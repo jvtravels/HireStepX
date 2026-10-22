@@ -575,3 +575,34 @@ describe("Scenario H — component-base / component-variable dual-write to ledge
     expect(getFact(s2.ledger!, "component-variable")).toBe(null);
   });
 });
+
+/* Scenario I — barrel wiring after the kernel/planner module split
+ * (2026-10-09). The scenarios above import through the
+ * `_negotiation-kernel` barrel; this pins that the barrel hands out the
+ * exact functions defined in the split modules (not stale copies), and
+ * that the planner barrel's registration side effect still runs, so
+ * pickAiMove delegates to the real planner rather than a missing hook. */
+describe("Scenario I — kernel/planner barrels re-export the split modules", () => {
+  it("kernel barrel exports are the split-module functions", async () => {
+    const barrel = await import("../../../server-handlers/_negotiation-kernel");
+    const apply = await import("../../../server-handlers/_negotiation-apply-answer");
+    const factory = await import("../../../server-handlers/_negotiation-factory");
+    expect(barrel.applyCandidateAnswer).toBe(apply.applyCandidateAnswer);
+    expect(barrel.initState).toBe(factory.initState);
+  });
+
+  it("planner barrel exports the core planner and a full turn still plans", async () => {
+    const barrel = await import("../../../server-handlers/_next-action-planner");
+    const core = await import("../../../server-handlers/_planner-core");
+    expect(barrel.planNextAction).toBe(core.planNextAction);
+    const band: NegotiationBand = { initialOffer: 20, maxStretch: 28, walkAway: 16, hasEquity: false };
+    const move = pickAiMove(initState({
+      sessionId: "scen-i",
+      role: "Software Engineer",
+      company: "unicorn-co",
+      band,
+    }));
+    expect(move.lever).toBeTruthy();
+    expect(move.rationale).toBeTruthy();
+  });
+});

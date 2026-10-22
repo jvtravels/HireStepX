@@ -1,90 +1,316 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { haptic } from "./haptics";
 
 /* ─── Types ─── */
 export type ToastType = "success" | "error" | "info";
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+export interface ToastOptions {
+  /** A single follow-up button, e.g. Undo. Clicking it runs `onClick` and dismisses the toast. */
+  action?: ToastAction;
+}
 interface Toast {
   id: number;
   message: string;
   type: ToastType;
-  exiting?: boolean;
+  action?: ToastAction;
+  entering: boolean;
+  leaving: boolean;
 }
 
 interface ToastContextValue {
-  toast: (message: string, type?: ToastType) => void;
+  toast: (message: string, type?: ToastType, options?: ToastOptions) => void;
+  /** Runs the newest visible toast's action (Undo) from the keyboard. Returns false when there is none. */
+  triggerToastAction: () => boolean;
 }
 
-const ToastContext = createContext<ToastContextValue>({ toast: () => {} });
+const ToastContext = createContext<ToastContextValue>({ toast: () => {}, triggerToastAction: () => false });
 export const useToast = () => useContext(ToastContext);
+
+/* ─── Banner-stacking tunables ───────────────────────────────────────────
+ * Ported from the transitions.dev "banner-stacking" pattern
+ * (https://transitions.dev/detail.html?t=banner-stacking): newest toast
+ * rises in at depth 0, older ones push back — smaller, higher, dimmer —
+ * three deep, and a fourth arrival sends the oldest out. Hovering the
+ * collapsed stack fans it into a readable list. */
+const STACK_OPEN_MS = 350;
+const STACK_CLOSE_MS = 250;
+const STACK_RISE = 80; // px, enter offset
+const STACK_BLUR = 2; // px, enter/leave cross-blur
+const STACK_SCALE = 0.97; // enter scale-in
+const STACK_PEEK = 12; // px, per-depth push-back offset
+const STACK_SPREAD_GAP = 8; // px, gap between fanned-out banners
+const STACK_DEPTH_SCALE = 0.06; // per-depth scale shrink
+const STACK_DEPTH_FADE = 0.4; // per-depth opacity dim
+// A toast with an action (Undo) stays long enough to be reached by keyboard or a slow reader.
+const ACTION_TOAST_MS = 9000;
+const ACTION_BUTTON_STYLE: React.CSSProperties = {
+  background: "none", border: "none", color: c.ivory, cursor: "pointer", flexShrink: 0,
+  font: "inherit", fontSize: 13, fontWeight: 600, textDecoration: "underline", padding: "4px 6px", minHeight: 28,
+};
+const STACK_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const STACK_WIDTH = 360;
+const MAX_DEPTH = 2; // three visible deep: 0, 1, 2
+// Per-depth idle opacity: depth 1 dims by one fade step, depth 2 by 1.6x
+// that step — not a plain depth*fade line, mirrors the source pattern.
+const DEPTH_OPACITY = [1, 1 - STACK_DEPTH_FADE, 1 - STACK_DEPTH_FADE * 1.6];
+
+function usePrefersReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
 
 /* ─── Provider ─── */
 let nextId = 0;
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [isSpread, setIsSpread] = useState(false);
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  // Auto-dismiss clocks, kept apart from the leave timers so they can be paused while the pointer or focus is on a toast.
+  const autoRef = useRef<Map<number, { timer: ReturnType<typeof setTimeout> | null; endsAt: number; left: number }>>(new Map());
+  const holdRef = useRef({ hover: false, focus: false });
+  const toastsRef = useRef<Toast[]>([]);
+  const leavingScheduledRef = useRef<Set<number>>(new Set());
+  const stackRef = useRef<HTMLDivElement | null>(null);
+  const reducedMotion = usePrefersReducedMotion();
 
+  // Marks a toast for its leave animation; the effect below removes it
+  // from state once --stack-close has played.
   const dismiss = useCallback((id: number) => {
-    // Start exit animation
-    setToasts(prev => prev.map(t => t.id === id ? { ...t, exiting: true } : t));
-    // Remove after animation
-    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 200);
     const timer = timersRef.current.get(id);
     if (timer) { clearTimeout(timer); timersRef.current.delete(id); }
+    const auto = autoRef.current.get(id);
+    if (auto?.timer) clearTimeout(auto.timer);
+    autoRef.current.delete(id);
+    setToasts(prev => prev.map(t => (t.id === id ? { ...t, leaving: true } : t)));
   }, []);
 
-  const toast = useCallback((message: string, type: ToastType = "info") => {
+  const toast = useCallback((message: string, type: ToastType = "info", options?: ToastOptions) => {
     const id = ++nextId;
-    setToasts(prev => [...prev.slice(-4), { id, message, type }]); // max 5
-    // Mobile haptic feedback tied to toast type. No-op on desktops and iOS.
     if (type === "success") haptic.success();
     else if (type === "error") haptic.error();
-    const timer = setTimeout(() => dismiss(id), 4000);
-    timersRef.current.set(id, timer);
+
+    setToasts(prev => {
+      const withNew: Toast[] = [{ id, message, type, action: options?.action, entering: true, leaving: false }, ...prev];
+      // A fourth (and beyond) banner is pushed straight into its leave
+      // animation rather than queued — "the fourth arrival sends the
+      // oldest out."
+      let rank = -1;
+      return withNew.map(t => {
+        if (t.leaving) return t;
+        rank += 1;
+        return rank > MAX_DEPTH ? { ...t, leaving: true } : t;
+      });
+    });
+
+    const ms = options?.action ? ACTION_TOAST_MS : 4000;
+    const held = holdRef.current.hover || holdRef.current.focus;
+    autoRef.current.set(id, {
+      timer: held ? null : setTimeout(() => dismiss(id), ms),
+      endsAt: Date.now() + ms,
+      left: ms,
+    });
+
+    // Flush the pre-open (is-enter) state, then release it in the same
+    // task — a single rAF hop is skipped whenever the frame clock is
+    // throttled, and the banner would land with no motion at all.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setToasts(prev => prev.map(t => (t.id === id ? { ...t, entering: false } : t)));
+      });
+    });
   }, [dismiss]);
+
+  // Actually remove a banner once it has finished playing its leave
+  // animation (fired exactly once per toast, whenever `leaving` flips true).
+  useEffect(() => {
+    toasts.forEach(t => {
+      if (t.leaving && !leavingScheduledRef.current.has(t.id)) {
+        leavingScheduledRef.current.add(t.id);
+        const timer = setTimeout(() => {
+          setToasts(prev => prev.filter(x => x.id !== t.id));
+          leavingScheduledRef.current.delete(t.id);
+          timersRef.current.delete(t.id);
+        }, STACK_CLOSE_MS + 60);
+        timersRef.current.set(t.id, timer);
+      }
+    });
+  }, [toasts]);
 
   // Cleanup timers on unmount
   useEffect(() => {
     const timers = timersRef.current;
-    return () => { timers.forEach(t => clearTimeout(t)); };
+    const auto = autoRef.current;
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+      auto.forEach(a => { if (a.timer) clearTimeout(a.timer); });
+    };
   }, []);
 
+  // WCAG 2.2.1: a toast the reader is pointing at or has focus in must not vanish. Pausing keeps the time that was
+  // left, and leaving restarts the clock from there.
+  const syncHold = useCallback(() => {
+    const held = holdRef.current.hover || holdRef.current.focus;
+    autoRef.current.forEach((a, id) => {
+      if (held && a.timer) {
+        clearTimeout(a.timer);
+        a.timer = null;
+        a.left = Math.max(1500, a.endsAt - Date.now());
+      } else if (!held && !a.timer) {
+        a.endsAt = Date.now() + a.left;
+        a.timer = setTimeout(() => dismiss(id), a.left);
+      }
+    });
+  }, [dismiss]);
+
+  // Removing the toast under the pointer or focus fires no leave or blur event, so the hold is re-checked as toasts change.
+  useEffect(() => {
+    const hold = holdRef.current;
+    if (!stackRef.current?.contains(document.activeElement)) hold.focus = false;
+    if (toasts.length === 0) hold.hover = false;
+    syncHold();
+  }, [toasts, syncHold]);
+
+  const triggerToastAction = useCallback((): boolean => {
+    const target = toastsRef.current.find(t => !t.leaving && t.action);
+    if (!target?.action) return false;
+    target.action.onClick();
+    dismiss(target.id);
+    return true;
+  }, [dismiss]);
+
+  // Hover spread is geometry, not :hover — the gaps between fanned-out
+  // banners belong to no element, and a plain mouseleave on the collapsed
+  // card would fire before the pointer reaches the taller revealed column.
+  useEffect(() => {
+    if (toasts.length === 0) return;
+    const within = (e: PointerEvent, above: number) => {
+      const stack = stackRef.current;
+      if (!stack) return false;
+      const r = stack.getBoundingClientRect();
+      return (
+        e.clientX >= r.left && e.clientX <= r.right &&
+        e.clientY <= r.bottom && e.clientY >= r.top - above
+      );
+    };
+    const onPointerMove = (e: PointerEvent) => {
+      const stack = stackRef.current;
+      if (!stack) return;
+      const spreadHeight = (stack.getBoundingClientRect().height + STACK_SPREAD_GAP) * 2;
+      setIsSpread(prev => {
+        if (prev) return within(e, spreadHeight);
+        return within(e, 0);
+      });
+    };
+    window.addEventListener("pointermove", onPointerMove);
+    return () => window.removeEventListener("pointermove", onPointerMove);
+  }, [toasts.length]);
+
+  toastsRef.current = toasts;
+
+  // Rank among non-leaving toasts gives each one its stacking depth
+  // (0 = front); leaving toasts animate out from wherever they were.
+  const depthById = new Map<number, number>();
+  let rank = -1;
+  toasts.forEach(t => {
+    if (!t.leaving) { rank += 1; depthById.set(t.id, rank); }
+  });
+
   return (
-    <ToastContext.Provider value={{ toast }}>
+    <ToastContext.Provider value={{ toast, triggerToastAction }}>
       {children}
-      {toasts.length > 0 && (
+      <div
+        aria-live="polite"
+        aria-atomic="false"
+        role="status"
+        style={{ position: "fixed", bottom: "max(24px, calc(env(safe-area-inset-bottom, 0px) + 12px))", right: "max(24px, env(safe-area-inset-right, 0px))", zIndex: 9999, pointerEvents: "none" }}
+      >
         <div
-          aria-live="polite"
-          aria-atomic="false"
-          role="status"
-          style={{
-            position: "fixed", bottom: 24, right: 24, zIndex: 9999,
-            display: "flex", flexDirection: "column", gap: 8,
-            pointerEvents: "none",
+          ref={stackRef}
+          style={{ position: "relative", width: `min(${STACK_WIDTH}px, calc(100vw - 48px))` }}
+          onMouseEnter={() => { holdRef.current.hover = true; syncHold(); }}
+          onMouseLeave={() => { holdRef.current.hover = false; syncHold(); }}
+          onFocus={() => { holdRef.current.focus = true; syncHold(); }}
+          onBlur={(e) => {
+            if (e.currentTarget.contains(e.relatedTarget)) return;
+            holdRef.current.focus = false;
+            syncHold();
           }}
         >
           {toasts.map((t) => {
-            const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : c.gilt;
-            const borderColor = t.type === "success" ? "rgba(21,128,61,0.25)" : t.type === "error" ? "rgba(185,28,28,0.25)" : "rgba(180,83,9,0.25)";
+            const depth = t.leaving ? MAX_DEPTH + 1 : (depthById.get(t.id) ?? 0);
+            const color = t.type === "success" ? c.sage : t.type === "error" ? c.ember : T.indigo;
+            const borderColor = t.type === "success" ? T.successLine : t.type === "error" ? T.errorLine : T.indigoRing;
+
+            const spreadActive = isSpread && !t.leaving && depth > 0;
+            const translateY = t.entering
+              ? STACK_RISE
+              : spreadActive
+                ? 0 // handled below via calc() against the banner's own height
+                : -(STACK_PEEK * depth);
+            const scale = t.entering ? STACK_SCALE : spreadActive ? 1 : 1 - STACK_DEPTH_SCALE * depth;
+            const opacity = t.entering || t.leaving
+              ? 0
+              : spreadActive
+                ? 1
+                : DEPTH_OPACITY[Math.min(depth, DEPTH_OPACITY.length - 1)];
+            const blur = t.entering || t.leaving ? STACK_BLUR : 0;
+            const duration = t.leaving ? STACK_CLOSE_MS : STACK_OPEN_MS;
+
+            const transform = spreadActive
+              ? `translateY(calc((100% + ${STACK_SPREAD_GAP}px) * -${depth})) scale(1)`
+              : `translateY(${translateY}px) scale(${scale})`;
+
             return (
               <div
                 key={t.id}
                 style={{
+                  position: depth === 0 && !t.leaving ? "relative" : "absolute",
+                  left: 0, right: 0, bottom: 0,
+                  zIndex: t.leaving ? 0 : 3 - Math.min(depth, 3),
+                  transformOrigin: depth === 0 && !t.leaving ? "50% 50%" : "50% 100%",
+                  transform: reducedMotion ? "none" : transform,
+                  opacity,
+                  filter: reducedMotion ? "none" : `blur(${blur}px)`,
+                  transition: reducedMotion || t.entering
+                    ? "none"
+                    : `transform ${duration}ms ${STACK_EASE}, opacity ${duration}ms ${STACK_EASE}, filter ${duration}ms ${STACK_EASE}`,
+                  willChange: "transform, opacity, filter",
                   padding: "10px 16px", borderRadius: 10,
                   background: c.graphite, border: `1px solid ${borderColor}`,
                   boxShadow: "0 4px 20px rgba(14,12,8,0.18)",
                   display: "flex", alignItems: "center", gap: 10,
-                  pointerEvents: "auto", maxWidth: 360,
-                  animation: t.exiting ? "toastOut 0.2s ease forwards" : "toastIn 0.25s ease",
+                  pointerEvents: t.leaving ? "none" : "auto",
+                  boxSizing: "border-box",
                 }}
               >
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: color, flexShrink: 0 }} />
                 <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, lineHeight: 1.4, flex: 1 }}>{t.message}</span>
+                {t.action && (
+                  <button
+                    type="button"
+                    onClick={() => { t.action?.onClick(); dismiss(t.id); }}
+                    style={ACTION_BUTTON_STYLE}
+                  >
+                    {t.action.label}
+                  </button>
+                )}
                 <button
                   onClick={() => dismiss(t.id)}
                   aria-label="Dismiss notification"
-                  style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 2, flexShrink: 0 }}
+                  style={{ background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 0, flexShrink: 0, width: 28, height: 28, display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "-4px -8px -4px 0" }}
                 >
                   <svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
@@ -92,11 +318,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             );
           })}
         </div>
-      )}
-      <style>{`
-        @keyframes toastIn { from { opacity: 0; transform: translateY(12px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
-        @keyframes toastOut { from { opacity: 1; transform: translateY(0) scale(1); } to { opacity: 0; transform: translateY(12px) scale(0.95); } }
-      `}</style>
+      </div>
     </ToastContext.Provider>
   );
 }

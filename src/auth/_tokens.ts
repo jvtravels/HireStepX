@@ -4,14 +4,26 @@
 
 export const tokens = {
   // Surface
-  cream: "#FAF7F0",
-  white: "#FFFFFF",
-  creamSoft: "#F4EFE3",
+  cream: "oklch(1 0 0)",
+  white: "oklch(1 0 0)",
+  creamSoft: "oklch(0.967 0.001 286.375)",
+  // Warmer raised surface — a hair lighter than cream, sits above it for
+  // settings/dashboard cards. Was inlined as `graphite: "#FDFCF7"` in three
+  // dashboard components.
+  creamRaised: "oklch(0.987 0.002 197.1)",
+  // App-shell canvas behind the sidebar + main content (Figma #FAFAFA,
+  // node 711:345/711:411) — a hair darker than pure white so the white
+  // header/card surfaces read as distinct raised cards instead of
+  // blending into the page.
+  pageBg: "oklch(0.9851 0 89.9)",
 
   // Ink
-  coal: "#0E0C08",
-  indigoGray: "#3E3A6E",
-  inkSoft: "#6E6759",
+  coal: "oklch(0.148 0.004 228.8)",
+  indigoGray: "oklch(0.379 0.087 284.954)",
+  // Darkened from L 0.56 (4.42:1 on pageBg, 4.19 on creamSoft, 4.14 on muted)
+  // to 0.52 so body text clears AA 4.5:1 on every light surface incl. the
+  // copper100 chip (4.57). Not for dark surfaces: use creamMuted there.
+  inkSoft: "oklch(0.52 0.021 213.5)",
   // Was #A39C8B — failed WCAG AA at ~2.4:1 on cream #FAF7F0. Darkened
   // to #736B5D so body-text usages (spam-folder hint, password-meter
   // labels, footer legal, marketing eyebrow labels) clear AA 4.5:1 on
@@ -20,46 +32,92 @@ export const tokens = {
   // 4.59:1 on creamSoft, 4.92:1 on #FAF7F0, 5.26:1 on white; still
   // lighter than inkSoft (#6E6759) so the text hierarchy is preserved.
   // Decorative-only uses can drop back to inkFaintWeak.
-  inkFaint: "#736B5D",
-  inkFaintWeak: "#A39C8B",
+  inkFaint: "oklch(0.45 0.017 213.2)",
+  // DECORATIVE ONLY (icons, dots, dividers) - never text or placeholders.
+  // Raised from L 0.72 (2.46:1) to 0.62 so meaningful non-text marks clear
+  // the 3:1 UI-component bar on white (3.63) and creamSoft (3.30). Text that
+  // used this shade now uses inkSoft.
+  inkFaintWeak: "oklch(0.62 0.019 213.9)",
 
-  // Brand — interactive
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  indigoRing: "rgba(49, 46, 129, 0.20)",
+  // Brand — interactive. Use for anything actionable or "in progress":
+  // buttons/CTAs, links, active/selected nav & tab states, focus rings,
+  // brand-identity chrome (panel headers). If a user can click it, or it
+  // marks the thing they're currently on, it's indigo — never copper.
+  indigo: "oklch(0.359 0.135 278.697)",
+  indigoDeep: "oklch(0.257 0.086 281.288)",
+  indigo100: "oklch(0.920 0.022 294.573)",
+  indigoRing: "oklch(0.359 0.135 278.697 / 0.20)",
 
-  // Brand — editorial
-  copper: "#B45309",
-  copperDark: "#923F07",
-  copperSoft: "rgba(180, 83, 9, 0.12)",
-  copper100: "#F4E5D8",
+  // Brand — editorial. Reserved for score/streak/achievement visuals
+  // ONLY: score chips & rings, the streak flame, milestone/skill-badge
+  // "earned" states. Never use copper for a button, link, or active
+  // state — that's indigo's job. (Two documented exceptions elsewhere:
+  // indigo doubles as a categorical chart-series color in
+  // dashboardComponents.tsx's results charts, and as a neutral
+  // "upcoming/soon" status tint in DashboardHomePanels.tsx's calendar
+  // strip — both are deliberate, not drift.)
+  // L 0.555 -> 0.53: 12px copper text on copper100 chips was 4.21:1; now 4.68.
+  copper: "oklch(0.53 0.163 48.998)",
+  // Copper for text/eyebrows on coal/indigo-dark surfaces (copper on coal is
+  // 3.9:1; this is ~9.5:1). Pair with a dark background only.
+  copperOnDark: "oklch(0.78 0.12 55)",
+  copperDark: "oklch(0.468 0.146 48.998)",
+  copperSoft: "oklch(0.555 0.163 48.998 / 0.12)",
+  copper100: "oklch(0.94 0.03 58.318)",
 
   // Copper alpha scale — replaces 16 inline rgba(180,83,9,0.x) literals
   // scattered across Interview, Dashboard, and Setup. Pick from coarsest
   // to most opaque; never inline a copper rgba again.
-  copperWash:   "rgba(180, 83, 9, 0.06)",
-  copperTint:   "rgba(180, 83, 9, 0.10)",
-  copperMid:    "rgba(180, 83, 9, 0.18)",
-  copperBorder: "rgba(180, 83, 9, 0.25)",
-  copperRing:   "rgba(180, 83, 9, 0.40)",
+  copperWash:   "oklch(0.555 0.163 48.998 / 0.06)",
+  copperTint:   "oklch(0.555 0.163 48.998 / 0.10)",
+  copperMid:    "oklch(0.555 0.163 48.998 / 0.18)",
+  copperBorder: "oklch(0.555 0.163 48.998 / 0.25)",
 
   // Status
-  success: "#15803D",
-  success100: "#DCFCE7",
-  error: "#B91C1C",
-  error100: "#FEE2E2",
-  warning: "#A16207",
-  warning100: "#FEF3C7",
+  success: "oklch(0.527 0.137 150.069)",
+  success100: "oklch(0.962 0.043 156.743)",
+  // Darker success text shade for AA contrast on light/cream surfaces
+  // (~7:1 on success100). Was inlined as "#166534" in the credits-balance
+  // rows of settingsSections + DashboardLayout.
+  successInk: "oklch(0.448 0.108 151.328)",
+  // Alpha sibling for borders on success surfaces — mirrors warningLine.
+  successLine: "oklch(0.448 0.108 151.328 / 0.20)",
+  error: "oklch(0.505 0.190 27.518)",
+  error100: "oklch(0.936 0.031 17.717)",
+  // Darker error text shade for AA contrast on error100 (mirrors successInk /
+  // warningInk's darken-and-desaturate pattern). Base T.error was previously
+  // used directly as text on error100 — same mistake successInk/warningInk
+  // were introduced to fix elsewhere, just never applied to error.
+  errorInk: "oklch(0.405 0.152 27.518)",
+  errorLine: "oklch(0.405 0.152 27.518 / 0.20)",
+  warning: "oklch(0.53 0.121 66.442)", // was 0.554: 4.42:1 on warning100, now 4.87
+  warning100: "oklch(0.962 0.058 95.617)",
   // Promoted from a dashboard-local literal during the 2026-06 audit.
   // warningInk is the AA-passing text shade on warning100 (~6.7:1).
   // warningLine is the alpha sibling for borders on warning surfaces.
-  warningInk: "#7C4A03",
-  warningLine: "rgba(124, 74, 3, 0.20)",
+  warningInk: "oklch(0.457 0.100 66.296)",
+  warningLine: "oklch(0.457 0.100 66.296 / 0.20)",
+
+  // Accent palette is indigo + copper only. The former violet and info-blue
+  // stage hues were removed; success/warning/error stay as functional status
+  // colours, never as decorative accents.
+
+  // Neutral badge — zero-delta / no-change states, distinct from ink.
+  neutralInk: "oklch(0.373 0.017 261.4)",
 
   // Lines
-  line: "#EBE5D2",
-  lineStrong: "#D6CDB5",
+  // Figma Border/Default (#EAECF0) — a neutral cool-gray hairline. The prior
+  // value here carried a warm hue (92°) left over from the retired editorial
+  // cream palette; the copper→indigo sweep missed borders. Corrected to match
+  // the audited Sessions spec (node 711:344), which is representative of the
+  // shared hairline used across cards/sidebar/tables app-wide.
+  line: "oklch(0.943 0.006 265.3)",
+  lineStrong: "oklch(0.849 0.034 89.869)",
+
+  // Neutral table-row tint (zebra/group-label rows). rowTint = Figma
+  // #F7F8FA (table header) — corrected via precise sRGB->OKLCH conversion
+  // against node 711:344.
+  rowTint: "oklch(0.9789 0.0029 264.5)",
 
   // Overlays / faded surfaces (used in marketing-v2)
   coalOverlay: "rgba(14, 12, 8, 0.55)",
@@ -75,22 +133,25 @@ export const tokens = {
 
   // Brand tints — sub-surface fills used in tables / pricing chips
   copper100Soft: "rgba(244, 229, 216, 0.12)",
-  copper100SoftLine: "rgba(244, 229, 216, 0.18)",
   indigoMist: "rgba(49, 46, 129, 0.04)",
-  indigoMist3: "rgba(49, 46, 129, 0.03)",
-  indigoFog: "rgba(49, 46, 129, 0.025)",
 
   // Status tints
   successMist: "rgba(34, 197, 94, 0.14)",
+
+  // Blog-infographic level badge colors (beginner / intermediate / advanced)
+  levelBeginner:    "oklch(0.484 0.096 153.009)",
+  levelIntermediate: "oklch(0.55 0.131 73.442)", // was 0.683 (2.91:1 on white); now 4.95
+  levelAdvanced:    "oklch(0.565 0.143 45.402)",
 } as const;
 
-/* Satoshi is the primary UI font, loaded from Fontshare CDN via a <link>
- * in app/layout.tsx. --font-ui is defined in src/index.css :root so all
- * var(--font-ui) references resolve to Satoshi. Inter has been removed. */
+/* Geist Sans is the primary UI font, self-hosted via next/font/local in
+ * app/layout.tsx (also registered as a literal @font-face in src/index.css
+ * for the call sites below that hardcode the family name instead of
+ * var(--font-ui)). Geist Mono replaces JetBrains Mono the same way. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Satoshi', system-ui, -apple-system, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  sans: "'Geist Sans', system-ui, -apple-system, sans-serif",
+  mono: "'Geist Mono', monospace",
 } as const;
 
 /* Typography scale — mirrors the --text-* CSS custom properties in index.css.

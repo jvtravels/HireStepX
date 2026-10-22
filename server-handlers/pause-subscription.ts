@@ -1,61 +1,25 @@
 /* Vercel Serverless Function — Pause / Resume Subscription */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  supabaseUrl,
-  supabaseAnonKey,
-  escapeHtml,
-  isRateLimited,
-  getVercelClientIp,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl, escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button } from "./_email-theme";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
-  if (handlePreflightAndMethod(req, res)) return;
-
-  const bodyLen = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyLen > 1048576) return res.status(413).json({ error: "Request too large" });
-  if (!origin) return res.status(403).json({ error: "Forbidden" });
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "pause-subscription", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  const pre = await withNodeAuthAndRateLimit(req, res, { endpoint: "pause-subscription", ipLimit: 5 });
+  if (pre.handled) return;
+  const { userId } = pre;
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
-  }
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  const token = authHeader.slice(7);
-  let userId: string;
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-  } catch {
-    return res.status(401).json({ error: "Auth verification failed" });
   }
 
   const { action } = req.body || {};
@@ -67,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
     const profileRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=razorpay_subscription_id,subscription_tier,subscription_end,email,name`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=razorpay_subscription_id,subscription_tier,subscription_end,paused_days_remaining,email,name`,
       { headers: dbHeaders },
     );
     const profiles = await profileRes.json();
@@ -85,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Call Razorpay to pause/resume if we have a subscription
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       const endpoint = action === "pause"
         ? `https://api.razorpay.com/v1/subscriptions/${subscriptionId}/pause`
         : `https://api.razorpay.com/v1/subscriptions/${subscriptionId}/resume`;
@@ -112,13 +76,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // Update DB flag
+    // On pause: freeze subscription_end by storing the remaining days so the
+    // cron doesn't expire a paused subscription during the pause period.
+    // On resume: restore subscription_end = now + frozen remaining days.
+    const pausePatch: Record<string, unknown> = { subscription_paused: action === "pause" };
+    if (action === "pause" && profile.subscription_end) {
+      const remaining = Math.max(0, Math.ceil((new Date(profile.subscription_end).getTime() - Date.now()) / 86_400_000));
+      pausePatch.paused_days_remaining = remaining;
+      // Push subscription_end far enough out that the cron won't downgrade while paused.
+      // We'll restore to the correct date on resume.
+      const frozenEnd = new Date();
+      frozenEnd.setFullYear(frozenEnd.getFullYear() + 10);
+      pausePatch.subscription_end = frozenEnd.toISOString();
+    } else if (action === "resume" && typeof profile.paused_days_remaining === "number") {
+      const resumedEnd = new Date();
+      resumedEnd.setDate(resumedEnd.getDate() + profile.paused_days_remaining);
+      pausePatch.subscription_end = resumedEnd.toISOString();
+      pausePatch.paused_days_remaining = null;
+    }
+
     const updateRes = await fetch(
       `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
       {
         method: "PATCH",
         headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-        body: JSON.stringify({ subscription_paused: action === "pause" }),
+        body: JSON.stringify(pausePatch),
       },
     );
 
@@ -129,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Send pause/resume confirmation email (best-effort)
     if (RESEND_API_KEY && profile?.email) {
       const safeName = escapeHtml(profile.name || "there");
-      const safeTier = escapeHtml(profile.subscription_tier || "Pro");
+      const safeTier = escapeHtml(profile.subscription_tier || "Starter");
       const subject = action === "pause"
         ? "Your subscription is paused"
         : "Welcome back to your plan";

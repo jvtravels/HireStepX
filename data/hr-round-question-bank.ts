@@ -1,4 +1,4 @@
-/* HireStepX — Canonical HR-round question bank
+/* HireStepX, Canonical HR-round question bank
  *
  * HR rounds (TCS/Infosys/Wipro "HR round", the people-ops screen at
  * product cos, the closing fit-and-comp conversation) ask a stable,
@@ -39,7 +39,7 @@ export const HR_DIMENSIONS = [
 export type HrDimension = typeof HR_DIMENSIONS[number];
 
 export interface HrQuestion {
-  /** Stable id — analytics + cross-session dedupe. */
+  /** Stable id, analytics + cross-session dedupe. */
   id: string;
   text: string;
   dimension: HrDimension;
@@ -73,7 +73,7 @@ export const HR_QUESTIONS: ReadonlyArray<HrQuestion> = [
   { id: "self-01", text: "What would you say are your greatest strengths, and how have they shown up at work?", dimension: "self-awareness", frequencyPct: 82 },
   { id: "self-02", text: "What is one weakness you're actively working on, and what are you doing about it?", dimension: "self-awareness", frequencyPct: 84 },
   { id: "self-03", text: "How would your current manager and teammates describe you?", dimension: "self-awareness", frequencyPct: 58 },
-  { id: "self-04", text: "Tell me about yourself — walk me through your background in a couple of minutes.", dimension: "self-awareness", frequencyPct: 90, opener: true },
+  { id: "self-04", text: "Tell me about yourself, walk me through your background in a couple of minutes.", dimension: "self-awareness", frequencyPct: 90, opener: true },
 
   // ── Culture & values ──
   { id: "cul-01", text: "What kind of work environment helps you do your best work?", dimension: "culture-values", frequencyPct: 70 },
@@ -99,7 +99,7 @@ export const HR_QUESTIONS: ReadonlyArray<HrQuestion> = [
 
   // ── Logistics ──
   { id: "log-01", text: "What is your notice period, and how soon could you join if we made an offer?", dimension: "logistics", frequencyPct: 78 },
-  { id: "log-02", text: "Are you comfortable with this role's location and work model — on-site, hybrid, or remote?", dimension: "logistics", frequencyPct: 60 },
+  { id: "log-02", text: "Are you comfortable with this role's location and work model, on-site, hybrid, or remote?", dimension: "logistics", frequencyPct: 60 },
   { id: "log-03", text: "Do you have any other offers or processes in progress right now?", dimension: "logistics", frequencyPct: 44 },
 
   // ── Compliance / BGV (the 13% "Compliance readiness" rubric dimension) ──
@@ -143,7 +143,7 @@ export interface SampleHrOpts {
    *  default: the opener is rendered as the intro beat, so sampling it
    *  into the body would ask for the candidate's background twice. */
   includeOpener?: boolean;
-  /** Dimensions the caller wants surfaced FIRST — the sampler fills these
+  /** Dimensions the caller wants surfaced FIRST, the sampler fills these
    *  before the neutral round-robin. Lets the caller reflect the resolved
    *  HR rubric (e.g. a senior candidate's higher comp/commitment weight,
    *  a fresher's self-awareness/motivation weight) so the draw isn't blind

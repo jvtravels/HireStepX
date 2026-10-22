@@ -2,8 +2,9 @@
    Brand voice, microcopy patterns, words to use, words to avoid.
    The discipline: confident, specific, no fluff. Lead with outcomes. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius, type } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Comparison row — bad copy vs good copy */
 function CopyPair({ context, bad, good }: { context: string; bad: string; good: string }) {
   return (
@@ -11,7 +12,7 @@ function CopyPair({ context, bad, good }: { context: string; bad: string; good: 
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: "24px 28px",
         boxShadow: shadows.card,
       }}
@@ -22,7 +23,7 @@ function CopyPair({ context, bad, good }: { context: string; bad: string; good: 
           style={{
             background: t.error100,
             borderLeft: `3px solid ${t.error}`,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             padding: "14px 18px",
           }}
         >
@@ -45,7 +46,7 @@ function CopyPair({ context, bad, good }: { context: string; bad: string; good: 
           style={{
             background: t.success100,
             borderLeft: `3px solid ${t.success}`,
-            borderRadius: 6,
+            borderRadius: radius.sm,
             padding: "14px 18px",
           }}
         >
@@ -84,7 +85,7 @@ function WordList({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: "28px 32px",
         boxShadow: shadows.card,
       }}
@@ -100,7 +101,7 @@ function WordList({
               color: t.coal,
               padding: "6px 12px",
               background: t.creamSoft,
-              borderRadius: 6,
+              borderRadius: radius.sm,
             }}
           >
             {w}
@@ -117,8 +118,7 @@ export default function DesignSystemVoice() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -130,36 +130,11 @@ export default function DesignSystemVoice() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Voice, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>specificity</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Confident. Specific. No fluff. Like a sharp friend who works in
-            hiring, not a corporate brochure. Lead with outcomes. Use numbers
-            when possible. Acknowledge the fear.
-          </p>
-        </header>
+        {/* PAGE HEADER */}
+        <PageHeader
+          title="Voice, by specificity."
+          description="Confident. Specific. No fluff. Like a sharp friend who works in hiring, not a corporate brochure. Lead with outcomes. Use numbers when possible. Acknowledge the fear."
+        />
 
         {/* 01 — THE VOICE */}
         <section style={{ marginBottom: 80 }}>
@@ -172,7 +147,7 @@ export default function DesignSystemVoice() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "40px 48px",
               boxShadow: shadows.card,
             }}
@@ -199,7 +174,7 @@ export default function DesignSystemVoice() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -314,30 +289,30 @@ export default function DesignSystemVoice() {
           </div>
         </section>
 
-        {/* 04 — HERO COPY FORMULAS */}
+        {/* 04 — HEADLINE FORMULAS */}
         <section style={{ marginBottom: 80 }}>
           <SectionHead
             num="04"
-            title="Hero copy formulas"
-            desc="The italic-accent-word treatment depends on the right word in the right place."
+            title="Headline formulas"
+            desc="Short, plain-set headlines. Word choice and order carry the payoff — not a decorative color treatment."
           />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {[
-              { ctx: "Auth · login", line: "Clarity wins interviews", accent: "wins" },
-              { ctx: "Auth · reset", line: "Reset your password", accent: "password" },
-              { ctx: "Auth · check email", line: "Check your email", accent: "email" },
-              { ctx: "Onboarding · upload", line: "Let's start improving your interview clarity", accent: "clarity" },
-              { ctx: "Result · score reveal", line: "Strong foundation", accent: "" },
-              { ctx: "Dashboard · greeting", line: "Good morning, Jay", accent: "Jay" },
-              { ctx: "Empty · no sessions", line: "No interviews yet", accent: "yet" },
-              { ctx: "Onboarding · ready", line: "Your first practice begins now", accent: "now" },
+              { ctx: "Auth · login", line: "Clarity wins interviews." },
+              { ctx: "Auth · reset", line: "Reset your password." },
+              { ctx: "Auth · check email", line: "Check your email." },
+              { ctx: "Onboarding · upload", line: "Let's start improving your interview clarity." },
+              { ctx: "Result · score reveal", line: "Strong foundation." },
+              { ctx: "Dashboard · greeting", line: "Good morning, Jay." },
+              { ctx: "Empty · no sessions", line: "No interviews yet." },
+              { ctx: "Onboarding · ready", line: "Your first practice begins now." },
             ].map((row) => (
               <div
                 key={row.ctx}
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: 28,
                   boxShadow: shadows.card,
                 }}
@@ -346,44 +321,24 @@ export default function DesignSystemVoice() {
                 <p
                   style={{
                     fontFamily: f.serif,
-                    fontSize: 28,
-                    fontWeight: 400,
+                    fontSize: type.h3.size,
+                    fontWeight: type.h3.weight,
                     margin: "12px 0 0",
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.15,
+                    lineHeight: type.h3.lineHeight,
                     color: t.coal,
                   }}
                 >
-                  {row.line.split(" ").map((word, i) => {
-                    const isAccent = word.toLowerCase().replace(/[.,!]/g, "") === row.accent.toLowerCase();
-                    return (
-                      <React.Fragment key={i}>
-                        {isAccent ? (
-                          <em
-                            style={{
-                              fontStyle: "italic",
-                              fontWeight: 500,
-                              color: t.copper,
-                            }}
-                          >
-                            {word}
-                          </em>
-                        ) : (
-                          word
-                        )}
-                        {i < row.line.split(" ").length - 1 && " "}
-                      </React.Fragment>
-                    );
-                  })}
+                  {row.line}
                 </p>
               </div>
             ))}
           </div>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
             <b style={{ color: t.coal, fontWeight: 600 }}>Formula:</b> [verb or
-            descriptive] [your] [noun-with-payoff]. The italic word is usually
-            the noun (the thing they came for) or the verb (the action that
-            unlocks it). Never on filler words like "the" or "a".
+            descriptive] [your] [noun-with-payoff]. Lead with the noun (the
+            thing they came for) or the verb (the action that unlocks it) —
+            put it early in the sentence, not in the middle. Emphasis comes
+            from word order and brevity, never from color or size.
           </p>
         </section>
 
@@ -398,7 +353,7 @@ export default function DesignSystemVoice() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               boxShadow: shadows.card,
               overflow: "hidden",
             }}
@@ -457,13 +412,12 @@ export default function DesignSystemVoice() {
                 }}
               >
                 <div style={{ fontSize: 13, fontWeight: 500, color: t.coal }}>{row.ctx}</div>
-                <div style={{ fontSize: 12, color: t.indigo, fontStyle: "italic" }}>{row.tone}</div>
+                <div style={{ fontSize: 12, color: t.indigo }}>{row.tone}</div>
                 <div
                   style={{
                     fontFamily: f.serif,
                     fontSize: 14,
-                    color: t.indigoGray,
-                    fontStyle: "italic",
+                    color: t.inkMuted,
                     lineHeight: 1.5,
                   }}
                 >
@@ -485,7 +439,7 @@ export default function DesignSystemVoice() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -494,10 +448,10 @@ export default function DesignSystemVoice() {
               <div>
                 <MonoLabel color={t.copper}>Spelling</MonoLabel>
                 <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
-                  <li style={{ fontSize: 14, color: t.indigoGray }}>
+                  <li style={{ fontSize: 14, color: t.inkMuted }}>
                     <b style={{ color: t.coal }}>British spellings</b> across the product:
                   </li>
-                  <li style={{ fontSize: 13, color: t.indigoGray, paddingLeft: 16, lineHeight: 1.7 }}>
+                  <li style={{ fontSize: 13, color: t.inkMuted, paddingLeft: 16, lineHeight: 1.7 }}>
                     practise (verb), practice (noun) · organise · prioritise ·
                     behaviour · colour · centre · analyse
                   </li>
@@ -510,18 +464,18 @@ export default function DesignSystemVoice() {
               <div>
                 <MonoLabel color={t.copper}>Currency & numbers</MonoLabel>
                 <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 10 }}>
-                  <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                  <li style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6 }}>
                     Use <b style={{ color: t.coal }}>₹ (rupee symbol)</b>, never $ or USD
                   </li>
-                  <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                  <li style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6 }}>
                     Use <b style={{ color: t.coal }}>LPA</b> (Lakhs Per Annum)
                     for salaries, not "$120K"
                   </li>
-                  <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                  <li style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6 }}>
                     Format: <b style={{ color: t.coal }}>₹15,00,000</b> (Indian
                     grouping) or "₹15 LPA"
                   </li>
-                  <li style={{ fontSize: 14, color: t.indigoGray, lineHeight: 1.6 }}>
+                  <li style={{ fontSize: 14, color: t.inkMuted, lineHeight: 1.6 }}>
                     Dates: <b style={{ color: t.coal }}>14 May 2026</b> (DMY),
                     not "May 14, 2026"
                   </li>
@@ -531,17 +485,17 @@ export default function DesignSystemVoice() {
 
             <div style={{ marginTop: 32, paddingTop: 24, borderTop: `1px solid ${t.line}` }}>
               <MonoLabel color={t.copper}>Examples that resonate</MonoLabel>
-              <p style={{ marginTop: 12, fontSize: 13, color: t.indigoGray, lineHeight: 1.7 }}>
+              <p style={{ marginTop: 12, fontSize: 13, color: t.inkMuted, lineHeight: 1.7 }}>
                 <b style={{ color: t.coal }}>Companies:</b> TCS, Infosys,
                 Wipro, Razorpay, Flipkart, Swiggy, Zerodha, Cred, PhonePe,
                 Paytm — not Stripe, Airbnb, Uber as primary examples.
               </p>
-              <p style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.7 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, lineHeight: 1.7 }}>
                 <b style={{ color: t.coal }}>Interview types:</b> Campus
                 placement, NQT (TCS), InfyTQ, Wipro NLTH, government PSU —
                 these phrases mean nothing in SF, everything to your audience.
               </p>
-              <p style={{ fontSize: 13, color: t.indigoGray, lineHeight: 1.7 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, lineHeight: 1.7 }}>
                 <b style={{ color: t.coal }}>Cities:</b> Bengaluru (not
                 Bangalore in formal writing), Mumbai, Hyderabad, Chennai, NCR.
               </p>
@@ -561,7 +515,7 @@ export default function DesignSystemVoice() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "28px 32px",
                 boxShadow: shadows.card,
               }}
@@ -592,10 +546,10 @@ export default function DesignSystemVoice() {
                   <span
                     key={v}
                     style={{
-                      background: t.indigo,
+                      background: t.copper,
                       color: t.white,
                       padding: "8px 14px",
-                      borderRadius: 8,
+                      borderRadius: radius.md,
                       fontSize: 12,
                       fontWeight: 500,
                       textAlign: "center",
@@ -610,7 +564,7 @@ export default function DesignSystemVoice() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "28px 32px",
                 boxShadow: shadows.card,
               }}
@@ -644,7 +598,7 @@ export default function DesignSystemVoice() {
                       background: t.creamSoft,
                       color: t.inkSoft,
                       padding: "8px 14px",
-                      borderRadius: 8,
+                      borderRadius: radius.md,
                       fontSize: 12,
                       fontWeight: 500,
                       textAlign: "center",

@@ -3,6 +3,7 @@
  * answer indices. Pure presentation. */
 
 import { t, f, radius, space } from "../tokens";
+import { Button } from "@/components/ui/button";
 import type { DrillSummary } from "../../../server-handlers/_drill-session";
 
 export function DrillVerdictCard({
@@ -57,7 +58,7 @@ export function DrillVerdictCard({
       >
         <span>
           Score:{" "}
-          <strong style={{ color: t.coal, fontSize: 15 }}>{summary.scorePct}/100</strong>
+          <strong style={{ color: t.coal, fontSize: 16 }}>{summary.scorePct}/100</strong>
         </span>
         <span>
           Strongest answer: <strong style={{ color: t.coal }}>Q{summary.strongestAnswerIdx + 1}</strong>
@@ -67,23 +68,9 @@ export function DrillVerdictCard({
         </span>
       </div>
       {onExit && (
-        <button
-          type="button"
-          onClick={onExit}
-          style={{
-            background: t.indigo,
-            color: t.white,
-            border: "none",
-            borderRadius: radius.lg,
-            padding: "10px 18px",
-            fontFamily: f.sans,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
+        <Button type="button" size="lg" onClick={onExit}>
           Back to report
-        </button>
+        </Button>
       )}
     </div>
   );

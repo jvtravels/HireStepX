@@ -47,7 +47,6 @@ function TestConsumer() {
     <div>
       <span data-testid="isFree">{String(ctx.isFree)}</span>
       <span data-testid="isStarter">{String(ctx.isStarter)}</span>
-      <span data-testid="isPro">{String(ctx.isPro)}</span>
       <span data-testid="displayName">{ctx.displayName}</span>
       <span data-testid="sessionsRemaining">{ctx.sessionsRemaining}</span>
       <span data-testid="dataLoading">{String(ctx.dataLoading)}</span>
@@ -82,7 +81,6 @@ describe("DashboardContext", () => {
 
     expect(screen.getByTestId("isFree").textContent).toBe("true");
     expect(screen.getByTestId("isStarter").textContent).toBe("false");
-    expect(screen.getByTestId("isPro").textContent).toBe("false");
   });
 
   it("provides display name from user", async () => {

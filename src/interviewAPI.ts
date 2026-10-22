@@ -2,7 +2,7 @@
 
 import type { InterviewStep } from "./interviewScripts";
 import { scriptHasQuestion } from "./interviewScripts";
-import { apiFetch } from "./apiClient";
+import { apiFetch, throwIfRateLimited, RateLimitError } from "./apiClient";
 import { openIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import { checkRateLimit } from "./rateLimit";
 import { extractAccentMarkup } from "./_accent-parser";
@@ -212,6 +212,12 @@ export interface EvaluationResult {
   nextSteps?: string[];
 }
 
+/* Bounded so a hung XHR resolves as status 0 and falls through to the retry
+   queue instead of pinning saveSessionResult forever. Longer than the engine's
+   10s UI race on purpose: the request may still land after the user has moved
+   on, and the server dedups on id. */
+const SAVE_TIMEOUT_MS = 25_000;
+
 /** Save session to localStorage + Supabase with fallback. */
 export async function saveSessionResult(result: SessionResult, userId?: string): Promise<{
   localOk: boolean;
@@ -284,7 +290,7 @@ export async function saveSessionResult(result: SessionResult, userId?: string):
         // would pick the new version, which would silently rebind the
         // session. This way it's locked from the start.
         resume_version_id: result.resumeVersionId || null,
-      });
+      }, { timeoutMs: SAVE_TIMEOUT_MS });
       if (res.ok && res.data?.ok) {
         cloudOk = true;
         if (res.data.strippedColumns && res.data.strippedColumns.length > 0) {
@@ -467,7 +473,11 @@ export async function fetchLLMQuestions(params: {
       params,
     );
     if (res.status === 429) {
-      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
+      const errData = res.errorData as { retryAfter?: number; quotaExceeded?: boolean } | null;
+      if (errData?.quotaExceeded) {
+        throw new Error("AI quota reached for today. Using practice questions for this session.");
+      }
+      const retryAfter = errData?.retryAfter;
       throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
     }
     if (!res.ok) {
@@ -716,10 +726,9 @@ export async function fetchLLMEvaluation(params: {
     );
     clearTimeout(timer);
     if (timedOut) throw new Error("Evaluation timed out. Using estimated score.");
-    if (res.status === 429) {
-      const retryAfter = (res.errorData as { retryAfter?: number } | null)?.retryAfter;
-      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds and try again.` : "Too many requests. Please wait a moment and try again.");
-    }
+    // Central 429 gate — same typed RateLimitError path fetchFollowUp uses, so
+    // the 429 check has one home instead of a per-caller inline reimplementation.
+    throwIfRateLimited(res);
     if (res.status >= 500) throw new Error(`Evaluation server error: ${res.status}`);
     if (!res.ok || !res.data) return null;
     const body = res.data;
@@ -829,6 +838,10 @@ export async function fetchFollowUp(params: {
         { signal: controller.signal },
       );
       clearTimeout(timer);
+      // Central 429 gate — throws a typed RateLimitError (carrying retryAfter)
+      // so a rate-limit is a distinct, surfaced signal rather than collapsing
+      // into the same silent null as "no follow-up needed" (OA-B9).
+      throwIfRateLimited(res);
       if (!res.ok) {
         if (res.status >= 500) throw new Error(`Server error: ${res.status}`);
         return null;
@@ -839,7 +852,10 @@ export async function fetchFollowUp(params: {
       baseDelayMs: 1000,
       shouldRetry: (err) => err instanceof TypeError || (err instanceof Error && err.message.startsWith("Server error")),
     });
-  } catch {
+  } catch (err) {
+    // Preserve the rate-limit signal — the caller shows "wait N seconds"
+    // instead of silently proceeding as if no follow-up were needed.
+    if (err instanceof RateLimitError) throw err;
     return null;
   }
 }
@@ -883,6 +899,14 @@ export interface NegotiationKernelResponse {
    *  way for kernel-authored turns as for `generate-questions` turns. */
   aiTextDisplay: string;
   move: NegotiationKernelMove;
+  /** The candidate's EFFECTIVE anchor as of this turn, in LPA (CTC-equivalent
+   *  total — folds a fixed-only "48 LPA fixed" base ask into an implied total
+   *  via the kernel's effectiveTargetCtcLpa accessor). The engine records this
+   *  as the move's `candidateTargetAtTurn` so end-of-session anchor-turn
+   *  detection ("named a counter") reads the SAME source as the report's
+   *  "YOUR ASK" surface. Null when no anchor of any kind has been stated
+   *  (e.g. at init, before the candidate speaks). */
+  candidateAnchorLpa?: number | null;
   source: "llm" | "llm-retry" | "fallback";
   terminal?: boolean;
   /** True when the server returned a cached response for an
@@ -916,6 +940,11 @@ export async function negotiationKernelInit(params: {
   totalYoe?: number | null;
   applicableYoe?: number | null;
   primaryDomain?: string | null;
+  /** B6 — candidate's pre-stated target salary (LPA, total CTC) from the
+   *  setup wizard. Server uses this to clamp the opening offer so there
+   *  is always at least a 12% gap, creating meaningful negotiation tension.
+   *  Null / absent when the candidate has not stated a target. */
+  candidateTargetLpa?: number | null;
 }): Promise<NegotiationKernelResponse | null> {
   return postKernel({ action: "init", ...params });
 }
@@ -984,8 +1013,12 @@ async function postKernel(body: Record<string, unknown>): Promise<NegotiationKer
   return second.data;
 }
 
-/** Retry queued offline evaluations */
-export async function retryQueuedEvals(): Promise<void> {
+/** Retry queued offline evaluations. `userId`, when provided, also pushes
+ * the corrected score to the server (via /api/sessions/update-score) so a
+ * session that was saved with a heuristic fallback score doesn't keep
+ * showing that wrong score after the next refresh/device — previously this
+ * only patched the local cache. */
+export async function retryQueuedEvals(userId?: string): Promise<void> {
   try {
     const db = await openIDB();
     const tx = db.transaction(IDB_STORE, "readonly");
@@ -1011,19 +1044,31 @@ export async function retryQueuedEvals(): Promise<void> {
             resumeText: data.resumeText as string | undefined,
           });
           if (result) {
+            const score = Math.min(100, Math.max(0, result.overallScore));
+            const skillScores = result.skillScores && typeof result.skillScores === "object"
+              ? Object.fromEntries(Object.entries(result.skillScores).map(([k, v]) => [k, typeof v === "object" && v !== null && "score" in (v as Record<string, unknown>) ? (v as Record<string, unknown>).score as number : v]))
+              : result.skillScores;
             try {
               const raw = localStorage.getItem(RESULTS_KEY);
               const sessions: SessionResult[] = raw ? JSON.parse(raw) : [];
               const idx = sessions.findIndex(s => s.id === data.sessionId);
               if (idx >= 0) {
-                sessions[idx].score = Math.min(100, Math.max(0, result.overallScore));
+                sessions[idx].score = score;
                 sessions[idx].ai_feedback = result.feedback;
-                sessions[idx].skill_scores = result.skillScores && typeof result.skillScores === "object"
-                  ? Object.fromEntries(Object.entries(result.skillScores).map(([k, v]) => [k, typeof v === "object" && v !== null && "score" in (v as Record<string, unknown>) ? (v as Record<string, unknown>).score as number : v]))
-                  : result.skillScores;
+                sessions[idx].skill_scores = skillScores;
                 localStorage.setItem(RESULTS_KEY, JSON.stringify(sessions));
               }
             } catch { /* expected: localStorage update may fail */ }
+            if (userId) {
+              try {
+                await apiFetch<{ ok: boolean }>("/api/sessions/update-score", {
+                  id: data.sessionId,
+                  score,
+                  ai_feedback: result.feedback,
+                  skill_scores: skillScores,
+                });
+              } catch { /* expected: server patch is best-effort; local cache is already corrected */ }
+            }
             await deleteFromIDB(key);
           }
         } catch { /* expected: IDB cursor iteration may fail */ }

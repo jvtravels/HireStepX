@@ -5,11 +5,11 @@
 
 export const AUTH_STYLES = `
   /* Webfont fallback — only loads if the host page hasn't already.
-     Instrument Serif + JetBrains Mono: kept here as a guard for any
-     standalone render path. Satoshi is loaded globally via layout.tsx
-     <link rel="stylesheet"> so its @import is omitted here to avoid a
+     Instrument Serif + Geist Mono: kept here as a guard for any
+     standalone render path. Geist Sans is loaded globally via layout.tsx
+     self-hosted next/font so its @import is omitted here to avoid a
      redundant CDN fetch on every auth page load. */
-  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist+Mono:wght@400;500&display=swap');
 
   /* ─── Animations ─── */
   @keyframes hsx-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -145,15 +145,6 @@ export const AUTH_STYLES = `
     animation: hsx-fade-up 220ms cubic-bezier(0.16, 1, 0.3, 1);
   }
 
-  /* Wordmark — italic X glows on hover */
-  .hsx-wordmark-x {
-    transition: color 220ms ease, transform 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  .hsx-wordmark:hover .hsx-wordmark-x {
-    transform: translateY(-1px);
-    color: #92400E;
-  }
-
   /* Respect reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -221,7 +212,7 @@ export const AUTH_STYLES = `
 
   /* Mobile (≤640px) — single column, shrunk paddings, lighter chrome */
   @media (max-width: 640px) {
-    .hsx-login-topbar { padding: 20px 20px !important; gap: 12px !important; }
+    .hsx-login-topbar { padding: 16px 18px !important; gap: 12px !important; }
     /* Vertically center the content block within main. The form +
        hero pair is shorter than the viewport, so this distributes
        empty space evenly above and below for a balanced layout. */
@@ -233,14 +224,14 @@ export const AUTH_STYLES = `
     /* Hero → form gap on mobile — generous enough that hero reads as
        its own block, tight enough that they still feel related. */
     .hsx-login-hero   { margin-bottom: 36px !important; }
-    .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 11px !important; }
+    .hsx-login-footer { padding: 24px 20px 32px !important; font-size: 12px !important; }
     .hsx-login-signup-prompt { font-size: 13px !important; }
     .hsx-login-subtitle { font-size: 14px !important; margin-top: 12px !important; margin-bottom: 0 !important; line-height: 1.45 !important; }
     .hsx-login-form-fields { gap: 14px !important; }
     .hsx-login-divider { margin: 14px 0 !important; }
     .hsx-login-google,
     .hsx-login-cta { padding: 13px 16px !important; font-size: 14px !important; }
-    .hsx-login-field-input { font-size: 14.5px !important; padding: 10px 14px !important; }
+    .hsx-login-field-input { font-size: 16px !important; padding: 10px 14px !important; }
     .hsx-login-field-input.has-slot { padding-right: 40px !important; }
     .hsx-login-field-input::placeholder { font-size: 14px !important; }
     .hsx-login-field-label { font-size: 13px !important; margin-bottom: 6px !important; font-weight: 500 !important; }

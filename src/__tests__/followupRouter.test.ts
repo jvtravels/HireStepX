@@ -94,7 +94,7 @@ describe("recommendFollowups — competing-offer-criteria", () => {
   it("suppresses when both deadline and stage known", () => {
     const state = baseState({
       competingOffer: 30,
-      decisionDeadline: { deadlineDays: 5, deadlineExplicit: true, conditionalAcceptance: false, conditionalEvidence: null, hasAny: true },
+      decisionDeadline: { deadlineDays: 5, deadlineExplicit: true, conditionalAcceptance: false, conditionalEvidence: null, requestsHold: false, hasAny: true },
       competingOfferDetail: { company: "X", status: "letter", stage: "offered", letterShareOffered: true, onHold: false, proofRequestedAtTurn: null, proofProvided: false, hasAny: true },
     });
     expect(categories(state)).not.toContain("competing-offer-criteria");

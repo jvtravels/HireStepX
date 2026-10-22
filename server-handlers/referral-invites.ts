@@ -1,11 +1,12 @@
 /* Vercel Edge Function — Per-invite list for the signed-in referrer.
    GET only. Joins referrals → profiles via the service role (RLS bypassed)
-   so we can surface the referred user's display name + email without
-   exposing other profile fields to the client. */
+   so we can surface the referred user's display name + a MASKED email
+   (p***@gmail.com) without exposing other profile fields to the client. */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, withRequestId } from "./_shared";
+import { maskEmail } from "./_referral-reward-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -84,11 +85,11 @@ export default async function handler(req: Request): Promise<Response> {
     const invites: ReferralInvite[] = referrals.map(r => {
       const profile = r.referred_id ? profilesById.get(r.referred_id) : undefined;
       const email = profile?.email || r.referred_email || "";
-      const fallbackName = email ? email.split("@")[0] : "Invited";
+      const fallbackName = email ? email[0].toUpperCase() : "Invited";
       return {
         id: r.id,
         name: profile?.name?.trim() || fallbackName,
-        email,
+        email: maskEmail(email),
         status: r.status,
         createdAt: r.created_at,
       };

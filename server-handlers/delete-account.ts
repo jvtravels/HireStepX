@@ -2,88 +2,50 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
+  withNodeAuthAndRateLimit,
   supabaseUrl,
   supabaseAnonKey,
-  escapeHtml,
+  slog,
   isRateLimited,
-  getVercelClientIp,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
+import { eraseUserData, posthogConfigFromEnv, pseudonymousId, sha256Hex } from "./_erase-user";
+import { sendErasureEmail } from "./_erase-user-email";
+import { RESTORE_EMPLOYER_FILTER, deletionPendingPatch, restoreEmployerPatch } from "./_delete-account-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
   res.setHeader("X-Request-ID", crypto.randomUUID());
 
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check
-  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyContentLength > 1048576) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "delete-account", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
+  const pre = await withNodeAuthAndRateLimit(req, res, {
+    endpoint: "delete-account",
+    ipLimit: 5,
+    maxBytes: 1048576,
+  });
+  if (pre.handled) return;
+  const { userId, userData, userEmail } = pre;
+  if (await isRateLimited(userId, "delete-account-user", 3, 60_000)) {
+    return res.status(429).json({ error: "Too many requests. Please wait a minute and try again." });
   }
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  const SUPABASE_ANON_KEY = supabaseAnonKey();
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
   }
 
-  // Verify user auth
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  const token = authHeader.slice(7);
-  let userId: string;
-  let userEmail: string | undefined;
   // OAuth-only accounts (Google) have no app password to verify — we
   // skip the re-auth gate for them. Bearer alone is what they had in
   // the first place (Supabase Auth never stored a hash we could check).
-  let isOAuthOnly = false;
-  try {
-    const authAc = new AbortController();
-    const authTimer = setTimeout(() => authAc.abort(), 5000);
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-      signal: authAc.signal,
-    });
-    clearTimeout(authTimer);
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-    userEmail = typeof userData.email === "string" ? userData.email : undefined;
-    const provider = userData?.app_metadata?.provider;
-    const providers: unknown = userData?.app_metadata?.providers;
-    isOAuthOnly =
-      (provider === "google" && (!Array.isArray(providers) || !providers.includes("email"))) ||
-      (Array.isArray(providers) && providers.includes("google") && !providers.includes("email"));
-  } catch (authErr) {
-    if (authErr instanceof Error && authErr.name === "AbortError") {
-      return res.status(504).json({ error: "Auth verification timed out" });
-    }
-    return res.status(401).json({ error: "Auth verification failed" });
-  }
+  const provider = (userData as { app_metadata?: { provider?: unknown; providers?: unknown } })?.app_metadata?.provider;
+  const providers = (userData as { app_metadata?: { providers?: unknown } })?.app_metadata?.providers;
+  const isOAuthOnly =
+    (provider === "google" && (!Array.isArray(providers) || !providers.includes("email"))) ||
+    (Array.isArray(providers) && providers.includes("google") && !providers.includes("email"));
 
   // Default: soft-delete with 7-day grace period. Pass { hard: true } to permanently delete immediately.
   const hardDelete = req.body && typeof req.body === "object" && "hard" in req.body ? !!(req.body as Record<string, unknown>).hard : false;
@@ -151,9 +113,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({ deleted_at: null }),
         });
         if (!restoreRes.ok) return res.status(500).json({ error: "Failed to restore account" });
+        // Lift only the block the soft delete placed on an employer row; an admin or
+        // report-threshold suspension carries a different reason and stays in force.
+        const unblock = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&${RESTORE_EMPLOYER_FILTER}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(restoreEmployerPatch()),
+        });
+        if (!unblock.ok) {
+          // Leaving an employer blocked after a "successful" restore would strand them; surface it.
+          slog.error("delete-account: employer unblock failed on restore", { code: "delete_account_employer_unblock_failed", httpStatus: unblock.status });
+          return res.status(500).json({ error: "Failed to restore account" });
+        }
         return res.status(200).json({ success: true, restored: true });
       } catch (err) {
-        console.error("[delete-account] Restore failed:", err);
+        slog.error("delete-account: restore failed", { error: err instanceof Error ? err.message : String(err) });
         return res.status(500).json({ error: "Failed to restore account" });
       }
     }
@@ -166,126 +140,96 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           headers,
           body: JSON.stringify({ deleted_at: new Date().toISOString() }),
         });
+        // Every failure here returns 500: falling through to the irreversible erasure below
+        // would turn a transient error into permanent data loss the user never confirmed
+        // (they asked for the 7-day grace period). Hard erase only runs for { hard: true }.
         if (!softRes.ok) {
-          // If column is missing, fall through to hard delete
-          const msg = await softRes.text().catch(() => "");
-          if (msg.includes("deleted_at")) {
-            console.warn("[delete-account] deleted_at column missing, falling back to hard delete");
-          } else {
-            return res.status(500).json({ error: "Failed to schedule account deletion" });
-          }
-        } else {
-          const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-          return res.status(200).json({
-            success: true,
-            scheduled: true,
-            deletionDate: deletionDate.toISOString(),
-            message: `Your account is scheduled for deletion on ${deletionDate.toDateString()}. Log in any time before then to cancel.`,
-          });
+          return res.status(500).json({ error: "Failed to schedule account deletion" });
         }
-      } catch (err) {
-        console.error("[delete-account] Soft-delete failed:", err);
-        // Fall through to hard delete
-      }
-    }
-
-    // Capture user email & name BEFORE deletion (data will be gone after)
-    let userEmail: string | undefined;
-    let userName: string | undefined;
-    try {
-      const profileRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}&select=email,name`,
-        { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
-      );
-      if (profileRes.ok) {
-        const profiles = await profileRes.json();
-        const profile = Array.isArray(profiles) && profiles[0];
-        userEmail = profile?.email;
-        userName = profile?.name;
-      }
-    } catch {
-      // Non-critical — email won't be sent but deletion continues
-    }
-
-    // Send deletion confirmation email BEFORE data is removed (best-effort)
-    if (RESEND_API_KEY && userEmail) {
-      const safeName = escapeHtml(userName || "there");
-      try {
-        await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: FROM_EMAIL,
-            to: [userEmail],
-            subject: "Your account has been deleted",
-            html: emailShell({
-              preview: "Your data is gone. Here's exactly what was removed.",
-              body:
-                graveEyebrow("Permanent &middot; Irreversible") +
-                title("Deleted, as requested.") +
-                para(`Hi ${safeName}, your HireStepX account and all associated data have been permanently deleted. This can't be undone, and we keep no backup of your sessions or reports.`) +
-                dataCard("Removed", [
-                  ["Profile & login", "Deleted"],
-                  ["Sessions & evaluations", "Deleted"],
-                  ["Payment & subscription", "Deleted"],
-                ]) +
-                para(`Thank you for giving HireStepX a try. If you ever want to come back, you can start fresh anytime at ${link(APP_URL.replace(/^https?:\/\//, ""), APP_URL)}.`, { muted: true }) +
-                para(`Didn't expect this? Contact us at ${link("support@hirestepx.com", "mailto:support@hirestepx.com")} immediately so we can investigate.`, { small: true, muted: true }),
-            }),
-          }),
+        // An employer must stop being live NOW, not in 7 days: block them through the
+        // suspension gate every employer handler already enforces. No-op for candidates
+        // (no employers row) and for an already-suspended employer.
+        const block = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&suspended_at=is.null`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
         });
-      } catch (emailErr) {
-        console.warn("[delete-account] Confirmation email failed (non-critical):", emailErr);
+        if (!block.ok) {
+          slog.error("delete-account: employer block failed on soft delete", { code: "delete_account_employer_block_failed", httpStatus: block.status });
+          await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
+            method: "PATCH", headers, body: JSON.stringify({ deleted_at: null }),
+          }).catch(() => null);
+          return res.status(500).json({ error: "Failed to schedule account deletion" });
+        }
+        // Stop employer matching right away (belt and braces with the deleted_at filter in
+        // matching). Separate best-effort call: the column ships in a later migration than
+        // deleted_at, and a missing column must not block the deletion itself. Restore does
+        // not flip it back, so a restored candidate re-enables visibility in Settings.
+        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
+          method: "PATCH",
+          headers,
+          body: JSON.stringify({ employer_visibility: "off", employer_visibility_updated_at: new Date().toISOString() }),
+        }).then((r) => {
+          if (!r.ok) slog.warn("delete-account: could not switch employer visibility off", { httpStatus: r.status });
+        }).catch(() => null);
+        const deletionDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+        return res.status(200).json({
+          success: true,
+          scheduled: true,
+          deletionDate: deletionDate.toISOString(),
+          message: `Your account is scheduled for deletion on ${deletionDate.toDateString()}. Log in any time before then to cancel.`,
+        });
+      } catch (err) {
+        slog.error("delete-account: soft-delete failed", { error: err instanceof Error ? err.message : String(err) });
+        return res.status(500).json({ error: "Failed to schedule account deletion" });
       }
     }
 
-    // Delete all user data in parallel with timeout (order doesn't matter — all keyed by user_id)
-    const ac = new AbortController();
-    const acTimer = setTimeout(() => ac.abort(), 8_000);
-    const results = await Promise.allSettled([
-      fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-      fetch(`${SUPABASE_URL}/rest/v1/calendar_events?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-      fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-      fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-      fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers, signal: ac.signal }),
-    ]);
-    clearTimeout(acTimer);
+    // Immediate ("hard") erasure goes through the same routine as the 7-day cron.
+    const result = await eraseUserData(
+      {
+        fetchImpl: fetch,
+        supabaseUrl: SUPABASE_URL,
+        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+        trigger: "user_hard",
+        contact: { email: userEmail },
+        posthog: posthogConfigFromEnv(process.env),
+        notify: (contact) => sendErasureEmail(fetch, { resendApiKey: RESEND_API_KEY, fromEmail: FROM_EMAIL, appUrl: APP_URL }, contact),
+        log: (msg, fields) => slog.info(msg, fields),
+      },
+      userId,
+    );
 
-    const tableNames = ["sessions", "events", "payments", "profile", "feedback"];
-    const failures = results
-      .map((r, i) => (r.status === "rejected" || (r.status === "fulfilled" && !r.value.ok)) ? tableNames[i] : null)
-      .filter(Boolean);
+    if (!result.ok) {
+      const userHash = (await sha256Hex(userId).catch(() => "unknown")).slice(0, 12);
+      slog.error("delete-account: erasure incomplete", { failures: result.failedSteps.join(", "), userHash });
+      // Hand the leftovers to the cron: it only picks up soft-deleted profiles, and every
+      // step is idempotent, so the next run finishes the job.
+      await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}&deleted_at=is.null`, {
+        method: "PATCH", headers, body: JSON.stringify({ deleted_at: new Date().toISOString() }),
+      }).catch(() => null);
 
-    if (failures.length > 0) {
-      // Hash the user id so logs don't enable user enumeration
-      const userHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(userId))
-        .then(buf => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("").slice(0, 12))
-        .catch(() => "unknown");
-      console.error("Partial delete failure:", failures.join(", "), "for user hash", userHash);
-      return res.status(500).json({ error: `Failed to delete data from: ${failures.join(", ")}. Account not deleted. Please try again or contact support.` });
+      if (result.failedSteps.length === 1 && result.failedSteps[0] === "auth") {
+        // Data is gone; only the login record remains. Same 207 contract as before.
+        const warning = result.retainedFinancialRecords
+          ? "Account data deleted but login deactivation incomplete. Please contact support."
+          : "Account data deleted but auth cleanup incomplete. You can still sign up again with the same email.";
+        return res.status(207).json({ success: true, partial: true, ...(result.retainedFinancialRecords ? { retainedFinancialRecords: true } : {}), warning });
+      }
+      return res.status(500).json({
+        error: `Failed to delete data from: ${result.failedSteps.join(", ")}. Account not deleted. We will retry automatically; contact support if this persists.`,
+      });
     }
 
-    // Delete the auth user (requires admin/service role)
-    const authDeleteRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodedId}`, {
-      method: "DELETE",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      },
+    await captureServerEvent("account_deleted", await pseudonymousId(userId), {
+      mode: "hard",
+      ...(result.retainedFinancialRecords ? { retainedFinancialRecords: true } : {}),
+      $process_person_profile: false,
     });
 
-    if (!authDeleteRes.ok) {
-      const statusCode = authDeleteRes.status;
-      console.error("Auth user delete failed:", statusCode);
-      // Data already deleted but auth record remains — report partial failure
-      return res.status(207).json({ success: true, partial: true, warning: "Account data deleted but auth cleanup incomplete. You can still sign up again with the same email." });
-    }
-
-    await captureServerEvent("account_deleted", userId, { mode: "hard" });
-
-    return res.status(200).json({ success: true });
+    return res.status(200).json(result.retainedFinancialRecords ? { success: true, retainedFinancialRecords: true } : { success: true });
   } catch (err) {
-    console.error("Delete account error:", err);
+    slog.error("delete-account: delete account error", { error: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Failed to delete account" });
   }
 }

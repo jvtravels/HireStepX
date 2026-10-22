@@ -852,3 +852,25 @@ describe("intent gate — nibble/conditional AFTER an accept idiom must never FA
     it(`still accepts unconditional: "${t}"`, () => expect(accepted(t)).toBe(true));
   }
 });
+
+describe("analyzeDemand — directional-approach core (S50-B10)", () => {
+  it("flags 'get closer to ₹28L' as unmet when offer is below 28 (S50-B10 root case)", () => {
+    expect(carriesUnmetDemand("I'd genuinely like to make this work if we can get closer to ₹28L", 23.6)).toBe(true);
+    expect(analyzeDemand("get closer to ₹28L", 23.6).reasons).toContain("directional-approach");
+  });
+  it("flags 'move towards 30L' as unmet when offer < 30", () => {
+    expect(carriesUnmetDemand("I'll commit if you move towards 30L", 27)).toBe(true);
+  });
+  it("does NOT flag 'get closer to ₹22L' when offer already exceeds the target", () => {
+    expect(carriesUnmetDemand("can we get closer to ₹22L", 23.6)).toBe(false);
+  });
+  it("does NOT flag 'get back to you' (no adjacent figure)", () => {
+    expect(carriesUnmetDemand("let me get back to you by end of day", 40)).toBe(false);
+  });
+  it("does NOT flag 'move towards the market rate' (no digit figure)", () => {
+    expect(carriesUnmetDemand("can you move towards the market rate", 40)).toBe(false);
+  });
+  it("blocks acceptance gate on directional-approach when offer is below target", () => {
+    expect(accepted("I'd genuinely like to make this work if we can get closer to ₹28L")).toBe(false);
+  });
+});

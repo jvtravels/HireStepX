@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeTranscript, toRoleTranscript, sanitizeNegotiationMetrics } from "../../server-handlers/save-session";
+import {
+  sanitizeTranscript,
+  toRoleTranscript,
+  sanitizeNegotiationMetrics,
+  groundNoCounterSkillScores,
+} from "../../server-handlers/save-session";
 
 /* PRI-61 regression guard.
  *
@@ -76,6 +81,43 @@ describe("sanitizeTranscript — canonical speaker shape (PRI-61)", () => {
     expect(sanitizeTranscript(null)).toEqual([]);
     expect(sanitizeTranscript("nope")).toEqual([]);
     expect(sanitizeTranscript({})).toEqual([]);
+  });
+
+  /* S1-B5 (2026-07-22): TTS interjection markers ("[I'm listening.]",
+   * "[Feel free to continue.]", etc.) were saved as recruiter turns in the
+   * transcript and appeared verbatim in the session replay. These are purely
+   * timing signals emitted by _listening-interjections.ts — strip them at
+   * the sanitize boundary so they never reach the database or the replay. */
+  it("S1-B5: strips TTS interjection markers from AI turns", () => {
+    const raw = [
+      { speaker: "ai", text: "What's your current CTC?", time: "00:00" },
+      { speaker: "user", text: "24 LPA", time: "00:12" },
+      { speaker: "ai", text: "[I'm listening.]", time: "00:40" },
+      { speaker: "user", text: "I mean my fixed is 20, variable 4.", time: "00:50" },
+      { speaker: "ai", text: "[Feel free to continue.]", time: "01:15" },
+      { speaker: "ai", text: "[Hmm, go on.]", time: "01:45" },
+      { speaker: "ai", text: "Thanks — that's helpful.", time: "02:00" },
+    ];
+    const out = sanitizeTranscript(raw);
+    // Real turns preserved, bracketed AI markers stripped.
+    expect(out).toHaveLength(4);
+    expect(out.every(e => !e.text.startsWith("[") || !e.text.endsWith("]"))).toBe(true);
+    expect(out.find(e => e.text === "Thanks — that's helpful.")).toBeDefined();
+  });
+
+  it("S1-B5: bracketed text in a USER turn is NOT stripped (skip/placeholder answers)", () => {
+    const raw = [
+      { speaker: "user", text: "[SKIPPED — reason: timeout]" },
+      { speaker: "user", text: "[Answer recorded — 3s]" },
+    ];
+    const out = sanitizeTranscript(raw);
+    expect(out).toHaveLength(2);
+  });
+
+  it("S1-B5: panel persona prefix '[Hiring Manager] Question text' is NOT stripped", () => {
+    const raw = [{ speaker: "ai", text: "[Hiring Manager] Tell me about a time..." }];
+    // Persona prefix has real text after the bracket — NOT entirely bracketed.
+    expect(sanitizeTranscript(raw)).toHaveLength(1);
   });
 });
 
@@ -178,5 +220,73 @@ describe("sanitizeNegotiationMetrics — persists the full kernel shape (DATA-1)
     expect(out!.offerTrajectoryLpa).toBeUndefined();
     // candidateAskLpa is always present (null when unknown) by contract
     expect(out!.candidateAskLpa).toBeNull();
+  });
+});
+
+/* REPORT-4b write-time grounding — boundary check only.
+ *
+ * The persisted skill_scores column feeds the cross-session Skill Progress
+ * panel, which BYPASSES the report adapter's render-time grounding, so a
+ * no-counter session's anchor/counter/specificity scores must be capped
+ * before persistence. save-session applies the ONE shared grounding rule
+ * (groundNoCounterSkillScores) at the write seam; its behaviour is pinned
+ * exhaustively in progressTracking.test.ts. Here we only verify save-session
+ * re-exports the shared binding so the write seam and read seam can't drift
+ * to two implementations. */
+describe("groundNoCounterSkillScores — re-exported from save-session (single source)", () => {
+  it("caps anchor axes on a no-counter row and no-ops once a counter is named", () => {
+    const capped = groundNoCounterSkillScores({ anchoring: 72, leverageUse: 80 }, null) as Record<
+      string,
+      number
+    >;
+    expect(capped.anchoring).toBe(35);
+    expect(capped.leverageUse).toBe(80);
+    const named = { anchoring: 72 };
+    expect(groundNoCounterSkillScores(named, 30)).toBe(named);
+  });
+});
+
+/* S18-B2 (2026-07-22): a near-empty / bailout session can produce LLM-imputed
+ * skill_scores (e.g. Communication 85 from a 3-word response) that contaminate
+ * the cross-session Skill Progress panel which reads skill_scores directly,
+ * bypassing render-time grounding. The write seam gates on transcript length:
+ * < 4 sanitized entries (at most 1 real exchange) → skill_scores nulled before
+ * DB persist. These tests pin the sanitizeTranscript boundary that determines
+ * the bailout gate so the 4-entry cutoff can't silently drift. */
+describe("S18-B2 bailout gate — sanitizeTranscript length boundary", () => {
+  it("S18-B2: a 3-entry transcript (intro + 1 exchange) is below the bailout threshold", () => {
+    const raw = [
+      { speaker: "ai", text: "Welcome. I'd like to discuss the offer." },
+      { speaker: "user", text: "Yes." },
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // write seam: out.length < 4 → isBailoutSession = true → skill_scores = null
+    expect(out.length).toBeLessThan(4);
+  });
+
+  it("S18-B2: a 4-entry transcript (intro + 2 turns) is NOT a bailout", () => {
+    const raw = [
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+      { speaker: "user", text: "I was expecting closer to 45 LPA." },
+      { speaker: "ai", text: "Let me see what I can do." },
+      { speaker: "user", text: "I'd appreciate that." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // write seam: out.length >= 4 → isBailoutSession = false → skill_scores persisted normally
+    expect(out.length).toBeGreaterThanOrEqual(4);
+  });
+
+  it("S18-B2: TTS markers stripped before bailout check — they don't inflate the count", () => {
+    // 4 raw entries but 2 are TTS markers → effective length = 2 → bailout
+    const raw = [
+      { speaker: "ai", text: "[I'm listening.]" },
+      { speaker: "user", text: "Yes." },
+      { speaker: "ai", text: "[Feel free to continue.]" },
+      { speaker: "ai", text: "We're offering ₹35 LPA." },
+    ];
+    const out = sanitizeTranscript(raw);
+    // 2 TTS markers stripped → 2 remaining → bailout
+    expect(out.length).toBeLessThan(4);
   });
 });

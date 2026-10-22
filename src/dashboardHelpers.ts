@@ -22,6 +22,8 @@ export interface InterviewEvent {
   start_utc?: string;
   end_utc?: string;
   timezone?: string;
+  /** Date-only event: exported as an all-day entry instead of a made-up clock time. */
+  all_day?: boolean;
   // PRI-35: carried through from the DB row so the Prep Runway rail can group
   // mock-prep sessions under the real interview they prepare for. Optional so
   // legacy localStorage rows and the create form (real interviews) still fit.
@@ -35,6 +37,20 @@ export interface InterviewEvent {
 }
 
 export const EVENTS_KEY = "hirestepx_events";
+
+/* ─── "Visited analytics" flag (Getting Started card, 4th step) ───
+   Written on mount by the analytics page itself (DashboardAnalytics.tsx /
+   readinessIndex/ReadinessIndex.tsx) so the dashboard's Getting Started
+   card can show a real completed step instead of a permanently-false one. */
+export function markAnalyticsVisited(userId: string | undefined) {
+  if (!userId) return;
+  try { localStorage.setItem(`hirestepx_visited_analytics_${userId}`, "1"); } catch { /* expected: localStorage may be unavailable */ }
+}
+
+export function hasVisitedAnalytics(userId: string | undefined): boolean {
+  if (!userId) return false;
+  try { return localStorage.getItem(`hirestepx_visited_analytics_${userId}`) === "1"; } catch { return false; }
+}
 
 export function loadEvents(): InterviewEvent[] {
   try {
@@ -117,6 +133,10 @@ function icsUtc(d: Date): string {
   return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 }
 
+function icsDay(d: Date): string {
+  return d.toISOString().slice(0, 10).replace(/-/g, "");
+}
+
 /** Resolve a calendar event's authoritative start/end Date pair. Prefers the
  *  stored UTC instants; falls back to composing the naive date/time strings. */
 function eventInstants(event: InterviewEvent): { start: Date; end: Date } | null {
@@ -151,8 +171,9 @@ export function generateICS(event: InterviewEvent, opts?: { now?: Date }): strin
     "BEGIN:VEVENT",
     `UID:${uid}`,
     `DTSTAMP:${dtstamp}`,
-    `DTSTART:${icsUtc(start)}`,
-    `DTEND:${icsUtc(end)}`,
+    ...(event.all_day
+      ? [`DTSTART;VALUE=DATE:${icsDay(start)}`, `DTEND;VALUE=DATE:${icsDay(new Date(start.getTime() + 86_400_000))}`]
+      : [`DTSTART:${icsUtc(start)}`, `DTEND:${icsUtc(end)}`]),
     "SEQUENCE:0",
     `SUMMARY:${icsEscape(summary)}`,
     `DESCRIPTION:${icsEscape(descParts.join("\n"))}`,
@@ -414,7 +435,9 @@ export function parseNaturalEvent(text: string, now: Date): ParsedNaturalEvent {
     if (h >= 0 && h <= 23) out.time = `${pad2(h)}:${t24[2]}`;
   }
 
-  // Date: "today", "tomorrow", a weekday name (next occurrence).
+  // Date: "today", "tomorrow", a weekday name (next occurrence),
+  // or an explicit date like "25th July", "July 25", "25/07", "25/07/2026".
+  const MONTH_NAMES = ["january","february","march","april","may","june","july","august","september","october","november","december"];
   if (/\btoday\b/.test(lower)) {
     out.date = toDateStr(now);
   } else if (/\btomorrow\b/.test(lower)) {
@@ -427,6 +450,34 @@ export function parseNaturalEvent(text: string, now: Date): ParsedNaturalEvent {
       if (delta === 0) delta = 7; // a weekday name means the next one, not today
       d.setDate(d.getDate() + delta);
       out.date = toDateStr(d);
+    } else {
+      // "25th July", "1st Jan", "July 25", "july 25th" — ordinal or plain day + month
+      const ordinalDay = /\b(\d{1,2})(?:st|nd|rd|th)?\s+(jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\b/.exec(lower);
+      const monthFirst  = /\b(jan\w*|feb\w*|mar\w*|apr\w*|may|jun\w*|jul\w*|aug\w*|sep\w*|oct\w*|nov\w*|dec\w*)\s+(\d{1,2})(?:st|nd|rd|th)?\b/.exec(lower);
+      // "25/07" or "25/07/2026"
+      const slashDate   = /\b(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?\b/.exec(lower);
+      let parsedDay: number | null = null;
+      let parsedMonth: number | null = null;
+      let parsedYear: number | null = null;
+      if (ordinalDay) {
+        parsedDay = parseInt(ordinalDay[1], 10);
+        parsedMonth = MONTH_NAMES.findIndex((m) => ordinalDay[2].startsWith(m.slice(0, 3)));
+      } else if (monthFirst) {
+        parsedMonth = MONTH_NAMES.findIndex((m) => monthFirst[1].startsWith(m.slice(0, 3)));
+        parsedDay = parseInt(monthFirst[2], 10);
+      } else if (slashDate) {
+        parsedDay = parseInt(slashDate[1], 10);
+        parsedMonth = parseInt(slashDate[2], 10) - 1; // 0-indexed
+        if (slashDate[3]) parsedYear = parseInt(slashDate[3], 10);
+      }
+      if (parsedDay !== null && parsedMonth !== null && parsedMonth >= 0) {
+        const year = parsedYear ?? now.getFullYear();
+        const d = new Date(year, parsedMonth, parsedDay);
+        // If the resulting date is in the past (and no explicit year was given),
+        // assume the user means next year.
+        if (!parsedYear && d < now) d.setFullYear(d.getFullYear() + 1);
+        if (!isNaN(d.getTime())) out.date = toDateStr(d);
+      }
     }
   }
 

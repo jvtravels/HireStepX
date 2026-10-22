@@ -138,7 +138,7 @@ export const scriptsByType: Record<string, InterviewStep[]> = {
   ],
   "salary-negotiation": [
     { type: "intro", aiText: "Good to see you again. We've completed all the interview rounds, and the team was really impressed with your profile. I'm here to discuss the offer details and see if we can make this work. Let me walk you through what we've put together.", thinkingDuration: 500, speakingDuration: 5500, waitForUser: true },
-    { type: "question", aiText: "So based on your experience and our internal bands, we've put together a strong offer — base, variable pay, and standard benefits all factored in. Before I walk you through the specific number, I'd like to understand what range you were targeting for this move. What were you hoping for?", thinkingDuration: 600, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: offer-presentation. Evaluate: Did they accept too quickly? Did they ask clarifying questions? Did they express interest without committing? Did they anchor high?" },
+    { type: "question", aiText: "So here's where we are. Fixed base: ₹22 LPA. Performance variable at 15% on-target, so on-target earnings come to about ₹25 LPA. Standard benefits — health cover for the family, PF, gratuity. That's our opening offer. What's your reaction?", thinkingDuration: 600, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: offer-presentation. Evaluate: Did they accept too quickly? Did they ask clarifying questions? Did they express interest without committing? Did they anchor high?" },
     { type: "question", aiText: "I appreciate you sharing that. Now that you've seen our number, I'd like to understand your side better. What range were you targeting for this move, and what's driving that expectation? I want to make sure we find something that works for both sides.", thinkingDuration: 700, speakingDuration: 5000, waitForUser: true, scoreNote: "Phase: probe-expectations. Evaluate: Did they anchor high with market data? Did they avoid revealing exact current CTC? Did they frame it around value, not needs?" },
     { type: "question", aiText: "I hear you. That's a bit above our initial band for this level. Let me see what I can do — there's some flexibility on the base, and I could also look at a joining bonus or ESOPs to bridge the gap. What matters more to you — a higher fixed component or equity upside?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: counter-offer. Evaluate: Did they negotiate beyond just base? Did they explore multiple levers? Did they maintain leverage without being adversarial?" },
     { type: "question", aiText: "Let me lay out the full picture then. Beyond the base and variable, there's a learning budget, flexible work options, and comprehensive benefits. I think the total package is quite competitive when you factor everything in. What would make this a clear yes for you?", thinkingDuration: 700, speakingDuration: 5500, waitForUser: true, scoreNote: "Phase: benefits-discussion. Evaluate: Did they think about total compensation? Did they prioritize clearly? Did they explore non-salary items?" },
@@ -282,7 +282,7 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
   ],
   "salary-negotiation": [
     // Ordered as a conversation arc: offer → probe → counter → benefits → closing. Engine picks in order.
-    { q: "We've put together an offer for the {role} position. I'd like to walk you through the number and the overall structure — but before I get into the details, how are you feeling about the opportunity so far?", qResume: "We've put together an offer for the {role} position, factoring in your background as {title}. I'll share the number and structure in a moment — but first, how are you feeling about the opportunity?", scoreNote: "Phase: offer-reaction. Evaluate: not accepting immediately, asking clarifying questions, expressing measured interest" },
+    { q: "We've put together an offer for the {role} position. Here's the number: ₹22 LPA fixed base, 15% performance variable on-target, so on-target total around ₹25 LPA. Standard benefits included. That's our opening offer — what's your reaction?", qResume: "We've put together an offer for the {role} position, taking your background as {title} into account. Fixed base is ₹22 LPA with 15% variable on-target — that puts on-target earnings at about ₹25 LPA. That's our opening number — what's your reaction?", scoreNote: "Phase: offer-presentation. Evaluate: Did they accept too quickly? Did they counter with data? Did they ask about structure? Did they anchor high?" },
     { q: "That's helpful. Can you share what range you were targeting for this move? And is that based on your current package, market research, or another offer?", qResume: "That's helpful. Given your background as {title}, what range were you targeting for this {role} position? Is that based on your current package, market data, or another offer?", scoreNote: "Phase: probe-expectations. Evaluate: anchoring high with reasoning, avoiding revealing exact current CTC, using data not emotion" },
     { q: "I hear you. That's above our initial band, but let me see what I can do. There's some flexibility on the base, and I could also look at a joining bonus or equity. What matters most to you in the overall package?", qResume: "I hear you. That's above our initial band for someone at your level. Let me see what flexibility I have — we can look at the base, a joining bonus, or equity. As you transition from {title} to {role}, what matters most to you?", scoreNote: "Phase: counter-offer. Evaluate: exploring beyond base salary, total comp thinking, professional framing, not accepting first counter" },
     { q: "Let me lay out the complete picture. Beyond the base and variable, there's health coverage for your family, a learning budget, and flexible work options. The total package is quite strong. What else would make this a clear yes?", qResume: "Let me lay out the full picture. Beyond base and variable, there's family health insurance, a learning budget, and flexible work. How does the total package compare to what you were expecting as {title}? What else would make this a yes?", scoreNote: "Phase: benefits-discussion. Evaluate: did they negotiate non-salary items, ask about growth, explore equity/ESOPs, think about total comp" },
@@ -299,7 +299,8 @@ const miniQuestionsByType: Record<string, QuestionBank[]> = {
   ],
 };
 
-/** Generate a 3-question quick onboarding interview script */
+/** Generate a quick onboarding interview script: 3 questions by default,
+    5 for salary-negotiation, 7 for hr-round (see questionCount below). */
 export function getMiniScript(user: User | null, company?: string, interviewType?: string): InterviewStep[] {
   const name = user?.name?.split(" ")[0] || "";
   const role = user?.targetRole || ROLE_FALLBACK;
@@ -314,11 +315,22 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   const latestRole = resumeData && resumeData._type === "fallback"
     ? resumeData.experience?.[0]
     : undefined;
-  const title = latestRole?.title || "";
+  // The AI-parsed variant (the common path — see analyze-resume.ts) carries
+  // no structured job-history rows, but its `headline` is prompted as "a
+  // compelling one-line professional identity" (e.g. "Senior Product
+  // Designer with 5+ years in B2B SaaS") — a noun phrase that drops into
+  // the same "as {title}" bank-template slots as a fallback-parsed job
+  // title. Without this, only the narrow fallback-parse variant ever
+  // personalized, so most candidates got generic questions while the intro
+  // still claimed "I'll reference your background" (live QA, 2026-Q3).
+  const aiHeadline = resumeData && resumeData._type === "ai" ? resumeData.headline : undefined;
+  const title = latestRole?.title || aiHeadline || "";
 
   const companyContext = targetCompany ? ` at ${targetCompany}` : "";
   const resumeContext = hasResume && latestRole
     ? ` I've reviewed your resume — I can see you were ${latestRole.title}${latestRole.company ? ` at ${latestRole.company}` : ""}. I'll reference your background in my questions.`
+    : hasResume && aiHeadline
+    ? ` I've reviewed your resume — I can see your background: ${aiHeadline}. I'll reference it in my questions.`
     : "";
 
   const typeKey = interviewType && miniQuestionsByType[interviewType] ? interviewType : "behavioral";
@@ -326,8 +338,16 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   // For salary-negotiation: maintain sequential order (conversation arc), use 5 questions for richer negotiation.
   const pool = miniQuestionsByType[typeKey];
   const isSalaryNeg = typeKey === "salary-negotiation";
-  const questionCount = isSalaryNeg ? Math.min(5, pool.length) : 3;
-  const questions = isSalaryNeg ? pool.slice(0, questionCount) : shuffleAndPick(pool, 3);
+  // hr-round's only session length is this 10-minute "mini" tier (see
+  // FOCUS_MINUTES in SessionSetup.tsx), but its 8-dimension Indian HR gate
+  // needs 7 questions — matching generate-questions.ts's questionCount,
+  // which also checks hr-round before isMini. This placeholder script is
+  // what the candidate hears speaking before the LLM responds (and what
+  // gets grafted onto if the LLM times out), so it must ship the same count
+  // the real session promises, not the generic 3-question mini default.
+  const isHrRound = typeKey === "hr-round";
+  const questionCount = isSalaryNeg ? Math.min(5, pool.length) : isHrRound ? Math.min(7, pool.length) : 3;
+  const questions = isSalaryNeg ? pool.slice(0, questionCount) : shuffleAndPick(pool, questionCount);
 
   const makeQ = (bank: { q: string; qResume: string; scoreNote: string }) => {
     const raw = hasResume && title ? bank.qResume : bank.q;
@@ -342,8 +362,8 @@ export function getMiniScript(user: User | null, company?: string, interviewType
   const introText = isSalaryNeg
     ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. So we've completed all the interview rounds for the ${role} position${companyContext}, and the team was really impressed with you. I'm here to walk you through the offer we've put together. Let me get into the details.`
     : isPanel
-    ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. This is a quick 3-question practice round for the ${role} position${companyContext}.${resumeContext} We'll each ask from our side. Shall we begin?`
-    : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. This is a quick 3-question ${typeLabel} practice round for the ${role} position${companyContext}.${resumeContext} I'll ask real interview questions and you'll get a detailed report at the end. Shall we begin?`;
+    ? `Hi${name ? ` ${name}` : ""}! Hope you're doing well. Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. This is a quick ${questionCount}-question practice round for the ${role} position${companyContext}.${resumeContext} We'll each ask from our side. Shall we begin?`
+    : `Hi${name ? ` ${name}` : ""}! Hope you're doing well. This is a quick ${questionCount}-question ${typeLabel} practice round for the ${role} position${companyContext}.${resumeContext} I'll ask real interview questions and you'll get a detailed report at the end. Shall we begin?`;
 
   // Build question steps dynamically (salary-neg gets 5, others get 3)
   const questionSteps: InterviewStep[] = questions.map((bank, i) => ({
@@ -388,11 +408,21 @@ export function getScript(type: string | null, difficulty: string | null, user: 
   const latestRole = resumeData2 && resumeData2._type === "fallback"
     ? resumeData2.experience?.[0]
     : undefined;
-  const title = latestRole?.title || "";
+  // See the matching note in getMiniScript above: the AI-parsed variant's
+  // `headline` is the only resume-derived signal available for the common
+  // (non-fallback) resume-parse path, and it reads naturally in the same
+  // "as {title}" template slots as a fallback-parsed job title.
+  const aiHeadline = resumeData2 && resumeData2._type === "ai" ? resumeData2.headline : undefined;
+  const title = latestRole?.title || aiHeadline || "";
 
   const companyContext = company ? ` at ${company}` : "";
   const industryContext = industry ? ` in the ${industry} space` : "";
-  const resumeContext = hasResume ? " I've reviewed your resume, so these questions will draw from your actual experience." : "";
+  // Gated on `title` (not just `hasResume`): this promise must only be made
+  // when the question swap below can actually honor it — an AI-parsed
+  // resume with no headline, or a resume we couldn't parse at all, got this
+  // promise unconditionally before, while makeQ silently fell back to the
+  // generic bank.q template (live QA, 2026-Q3 — false personalization claim).
+  const resumeContext = hasResume && title ? " I've reviewed your resume, so these questions will draw from your actual experience." : "";
 
   const isPanel = typeKey === "panel";
 

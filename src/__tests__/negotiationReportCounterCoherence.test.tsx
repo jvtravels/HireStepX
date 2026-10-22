@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { TLDRHero } from "../sessionReport/panels/TLDRHero";
 import { AnchorBracketPanel } from "../sessionReport/panels/AnchorBracketPanel";
 import { derivePhases, type NegotiationOutcome } from "../sessionReport/derivations";
+import { filterNegotiationStrengths } from "../sessionReport/adapter";
 
 /* Cross-surface counter-coherence invariant (2026-06-27, live staging audit).
  *
@@ -151,5 +152,89 @@ describe("negotiation report — never claims an acceptance on a non-accepted ou
     const o = outcome({ outcome: "accepted", finalTotal: 51, offers: [{ turn: 1, total: 51, question: "" }], candidateAsk: 65 });
     const text = renderSurfaces(o);
     expect(text.toLowerCase()).toContain("accepted their opening");
+  });
+});
+
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). An
+ * ACCEPTED deal whose offer numbers weren't captured (legacy row, no persisted
+ * trajectory, offer-regex missed the transcript → offers empty, finalTotal null
+ * → delta null) matched neither the `delta > 0` nor the `delta === 0` accept
+ * branch and fell through to the no-agreement `else`, printing "No deal closed …
+ * ₹0 gained … walking away" beside this same component's stage tracker ("you
+ * closed the deal") and N1's "Outcome: Accepted". The close is authoritative
+ * from outcome.outcome; the no-deal narrative must be unreachable on an accept,
+ * whether or not offer numbers survived. */
+const NO_DEAL_CLAIM = /no deal closed|nothing locked in|walking away with ₹0|ended with ₹0|₹0 gained/i;
+
+const ACCEPTED_UNQUANTIFIED: Array<{ name: string; o: NegotiationOutcome }> = [
+  {
+    name: "accepted, no offer numbers, counter named (the live bug)",
+    o: outcome({ outcome: "accepted", finalTotal: null, offers: [], candidateAsk: 65 }),
+  },
+  {
+    name: "accepted, no offer numbers, no counter named",
+    o: outcome({ outcome: "accepted", finalTotal: null, offers: [], candidateAsk: null }),
+  },
+];
+
+describe("negotiation report — an accepted deal never reads as no-deal, even without offer numbers", () => {
+  it.each(ACCEPTED_UNQUANTIFIED)("verdict states the accept and never the no-deal narrative: $name", ({ o }) => {
+    const text = renderSurfaces(o);
+    // The 30-second read must not print the no-agreement narrative on a close.
+    expect(text).not.toMatch(NO_DEAL_CLAIM);
+    // And it must affirmatively state the accept, coherent with N1 / stage tracker.
+    expect(text.toLowerCase()).toContain("you accepted");
+    // The stage tracker's own "you closed the deal" hint must still agree.
+    expect(text.toLowerCase()).toContain("you closed the deal");
+  });
+});
+
+/* REPORT-4 (2026-07-12, live staging — session 686b5699). TOP STRENGTHS must
+ * never praise an anchor/counter the kernel says was never named. `wins` is
+ * the one counter-aware surface previously not pinned to candidateAsk; this
+ * gate closes it. Same single source (candidateAsk !== null → counterNamed). */
+describe("negotiation strengths — never claim an anchor the kernel says wasn't named", () => {
+  const ANCHOR_CLAIMS = [
+    "Anchored with a clear target salary",
+    "You anchored high and held firm",
+    "Named a counter above the offer",
+    "Countered their opening confidently",
+    "Stated your number early",
+    "Asked for a higher base",
+    "Set a strong target salary",
+  ];
+  const NON_ANCHOR_STRENGTHS = [
+    "Stayed composed under pressure",
+    "Kept a professional, warm tone",
+    "Researched the market range beforehand",
+    "Asked thoughtful clarifying questions",
+    "Avoided leaking your current CTC",
+  ];
+
+  it("drops every anchor-claiming win when no counter was named", () => {
+    const kept = filterNegotiationStrengths(ANCHOR_CLAIMS, false);
+    // All anchor claims removed → falls back to the single honest, claim-free line.
+    expect(kept).toEqual(["You practised the opening of the conversation."]);
+  });
+
+  it("keeps genuine non-anchor strengths on a no-counter session", () => {
+    const kept = filterNegotiationStrengths(NON_ANCHOR_STRENGTHS, false);
+    expect(kept).toEqual(NON_ANCHOR_STRENGTHS);
+  });
+
+  it("drops only the anchor claim from a mixed list, keeps the rest", () => {
+    const mixed = ["Anchored with a clear target salary", "Stayed composed under pressure"];
+    expect(filterNegotiationStrengths(mixed, false)).toEqual(["Stayed composed under pressure"]);
+  });
+
+  it("passes strengths through verbatim once a counter WAS named", () => {
+    // counterNamed === true → the kernel corroborates the anchor; nothing to gate.
+    expect(filterNegotiationStrengths(ANCHOR_CLAIMS, true)).toEqual(ANCHOR_CLAIMS);
+  });
+
+  it("does not over-match negotiation words inside non-claim strengths", () => {
+    // 'counterproductive' / 'asked' (without a figure) must survive.
+    const safe = ["You avoided being counterproductive", "You asked about the team"];
+    expect(filterNegotiationStrengths(safe, false)).toEqual(safe);
   });
 });

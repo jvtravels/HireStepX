@@ -1,11 +1,14 @@
 /* Vercel Serverless Function — Send Verification + Welcome + Password Reset Email via Resend API */
 /* Self-contained: no _shared import to avoid module resolution issues */
-/* Supports actions: "verify" (default), "reset", "password-changed", "verify-reminder" */
+/* Supports actions: "create-account", "reset", "password-changed", "new_device_login", "signup-attempted-existing", plus auth-check tracking. Resend-link requests live in resend-verification.ts. */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, randomBytes } from "crypto";
 import { resolve } from "dns/promises";
 import { isDisposableEmailServer } from "./_disposable-emails";
+import { findAuthUserByEmail, isOAuthOnlyUser } from "./_auth-user-lookup";
+import { createUnconfirmedUser, validateSignupFields } from "./_signup-account";
+import { CONSENT_METADATA_KEY, currentSignupConsent } from "../src/_consent-record";
 import {
   emailShell,
   title,
@@ -18,7 +21,7 @@ import {
 } from "./_email-theme";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -31,9 +34,9 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
    also let an attacker forge verification tokens for any account, which
    is a much wider blast radius than the leak alone.
 
-   The startup probe at the bottom of this module crashes the function
-   on first invocation if EMAIL_VERIFICATION_SECRET is missing in
-   production (VERCEL_ENV === "production"). Dev / preview keep working.
+   Every call site that issues a token via generateVerifyToken() checks
+   assertEmailSecret() first and returns a clean 500 instead of sending
+   an email whose verify link is guaranteed to fail.
 
    The "fallback-secret" string is intentionally kept as a last-resort
    default so a misconfigured local dev doesn't crash with a cryptic
@@ -56,10 +59,10 @@ const EMAIL_SECRET = (() => {
 })();
 
 /* assertEmailSecret returns true if the HMAC signing key is sufficiently
-   strong to issue tokens. Currently consulted only by generateVerifyToken
-   which uses EMAIL_SECRET directly; surface here in case future callers
-   want to fail loudly before issuing a link signed against a missing
-   secret in production. */
+   strong to issue tokens. Call this before generateVerifyToken() at any
+   new call site — without it, a missing EMAIL_VERIFICATION_SECRET in
+   production still emails a "successful" signup with a verify link that
+   is silently guaranteed to fail at /api/verify-email. */
 export function assertEmailSecret(): boolean {
   return EMAIL_SECRET.length >= 16;
 }
@@ -238,52 +241,6 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
   return res.status(200).json({ ok: true });
 }
 
-// ─── Verification Reminder Email ─────────────────────────────────────────────
-async function handleVerifyReminder(req: VercelRequest, res: VercelResponse, normalizedEmail: string, name?: string) {
-  if (!RESEND_API_KEY) return res.status(200).json({ ok: true });
-
-  // Rate limit: max 2 reminders per IP per day
-  if (await checkRateLimit(req, "reminder", 2)) {
-    return res.status(429).json({ error: "Too many reminder requests." });
-  }
-
-  const token = generateVerifyToken(normalizedEmail);
-  const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(normalizedEmail)}&token=${token}`;
-  const safeName = escapeHtml(name || "there");
-
-  try {
-    const ac = new AbortController();
-    const timer = setTimeout(() => ac.abort(), 10_000);
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      signal: ac.signal,
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [normalizedEmail],
-        subject: "Still need to verify your email",
-        html: emailShell({
-          preview: "Your free sessions are waiting behind one click.",
-          body:
-            title("One step", { accentWord: "left." }) +
-            para(`Hi ${safeName}, you signed up but haven't confirmed your email yet. Your ${b("2 free mock interviews")} are ready the moment you do.`) +
-            button("Verify and start", verifyUrl) +
-            para(
-              `A fresh link, valid for ${b("24 hours")}. If you've already verified, you're all set, just ignore this.`,
-              { small: true, muted: true },
-            ),
-        }),
-      }),
-    });
-    clearTimeout(timer);
-    logResendUsage("verify-reminder", "success");
-  } catch (err) {
-    logResendUsage("verify-reminder", "error", undefined, err instanceof Error ? err.message : "Unknown");
-  }
-
-  return res.status(200).json({ ok: true });
-}
-
 /* ─── No-Account-Found courtesy email ─────────────────────────────────────
    Sent when /forgot-password is invoked with an email that has no
    matching HireStepX account. Lets the legit user (typo, wrong
@@ -328,6 +285,35 @@ async function sendNoAccountFoundEmail(email: string): Promise<void> {
       "[reset] no-account email send failed:",
       err instanceof Error ? err.message : "Unknown",
     );
+  }
+}
+
+/* Sent instead of a reset link when the address belongs to an OAuth-only
+   (Google) account. Generic 200 to the caller either way. */
+async function sendOAuthOnlyResetEmail(email: string): Promise<void> {
+  if (!RESEND_API_KEY) return;
+  try {
+    const safeEmail = escapeHtml(email);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(10_000),
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [email],
+        subject: "Sign in with Google",
+        html: emailShell({
+          preview: "This account uses Google to sign in, so there's no password to reset.",
+          body:
+            title("Use Google to", { accentWord: "sign in." }) +
+            para(`Someone asked to reset the HireStepX password for ${b(safeEmail)}. This account signs in with Google, so there's no password to reset.`) +
+            button("Go to sign in", `${APP_URL}/login`) +
+            para(`Choose "Continue with Google" with this address. If you didn't request this, ignore it, nothing has changed.`, { small: true, muted: true }),
+        }),
+      }),
+    });
+  } catch (err) {
+    console.warn("[reset] oauth-only email send failed:", err instanceof Error ? err.message : "Unknown");
   }
 }
 
@@ -382,37 +368,23 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   }
 
   try {
-    // Check if user exists before sending reset email
-    const userListRes = await fetch(
-      `${SUPABASE_URL}/auth/v1/admin/users?filter=${encodeURIComponent(normalizedEmail)}&page=1&per_page=1`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        },
-      },
-    );
-    if (userListRes.ok) {
-      const userListData = await userListRes.json();
-      const users = userListData.users || userListData || [];
-      const found = Array.isArray(users) && users.some((u: { email?: string }) => u.email?.toLowerCase() === normalizedEmail);
-      if (!found) {
-        /* Email enumeration defense — the client UI must look identical
-           whether the email exists or not, so attackers probing
-           /forgot-password can't tell which addresses are registered.
-           BUT a silent no-op leaves a legit user (typo'd email, wrong
-           account) sitting forever on "Check your email" with no
-           explanation.
-           Option C from the audit: silent in UI, but send a "we
-           couldn't find an account" email to the typed address. The
-           legit user immediately understands what happened; the
-           attacker only learns about emails sent to their own probe
-           address (no information leak). Same per-IP + per-email
-           rate limits (3/h IP, 5/24h email) bound abuse cost. */
-        console.log(`[reset] unknown email — sending "no account found" courtesy email: ${normalizedEmail}`);
-        await sendNoAccountFoundEmail(normalizedEmail);
-        return res.status(200).json({ ok: true });
-      }
+    // Exact-email lookup (admin ?filter= is a substring match). A failed
+    // lookup falls through to generate_link, which resolves the user itself.
+    const lookup = await findAuthUserByEmail(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, normalizedEmail);
+    if (lookup.ok && !lookup.user) {
+      /* Email enumeration defense: the UI looks identical whether or not the
+         email exists, but a silent no-op strands a legit user (typo, wrong
+         account) on "Check your email". So send a "no account found"
+         courtesy email to the typed address; a prober only ever reaches
+         their own inbox. Same per-IP + per-email limits bound abuse. */
+      console.log(`[reset] unknown email, sending "no account found" courtesy email: ${normalizedEmail.slice(0, 3)}***`);
+      await sendNoAccountFoundEmail(normalizedEmail);
+      return res.status(200).json({ ok: true });
+    }
+    if (lookup.ok && lookup.user && isOAuthOnlyUser(lookup.user)) {
+      // Google-only accounts have no password; point them at the button they used.
+      await sendOAuthOnlyResetEmail(normalizedEmail);
+      return res.status(200).json({ ok: true });
     }
 
     /* Always generate a fresh recovery link.
@@ -523,67 +495,16 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
 }
 
 // ─── Verification / Welcome Email Handler ───────────────────────────────────
-async function handleVerify(req: VercelRequest, res: VercelResponse, email: string, name?: string, userId?: string) {
-  // Rate limit: max 3 welcome emails per IP per hour
-  if (await checkRateLimit(req, "email", 3)) {
-    return res.status(429).json({ error: "Too many email requests. Try again later." });
-  }
-
-  if (!RESEND_API_KEY) {
-    // CRITICAL: signup will appear successful (200 + skipped:true) but no
-    // verification email goes out → user is permanently stuck unverified.
-    // Loud log + 500 in production so monitoring catches it; 200 in
-    // dev/preview so local signup flow doesn't error out.
-    const isProd = process.env.VERCEL_ENV === "production";
-    const msg =
-      "[CRITICAL] RESEND_API_KEY missing — verification email NOT sent. " +
-      `Signup completed for ${email} but they cannot verify.`;
-    console.error(msg);
-    if (isProd) {
-      // Surface to whatever monitoring is listening on console.error in
-      // production (Vercel Log Drains / Sentry server SDK if wired).
-      return res
-        .status(500)
-        .json({ ok: false, error: "Email service unavailable" });
-    }
-    return res.status(200).json({ ok: true, skipped: true });
-  }
-
-  // Clear email_confirmed_at so user must verify (Supabase auto-sets it when "Confirm email" is OFF)
-  if (userId && SUPABASE_SERVICE_ROLE_KEY && SUPABASE_URL) {
-    try {
-      // Method 1: Admin API with email_confirm: false
-      const clearRes = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email_confirm: false }),
-      });
-      if (!clearRes.ok) {
-        console.error("Failed to clear email_confirmed_at via admin API:", clearRes.status);
-      }
-
-      // Method 2: Also store our own verification flag in user_metadata
-      await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
-        method: "PUT",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ user_metadata: { custom_email_verified: false } }),
-      }).catch(() => {});
-    } catch (err) {
-      console.error("Failed to clear email verification:", err);
-    }
-  }
-
-  // Generate verification link
+/* Returns null on success, or a short failure reason. */
+async function sendVerificationEmail(email: string, name?: string, ref?: string): Promise<string | null> {
+  // Generate verification link. The pending referral code (if any) rides
+  // along as a query param so verify-email.ts can forward it onto the
+  // /login redirect — the email is usually opened in a different browser
+  // context than the one that captured the code via localStorage, so it
+  // wouldn't otherwise survive to the SIGNED_IN handler that applies it.
   const token = generateVerifyToken(email);
-  const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}`;
+  const safeRef = typeof ref === "string" && /^HSX-[A-Z0-9]{4,8}$/.test(ref) ? ref : "";
+  const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}${safeRef ? `&ref=${safeRef}` : ""}`;
   const safeName = escapeHtml(name || "there");
 
   try {
@@ -629,15 +550,15 @@ async function handleVerify(req: VercelRequest, res: VercelResponse, email: stri
       const errBody = await emailRes.text();
       console.error("Resend API error:", emailRes.status, errBody);
       logResendUsage("verify", "error", undefined, `HTTP ${emailRes.status}`);
-      return res.status(502).json({ ok: false, emailSent: false, reason: "Resend API error" });
+      return "Resend API error";
     }
 
     logResendUsage("verify", "success");
-    return res.status(200).json({ ok: true, emailSent: true });
+    return null;
   } catch (err) {
     console.error("Verification email error:", err);
     logResendUsage("verify", "error", undefined, err instanceof Error ? err.message : "Unknown");
-    return res.status(502).json({ ok: false, emailSent: false, reason: "Email send failed" });
+    return "Email send failed";
   }
 }
 
@@ -725,6 +646,25 @@ async function delRedisKey(key: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
+/* Returns a user-facing message when rate limited, otherwise null. */
+async function bumpSignupCounters(ip: string, normalizedEmail: string): Promise<string | null> {
+  const signupKey = `rl:signup:ip:${ip}`;
+  const ipCount = await incrRedisKey(signupKey, AUTH_SIGNUP_WINDOW);
+  if (ipCount > AUTH_MAX_SIGNUP) {
+    return "Too many signup attempts. Please try again later.";
+  }
+  if (normalizedEmail) {
+    const emailSignupKey = `rl:signup:email:${normalizedEmail}`;
+    const emailCount = await incrRedisKey(emailSignupKey, 24 * 60 * 60);
+    if (emailCount > 2) {
+      // 2/24h per email: covers legit typo→correct flow while blocking
+      // bots hammering a single address. Generic copy — no information leak.
+      return "Too many attempts for this email. Please try again later.";
+    }
+  }
+  return null;
+}
+
 async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: string, email?: string, intent?: string) {
   const ip = (req.headers["x-forwarded-for"] as string || "127.0.0.1").split(",")[0].trim();
   const normalizedEmail = (email || "").toLowerCase().trim();
@@ -778,20 +718,8 @@ async function handleAuthCheck(req: VercelRequest, res: VercelResponse, action: 
     //     verification cooldown elsewhere, 3/day is plenty for legit
     //     users (typo → resend → finally land) but cuts off targeted
     //     abuse.
-    const signupKey = `rl:signup:ip:${ip}`;
-    const ipCount = await incrRedisKey(signupKey, AUTH_SIGNUP_WINDOW);
-    if (ipCount > AUTH_MAX_SIGNUP) {
-      return res.status(429).json({ locked: true, message: "Too many signup attempts. Please try again later." });
-    }
-    if (normalizedEmail) {
-      const emailSignupKey = `rl:signup:email:${normalizedEmail}`;
-      const emailCount = await incrRedisKey(emailSignupKey, 24 * 60 * 60);
-      if (emailCount > 3) {
-        // Generic copy — don't tell an attacker their probe is hitting
-        // a real account vs no account.
-        return res.status(429).json({ locked: true, message: "Too many attempts for this email. Please try again later." });
-      }
-    }
+    const limited = await bumpSignupCounters(ip, normalizedEmail);
+    if (limited) return res.status(429).json({ locked: true, message: limited });
     return res.status(200).json({ ok: true });
   }
 
@@ -889,7 +817,7 @@ function isAllowedOrigin(origin: string): boolean {
   return false;
 }
 
-// ─── Main Handler (routes to verify, reset, password-changed, verify-reminder) ─
+// ─── Main Handler ───
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // CORS
   const origin = req.headers.origin || "";
@@ -906,12 +834,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
-  const { email, name, userId, action, honeypot, intent } = req.body || {};
+  const { email, name, action, honeypot, intent, ref, password, companyName, companyWebsite } = req.body || {};
 
   // Honeypot check: if the hidden field is filled, it's a bot
   if (honeypot) {
     // Pretend success to not alert the bot
     return res.status(200).json({ ok: true });
+  }
+
+  // Require a valid Origin for all email-sending actions — blocks external curl/scripts.
+  // Rate-limit tracking actions and "reset" (no active session) remain open.
+  const EMAIL_SEND_ACTIONS = ["password-changed", "new_device_login", "signup-attempted-existing", "create-account"];
+  if (EMAIL_SEND_ACTIONS.includes(action) && (!origin || !isAllowedOrigin(origin))) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
   // Auth rate limiting + Turnstile verification actions (don't require
@@ -966,8 +901,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // MX record validation — check domain can receive email
-  // Skip for: reset (don't reveal if email exists), password-changed (notification only), verify-reminder
-  if (!["reset", "password-changed", "verify-reminder", "new_device_login", "signup-attempted-existing"].includes(action)) {
+  // Skip for: reset (don't reveal if email exists), password-changed (notification only)
+  if (!["reset", "password-changed", "new_device_login", "signup-attempted-existing"].includes(action)) {
     const hasMx = await validateMxRecord(normalizedEmail);
     if (!hasMx) {
       return res.status(400).json({ error: "This email domain does not appear to accept mail. Please use a valid email address." });
@@ -984,13 +919,76 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (action === "new_device_login") {
     return handleNewDeviceLogin(req, res, normalizedEmail);
   }
-  if (action === "verify-reminder") {
-    return handleVerifyReminder(req, res, normalizedEmail, name);
-  }
   if (action === "signup-attempted-existing") {
     return handleSignupAttemptedExisting(req, res, normalizedEmail, name);
   }
-  return handleVerify(req, res, normalizedEmail, name, userId);
+  if (action === "create-account") {
+    return handleCreateAccount(req, res, normalizedEmail, name, password, ref, { companyName, companyWebsite });
+  }
+  return res.status(400).json({ error: "Unknown action" });
+}
+
+/* Creates the account server-side with email_confirm:false so Supabase sends
+   no mail of its own; the Resend verification mail is the only one. Always
+   answers { ok: true } for new and existing emails (enumeration defense). */
+async function handleCreateAccount(
+  req: VercelRequest,
+  res: VercelResponse,
+  email: string,
+  name: unknown,
+  password: unknown,
+  ref: unknown,
+  company: { companyName?: unknown; companyWebsite?: unknown } = {},
+) {
+  const invalid = validateSignupFields(name, password);
+  if (invalid || typeof name !== "string" || typeof password !== "string") {
+    return res.status(400).json({ error: invalid || "Invalid signup details." });
+  }
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return res.status(500).json({ error: "Signup is not configured" });
+  }
+  const isProd = process.env.VERCEL_ENV === "production";
+  const canSend = !!RESEND_API_KEY && assertEmailSecret();
+  if (!canSend && isProd) {
+    console.error("[CRITICAL] Signup blocked: RESEND_API_KEY or email secret missing, no account created.");
+    return res.status(500).json({ error: "Email service unavailable" });
+  }
+
+  const ip = (req.headers["x-forwarded-for"] as string || "127.0.0.1").split(",")[0].trim();
+  const limited = await bumpSignupCounters(ip, email);
+  if (limited) return res.status(429).json({ error: limited });
+
+  let created;
+  try {
+    created = await createUnconfirmedUser({
+      supabaseUrl: SUPABASE_URL,
+      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+      email,
+      password,
+      name,
+      consentKey: CONSENT_METADATA_KEY,
+      consentVersion: currentSignupConsent().version,
+      companyName: typeof company.companyName === "string" ? company.companyName : undefined,
+      companyWebsite: typeof company.companyWebsite === "string" ? company.companyWebsite : undefined,
+    });
+  } catch (err) {
+    console.error("[create-account] admin createUser failed:", err instanceof Error ? err.message : "Unknown");
+    return res.status(502).json({ error: "Could not create your account. Please try again." });
+  }
+
+  if (created.kind === "error") {
+    console.error("[create-account] admin createUser status:", created.status);
+    return res.status(created.status >= 500 ? 502 : 400).json({ error: "Could not create your account. Please try again." });
+  }
+  if (created.kind === "exists") {
+    if (!(await checkRateLimit(req, "signup-attempted-existing", 5))) await sendExistingAccountEmail(email, name);
+    return res.status(200).json({ ok: true });
+  }
+  if (canSend) {
+    const failure = await sendVerificationEmail(email, name, typeof ref === "string" ? ref : undefined);
+    if (failure) console.error("[create-account] verification email failed after account creation:", failure);
+  }
+  return res.status(200).json({ ok: true });
 }
 
 /* ─── handleSignupAttemptedExisting ──────────────────────────────────────
@@ -1009,10 +1007,12 @@ async function handleSignupAttemptedExisting(
       .status(429)
       .json({ error: "Too many requests. Try again later." });
   }
-  if (!RESEND_API_KEY) {
-    // Don't leak failure to the client — return 200.
-    return res.status(200).json({ ok: true, skipped: true });
-  }
+  await sendExistingAccountEmail(email, name);
+  return res.status(200).json({ ok: true });
+}
+
+async function sendExistingAccountEmail(email: string, name?: string): Promise<void> {
+  if (!RESEND_API_KEY) return;
   const safeName = escapeHtml(name || "there");
   try {
     const ac = new AbortController();
@@ -1042,13 +1042,10 @@ async function handleSignupAttemptedExisting(
       }),
     });
     clearTimeout(t);
-    return res.status(200).json({ ok: true });
   } catch (err) {
     console.warn(
       "[signup-attempted-existing] email send failed:",
       err instanceof Error ? err.message : "Unknown",
     );
-    // Don't leak failure to client.
-    return res.status(200).json({ ok: true });
   }
 }

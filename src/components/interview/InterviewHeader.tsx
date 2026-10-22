@@ -47,7 +47,7 @@ export function InterviewHeader({
     }}>
       <div className="iv-canvas-topbar-left" style={{ display: "inline-flex", alignItems: "center", gap: 16 }}>
         <CanvasWordmark />
-        <span aria-hidden style={{ width: 1, height: 18, background: e.line, display: "inline-block" }} />
+        <span aria-hidden className="iv-canvas-mobile-hide" style={{ width: 1, height: 18, background: e.line, display: "inline-block" }} />
         <CanvasContextChip
           role={displayRole || "Interview practice"}
           company={displayCompany || ""}
@@ -69,7 +69,7 @@ export function InterviewHeader({
             label leaked an internal provider detail with no user action. */}
         <CanvasMuteToggle muted={isMuted} onClick={onToggleMute} />
         <CanvasCameraToggle on={videoEnabled} onClick={onToggleVideo} />
-        <CanvasAvatar initials={myInitials} />
+        <span className="iv-canvas-avatar-wrap" style={{ display: "inline-flex" }}><CanvasAvatar initials={myInitials} /></span>
       </div>
     </header>
   );

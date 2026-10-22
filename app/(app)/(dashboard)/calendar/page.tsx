@@ -1,12 +1,13 @@
-import type { Metadata } from "next";
-import DashboardCalendar from "@/DashboardCalendar";
+import RedirectNotice from "@/RedirectNotice";
 
-export const metadata: Metadata = {
-  title: "Calendar | HireStepX",
-  description:
-    "Schedule and view your upcoming interview practice sessions.",
-};
-
+// Calendar is hidden for candidates for now; DashboardCalendar is kept for when it returns.
 export default function Page() {
-  return <DashboardCalendar />;
+  return (
+    <RedirectNotice
+      to="/dashboard"
+      fullScreen={false}
+      title="Calendar isn't available yet"
+      message="Taking you back to your dashboard."
+    />
+  );
 }

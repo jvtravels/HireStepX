@@ -104,24 +104,27 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  target_role: string;
-  target_company: string;
-  city: string;
-  industry: string;
-  interview_date: string;
-  experience_level: string;
-  learning_style: string;
-  preferred_session_length: number;
-  interview_types: string[];
+  target_role: string | null;
+  target_company: string | null;
+  city: string | null;
+  industry: string | null;
+  interview_date: string | null;
+  experience_level: string | null;
+  learning_style: string | null;
+  preferred_session_length: number | null;
+  interview_types: string[] | null;
   resume_file_name: string;
   resume_text: string;
   resume_data: Record<string, unknown> | null;
   /** UUID pointer to resume_versions.id — the canonical version row
       whose AI parse populated resume_data. Soft FK (no DB constraint). */
   resume_version_id: string | null;
+  /** Candidate-submitted proof-of-work links (GitHub, portfolio site, etc).
+      Only what the candidate entered — never synthesized. */
+  portfolio_links?: Array<{ title: string; url: string }> | null;
   practice_timestamps: string[];
   avatar_url: string;
-  subscription_tier: "free" | "starter" | "pro" | "team";
+  subscription_tier: "free" | "starter" | "team";
   subscription_start: string | null;
   subscription_end: string | null;
   cancel_at_period_end: boolean;
@@ -135,6 +138,16 @@ export interface Profile {
       deletion; profile rows linger for the 30-day grace period. */
   deleted_at: string | null;
   created_at: string;
+  /** Whether the /profile/:id public bio page is reachable for this user. */
+  is_profile_public: boolean;
+  /** Monotonic high-water mark of sessions started, bumped by a DB trigger —
+      never decreases even across refunds/deletes. Gates some quota checks. */
+  sessions_started_lifetime: number;
+  started_session_ids: string[];
+  started_session_ts: string[];
+  /** ISO date of the last re-engagement lifecycle email sent (server-handlers/re-engage-users.ts). */
+  re_engage_sent: string | null;
+  last_summary_email_at: string | null;
 }
 
 export interface SessionRecord {
@@ -162,7 +175,18 @@ export interface SessionRecord {
      column; shape is the SessionReport but we only read `coaching` here for
      the dashboard card, so it's typed loosely. The report layer is the trust
      boundary — this is just transport. */
-  report_json?: { coaching?: SessionCoaching | null; focusMetrics?: SessionFocusMetric[] | null } & Record<string, unknown> | null;
+  report_json?: {
+    coaching?: SessionCoaching | null;
+    focusMetrics?: SessionFocusMetric[] | null;
+    /* Deterministic-fallback wins/fixes — read by cardCoachingFromWinsFixes
+       (DashboardContext.tsx) to synthesize a coaching pair when coaching
+       itself is null. */
+    wins?: Array<{ text: string }> | null;
+    fixes?: Array<{ text: string }> | null;
+    /* Real per-question breakdown — read by the dashboard card instead of
+       fabricating placeholder scores. Absent until the report is generated. */
+    perQuestion?: Array<{ question: string; score: number; explanation?: string }> | null;
+  } & Record<string, unknown> | null;
   /* Schema version the evaluator was on when the report was written.
      Surfaced so the client can short-circuit /api/evaluate-session
      when (report_json present, report_version === current). The
@@ -303,88 +327,52 @@ export async function initLiveSession(params: {
   }
 }
 
-/**
- * Save a single turn (answer or follow-up) in real-time.
- * Returns success/failure + queues a localStorage backup on failure so
- * transcripts aren't silently lost on flaky network.
- */
-const TURN_RETRY_QUEUE_KEY = "hirestepx_pending_turns";
-
-export async function saveInterviewTurn(turn: Omit<InterviewTurn, "created_at">): Promise<{ ok: boolean; error?: string }> {
-  if (!supabaseConfigured) return { ok: false, error: "Supabase not configured" };
-  try {
-    const client = await getSupabase();
-    const { error } = await client.from("interview_turns").insert(turn);
-    if (error) {
-      console.error("[supabase] saveInterviewTurn failed:", error.message);
-      queueTurnForRetry(turn);
-      return { ok: false, error: error.message };
-    }
-    return { ok: true };
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    console.error("[supabase] saveInterviewTurn threw:", msg);
-    queueTurnForRetry(turn);
-    return { ok: false, error: msg };
-  }
-}
-
-/** Localstorage backup queue for failed turns. Survives reload. Drained by flushPendingTurns(). */
-function queueTurnForRetry(turn: Omit<InterviewTurn, "created_at">): void {
-  if (typeof localStorage === "undefined") return;
-  try {
-    const raw = localStorage.getItem(TURN_RETRY_QUEUE_KEY);
-    const queue = raw ? (JSON.parse(raw) as Array<Omit<InterviewTurn, "created_at">>) : [];
-    queue.push(turn);
-    // Cap at 200 to prevent localStorage overflow on prolonged outage.
-    if (queue.length > 200) queue.splice(0, queue.length - 200);
-    localStorage.setItem(TURN_RETRY_QUEUE_KEY, JSON.stringify(queue));
-  } catch { /* localStorage may be full or disabled — best effort */ }
-}
-
-/** Drain the retry queue. Call on app load or network-recovery events. */
-export async function flushPendingTurns(): Promise<{ flushed: number; failed: number }> {
-  if (typeof localStorage === "undefined" || !supabaseConfigured) return { flushed: 0, failed: 0 };
-  let queue: Array<Omit<InterviewTurn, "created_at">> = [];
-  try {
-    const raw = localStorage.getItem(TURN_RETRY_QUEUE_KEY);
-    if (!raw) return { flushed: 0, failed: 0 };
-    queue = JSON.parse(raw);
-  } catch { return { flushed: 0, failed: 0 }; }
-  if (queue.length === 0) return { flushed: 0, failed: 0 };
-
-  const remaining: typeof queue = [];
-  let flushed = 0;
-  for (const turn of queue) {
-    const res = await saveInterviewTurn(turn);
-    // saveInterviewTurn auto-requeues on failure; avoid double-queueing here.
-    if (res.ok) flushed++;
-    else remaining.push(turn);
-  }
-  try {
-    if (remaining.length === 0) localStorage.removeItem(TURN_RETRY_QUEUE_KEY);
-    else localStorage.setItem(TURN_RETRY_QUEUE_KEY, JSON.stringify(remaining));
-  } catch { /* best effort */ }
-  return { flushed, failed: remaining.length };
-}
-
 /* ─── Session helpers ─── */
 
-export async function saveSession(session: Omit<SessionRecord, "created_at">) {
-  const client = await getSupabase();
-  const result = await client.from("sessions").insert(session);
-  if (result.error) throw new Error(result.error.message);
-  return result;
-}
+/* List view needs the card fields plus a handful of report_json keys — never
+   the transcript, JD analysis or the rest of the report body, which dominate
+   the payload. Postgres extracts the keys server-side, so the TOASTed jsonb
+   isn't shipped to the browser. getSessionById still returns the full row. */
+const SESSION_LIST_COLUMNS = [
+  "id", "user_id", "date", "type", "difficulty", "focus", "duration", "score", "questions",
+  "ai_feedback", "skill_scores", "target_role", "target_company", "negotiation_metrics", "created_at",
+  "rj_overall:report_json->overallScore",
+  "rj_coaching:report_json->coaching",
+  "rj_wins:report_json->wins",
+  "rj_fixes:report_json->fixes",
+  "rj_focus:report_json->focusMetrics",
+].join(",");
+
+type SessionListRow = Omit<SessionRecord, "transcript" | "report_json"> & {
+  rj_overall: number | null;
+  rj_coaching: unknown;
+  rj_wins: unknown;
+  rj_fixes: unknown;
+  rj_focus: unknown;
+};
 
 export async function getUserSessions(userId: string): Promise<SessionRecord[]> {
   const client = await getSupabase();
-  const { data } = await client
+  const { data, error } = await client
     .from("sessions")
-    .select("*")
+    .select(SESSION_LIST_COLUMNS)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  return data || [];
+    .order("created_at", { ascending: false })
+    .returns<SessionListRow[]>();
+  if (error) throw new Error(error.message);
+  return (data || []).map(({ rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus, ...row }) => {
+    const hasReport = [rj_overall, rj_coaching, rj_wins, rj_fixes, rj_focus].some((v) => v != null);
+    const report_json = hasReport
+      ? {
+          ...(rj_overall != null ? { overallScore: rj_overall } : {}),
+          ...(rj_coaching != null ? { coaching: rj_coaching } : {}),
+          ...(rj_wins != null ? { wins: rj_wins } : {}),
+          ...(rj_fixes != null ? { fixes: rj_fixes } : {}),
+          ...(rj_focus != null ? { focusMetrics: rj_focus } : {}),
+        } as SessionRecord["report_json"]
+      : null;
+    return { ...row, transcript: [], report_json } as SessionRecord;
+  });
 }
 
 export async function getSessionById(sessionId: string, userId: string): Promise<SessionRecord | null> {
@@ -650,7 +638,20 @@ export async function syncGoogleEvents(userId: string): Promise<{ synced: number
  *
  * Retries up to `maxRetries` times on 502/503 (transient infra errors) with
  * exponential back-off before giving up. */
-export async function getCreditBalance(_userId: string, maxRetries = 2): Promise<number> {
+const creditBalanceInFlight = new Map<string, Promise<number>>();
+
+/* Concurrent callers (dashboard provider + session setup mounting together)
+   share one request. Only in-flight sharing — never a TTL — so a read made
+   right after a purchase is always fresh. */
+export function getCreditBalance(userId: string, maxRetries = 2): Promise<number> {
+  const pending = creditBalanceInFlight.get(userId);
+  if (pending) return pending;
+  const p = fetchCreditBalance(userId, maxRetries).finally(() => creditBalanceInFlight.delete(userId));
+  creditBalanceInFlight.set(userId, p);
+  return p;
+}
+
+async function fetchCreditBalance(_userId: string, maxRetries: number): Promise<number> {
   if (!_userId) return 0;
 
   // authHeaders() reads the JWT from localStorage — must be done before fetch.

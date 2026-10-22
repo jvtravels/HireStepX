@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeUpdate, ALLOWED_COLUMNS, stampResumeParsedAt } from "../../server-handlers/update-profile";
+import { sanitizeUpdate, ALLOWED_COLUMNS, stampResumeParsedAt, sanitizePortfolioLinks } from "../../server-handlers/update-profile";
 
 /**
  * sanitizeUpdate is the allow-list filter that stands between an
@@ -40,17 +40,21 @@ describe("sanitizeUpdate", () => {
 
   it("preserves arrays, booleans, numbers, nulls, objects", () => {
     const result = sanitizeUpdate({
-      practice_timestamps: ["2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z"],
+      interview_focus: ["behavioural", "technical"],
       has_completed_onboarding: true,
       preferred_session_length: 15,
       resume_data: { topSkills: ["a", "b"] },
       interview_types: null,
     });
-    expect(result.practice_timestamps).toEqual(["2026-04-01T00:00:00Z", "2026-04-02T00:00:00Z"]);
+    expect(result.interview_focus).toEqual(["behavioural", "technical"]);
     expect(result.has_completed_onboarding).toBe(true);
     expect(result.preferred_session_length).toBe(15);
     expect(result.resume_data).toEqual({ topSkills: ["a", "b"] });
     expect(result.interview_types).toBe(null);
+  });
+
+  it("never accepts client-written practice_timestamps", () => {
+    expect("practice_timestamps" in sanitizeUpdate({ practice_timestamps: [new Date().toISOString()] })).toBe(false);
   });
 
   it("rejects non-object input", () => {
@@ -89,9 +93,10 @@ describe("sanitizeUpdate", () => {
       "interview_date",
       "interview_focus",
       "interview_types",
+      "is_profile_public",
       "learning_style",
       "name",
-      "practice_timestamps",
+      "portfolio_links",
       "preferred_session_length",
       "resume_data",
       "resume_file_name",
@@ -107,6 +112,77 @@ describe("sanitizeUpdate", () => {
     const result = sanitizeUpdate({ id: "attacker-user-id", name: "Jay" });
     expect("id" in result).toBe(false);
     expect(result.name).toBe("Jay");
+  });
+
+  it("validates portfolio_links items through sanitizePortfolioLinks rather than passing the raw array", () => {
+    const result = sanitizeUpdate({
+      portfolio_links: [
+        { title: "My GitHub", url: "https://github.com/jay" },
+        { title: "Bad one", url: "javascript:alert(1)" },
+      ],
+    });
+    expect(result.portfolio_links).toEqual([{ title: "My GitHub", url: "https://github.com/jay" }]);
+  });
+});
+
+/**
+ * sanitizePortfolioLinks is the only thing standing between a candidate's
+ * raw input and what an employer sees as "proof of work" — it must only
+ * ever pass through real, well-formed, candidate-entered links.
+ */
+describe("sanitizePortfolioLinks", () => {
+  it("keeps well-formed http(s) links with a title", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "Portfolio site", url: "https://jay.dev" },
+      { title: "GitHub", url: "http://github.com/jay" },
+    ]);
+    expect(result).toEqual([
+      { title: "Portfolio site", url: "https://jay.dev" },
+      { title: "GitHub", url: "http://github.com/jay" },
+    ]);
+  });
+
+  it("drops items with a non-http(s) url (javascript:, data:, bare strings)", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "XSS attempt", url: "javascript:alert(1)" },
+      { title: "Data URI", url: "data:text/html,<script>1</script>" },
+      { title: "No protocol", url: "github.com/jay" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("drops items with an empty or missing title", () => {
+    const result = sanitizePortfolioLinks([
+      { title: "", url: "https://jay.dev" },
+      { title: "   ", url: "https://jay.dev" },
+      { url: "https://jay.dev" },
+    ]);
+    expect(result).toEqual([]);
+  });
+
+  it("caps at 5 links, dropping the rest", () => {
+    const many = Array.from({ length: 8 }, (_, i) => ({ title: `Link ${i}`, url: `https://example.com/${i}` }));
+    const result = sanitizePortfolioLinks(many);
+    expect(result).toHaveLength(5);
+    expect(result[0].title).toBe("Link 0");
+    expect(result[4].title).toBe("Link 4");
+  });
+
+  it("trims and caps title/url length", () => {
+    const result = sanitizePortfolioLinks([
+      { title: `  ${"x".repeat(200)}  `, url: `https://example.com/${"y".repeat(600)}` },
+    ]);
+    expect(result[0].title.length).toBe(120);
+    expect(result[0].url.length).toBe(500);
+  });
+
+  it("ignores non-array input and non-object items", () => {
+    expect(sanitizePortfolioLinks(null)).toEqual([]);
+    expect(sanitizePortfolioLinks(undefined)).toEqual([]);
+    expect(sanitizePortfolioLinks("not an array")).toEqual([]);
+    expect(sanitizePortfolioLinks([null, "string", 42, { title: "ok", url: "https://a.com" }])).toEqual([
+      { title: "ok", url: "https://a.com" },
+    ]);
   });
 });
 

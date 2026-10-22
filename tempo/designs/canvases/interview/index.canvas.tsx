@@ -7,23 +7,15 @@
    Coordinates are inlined as literals (not computed) so Tempo's static
    discovery analyzer parses them at build time. */
 
-import type { TempoPage, TempoStoryboard } from "tempo-sdk";
 import CanvasProviders from "../../../CanvasProviders";
 import Interview from "./Interview";
 import Reconnecting from "./Reconnecting";
 import SessionSetup from "./SessionSetup";
-
-const page: TempoPage = {
-  name: "Interview",
-};
-
-export default page;
+import { Canvas, Storyboard } from "tempo-sdk/canvas";
 
 /* ─── Row 1 — happy path lifecycle ─────────────────────────────────── */
 
-export const AISpeakingScreen: TempoStoryboard = {
-  name: "1. AI is asking the question",
-  render: () => (
+const AISpeakingScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-speaking"
@@ -42,13 +34,9 @@ export const AISpeakingScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 0, width: 1440, height: 1024 },
-};
+  );
 
-export const YourTurnScreen: TempoStoryboard = {
-  name: "2. Your turn (idle, ready)",
-  render: () => (
+const YourTurnScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -67,13 +55,9 @@ export const YourTurnScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 0, width: 1440, height: 1024 },
-};
+  );
 
-export const YouSpeakingScreen: TempoStoryboard = {
-  name: "3. You are answering (mic hot)",
-  render: () => (
+const YouSpeakingScreen = () => (
     <CanvasProviders>
       <Interview
         state="you-speaking"
@@ -93,13 +77,9 @@ export const YouSpeakingScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 0, width: 1440, height: 1024 },
-};
+  );
 
-export const AIThinkingScreen: TempoStoryboard = {
-  name: "4. AI is thinking",
-  render: () => (
+const AIThinkingScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-thinking"
@@ -118,15 +98,11 @@ export const AIThinkingScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 0, width: 1440, height: 1024 },
-};
+  );
 
 /* ─── Row 2 — alternate inputs + interrupt states ──────────────────── */
 
-export const TypingModeScreen: TempoStoryboard = {
-  name: "5. Typing mode (keyboard fallback)",
-  render: () => (
+const TypingModeScreen = () => (
     <CanvasProviders>
       <Interview
         state="typing-mode"
@@ -145,13 +121,9 @@ export const TypingModeScreen: TempoStoryboard = {
         typedAnswer="Last year I led the migration from a Rails monolith to a service-oriented architecture. I wasn't the tech lead, but"
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 1074, width: 1440, height: 1024 },
-};
+  );
 
-export const PausedScreen: TempoStoryboard = {
-  name: "6. Paused",
-  render: () => (
+const PausedScreen = () => (
     <CanvasProviders>
       <Interview
         state="paused"
@@ -169,13 +141,9 @@ export const PausedScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 1074, width: 1440, height: 1024 },
-};
+  );
 
-export const ConnectionWarningScreen: TempoStoryboard = {
-  name: "7. Connection unstable",
-  render: () => (
+const ConnectionWarningScreen = () => (
     <CanvasProviders>
       <Interview
         state="connection-warning"
@@ -193,13 +161,9 @@ export const ConnectionWarningScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 1074, width: 1440, height: 1024 },
-};
+  );
 
-export const EndConfirmScreen: TempoStoryboard = {
-  name: "8. End-confirm overlay",
-  render: () => (
+const EndConfirmScreen = () => (
     <CanvasProviders>
       <Interview
         state="end-confirm"
@@ -217,15 +181,11 @@ export const EndConfirmScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 1074, width: 1440, height: 1024 },
-};
+  );
 
 /* ─── Row 3 — edge moments ─────────────────────────────────────────── */
 
-export const FirstQuestionScreen: TempoStoryboard = {
-  name: "9. Q1 — warmup framing",
-  render: () => (
+const FirstQuestionScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-speaking"
@@ -244,13 +204,9 @@ export const FirstQuestionScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 2148, width: 1440, height: 1024 },
-};
+  );
 
-export const FinalQuestionScreen: TempoStoryboard = {
-  name: "10. Q5 — final question",
-  render: () => (
+const FinalQuestionScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -269,13 +225,9 @@ export const FinalQuestionScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 2148, width: 1440, height: 1024 },
-};
+  );
 
-export const LongQuestionScreen: TempoStoryboard = {
-  name: "11. Long question (text wrap stress test)",
-  render: () => (
+const LongQuestionScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-speaking"
@@ -294,13 +246,9 @@ export const LongQuestionScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 2148, width: 1440, height: 1024 },
-};
+  );
 
-export const FairConnectionScreen: TempoStoryboard = {
-  name: "12. Connection fair (subtle chip)",
-  render: () => (
+const FairConnectionScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -319,15 +267,11 @@ export const FairConnectionScreen: TempoStoryboard = {
         context={{ role: "Product Manager", company: "Flipkart", focus: "Behavioral" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 2148, width: 1440, height: 1024 },
-};
+  );
 
 /* ─── Row 4 — camera-on + alternate role contexts ──────────────────── */
 
-export const CameraOnScreen: TempoStoryboard = {
-  name: "13. Camera on (self-view tile)",
-  render: () => (
+const CameraOnScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -347,13 +291,9 @@ export const CameraOnScreen: TempoStoryboard = {
         cameraOn
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 3222, width: 1440, height: 1024 },
-};
+  );
 
-export const TechnicalRoundScreen: TempoStoryboard = {
-  name: "14. Technical round — Google SDE",
-  render: () => (
+const TechnicalRoundScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-speaking"
@@ -372,13 +312,9 @@ export const TechnicalRoundScreen: TempoStoryboard = {
         context={{ role: "SDE-2", company: "Google", focus: "System design" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 3222, width: 1440, height: 1024 },
-};
+  );
 
-export const FresherCampusScreen: TempoStoryboard = {
-  name: "15. Fresher · TCS campus placement",
-  render: () => (
+const FresherCampusScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -397,13 +333,9 @@ export const FresherCampusScreen: TempoStoryboard = {
         context={{ role: "Graduate Trainee", company: "TCS", focus: "Campus HR" }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 3222, width: 1440, height: 1024 },
-};
+  );
 
-export const NegotiationScreen: TempoStoryboard = {
-  name: "16. Salary negotiation · Razorpay",
-  render: () => (
+const NegotiationScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-speaking"
@@ -423,25 +355,17 @@ export const NegotiationScreen: TempoStoryboard = {
         cameraOn
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 3222, width: 1440, height: 1024 },
-};
+  );
 
 /* ─── Row 5 — recovery + auto-save ────────────────────────────────── */
 
-export const ReconnectingScreen: TempoStoryboard = {
-  name: "17. Reconnecting (network dropped)",
-  render: () => (
+const ReconnectingScreen = () => (
     <CanvasProviders>
       <Reconnecting attempt={2} question={{ current: 3, total: 5 }} />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 4296, width: 1440, height: 1024 },
-};
+  );
 
-export const SaveToastScreen: TempoStoryboard = {
-  name: "18. Auto-save toast confirmation",
-  render: () => (
+const SaveToastScreen = () => (
     <CanvasProviders>
       <Interview
         state="ai-thinking"
@@ -460,13 +384,9 @@ export const SaveToastScreen: TempoStoryboard = {
         showSaveToast
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 4296, width: 1440, height: 1024 },
-};
+  );
 
-export const LiveTranscriptScreen: TempoStoryboard = {
-  name: "19. You speaking — live transcript + pace",
-  render: () => (
+const LiveTranscriptScreen = () => (
     <CanvasProviders>
       <Interview
         state="you-speaking"
@@ -488,13 +408,9 @@ export const LiveTranscriptScreen: TempoStoryboard = {
         showPace
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 4296, width: 1440, height: 1024 },
-};
+  );
 
-export const MicQuietScreen: TempoStoryboard = {
-  name: "20. Mic-quiet warning during answer",
-  render: () => (
+const MicQuietScreen = () => (
     <CanvasProviders>
       <Interview
         state="you-speaking"
@@ -514,13 +430,9 @@ export const MicQuietScreen: TempoStoryboard = {
         micQuiet
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 4296, width: 1440, height: 1024 },
-};
+  );
 
-export const InlineFeedbackScreen: TempoStoryboard = {
-  name: "21. Inline mini-feedback between questions",
-  render: () => (
+const InlineFeedbackScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -541,13 +453,9 @@ export const InlineFeedbackScreen: TempoStoryboard = {
         }}
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 5370, width: 1440, height: 1024 },
-};
+  );
 
-export const MutedScreen: TempoStoryboard = {
-  name: "22. Mic temporarily muted (cough/water break)",
-  render: () => (
+const MutedScreen = () => (
     <CanvasProviders>
       <Interview
         state="your-turn"
@@ -566,9 +474,7 @@ export const MutedScreen: TempoStoryboard = {
         muted
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 5370, width: 1440, height: 1024 },
-};
+  );
 
 /* ─── Row 6 (cont.) + Row 7 — Session Setup (pre-interview) ─────────────
    Single-page progressive form. Each storyboard shows a different
@@ -577,19 +483,13 @@ export const MutedScreen: TempoStoryboard = {
    resume-aware pre-fill, recent quick-picks, real autocomplete with
    keyboard hints, validation, and a mobile pass. */
 
-export const SetupEmpty: TempoStoryboard = {
-  name: "23. Setup — first touch (empty)",
-  render: () => (
+const SetupEmpty = () => (
     <CanvasProviders>
       <SessionSetup />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 5370, width: 1440, height: 1280 },
-};
+  );
 
-export const SetupFilled: TempoStoryboard = {
-  name: "24. Setup — filled, happy path",
-  render: () => (
+const SetupFilled = () => (
     <CanvasProviders>
       <SessionSetup
         role="Frontend Developer"
@@ -597,13 +497,9 @@ export const SetupFilled: TempoStoryboard = {
         focus="technical"
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 5370, width: 1440, height: 1380 },
-};
+  );
 
-export const SetupReturningUser: TempoStoryboard = {
-  name: "25. Setup — returning user (resume + recent)",
-  render: () => (
+const SetupReturningUser = () => (
     <CanvasProviders>
       <SessionSetup
         role="Product Manager"
@@ -614,13 +510,9 @@ export const SetupReturningUser: TempoStoryboard = {
         userName="Priya Kumar"
       />
     </CanvasProviders>
-  ),
-  layout: { x: 0, y: 6750, width: 1440, height: 1480 },
-};
+  );
 
-export const SetupCompanyAutocomplete: TempoStoryboard = {
-  name: "26. Setup — company autocomplete open",
-  render: () => (
+const SetupCompanyAutocomplete = () => (
     <CanvasProviders>
       <SessionSetup
         role="Software Engineer"
@@ -629,13 +521,9 @@ export const SetupCompanyAutocomplete: TempoStoryboard = {
         showCompanyAutocomplete
       />
     </CanvasProviders>
-  ),
-  layout: { x: 1490, y: 6750, width: 1440, height: 1380 },
-};
+  );
 
-export const SetupValidationErrors: TempoStoryboard = {
-  name: "27. Setup — validation errors",
-  render: () => (
+const SetupValidationErrors = () => (
     <CanvasProviders>
       <SessionSetup
         role=""
@@ -643,13 +531,9 @@ export const SetupValidationErrors: TempoStoryboard = {
         showErrors
       />
     </CanvasProviders>
-  ),
-  layout: { x: 2980, y: 6750, width: 1440, height: 1080 },
-};
+  );
 
-export const SetupMobile: TempoStoryboard = {
-  name: "28. Setup — mobile (narrow viewport)",
-  render: () => (
+const SetupMobile = () => (
     <CanvasProviders>
       <SessionSetup
         role="SDE-2"
@@ -658,6 +542,179 @@ export const SetupMobile: TempoStoryboard = {
         compact
       />
     </CanvasProviders>
-  ),
-  layout: { x: 4470, y: 6750, width: 480, height: 1620 },
-};
+  );
+
+export default function InterviewCanvas() {
+  return (
+    <Canvas name="Interview">
+      <Storyboard
+        id="AISpeakingScreen"
+        name="1. AI is asking the question"
+        component={AISpeakingScreen}
+        layout={{ x: 0, y: 0, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="YourTurnScreen"
+        name="2. Your turn (idle, ready)"
+        component={YourTurnScreen}
+        layout={{ x: 1490, y: 0, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="YouSpeakingScreen"
+        name="3. You are answering (mic hot)"
+        component={YouSpeakingScreen}
+        layout={{ x: 2980, y: 0, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="AIThinkingScreen"
+        name="4. AI is thinking"
+        component={AIThinkingScreen}
+        layout={{ x: 4470, y: 0, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="TypingModeScreen"
+        name="5. Typing mode (keyboard fallback)"
+        component={TypingModeScreen}
+        layout={{ x: 0, y: 1074, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="PausedScreen"
+        name="6. Paused"
+        component={PausedScreen}
+        layout={{ x: 1490, y: 1074, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="ConnectionWarningScreen"
+        name="7. Connection unstable"
+        component={ConnectionWarningScreen}
+        layout={{ x: 2980, y: 1074, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="EndConfirmScreen"
+        name="8. End-confirm overlay"
+        component={EndConfirmScreen}
+        layout={{ x: 4470, y: 1074, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="FirstQuestionScreen"
+        name="9. Q1 — warmup framing"
+        component={FirstQuestionScreen}
+        layout={{ x: 0, y: 2148, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="FinalQuestionScreen"
+        name="10. Q5 — final question"
+        component={FinalQuestionScreen}
+        layout={{ x: 1490, y: 2148, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="LongQuestionScreen"
+        name="11. Long question (text wrap stress test)"
+        component={LongQuestionScreen}
+        layout={{ x: 2980, y: 2148, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="FairConnectionScreen"
+        name="12. Connection fair (subtle chip)"
+        component={FairConnectionScreen}
+        layout={{ x: 4470, y: 2148, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="CameraOnScreen"
+        name="13. Camera on (self-view tile)"
+        component={CameraOnScreen}
+        layout={{ x: 0, y: 3222, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="TechnicalRoundScreen"
+        name="14. Technical round — Google SDE"
+        component={TechnicalRoundScreen}
+        layout={{ x: 1490, y: 3222, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="FresherCampusScreen"
+        name="15. Fresher · TCS campus placement"
+        component={FresherCampusScreen}
+        layout={{ x: 2980, y: 3222, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="NegotiationScreen"
+        name="16. Salary negotiation · Razorpay"
+        component={NegotiationScreen}
+        layout={{ x: 4470, y: 3222, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="ReconnectingScreen"
+        name="17. Reconnecting (network dropped)"
+        component={ReconnectingScreen}
+        layout={{ x: 0, y: 4296, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="SaveToastScreen"
+        name="18. Auto-save toast confirmation"
+        component={SaveToastScreen}
+        layout={{ x: 1490, y: 4296, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="LiveTranscriptScreen"
+        name="19. You speaking — live transcript + pace"
+        component={LiveTranscriptScreen}
+        layout={{ x: 2980, y: 4296, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="MicQuietScreen"
+        name="20. Mic-quiet warning during answer"
+        component={MicQuietScreen}
+        layout={{ x: 4470, y: 4296, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="InlineFeedbackScreen"
+        name="21. Inline mini-feedback between questions"
+        component={InlineFeedbackScreen}
+        layout={{ x: 0, y: 5370, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="MutedScreen"
+        name="22. Mic temporarily muted (cough/water break)"
+        component={MutedScreen}
+        layout={{ x: 1490, y: 5370, width: 1440, height: 1024 }}
+      />
+      <Storyboard
+        id="SetupEmpty"
+        name="23. Setup — first touch (empty)"
+        component={SetupEmpty}
+        layout={{ x: 2980, y: 5370, width: 1440, height: 1280 }}
+      />
+      <Storyboard
+        id="SetupFilled"
+        name="24. Setup — filled, happy path"
+        component={SetupFilled}
+        layout={{ x: 4470, y: 5370, width: 1440, height: 1380 }}
+      />
+      <Storyboard
+        id="SetupReturningUser"
+        name="25. Setup — returning user (resume + recent)"
+        component={SetupReturningUser}
+        layout={{ x: 0, y: 6750, width: 1440, height: 1480 }}
+      />
+      <Storyboard
+        id="SetupCompanyAutocomplete"
+        name="26. Setup — company autocomplete open"
+        component={SetupCompanyAutocomplete}
+        layout={{ x: 1490, y: 6750, width: 1440, height: 1380 }}
+      />
+      <Storyboard
+        id="SetupValidationErrors"
+        name="27. Setup — validation errors"
+        component={SetupValidationErrors}
+        layout={{ x: 2980, y: 6750, width: 1440, height: 1080 }}
+      />
+      <Storyboard
+        id="SetupMobile"
+        name="28. Setup — mobile (narrow viewport)"
+        component={SetupMobile}
+        layout={{ x: 4470, y: 6750, width: 480, height: 1620 }}
+      />
+    </Canvas>
+  );
+}

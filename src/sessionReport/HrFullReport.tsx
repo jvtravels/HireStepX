@@ -6,7 +6,6 @@
  *   01 Diagnose   — dimension gate + wins + probe review
  *   02 Act        — notice logistics + comp anchor + BGV gaps + counter-offer
  *   03 Practice   — motivation rewrite
- *   04 Next step  — drill CTA
  *
  * Data sources:
  *   • `skills`       — 8 HR rubric dimensions scored by the evaluator
@@ -21,24 +20,26 @@
 
 import type { HrReportData, Question, Skill } from "./types";
 import { t, f } from "./tokens";
+import { tokens as base } from "../auth/_tokens";
 import { ReportCardShell, SectionBand } from "./panels/_primitives";
+import { atCompany } from "./roleLabel";
+import { Empty, EmptyDescription } from "@/components/ui/empty";
 
 /* ─── Design tokens ─────────────────────────────────────────────────── */
 
 const COAL = t.coal;
 const INK_SOFT = t.inkSoft;
 const LINE = t.line;
-const LINE_STRONG = "#D6CDB5";
-const CREAM = t.cream;
-const CREAM_SOFT = "#F4EFE3";
-const ERROR = "#B91C1C";
-const ERROR_SOFT = "#FEE2E2";
-const SUCCESS = "#15803D";
-const SUCCESS_SOFT = "#DCFCE7";
-const COPPER = "#B45309";
-const COPPER_SOFT = "#FED7AA";
-const INDIGO = "#312E81";
-const INDIGO_SOFT = "#E5E2F2";
+const LINE_STRONG = t.lineStrong;
+const CREAM_SOFT = t.creamSoft;
+const ERROR = t.error;
+const ERROR_SOFT = t.error100;
+const SUCCESS = t.success;
+const SUCCESS_SOFT = t.success100;
+const COPPER = t.copper;
+const COPPER_SOFT = t.copper100;
+const INDIGO = t.indigo;
+const INDIGO_SOFT = t.indigo100;
 const MONO = f.mono;
 const SANS = f.sans;
 const SERIF = f.serif;
@@ -48,12 +49,10 @@ const SERIF = f.serif;
 function Panel({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div
+      className="hrfr-panel"
       style={{
-        background: "#FFFFFF",
-        border: `1px solid ${LINE}`,
-        borderRadius: 14,
-        padding: 24,
-        boxShadow: "0 1px 0 rgba(14,12,8,0.02), 0 4px 14px rgba(14,12,8,0.04)",
+        borderTop: `1px solid ${LINE}`,
+        padding: "22px 0 6px",
         ...style,
       }}
     >
@@ -68,7 +67,7 @@ function Eyebrow({ kicker, title, sub }: { kicker: string; title: string; sub?: 
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: COPPER,
@@ -110,7 +109,7 @@ function Pill({
         display: "inline-flex",
         alignItems: "center",
         fontFamily: MONO,
-        fontSize: 10,
+        fontSize: 11,
         letterSpacing: "0.08em",
         textTransform: "uppercase",
         background: c.bg,
@@ -128,20 +127,18 @@ function Pill({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <div
+    <Empty
       style={{
         background: CREAM_SOFT,
         border: `1px dashed ${LINE_STRONG}`,
         borderRadius: 10,
         padding: "14px 18px",
-        fontFamily: SANS,
-        fontSize: 13,
-        color: INK_SOFT,
-        lineHeight: 1.55,
       }}
     >
-      {message}
-    </div>
+      <EmptyDescription style={{ fontFamily: SANS, fontSize: 13, color: INK_SOFT, lineHeight: 1.55 }}>
+        {message}
+      </EmptyDescription>
+    </Empty>
   );
 }
 
@@ -174,6 +171,7 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
           return (
             <div
               key={skill.name}
+              className="hrfr-dim"
               style={{
                 display: "grid",
                 gridTemplateColumns: "200px 1fr auto auto",
@@ -197,8 +195,8 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
                     width: `${pct}%`,
                     borderRadius: 999,
                     background: passing
-                      ? `linear-gradient(90deg, ${INDIGO}, #4F46E5)`
-                      : `linear-gradient(90deg, ${ERROR}, #EF4444)`,
+                      ? `linear-gradient(90deg, ${INDIGO}, ${INDIGO})`
+                      : `linear-gradient(90deg, ${ERROR}, ${ERROR})`,
                   }}
                 />
                 {/* 60/100 floor marker */}
@@ -306,10 +304,8 @@ function ProbeReviewPanel({ questions }: { questions: Question[] }) {
             <div
               key={q.index}
               style={{
-                border: `1px solid ${LINE}`,
-                borderRadius: 12,
-                padding: 18,
-                background: CREAM,
+                borderTop: `1px solid ${LINE}`,
+                padding: "16px 0 0",
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
@@ -348,7 +344,7 @@ function ProbeReviewPanel({ questions }: { questions: Question[] }) {
                 <ProbeRow
                   kicker="Next probe likely"
                   body={
-                    <span style={{ fontFamily: SERIF, fontSize: 15, color: COAL, lineHeight: 1.45 }}>
+                    <span style={{ fontFamily: SERIF, fontSize: 16, color: COAL, lineHeight: 1.45 }}>
                       "{q.likelyFollowUp}"
                     </span>
                   }
@@ -377,6 +373,7 @@ function ProbeRow({
 }) {
   return (
     <div
+      className="hrfr-probe"
       style={{
         display: "grid",
         gridTemplateColumns: "140px 1fr",
@@ -388,7 +385,7 @@ function ProbeRow({
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: accent,
@@ -421,16 +418,14 @@ function SectorNormStrip({
     <div
       style={{
         marginTop: 16,
-        background: CREAM_SOFT,
-        border: `1px solid ${LINE}`,
-        borderRadius: 12,
-        padding: 16,
+        borderTop: `1px solid ${LINE}`,
+        padding: "14px 0 0",
       }}
     >
       <div
         style={{
           fontFamily: MONO,
-          fontSize: 10,
+          fontSize: 11,
           letterSpacing: "0.10em",
           textTransform: "uppercase",
           color: COPPER,
@@ -441,7 +436,7 @@ function SectorNormStrip({
       </div>
       <div style={{ display: "grid", gap: 8 }}>
         {visible.map((l, i) => (
-          <div key={i} style={{ fontFamily: SANS, fontSize: 12.5, color: INK_SOFT, lineHeight: 1.5 }}>
+          <div key={i} style={{ fontFamily: SANS, fontSize: 12, color: INK_SOFT, lineHeight: 1.5 }}>
             <span style={{ fontWeight: 600, color: COAL }}>{l.label}: </span>
             {l.value}
           </div>
@@ -479,20 +474,18 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
         title="What you said about notice and salary"
         sub="HR needs both these committed before they write up the offer. Vague answers here stall the process."
       />
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 16 }}>
         {noticeDays !== null && (
           <div
             style={{
-              background: CREAM_SOFT,
-              border: `1px solid ${LINE}`,
-              borderRadius: 12,
-              padding: 18,
+              borderTop: `1px solid ${LINE}`,
+              padding: "14px 0 0",
             }}
           >
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: COPPER,
@@ -529,7 +522,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: INDIGO,
@@ -538,7 +531,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             >
               Comp expectation
             </div>
-            <div style={{ fontFamily: MONO, fontSize: 24, color: COAL, fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ fontFamily: MONO, fontSize: 22, color: COAL, fontWeight: 700, marginBottom: 8 }}>
               {compExpected}
             </div>
             <div style={{ fontFamily: SANS, fontSize: 12, color: INK_SOFT, lineHeight: 1.5 }}>
@@ -674,8 +667,6 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
       <div
         style={{
           background: CREAM_SOFT,
-          border: `1px solid ${LINE}`,
-          borderLeft: `4px solid ${COPPER}`,
           borderRadius: 12,
           padding: 22,
         }}
@@ -683,7 +674,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: "0.10em",
             textTransform: "uppercase",
             color: COPPER,
@@ -724,7 +715,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
         title="Your 'why this company' — rewritten"
         sub="Generic answers ('great culture, great opportunity') signal you'll churn. This is the version that lands."
       />
-      <div style={{ display: "grid", gridTemplateColumns: twoUp ? "1fr 1fr" : "1fr", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: twoUp ? "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" : "1fr", gap: 14 }}>
         {motivationBefore && (
           <div
             style={{
@@ -737,7 +728,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: ERROR,
@@ -771,7 +762,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
             <div
               style={{
                 fontFamily: MONO,
-                fontSize: 10,
+                fontSize: 11,
                 letterSpacing: "0.10em",
                 textTransform: "uppercase",
                 color: SUCCESS,
@@ -813,112 +804,6 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
   );
 }
 
-/* ─── Drill CTA ─────────────────────────────────────────────────────── */
-
-function DrillCtaPanel({
-  skills,
-  daysUntilInterview,
-  onDrillSkill,
-}: {
-  skills: Skill[];
-  daysUntilInterview?: number;
-  onDrillSkill?: (name: string) => void;
-}) {
-  const weakest = [...skills].sort((a, b) => a.score - b.score).slice(0, 3);
-  return (
-    <Panel style={{ background: `linear-gradient(135deg, #0E0C08 0%, ${INDIGO} 100%)` }}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr auto",
-          gap: 24,
-          alignItems: "center",
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: MONO,
-              fontSize: 10,
-              letterSpacing: "0.10em",
-              textTransform: "uppercase",
-              color: "#B8B5D4",
-              marginBottom: 6,
-            }}
-          >
-            DRILL PLAN{daysUntilInterview ? ` · ${daysUntilInterview} DAYS LEFT` : ""}
-          </div>
-          <div style={{ fontFamily: SERIF, fontSize: 22, color: "#FFFFFF", lineHeight: 1.2, marginBottom: 6 }}>
-            Re-drill the {weakest.length > 0 ? weakest.length : "weakest"} dimensions before your real round
-          </div>
-          <div style={{ fontFamily: SANS, fontSize: 13, color: "#B8B5D4" }}>
-            One 12-minute focused session per dimension — scored on the same rubric so you can see the delta.
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onDrillSkill && weakest[0] && onDrillSkill(weakest[0].name)}
-          style={{
-            background: "#FFFFFF",
-            color: INDIGO,
-            padding: "12px 22px",
-            borderRadius: 10,
-            fontFamily: SANS,
-            fontSize: 14,
-            fontWeight: 700,
-            border: "none",
-            cursor: onDrillSkill ? "pointer" : "default",
-            whiteSpace: "nowrap",
-          }}
-        >
-          Start drill plan →
-        </button>
-      </div>
-      {weakest.length > 0 && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: `repeat(${weakest.length}, 1fr)`,
-            gap: 10,
-          }}
-        >
-          {weakest.map((s, i) => (
-            <div
-              key={s.name}
-              style={{
-                background: "rgba(255,255,255,0.08)",
-                border: "1px solid rgba(255,255,255,0.15)",
-                borderRadius: 10,
-                padding: 14,
-              }}
-            >
-              <div
-                style={{
-                  fontFamily: MONO,
-                  fontSize: 9,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  color: "#FCA5A5",
-                  marginBottom: 6,
-                }}
-              >
-                Drill {i + 1}
-              </div>
-              <div style={{ fontFamily: SANS, fontSize: 13, color: "#FFFFFF", lineHeight: 1.4 }}>
-                {s.name}
-              </div>
-              <div style={{ fontFamily: MONO, fontSize: 11, color: "#9CA3AF", marginTop: 4 }}>
-                {s.score}/100
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </Panel>
-  );
-}
-
 /* ─── Composed export ────────────────────────────────────────────────── */
 
 interface HrFullReportProps {
@@ -931,8 +816,22 @@ interface HrFullReportProps {
   daysUntilInterview?: number;
   role: string;
   company: string;
-  onDrillSkill?: (name: string) => void;
 }
+
+const HR_RESPONSIVE_CSS = `
+  .hrfr-panel { min-width: 0; overflow-wrap: anywhere; }
+  .hrfr-dim > *, .hrfr-probe > * { min-width: 0; }
+  @media (max-width: 640px) {
+    .hrfr-panel { padding: 18px 0 4px !important; }
+    .hrfr-dim { grid-template-columns: 1fr auto auto !important; row-gap: 6px !important; column-gap: 10px !important; }
+    .hrfr-dim > :first-child { grid-column: 1 / -1; }
+    .hrfr-probe { grid-template-columns: 1fr !important; gap: 4px !important; }
+    .hrfr-bridge { grid-template-columns: 1fr 1fr !important; padding: 18px 16px !important; gap: 14px !important; }
+    .hrfr-bridge-sep { display: none !important; }
+    .hrfr-bridge-msg { grid-column: 1 / -1 !important; }
+    .hrfr-bridge-pill { grid-column: 1 / -1 !important; justify-self: start; }
+  }
+`;
 
 export default function HrFullReport({
   overallScore,
@@ -943,20 +842,21 @@ export default function HrFullReport({
   daysUntilInterview,
   role,
   company,
-  onDrillSkill,
 }: HrFullReportProps) {
   const failingDims = skills.filter((s) => s.score < 60).length;
   const totalDims = skills.length;
 
   return (
     <ReportCardShell ariaLabelledBy="ir-section-hr">
+      <style>{HR_RESPONSIVE_CSS}</style>
       {/* Reconcile bridge — ties the hero score to the dim-gate count */}
       <div
+        className="hrfr-bridge"
         style={{
           background: `linear-gradient(135deg, ${COAL} 0%, ${INDIGO} 100%)`,
           borderRadius: 14,
           padding: "22px 26px",
-          color: "#FFFFFF",
+          color: t.white,
           display: "grid",
           gridTemplateColumns: "auto 1px auto 1fr auto",
           gap: 22,
@@ -965,27 +865,27 @@ export default function HrFullReport({
         }}
       >
         <div>
-          <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: base.creamMuted, marginBottom: 4 }}>
             Overall
           </div>
           <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700 }}>
             {overallScore}
-            <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/100</span>
+            <span style={{ fontSize: 14, color: base.creamMuted, marginLeft: 2 }}>/100</span>
           </div>
         </div>
-        <div style={{ width: 1, height: 36, background: "rgba(255,255,255,0.18)" }} />
+        <div className="hrfr-bridge-sep" style={{ width: 1, height: 36, background: "rgba(255,255,255,0.18)" }} />
         {totalDims > 0 && (
           <>
             <div>
-              <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#B8B5D4", marginBottom: 4 }}>
+              <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.12em", textTransform: "uppercase", color: base.creamMuted, marginBottom: 4 }}>
                 Failing dims
               </div>
-              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? "#FCA5A5" : "#BBF7D0" }}>
+              <div style={{ fontFamily: MONO, fontSize: 28, fontWeight: 700, color: failingDims > 0 ? t.error100 : t.success100 }}>
                 {failingDims}
-                <span style={{ fontSize: 14, color: "#B8B5D4", marginLeft: 2 }}>/{totalDims}</span>
+                <span style={{ fontSize: 14, color: base.creamMuted, marginLeft: 2 }}>/{totalDims}</span>
               </div>
             </div>
-            <div style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2" }}>
+            <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: base.creamMuted }}>
               {failingDims === 0
                 ? "All dimensions cleared — strong HR signal across the board."
                 : `${failingDims} dimension${failingDims > 1 ? "s" : ""} below the 60/100 floor. Fix any one of them and you cross the line.`}
@@ -993,22 +893,23 @@ export default function HrFullReport({
           </>
         )}
         {totalDims === 0 && (
-          <div style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: "#E5E2F2", gridColumn: "3 / -1" }}>
-            HR Round for {role} at {company}
+          <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: base.creamMuted, gridColumn: "3 / -1" }}>
+            HR Round for {role}{atCompany(company)}
           </div>
         )}
         <div
           style={{
             fontFamily: MONO,
-            fontSize: 10,
+            fontSize: 11,
             letterSpacing: "0.12em",
             textTransform: "uppercase",
             background: failingDims === 0 ? SUCCESS : failingDims <= 2 ? COPPER : ERROR,
-            color: "#FFFFFF",
+            color: t.white,
             padding: "8px 12px",
             borderRadius: 999,
             whiteSpace: "nowrap",
           }}
+          className="hrfr-bridge-pill"
         >
           {failingDims === 0 ? "Hire Signal" : failingDims <= 2 ? "Lean Hire" : "No Hire"}
         </div>
@@ -1019,8 +920,8 @@ export default function HrFullReport({
         label="01 · Diagnose"
         title="Where you stand right now"
         subtitle="Your scores across every axis HR actually grades on."
-        accent={ERROR}
-        bg={ERROR_SOFT}
+        accent={failingDims === 0 ? SUCCESS : failingDims <= 2 ? COPPER : ERROR}
+        bg={failingDims === 0 ? SUCCESS_SOFT : failingDims <= 2 ? COPPER_SOFT : ERROR_SOFT}
       />
       <DimensionGate skills={skills} />
       <WinsPanel wins={wins} />
@@ -1057,24 +958,6 @@ export default function HrFullReport({
             bg={INDIGO_SOFT}
           />
           <MotivationRewritePanel hrReport={hrReport} />
-        </>
-      )}
-
-      {/* SECTION 04 — NEXT STEP */}
-      {skills.length > 0 && (
-        <>
-          <SectionBand
-            label="04 · Next step"
-            title="Where the drill plan takes you"
-            subtitle="One focused 12-minute session per weakest dimension."
-            accent={SUCCESS}
-            bg={SUCCESS_SOFT}
-          />
-          <DrillCtaPanel
-            skills={skills}
-            daysUntilInterview={daysUntilInterview}
-            onDrillSkill={onDrillSkill}
-          />
         </>
       )}
     </ReportCardShell>

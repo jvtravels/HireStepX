@@ -1,17 +1,10 @@
 /* Vercel Serverless Function — Cancel Subscription */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  supabaseUrl,
-  supabaseAnonKey,
-  isRateLimited,
-  getVercelClientIp,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
-  isCancellationBodyTooLarge,
   parseSubscriptionProfile,
   formatSubscriptionEndDate,
   buildCancellationEmailHtml,
@@ -21,55 +14,19 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
   res.setHeader("X-Request-ID", crypto.randomUUID());
 
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check
-  if (isCancellationBodyTooLarge(req.headers["content-length"] as string | undefined)) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header on state-changing requests
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "cancel-subscription", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
+  const pre = await withNodeAuthAndRateLimit(req, res, { endpoint: "cancel-subscription", ipLimit: 5 });
+  if (pre.handled) return;
+  const { userId } = pre;
 
   const SUPABASE_URL = supabaseUrl();
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
     return res.status(503).json({ error: "Not configured" });
-  }
-
-  // Verify user auth
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Unauthorized" });
-  }
-
-  const token = authHeader.slice(7);
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let userId: string;
-  try {
-    const userRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!userRes.ok) return res.status(401).json({ error: "Invalid auth token" });
-    const userData = await userRes.json();
-    userId = userData.id;
-  } catch {
-    return res.status(401).json({ error: "Auth verification failed" });
   }
 
   try {
@@ -84,13 +41,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Cancel Razorpay subscription at cycle end (if active)
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       try {
-        await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`, {
+        const cancelRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}/cancel`, {
           method: "POST",
           headers: { "Authorization": `Basic ${auth}`, "Content-Type": "application/json" },
           body: JSON.stringify({ cancel_at_cycle_end: true }),
         });
+        if (!cancelRes.ok) {
+          console.warn(`[cancel] Razorpay cancel returned ${cancelRes.status} — DB will still be updated but subscription may auto-renew`);
+        }
       } catch (err) {
         console.warn("[cancel] Razorpay API cancel failed (continuing with DB update):", err);
       }

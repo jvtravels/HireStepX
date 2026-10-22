@@ -7,7 +7,6 @@ import {
   TranscriptPanel, EndModal, EvaluatingOverlay,
   DealSummaryCard, AnnotatedReplayPanel,
   SaveToast, ReconnectingOverlay,
-  InterviewCoachmarks,
 } from "./InterviewPanels";
 import {
   CanvasVoiceVisualizer, CanvasPersonaLabel, CanvasPlainHeading,
@@ -16,6 +15,8 @@ import {
   type CanvasVizState, type CanvasPersonaState, type CanvasConnectionStatus,
 } from "./InterviewCanvasAtoms";
 import { LiveCaptions } from "./InterviewComponents";
+import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { pickAccent } from "./_accent-parser";
 import { useInterviewEngine } from "./useInterviewEngine";
 import { isAutoplayBlocked, retryUnlockAudio, clearAutoplayBlock } from "./tts";
@@ -61,10 +62,6 @@ function addInterviewPreconnects() {
   const hosts = [
     "https://api.cartesia.ai",   // Cartesia TTS — direct WSS from browser
     "https://api.deepgram.com",  // Deepgram STT — direct WSS from browser
-    // Sarvam STT opens wss://api.sarvam.ai/speech-to-text/ws directly from
-    // the browser (sarvamSTT.ts). Sarvam/Azure TTS go through the same-origin
-    // /api/* proxy, so only the STT host is a direct cross-origin connection.
-    "https://api.sarvam.ai",
   ];
   // Supabase (auth refresh + storage + realtime) is hit directly from the
   // browser on the project origin; preconnect it too. Env-derived, so guard
@@ -187,7 +184,7 @@ function countExchanges(transcript: Array<{ speaker: string }>): number {
 }
 
 /* Canvas-style typewriter wrapper that types the AI's question in sync
-   with TTS audio duration. Inherits the parent <h1>'s serif typography
+   with TTS audio duration. Inherits the parent <h1>'s sans typography
    via variant="inherit". The flicker that previously affected this was
    fixed at the engine level — handleNextQuestion now sets phase=thinking
    in the SAME batched update as setCurrentStep, so the new step never
@@ -217,6 +214,7 @@ function LiveCaptionsAsHeading({ text, ttsDurationMs, speakingDuration, speechEn
 function InterviewInner() {
   useEffect(() => { addInterviewPreconnects(); }, []);
   useMobileAudioResilience();
+  const [llmSlow, setLlmSlow] = useState(false);
   const { user } = useAuth();
   const myInitials = userInitials(user?.name, user?.email) || "You";
   const engine = useInterviewEngine();
@@ -234,7 +232,8 @@ function InterviewInner() {
     isPanelInterview, panelMembers, activePersona,
     ttsDurationMs, speechEnded,
     saveWarning, liveMetrics,
-    isSalaryNegotiation, negotiationBand, negotiationStyle,
+    isSalaryNegotiation, negotiationBand, negotiationStyle, negotiationCandidateAskLpa, negotiationJoiningBonusLpa, negotiationKernelOutcome,
+    liveNegotiationState,
 
     setCurrentTranscript, setSpeechUnavailable, setIsMuted,
     setShowTranscript, setShowEndModal,
@@ -243,7 +242,7 @@ function InterviewInner() {
     handleNextQuestion, handleSkipQuestion, skipSpeaking, retakeLastAnswer, handleEnd, navigate, replayQuestion,
     restartListening, awaitingSpeechStart, isLastStep, isClosingStep,
     skipsUsed, skipBudget, canSkip,
-    micQuiet, reconnecting, reconnectAttempt,
+    micQuiet, reconnecting, reconnectAttempt, nextProbeAt, retryConnectionNow,
 
     transcriptRef, endModalTriggerRef, textareaRef, nextBtnRef,
     ttsCancelRef, interviewEndedRef,
@@ -252,18 +251,13 @@ function InterviewInner() {
   // Tap-to-begin overlay — bulletproof recovery for the "autoplay blocked,
   // voice disabled for session" cascade. The mount-time unlock + click
   // recovery handle 95% of cases; this surface catches the remaining ones
-  // (slow router, restored from bfcache, strict media policies, etc).
-  // Polls because isAutoplayBlocked() flips to true only AFTER the first
-  // failed TTS attempt — there's no event we can subscribe to.
+  // Detect autoplay block state. isAutoplayBlocked() flips true only after a
+  // failed TTS attempt (set by the TTS layer). We check on phase transitions
+  // rather than polling every 600ms — eliminates constant battery drain on mobile.
   const [autoplayBlocked, setAutoplayBlocked] = useState(false);
   useEffect(() => {
     if (phase === "done") return;
-    const id = setInterval(() => {
-      if (isAutoplayBlocked() && !autoplayBlocked) {
-        setAutoplayBlocked(true);
-      }
-    }, 600);
-    return () => clearInterval(id);
+    if (isAutoplayBlocked() && !autoplayBlocked) setAutoplayBlocked(true);
   }, [phase, autoplayBlocked]);
 
   // Track interview abandonment — fires when user leaves before handleEnd runs
@@ -320,11 +314,18 @@ function InterviewInner() {
     return () => clearTimeout(timeout);
   }, [phase, currentStep]);
 
+  useEffect(() => {
+    if (!llmLoading || currentStep > 1) { setLlmSlow(false); return; }
+    const t = setTimeout(() => setLlmSlow(true), 5000);
+    return () => clearTimeout(t);
+  }, [llmLoading, currentStep]);
+
   return (
     <InterviewProvider value={engine}>
-    <div style={{
-      width: "100vw", height: "100dvh", minHeight: "100vh", background: e.cream,
+    <div className="app-vh" style={{
+      width: "100%", background: e.cream,
       display: "flex", flexDirection: "column", overflow: "hidden",
+      paddingLeft: "env(safe-area-inset-left, 0px)", paddingRight: "env(safe-area-inset-right, 0px)",
       fontFamily: ef.sans, color: e.coal,
     }}>
       <style>{`
@@ -382,27 +383,48 @@ function InterviewInner() {
           .iv-canvas-topbar-right span { font-size: 11px !important; }
           .iv-canvas-stage { padding: 16px 14px !important; gap: 14px !important; }
           .iv-center { padding: 16px !important; }
-          .iv-controls { padding: 8px 12px !important; gap: 6px !important; }
-          .iv-controls button { min-width: 48px !important; min-height: 48px !important; }
-          .iv-controls .iv-hide-mobile { display: none !important; }
           .iv-transcript-panel { width: 100% !important; max-width: none !important; position: fixed !important; bottom: 0 !important; top: auto !important; right: 0 !important; left: 0 !important; height: min(60vh, calc(100dvh - 96px)) !important; max-height: calc(100dvh - 96px) !important; border-radius: 20px 20px 0 0 !important; animation: slideUpSheet 0.35s cubic-bezier(0.16, 1, 0.3, 1) both !important; }
-          /* Video preview default is 160×120 — 43% of a 375px viewport.
-             Shrinks to ~90px to stay out of the way of the main stage.
-             top respects notch/safe-area-inset on iOS. */
-          .iv-video-preview { width: 90px !important; height: 68px !important; top: calc(64px + env(safe-area-inset-top, 0px)) !important; right: 8px !important; }
+          /* Self-view default is 148×96 — ~40% of a 360px viewport.
+             Shrinks so it stays out of the way of the question. */
+          .iv-canvas-selfview { width: 96px !important; height: 64px !important; right: 10px !important; bottom: calc(84px + env(safe-area-inset-bottom, 0px)) !important; }
         }
         @media (max-width: 420px) {
-          .iv-canvas-topbar { padding: 10px 12px !important; }
+          .iv-canvas-avatar-wrap { display: none !important; }
+          .iv-canvas-topbar { padding: 10px 12px !important; padding-top: max(10px, env(safe-area-inset-top, 10px)) !important; }
           .iv-canvas-stage { padding: 12px 10px !important; }
           .iv-info-bar-row { padding: 8px 12px !important; }
         }
-        @media (hover: none) and (pointer: coarse) {
-          .iv-controls button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        .app-vh { height: 100vh; height: 100dvh; }
+        .iv-touch-hint { display: none; }
+        /* Keyboard-only hints (Space / T) are noise on touch devices. */
+        @media (hover: none), (pointer: coarse) {
+          .iv-kbd-hint { display: none !important; }
+          .iv-touch-hint { display: inline; }
+        }
+        @media (max-width: 600px) {
+          .iv-sep { display: none; }
+          .iv-canvas-stage { padding-bottom: 96px !important; }
+          .iv-status-stack { top: auto !important; bottom: calc(64px + env(safe-area-inset-bottom, 0px)) !important; }
+        }
+        /* Landscape phones (~360-430px tall): the portrait stack of
+           header + visualizer + question + controls can't fit, so drop
+           the decorative visualizer and tighten every vertical gap. */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .iv-canvas-topbar { padding-top: max(6px, env(safe-area-inset-top, 6px)) !important; padding-bottom: 6px !important; }
+          .iv-canvas-topbar { padding-left: 16px !important; padding-right: 16px !important; gap: 8px !important; }
+          .iv-canvas-topbar-left { gap: 10px !important; min-width: 0 !important; flex: 1 1 auto !important; overflow: hidden !important; }
+          .iv-canvas-topbar-right { gap: 6px !important; flex-shrink: 0 !important; }
+          .iv-canvas-mobile-hide, .iv-canvas-avatar-wrap { display: none !important; }
+          .iv-info-bar-row { padding-top: 6px !important; padding-bottom: 6px !important; }
+          .iv-canvas-stage { padding: 8px 24px !important; gap: 8px !important; }
+          .iv-viz-disc { display: none !important; }
+          .iv-canvas-footer { padding: 6px 24px max(6px, env(safe-area-inset-bottom, 6px)) !important; }
+          .iv-status-stack { top: auto !important; bottom: calc(52px + env(safe-area-inset-bottom, 0px)) !important; }
+          .iv-question-h1 { font-size: clamp(1rem, 2.4vw, 1.2rem) !important; line-height: 1.25 !important; }
+          .iv-canvas-selfview { width: 84px !important; height: 56px !important; bottom: 12px !important; right: 12px !important; }
+          .iv-transcript-panel { height: calc(100dvh - 24px) !important; max-height: calc(100dvh - 24px) !important; border-radius: 16px 16px 0 0 !important; }
         }
       `}</style>
-
-      {/* First-time onboarding — three quick callouts, then never again */}
-      <InterviewCoachmarks />
 
       <StatusToasts tabConflict={tabConflict} isOffline={isOffline} micError={micError} ttsError={ttsError} ttsFailed={ttsFailed} />
 
@@ -458,8 +480,8 @@ function InterviewInner() {
             skipSpeaking={skipSpeaking}
           />
         )}
-        {/* Question heading — heuristic-driven italic-copper accent.
-            During phase=speaking we render plain serif because the
+        {/* Question heading — heuristic-driven bold-indigo accent.
+            During phase=speaking we render plain sans because the
             LiveCaptions typewriter would fight with the inline accent
             mid-stream. Once speech ends and we're listening, the accent
             renders. */}
@@ -527,8 +549,8 @@ function InterviewInner() {
               // you choose…". In salary-neg prose those same words show
               // up incidentally ("how does that *align*", "*what* would
               // it take", "your notice period *situation*") and the
-              // italic-copper highlighting makes the AI look erratic.
-              // Real session: italics on align/what/situation across 3
+              // bold-indigo highlighting makes the AI look erratic.
+              // Real session: emphasis on align/what/situation across 3
               // turns — interpreted by the user as "markdown leak".
               // Suppress the heuristic accent for negotiation; LLM-
               // marked accentSplit (rare in negotiation anyway) still
@@ -638,29 +660,23 @@ function InterviewInner() {
             isLastStep={isLastStep}
             isClosingStep={isClosingStep}
             onViewResult={handleEnd}
+            candidateCurrentCtcKnown={
+              isSalaryNegotiation
+                ? liveNegotiationState?.facts.candidateCurrentCTC != null
+                : undefined
+            }
+            micError={micError}
           />
         )}
 
         {phase === "speaking" && (
-          <button
-            type="button"
-            onClick={skipSpeaking}
-            style={{
-              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.inkSoft,
-              background: e.white, border: `1px solid ${e.line}`,
-              borderRadius: 999, padding: "8px 16px", minHeight: 36,
-              cursor: "pointer", transition: "all 160ms ease",
-              display: "inline-flex", alignItems: "center", gap: 6,
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; }}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={skipSpeaking}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
               <polygon points="5 4 15 12 5 20 5 4" />
               <line x1="19" y1="5" x2="19" y2="19" />
             </svg>
             Continue — Enter
-          </button>
+          </Button>
         )}
 
         {(phase === "thinking" || phase === "speaking") && (
@@ -681,23 +697,16 @@ function InterviewInner() {
             our equivalent. Wired to engine.retakeLastAnswer which
             cancels the pending follow-up, drops the last user message,
             and reverts phase=listening. */}
-        {phase === "thinking" && (
-          <button
+        {phase === "thinking" && transcript.some(t => t.speaker === "user") && (
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={() => {
               captureClientEvent("interview_retake_answer", {});
               retakeLastAnswer();
             }}
             aria-label="Retake the answer you just sent"
-            style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.copper,
-              background: "transparent", border: `1px solid rgba(180,83,9,0.35)`,
-              borderRadius: 999, padding: "7px 14px", cursor: "pointer",
-              transition: "background 160ms ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(180,83,9,0.08)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
           >
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -705,7 +714,7 @@ function InterviewInner() {
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
             </svg>
             Actually, let me redo that
-          </button>
+          </Button>
         )}
 
         {phase === "done" && (
@@ -715,6 +724,9 @@ function InterviewInner() {
                 transcript={transcript}
                 negotiationBand={negotiationBand}
                 negotiationStyle={negotiationStyle}
+                candidateAskLpa={negotiationCandidateAskLpa}
+                joiningBonusLpa={negotiationJoiningBonusLpa}
+                kernelOutcome={negotiationKernelOutcome}
                 onReplay={(style) => {
                   const params = new URLSearchParams(window.location.search);
                   params.set("negotiationStyle", style);
@@ -753,8 +765,10 @@ function InterviewInner() {
 
         {llmLoading && currentStep <= 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 10, height: 10, border: `1.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions…</span>
+            <Spinner aria-hidden="true" className="size-2.5" style={{ color: e.indigo }} />
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
+              {llmSlow ? "Taking a bit longer — almost there…" : "Personalizing questions…"}
+            </span>
           </div>
         )}
       </main>
@@ -812,6 +826,8 @@ function InterviewInner() {
       {reconnecting && (
         <ReconnectingOverlay
           attempt={reconnectAttempt}
+          nextProbeAt={nextProbeAt}
+          onRetryNow={retryConnectionNow}
           currentQuestion={currentQuestionNum}
           totalQuestions={totalQuestions}
           baseQuestionCount={baseQuestionCount}
@@ -870,7 +886,7 @@ function InterviewInner() {
             </svg>
           </span>
           <span style={{
-            fontFamily: ef.serif, fontSize: 24, fontWeight: 500,
+            fontFamily: ef.sans, fontSize: 22, fontWeight: 500,
             letterSpacing: -0.2, color: e.cream,
           }}>
             Tap to enable voice

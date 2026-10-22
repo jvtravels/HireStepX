@@ -121,13 +121,14 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
   }
 
-  // Calendar is a Pro feature, enforced at the data layer (not just the client
-  // ProGate). Reads/deletes of one's own rows stay open so a downgrade never
-  // strands existing data, but creating/editing requires an active paid tier.
+  // Calendar is included with any paid plan, enforced at the data layer (not
+  // just the client ProGate). Reads/deletes of one's own rows stay open so a
+  // downgrade never strands existing data, but creating/editing requires an
+  // active paid tier.
   const tier = await getSubscriptionTier(auth.userId);
-  if (tier !== "pro" && tier !== "team") {
+  if (tier !== "starter" && tier !== "team") {
     return new Response(
-      JSON.stringify({ error: "The interview calendar is a Pro feature. Upgrade to schedule interviews.", upgradeRequired: true }),
+      JSON.stringify({ error: "The interview calendar is included with any paid plan. Upgrade to schedule interviews.", upgradeRequired: true }),
       { status: 403, headers },
     );
   }

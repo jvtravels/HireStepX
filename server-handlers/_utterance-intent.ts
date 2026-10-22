@@ -124,6 +124,18 @@ const NONCOMP_TITLE =
 const RANK =
   "(?:principal|staff|senior|sr\\b|lead|director|manager|architect|vp\\b|head|distinguished|fellow)";
 
+/* Coercive contractual CLAUSES a candidate can demand the employer REMOVE as a
+ * close condition ("waive the bond and I'll sign", "drop the lock-in and I'm
+ * in"). Removing an unfavourable term is a concession extracted from the
+ * employer — inherently an unmet demand, distinct from a comp raise or a
+ * sweetener add-on. Common in Indian tech (service bonds, notice-period
+ * buyouts, non-competes), so a close welded to a waiver false-closes at terms
+ * the candidate is explicitly rejecting. Read only behind a REMOVAL verb in the
+ * waive-clause core below, so ordinary prose naming a "bond" or "notice period"
+ * never trips it. */
+const CLAUSE =
+  "(?:bond|lock[-\\s]?in|service\\s+(?:bond|agreement|commitment|contract)|notice\\s+period|non[-\\s]?compete|claw[-\\s]?back|tie[-\\s]?in|retention\\s+clause)";
+
 /* Decade-band figures for the vague "mid-forties" demand form (see the
  * decade-band core below). Kept lakh-denominated to match figureToLakhs output;
  * the qualifier nudges within the decade. */
@@ -180,6 +192,21 @@ const DEMAND_CORES: DemandCore[] = [
     absoluteTargetGroup: 1,
     unitGroup: 2,
     re: /\b(?:hits?|reach(?:es)?|touch(?:es)?|lands?\s+(?:at|on)|sits?\s+at)\s+(?:the\s+(?:base|fixed|cash|number|figure|total|ctc|package)\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
+  },
+  /* Directional-approach demand: "get closer to ₹28L", "move towards 30L",
+   * "come nearer to ₹25L". The candidate names a figure they want the offer to
+   * approach — semantically a floor at that figure. Unmet when the target
+   * exceeds the standing offer. Gated on a directional verb + approach
+   * preposition immediately adjacent to a figure so non-comp uses ("get back to
+   * you", "move in", "come to the meeting at 28") do not match (no directional
+   * approach phrase wraps them). S50-B10 root: "get closer to ₹28L" against a
+   * ₹23.6L offer carried a 19% gap that the conditional-close gate missed
+   * because no existing core captured directional-approach phrasing. */
+  {
+    reason: "directional-approach",
+    absoluteTargetGroup: 1,
+    unitGroup: 2,
+    re: /\b(?:get|move|come|bring|push|take|work)\s+(?:(?:it|us|things?|the\s+(?:number|package|total|ctc|offer|cash|fixed|comp))\s+)?(?:up\s+)?(?:closer\s+to|nearer\s+to|towards?|approaching?)\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
   /* Floor expression + figure: "at least 45", "no less than 45", "north of
    * 45", "upwards of 45", "in excess of 45", "a minimum of 45", "starting at
@@ -335,6 +362,24 @@ const DEMAND_CORES: DemandCore[] = [
       figureToLakhs(m[3], m[4]),
     re: /\b(?:(double|twice|triple|treble|quadruple)|(\d+(?:\.\d+)?)\s*x)\s+(?:my\s+|the\s+)?(?:current|present|existing)\s+(?:ctc|salary|base|pay|package|comp\w*)?\s*(?:of\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(lpa|lakhs?|lac|l|k|cr|crores?|m|mn|million)?\b/i,
   },
+  /* Figureless MULTIPLIER on a named comp lever: "double the stock", "triple the
+   * equity", "double the base", "2x the bonus". multiplier-current needs a
+   * "current/present/existing" anchor AND a figure to derive the target, so a
+   * multiplier applied directly to a lever with no figure slipped it and "Double
+   * the stock and I'll accept." false-closed at the un-bumped offer (batch-20
+   * hostile leak, 2026-07-13). A multiplier verb (double/twice/triple/2x) is
+   * inherently upward on whatever lever it governs, so it is always an unmet
+   * demand — no figure or offer gate. Lexically pinned to the shared lever
+   * vocabulary (CORE_COMP ∪ SWEETENER), so "double the effort/headcount" (no comp
+   * lever) never matches, and the optional determiner keeps "double my base" and
+   * "double the stock" both covered. */
+  {
+    reason: "multiplier-lever",
+    re: new RegExp(
+      `\\b(?:double|twice|triple|treble|quadruple|\\d+(?:\\.\\d+)?\\s*x)\\s+(?:the|my|your|their)?\\s*(?:${CORE_COMP}|${SWEETENER})\\b`,
+      "i",
+    ),
+  },
   /* Component-specific floor: "the fixed alone is 46", "the base component must
    * be 47". A bare copula ("is"/"must be") pins a figure to a NAMED component,
    * which no landing-verb core caught ("hits/reaches/sits at" only) — so "I'm in
@@ -412,6 +457,59 @@ const DEMAND_CORES: DemandCore[] = [
       "i",
     ),
   },
+  /* Quantity + LEADING increase word + unit: "one more lakh", "two more lakhs",
+   * "a couple more lakhs", "3 more percent". The increase token ("more/extra/
+   * additional/further") sits BETWEEN the quantity and the unit — the mirror of
+   * word-more ("a lakh more", unit-then-more) and relative-more (digit + unit +
+   * more). A bare WORD-quantity in this order ("one MORE lakh") slipped all
+   * three cores (relative-more needs a digit, word-more needs unit-before-more,
+   * another-more's lead set is another/an-extra/an-additional/a-further) and
+   * "One more lakh and I'm in." false-closed at the un-bumped offer (offline
+   * hostile hunt, 2026-07-17). Unit-restricted to cash/percent so non-comp
+   * counts ("one more round", "a few more weeks") never match; always an upward
+   * ask, so no offer gate. The global dismissal-tail guard covers "I don't need
+   * one more lakh, I accept". */
+  {
+    reason: "quantity-more-unit",
+    re: new RegExp(
+      `\\b(?:\\d+(?:\\.\\d+)?|${VERBAL_QTY}|two|three|four|five|six|seven|eight|nine|ten)\\s+(?:more|extra|additional|further)\\s+(?:${UNIT})\\b`,
+      "i",
+    ),
+  },
+  /* Leading INCREASE word directly on a comp lever, no figure: "give me more
+   * RSUs", "more equity", "extra stock", "additional base". another-more requires
+   * a cash/percent unit after the increase word, and demand-for-more needs a
+   * TRAILING more/higher, so a bare "more <lever>" (increase word LEADING a lever
+   * noun) slipped both and "Give me more RSUs and we have a deal." false-closed at
+   * the un-bumped offer (batch-20 hostile leak, 2026-07-13). "more/extra/
+   * additional/further" on a lever is inherently upward → always unmet, no offer
+   * gate. Pinned to the shared lever vocabulary (CORE_COMP ∪ SWEETENER). A
+   * DEFINITE/possessive-determiner negative lookbehind keeps a sweetener referenced
+   * as ALREADY on the table ("the extra equity is great, I accept") from
+   * over-blocking a genuine accept — only an undetermined ask ("more equity",
+   * "give me more equity") is a fresh demand. The global dismissal-tail guard
+   * additionally covers "I don't need more equity, I accept". */
+  {
+    reason: "more-lever",
+    re: new RegExp(
+      `(?<!\\b(?:the|this|that|your|our|their|its|his|her)\\s)` +
+        `\\b(?:more|extra|additional|further)\\s+(?:${CORE_COMP}|${SWEETENER})\\b`,
+      "i",
+    ),
+  },
+  /* Hindi / code-switched increase imperative: "badha do", "thoda aur badha
+   * do", "upar karo", "zyada kar do", "aur badhao". A bilingual candidate
+   * routinely conditions a close in Hindi on more money, then switches to
+   * English to sign ("Thoda aur badha do, phir I'll sign.") — a false-close the
+   * English demand cores can't see (offline hostile hunt, 2026-07-17). Anchored
+   * on the increase VERB (badha/badhao/upar-karo/zyada-karo); bare "aur"
+   * (Hindi "and"/"more") is too common to key on alone. Always an upward ask,
+   * so no offer gate. Genuine Hindi closes ("kar do", "bhej do", "theek hai",
+   * "haan") lack the increase verb and never match. */
+  {
+    reason: "hindi-increase",
+    re: /\b(?:badha\s*d(?:o|e|ijiye|ena|ijye)|badha[a]?o|(?:thoda\s+)?upar\s+(?:karo|le\s+jao|kar\s+do|uthao)|zyada\s+(?:karo|kar\s+do|do|chahiye))\b/i,
+  },
   /* Verb-fronted cash/percent bump whose increase intent lives in the
    * verb: "bump it 5%", "push the base up by a few percent". Ported
    * from VERB_MAGNITUDE_THEN_CLOSE_PATTERN, bridge dropped. */
@@ -456,7 +554,7 @@ const DEMAND_CORES: DemandCore[] = [
    * bias (an over-detect merely costs a turn). */
   {
     reason: "beat-match",
-    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer|[a-z][\w.-]*'s\s+(?:offer|number|figure|comp\w*|package|ctc))\b/i,
+    re: /\b(?:beat|match|top|exceed|improve\s+(?:on|upon)|come\s+up\s+on)\s+(?:it|that|this|their\s+(?:offer|number|figure|comp\w*|package|ctc)|the\s+(?:offer|number|figure|comp\w*|package|ctc)|my\s+(?:other\s+)?(?:current|ctc|comp\w*|package|base|salary|pay|number|offer|counter|ask|demand)|(?:a|an|another|the|my|their)\s+(?:competing|rival|outside|other)\s+offer|[a-z][\w.-]*'s\s+(?:offer|number|figure|comp\w*|package|ctc))\b/i,
   },
   /* Beat/match a bare FIGURE ("beat the 47 Razorpay gave me", "match 46",
    * "exceed the 48 I have"). beat-match above only binds an OBJECT WORD
@@ -520,6 +618,23 @@ const DEMAND_CORES: DemandCore[] = [
       "i",
     ),
   },
+  /* Imperative to REVISE the offer upward ("send me a better offer", "get me a
+   * higher offer", "come back with a revised number"). The verb set overlaps the
+   * legitimate procedural close "send me the offer letter and I'll sign" (pinned
+   * as a genuine accept in the improve-lever note), so this core is GATED on a
+   * comparative/revision ADJECTIVE (better/higher/improved/revised/stronger/
+   * bigger/sweeter/richer) sitting between the verb and the offer noun — "the
+   * offer letter" carries no such adjective and never matches, while "a better
+   * offer" is unambiguously a demand to raise it. Always unmet (asking for a
+   * better offer means the current one is not accepted), so no offer gate.
+   * Added after "Send me a better offer and I'll sign." false-accepted at the
+   * un-bumped offer (offline hostile battery, 2026-07-17): the object of the
+   * imperative was an improved OFFER rather than a named lever, so improve-lever
+   * (lever-anchored) and grant-perk (perk-anchored) both missed it. */
+  {
+    reason: "revise-offer-up",
+    re: /\b(?:send|get|give|bring|come\s+back\s+with|come\s+up\s+with|put\s+together)\s+(?:me\s+)?(?:a|an|the|another)?\s*(?:better|higher|improved|revised|stronger|bigger|sweeter|richer|fatter|beefier)\s+(?:offer|number|figure|package|comp\w*|ctc|deal|proposal)\b/i,
+  },
   /* Named NON-COMP perk GRANT (imperative): "give me a corner office and I'll
    * sign", "throw in a parking spot", "include a company car". Sibling of
    * grant-sweetener for the concrete perk nouns SWEETENER omits — a perk welded
@@ -541,11 +656,20 @@ const DEMAND_CORES: DemandCore[] = [
    * sign" false-closed at the un-bumped offer (batch-16 hostile leak,
    * 2026-07-11). Verbs are inherently upward (bump/nudge/hike/jack/boost/lift),
    * so it is always an unmet demand; the object is pinned to it/that or a comp
-   * handle (number/figure/offer/base/...), and an optional "up/higher/a little"
-   * tail is allowed — ordinary prose ("take it", "move on") never matches. */
+   * handle, and an optional "up/higher/a little" tail is allowed — ordinary prose
+   * ("take it", "move on") never matches. The object list is the SHARED lever
+   * vocabulary (CORE_COMP ∪ SWEETENER) plus the generic number/figure/offer/pay
+   * handles: a hardcoded cash-only list ("base/fixed/…") missed equity/esops/
+   * stock/bonus/variable, so "Bump the equity and I accept." false-closed at the
+   * un-bumped offer (batch-19 hostile leak, 2026-07-12). Sourcing the levers from
+   * the same constants the other demand cores use keeps the vocabulary in one
+   * place — a lever added there is covered here for free. */
   {
     reason: "vague-relative-bump",
-    re: /\b(?:bump|nudge|hike|jack|boost|lift|kick)\s+(?:it|that|the\s+(?:number|figure|offer|base|fixed|cash|salary|ctc|package|pay))(?:\s+(?:up|higher|north))?(?:\s+(?:a\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\b/i,
+    re: new RegExp(
+      `\\b(?:bump|nudge|hike|jack|boost|lift|kick)\\s+(?:it|that|the\\s+(?:number|figure|offer|pay|${CORE_COMP}|${SWEETENER}))(?:\\s+(?:up|higher|north))?(?:\\s+(?:a\\s+(?:little|bit|touch|tad|smidge|notch)|slightly|some(?:what)?))?\\b`,
+      "i",
+    ),
   },
   /* Directional CONVERGENCE demand (figureless): "round it up", "split the
    * difference", "meet me halfway", "meet in the middle", "close/bridge/narrow
@@ -591,6 +715,23 @@ const DEMAND_CORES: DemandCore[] = [
     reason: "peer-match-demand",
     re: /\b(?:match|beat|pay\s+me)\b[^.!?]{0,30}?\bwhat\b[^.!?]{0,30}?\b(?:paid|pays?|makes?|earns?|gets?|got|make|earn|are\s+(?:paid|making|on))\b/i,
   },
+  /* Figureless BENCHMARK-MATCH demand: "match the market", "get me to par with
+   * the team", "get me closer to what I'm worth", "bring me in line with
+   * industry standard". A request to lift the offer to an unnamed external
+   * benchmark — inherently upward, yet distinct from peer-match-demand (which
+   * needs a "what <peer> earns" clause) and beat-match (a possessive OFFER
+   * object), so a bare benchmark noun slipped both and false-closed at the
+   * un-bumped offer (batch-19 hostile leak, 2026-07-12). Two verb frames: the
+   * transitive "match <benchmark>" and the ditransitive "get/bring/move me
+   * (up/closer) to <benchmark>". The benchmark is a closed list (market/par/
+   * parity/industry standard/what I'm worth/what I deserve), so ordinary prose
+   * never matches; the imperative "match" (not "matches") keeps a stative "the
+   * offer matches the market, I accept" (satisfaction) out, and the shared
+   * dismissal-tail guard covers "you don't have to match the market, I accept". */
+  {
+    reason: "benchmark-match-demand",
+    re: /\b(?:match|(?:get|bring|move|take|push)\s+me\s+(?:up\s+)?(?:to|closer\s+to|towards?|nearer\s+to|in\s+line\s+with))\s+(?:the\s+)?(?:market(?:\s+(?:rate|value|average|median))?|par\b|parity|industry\s+(?:standard|average|norm|rate|median)|what\s+i(?:'m|\s+am)\s+worth|what\s+i\s+deserve|my\s+(?:market\s+)?worth)\b/i,
+  },
   /* FUTURE-GUARANTEE demand: "guarantee a review in six months", "promise me a
    * raise at review". A demand for a forward commitment (review / raise / bump)
    * the recruiter has NOT granted — welding it to a close fabricates agreement
@@ -602,6 +743,25 @@ const DEMAND_CORES: DemandCore[] = [
   {
     reason: "future-guarantee-demand",
     re: /\b(?:guarantee|promise|commit\s+to|lock\s+in)\s+(?:me\s+)?(?:a|an|the)?\s*(?:review|raise|bump|increase|hike|promotion|re-?visit|reassessment|re-?evaluation)\b/i,
+  },
+  /* WAIVE-A-CLAUSE demand: "waive the bond and I'll sign", "drop the lock-in and
+   * I'm in", "remove the non-compete", "scrap the notice period". A demand that
+   * the employer GIVE UP an unfavourable contractual term — inherently a
+   * concession extracted from the employer, so welding it to a close fabricates
+   * agreement to a waiver never granted, and "Waive the bond and I'll sign."
+   * false-closed at terms the candidate is rejecting (batch-20 hostile leak,
+   * 2026-07-13). Always unmet (a removal only ever moves the deal toward the
+   * candidate), no offer gate. Gated on a present-imperative REMOVAL verb
+   * governing a CLAUSE noun; \b-bounded verbs keep PAST-tense satisfaction ("you
+   * waived the bond, deal" / "dropped the lock-in, I accept") out — only a live
+   * request to remove a term matches. */
+  {
+    reason: "waive-clause",
+    re: new RegExp(
+      `\\b(?:waive|drop|remove|cut|eliminate|scrap|lift|forgo|forego|do\\s+away\\s+with|get\\s+rid\\s+of)\\b` +
+        `[^.!?]{0,15}?\\b${CLAUSE}\\b`,
+      "i",
+    ),
   },
   /* Anaphoric terms-change welded to a comp topic: "what about relocation? sort
    * that and I accept", "the equity — fix that and I'm in". improve-lever needs

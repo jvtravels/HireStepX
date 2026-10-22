@@ -5,6 +5,10 @@ import {
   sttInr,
   costBreakdown,
   kFactor,
+  rateCardAgeDays,
+  isRateCardStale,
+  RATES_LAST_VERIFIED_AT,
+  RATE_STALENESS_THRESHOLD_DAYS,
   type CostRates,
 } from "../../server-handlers/_cost-helpers";
 
@@ -104,5 +108,27 @@ describe("kFactor", () => {
 
   it("can exceed 1 for a self-sustaining loop", () => {
     expect(kFactor(15, 10)).toBe(1.5);
+  });
+});
+
+describe("rate card staleness", () => {
+  const verifiedMs = new Date(RATES_LAST_VERIFIED_AT).getTime();
+
+  it("reports 0 age right at the verification timestamp", () => {
+    expect(rateCardAgeDays(verifiedMs)).toBe(0);
+  });
+
+  it("is not stale just under the threshold", () => {
+    const now = verifiedMs + (RATE_STALENESS_THRESHOLD_DAYS - 1) * 86_400_000;
+    expect(isRateCardStale(now)).toBe(false);
+  });
+
+  it("is stale just past the threshold", () => {
+    const now = verifiedMs + (RATE_STALENESS_THRESHOLD_DAYS + 1) * 86_400_000;
+    expect(isRateCardStale(now)).toBe(true);
+  });
+
+  it("never reports negative age for a clock before the verification date", () => {
+    expect(rateCardAgeDays(verifiedMs - 86_400_000)).toBe(0);
   });
 });

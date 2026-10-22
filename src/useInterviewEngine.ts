@@ -2,11 +2,15 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
+import { sendGtagEvent } from "./_browser-api-guards";
 
 import { useAuth, setInterviewInProgress } from "./AuthContext";
-import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED } from "./tts";
+import { speak, speakAs, prefetchTTS, cleanupTTS, fetchCartesiaVoices, isAutoplayBlocked, hardMuteTTS, VOICE_OUTPUT_DISABLED, SARVAM_FEMALE_VOICES } from "./tts";
 import { useForceAudioUnlockOnMount, useClickRecoverAutoplay } from "./_audio-unlock";
 import { useOnlineOfflineRecovery } from "./_recovery";
+import { acquireHeartbeat, getConnectionState, retryNow, useConnectionState, waitForReachable } from "./connectionMonitor";
+import { isReachable } from "./_connection-state";
+import { createOnlineBudget, DEFAULT_MAX_HOLD_MS, runWithHold } from "./_turn-retry";
 import { buildDraftSnapshot, validateRestoredDraft } from "./_session-draft";
 import { useBackchannels } from "./_backchannels";
 import { extractAccentMarkup } from "./_accent-parser";
@@ -27,14 +31,15 @@ import { saveToIDB, loadFromIDB, deleteFromIDB } from "./interviewIDB";
 import type { InterviewStep } from "./interviewScripts";
 import { getMiniScript, getScript, scriptHasQuestion } from "./interviewScripts";
 import { saveSessionResult, fetchLLMQuestions, fetchFollowUp, retryQueuedEvals, getAdaptiveHints, negotiationKernelInit, negotiationKernelTurn } from "./interviewAPI";
-import { initLiveSession, saveInterviewTurn, getLatestSessionInsightFlags } from "./supabase";
+import { initLiveSession, getLatestSessionInsightFlags } from "./supabase";
+import { saveInterviewTurn, flushSessionOutbox, installTurnOutboxDrain } from "./interviewTurns";
 import { deriveCandidateState } from "./_emotional-state";
 import { checkFollowUpCap } from "./_follow-up-cap";
+import { isDuplicateQuestionText } from "./_duplicate-question-guard";
 import { extractNounPhrases, appendToMemory } from "./_noun-phrase-memory";
 import type { NegotiationBandData } from "./interviewAPI";
 import type { DeepgramSTTHandle } from "./deepgramSTT";
-import type { SarvamSTTHandle } from "./sarvamSTT";
-import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait } from "./InterviewComponents";
+import { getInterviewerName, getInterviewerGender, getPanelMembers, formatTime, getPersonaTrait, getInterviewerRerollCount } from "./InterviewComponents";
 import type { SpeechRecognitionInstance } from "./speechRecognition";
 import { safeUUID } from "./utils";
 import { computeMicroFeedback } from "./interviewMicroFeedback";
@@ -61,9 +66,11 @@ import {
   decideComponentGapFollowUp,
 } from "./_interview-engine-helpers";
 import type { InterviewerPersonality } from "./_interview-engine-helpers";
+import { useBeforeUnloadGuard } from "./useBeforeUnloadGuard";
 
 /* ─── Draft data shape (for IDB restore) ─── */
 interface InterviewDraft {
+  sessionId?: string;
   transcript: { speaker: "ai" | "user"; text: string; time: string }[];
   currentStep: number;
   elapsed: number;
@@ -138,6 +145,21 @@ export function useInterviewEngine() {
   );
   // Negotiation band (populated by LLM question generation for salary-neg)
   const negotiationBandRef = useRef<NegotiationBandData | null>(null);
+  /* Kernel-authoritative candidate ask (₹LPA), captured when negotiation
+   * metrics are computed at save time. Threaded to the post-session
+   * DealSummaryCard so its "Your Ask" tile shows the SAME value the durable
+   * SessionReport renders (I-10 cross-surface coherence). Null until the
+   * kernel metrics land / for non-kernel sessions → card falls back to
+   * transcript extraction. */
+  const [negotiationCandidateAskLpa, setNegotiationCandidateAskLpa] = useState<number | null>(null);
+  /* S4S5-B3 — joining bonus offered by recruiter; surfaced to DealSummaryCard
+   * so "Final Package" shows "₹X CTC + ₹Y joining bonus" on the done screen. */
+  const [negotiationJoiningBonusLpa, setNegotiationJoiningBonusLpa] = useState<number | null>(null);
+  /* S4-B18 — kernel outcome surfaced to DealSummaryCard so the "Final Package"
+   * tile is gated to accepted sessions only. Without this, backward-scan of
+   * AI text can pick up the candidate's echoed ask as the "final package" on
+   * walk-away / stalemate / in-progress sessions. */
+  const [negotiationKernelOutcome, setNegotiationKernelOutcome] = useState<string | null>(null);
   /* Canonical negotiation kernel: serialized state passed back to the
      server on each turn. Null until the kernel path initialises it
      on first follow-up. */
@@ -198,10 +220,21 @@ export function useInterviewEngine() {
   const isNewSession = searchParams.get("new") === "1";
   const isResuming = searchParams.get("resume") === "true";
   const draftRef = useRef<InterviewDraft | null>(null);
+  // Tracks "a draft existed in storage for this session" separately from
+  // "the draft validated for restore" — a refresh before the first answer
+  // seeds a draft (currentStep: 0, no user turns) that validateRestoredDraft
+  // correctly refuses to *restore* (nothing worth replaying), but its mere
+  // existence proves the interview legitimately started. Without this, the
+  // bounce guard below couldn't tell that apart from a bare back-button
+  // entry with no draft at all, and kicked a mid-interview refresh back to
+  // /dashboard after the session had already been counted/charged.
+  const rawDraftExistedRef = useRef(false);
+  const unansweredSessionIdRef = useRef<string | null>(null);
   if (!draftRef.current) {
     try {
       const raw = localStorage.getItem(draftKey);
       if (raw) {
+        rawDraftExistedRef.current = true;
         if (isNewSession && !isResuming) {
           // Explicit new session from SessionSetup — clear old draft
           localStorage.removeItem(draftKey);
@@ -214,6 +247,12 @@ export function useInterviewEngine() {
           if (valid) {
             draftRef.current = valid;
           } else {
+            // No answer yet: keep the id so a refresh re-sends the SAME sessionId
+            // (idempotent) instead of charging a second credit.
+            if (typeof parsed?.sessionId === "string" && parsed.sessionId && typeof parsed.savedAt === "number"
+              && Date.now() - parsed.savedAt < 30 * 60_000 && (!parsed.interviewType || parsed.interviewType === interviewType)) {
+              unansweredSessionIdRef.current = parsed.sessionId;
+            }
             localStorage.removeItem(draftKey);
             deleteFromIDB(draftKey);
           }
@@ -221,6 +260,26 @@ export function useInterviewEngine() {
       }
     } catch (e) {
       console.warn("[interview] Draft restore failed:", e);
+    }
+  }
+
+  /* H1 (2026-07-12) — adopt the restored draft's session id. record-session-
+   * start (at mount) and save-session (at completion) dedup the quota bump on
+   * session id; a fresh UUID minted per mount defeats that guard, so a plain
+   * page refresh mid-interview was counted as a SECOND session. The draft is
+   * the canonical "resume this exact session" payload, so its id is the single
+   * source of truth for identity across a reload. One-time adoption, and only
+   * for drafts that carry an id (older drafts predate the field → keep the
+   * freshly-minted id). Runs during render, before the mount effects fire, so
+   * liveSessionIdRef holds the restored id by the time record-session-start
+   * reads it. */
+  const sessionIdAdoptedRef = useRef(false);
+  if (!sessionIdAdoptedRef.current) {
+    sessionIdAdoptedRef.current = true;
+    if (draftRef.current?.sessionId) {
+      liveSessionIdRef.current = draftRef.current.sessionId;
+    } else if (unansweredSessionIdRef.current) {
+      liveSessionIdRef.current = unansweredSessionIdRef.current;
     }
   }
 
@@ -247,10 +306,17 @@ export function useInterviewEngine() {
   //     - Fresh start from SessionSetup → has ?new=1
   //     - Resume from dashboard → has ?resume=true
   //     - Page refresh mid-session → draftRef.current is populated
+  //
+  //   B-EMP2 (2026-08-20): this redirect and the record-session-start
+  //   effect below both fire on mount as SEPARATE effects. Before this ref,
+  //   a bounce-worthy entry (no intent, no draft) still let
+  //   record-session-start's effect run and burn a credit for a session
+  //   the user never saw — router.replace() only kicks off navigation, it
+  //   doesn't stop already-scheduled effects. missingStartIntentRef lets
+  //   the later effect check "are we bouncing?" before spending a credit.
+  const missingStartIntentRef = useRef(!(isNewSession || isResuming) && !draftRef.current && !rawDraftExistedRef.current);
   useEffect(() => {
-    const hasExplicitIntent = isNewSession || isResuming;
-    const hasRestorableDraft = !!draftRef.current;
-    if (!hasExplicitIntent && !hasRestorableDraft) {
+    if (missingStartIntentRef.current) {
       console.warn("[interview] Entered /interview with no start intent and no draft — redirecting to /dashboard");
       router.replace("/dashboard");
     }
@@ -296,34 +362,42 @@ export function useInterviewEngine() {
      The endpoint is idempotent on sessionId (handles React StrictMode
      double-mount and any client retry); save-session.ts checks the
      same started_session_ids list to avoid double-bumping on completion.
-     Fire-and-forget with one retry — a transient network blip on the
-     first attempt must not silently drop the session-start record, which
-     would cause quota counting to undercount active sessions. */
+     Fire-and-forget with up to two retries (1.5s, 4s): a transient blip must
+     not drop the session-start record (quota would undercount). */
   useEffect(() => {
     if (!user?.id) return; // anon sessions don't count
+    if (missingStartIntentRef.current) return; // B-EMP2: bouncing to /dashboard — don't charge a credit
     const sessionId = liveSessionIdRef.current;
     (async () => {
-      try {
-        const { apiFetch } = await import("./apiClient");
-        await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
-      } catch (e1) {
-        console.warn("[interview] record-session-start failed, retrying in 2s:", e1 instanceof Error ? e1.message : e1);
-        await new Promise(r => setTimeout(r, 2000));
-        try {
-          const { apiFetch } = await import("./apiClient");
-          await apiFetch("/api/record-session-start", { sessionId, type: interviewType });
-        } catch (e2) {
-          console.error("[interview] record-session-start permanently failed:", e2 instanceof Error ? e2.message : e2);
-          // Quota is counted at START; a permanent failure here means this
-          // session is never debited (free test-drive) AND completion can't
-          // dedupe against it. Track so we can see how often the safeguard
-          // leaks rather than letting it fail silently.
-          captureClientEvent("record_session_start_failed", {
-            session_id: sessionId,
-            type: interviewType,
-            error: e2 instanceof Error ? e2.message : String(e2),
-          });
-        }
+      const { apiFetch } = await import("./apiClient");
+      type StartResp = { ok: boolean; allowed?: boolean; recorded?: boolean; concurrent?: boolean; reason?: string };
+      // apiFetch never rejects; status 0 / 429 / 5xx are transient, retried (idempotent on sessionId).
+      const delays = [0, 1500, 4000];
+      let startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
+      for (let i = 1; i < delays.length && !startResult.ok && (startResult.status === 0 || startResult.status === 429 || startResult.status >= 500); i++) {
+        await new Promise(r => setTimeout(r, delays[i]));
+        startResult = await apiFetch<StartResp>("/api/record-session-start", { sessionId, type: interviewType });
+      }
+      // S9-B24 credit gate: over the free limit with no credits, so go to the upgrade modal.
+      if (!startResult.ok && startResult.status === 403) {
+        const reason = startResult.data?.reason || "";
+        toast(reason || "Session limit reached — redirecting to dashboard.", "info");
+        router.replace("/dashboard?upgrade=1");
+        return;
+      }
+      if (!startResult.ok) {
+        // Fail open: save-session still debits on completion (id absent from started_session_ids).
+        console.error("[interview] record-session-start permanently failed:", startResult.status, startResult.error);
+        captureClientEvent("record_session_start_failed", {
+          session_id: sessionId,
+          type: interviewType,
+          error: startResult.error || `HTTP ${startResult.status}`,
+        });
+        return;
+      }
+      // OA-B50: in-flight session on another device may consume a second credit.
+      if (startResult.data?.concurrent) {
+        toast("Heads-up: it looks like another session is active on a different device. Running two sessions simultaneously may use extra practice credits.", "info");
       }
     })();
     // Mount-only: liveSessionIdRef is stable for this engine instance.
@@ -371,6 +445,15 @@ export function useInterviewEngine() {
           return;
         }
         draftRef.current = d;
+        /* Keep the resumed session's identity stable (H1): save-session and
+         * this session's turns must persist under the id the draft was
+         * started on. Safe here because this branch only runs when no
+         * localStorage draft existed, so no turn has been saved yet under
+         * the freshly-minted id. (The mount-time record-session-start may
+         * already have fired with the fresh id for the rarer IDB-only path;
+         * the common localStorage-refresh path is deduped synchronously
+         * above, before any effect runs.) */
+        if (d.sessionId) liveSessionIdRef.current = d.sessionId;
         setCurrentStep(d.currentStep || 0);
         setTranscript(d.transcript || []);
         setElapsed(d.elapsed || 0);
@@ -442,7 +525,14 @@ export function useInterviewEngine() {
        headline domain-mismatches the session role, scrub resume context for
        this salary-neg fetch only. Behavioral flow still uses resume because
        there the role-role match is unambiguous. */
-    const sessionRoleForFetch = targetRole || user?.targetRole || "";
+    // For campus-placement sessions the URL's ?role= is the canonical source;
+    // never fall back to the Settings profile role (which is often a senior
+    // experienced-hire title that would poison the campus question calibration).
+    // Other focuses use the profile role as a convenience fallback.
+    const isCampusFocus = interviewFocus === "campus-placement";
+    const sessionRoleForFetch = isCampusFocus
+      ? (targetRole || "")
+      : (targetRole || user?.targetRole || "");
     const resumeHeadlineRole = (aiProfile?.headline || "").split(/\s+with\s+/i)[0]?.trim() || "";
     const resumeRoleMismatch =
       interviewType === "salary-negotiation"
@@ -454,11 +544,14 @@ export function useInterviewEngine() {
       try { toast(`Using market data for ${sessionRoleForFetch} — your resume role differs.`, "info"); } catch { /* silent */ }
     }
     const effectiveUseResume = shouldUseResume && !resumeRoleMismatch;
+    const roleForLLM = isCampusFocus
+      ? (targetRole || "Fresher")
+      : (targetRole || user?.targetRole || "the role");
     const llmPromise = fetchLLMQuestions({
       type: interviewType,
       focus: interviewFocus,
       difficulty: interviewDifficulty,
-      role: targetRole || user?.targetRole || "the role",
+      role: roleForLLM,
       company: targetCompany || user?.targetCompany,
       currentCity: currentCity,
       jobCity: jobCity,
@@ -489,13 +582,21 @@ export function useInterviewEngine() {
       drill: drillKey || undefined,
       priorFlags: priorFlagsRef.current.length > 0 ? priorFlagsRef.current : undefined,
     });
-    const timeoutMs = isMiniMode ? 12_000 : 30_000;
+    // hr-round's prompt is the heaviest of the mini-tier types (persona
+    // selection, prior-flag prebias, CSV bias, grounding rules,
+    // hrPersonaContext — see generate-questions.ts) but FOCUS_MINUTES
+    // (SessionSetup.tsx) makes it the ONE mini focus that always has 7
+    // questions to generate, not 3. The tight 12s mini budget was timing
+    // this out disproportionately, falling through to the static fallback
+    // and leaving the spoken 3-question intro mismatched with a 7-question
+    // fallback script. Give it the full budget like non-mini sessions.
+    const timeoutMs = isMiniMode && interviewType !== "hr-round" ? 12_000 : 30_000;
     const timeoutPromise = new Promise<null>((_, reject) => {
       setTimeout(() => reject(new Error("Question generation timed out")), timeoutMs);
     });
     Promise.race([llmPromise, timeoutPromise]).then(result => {
       if (llmFetchCancelRef.current) return;
-      const questions = result?.questions ?? null;
+      const questions = result?._fallback === "static" && interviewType === "hr-round" ? null : (result?.questions ?? null);
       // Store negotiation band for follow-up API calls (validate shape to prevent malformed data)
       if (result?.negotiationBand && typeof result.negotiationBand.initialOffer === "number" && typeof result.negotiationBand.maxStretch === "number") {
         negotiationBandRef.current = result.negotiationBand;
@@ -590,8 +691,8 @@ export function useInterviewEngine() {
       // Don't fall back to static questions (that would let them bypass the
       // gate). Navigate back to the dashboard where they can buy credits or
       // upgrade. The ?upgrade=1 param tells the dashboard to open the modal.
-      // Server sends: "Free plan limit reached", "Pro plan limit reached",
-      // "Starter plan limit reached" — all contain "limit reached".
+      // Server sends: "Free plan limit reached", "Starter plan limit reached"
+      // — all contain "limit reached".
       if (msg.toLowerCase().includes("limit reached")) {
         toast("Session limit reached — redirecting to dashboard.", "info");
         setLlmLoading(false);
@@ -625,7 +726,6 @@ export function useInterviewEngine() {
   // Speech recognition
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
   const deepgramRef = useRef<DeepgramSTTHandle | null>(null);
-  const sarvamRef = useRef<SarvamSTTHandle | null>(null);
   // Restored from draft on resume so an in-progress answer (typed but not yet
   // submitted) survives a tab close / network blip / refresh.
   const [currentTranscript, setCurrentTranscript] = useState<string>(() => {
@@ -645,10 +745,11 @@ export function useInterviewEngine() {
   // Pass a "frozen" phase to the timer when we're awaiting the user's
   // manual speech-start tap so the per-question countdown doesn't burn
   // seconds before they realise it's their turn.
+  const connection = useConnectionState();
   const {
     elapsed, setElapsed, answerTimer, timeRemaining, timePercent,
     handleNextRef,
-  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation");
+  } = useInterviewTimers(awaitingSpeechStart ? "speaking" : phase, currentStep, draftRef.current?.elapsed || 0, toast, interviewType === "salary-negotiation", connection.status === "offline");
 
   // TTS-caption sync: actual audio duration (from TTS provider) and speech-ended flag
   const [ttsDurationMs, setTtsDurationMs] = useState<number | undefined>(undefined);
@@ -657,7 +758,8 @@ export function useInterviewEngine() {
   // UI alongside a silent interviewer reads as broken. Users can opt into
   // speech via the in-composer "Switch to speaking" control. `?nomic=1` still
   // forces text mode regardless.
-  const [speechUnavailable, setSpeechUnavailable] = useState(searchParams.get("nomic") === "1" || VOICE_OUTPUT_DISABLED);
+  const micIntentionallyDisabledRef = useRef(searchParams.get("nomic") === "1" || VOICE_OUTPUT_DISABLED);
+  const [speechUnavailable, setSpeechUnavailable] = useState(micIntentionallyDisabledRef.current);
 
   // Controls
   const [isMuted, setIsMuted] = useState(false);
@@ -691,17 +793,9 @@ export function useInterviewEngine() {
   // Click-recovery for autoplay blocks — see ./_audio-unlock.ts.
   useClickRecoverAutoplay(toast);
 
-  // Prevent accidental navigation/close during active interview
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!interviewEndedRef.current) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, []);
+  // Warn before a hard close/refresh once there is an answer to lose; stays on
+  // through evaluation + save, released when handleEnd settles.
+  const releaseUnloadGuard = useBeforeUnloadGuard(transcript.some(t => t.speaker === "user"));
 
   // Offline + save status + mic error
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
@@ -749,8 +843,19 @@ export function useInterviewEngine() {
      mid-session. Fired from the offline detector below. Auto-clears when
      navigator.onLine flips back. */
   const [reconnecting, setReconnecting] = useState(false);
-  const reconnectAttemptRef = useRef(1);
   const noSpeechCountRef = useRef(0);
+  // Clear per-turn STT error state on every question transition so a single
+  // "no-speech" or mic error doesn't permanently silence the mic for the rest
+  // of the session. speechUnavailable is only set forever on explicit user opt-out
+  // (nomic param) or when the whole TTS cascade fails — transient errors should
+  // recover on the next question.
+  useEffect(() => {
+    if (currentStep === 0) return;
+    noSpeechCountRef.current = 0;
+    setMicError("");
+    setMicQuiet(false);
+    if (!micIntentionallyDisabledRef.current) setSpeechUnavailable(false);
+  }, [currentStep]);
   /* Silence-nudge refs are owned by useListeningInterjections — see
      ./_listening-interjections.ts. */
   /* Conversational continuity — accumulates noun-phrase mentions
@@ -762,8 +867,20 @@ export function useInterviewEngine() {
   const [evaluating, setEvaluating] = useState(false);
   const [evalElapsed, setEvalElapsed] = useState(0);
   const micStreamRef = useRef<MediaStream | null>(null);
-  const interviewerName = useMemo(() => getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}`), [interviewType, interviewFocus, targetCompany, user?.id]);
+  const interviewerName = useMemo(() => {
+    const reroll = getInterviewerRerollCount(user?.id);
+    return getInterviewerName(`${interviewType}-${interviewFocus}-${targetCompany}-${user?.id || ""}-${reroll}`, user?.id, targetCompany);
+  }, [interviewType, interviewFocus, targetCompany, user?.id]);
   const interviewerGender = useMemo(() => getInterviewerGender(interviewerName), [interviewerName]);
+  // Pick a random female voice once per session (seeded by interviewerName so
+  // the same interviewer always uses the same voice, but different interviewers
+  // give variety across sessions). Male interviewers use no voiceId hint
+  // (server picks from the male pool by default).
+  const interviewerSarvamVoice = useMemo(() => {
+    if (interviewerGender !== "female") return undefined;
+    const hash = interviewerName.split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+    return SARVAM_FEMALE_VOICES[Math.abs(hash) % SARVAM_FEMALE_VOICES.length];
+  }, [interviewerGender, interviewerName]);
 
   /* ─── Personalised intro for behavioural sessions ───
      The static behavioural script opens with anonymous "I'm your AI
@@ -822,10 +939,13 @@ export function useInterviewEngine() {
       if (firstExp) return [`${cleanPhrase(firstExp.title)} at ${cleanPhrase(firstExp.company)}`];
       return [];
     })();
+    // Campus placement: never inject the profile role into Q1 — the intro
+    // should greet a fresher, not someone interviewing for "Senior Product Designer".
+    const isCampusFocus = interviewFocus === "campus-placement";
     const intro = buildBehavioralIntro({
       interviewerName,
       candidateName: user?.name || undefined,
-      role: targetRole || user?.targetRole || undefined,
+      role: isCampusFocus ? (targetRole || "Fresher") : (targetRole || user?.targetRole || undefined),
       company: targetCompany || user?.targetCompany || undefined,
       topProjects: introTopProjects.length ? introTopProjects : undefined,
     });
@@ -883,10 +1003,14 @@ export function useInterviewEngine() {
       let maleIdx = 0, femaleIdx = 0;
       for (const member of panelMembers) {
         const pool = member.gender === "male" ? maleVoices : femaleVoices;
-        const fallbackPool = pool.length > 0 ? pool : (maleVoices.length > 0 ? maleVoices : femaleVoices);
-        const idxRef = member.gender === "male" ? maleIdx : femaleIdx;
-        if (fallbackPool.length > 0) {
-          voiceMap[member.title] = fallbackPool[idxRef % fallbackPool.length].id;
+        // Only assign a Cartesia voice when a gender-matched voice exists.
+        // Assigning a cross-gender fallback voice here would cause a female
+        // panelist to speak in a male voice (or vice versa) via Cartesia.
+        // Leaving the entry absent lets speakAs() fall through to Sarvam/Azure
+        // which select voices by gender correctly.
+        if (pool.length > 0) {
+          const idxRef = member.gender === "male" ? maleIdx : femaleIdx;
+          voiceMap[member.title] = pool[idxRef % pool.length].id;
           if (member.gender === "male") maleIdx++; else femaleIdx++;
         }
       }
@@ -918,14 +1042,21 @@ export function useInterviewEngine() {
   const ttsInstanceIdRef = useRef(0);
   const interviewEndedRef = useRef(false);
 
+  // The recovery hook's effect is mount-only, so it reads this ref rather
+  // than closing over `user` directly — user?.id is often still undefined
+  // on the first render while auth is loading.
+  const userIdRef = useRef<string | undefined>(user?.id);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+
+  useEffect(() => { installTurnOutboxDrain(); }, []);
+
   // Online/offline recovery — see ./_recovery.ts for the debounce reasoning.
   useOnlineOfflineRecovery({
     setIsOffline,
     setReconnecting,
-    reconnectAttemptRef,
-    currentStepRef,
-    interviewEndedRef,
-    retryQueuedEvals,
+    active: currentStep > 0 && phase !== "done",
+    retryQueuedEvals: () => retryQueuedEvals(userIdRef.current),
+    flushOutbox: () => flushSessionOutbox(),
     fetchPersonalizedQuestions,
     saveWarningRef,
   });
@@ -940,17 +1071,19 @@ export function useInterviewEngine() {
     return () => window.removeEventListener("beforeunload", handleUnload);
   }, []);
 
-  // Auto-save draft (clear draft when interview completes to prevent stale restore)
+  // Auto-save draft. Stop re-arming the autosave once the interview reaches
+  // "done", but do NOT delete the draft here: handleEnd fires shortly after
+  // phase flips to "done" and owns clearing draftKey itself, only after the
+  // session save has actually been attempted. Deleting it eagerly on the
+  // phase transition used to mean closing the tab during evaluation (scoring
+  // can take up to 45s) lost the whole interview — the draft was already
+  // gone with nothing left to restore even though nothing had been saved yet.
   useEffect(() => {
-    if (phase === "done" || evaluating) {
-      // Interview completed — clear draft so next session starts fresh
-      try { localStorage.removeItem(draftKey); } catch { /* non-critical */ }
-      deleteFromIDB(draftKey);
-      return;
-    }
+    if (phase === "done") return;
     const saveDraft = () => {
       // Snapshot shape lives in src/_session-draft.ts (testable + reusable).
       const draftData = buildDraftSnapshot({
+        sessionId: liveSessionIdRef.current,
         transcript, currentTranscript,
         currentStep, elapsed,
         interviewType, interviewDifficulty, interviewFocus,
@@ -960,13 +1093,14 @@ export function useInterviewEngine() {
       try { localStorage.setItem(draftKey, JSON.stringify(draftData)); } catch { /* expected: localStorage may be unavailable */ }
       saveToIDB(draftKey, draftData);
     };
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
+    const handleBeforeUnload = () => {
       saveDraft();
       // Fire-and-forget abandonment analytics (use sendBeacon since page is unloading)
       try {
         const completionRate = totalQuestions > 0 ? currentStep / totalQuestions : 0;
         const body = JSON.stringify({
+          message: "session_abandoned",
+          level: "info",
           event: "session_abandoned",
           type: interviewType,
           difficulty: interviewDifficulty,
@@ -991,17 +1125,18 @@ export function useInterviewEngine() {
     };
     // The draft-save fires every 15s and on unload; it reads draftKey/interviewScript/targetCompany/targetRole/totalQuestions latest-values inside the snapshot closure. Adding them as deps would re-bind the beforeunload listener on every keystroke (transcript/currentTranscript change) and was explicitly avoided.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, evaluating, transcript, currentTranscript, currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus]);
+  }, [phase, transcript, currentTranscript, currentStep, elapsed, interviewType, interviewDifficulty, interviewFocus]);
 
   // Cancel speech + recognition on unmount or when voice toggled
   useEffect(() => {
     return () => {
       // We deliberately read the latest ref.current at cleanup time — capturing now would abort an already-replaced STT instance and leak the new one. Refs here point to STT clients, not React-rendered DOM nodes.
       ttsCancelRef.current?.();
+      // Fire-and-forget speak() calls (silence nudges, backchannels) keep no cancel handle, so silence everything at module level when the interview unmounts.
+      hardMuteTTS();
       recognitionRef.current?.stop();
       /* eslint-disable react-hooks/exhaustive-deps */
       deepgramRef.current?.abort();
-      sarvamRef.current?.abort();
       /* eslint-enable react-hooks/exhaustive-deps */
     };
   }, [aiVoiceEnabled]);
@@ -1055,7 +1190,7 @@ export function useInterviewEngine() {
     toast("Listening — speak when ready", "info");
   }, [phase, toast]);
 
-  // STT fallback chain: Deepgram → Sarvam → Web Speech API + mic stream capture
+  // STT fallback chain: Deepgram → Web Speech API + mic stream capture
   // STT is gated behind awaitingSpeechStart — we pretend phase isn't yet
   // "listening" so the hook doesn't auto-start until the user clicks the
   // "Start speaking" button.
@@ -1064,7 +1199,7 @@ export function useInterviewEngine() {
     toast, textareaRef, interviewEndedRef,
     onLowSttConfidence: (snapshot) => { sttLowConfidenceRef.current = snapshot; },
   }, {
-    recognitionRef, deepgramRef, sarvamRef, noSpeechCountRef, micStreamRef,
+    recognitionRef, deepgramRef, noSpeechCountRef, micStreamRef,
   }, sttRestartTrigger);
 
   /* ── micQuiet poll ───────────────────────────────────────────────
@@ -1107,7 +1242,7 @@ export function useInterviewEngine() {
     ttsCancelRef.current?.();
     ttsCancelRef.current = null;
     const instanceId = ++ttsInstanceIdRef.current;
-    speak(stepObj.aiText, () => {}, () => {}, interviewerGender).then((handle) => {
+    speak(stepObj.aiText, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).then((handle) => {
       if (ttsInstanceIdRef.current === instanceId) {
         ttsCancelRef.current = handle.cancel;
       } else {
@@ -1151,7 +1286,7 @@ export function useInterviewEngine() {
     aiVoiceEnabled,
     currentStep,
     currentTranscript,
-    speak: (text) => speak(text, () => {}, () => {}, interviewerGender),
+    speak: (text) => speak(text, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice),
     pickLine: () => pickRandom(REACTIONS.backchannels),
     ramblingFiredRef,
     softTrackFiredRef,
@@ -1456,6 +1591,11 @@ export function useInterviewEngine() {
         // signup → wow-moment conversion is working.
         is_first_session: (user?.practiceTimestamps?.length ?? 0) === 0,
       });
+      sendGtagEvent("interview_started", {
+        focus: interviewType,
+        mode: isMiniMode ? "mini" : "full",
+        is_panel: isPanelInterview,
+      });
       }
     }
 
@@ -1681,7 +1821,6 @@ export function useInterviewEngine() {
            * show a durable "audio unavailable" banner, then advances the
            * engine state via onSpeechEnd so the interview keeps moving. */
           const onAllTtsProvidersFailed = () => {
-            flagTtsError("Audio unavailable — please read questions on screen and type your answers.");
             setTtsFailed(true);
             onSpeechEnd();
           };
@@ -1689,7 +1828,7 @@ export function useInterviewEngine() {
           ttsCharsRef.current += (step.aiText ?? "").length;
           return panelVoiceId
             ? speakAs(step.aiText, panelVoiceId, onSpeechEnd, onAllTtsProvidersFailed, panelGender, onDurationKnown, revealTranscript)
-            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript);
+            : speak(step.aiText, onSpeechEnd, onAllTtsProvidersFailed, fallbackGender, onDurationKnown, revealTranscript, interviewerSarvamVoice);
         };
         speakPanel().then(handle => {
           if (ttsInstanceIdRef.current === instanceId) {
@@ -1726,7 +1865,7 @@ export function useInterviewEngine() {
           // Brief micro-pause between phrase and question (300-600ms)
           setTimeout(startSpeaking, randomDelay(300, 600));
         };
-        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender).then(handle => {
+        speak(thinkingPhrase, onPhraseDone, onPhraseDone, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
           if (ttsInstanceIdRef.current === phraseInstanceId) {
             ttsCancelRef.current = handle.cancel;
           } else {
@@ -1836,7 +1975,13 @@ export function useInterviewEngine() {
        * paths the legacy 4 s race is preserved (those code paths are
        * tuned to it). */
       const timeoutMs = isSalaryNegConversation ? 25_000 : 4_000;
-      const timeout = new Promise<null>(r => setTimeout(() => r(null), timeoutMs));
+      /* Salary-neg: the 25 s sentinel only counts reachable time, so a network
+       * drop (which the kernel IIFE now holds through) can't expire it and
+       * force the salvage closing. Non-salary keeps the plain 4 s race. */
+      const budget = isSalaryNegConversation
+        ? createOnlineBudget({ budgetMs: timeoutMs, ceilingMs: DEFAULT_MAX_HOLD_MS + 60_000, isReachable: () => isReachable(getConnectionState()) })
+        : null;
+      const timeout = budget ? budget.promise : new Promise<null>(r => setTimeout(() => r(null), timeoutMs));
 
       // For salary-neg: speak thinking phrase IMMEDIATELY to eliminate dead air,
       // then wait for follow-up API in background. This means the user hears
@@ -1866,7 +2011,7 @@ export function useInterviewEngine() {
         setTimeout(() => {
           if (isStale() || interviewEndedRef.current) return;
           const phraseInstanceId = ++ttsInstanceIdRef.current;
-          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender).then(handle => {
+          speak(thinkingPhrase!, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).then(handle => {
             if (ttsInstanceIdRef.current === phraseInstanceId) {
               ttsCancelRef.current = handle.cancel;
             } else {
@@ -1877,6 +2022,7 @@ export function useInterviewEngine() {
       }
 
       Promise.race([pendingFollowUp, timeout]).then(result => {
+        budget?.cancel();
         if (isStale() || interviewEndedRef.current) return;
         // Drop stale follow-ups: we only apply if the engine is exactly one
         // step past the originating question. If the user advanced further
@@ -2228,6 +2374,14 @@ export function useInterviewEngine() {
                   return prev;
                 }
               }
+              // See src/_duplicate-question-guard.ts — nothing above this
+              // point checks TEXT, only turn count, so a stale-ref race or
+              // a confused LLM echoing an earlier prompt can otherwise
+              // insert a question identical to one already asked (BUG C).
+              if (isDuplicateQuestionText(followUpStep.aiText, prev, currentStep)) {
+                console.warn("[interview] Skipping follow-up — duplicate of an already-asked question");
+                return prev;
+              }
               return [
                 ...prev.slice(0, currentStep),
                 followUpStep,
@@ -2282,6 +2436,7 @@ export function useInterviewEngine() {
           }
         }
       }).catch(() => {
+        budget?.cancel();
         if (!isStale() && !interviewEndedRef.current) {
           if (isSalaryNegConversation) {
             // PDF#46 follow-up — same salvage as the null-result branch.
@@ -2379,7 +2534,7 @@ export function useInterviewEngine() {
         setCurrentTranscript("");
         advancingRef.current = false;
         clearTimeout(advancingSafetyTimer);
-        speak(currentStepObj.aiText, () => {}, () => {}, interviewerGender).catch(() => {});
+        speak(currentStepObj.aiText, () => {}, () => {}, interviewerGender, undefined, undefined, interviewerSarvamVoice).catch(() => {});
         return;
       }
     }
@@ -2467,12 +2622,17 @@ export function useInterviewEngine() {
         ]).acceptedImmediately
       : false;
     // Suppress when (a) the just-answered turn was an opener/closing,
-    // (b) this is the last real answer before closing, or (c) the
-    // candidate has already accepted.
+    // (b) this is the last real answer before closing (non-negotiation only), or
+    // (c) the candidate has already accepted.
+    // OA-B42: in salary-negotiation the 3-step static script always has `closing`
+    // at index 2 — the kernel hasn't inserted its placeholder slots yet, so
+    // `nextStepType === "closing"` would ALWAYS be true, silencing coaching on
+    // every turn. Exempt salary-negotiation from this check; `acceptedAlready`
+    // handles suppression once the deal is actually done.
     const skipMicroFeedback =
       justAskedType === "intro" ||
       justAskedType === "closing" ||
-      nextStepType === "closing" ||
+      (interviewType !== "salary-negotiation" && nextStepType === "closing") ||
       acceptedAlready;
     setMicroFeedback(null);
     if (
@@ -2603,7 +2763,7 @@ export function useInterviewEngine() {
         interviewType, currentStep, scriptStepTypes: stepTypes,
       });
 
-      if (depth <= 2) {
+      if (depth <= (interviewType === "hr-round" ? 0 : 2)) {
         followUpDepthRef.current = depth;
         const followUpAiProfile = (user?.resumeData as Record<string, unknown> | undefined)?.aiProfile as {
           topSkills?: string[];
@@ -2806,6 +2966,11 @@ export function useInterviewEngine() {
                   totalYoe: totalYoeFromResume,
                   applicableYoe: yoeResult.applicableYoe,
                   primaryDomain: primaryDomainFromResume,
+                  /* B6 — forward the candidate's pre-stated target so the
+                     server can clamp the opening offer to leave at least
+                     12% negotiation headroom. targetSalary is set from the
+                     setup wizard's "what are you targeting?" field. */
+                  candidateTargetLpa: typeof targetSalary === "number" && targetSalary > 0 ? targetSalary : null,
                 });
                 if (!initRes) return null;
                 negotiationKernelStateRef.current = initRes.state;
@@ -2830,32 +2995,45 @@ export function useInterviewEngine() {
                     lever: initRes.move.lever,
                     newTotalLpa: initRes.move.newTotalLpa,
                     turnIndex: typeof parsedInit.turnIndex === "number" ? parsedInit.turnIndex : 0,
-                    candidateTargetAtTurn: typeof parsedInit.candidateTarget === "number" ? parsedInit.candidateTarget : null,
+                    /* Effective anchor from the server (folds fixed-only asks) —
+                       NOT the opaque state's raw candidateTarget, which misses a
+                       base-only "48 LPA fixed" anchor and false-reads "never
+                       named a number". See NegotiationKernelResponse.candidateAnchorLpa. */
+                    candidateTargetAtTurn: typeof initRes.candidateAnchorLpa === "number" ? initRes.candidateAnchorLpa : null,
                   });
                 } catch { /* non-fatal */ }
               }
-              /* Single-retry on transient null. The original
-               * implementation returned null on the first failure —
-               * meaning a single dropped packet / cold-start blip / 502
-               * mid-stream wrote off the entire turn and (with the
-               * salvage path) ended the session prematurely. Production
-               * kernel-turn failures are dominated by transient causes
-               * (LLM provider cold starts, brief 502s during deploys),
-               * so a single retry with a short backoff catches the
-               * majority without doubling the average latency. Two
-               * consecutive nulls is a real outage — we surface that
-               * honestly. */
-              let turnRes = await negotiationKernelTurn({
-                state: negotiationKernelStateRef.current,
-                candidateAnswer: answerText,
-              });
-              if (!turnRes) {
-                track("negotiate_turn_failed", { reason: "null_response_first" });
-                await new Promise(r => setTimeout(r, 600));
-                turnRes = await negotiationKernelTurn({
-                  state: negotiationKernelStateRef.current,
-                  candidateAnswer: answerText,
-                });
+              /* Hold-and-retry (see _turn-retry.ts). A transient null used to
+               * be retried once after 600ms and then ended the session via the
+               * scripted-closing salvage — which is exactly what a 20 s network
+               * drop produced. Now, if the server is unreachable the turn is
+               * HELD until connectivity returns (the server dedupes a replayed
+               * turn by state+answer, so re-sending is safe); only a reachable
+               * server that keeps failing falls through to the salvage. */
+              const releaseHeartbeat = acquireHeartbeat();
+              const kernelAnswer = answerText;
+              const kernelState = negotiationKernelStateRef.current;
+              if (!kernelState) return null;
+              let turnRes: Awaited<ReturnType<typeof negotiationKernelTurn>>;
+              try {
+                ({ value: turnRes } = await runWithHold({
+                  attempt: () => negotiationKernelTurn({
+                    state: kernelState,
+                    candidateAnswer: kernelAnswer,
+                  }),
+                  probe: retryNow,
+                  waitReachable: ({ timeoutMs }) => waitForReachable({ timeoutMs }),
+                  sleep: (ms) => new Promise<void>(r => setTimeout(r, ms)),
+                  now: Date.now,
+                  isCancelled: () => interviewEndedRef.current,
+                  onEvent: (event, detail) => {
+                    if (event === "held" || event === "resumed") {
+                      track(`negotiate_turn_${event}`, { attempts: Number(detail.attempts ?? 0), held_ms: Number(detail.heldMs ?? 0) });
+                    }
+                  },
+                }));
+              } finally {
+                releaseHeartbeat();
               }
               if (!turnRes) {
                 /* Observability — silent null was the original
@@ -2931,7 +3109,12 @@ export function useInterviewEngine() {
                   lever: turnRes.move.lever,
                   newTotalLpa: turnRes.move.newTotalLpa,
                   turnIndex: typeof parsedState.turnIndex === "number" ? parsedState.turnIndex : kernelMovesRef.current.length,
-                  candidateTargetAtTurn: typeof parsedState.candidateTarget === "number" ? parsedState.candidateTarget : null,
+                  /* Effective anchor from the server (folds fixed-only asks) —
+                     see the init-branch note and NegotiationKernelResponse.
+                     candidateAnchorLpa. Reading the opaque state's raw
+                     candidateTarget here was the source of the "48 LPA fixed →
+                     no counter named" cross-surface divergence. */
+                  candidateTargetAtTurn: typeof turnRes.candidateAnchorLpa === "number" ? turnRes.candidateAnchorLpa : null,
                 });
               } catch {
                 /* serialized state shape changed under us — non-fatal,
@@ -3196,9 +3379,17 @@ export function useInterviewEngine() {
           return [...prev.slice(0, nextIdx), placeholder, ...prev.slice(nextIdx)];
         });
       }
+      // OA-B17: the advance is complete — release the lock before phase flips.
+      // Without this, short TTS (thinking+speaking < 4s) hits the next listening
+      // phase with advancingRef still true and the user's first tap is silently
+      // dropped. The 4s safety backstop above only fires after the fact.
+      clearTimeout(advancingSafetyTimer);
+      advancingRef.current = false;
       setPhase("thinking");
       setCurrentStep(currentStep + 1);
     } else {
+      clearTimeout(advancingSafetyTimer);
+      advancingRef.current = false;
       setPhase("done");
     }
     // handleNextQuestion is the central transition function. Many of the values flagged (aiVoiceEnabled / currentCity / interviewerGender / isPanelInterview / jobCity / jobDescription / negotiationScenario / negotiationStyle / targetSalary / toast / transcript) are read at *fire-time* from latest closures inside the callback body — adding them as deps would re-create the function on every keystroke and re-bind every effect that depends on it. The values we DO bind to are the minimum trigger set.
@@ -3412,16 +3603,20 @@ export function useInterviewEngine() {
 
     // Global escape hatch — no matter what hangs below (eval, auth refresh,
     // supabase save, service-worker intercept), navigate to the session
-    // detail after 35s so the user never stares at a dead spinner. The
+    // detail after 58s so the user never stares at a dead spinner. The
     // rich v6 report will regenerate server-side when SessionReportView
     // mounts, and partial local saves survive page navigation.
+    // Set above the 45s eval abort below (+ ~13s margin for auth refresh
+    // and the save round-trip) so a real evaluation isn't cut off by this
+    // outer guard before its own timeout even has a chance to fire.
     const escapeHatch = setTimeout(() => {
-      console.warn("[interview] handleEnd exceeded 35s — forcing navigation to session detail");
+      console.warn("[interview] handleEnd exceeded 58s — forcing navigation to session detail");
       // replace not push — same reasoning as the success path: back-button
       // from /session/[id] must not land on /interview.
+      releaseUnloadGuard();
       try { router.replace(`/session/${sessionId}`); } catch { /* best effort */ }
       setEvaluating(false);
-    }, 35_000);
+    }, 58_000);
     let score = 0;
     let aiFeedback = "";
     let skillScores: Record<string, number> | null = null;
@@ -3436,17 +3631,22 @@ export function useInterviewEngine() {
       setCurrentTranscript("");
     }
 
-    // Evaluation timeout controller — shortened from 40s to 18s.
-    // The *rich* per-question evaluation now runs via /api/evaluate-session when
-    // the user opens their report, so this quick pre-save eval only needs to
-    // produce a usable score. Fallback scores are honest and the user lands
-    // on the report faster; SessionReportView computes the full v6 report
-    // there with proper caching.
+    // Evaluation timeout controller — raised from 18s to 45s (2026-10-04).
+    // Production llm_usage logs showed evaluate-session calls that fall back
+    // from Groq to Gemini (common: Groq's on_demand tier caps at 8000 TPM)
+    // routinely take 34-38s — always past the old 18s budget, which meant
+    // the Gemini-fallback path got a fake heuristic score and canned
+    // "Evaluation unavailable" message on effectively every request it
+    // served. 45s clears that observed latency with headroom. The *rich*
+    // per-question evaluation still runs separately via /api/evaluate-session
+    // when the user opens their report (with its own caching + retry), but
+    // candidates who never reopen the report should still get a real score
+    // from this quick pre-save eval whenever possible.
     const evalAbort = new AbortController();
     const safetyTimer = setTimeout(() => {
-      console.warn("[interview] handleEnd evaluation timeout (18s) — aborting fetch, using fallback scores");
+      console.warn("[interview] handleEnd evaluation timeout (45s) — aborting fetch, using fallback scores");
       evalAbort.abort();
-    }, 18_000);
+    }, 45_000);
 
     try {
     /* End-of-session evaluation — see ./_evaluation-flow.ts. The flow is
@@ -3623,6 +3823,17 @@ export function useInterviewEngine() {
           "../server-handlers/_decision-log-readers"
         );
         const flagSummary = guardrailFlagSummary(finalState);
+        /* Surface the kernel-authoritative ask to the transient DealSummaryCard
+         * so its "Your Ask" tile matches the durable report (I-10). */
+        setNegotiationCandidateAskLpa(m.candidateAskLpa ?? null);
+        /* S4-B18 — surface kernel outcome so DealSummaryCard can gate the
+         * "Final Package" tile to accepted sessions only. Use `m.outcome`
+         * (the raw computeNegotiationMetrics result) — `negotiationMetrics`
+         * hasn't been assigned yet at this point in the block. */
+        setNegotiationKernelOutcome(m.outcome);
+        /* S4S5-B3 — surface joining bonus (if any) for the DealSummaryCard
+         * "Final Package" tile so it reads "₹X CTC + ₹Y joining bonus". */
+        setNegotiationJoiningBonusLpa(m.lastJoiningBonusOffered ?? null);
         negotiationMetrics = {
           ...m,
           score: scoreNegotiationBehaviour(m),
@@ -3667,7 +3878,12 @@ export function useInterviewEngine() {
       resumeVersionId: resumeVersionIdRef.current,
       jobDescription: jobDescription || undefined,
       jdAnalysis: jdAnalysisData || null,
-      targetRole: targetRole || user?.targetRole || undefined,
+      // For campus-placement, never fall back to the profile role — store
+      // what the candidate actually typed (or null), so the report and
+      // future sessions don't inherit the wrong career level.
+      targetRole: interviewFocus === "campus-placement"
+        ? (targetRole || undefined)
+        : (targetRole || user?.targetRole || undefined),
       targetCompany: targetCompany || user?.targetCompany || undefined,
       negotiationMetrics,
     };
@@ -3684,6 +3900,15 @@ export function useInterviewEngine() {
       ]);
       localOk = saveResult.localOk;
       cloudOk = saveResult.cloudOk;
+      // Signal DashboardContext to invalidate its session cache on next
+      // mount. DashboardProvider is not mounted during /interview (it lives
+      // in the (dashboard) layout group), so we use a localStorage flag
+      // that the data-fetch useEffect reads and consumes on remount.
+      // This is the B9 fix: sessions list updates automatically after
+      // session completion without requiring a hard reload.
+      if (cloudOk && user?.id) {
+        try { localStorage.setItem(`hirestepx_sessions_dirty_${user.id}`, "1"); } catch { /* non-critical */ }
+      }
     } catch (saveErr) {
       console.error("[interview] saveSessionResult threw:", saveErr);
       // Even when the in-line save throws, enqueue for background retry
@@ -3709,6 +3934,11 @@ export function useInterviewEngine() {
         ).catch(() => { /* IDB unavailable — local-only is still saved */ });
       }
     } else if (!localOk && !cloudOk) {
+      if (user?.id) {
+        void import("./saveRetryQueue").then(({ enqueueSave }) =>
+          enqueueSave(savePayload, user.id, "local and cloud save both failed")
+        ).catch(() => { /* IDB unavailable — the reduced backup below is the last resort */ });
+      }
       try {
         await saveToIDB(`hirestepx_unsaved_${sessionId}`, {
           id: sessionId, date: new Date().toISOString(), type: interviewType,
@@ -3768,15 +3998,16 @@ export function useInterviewEngine() {
     track("interview_completed", { type: interviewType, questionsAnswered: currentQuestionNum, duration: elapsed });
     // PostHog: per-focus completion signal — terminal node of the
     // selected → started → completed funnel. Score / duration / question
-    // count let the dashboard build "Pro plan engagement by focus" or
-    // "fallback rate by focus" insights without joining elsewhere.
+    // count let the dashboard build "engagement by focus" or "fallback
+    // rate by focus" insights without joining elsewhere.
     // Snapshot COGS accumulators before any cleanup resets them.
     const sessionTtsChars = ttsCharsRef.current;
     const sessionSttSeconds = Math.round(sttAudioSecondsRef.current * 10) / 10;
-    // Estimated TTS cost: Sarvam Bulbul v2 = ₹15/10K chars.
+    // Estimated TTS cost: Sarvam Bulbul v3 = ₹30/10K chars (v2, ₹15/10K, was
+    // deprecated by Sarvam on 15 Aug 2026).
     // Estimated STT cost: Sarvam Saarika = ₹30/hr → ₹0.00833/sec; Deepgram = $0.0077/min → ₹0.0108/sec.
     // Using Deepgram rate as current provider. Switch constant when migrating to Sarvam.
-    const ttsCostInr = Math.round((sessionTtsChars / 10_000) * 15 * 100) / 100;
+    const ttsCostInr = Math.round((sessionTtsChars / 10_000) * 30 * 100) / 100;
     const sttCostInr = Math.round(sessionSttSeconds * (0.0077 / 60) * 84 * 100) / 100;
     captureClientEvent("interview_session_completed", {
       focus: interviewType,
@@ -3798,9 +4029,18 @@ export function useInterviewEngine() {
       tts_cost_inr_est: ttsCostInr,
       stt_cost_inr_est: sttCostInr,
     });
+    sendGtagEvent("interview_completed", {
+      focus: interviewType,
+      score,
+      duration_seconds: elapsed,
+      questions_answered: currentQuestionNum,
+    });
 
-    try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
-    try { await deleteFromIDB(draftKey); } catch { /* expected: IDB cleanup is non-critical */ }
+    // Nothing persisted anywhere ("failed") means the draft is the only copy: keep it so the user can resume and re-save.
+    if (savePath !== "failed") {
+      try { localStorage.removeItem(draftKey); } catch { /* expected: localStorage cleanup is non-critical */ }
+      try { await deleteFromIDB(draftKey); } catch { /* expected: IDB cleanup is non-critical */ }
+    }
     try {
       // /api/sessions/save already atomically appends the timestamp and sets
       // has_completed_onboarding=true server-side. We still call updateUser
@@ -3840,6 +4080,7 @@ export function useInterviewEngine() {
     } finally {
       clearTimeout(safetyTimer);
       clearTimeout(escapeHatch);
+      releaseUnloadGuard();
       setEvaluating(false);
     }
     // handleEnd reads many derived values (draftKey/evalTimedOut/evaluating/interviewScript/jdAnalysisData/jobDescription/negotiationStyle/shouldUseResume/targetRole/targetSalary/toast/usedFallbackScore) at fire-time. It runs exactly once per session — re-creating the callback on each of these would only churn ref identity without changing behavior since handleEndRef holds the latest version.
@@ -3872,7 +4113,15 @@ export function useInterviewEngine() {
     const totalQs = questionSteps.length;
     const negotiationPhases = ["offer-reaction", "probe-expectations", "counter-offer", "benefits-discussion", "closing-pressure", "closing"];
     const ratio = totalQs > 1 ? (currentQuestionIdx - 1) / (totalQs - 1) : 0;
-    const phaseIdx = Math.min(Math.round(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 1);
+    /* S41-B4/B6 / S42-B5 / S43-B5 — "closing" phase must not be assigned
+     * until the final question; Math.round was reaching closing prematurely
+     * for short sessions (4–6 Qs), causing "Confirm all terms explicitly"
+     * to fire during counter-offer exchanges. Floor + cap ensures we only
+     * enter closing at the last step. */
+    const atLastQ = currentQuestionIdx >= totalQs;
+    const phaseIdx = atLastQ
+      ? negotiationPhases.length - 1
+      : Math.min(Math.floor(ratio * (negotiationPhases.length - 1)), negotiationPhases.length - 2);
     const phase = negotiationPhases[phaseIdx] || "offer-reaction";
     // Leverage score: 0-100 based on tactics used
     let leverage = 30; // baseline
@@ -4025,7 +4274,10 @@ export function useInterviewEngine() {
     ttsFailed,
     micQuiet,
     reconnecting,
-    reconnectAttempt: reconnectAttemptRef.current,
+    reconnectAttempt: connection.attempt,
+    nextProbeAt: connection.nextProbeAt,
+    connectionStatus: connection.status,
+    retryConnectionNow: retryNow,
     usedFallbackScore,
     evalTimedOut,
     lastSessionId,
@@ -4060,6 +4312,9 @@ export function useInterviewEngine() {
     isSalaryNegotiation: interviewType === "salary-negotiation",
     negotiationStyle: negotiationStyle || undefined,
     negotiationBand: negotiationBandRef.current,
+    negotiationCandidateAskLpa,
+    negotiationJoiningBonusLpa,
+    negotiationKernelOutcome,
     targetSalary,
     setTargetSalary,
     highestOffer: highestOfferRef.current,

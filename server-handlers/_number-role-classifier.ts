@@ -52,7 +52,7 @@
  * Pure. No clock, no IO.
  */
 
-import { substituteEnglishNumbers, substituteVagueSalaryDecades } from "./_fact-parser";
+import { substituteAbsoluteRupees, substituteEnglishNumbers, substituteForeignCurrency, substituteThousandScale, substituteVagueSalaryDecades, stripUrls } from "./_fact-parser";
 
 /* ─── Type surface ─────────────────────────────────────────────────── */
 
@@ -66,6 +66,11 @@ export interface NumberRoleContext {
    *  AND the candidate replies with a bare number, the default role
    *  is `target` (the bot just asked for it). */
   phase?: string;
+  /** OA-B3 — the candidate's already-established current CTC (LPA) from
+   *  prior state. Used as the base for resolving a percentage-expressed
+   *  target ("20% above my CTC") when no current-CTC figure is disclosed
+   *  in the same utterance. Null/undefined when unknown. */
+  currentCtc?: number | null;
 }
 
 export interface NumberRoleResult {
@@ -93,11 +98,13 @@ export interface NumberRoleResult {
 
 const USD_TO_INR = 83;
 /* Window sizes for left/right cue search around each number span.
- * 40 chars before the number captures typical "I am currently
- * earning around ₹..." phrasings without crossing sentence boundaries.
- * 25 chars after captures trailing qualifiers ("...24 LPA CTC
- * overall right now"). */
-const LEFT_WINDOW = 40;
+ * 65 chars before the number captures longer phrasings like "my current
+ * CTC is somewhere between 25 and 27 lakhs" where the "current CTC" cue
+ * is >40 chars before the second number. 40 was too narrow: the "between"
+ * keyword (a TARGET cue) sat inside the old window and won the competition
+ * over the explicit "current CTC" cue that sat just outside it. (S30-B1/B2)
+ * 25 chars after captures trailing qualifiers ("...24 LPA CTC overall right now"). */
+const LEFT_WINDOW = 65;
 const RIGHT_WINDOW = 25;
 /* Output sanity clamp (also enforced by the kernel's `clampInr`).
  * Anything outside [1, 5000] LPA is implausible for an Indian
@@ -133,9 +140,21 @@ interface CueTable {
 const CURRENT_CUES: CueTable = {
   left: [
     /\bcurrent(?:ly)?\b/i,
-    /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total)\b/i,
+    /\bmy\s+(?:current\s+)?(?:[a-z]+\s+){0,3}(?:package|salary|ctc|comp(?:ensation)?|pay|fitment|fixed|total|gross)\b/i,
+    /* S148 (2026-07-31): "gross" is an unambiguous present-compensation cue —
+     * candidates disclose current pay as "annual gross of 32 lakhs" or "gross
+     * salary is 32L". The possessive `my ... gross` shape is covered above;
+     * these two frames cover the non-possessive "annual gross of N" and the
+     * "gross salary/pay/ctc" collocations, neither of which a target ask uses. */
+    /\bannual\s+gross\b/i,
+    /\bgross\s+(?:salary|pay|ctc|package|comp(?:ensation)?)\b/i,
     /\bi\s+(?:make|earn|get|draw)\b/i,
-    /\bi.?m\s+at\b/i,
+    /* S48-B1/S49-B1/S50-B1 (2026-07-24): "I am at N" / "I am on N" — the legacy
+     * `\bi.?m\s+at\b` pattern uses `.?` (one optional char between 'i' and 'm'),
+     * which matches "I'm" but NOT "I am" (two chars 'a'+'m' after 'i'). Indian
+     * candidates commonly state "I am at ₹22L" or "I am on ₹18L" in their
+     * opening greeting. Extended to also match "I am at/on". */
+    /\bi(?:['']?m|\s+am)\s+(?:at|on)\b/i,
     /* AUDIT-2 follow-up (2026-06-08): role-token between "I'm" and "at"
      * — "I'm a SE3 at Myntra, 24 LPA". The bare `\bi.?m\s+at\b` cue
      * requires adjacency; the role token ("a SE3") breaks it. Surfaced
@@ -164,6 +183,15 @@ const CURRENT_CUES: CueTable = {
      * target frame ("mujhe … chahiye"), so target binds are untouched. */
     /\babhi\s+main\b/i,
     /\bfil[h]?aal\b/i,
+    /* S39-B1 (2026-07-21): Hinglish possessive current-CTC frames. "Mera current
+     * CTC 30 lakhs hai" — "mera" (my) is a Hindi possessive that unambiguously
+     * scopes the figure to the speaker's own pay. "hamara" (our) covers the
+     * same possessive when candidates speak for their household/team-context.
+     * Neither was in the table before; figures in these frames fell through
+     * pickRole's Gricean default and mis-bound to current only when the bot
+     * happened to have asked for current CTC. */
+    /\bmera(?:\s+current)?\s+(?:ctc|salary|package|comp(?:ensation)?)\b/i,
+    /\bhamara\s+(?:ctc|salary)\b/i,
   ],
   right: [
     /\bpe\s+h(?:oo?n|u|un)\b/i,
@@ -185,8 +213,16 @@ const CURRENT_CUES: CueTable = {
     /\bmil(?:t[aei]|\s+rah[aei])\s+h(?:ai|ain|oo?n|u|un|e|y)\b/i,
     /\bkama(?:t[aei]|\s+rah[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
     /\ble(?:t[aei])\s+h(?:ai|oo?n|u|un|y|e)\b/i,
-    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
-    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crore)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
+    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\b(?!\s+(?:expectation|target|expect|range))/i,
+    /^\s*(?:lpa|lakhs?|lacs?|l|cr|crores?)\s+ctc\s+(?:overall|total|annual|right\s+now|presently|at\s+present)/i,
+    /* S48-B1/S49-B1/S50-B1 (2026-07-24): "N LPA currently" / "N lakhs right
+     * now" — when a candidate proactively discloses CTC in the opening turn
+     * ("52 LPA currently, targeting 85 LPA") without the AI having asked,
+     * `CURRENT_CUES.left` can't fire because "currently" sits in the RIGHT
+     * window (after the number+unit). SalarySpan.end already includes the
+     * unit token, so the right window starts AFTER the unit — match the
+     * temporal adverb at the start of the window, not the unit. */
+    /^\s*(?:currently|right\s+now|presently)\b/i,
     /* AUDIT-2 (2026-06-08): the "X LPA total." compact disclosure cue
      * lives in the LAST_AI_ASKED_*-style fall-through layer in pickRole
      * (see SENTENCE_FINAL_TOTAL_RE below), NOT here in CURRENT_CUES.
@@ -320,6 +356,15 @@ const TARGET_CUES: CueTable = {
     /\b(?:less|lower)\s+than\b/i,
     /\b(?:no|not\s+a\s+rupee)\s+less\b/i,
     /\bat\s+least\b/i,
+    /* S40-B1/S41-B1 (2026-07-21): "at least N" and "minimum N" both introduce
+     * a TARGET floor. `at least` was already here but `minimum` was absent —
+     * "minimum 42 lakhs" scored zero target cues and fell through to the
+     * current default. `kam se kam` is the Hindi equivalent and covers Hinglish
+     * disclosures. These reinforce TARGET scoring, not FLOOR: unlike an explicit
+     * walk-away ("can't go below"), these are ask-anchors that correctly
+     * bind to target (see isFloorScopedSpan which guards the true walk-away case). */
+    /\bminimum\b/i,
+    /\bkam\s+se\s+kam\b/i,
     /\bnon[-\s]?negotiable\b/i,
     /\bbottom\s+line\b/i,
     /\bfirm\s+(?:at|on)\b/i,
@@ -331,8 +376,13 @@ const TARGET_CUES: CueTable = {
     /\bmil\s+jaye\b/i,
     /\bmilna\s+chahiye\b/i,
     /\bexpect\s+kar(?:ta|ti)\s+hu\b/i,
-    /\bchahta\s+hu\b/i,
-    /\bchahti\s+hu\b/i,
+    /* S39-B1 (2026-07-21): Expand Hinglish target-verb right-cues to cover the
+     * full conjugation family — "chahiye" is already above; "chahta/chahti" must
+     * also cover hoon/hun/oon (formal and informal first-person present) so that
+     * "42 lakhs chahta hoon" and "42 chahti hun" bind to TARGET, not fall through
+     * to the Gricean current default. The old bare `hu` forms missed the longer
+     * conjugations that Sarvam/Azure STT often transcribes in full. */
+    /\bchaht[aie]\s+h(?:u|oo?n|un)\b/i,
     /* Ask-anchor framing stated AFTER the number ("55 total, that's my
      * number", "55, non-negotiable", "55, no less"). Same rationale as the
      * ask-anchor block above — these are target assertions, never current. */
@@ -360,11 +410,15 @@ const COMPETING_CUES: CueTable = {
     /\banother\s+offer(?:\s+(?:of|at))?\b/i,
     /\banother\s+opportunity(?:\s+(?:of|at))?\b/i,
     /\bother\s+offers?\b/i,
-    /\boffer\s+(?:of|at)\b/i,
-    /\bin[-\s]?hand(?:\s+offer)?(?:\s+(?:of|at))?\b/i,
+    /* S36-B2 (2026-07-23) — "offer for X" was missing; "of/at" were covered
+     * but "for" (very common in Indian English: "an offer for 58L") was not.
+     * Added "for" to the preposition alternation so "I have an offer for 58L
+     * from Google" binds the 58L as competing, not as a stray target. */
+    /\boffer\s+(?:of|at|for)\b/i,
+    /\bin[-\s]?hand(?:\s+offer)?(?:\s+(?:of|at|for))?\b/i,
     /\balready\s+have\b/i,
     /\breceived\s+(?:an?\s+)?offer\b/i,
-    /\bgot\s+an?\s+offer(?:\s+(?:of|at))?\b/i,
+    /\bgot\s+an?\s+offer(?:\s+(?:of|at|for))?\b/i,
     /\bmultiple\s+offers?\b/i,
     /* Rival-company-named competing offer (live-staging 2026-06-19, #92).
      * Candidates routinely cite a competitor by name with the company
@@ -376,7 +430,7 @@ const COMPETING_CUES: CueTable = {
      * amount; the negative lookahead keeps it from matching OUR offer
      * ("the offer from you at 35"). Plus a bare "have an/another offer"
      * presence cue for phrasings with no "from". */
-    /\boffer\s+from\s+(?!you\b|us\b|your\b|me\b|the\s+company\b|here\b)\w+(?:\s+\w+){0,3}\s+(?:of|at)\b/i,
+    /\boffer\s+from\s+(?!you\b|us\b|your\b|me\b|the\s+company\b|here\b)\w+(?:\s+\w+){0,3}\s+(?:of|at|for)\b/i,
     /\b(?:have|hold)\s+(?:an?|another|other)\s+offers?\b/i,
   ],
   right: [],
@@ -457,7 +511,19 @@ interface SalarySpan {
  *  ("LPS", "LPP"). The unit shape `[Dd]igits + LP[A-Z]` is unambiguous
  *  in the Indian-HR register; accept the whole family as LPA so the
  *  role-classifier mirrors the fact-parser. */
-const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l|cr|crore|cash)";
+/* OA-B12 (2026-07-17): "million"/"mn" is a real INR-comp unit for returning-NRI
+ * and MNC candidates ("4.8 million" = 48 LPA). Mirrors the same synonym added to
+ * _fact-parser UNIT_TOKEN so both subsystems agree. Bare single-letter `m` is
+ * deliberately excluded (collides with stray tokens); only million/mn accepted. */
+/* S35-B1/B2 (2026-07-23) — "crores" (plural) was missing; the alternation had
+ * `cr|crore` but not `crores?`. `cr` doesn't match at a word boundary inside
+ * "crores" (next char is 'o'), and `crore` also fails the trailing \b (next
+ * char is 's'). Changed `crore` → `crores?` to cover both singular and plural. */
+const SALARY_UNIT_GROUP = "(lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crores?|cash)";
+/** Non-capturing version of SALARY_UNIT_GROUP for use in BETWEEN_RANGE_RE
+ *  where we need the unit after the first number to be optional and
+ *  non-capturing (so group indices stay consistent with RANGE_RE). */
+const SALARY_UNIT_GROUP_NC = "(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|millions?|mn|l|cr|crores?|cash)";
 
 /** LPA-shaped salary number: `[₹]? digits [LPA|lakhs|L|cr|crore]`.
  *  Allows zero whitespace between digit and unit ("24LPA"). */
@@ -477,10 +543,46 @@ const RANGE_RE = new RegExp(
   "gi",
 );
 
+/** Between-range pattern — matches `between 48 and 52 lakhs` /
+ *  `between ₹48 and ₹52L` / `between 48L and 52 lakhs`.
+ *  Group layout mirrors RANGE_RE (m[4] = upper digits, m[5] = unit)
+ *  so findSalarySpans Pass 0 can reuse the same extraction logic. */
+const BETWEEN_RANGE_RE = new RegExp(
+  `\\bbetween\\s+(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP_NC}?\\s+and\\s+(₹?\\s*)([\\d,]+(?:\\.\\d+)?)\\s*${SALARY_UNIT_GROUP}\\b`,
+  "gi",
+);
+
 /** Units that should make us SKIP a numeric match — these are not
  *  salary disclosures. `\d+ days`, `\d+ years`, `\d+%`, `\d+ PF`. */
 const NON_SALARY_UNIT_RE =
   /(\d[\d,.]*)\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
+
+/** Business-impact context — a monetary figure that BOTH (a) follows an
+ *  impact verb in the same sentence AND (b) is trailed by a business-object
+ *  phrase is a business metric, NOT personal compensation.
+ *
+ *  "saved the company 2 crore per year in cloud costs" → ₹200L must NOT
+ *  become a salary span (S74-B1, 2026-07-25).
+ *
+ *  TWO-PART TEST applied in findSalarySpans Pass 2:
+ *    left: IMPACT_AMOUNT_LEFT_RE matches the 100-char left window
+ *          (stops at sentence boundaries via [^.!?\n]{0,80})
+ *    right: IMPACT_AMOUNT_RIGHT_RE matches the 60-char right window
+ *           (requires a specific business noun, not just "annually")
+ *  Both must be true to exclude.  This prevents impact verbs that appear
+ *  earlier in the same sentence (e.g. "I drove 25% improvement and I'm
+ *  currently at 18 LPA") from falsely blocking the subsequent CTC figure. */
+const IMPACT_AMOUNT_LEFT_RE =
+  /\b(?:saved?|saving|generated?|generating|reduced?|reducing|cut(?:ting)?|drove?|driving|grew|grown|growing|scaled?|scaling|increased?|increasing|delivered?|delivering|created?|creating|built|earned?|earned|achieved?|achieving|owned?)\b[^.!?\n]{0,80}$/i;
+
+/* "for the [entity]" was too ambiguous — "I earned 28 LPA for the company"
+ * falsely matched it (S74-B1 false-positive, 2026-07-25). Restrict to
+ * specific cost/revenue domain nouns that unambiguously denote a business
+ * metric rather than a personal compensation figure.  "in revenue for the
+ * team" still matches via the "in revenue" alternative even without the
+ * "for the [entity]" branch. */
+const IMPACT_AMOUNT_RIGHT_RE =
+  /^[^.!?\n]{0,60}(?:per\s+(?:year|annum)\s+in\b|in\s+(?:cloud|infrastructure|infra|revenue|saving|cost|costs|opex|capex|efficiency|deliver|deal|contract|budget))/i;
 
 /* Per-month periodicity (2026-06-15, unbiased-review HIGH). The classifier
  * normalizes every salary span to LPA (lakhs per ANNUM). A figure quoted PER
@@ -509,7 +611,10 @@ function parseDigits(s: string): number {
 
 function unitMultiplier(unit: string): number {
   const u = unit.toLowerCase();
-  return u === "cr" || u === "crore" ? 100 : 1;
+  if (u === "cr" || u === "crore" || u === "crores") return 100;
+  /* OA-B12: ₹N million = 10N LPA. */
+  if (u === "mn" || u.startsWith("million")) return 10;
+  return 1;
 }
 
 /** Scan the text and return every salary-shaped number, in left-to-right
@@ -517,8 +622,24 @@ function unitMultiplier(unit: string): number {
  *  bound is dropped). USD spans are converted to LPA at the FX boundary. */
 function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[] {
   const spans: SalarySpan[] = [];
-  /* Pass 1 — ranges. Mark the upper bound, claim both numbers' offsets. */
   const claimedRanges = new Set<string>(); // "start-end" of digits we've claimed
+  /* Pass 0 — "between X and Y [unit]" ranges (S46-B1, 2026-07-23).
+   *  RANGE_RE only covers `X-Y` / `X to Y` separators; "between X and Y"
+   *  was silently missed, leaving target = null and causing the planner
+   *  to re-ask for target every turn. Same extraction logic as Pass 1. */
+  for (const m of text.matchAll(BETWEEN_RANGE_RE)) {
+    if (m.index == null) continue;
+    const upper = parseDigits(m[4]);
+    const unit = m[5];
+    if (!Number.isFinite(upper)) continue;
+    const value = upper * unitMultiplier(unit);
+    if (value < MIN_LPA || value > MAX_LPA) continue;
+    const start = m.index + m[0].search(/[\d₹]/);
+    const end = m.index + m[0].length;
+    spans.push({ value, start, end, isRangeUpper: true });
+    claimedRanges.add(`${m.index}-${end}`);
+  }
+  /* Pass 1 — ranges. Mark the upper bound, claim both numbers' offsets. */
   for (const m of text.matchAll(RANGE_RE)) {
     if (m.index == null) continue;
     const upper = parseDigits(m[4]);
@@ -545,9 +666,17 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
     /* Reject if matched text is actually a non-salary unit token. */
     const left = Math.max(0, m.index - 10);
     const windowText = text.slice(left, innerEnd + 10);
-    if (NON_SALARY_UNIT_RE.test(windowText) && !/(?:lpa|lakhs?|lacs?|\bl\b|cr|crore)/i.test(m[0])) {
+    if (NON_SALARY_UNIT_RE.test(windowText) && !/(?:lpa|lakhs?|lacs?|\bl\b|cr|crores?)/i.test(m[0])) {
       continue;
     }
+    /* S74-B1 (2026-07-25) — reject numbers that (a) follow a business-impact
+     * verb AND (b) are trailed by a specific business-object phrase.
+     * Requiring BOTH prevents impact verbs earlier in the sentence (e.g.
+     * "drove 25% improvement and I'm currently at 18 LPA") from blocking
+     * the subsequent compensation figure whose right context is empty. */
+    const wideLeftCtx = text.slice(Math.max(0, m.index - 100), m.index);
+    const rightCtx = text.slice(innerEnd, innerEnd + 60);
+    if (IMPACT_AMOUNT_LEFT_RE.test(wideLeftCtx) && IMPACT_AMOUNT_RIGHT_RE.test(rightCtx)) continue;
     const digits = parseDigits(m[2]);
     if (!Number.isFinite(digits)) continue;
     const value = digits * unitMultiplier(m[3]);
@@ -617,7 +746,7 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
    * between the number and the unit — an intervening digit (another number)
    * breaks the match, so "36" is no longer swallowed by "3 lakh", while a
    * genuine "36 lakh" / "36 LPA" still abuts and is correctly deferred. */
-  const SALARY_UNIT_NEARBY = /^[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)/i;
+  const SALARY_UNIT_NEARBY = /^[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|\bl\b)/i;
   /* MVP-audit Fix B (2026-06-18): three additional bare-integer emission
    * gates beyond the target-cue gate. Root cause of the discovery
    * stalemate (audit finding #2): a candidate answering the recruiter's
@@ -650,8 +779,13 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
      * real CTC (30) was wrongly discarded and discovery looped the CTC probe
      * forever. Build "<thisNumber><immediate tail>" and require the unit to
      * abut this number (anchored ^). */
+    /* S47-B1 (2026-07-24): extend to catch `<N>-<M>%` range patterns.
+     * Original `[\d,.]*` stops at `-`, so "30-40%" passed the guard and
+     * "30" leaked as a CTC span, triggering a spurious reconcile probe.
+     * Added `(?:-\d[\d,.]*)?` to optionally consume the hyphen-connected
+     * upper bound so the anchored unit (`%`) still matches. */
     const NON_SALARY_UNIT_ANCHORED =
-      /^\d[\d,.]*\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
+      /^\d[\d,.]*(?:-\d[\d,.]*)?(?:\s*(?:to\s+\d[\d,.]*\s*)?)?\s*(?:%|days?\b|months?\b|years?\b|yrs?\b|percent\b|pf\b|hours?\b|hrs?\b|members?\b|people\b|reports?\b|reportees?\b|engineers?\b|developers?\b|devs?\b|designers?\b|analysts?\b|interns?\b|teammates?\b|contributors?\b|folks?\b|headcount\b|yoe\b)/i;
     if (NON_SALARY_UNIT_ANCHORED.test(m[1] + text.slice(digitEnd, digitEnd + 10)))
       continue;
     /* Non-salary LEFT context (live-staging 2026-06-19, scenario C —
@@ -742,13 +876,16 @@ function findSalarySpans(text: string, ctx: NumberRoleContext = {}): SalarySpan[
 function scoreRolesForSpan(
   text: string,
   span: SalarySpan,
-): Record<NumberRole, number> {
+): { scores: Record<NumberRole, number>; genericAdverbOnlyForCurrent: boolean; genericAdverbFired: boolean; targetScoreLeft: number; currentScoreStrictLeft: number } {
   let leftWindow = text.slice(Math.max(0, span.start - LEFT_WINDOW), span.start);
   /* Clause clipping: when an earlier salary disclosure sits in the
    * window ("18 LPA and I'd like 32 LPA"), cues before it belong to
    * that number, not this span. Truncate the window to start AFTER
    * the last such disclosure or clause boundary. */
-  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crore|\bl\b)\b/gi;
+  /* S50-B6 (2026-07-24): \bl\b requires a word boundary BEFORE "L", which
+   * fails when "L" abuts a digit ("55L" — "5"→"L" has no left boundary).
+   * Use l\b (boundary only after) so "55L", "90L" etc. are detected. */
+  const PRIOR_DISCLOSURE = /[\d,.]+\s*(?:lpa|lakhs?|lacs?|cr|crores?|l\b)\b/gi;
   let lastEnd = -1;
   for (const m of leftWindow.matchAll(PRIOR_DISCLOSURE)) {
     if (m.index != null) lastEnd = Math.max(lastEnd, m.index + m[0].length);
@@ -807,10 +944,32 @@ function scoreRolesForSpan(
     restatementFired && targetScore === 0 && competingScore === 0
       ? currentScore + 1
       : currentScore;
+  /* S4-B16 (2026-07-22): "currently I am looking for 40 LPA" — the adverb
+   * `currently` (CURRENT_CUES.left[0]) is a temporal modifier, NOT a
+   * pay-disclosure verb. When it is the ONLY current cue and a target verb
+   * appears in the LEFT window (same clause, before the number), the
+   * current>target tiebreak is wrong — target must win.
+   *
+   * Guard: only check TARGET_CUES.left (NOT right). The right window extends
+   * past the next salary figure ("Currently at 32 LPA and 38 LPA is my
+   * target"), so TARGET_CUES.right can bleed from the 38-clause into 32's
+   * right window and falsely fire. A target verb genuinely scoping THIS number
+   * must precede it. */
+  const genericAdverbFired = CURRENT_CUES.left[0].test(leftWindow);
+  let currentScoreStrict = 0;
+  let currentScoreStrictLeft = 0;
+  for (let i = 1; i < CURRENT_CUES.left.length; i++) {
+    if (CURRENT_CUES.left[i].test(leftWindow)) { currentScoreStrict++; currentScoreStrictLeft++; }
+  }
+  for (const re of CURRENT_CUES.right) if (re.test(rightWindow)) currentScoreStrict++;
+  const targetScoreLeft = TARGET_CUES.left.reduce((n, re) => n + (re.test(leftWindow) ? 1 : 0), 0);
+  const genericAdverbOnlyForCurrent = genericAdverbFired && currentScoreStrict === 0;
   return {
-    current: currentWithRestatement,
-    target: targetScore,
-    competing: competingScore,
+    scores: { current: currentWithRestatement, target: targetScore, competing: competingScore },
+    genericAdverbOnlyForCurrent,
+    genericAdverbFired,
+    targetScoreLeft,
+    currentScoreStrictLeft,
   };
 }
 
@@ -845,19 +1004,44 @@ function pickRole(
     const targetAnywhere = TARGET_CUES.left.some((r) => r.test(text)) ||
       TARGET_CUES.right.some((r) => r.test(text));
     if (!competingAnywhere && !targetAnywhere) return "current";
+    /* S54-B1/S59-B1/S60-B2 (2026-07-23) — component-labeled CTC survives the
+     * targetAnywhere gate. When a candidate says "12 lakh fixed, looking at 18
+     * in new role", "looking at" sets targetAnywhere=true and suppresses the
+     * aiAskedCurrent default for the 12-span — CTC returns null and the bot
+     * re-asks. But "12 lakh fixed" right after the bot's CTC question is
+     * unambiguously the FIXED COMPONENT of the current package: a component
+     * label ("fixed"/"base"/"basic") immediately trailing the unit in response
+     * to a CTC question IS the current CTC, never a target. Re-enable the
+     * current bind when: (a) AI asked for CTC, (b) no competing cue, and
+     * (c) the span carries a right-adjacent component word. This is tight and
+     * conservative — it only fires when all three signals align. */
+    if (!competingAnywhere && detectCurrentComponentScope(text, span) === "component") {
+      return "current";
+    }
   }
   /* AUDIT-2 (2026-06-08): symmetric — bot asked target → bare = target. */
   const aiAskedTarget = !!ctx.lastAiText && LAST_AI_ASKED_TARGET.test(ctx.lastAiText);
+  /* S41-B8 (2026-07-23) — ESOP effective-comp sub-total misclassified as target.
+   * When the bot has asked for the candidate's target and they explain "my effective
+   * comp is 29-30L due to ESOP depreciation", the Gricean / phase default picks up
+   * 30 as the target (no explicit target-verb, but aiAskedTarget=true or probe-
+   * expectations). A genuine target ask in an Indian salary negotiation is almost
+   * never below the candidate's own current CTC — that would be a pay cut. Guard:
+   * if the span's value is materially below the established currentCtc (< 95%), don't
+   * bind via the bare-number defaults. Explicit target-verb cues ("I'm targeting 30")
+   * still win via the cue-scoring path (max > 0) above and are unaffected. */
+  const belowEstablishedCtc =
+    ctx.currentCtc != null && span.value < ctx.currentCtc * 0.95;
   if (aiAskedTarget) {
     const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text)) ||
       COMPETING_CUES.right.some((r) => r.test(text));
     const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
-    if (!competingAnywhere && !currentAnywhere) return "target";
+    if (!competingAnywhere && !currentAnywhere && !belowEstablishedCtc) return "target";
   }
   if (ctx.phase === "probe-expectations") {
     const currentAnywhere = CURRENT_CUES.left.some((r) => r.test(text));
     const competingAnywhere = COMPETING_CUES.left.some((r) => r.test(text));
-    if (!currentAnywhere && !competingAnywhere) return "target";
+    if (!currentAnywhere && !competingAnywhere && !belowEstablishedCtc) return "target";
   }
   /* AUDIT-2 (2026-06-08): "X LPA total." compact-disclosure fall-through.
    * Runs ONLY when nothing else scored. Tests the right window post-LPA
@@ -1055,6 +1239,72 @@ function isComponentBonusScopedSpan(text: string, span: SalarySpan): boolean {
   return COMPONENT_BONUS_RIGHT_ANCHORED.test(rightWindow);
 }
 
+/* S4-B15 / S5-B20 (2026-07-22): variable-pay component guard.
+ *
+ * A number tagged by a variable-pay or performance-bonus qualifier in its
+ * immediate right context — "₹6L variable", "6 lakh variable pay", "6L
+ * variable component", "6 LPA performance bonus", "₹4L annual bonus" — is
+ * a CTC sub-component, NOT the candidate's standalone target ask. Before this
+ * guard, "I am looking for ₹32L fixed + ₹6L variable" bound target=6 (the
+ * variable component read as a ₹6L total target — less than the offer floor —
+ * prompting the recruiter to say "₹6L? You're undershooting your level").
+ *
+ * The fix: if the number's immediate right context (≤ 30 chars) starts with
+ * an optional unit then a variable/bonus qualifier, suppress the span — it
+ * binds to no role and the kernel reads the total from the explicit fixed+var
+ * context via extractComponentBreakdown. Left-adjacent form also caught
+ * ("variable pay of ₹6L"). Tight window prevents a trailing "variable"
+ * two clauses away from bleeding in.
+ *
+ * NOT suppressed: "I want variable to be higher" (no number; no span emitted
+ * by Pass 2 here), "₹40L variable-pay band" (the unit "band" is not a
+ * component qualifier). */
+const VARIABLE_COMPONENT_RIGHT_ANCHORED =
+  /^\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\.?\s*(?:variable(?:\s+(?:pay|component|salary|ctc|part|portion))?|performance\s+bonus|annual\s+bonus|target(?:ed)?\s+bonus|var(?:iable)?\s+(?:pay|component|portion))\b/i;
+/* Fix B (2026-07-22): expanded left-anchored pattern to cover "comes to",
+ * "amounts to", "totals", "is around", "works out to" linking verbs that
+ * naturally appear between the variable-pay noun and the amount —
+ * e.g. "the variable component comes to 8" left-context: "the variable
+ * component comes to " which the old pattern missed because "comes to"
+ * wasn't in the linking-verb list. Also added "incentive" as a synonym. */
+const VARIABLE_COMPONENT_LEFT_ANCHORED =
+  /\b(?:variable(?:\s+(?:pay|component|salary|ctc|part|portion))?|performance\s+(?:bonus|incentive)|annual\s+bonus|incentive(?:\s+(?:pay|component|bonus))?|target(?:ed)?\s+bonus|var(?:iable)?\s+(?:pay|component|portion))\s+(?:of\s+|is\s+|at\s+|around\s+|roughly\s+|about\s+|worth\s+|comes?\s+to\s+|amounts?\s+to\s+|totals?\s+(?:to\s+)?|works?\s+out\s+to\s+)?$/i;
+function isVariableComponentScopedSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 30));
+  if (VARIABLE_COMPONENT_RIGHT_ANCHORED.test(rightWindow)) return true;
+  const leftWindow = text.slice(Math.max(0, span.start - 30), span.start);
+  return VARIABLE_COMPONENT_LEFT_ANCHORED.test(leftWindow);
+}
+
+/* Non-CTC perk-component guard (OA-B63, 2026-07-18 audit). A number scoped to
+ * a recurring/perk allowance — WFH / home-office / setup / internet / remote /
+ * wellness / L&D / learning / meal / travel allowance, stipend, or budget — is
+ * a benefit ASK, not the candidate's CTC target/current/competing TOTAL. Before
+ * this guard, "I'd like a 1 lakh work-from-home setup allowance" bound
+ * target=1 (the WFH amount read as a ₹1 LPA total target — a harmful mis-bind),
+ * and "26 LPA plus a 2 lakh WFH stipend" silently dropped the stipend. The
+ * kernel tracks such perks separately (or not at all); this span binds to NO
+ * role. Right-anchored (number then the perk noun) AND left-anchored (perk noun
+ * then the number, e.g. "WFH stipend of 50k") so both surface forms are caught,
+ * while a genuine total ("26 LPA plus …") keeps binding 26 — its right context
+ * starts with "plus", not a perk noun. Mirrors isCashComponentScopedSpan. */
+const PERK_NOUN =
+  "(?:wfh|work[-\\s]?from[-\\s]?home|remote(?:\\s+work)?|home[-\\s]?office|internet|broadband|setup|set[-\\s]?up|wellness|well[-\\s]?being|learning|l\\s*&\\s*d|l\\s+and\\s+d|upskilling|education|meal|food|travel|commute|gym|fitness)\\s+(?:setup\\s+)?(?:allowance|stipend|budget|reimbursement|perk|benefit)";
+const PERK_COMPONENT_RIGHT = new RegExp(
+  `^\\s*(?:lpa|lakhs?|lacs?|lac|l|k)?\\.?\\s*(?:for\\s+)?(?:a\\s+)?${PERK_NOUN}\\b`,
+  "i",
+);
+const PERK_COMPONENT_LEFT = new RegExp(
+  `\\b${PERK_NOUN}\\s+(?:of\\s+|is\\s+|at\\s+|around\\s+|roughly\\s+|about\\s+|worth\\s+)?$`,
+  "i",
+);
+function isPerkComponentScopedSpan(text: string, span: SalarySpan): boolean {
+  const rightWindow = text.slice(span.end, Math.min(text.length, span.end + 40));
+  if (PERK_COMPONENT_RIGHT.test(rightWindow)) return true;
+  const leftWindow = text.slice(Math.max(0, span.start - 40), span.start);
+  return PERK_COMPONENT_LEFT.test(leftWindow);
+}
+
 /* Relative-increase scope (§9d / PRI-69b, 2026-07-08). A number whose
  * IMMEDIATE right context is an increase marker — "2L more", "2 higher",
  * "3 lakh extra", "5 on top" — is a RELATIVE delta the candidate wants
@@ -1119,6 +1369,47 @@ function isBeatByReferenceSpan(text: string, span: SalarySpan): boolean {
  *       happen after scoring, but defence-in-depth).
  *    5. `targetAsRange` is true when ANY salary span is a range upper
  *       AND a target was bound. */
+/* ─── OA-B3 · percentage-expressed target resolver ───────────────────────
+ *
+ * A candidate can state a target as a HIKE relative to their current CTC —
+ * "20% above my CTC", "I want a 30% hike", "25% more than what I make now" —
+ * instead of an absolute LPA figure. The "%"/"percent" span is (correctly)
+ * discarded by NON_SALARY_UNIT_RE before span discovery — a percentage is not
+ * itself a salary unit — so without this resolver the target stays null and
+ * discovery stalls. When a current-CTC base is known (disclosed this turn or
+ * carried in from prior state via ctx.currentCtc), resolve
+ *   target = round(base × (1 + pct/100)).
+ * Single, conservative entry point; gated on an explicit hike/above-CTC intent
+ * so a component percentage ("20% variable", "10% joining bonus") never
+ * false-binds a target.
+ *
+ * Two surface forms are recognised:
+ *   A. percent THEN a hike/above word — "20% above|over|more|hike|raise|…"
+ *   B. a hike word THEN percent      — "a hike|raise|increment|jump of 20%"
+ * A component noun (variable/bonus/esop/stock/joining/…) abutting the match
+ * suppresses resolution — that percentage is scoped to a component, not CTC. */
+const PERCENT_HIKE_LEADING_RE =
+  /(?:^|[^.\d])(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)\s*(?:hike|raise|increment|increase|jump|bump|more|above|over|higher|on\s+top)\b/i;
+const PERCENT_HIKE_TRAILING_RE =
+  /\b(?:hike|raise|increment|increase|jump|bump|higher)\s+(?:of\s+)?(\d{1,3}(?:\.\d+)?)\s*(?:%|percent)(?![a-z0-9])/i;
+const PERCENT_COMPONENT_GUARD_RE =
+  /\b(?:variable|bonus|esop|stock|equity|joining|jb|pf|hra|gratuity|retention|sign[-\s]?on|relocation|joining\s+bonus)\b/i;
+
+function resolvePercentHikeTarget(text: string, base: number | null): number | null {
+  if (base == null || !(base > 0)) return null;
+  const m = PERCENT_HIKE_LEADING_RE.exec(text) ?? PERCENT_HIKE_TRAILING_RE.exec(text);
+  if (!m) return null;
+  const pct = parseFloat(m[1]);
+  if (!Number.isFinite(pct) || pct <= 0 || pct > 200) return null;
+  /* Component guard: reject if a non-CTC component noun sits right after the
+   * matched phrase ("10% bump on the joining bonus" → scoped to the JB). */
+  const tail = text.slice(m.index + m[0].length, m.index + m[0].length + 24);
+  if (PERCENT_COMPONENT_GUARD_RE.test(tail)) return null;
+  const resolved = base * (1 + pct / 100);
+  if (!(resolved >= 1) || resolved > 5000) return null;
+  return Math.round(resolved * 100) / 100;
+}
+
 export function classifyNumberRoles(
   textIn: string,
   ctx: NumberRoleContext = {},
@@ -1131,10 +1422,23 @@ export function classifyNumberRoles(
    * Without this, "my current CTC is thirty six LPA" silently returns
    * { currentCtc: null }, the kernel sees no disclosure, and the engine
    * falls through — exact same shape as the LPE bug f5289f3 fixed. */
-  const text = substituteVagueSalaryDecades(substituteEnglishNumbers(textIn));
+  /* OA-B55: strip URL-shaped tokens first so port/path/query digits
+   * ("…example.com:8080/jobs/45") never reach span discovery and false-bind
+   * as a salary figure. Shared single source with parseSalaryFacts. */
+  const text = substituteVagueSalaryDecades(substituteThousandScale(substituteEnglishNumbers(substituteAbsoluteRupees(substituteForeignCurrency(stripUrls(textIn))))));
   const spans = findSalarySpans(text, ctx);
   if (spans.length === 0) {
-    return { currentCtc: null, target: null, competing: null, targetAsRange: false, targetComponent: null };
+    /* OA-B3: the percent span is discarded before span discovery, so a pure
+     * "20% above my CTC" utterance yields no salary span. Resolve the hike
+     * against the carried-in current-CTC base before bailing. */
+    const pctTarget = resolvePercentHikeTarget(text, ctx.currentCtc ?? null);
+    return {
+      currentCtc: null,
+      target: pctTarget,
+      competing: null,
+      targetAsRange: false,
+      targetComponent: pctTarget != null ? "total" : null,
+    };
   }
   let currentCtc: number | null = null;
   let target: number | null = null;
@@ -1160,7 +1464,41 @@ export function classifyNumberRoles(
     /* Component-bonus guard (#94): a JB / sign-on / relocation amount
      * binds to NO role regardless of any cue leaking into its window. */
     if (isComponentBonusScopedSpan(text, span)) continue;
-    const scores = scoreRolesForSpan(text, span);
+    /* OA-B63: a WFH/setup/wellness/L&D/etc. allowance or stipend amount binds
+     * to NO role regardless of any cue leaking into its window — it's a perk
+     * ask, not the candidate's CTC. */
+    if (isPerkComponentScopedSpan(text, span)) continue;
+    /* S4-B15 / S5-B20: a number immediately tagged as a variable-pay /
+     * performance-bonus component — "₹6L variable", "6 lakh variable pay",
+     * "variable pay of ₹6L" — is a CTC sub-component, not the candidate's
+     * total target ask. Suppress it here so it binds to NO role; the kernel
+     * reads the total from extractComponentBreakdown instead. */
+    if (isVariableComponentScopedSpan(text, span)) continue;
+    const { scores: rawScores, genericAdverbOnlyForCurrent, genericAdverbFired, targetScoreLeft, currentScoreStrictLeft } = scoreRolesForSpan(text, span);
+    /* S4-B16: "currently I am looking for 40 LPA" — `currently` is the weak
+     * temporal adverb (CURRENT_CUES.left[0]). When it is the ONLY current cue
+     * and a target verb appears in the LEFT window (same clause), the
+     * current>target tiebreak is wrong — zero out current so target wins.
+     * Guard on targetScoreLeft (not total targetScore): TARGET_CUES.right can
+     * bleed from a later clause into this number's right window. */
+    let scores: Record<NumberRole, number> =
+      genericAdverbOnlyForCurrent && targetScoreLeft > 0
+        ? { ...rawScores, current: 0 }
+        : rawScores;
+    /* S48-B1 follow-up (2026-07-24): right-context-only current cue should
+     * yield to a left-context target verb. The new "N LPA currently" right-cue
+     * fires on "I want 35 LPA currently" — but "want" in the LEFT window is
+     * an unambiguous target verb that must win. If no left-side current cue
+     * fired (currentScoreStrictLeft === 0, genericAdverbFired === false, so
+     * all current score came from the right window) and a target verb does
+     * appear in the left window, zero out current so target wins. This is the
+     * right-window analogue of the S4-B16 genericAdverb guard. */
+    if (
+      currentScoreStrictLeft === 0 && !genericAdverbFired &&
+      scores.current > 0 && targetScoreLeft > 0
+    ) {
+      scores = { ...scores, current: 0 };
+    }
     /* Equity-scope guard (L1 / PRI-50): an equity/RSU/ESOP/stock-framed
      * number with NO explicit current/target/competing cue is an equity
      * component, not a CTC — don't let it fall through pickRole's
@@ -1183,6 +1521,27 @@ export function classifyNumberRoles(
      * current cue ("I get stock worth 5 LPA"). */
     if (isEquityLeftAdjacentSpan(text, span)) continue;
     const role = pickRole(scores, ctx, span, text);
+    /* OA-B21: a bare left-total span ("...base is 20L, total is 80L") carries
+     * no role cue of its own, so pickRole scores it null. But when an explicit
+     * COMPONENT current is already bound, that trailing total IS the candidate's
+     * full package and must supersede the component — the scoped branch below
+     * only runs for role==="current". Promote it here, tightly gated: a
+     * component current must already hold the slot, the span must be an explicit
+     * left-total, and no target/competing cue may sit anywhere in the utterance
+     * (so "my ask total is 45" or a BATNA total is never mis-grabbed). */
+    if (
+      role == null &&
+      currentCtc != null &&
+      currentScope === "component" &&
+      hasLeftTotalCue(text, span) &&
+      !TARGET_CUES.left.some((r) => r.test(text)) &&
+      !COMPETING_CUES.left.some((r) => r.test(text))
+    ) {
+      currentCtc = span.value;
+      currentFromRange = span.isRangeUpper;
+      currentScope = "total";
+      continue;
+    }
     if (role == null) continue;
     if (role === "current") {
       const scope = detectCurrentComponentScope(text, span);
@@ -1200,8 +1559,13 @@ export function classifyNumberRoles(
       target = span.value;
       targetFromRange = span.isRangeUpper;
       targetComponent = detectTargetComponentScope(text, span);
-    } else if (role === "competing" && competing == null) {
-      competing = span.value;
+    } else if (role === "competing") {
+      /* OA-B28/B64: bind the BEST (max) in-utterance competing figure, not the
+       * first-stated one. The candidate's leverage is their strongest credible
+       * BATNA, so "Zomato 38 and Swiggy 40" and its reverse must both bind 40.
+       * First-wins made the counter-match floor order-dependent — the recruiter
+       * would meet ₹38L or ₹40L for the *same* two offers purely on word order. */
+      competing = competing == null ? span.value : Math.max(competing, span.value);
     }
   }
   /* Disambiguation: a single number shouldn't be both current and
@@ -1212,6 +1576,16 @@ export function classifyNumberRoles(
     target = null;
     targetFromRange = false;
     targetComponent = null;
+  }
+  /* OA-B3: no absolute target bound from a span, but the candidate may have
+   * expressed it as a percentage hike ("I make 20L, want 30% more"). Resolve
+   * against this turn's disclosed current, else the carried-in base. */
+  if (target == null) {
+    const pctTarget = resolvePercentHikeTarget(text, currentCtc ?? ctx.currentCtc ?? null);
+    if (pctTarget != null && pctTarget !== currentCtc && pctTarget !== competing) {
+      target = pctTarget;
+      targetComponent = "total";
+    }
   }
   const targetAsRange = targetFromRange || (target != null && currentFromRange === false && spans.some((s) => s.isRangeUpper));
   return {
@@ -1233,6 +1607,30 @@ export function classifyNumberRoles(
  * Indian-HR register). Left-context is deliberately ignored here: "current
  * is 32 fixed" has "current" on the LEFT but "fixed" on the RIGHT — the
  * right-adjacent scope word is what tags THIS number. */
+/* OA-B21: a "total"/"overall" scope cue can sit on EITHER side of the figure
+ * in spoken Indian-HR register — "80 total" (right-adjacent, read inline) OR
+ * "total is 80" (left-adjacent). This detects the left-adjacent case within
+ * the CURRENT clause only (bounded at the previous comma/semicolon) so a total
+ * cue from an earlier clause can't leak across, and requires tight adjacency —
+ * the cue word, an optional linking verb, then the number. Single source of
+ * truth for both role-scoring (pickRole) and scope-tagging
+ * (detectCurrentComponentScope). */
+const LEFT_TOTAL_ADJACENT_RE = /\b(?:total|overall)\s*(?:is|of|at|was|comes?\s+to)?\s*$/i;
+const LEFT_COMPONENT_ADJACENT_RE = /\b(?:fixed|base|basic|variable|bonus)\s*(?:is|of|at|was|comes?\s+to|:)?\s*$/i;
+/* Read the CURRENT clause to the left of the span (bounded at the previous
+ * comma/semicolon so a cue from an earlier clause can't leak across) and test
+ * whether it ends in the given adjacency cue. */
+function leftClauseEndsWith(text: string, span: SalarySpan, re: RegExp): boolean {
+  const clauseStart = Math.max(
+    text.lastIndexOf(",", span.start - 1),
+    text.lastIndexOf(";", span.start - 1),
+  ) + 1;
+  return re.test(text.slice(clauseStart, span.start));
+}
+function hasLeftTotalCue(text: string, span: SalarySpan): boolean {
+  return leftClauseEndsWith(text, span, LEFT_TOTAL_ADJACENT_RE);
+}
+
 function detectCurrentComponentScope(
   text: string,
   span: SalarySpan,
@@ -1240,6 +1638,11 @@ function detectCurrentComponentScope(
   const right = text.slice(span.end, Math.min(text.length, span.end + 14));
   if (/^\s*(?:fixed|base|basic|variable|bonus)\b/i.test(right)) return "component";
   if (/^\s*(?:total|overall)\b/i.test(right)) return "total";
+  /* OA-B21: the scope word can also LEAD the figure ("base is 20L", "total is
+   * 80L") — read the left clause symmetrically. Component first, mirroring the
+   * right-window order above. */
+  if (leftClauseEndsWith(text, span, LEFT_COMPONENT_ADJACENT_RE)) return "component";
+  if (hasLeftTotalCue(text, span)) return "total";
   return null;
 }
 

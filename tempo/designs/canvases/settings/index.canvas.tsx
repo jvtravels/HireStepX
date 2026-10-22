@@ -2,62 +2,73 @@
    Five storyboards, one per tab. The `tab` prop drives which section
    highlights in the sidebar and renders in the content pane.
    CanvasProviders supplies brand CSS custom properties. */
-import type { TempoPage, TempoStoryboard } from 'tempo-sdk';
 import CanvasProviders from '../../../CanvasProviders';
 import { Settings } from './Settings';
+import { Canvas, Storyboard } from "tempo-sdk/canvas";
 
-const page: TempoPage = {
-  name: "Settings",
-};
-
-export default page;
-
-export const AccountTab: TempoStoryboard = {
-  render: () => (
+const AccountTab = () => (
     <CanvasProviders>
       <Settings tab="account" />
     </CanvasProviders>
-  ),
-  name: "1. Account",
-  layout: { x: 0, y: 0, width: 1728, height: 1060 },
-};
+  );
 
-export const InterviewTab: TempoStoryboard = {
-  render: () => (
+const InterviewTab = () => (
     <CanvasProviders>
       <Settings tab="interview" />
     </CanvasProviders>
-  ),
-  name: "2. Interview",
-  layout: { x: 0, y: 1110, width: 1728, height: 1060 },
-};
+  );
 
-export const NotificationsTab: TempoStoryboard = {
-  render: () => (
+const NotificationsTab = () => (
     <CanvasProviders>
       <Settings tab="notifications" />
     </CanvasProviders>
-  ),
-  name: "3. Notifications (future)",
-  layout: { x: 0, y: 2220, width: 1728, height: 1060 },
-};
+  );
 
-export const PlanTab: TempoStoryboard = {
-  render: () => (
+const PlanTab = () => (
     <CanvasProviders>
       <Settings tab="plan" />
     </CanvasProviders>
-  ),
-  name: "4. Plan and data",
-  layout: { x: 0, y: 3330, width: 1728, height: 1060 },
-};
+  );
 
-export const ReferralTab: TempoStoryboard = {
-  render: () => (
+const ReferralTab = () => (
     <CanvasProviders>
       <Settings tab="referral" />
     </CanvasProviders>
-  ),
-  name: "5. Referral",
-  layout: { x: 0, y: 4440, width: 1728, height: 1060 },
-};
+  );
+
+export default function SettingsCanvas() {
+  return (
+    <Canvas name="Settings">
+      <Storyboard
+        id="AccountTab"
+        name="1. Account"
+        component={AccountTab}
+        layout={{ x: 0, y: 0, width: 1728, height: 1060 }}
+      />
+      <Storyboard
+        id="InterviewTab"
+        name="2. Interview"
+        component={InterviewTab}
+        layout={{ x: 0, y: 1110, width: 1728, height: 1060 }}
+      />
+      <Storyboard
+        id="NotificationsTab"
+        name="3. Notifications (future)"
+        component={NotificationsTab}
+        layout={{ x: 0, y: 2220, width: 1728, height: 1060 }}
+      />
+      <Storyboard
+        id="PlanTab"
+        name="4. Plan and data"
+        component={PlanTab}
+        layout={{ x: 0, y: 3330, width: 1728, height: 1060 }}
+      />
+      <Storyboard
+        id="ReferralTab"
+        name="5. Referral"
+        component={ReferralTab}
+        layout={{ x: 0, y: 4440, width: 1728, height: 1060 }}
+      />
+    </Canvas>
+  );
+}

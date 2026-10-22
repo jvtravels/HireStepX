@@ -32,31 +32,55 @@ import { isAllowedOnGate } from "./src/middlewareGate";
 
 /* ── Per-request CSP nonce ──────────────────────────────────────────────────
  *
- * Keep 'unsafe-inline' alongside the nonce during the transition period.
- * CSP L2+ ignores 'unsafe-inline' when a nonce or hash is present, so modern
- * browsers get nonce-enforced protection. Legacy browsers (CSP L1) fall back
- * to 'unsafe-inline' — same as before. Once staging confirms nonce propagation
- * across all surfaces, remove 'unsafe-inline' from script-src.
+ * 'strict-dynamic' + nonce: CSP L2+ ignores 'unsafe-inline' when a nonce is
+ * present, and 'strict-dynamic' allows scripts dynamically injected by a
+ * trusted (nonced) script — covering Razorpay and PostHog loaders. The host
+ * allowlist is kept as a CSP L1/L2 fallback for browsers that don't support
+ * 'strict-dynamic' (they ignore it and fall back to the host list). No
+ * 'unsafe-inline': inline scripts must carry the nonce from AnalyticsNonce.
+ *
+ * Marketing routes (nonce === null) get NO live nonce and NO 'strict-dynamic'
+ * — reading headers() to mint one would force them fully dynamic, defeating
+ * static/ISR generation. These pages were previously locked down with a
+ * content-hash allowlist (JSONLD_CSP_HASHES) instead of a nonce, but that
+ * only ever covered the page's OWN inline JSON-LD — it never covered (and
+ * can't cover) Next.js's own framework-injected inline hydration/RSC scripts,
+ * whose content isn't knowable ahead of a build. With no nonce, no hash match
+ * for those scripts, and no 'unsafe-inline', CSP silently blocked every
+ * static/ISR marketing page's hydration entirely (2026-08-10 outage). Per the
+ * CSP spec, 'unsafe-inline' is only honored when the source list has NO
+ * nonce-source or hash-source at all, so for the no-nonce branch we must
+ * drop hash-based locking and rely on 'unsafe-inline' + the host allowlist
+ * below — the same protection level CSP-L1 browsers already had. Routes that
+ * carry a live nonce (app/auth/admin) are unaffected and keep the strict
+ * nonce + 'strict-dynamic' policy.
  */
-function buildCsp(nonce: string): string {
-  const n = `'nonce-${nonce}'`;
-  return [
+function buildCsp(nonce: string | null): string {
+  const scriptExtra = nonce ? `'nonce-${nonce}' 'strict-dynamic'` : "'unsafe-inline'";
+  const directives = [
     "default-src 'self'",
-    `script-src 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com`,
-    `script-src-elem 'self' ${n} 'unsafe-inline' blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
-    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com https://api.fontshare.com",
-    "font-src 'self' https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com",
-    "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.razorpay.com https://cdn.simpleicons.org",
-    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://generativelanguage.googleapis.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.razorpay.com https://lumberjack.razorpay.com https://*.upstash.io https://vitals.vercel-insights.com https://va.vercel-scripts.com wss://api.cartesia.ai https://api.cartesia.ai wss://api.deepgram.com https://api.deepgram.com wss://api.sarvam.ai https://api.sarvam.ai https://*.tts.speech.microsoft.com https://api.resend.com https://*.sentry.io https://us.i.posthog.com https://us-assets.i.posthog.com https://*.i.posthog.com https://api.pwnedpasswords.com",
-    "frame-src https://api.razorpay.com https://checkout.razorpay.com",
+    `script-src 'self' ${scriptExtra} blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com`,
+    `script-src-elem 'self' ${scriptExtra} blob: https://checkout.razorpay.com https://*.razorpay.com https://va.vercel-scripts.com https://*.vercel-scripts.com https://us-assets.i.posthog.com https://www.googletagmanager.com https://pagead2.googlesyndication.com https://*.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com",
+    "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.razorpay.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.razorpay.com https://t2.gstatic.com https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.doubleclick.net",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.groq.com https://generativelanguage.googleapis.com https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://*.razorpay.com https://lumberjack.razorpay.com https://*.upstash.io https://vitals.vercel-insights.com https://va.vercel-scripts.com wss://api.cartesia.ai https://api.cartesia.ai wss://api.deepgram.com https://api.deepgram.com https://*.tts.speech.microsoft.com https://api.resend.com https://*.sentry.io https://us.i.posthog.com https://us-assets.i.posthog.com https://*.i.posthog.com https://api.pwnedpasswords.com https://www.googletagmanager.com https://www.google-analytics.com https://analytics.google.com https://*.googlesyndication.com https://adservice.google.com https://googleads.g.doubleclick.net https://*.doubleclick.net",
+    "frame-src https://api.razorpay.com https://checkout.razorpay.com https://googleads.g.doubleclick.net https://*.doubleclick.net https://*.googlesyndication.com",
     "media-src 'self' blob: data:",
     "worker-src 'self' blob:",
     "base-uri 'self'",
     "form-action 'self'",
     "object-src 'none'",
-    "frame-ancestors 'none'",
-  ].join("; ");
+  ];
+  // Tempo's canvas devserver embeds route storyboards (e.g. /dashboard) in an
+  // iframe to preview the real app. Only relax frame-ancestors when the app
+  // is running under Tempo's own supervised dev process — production and any
+  // other non-Tempo traffic keep the strict 'none' policy.
+  if (process.env.TEMPO !== "true") {
+    directives.push("frame-ancestors 'none'");
+  }
+  return directives.join("; ");
 }
 
 const APP_HOST = "app.hirestepx.com";
@@ -114,17 +138,19 @@ async function verifyAdminTokenCookie(token: string): Promise<boolean> {
     if (!key) return false;
 
     const dataStr = atob(dataB64);
-    const expectedSigBytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(dataStr));
-    const expectedSigHex = Array.from(new Uint8Array(expectedSigBytes)).map(b => b.toString(16).padStart(2, "0")).join("");
 
-    // Constant-time hex comparison
-    if (sigHex.length !== expectedSigHex.length) return false;
-    let diff = 0;
-    for (let i = 0; i < sigHex.length; i++) diff |= sigHex.charCodeAt(i) ^ expectedSigHex.charCodeAt(i);
-    if (diff !== 0) return false;
+    // Convert hex signature to bytes and use crypto.subtle.verify() — this is
+    // the correct usage for a key imported with ["verify"]. The previous code
+    // called crypto.subtle.sign() on a ["verify"] key, which throws a
+    // NotSupportedError caught silently, causing every valid cookie to be rejected.
+    if (sigHex.length % 2 !== 0) return false;
+    const sigBytes = new Uint8Array(sigHex.match(/.{2}/g)!.map(b => parseInt(b, 16)));
+    const valid = await crypto.subtle.verify("HMAC", key, sigBytes, new TextEncoder().encode(dataStr));
+    if (!valid) return false;
 
-    const payload = JSON.parse(dataStr) as { exp?: unknown };
+    const payload = JSON.parse(dataStr) as { exp?: unknown; mfa?: unknown };
     if (typeof payload.exp !== "number" || Date.now() > payload.exp) return false;
+    if ((process.env.ADMIN_REQUIRE_MFA || "").trim() === "1" && payload.mfa !== true) return false;
 
     return true;
   } catch {
@@ -137,9 +163,12 @@ const MARKETING_PREFIXES = ["/blog/", "/page/", "/profile/"];
 
 const APP_PREFIXES = [
   "/dashboard", "/sessions", "/calendar", "/analytics", "/resume", "/settings",
-  "/session/", "/interview", "/onboarding", "/signup", "/login", "/reset-password",
+  "/session/", "/interview/", "/onboarding", "/signup", "/login", "/reset-password",
   "/auth/callback",
 ];
+// /interview (exact) is an app route; /interview-prep is a marketing page.
+// We keep /interview/ as a prefix so /interview-prep is never caught.
+const APP_EXACT_PATHS = new Set(["/interview"]);
 
 /**
  * Pre-launch "Coming Soon" gate (restored 2026-06-16).
@@ -156,9 +185,7 @@ const APP_PREFIXES = [
  * same flag so the two stay in sync.
  */
 const PRE_LAUNCH_HOSTS = new Set<string>([
-  "hirestepx.com",
-  "www.hirestepx.com",
-  "app.hirestepx.com",
+  // Cleared for public launch — gate disabled on all hosts.
 ]);
 
 // Gate allowlist logic (which paths stay reachable while gated) lives in
@@ -171,7 +198,22 @@ function isMarketingPath(pathname: string): boolean {
 }
 
 function isAppPath(pathname: string): boolean {
-  return APP_PREFIXES.some(p => pathname.startsWith(p));
+  return APP_EXACT_PATHS.has(pathname) || APP_PREFIXES.some(p => pathname.startsWith(p));
+}
+
+// Routes that must keep a live per-request nonce (they render through
+// app/(app)/layout.tsx, app/(auth)/layout.tsx, or app/admin/layout.tsx, all
+// of which call headers() via AnalyticsNonce). Everything else renders
+// through app/(marketing)/layout.tsx, which never calls headers() so those
+// routes can stay static/ISR. isAppPath() covers (app) + most of (auth);
+// "/forgot-password" is the one (auth) route it doesn't already enumerate.
+function needsLiveNonce(pathname: string): boolean {
+  return (
+    isAppPath(pathname) ||
+    pathname === "/forgot-password" ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/api/")
+  );
 }
 
 export async function proxy(request: NextRequest) {
@@ -179,20 +221,42 @@ export async function proxy(request: NextRequest) {
   const hostname = request.nextUrl.hostname;
 
   // Generate a per-request nonce and forward it to server components via
-  // x-nonce so app/layout.tsx can attach it to JSON-LD <script> tags.
+  // x-nonce so AnalyticsNonce (app/(app), app/(auth), app/admin layouts) can
+  // attach it to JSON-LD/analytics <script> tags. Marketing routes don't
+  // read it (no headers() call in app/(marketing)/layout.tsx), so the CSP
+  // for those omits the nonce/'strict-dynamic' entirely — see buildCsp().
   // crypto.randomUUID() is available on all WinterCG-compliant runtimes.
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildCsp(nonce);
+  const csp = buildCsp(needsLiveNonce(pathname) ? nonce : null);
 
   // Helper: attach nonce to request headers so server components can read it,
-  // and set the CSP response header on the final response.
+  // and set the CSP + hardening response headers on the final response.
   function withCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", csp);
+    // Cross-origin isolation: prevent cross-origin window.opener access and
+    // restrict how this page can be embedded by other origins.
+    response.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    // Restrict what browser features can be used; deny mic/camera/geolocation
+    // except on same-origin (payment and interview pages request mic via JS).
+    response.headers.set(
+      "Permissions-Policy",
+      "camera=(), geolocation=(), payment=(self), microphone=(self), usb=(), bluetooth=()",
+    );
+    // Prevent MIME-type sniffing on responses.
+    response.headers.set("X-Content-Type-Options", "nosniff");
     return response;
   }
   function nextWithNonce(): NextResponse {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
+    // Next.js auto-stamps this nonce onto its own framework-injected inline
+    // scripts (the RSC hydration payload) only if it can read a matching
+    // `content-security-policy` header on the INCOMING request — see
+    // getScriptNonceFromHeader() in next/dist/server/app-render/app-render.js.
+    // x-nonce alone only covers scripts we manually attach it to (e.g.
+    // ConsentGatedAnalytics); without this, Next's own scripts render with no
+    // nonce and get silently blocked under 'strict-dynamic'.
+    requestHeaders.set("Content-Security-Policy", csp);
     return withCsp(NextResponse.next({ request: { headers: requestHeaders } }));
   }
 
@@ -213,6 +277,7 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/";
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", csp);
     return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
   }
 
@@ -226,6 +291,12 @@ export async function proxy(request: NextRequest) {
 
     // /admin-login is the unauthenticated entry point — let it through always.
     if (pathname === "/admin-login") {
+      return nextWithNonce();
+    }
+
+    // The service worker script must be served directly — browsers reject SW
+    // registration when the script URL returns a redirect, even on authed subdomains.
+    if (pathname === "/sw.js") {
       return nextWithNonce();
     }
 
@@ -246,6 +317,7 @@ export async function proxy(request: NextRequest) {
       url.pathname = "/admin";
       const requestHeaders = new Headers(request.headers);
       requestHeaders.set("x-nonce", nonce);
+      requestHeaders.set("Content-Security-Policy", csp);
       return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
     }
     return nextWithNonce();

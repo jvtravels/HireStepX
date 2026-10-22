@@ -119,6 +119,19 @@ jobs:
               process.exit(1);
             }
           '
+      - name: Post-deploy health check
+        if: ${{ !cancelled() }}
+        # Ping /api/uptime-check on the deployed URL to confirm the serverless
+        # runtime is healthy immediately after each Vercel deployment — closes
+        # the gap where the nightly cron at 6am UTC is the only health signal.
+        run: |
+          echo "Health-checking $BASE_URL/api/uptime-check"
+          STATUS=$(curl -fsS -o /dev/null -w "%{http_code}" -m 15 "$BASE_URL/api/uptime-check" || echo "000")
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Uptime check returned HTTP $STATUS — deployment may be broken."
+            exit 1
+          fi
+          echo "Uptime check passed (HTTP $STATUS)."
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:

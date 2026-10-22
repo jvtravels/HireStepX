@@ -94,3 +94,18 @@ describe("JD Keyword Extraction", () => {
     expect(keywords).not.toContain("sql");
   });
 });
+
+describe("isMostlyEnglishScript", () => {
+  it("accepts an English resume", async () => {
+    const { isMostlyEnglishScript } = await import("../resumeAts");
+    expect(isMostlyEnglishScript("Led a team of five engineers to build and launch a payments platform. ".repeat(3))).toBe(true);
+  });
+  it("rejects a Devanagari resume", async () => {
+    const { isMostlyEnglishScript } = await import("../resumeAts");
+    expect(isMostlyEnglishScript("मैंने पाँच इंजीनियरों की टीम का नेतृत्व किया और भुगतान प्लेटफ़ॉर्म बनाया। ".repeat(4))).toBe(false);
+  });
+  it("treats very short text as English so the normal path decides", async () => {
+    const { isMostlyEnglishScript } = await import("../resumeAts");
+    expect(isMostlyEnglishScript("हिंदी")).toBe(true);
+  });
+});

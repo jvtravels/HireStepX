@@ -10,21 +10,20 @@
  * Inert until configured: returns early if the Google client env is unset.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { googleConfigured } from "./_google-calendar";
 import { runIncrementalSync, ensureWatchChannel, type SyncRow } from "./_google-sync-runner";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const RENEW_WINDOW_MS = 86_400_000; // re-register a channel within 1 day of expiry
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasSecret = CRON_SECRET && req.headers.authorization === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!googleConfigured({ GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET })) {
@@ -36,7 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const rowsRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/google_calendar_sync?select=*&limit=1000`,
+      `${SUPABASE_URL}/rest/v1/google_calendar_sync?select=user_id,access_token,refresh_token,sync_token,calendar_id,watch_expiry,watch_channel_id,watch_resource_id&limit=1000`,
       { headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` }, signal: AbortSignal.timeout(10_000) },
     );
     if (!rowsRes.ok) {
@@ -45,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const rows: SyncRow[] = await rowsRes.json().catch(() => []);
     if (!Array.isArray(rows) || rows.length === 0) {
+      await recordCronResult("google-calendar-poll", { errors: 0 });
       return res.status(200).json({ synced: 0, message: "No connected calendars" });
     }
 
@@ -71,6 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    await recordCronResult("google-calendar-poll", { errors: 0 });
     return res.status(200).json({ connections: rows.length, synced, renewed, reconnectNeeded });
   } catch (err) {
     console.error("[cron:google-poll] fatal:", err);

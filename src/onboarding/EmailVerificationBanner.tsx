@@ -1,44 +1,18 @@
-import { useState, useEffect } from "react";
 import { font } from "../tokens";
 import { tokens } from "../auth/_tokens";
+import { Button } from "@/components/ui/button";
+import { useResendVerification } from "../auth/ResendVerification";
 
 export function EmailVerificationBanner({ email }: { email?: string } = {}) {
-  const [cooldown, setCooldown] = useState(0);
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  const handleResend = async () => {
-    if (!email || cooldown > 0 || status === "sending") return;
-    setStatus("sending");
-    try {
-      const res = await fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "resend", email: email.toLowerCase().trim() }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setStatus("sent");
-      setCooldown(45);
-      setTimeout(() => setStatus("idle"), 4000);
-    } catch (err) {
-      console.error("[onboarding] Resend verification failed:", err instanceof Error ? err.message : err);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 4000);
-    }
-  };
+  const { send, sending, cooldown, message } = useResendVerification(email ?? "");
 
   // Derived from the canonical cream palette so a token shift propagates.
   const COPPER = tokens.copper;
   const COPPER_SOFT = "rgba(180, 83, 9, 0.08)"; // banner-local lighter wash, between copperWash & copperSoft
   const COAL = tokens.coal;
-  const INK_FAINT = tokens.inkFaintWeak;
   const LINE = tokens.line;
-  const disabled = cooldown > 0 || status === "sending";
+  const disabled = cooldown > 0 || sending;
+  const label = sending ? "Sending…" : cooldown > 0 ? (message?.kind === "ok" ? `Sent ✓ · resend in ${cooldown}s` : `Resend in ${cooldown}s`) : message?.kind === "error" ? "Failed — try again" : "Resend email";
   return (
     <div
       style={{
@@ -67,25 +41,16 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
         Check your inbox for a verification link — your progress is saved.
       </span>
       {email && (
-        <button
+        <Button
           type="button"
-          onClick={handleResend}
+          variant="outline"
+          size="sm"
+          onClick={send}
           disabled={disabled}
-          style={{
-            fontFamily: font.ui,
-            fontSize: 12,
-            fontWeight: 500,
-            color: disabled ? INK_FAINT : COPPER,
-            background: "transparent",
-            border: `1px solid ${disabled ? LINE : "rgba(180, 83, 9, 0.35)"}`,
-            borderRadius: 6,
-            padding: "4px 10px",
-            cursor: disabled ? "default" : "pointer",
-            transition: "all 0.15s",
-          }}
+          style={{ fontFamily: font.ui }}
         >
-          {status === "sending" ? "Sending…" : status === "sent" ? "Sent ✓" : status === "error" ? "Failed — try again" : cooldown > 0 ? `Resend in ${cooldown}s` : "Resend email"}
-        </button>
+          {label}
+        </Button>
       )}
     </div>
   );

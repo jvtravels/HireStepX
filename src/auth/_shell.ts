@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef } from "react";
 
 /* ─── Error mapping ─── */
 
+export const UNVERIFIED_EMAIL_MESSAGE =
+  "Your email isn't verified yet. Check your inbox for the verification link, or request a new one below.";
+
 /** Map Supabase auth errors to user-facing copy. Keep messages short
     and actionable; never leak which field was wrong (security). */
 export function mapAuthError(raw: string | undefined): string {
@@ -32,7 +35,7 @@ export function mapAuthError(raw: string | undefined): string {
     return "This email is already in our system. Check your inbox for a pending verification link, or sign in instead.";
   }
   if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
-    return "Your email isn't verified yet. Check your inbox for the verification link, or use \"Forgot password\" to resend it.";
+    return UNVERIFIED_EMAIL_MESSAGE;
   }
   if (msg.includes("rate limit") || msg.includes("too many requests")) {
     return "Too many attempts. Try again in a few minutes.";
@@ -164,6 +167,13 @@ export function isSessionExpiredByPreference(): boolean {
   }
 }
 
+/* A same-origin relative path only: single leading slash, never "//" or
+ * "/\" (both of which browsers resolve as a scheme-relative URL to a
+ * different origin, e.g. "//evil.com" -> "https://evil.com"). */
+function isSafeRelativePath(path: string): boolean {
+  return path.startsWith("/") && !path.startsWith("//") && !path.startsWith("/\\");
+}
+
 /* ─── Build a /signup or /login link that preserves both
        plan + next params (Login → Signup, Signup → Login). ─── */
 
@@ -176,7 +186,7 @@ export function buildAuthLink(
   const next = searchParams.get("next");
   const qs = new URLSearchParams();
   if (plan) qs.set("plan", plan);
-  if (next && next.startsWith("/")) qs.set("next", next);
+  if (next && isSafeRelativePath(next)) qs.set("next", next);
   const search = qs.toString();
   return search ? `${basePath}?${search}` : basePath;
 }
@@ -197,24 +207,28 @@ export interface ComputeRedirectArgs {
  * to buy, so we open the upgrade flow instead of dropping them on the
  * dashboard with no follow-through. Keep in sync with marketing CTAs in
  * src/marketing-v2/{HomepageV2,MarketingPagesV2}.tsx. */
-const PAID_PLANS = new Set(["session", "weekly", "monthly", "starter", "pro"]);
+const PAID_PLANS = new Set(["session", "weekly", "sprint", "starter"]);
+/* "sprint" is the user-facing alias for the "weekly" plan ID — normalize
+ * it here so the backend always receives the canonical plan identifier. */
+const PLAN_ALIASES: Record<string, string> = { sprint: "weekly" };
 
 export function computeAuthRedirect({
   next,
   plan,
   hasCompletedOnboarding,
 }: ComputeRedirectArgs): string {
-  if (next && next.startsWith("/")) return next;
+  if (next && isSafeRelativePath(next)) return next;
   const base = hasCompletedOnboarding ? "/dashboard" : "/onboarding";
   if (!plan) return base;
+  const resolvedPlan = PLAN_ALIASES[plan] ?? plan;
   /* Paid plan + onboarded → open upgrade modal immediately (the
    * dashboard reads ?upgrade=1 in a useEffect and shows the tier
    * picker). Paid plan + first-time → onboarding first; ?plan= is
    * preserved so we can resume into upgrade after onboarding. */
   if (PAID_PLANS.has(plan) && hasCompletedOnboarding) {
-    return `${base}?upgrade=1&plan=${plan}`;
+    return `${base}?upgrade=1&plan=${resolvedPlan}`;
   }
-  return `${base}?plan=${plan}`;
+  return `${base}?plan=${resolvedPlan}`;
 }
 
 /* ─── Email typo detection (Levenshtein-1 against common domains) ─── */
@@ -288,26 +302,25 @@ export function detectEmailProvider(email: string): EmailProvider | null {
   const at = email.lastIndexOf("@");
   if (at < 0) return null;
   const domain = email.slice(at + 1).toLowerCase();
-  if (domain.includes("gmail") || domain.includes("googlemail")) {
+  // Match the registrable name exactly — substring checks wrongly flagged
+  // company domains like acme.com ("me.com") or olive.com ("live").
+  const name = domain.split(".")[0];
+  if (name === "gmail" || name === "googlemail") {
     return { name: "Gmail", url: "https://mail.google.com" };
   }
-  if (
-    domain.includes("outlook") ||
-    domain.includes("hotmail") ||
-    domain.includes("live")
-  ) {
+  if (name === "outlook" || name === "hotmail" || name === "live") {
     return { name: "Outlook", url: "https://outlook.live.com" };
   }
-  if (domain.includes("yahoo")) {
+  if (name === "yahoo" || name === "ymail") {
     return { name: "Yahoo", url: "https://mail.yahoo.com" };
   }
-  if (domain.includes("proton")) {
+  if (name === "proton" || name === "protonmail") {
     return { name: "Proton", url: "https://mail.proton.me" };
   }
-  if (domain.includes("icloud") || domain.includes("me.com")) {
+  if (domain === "icloud.com" || domain === "me.com" || domain === "mac.com") {
     return { name: "iCloud", url: "https://www.icloud.com/mail" };
   }
-  if (domain.includes("rediffmail")) {
+  if (name === "rediffmail") {
     return { name: "Rediffmail", url: "https://mail.rediff.com" };
   }
   return null;

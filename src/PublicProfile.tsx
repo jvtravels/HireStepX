@@ -130,7 +130,7 @@ export default function PublicProfile() {
           <Link href="/signup" style={{
             fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.obsidian,
             background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-            padding: "12px 32px", borderRadius: 10, textDecoration: "none", display: "inline-block",
+            padding: "12px 32px", borderRadius: 8, textDecoration: "none", display: "inline-block",
           }}>
             Start Your Interview Prep
           </Link>

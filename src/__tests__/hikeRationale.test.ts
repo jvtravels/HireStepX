@@ -4,6 +4,8 @@ import {
   extractRationale,
   extractHikeRationale,
   categorizeHike,
+  hikeBriefToken,
+  hikeCalibrationHint,
 } from "../../server-handlers/_hike-rationale";
 
 describe("computeHikePercent", () => {
@@ -110,5 +112,51 @@ describe("categorizeHike", () => {
 
   it("returns null on null input", () => {
     expect(categorizeHike(null)).toBe(null);
+  });
+
+  /* OA-B8 — a negative hike is a pay cut, not a "conservative" raise. */
+  it("classifies a negative percent as pay-cut, not conservative", () => {
+    expect(categorizeHike(-18)).toBe("pay-cut");
+    expect(categorizeHike(-0.1)).toBe("pay-cut");
+  });
+
+  it("classifies exactly 0% as conservative (a flat lateral, not a cut)", () => {
+    expect(categorizeHike(0)).toBe("conservative");
+  });
+});
+
+describe("hikeBriefToken — OA-B8 negative-hike framing", () => {
+  it("emits a hike= chip for a positive percent", () => {
+    expect(hikeBriefToken(22)).toBe("hike=22%");
+    expect(hikeBriefToken(0)).toBe("hike=0%");
+  });
+
+  it("emits an absolute payCut= chip for a negative percent (never hike=-N)", () => {
+    expect(hikeBriefToken(-18)).toBe("payCut=18%");
+    expect(hikeBriefToken(-7.5)).toBe("payCut=7.5%");
+  });
+});
+
+describe("hikeCalibrationHint — OA-B8 single-source ladder", () => {
+  it("frames a negative hike as a pay cut and forbids the raise frame", () => {
+    const h = hikeCalibrationHint(-20);
+    expect(h).toMatch(/pay cut/i);
+    expect(h).toMatch(/20%/);
+    expect(h).not.toMatch(/conservative|within market norms/i);
+  });
+
+  it("preserves the prior ladder text for non-negative buckets", () => {
+    expect(hikeCalibrationHint(60)).toBe(
+      "Hike is 60% — extreme. Frame your pushback respectfully; ask for the justification before any concession.",
+    );
+    expect(hikeCalibrationHint(35)).toBe(
+      "Hike is 35% — aggressive. A justification probe is appropriate before counter-offering.",
+    );
+    expect(hikeCalibrationHint(20)).toBe(
+      "Hike is 20% — normal switch-job range. Probe lightly or proceed to counter.",
+    );
+    expect(hikeCalibrationHint(10)).toBe(
+      "Hike is 10% — conservative. The candidate's ask is well within market norms; consider matching.",
+    );
   });
 });

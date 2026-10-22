@@ -8,7 +8,7 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f } from "../auth/_tokens";
 import type { Fixture, Pillar, CrossInsight, TypedFlag, RangeKeyLocal as RangeKey, Attention } from "./types";
 import { rangeSliceDated, rangeStartIndex, RANGE_LABEL } from "./types";
 import {
@@ -16,27 +16,25 @@ import {
   RiGauge, Trajectory, Spark, SkillBar, StarChips, EvidenceQuote,
   scoreColor, TONE_FG, HIRE_META, BAND_META, COPPER_LINE, SUCCESS_LINE,
 } from "./ui";
+import { EmptyState as SharedEmptyState } from "../components/EmptyState";
+import { Button } from "@/components/ui/button";
 
 /* ── shared small bits ─────────────────────────────────────────── */
 
+/* Consolidated onto the shared shadcn-backed EmptyState (src/components/EmptyState.tsx) —
+   this local wrapper just adapts the `need` prop name this file's call sites use to the
+   shared component's `description` prop, and picks up the Empty primitive's default
+   (vertical) layout in place of the old horizontal icon+text row. */
 export function EmptyState({ title, need }: { title: string; need: string }) {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "center", padding: "14px 16px", border: `1px dashed ${t.lineStrong}`, borderRadius: 12, background: t.cream }}>
-      <span aria-hidden="true" style={{ width: 28, height: 28, borderRadius: 8, background: t.creamSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: f.mono, fontSize: 13, color: t.inkSoft, flexShrink: 0 }}>+</span>
-      <div>
-        <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>{title}</div>
-        <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 1 }}>{need}</div>
-      </div>
-    </div>
-  );
+  return <SharedEmptyState title={title} description={need} />;
 }
 
 function DisclosureBtn({ open, onClick, label }: { open: boolean; onClick: () => void; label: string }) {
   return (
-    <button type="button" onClick={onClick} aria-expanded={open} className="rix-btn rix-focus rix-tap"
-      style={{ padding: "4px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
+    <Button type="button" variant="link" size="sm" onClick={onClick} aria-expanded={open}
+      style={{ padding: "4px 2px", height: "auto", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
       {open ? "Hide evidence" : label} <span aria-hidden="true">{open ? "▲" : "→"}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -54,10 +52,10 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
   const winStart = rangeStartIndex(d.trajectoryStamps, range, nowMs);
   const rangeDelta = d.trajectory.length ? d.ri - d.trajectory[Math.min(winStart, d.trajectory.length - 1)] : 0;
   return (
-    <Card as="section" pad={narrow ? 18 : 26} id="zone-readiness">
-      <h1 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>
+    <Card as="section" id="zone-readiness">
+      <h2 style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}>
         Readiness Index for {d.target.role}{d.target.hasCompany ? ` at ${d.target.company}` : ""}, {d.target.round}
-      </h1>
+      </h2>
       <div style={{ display: "flex", flexDirection: narrow ? "column" : "row", gap: narrow ? 18 : 30, alignItems: narrow ? "stretch" : "center" }}>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <RiGauge ri={d.ri} threshold={d.threshold} band={d.band} cohort={d.cohort.ri} size={narrow ? 190 : 220} />
@@ -91,16 +89,16 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
           {/* Comparison frames — cohort + own baseline give the number a reference */}
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs the {d.cohort.label}</div>
+              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs the {d.cohort.label}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: vsCohort >= 0 ? t.success : t.copper }}>{vsCohort >= 0 ? "+" : ""}{vsCohort}</span>
+                <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: vsCohort >= 0 ? t.success : t.copper }}>{vsCohort >= 0 ? "+" : ""}{vsCohort}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>RI (bar at {d.cohort.ri})</span>
               </div>
             </div>
             <div style={{ flex: 1, minWidth: 180, padding: "10px 14px", background: t.creamSoft, borderRadius: 10 }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs your baseline</div>
+              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>vs your baseline</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginTop: 4 }}>
-                <span style={{ fontFamily: f.serif, fontSize: 22, color: t.success }}>{vsBaseline >= 0 ? "+" : ""}{vsBaseline}</span>
+                <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.success }}>{vsBaseline >= 0 ? "+" : ""}{vsBaseline}</span>
                 <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>since {d.baseline.label}</span>
               </div>
             </div>
@@ -108,7 +106,7 @@ export function HeroRow({ d, narrow, range }: { d: Fixture; narrow: boolean; ran
 
           <div style={{ display: "flex", gap: 18, alignItems: "center", flexWrap: "wrap", borderTop: `1px solid ${t.line}`, paddingTop: 14 }}>
             <div style={{ flex: narrow ? "1 1 100%" : "0 0 auto" }}>
-              <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>Trajectory + projection</div>
+              <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>Trajectory + projection</div>
               <div style={{ marginTop: 8 }}>
                 <Trajectory points={traj} projTarget={d.projection.targetRi} threshold={d.threshold} width={narrow ? 240 : 200} />
               </div>
@@ -155,14 +153,14 @@ export function BandMix({ d }: { d: Fixture }) {
             const total = d.sessions || 1;
             if (noHire / total > 0.3) {
               return (
-                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.copperSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.copperSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.5 }}>
                   {noHire} of your {total} sessions fell below the hiring bar. This is usually a <strong>Consistency</strong> problem — your peak score is fine, but your floor is too low. Reducing variance moves the RI faster than chasing higher peaks.
                 </p>
               );
             }
             if (strongHire / total > 0.5) {
               return (
-                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.success100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+                <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.success100, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.5 }}>
                   More than half your sessions are at the strong-hire level. Your floor is solid. Focus on converting Hire sessions to Strong hire by adding specific metrics to your answers.
                 </p>
               );
@@ -189,22 +187,21 @@ const PILLAR_HINT: Record<Pillar["key"], string> = {
 
 function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pillar; lever: boolean; active: boolean; onOpen: () => void; range: RangeKey; stamps: number[]; nowMs: number }) {
   return (
-    <Card as="article" className="rix-pillar" pad={18}
+    <Card as="article"
       style={{
-        display: "flex", flexDirection: "column", gap: 8, minHeight: 196,
-        border: active ? `1px solid ${t.indigo}` : lever ? `1px solid ${COPPER_LINE}` : "none",
-        boxShadow: active ? `0 0 0 3px ${t.indigo100}, ${shadows.card}` : shadows.card,
+        display: "flex", flexDirection: "column", gap: 8, minHeight: 196, padding: "16px 18px",
+        background: active ? t.indigo100 : "transparent",
       }}>
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
         <div>
           <Title as="h3" size={14}>{p.label}</Title>
-          <div style={{ fontFamily: f.mono, fontSize: 9.5, color: t.inkSoft, marginTop: 3 }}>{PILLAR_HINT[p.key]}</div>
+          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, marginTop: 3 }}>{PILLAR_HINT[p.key]}</div>
         </div>
-        <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, background: t.creamSoft, padding: "2px 7px", borderRadius: 999 }}>{Math.round(p.weight * 100)}%</span>
+        <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, background: t.creamSoft, padding: "2px 7px", borderRadius: 999 }}>{Math.round(p.weight * 100)}%</span>
       </div>
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8 }}>
         <span style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 38, lineHeight: 1, color: scoreColor(p.score) }}>{p.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 38, lineHeight: 1, color: scoreColor(p.score) }}>{p.score}</span>
           <DeltaTag value={p.delta} suffix=" this fortnight" />
         </span>
         <Spark points={rangeSliceDated(p.trend, stamps, range, nowMs)} color={scoreColor(p.score)} width={70} height={26} />
@@ -213,11 +210,11 @@ function PillarCard({ p, lever, active, onOpen, range, stamps, nowMs }: { p: Pil
         <div style={{ width: `${p.score}%`, height: "100%", background: scoreColor(p.score), borderRadius: 999 }} />
       </div>
       <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45 }}>{p.blurb}</p>
-      {lever && <span style={{ fontFamily: f.mono, fontSize: 10, fontWeight: 600, color: t.copper, letterSpacing: 0.4, textTransform: "uppercase" }}>◆ Biggest lever</span>}
-      <button type="button" onClick={onOpen} aria-expanded={active} className="rix-btn rix-focus rix-tap"
-        style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 2px", background: "none", border: "none", cursor: "pointer", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
+      {lever && <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, color: t.copper, letterSpacing: 0.4, textTransform: "uppercase" }}>◆ Biggest lever</span>}
+      <Button type="button" variant="link" size="sm" onClick={onOpen} aria-expanded={active}
+        style={{ marginTop: "auto", alignSelf: "flex-start", padding: "4px 2px", height: "auto", fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.indigo }}>
         {active ? "Hide evidence ▲" : "Open evidence →"}
-      </button>
+      </Button>
     </Card>
   );
 }
@@ -230,7 +227,7 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
         <Eyebrow as="h2" tone="indigo"><span id="rix-pillars">The five pillars · weighted into RI</span></Eyebrow>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>open any pillar for its drivers and the one fix</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(5, 1fr)", gap: 14 }}>
+      <div className={narrow ? "rix-div-y" : "rix-div-x"} style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", border: `1px solid ${t.line}`, borderRadius: 12, overflow: "hidden" }}>
         {d.pillars.map((p) => (
           <PillarCard key={p.key} p={p} lever={p.key === leverKey} active={p.key === activeKey} onOpen={() => onOpen(p.key)} range={range} stamps={d.trajectoryStamps} nowMs={d.meta.generatedAtMs} />
         ))}
@@ -244,32 +241,32 @@ export function PillarGrid({ d, narrow, activeKey, onOpen, range }: { d: Fixture
    hold/fix narration. The inline drill target for the pillar grid. */
 export function PillarEvidence({ p }: { p: Pillar }) {
   return (
-    <Card as="section" pad={22} style={{ border: `1px solid ${t.indigo}`, boxShadow: `0 0 0 3px ${t.indigo100}, ${shadows.card}` }}>
+    <Card as="section" style={{ background: t.indigo100, borderRadius: 12, padding: 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
         <div>
           <Eyebrow as="h2" tone="indigo">Pillar evidence</Eyebrow>
           <Title as="h3" size={24}>{p.label}</Title>
         </div>
         <span style={{ textAlign: "right" }}>
-          <span style={{ fontFamily: f.serif, fontSize: 40, color: scoreColor(p.score), lineHeight: 1 }}>{p.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 40, color: scoreColor(p.score), lineHeight: 1 }}>{p.score}</span>
           <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}> / 100</span>
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, p.drivers.length))}, 1fr)`, gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${Math.min(3, Math.max(1, p.drivers.length))}, minmax(0, 1fr))`, gap: 14 }}>
         {p.drivers.map((dr) => (
           <MetricStat key={dr.label} label={dr.label} value={dr.value}
             tone={dr.tone === "good" ? "good" : dr.tone === "watch" ? "warn" : dr.tone === "miss" ? "bad" : "ink"}
             hint={dr.hint} meter={dr.meter} />
         ))}
       </div>
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 14 }}>
         <div style={{ padding: "14px 16px", background: t.success100, borderRadius: 12 }}>
           <Eyebrow tone="ink"><span style={{ color: t.success }}>Holding well</span></Eyebrow>
-          <p style={{ margin: "6px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5 }}>{p.hold}</p>
+          <p style={{ margin: "6px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.5 }}>{p.hold}</p>
         </div>
         <div style={{ padding: "14px 16px", background: t.copperSoft, borderRadius: 12 }}>
           <Eyebrow tone="ink"><span style={{ color: t.copper }}>The one fix</span></Eyebrow>
-          <p style={{ margin: "6px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5 }}>{p.fix}</p>
+          <p style={{ margin: "6px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.5 }}>{p.fix}</p>
         </div>
       </div>
     </Card>
@@ -292,7 +289,7 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
   }
   const a = d.snapshots.find((s) => s.id === aId) ?? d.snapshots[0];
   const b = d.snapshots.find((s) => s.id === bId) ?? d.snapshots[d.snapshots.length - 1];
-  const selStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 12.5, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer" };
+  const selStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 12, color: t.coal, background: t.white, border: `1px solid ${t.line}`, borderRadius: 8, padding: "6px 10px", cursor: "pointer" };
   return (
     <Card as="section">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -301,14 +298,14 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <Title as="h3" size={20}>What moved between two points</Title>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <label htmlFor="rix-compare-from" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
+          <label htmlFor="rix-compare-from" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 11, color: t.inkSoft, textTransform: "uppercase" }}>
             From
             <select id="rix-compare-from" name="rix-compare-from" aria-label="Compare from session" className="rix-focus" value={aId} onChange={(e) => setA(e.target.value)} style={selStyle}>
               {d.snapshots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
           </label>
           <span aria-hidden="true" style={{ color: t.inkFaint }}>→</span>
-          <label htmlFor="rix-compare-to" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 10, color: t.inkSoft, textTransform: "uppercase" }}>
+          <label htmlFor="rix-compare-to" style={{ display: "inline-flex", gap: 6, alignItems: "center", fontFamily: f.mono, fontSize: 11, color: t.inkSoft, textTransform: "uppercase" }}>
             To
             <select id="rix-compare-to" name="rix-compare-to" aria-label="Compare to session" className="rix-focus" value={bId} onChange={(e) => setB(e.target.value)} style={selStyle}>
               {d.snapshots.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
@@ -318,12 +315,12 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 14 }}>
         <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>RI</span>
-        <span style={{ fontFamily: f.serif, fontSize: 22, color: t.inkSoft }}>{a.ri}</span>
+        <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.inkSoft }}>{a.ri}</span>
         <span aria-hidden="true" style={{ color: t.inkFaint }}>→</span>
-        <span style={{ fontFamily: f.serif, fontSize: 22, color: t.coal }}>{b.ri}</span>
+        <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.coal }}>{b.ri}</span>
         <DeltaTag value={b.ri - a.ri} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(5, 1fr)", gap: 10 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(5, minmax(0, 1fr))", gap: 10 }}>
         {d.pillarLabels.map((label, i) => {
           const delta = b.pillars[i] - a.pillars[i];
           const col = delta > 0 ? t.success : delta < 0 ? t.error : t.inkSoft;
@@ -332,7 +329,7 @@ export function SessionDiff({ d, narrow }: { d: Fixture; narrow: boolean }) {
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>{label}</div>
               <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
                 <span style={{ fontFamily: f.mono, fontSize: 14, color: t.coal }}>{b.pillars[i]}</span>
-                <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: col }}>{delta > 0 ? "+" : ""}{delta}</span>
+                <span style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 600, color: col }}>{delta > 0 ? "+" : ""}{delta}</span>
               </div>
             </div>
           );
@@ -348,7 +345,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
   const weakest = [...d.skills].sort((a, b) => a.score - b.score)[0];
   const lowSample = d.sessions < 8;
   return (
-    <div id="zone-competence" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.4fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-competence" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.4fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16, gap: 12 }}>
           <div>
@@ -360,10 +357,10 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
         {d.skills.length ? (
           <>
             <div style={{ display: "flex", flexDirection: "column", gap: 13 }}>
-              {d.skills.map((s) => <SkillBar key={s.name} s={s} />)}
+              {d.skills.map((s) => <SkillBar key={s.name} s={s} modelled={d.meta.modelled.includes("skills.percentile")} />)}
             </div>
             {weakest && (
-              <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>
+              <p style={{ marginTop: 16, marginBottom: 0, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
                 Weakest lever: <strong style={{ color: t.coal }}>{weakest.name}</strong> (p{weakest.percentile}). The biggest single RI gain comes from closing this gap.
               </p>
             )}
@@ -391,7 +388,7 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
           <div>
             <div style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, marginBottom: 8 }}>STAR completeness</div>
             <StarChips star={d.coverage.star} />
-            <div style={{ fontFamily: f.sans, fontSize: 11.5, color: t.inkSoft, marginTop: 9 }}>
+            <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 9 }}>
               {(() => {
                 const labels: Array<[keyof typeof d.coverage.star, string]> = [["S", "Situation"], ["T", "Task"], ["A", "Action"], ["R", "Result"], ["L", "Learning"]];
                 const missing = labels.filter(([k]) => !d.coverage.star[k]).map(([k, name]) => `${name} (${k})`);
@@ -413,6 +410,8 @@ export function CompetenceCoverage({ d, narrow }: { d: Fixture; narrow: boolean 
 
 export function BlindSpots({ d }: { d: Fixture }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   return (
     <Card as="section" id="zone-actions" style={{ scrollMarginTop: 88 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
@@ -423,18 +422,18 @@ export function BlindSpots({ d }: { d: Fixture }) {
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>% = frequency {d.target.hasCompany ? `at ${d.target.company}` : "in this role"}</span>
       </div>
       {d.blindSpots.length ? (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
           {d.blindSpots.map((b) => (
             <li key={b.competency} style={{ display: "flex", gap: 14, alignItems: "center", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 24, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
-              <div style={{ flex: 1 }}>
+              <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 22, color: t.copper, width: 52, flexShrink: 0 }}>{b.frequencyPct}%</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>{b.competency}</div>
-                <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 2 }}>{b.note}</div>
               </div>
-              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Practice ${b.competency}`}
-                style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Practice ${b.competency}`}
+                style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans, flexShrink: 0, whiteSpace: "nowrap" }}>
                 Practice
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
@@ -467,7 +466,7 @@ export function DeliveryPanel({ d, narrow }: { d: Fixture; narrow: boolean }) {
       {!hasVoice ? (
         <EmptyState title="No voice delivery read yet" need="Run a session in voice mode so we can measure pace, fillers, latency and energy." />
       ) : (
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(3, 1fr)", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(3, minmax(0, 1fr))", gap: 14 }}>
         <MetricStat label="Filler / min" value={`${c.fillerPerMin}`} tone={c.fillerPerMin <= 5 ? "good" : "warn"} meter={{ min: 0, max: 12, lo: 0, hi: 5, value: c.fillerPerMin, lowerBetter: true }} hint="comfortable ≤ 5" />
         <MetricStat label="Pace" value={`${c.paceWpm}`} unit="wpm" tone={c.paceWpm <= 160 ? "good" : "warn"} meter={{ min: 90, max: 200, lo: 120, hi: 160, value: c.paceWpm }} hint="120–160 ideal" />
         <MetricStat label="Silence ratio" value={`${c.silenceRatio}`} unit="%" tone={c.silenceRatio <= 15 ? "good" : "warn"} meter={{ min: 0, max: 40, lo: 0, hi: 15, value: c.silenceRatio, lowerBetter: true }} hint="dead air" />
@@ -523,7 +522,7 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
         {d.attention.map((a, i) => (
           <li key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, width: 38, flexShrink: 0 }}>{a.atPct}%</span>
-            <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase", color: ATTN_META[a.state].color, width: 96, flexShrink: 0 }}>{ATTN_META[a.state].label}</span>
+            <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, letterSpacing: 0.3, textTransform: "uppercase", color: ATTN_META[a.state].color, width: 96, flexShrink: 0 }}>{ATTN_META[a.state].label}</span>
             <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>{a.note}</span>
           </li>
         ))}
@@ -550,12 +549,12 @@ export function CulturalRegister({ d }: { d: Fixture }) {
           <li key={s.key} style={{ display: "flex", gap: 12, alignItems: "center", padding: "10px 12px", background: s.tone === "asset" ? t.success100 : t.warning100, borderRadius: 10 }}>
             <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 700, color: s.tone === "asset" ? t.success : t.warning, width: 18 }}>{s.tone === "asset" ? "✓" : "!"}</span>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: f.sans, fontSize: 13.5, fontWeight: 600, color: t.coal }}>
+              <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>
                 {s.label} <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, fontWeight: 400 }}>· {s.ratePct}% of answers</span>
               </div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 1 }}>{s.note}</div>
             </div>
-            <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: s.tone === "asset" ? t.success : t.warning }}>{s.tone === "asset" ? "asset" : "watch"}</span>
+            <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: s.tone === "asset" ? t.success : t.warning }}>{s.tone === "asset" ? "asset" : "watch"}</span>
           </li>
         ))}
       </ul>
@@ -576,7 +575,7 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
     { label: "Too long", n: ac.lengthMix.tooLong, color: t.error },
   ];
   return (
-    <div id="zone-craft" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.3fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-craft" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.3fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <Eyebrow as="h2">Answer craft · per-question verdicts</Eyebrow>
         <Title as="h3" size={20}>Quality across every answer</Title>
@@ -590,7 +589,7 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <div style={{ display: "flex", gap: 14, marginTop: 8, flexWrap: "wrap" }}>
             {lenSeg.map((s) => (
               <span key={s.label} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, display: "inline-flex", gap: 6, alignItems: "center" }}>
-                <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />{s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{s.n}</strong>
+                <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />{s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 12 }}>{s.n}</strong>
               </span>
             ))}
           </div>
@@ -604,13 +603,13 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
             {open && (
               <ul style={{ listStyle: "none", margin: "12px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
                 {ac.weakAnswers.map((w, i) => (
-                  <li key={i} className="rix-evi" style={{ padding: "10px 12px", borderRadius: 10 }}>
+                  <li key={i} style={{ padding: "10px 12px", borderRadius: 10 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, textTransform: "uppercase", color: t.error, background: t.error100, padding: "2px 6px", borderRadius: 5 }}>{w.verdict}</span>
+                      <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, textTransform: "uppercase", color: t.error, background: t.error100, padding: "2px 6px", borderRadius: 5 }}>{w.verdict}</span>
                       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{w.question}</span>
                     </div>
                     {w.quote && <EvidenceQuote quote={w.quote} />}
-                    <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.copper, marginTop: 6 }}>Fix · {w.fix}</div>
+                    <div style={{ fontFamily: f.sans, fontSize: 12, color: t.copper, marginTop: 6 }}>Fix · {w.fix}</div>
                   </li>
                 ))}
               </ul>
@@ -627,7 +626,7 @@ export function AnswerCraft({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <div style={{ flex: 1 }}><MetricStat label="Quantified answers" value={`${ac.quantifiedPct}`} unit="%" tone={ac.quantifiedPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: ac.quantifiedPct }} hint="answers with a metric" /></div>
           <div style={{ flex: 1 }}><MetricStat label="Clear ownership" value={`${ac.ownershipPct}`} unit="%" tone={ac.ownershipPct >= 65 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 65, hi: 100, value: ac.ownershipPct }} hint="“I” vs we-heavy" /></div>
         </div>
-        <p style={{ margin: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5 }}>
+        <p style={{ margin: 0, padding: "10px 14px", background: t.indigo100, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.indigoDeep, lineHeight: 1.5 }}>
           {ac.quantifiedPct < 60
             ? "Putting a number on the result is the fastest answer-craft win. It moves Partial answers to Complete."
             : "Strong on numbers. Keep first-person ownership high and you convert Complete answers to Strong."}
@@ -649,7 +648,7 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
         </div>
         <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>pinned per type</span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "repeat(2, minmax(0, 1fr))", gap: 12 }}>
         {d.focusMetrics.map((fm) => (
           <div key={fm.type} style={{ border: `1px solid ${t.line}`, borderRadius: 12, padding: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
@@ -659,10 +658,10 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
             <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
               {fm.metrics.map((m) => (
                 <div key={m.label} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>{m.label}</span>
+                  <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>{m.label}</span>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                     <span aria-hidden="true" style={{ width: 7, height: 7, borderRadius: 999, background: TONE_FG[m.tone] }} />
-                    <span style={{ fontFamily: f.mono, fontSize: 12.5, fontWeight: 600, color: TONE_FG[m.tone] }}>{m.value}</span>
+                    <span style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 600, color: TONE_FG[m.tone] }}>{m.value}</span>
                   </span>
                 </div>
               ))}
@@ -692,7 +691,7 @@ const KIND_META: Record<CrossInsight["kind"], { glyph: string; color: string; la
 
 export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean }) {
   return (
-    <div id="zone-patterns" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1.4fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-patterns" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "1.4fr minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <Eyebrow as="h2" tone="indigo">Patterns over time · across sessions</Eyebrow>
         <Title as="h3" size={20}>What's moving, session to session</Title>
@@ -705,8 +704,8 @@ export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean })
                   <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 12, color: k.color, marginTop: 2, width: 14, flexShrink: 0 }}>{k.glyph}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
-                      <span style={{ fontFamily: f.mono, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: k.color }}>{k.label}</span>
-                      <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: t.coal }}>{ci.metric}</span>
+                      <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 600, letterSpacing: 0.4, textTransform: "uppercase", color: k.color }}>{k.label}</span>
+                      <span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.coal }}>{ci.metric}</span>
                       {typeof ci.delta === "number" && <DeltaTag value={ci.delta} />}
                     </div>
                     <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2, lineHeight: 1.45 }}>{ci.text}</div>
@@ -730,7 +729,7 @@ export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean })
                   <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal }}>“{s.label}”</span>
                   <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, background: t.copperSoft, padding: "2px 8px", borderRadius: 999 }}>{s.count}× reused</span>
                 </div>
-                <div style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, marginTop: 6, lineHeight: 1.45 }}>{s.concern}</div>
+                <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 6, lineHeight: 1.45 }}>{s.concern}</div>
               </li>
             ))}
           </ul>
@@ -754,11 +753,11 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, gap: 10 }}>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: sev.color, background: sev.bg, padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>{sev.label}</span>
+          <span style={{ fontFamily: f.mono, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, textTransform: "uppercase", color: sev.color, background: sev.bg, padding: "2px 6px", borderRadius: 5, flexShrink: 0 }}>{sev.label}</span>
           <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{flag.title}</span>
         </span>
         <span style={{ display: "inline-flex", gap: 10, alignItems: "center", flexShrink: 0 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{flag.hits}/{flag.of}</span>
+          <span style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft }}>{flag.hits}/{flag.of}</span>
           {flag.quote && <DisclosureBtn open={open} onClick={() => setOpen((v) => !v)} label="Evidence" />}
         </span>
       </div>
@@ -772,6 +771,8 @@ function FlagRow({ flag }: { flag: TypedFlag }) {
 
 export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   return (
     <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
       <Card as="section">
@@ -787,11 +788,11 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
             {d.refresh.map((r) => (
               <li key={r.skill} style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, padding: "10px 12px", background: t.creamSoft, borderRadius: 10 }}>
                 <span aria-hidden="true" style={{ width: 8, height: 8, borderRadius: 999, background: r.decay <= -5 ? t.error : t.copper, flexShrink: 0 }} />
-                <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 13.5, color: t.coal }}>{r.skill}</span>
-                <span style={{ fontFamily: f.mono, fontSize: 11.5, color: t.inkSoft }}>{r.days}d idle</span>
-                <span style={{ fontFamily: f.mono, fontSize: 11.5, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
-                <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Refresh ${r.skill}`}
-                  style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Refresh</button>
+                <span style={{ flex: 1, minWidth: 0, fontFamily: f.sans, fontSize: 14, color: t.coal }}>{r.skill}</span>
+                <span style={{ fontFamily: f.mono, fontSize: 12, color: t.inkSoft }}>{r.days}d idle</span>
+                <span style={{ fontFamily: f.mono, fontSize: 12, fontWeight: 600, color: t.error, width: 30, textAlign: "right" }} aria-label={`decayed ${Math.abs(r.decay)} points`}>{r.decay}</span>
+                <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Refresh ${r.skill}`}
+                  style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans }}>Refresh</Button>
               </li>
             ))}
           </ul>
@@ -808,13 +809,13 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
               {d.redFlags.map((flag) => <FlagRow key={flag.title} flag={flag} />)}
             </div>
             <div style={{ marginTop: 16, padding: "10px 14px", background: t.indigo100, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-              <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12.5, color: t.indigoDeep, lineHeight: 1.5, flex: 1 }}>
+              <p style={{ margin: 0, fontFamily: f.sans, fontSize: 12, color: t.indigoDeep, lineHeight: 1.5, flex: 1 }}>
                 Fixing this one flag is your fastest RI gain. It appeared in {d.redFlags[0].hits} of your last {d.redFlags[0].of} sessions.
               </p>
-              <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap"
-                style={{ padding: "7px 14px", borderRadius: 8, border: `1px solid ${t.indigo}`, background: t.white, color: t.indigoDeep, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)}
+                style={{ borderColor: t.indigo, color: t.indigoDeep, fontFamily: f.sans, flexShrink: 0 }}>
                 Practice now →
-              </button>
+              </Button>
             </div>
           </>
         ) : (
@@ -828,6 +829,8 @@ export function RefreshAndFlags({ d, narrow }: { d: Fixture; narrow: boolean }) 
 /* Likely follow-ups — aggregated to a prep list. */
 export function FollowUpPrep({ d }: { d: Fixture }) {
   const router = useRouter();
+  const isCampus = d.target.role === "Campus / Fresher";
+  const practiceUrl = isCampus ? "/session/new?type=behavioral&focus=campus-placement" : "/session/new";
   if (!d.followUps.length) return null;
   return (
     <Card as="section">
@@ -841,13 +844,13 @@ export function FollowUpPrep({ d }: { d: Fixture }) {
       <ol style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
         {d.followUps.map((q, i) => (
           <li key={i} style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "12px 14px", background: t.creamSoft, borderRadius: 12 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 18, color: t.indigo, width: 40, flexShrink: 0 }}>{q.freqPct}%</span>
-            <div style={{ flex: 1 }}>
+            <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 18, color: t.indigo, width: 40, flexShrink: 0 }}>{q.freqPct}%</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.45 }}>{q.question}</div>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 3 }}>Why you · {q.why}</div>
             </div>
-            <button type="button" onClick={() => router.push("/session/new")} className="rix-btn rix-ghost rix-focus rix-tap" aria-label={`Drill: ${q.question}`}
-              style={{ padding: "6px 12px", borderRadius: 8, border: `1px solid ${COPPER_LINE}`, background: t.white, color: t.copper, fontFamily: f.sans, fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 }}>Drill</button>
+            <Button type="button" variant="outline" size="sm" onClick={() => router.push(practiceUrl)} aria-label={`Drill: ${q.question}`}
+              style={{ borderColor: COPPER_LINE, color: t.copper, fontFamily: f.sans, flexShrink: 0 }}>Drill</Button>
           </li>
         ))}
       </ol>
@@ -867,14 +870,14 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
   ];
   const vColor = rv.verdict === "strong" ? t.success : rv.verdict === "weak" || rv.verdict === "red flags" ? t.error : t.warning;
   return (
-    <div id="zone-closing" style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16, scrollMarginTop: 88 }}>
+    <div id="zone-closing" style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16, scrollMarginTop: 88 }}>
       <Card as="section">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, marginBottom: 14 }}>
           <div>
             <Eyebrow as="h2" tone="indigo">Closing turn · your questions back</Eyebrow>
             <Title as="h3" size={20}>The questions you ask back</Title>
           </div>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, fontWeight: 600, color: vColor, textTransform: "capitalize" }}>{rv.verdict}</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: vColor, textTransform: "capitalize" }}>{rv.verdict}</span>
         </div>
         <div role="img" aria-label={`Closing questions: ${rv.green} strong, ${rv.yellow} neutral, ${rv.red} risky`} style={{ display: "flex", height: 14, borderRadius: 999, overflow: "hidden", background: t.creamSoft }}>
           {segs.map((s) => s.n > 0 && <div key={s.label} style={{ width: `${(s.n / total) * 100}%`, background: s.color }} />)}
@@ -882,11 +885,11 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
         <ul style={{ display: "flex", gap: 14, listStyle: "none", margin: "10px 0 0", padding: 0, flexWrap: "wrap" }}>
           {segs.map((s) => (
             <li key={s.label} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, display: "inline-flex", gap: 6, alignItems: "center" }}>
-              <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />{s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{s.n}</strong>
+              <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />{s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 12 }}>{s.n}</strong>
             </li>
           ))}
         </ul>
-        <p style={{ margin: "14px 0 0", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
+        <p style={{ margin: "14px 0 0", fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>
           {rv.red > 0
             ? "One question read as a rejection trigger (salary or leave too early). Save those for the recruiter, not the panel."
             : "Your closing questions engage the role itself. Keep asking about success in 90 days and team structure."}
@@ -902,13 +905,13 @@ export function ClosingAndResume({ d, narrow }: { d: Fixture; narrow: boolean })
             {d.resume.trend.length > 1 && <Spark points={d.resume.trend} color={t.copper} />}
           </div>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-            <span style={{ fontFamily: f.serif, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
+            <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 44, lineHeight: 1, color: scoreColor(d.resume.score) }}>{d.resume.score}</span>
             <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
           </div>
           <div role="img" aria-label={`Resume grounding ${d.resume.score} of 100`} style={{ height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden", marginTop: 10 }}>
             <div style={{ width: `${d.resume.score}%`, height: "100%", background: scoreColor(d.resume.score), borderRadius: 999 }} />
           </div>
-          <p style={{ margin: "12px 0 0", fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>{d.resume.rationale}</p>
+          <p style={{ margin: "12px 0 0", fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>{d.resume.rationale}</p>
         </Card>
       ) : (
         <Card as="section">
@@ -926,18 +929,18 @@ export function Coaching({ d, narrow }: { d: Fixture; narrow: boolean }) {
   if (!d.coaching) return null;
   const co = d.coaching;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "1fr 1fr", gap: 16 }}>
-      <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}` }}>
+    <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "minmax(0, 1fr) minmax(0, 1fr)", gap: 16 }}>
+      <Card as="section" style={{ background: t.success100, border: `1px solid ${SUCCESS_LINE}`, borderRadius: 12, padding: 20 }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.success }}>Your edge</span></Eyebrow>
         <Title as="h3" size={20}>{co.strength.headline}</Title>
-        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{co.strength.meaning}</p>
+        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55 }}>{co.strength.meaning}</p>
       </Card>
-      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${COPPER_LINE}` }}>
+      <Card as="section" style={{ background: t.copperSoft, border: `1px solid ${COPPER_LINE}`, borderRadius: 12, padding: 20 }}>
         <Eyebrow as="h2" tone="ink"><span style={{ color: t.copper }}>Your one gap</span></Eyebrow>
         <Title as="h3" size={20}>{co.gap.headline}</Title>
-        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.55 }}>{co.gap.meaning}</p>
-        <div style={{ marginTop: 10, padding: "10px 12px", background: t.white, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
-          <span style={{ fontFamily: f.mono, fontSize: 10, color: t.copper, textTransform: "uppercase", letterSpacing: 0.4 }}>Try this</span><br />{co.gap.example}
+        <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55 }}>{co.gap.meaning}</p>
+        <div style={{ marginTop: 10, padding: "10px 12px", background: t.white, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>
+          <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, textTransform: "uppercase", letterSpacing: 0.4 }}>Try this</span><br />{co.gap.example}
         </div>
       </Card>
     </div>
@@ -958,11 +961,11 @@ export function NegotiationCard({ d, narrow }: { d: Fixture; narrow: boolean }) 
           <Title as="h3" size={20}>Your negotiation behaviour</Title>
         </div>
         <span style={{ display: "inline-flex", alignItems: "baseline", gap: 8 }}>
-          <span style={{ fontFamily: f.serif, fontSize: 34, lineHeight: 1, color: scoreColor(n.score) }}>{n.score}</span>
+          <span style={{ fontFamily: f.sans, fontWeight: 700, fontSize: 34, lineHeight: 1, color: scoreColor(n.score) }}>{n.score}</span>
           <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>/ 100</span>
         </span>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr) minmax(0, 1fr)" : "repeat(4, minmax(0, 1fr))", gap: 12 }}>
         <MetricStat label="Outcome" value={n.outcome === "walked-away" ? "Walked" : n.outcome.charAt(0).toUpperCase() + n.outcome.slice(1)} tone={n.outcome === "accepted" ? "good" : "warn"} />
         <MetricStat label="Anchored at turn" value={`${n.anchorTurn}`} tone={n.anchorTurn <= 1 ? "good" : "warn"} hint="earlier is stronger" />
         <MetricStat label="Band traversed" value={`${n.bandTraversalPct}`} unit="%" tone={n.bandTraversalPct >= 60 ? "good" : "warn"} meter={{ min: 0, max: 100, lo: 60, hi: 100, value: n.bandTraversalPct }} hint="of negotiable band" />
@@ -971,7 +974,7 @@ export function NegotiationCard({ d, narrow }: { d: Fixture; narrow: boolean }) 
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14, padding: "10px 14px", background: t.creamSoft, borderRadius: 10, flexWrap: "wrap" }}>
         <span style={{ fontFamily: f.mono, fontSize: 11, color: oColor, fontWeight: 600 }}>+{n.lpaGained} LPA gained</span>
         <span aria-hidden="true" style={{ width: 4, height: 4, borderRadius: 999, background: t.inkFaint }} />
-        <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}>{n.archetype}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>{n.archetype}</span>
       </div>
     </Card>
   );
@@ -996,22 +999,22 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
           <Title as="h3" size={20}>How much, how often, on what</Title>
         </div>
         <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.totalSessions}</strong> sessions</span>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.totalHours}</strong> hrs</span>
-          <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.serif, fontSize: 18 }}>{d.cadence.questions}</strong> questions</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.totalSessions}</strong> sessions</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.totalHours}</strong> hrs</span>
+          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}><strong style={{ color: t.coal, fontFamily: f.sans, fontWeight: 700, fontSize: 18 }}>{d.cadence.questions}</strong> questions</span>
         </div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: narrow ? "1fr" : "auto 1fr 1fr", gap: 22, alignItems: "start" }}>
+      <div style={{ display: "grid", gridTemplateColumns: narrow ? "minmax(0, 1fr)" : "auto minmax(0, 1fr) minmax(0, 1fr)", gap: 22, alignItems: "start" }}>
         <div>
-          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>Last {d.cadence.weeks} weeks</div>
+          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 8 }}>Last {d.cadence.weeks} weeks</div>
           <div role="img" aria-label={heatLabel} style={{ display: "grid", gridTemplateColumns: `14px repeat(${d.cadence.weeks}, 14px)`, gap: 4 }}>
             <span aria-hidden="true" />
             {Array.from({ length: d.cadence.weeks }).map((_, w) => (
-              <span key={w} aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 8, color: t.inkFaint, textAlign: "center" }}>{w + 1}</span>
+              <span key={w} aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 11, color: t.inkFaint, textAlign: "center" }}>{w + 1}</span>
             ))}
             {days.map((dy, r) => (
               <React.Fragment key={r}>
-                <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 8, color: t.inkFaint, lineHeight: "14px" }}>{dy}</span>
+                <span aria-hidden="true" style={{ fontFamily: f.mono, fontSize: 11, color: t.inkFaint, lineHeight: "14px" }}>{dy}</span>
                 {Array.from({ length: d.cadence.weeks }).map((_, w) => {
                   const raw = d.cadence.heat[w * 7 + r] ?? 0;
                   const v = Math.min(3, raw);
@@ -1022,11 +1025,11 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
           </div>
         </div>
         <div>
-          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 }}>By interview type</div>
+          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 }}>By interview type</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {d.cadence.typeMix.map((tm) => (
               <div key={tm.type} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontFamily: f.sans, fontSize: 12.5, color: t.coal, width: 96, flexShrink: 0 }}>{tm.type}</span>
+                <span style={{ fontFamily: f.sans, fontSize: 12, color: t.coal, width: 96, flexShrink: 0 }}>{tm.type}</span>
                 <div style={{ flex: 1, height: 7, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
                   <div style={{ width: `${(tm.n / typeTotal) * 100}%`, height: "100%", background: t.indigo, borderRadius: 999 }} />
                 </div>
@@ -1036,7 +1039,7 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
           </div>
         </div>
         <div>
-          <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 }}>By difficulty</div>
+          <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 10 }}>By difficulty</div>
           <div style={{ display: "flex", height: 14, borderRadius: 999, overflow: "hidden", background: t.creamSoft }}
             role="img" aria-label={`Difficulty mix: ${diff.warmup} warmup, ${diff.standard} standard, ${diff.hard} hard`}>
             {diff.warmup > 0 && <div style={{ width: `${(diff.warmup / diffTotal) * 100}%`, background: "rgba(49,46,129,0.30)" }} />}
@@ -1047,15 +1050,15 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
             {([["Warmup", diff.warmup, "rgba(49,46,129,0.30)"], ["Standard", diff.standard, "rgba(49,46,129,0.58)"], ["Hard", diff.hard, t.indigo]] as [string, number, string][]).map(([label, n, col]) => (
               <li key={label} style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, display: "flex", justifyContent: "space-between" }}>
                 <span style={{ display: "inline-flex", gap: 6, alignItems: "center" }}><span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: col }} />{label}</span>
-                <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{n}</strong>
+                <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 12 }}>{n}</strong>
               </li>
             ))}
           </ul>
-          {diff.hard === 0 && d.cadence.totalSessions > 0 && <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 11.5, color: t.warning }}>No hard sessions yet. The loop will be hard; practice at that level.</p>}
+          {diff.hard === 0 && d.cadence.totalSessions > 0 && <p style={{ margin: "10px 0 0", fontFamily: f.sans, fontSize: 12, color: t.warning }}>No hard sessions yet. The loop will be hard; practice at that level.</p>}
         </div>
       </div>
       {d.cadence.totalSessions > 0 && d.cadence.weeks > 0 && (
-        <p style={{ margin: "18px 0 0", padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12.5, color: t.coal, lineHeight: 1.5 }}>
+        <p style={{ margin: "18px 0 0", padding: "10px 14px", background: t.creamSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.5 }}>
           {(() => {
             const avg = d.cadence.totalSessions / d.cadence.weeks;
             const weeklyAvg = avg.toFixed(1);

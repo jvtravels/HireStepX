@@ -1,10 +1,33 @@
-/* ─── Font custom property — Satoshi replaces Inter as the primary UI font.
-   --font-ui was previously injected by next/font/google (Inter); now it is
-   defined here so all var(--font-ui) call sites resolve to Satoshi without
-   any per-component changes. Satoshi is loaded in app/layout.tsx via
-   <link rel="stylesheet" href="https://api.fontshare.com/...">. ─── */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* ─── Font custom property — Geist Sans replaces Satoshi as the primary UI
+   font (and Geist Mono replaces JetBrains Mono). --font-ui/--font-mono are
+   set on <body>/<html> from next/font/local in app/layout.tsx (self-hosted
+   from public/fonts/geist-*-var.woff2); the values below are the :root
+   fallback only. The @font-face rules further down register the literal
+   'Geist Sans' / 'Geist Mono' family names for the handful of call sites
+   that hardcode a font-family string instead of var(--font-ui). ─── */
+
+@font-face {
+  font-family: 'Geist Sans';
+  src: url('/fonts/geist-sans-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('/fonts/geist-mono-var.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@custom-variant dark (&:is(.dark *));
 :root {
-  --font-ui: 'Satoshi', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: 'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* ── Typography scale (8 stops) ──────────────────────────────────────────
    * Ratio ≈ 1.25 (major third). Use these for NEW code; existing hardcoded
@@ -21,7 +44,7 @@
    *   --text-3xl  : page headings
    *   --text-4xl+ : hero / display (handled inline with clamp())
    * ───────────────────────────────────────────────────────────────────── */
-  --text-xs:   11px;
+  --text-xs:   12px;
   --text-sm:   12px;
   --text-base: 13px;
   --text-md:   14px;
@@ -29,27 +52,208 @@
   --text-xl:   18px;
   --text-2xl:  22px;
   --text-3xl:  28px;
+
+  /* shadcn components render through Tailwind's font-sans utility class —
+     point it at the app's existing Geist Sans stack instead of shipping a new
+     font (Geist). --font-ui is set from next/font in app/layout.tsx. */
+  --font-sans: var(--font-ui);
+
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.148 0.004 228.8);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.148 0.004 228.8);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.148 0.004 228.8);
+  --primary: oklch(0.359 0.135 278.697);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.967 0.001 286.375);
+  --secondary-foreground: oklch(0.21 0.006 285.885);
+  --muted: oklch(0.963 0.002 197.1);
+  --muted-foreground: oklch(0.52 0.021 213.5);
+  --accent: oklch(0.963 0.002 197.1);
+  --accent-foreground: oklch(0.218 0.008 223.9);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.925 0.005 214.3);
+  --input: oklch(0.925 0.005 214.3);
+  --ring: oklch(0.723 0.014 214.4);
+
+  /* --primary is indigo, the actionable brand colour (see src/auth/_tokens.ts
+     T.indigo); copper is reserved for score/streak/achievement visuals. The
+     --btn-* values below mirror T.indigo/T.indigoDeep/T.error/T.errorInk. */
+  --btn-primary: oklch(0.359 0.135 278.697);
+  --btn-primary-hover: oklch(0.257 0.086 281.288);
+  --btn-primary-foreground: oklch(1 0 0);
+  --btn-destructive: oklch(0.505 0.190 27.518);
+  --btn-destructive-hover: oklch(0.405 0.152 27.518);
+  --chart-1: oklch(0.872 0.007 219.6);
+  --chart-2: oklch(0.52 0.021 213.5);
+  --chart-3: oklch(0.45 0.017 213.2);
+  --chart-4: oklch(0.378 0.015 216);
+  --chart-5: oklch(0.275 0.011 216.9);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.9851 0 89.9);
+  --sidebar-foreground: oklch(0.148 0.004 228.8);
+  --sidebar-primary: oklch(0.359 0.135 278.697);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.963 0.002 197.1);
+  --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
+  --sidebar-border: oklch(0.925 0.005 214.3);
+  --sidebar-ring: oklch(0.723 0.014 214.4);
 }
 
-/* ─── Base Reset ─── */
-*, *::before, *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ─── Base Reset ───
+   Wrapped in @layer base so Tailwind's @layer utilities (e.g. p-*, m-*,
+   gap-* spacing utilities, shadcn's Card padding) can still override it —
+   an unlayered reset here would unconditionally beat every layered
+   Tailwind utility regardless of specificity, per the CSS cascade layers
+   spec, silently zeroing out margin/padding app-wide. ─── */
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
 }
 
 /* ─── Global focus-visible styles (WCAG 2.1 AA) ─── */
 :focus-visible {
-  outline: 2px solid #B45309;
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 2px;
 }
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #B45309;
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 2px;
 }
+/* Menu and list-box rows already show a filled highlight on focus; the ring
+   would be a second heavy border on top of it. */
+[role="menuitem"]:focus-visible,
+[role="menuitemcheckbox"]:focus-visible,
+[role="menuitemradio"]:focus-visible,
+[role="option"]:focus-visible {
+  outline: none;
+}
+/* Shared Select trigger: Radix hands focus back to it after a pick, which
+   shows the keyboard ring on mouse use. A darker border marks focus instead. */
+[data-slot="select-trigger"]:focus-visible {
+  outline: none;
+  border-color: oklch(0.359 0.135 278.697);
+}
+/* Chip / tag fields: the wrapper is the visible "input", so it carries the
+   single focus ring, drawn over its own 1px border. The inner input's ring is
+   suppressed so a nested box never appears inside the field. */
+.rf-chipfield:focus-within {
+  outline: 2px solid oklch(0.359 0.135 278.697);
+  outline-offset: -1px;
+}
+.rf-chipfield[data-invalid]:focus-within {
+  outline-color: oklch(0.505 0.190 27.518);
+}
+.rf-chipfield input:focus-visible {
+  outline: none;
+}
+/* Advanced-matching accordion trigger sits inside a bordered card; draw the
+   ring inside its own edge so it doesn't float against the card border. */
+.rf-accordion-trigger:focus-visible {
+  outline-offset: -2px;
+  border-radius: 12px;
+}
 input[type="range"]:focus-visible {
-  outline: 2px solid #B45309;
+  outline: 2px solid oklch(0.359 0.135 278.697);
   outline-offset: 4px;
+}
+
+/* ─── Pointer cursor on clickable elements ───
+   Native <button> and role="button" default to the browser's arrow cursor,
+   not a pointer, unless a component opts in explicitly — inconsistent across
+   the app depending on whether that component happened to set cursor-pointer. */
+button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
+/* ─── Shared button hover/interaction states ───
+   Generalized version of DashboardHome's .hsx-dh-btn pattern (same 160ms
+   cubic-bezier(.2,.7,.2,1) snap timing — see src/_motion.ts) for screens
+   without their own scoped hover <style> block. Buttons that already drive
+   hover via onMouseEnter/Leave (DashboardSettings pills, SessionsV2
+   FilterPill) or the design-system Button component keep their existing
+   treatment untouched. */
+.hsx-btn {
+  transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              box-shadow 160ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              background-color 160ms ease,
+              border-color 160ms ease,
+              color 160ms ease,
+              filter 160ms ease;
+}
+.hsx-btn-primary {
+  background: oklch(0.359 0.135 278.697);
+  color: oklch(1 0 0);
+  border: none;
+}
+.hsx-btn-primary:not(:disabled):hover {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(20,17,10,.10), 0 10px 22px -6px rgba(49,46,129,.32);
+}
+.hsx-btn-primary:not(:disabled):active {
+  filter: brightness(0.96);
+  transform: translateY(0) scale(0.985);
+  transition-duration: 80ms;
+}
+/* Ghost — icon buttons with no default border (modal close "x", etc). */
+.hsx-btn-icon {
+  background: transparent;
+  border: 1px solid transparent;
+  color: oklch(0.52 0.021 213.5);
+  border-radius: 8px;
+}
+.hsx-btn-icon:not(:disabled):hover {
+  background: oklch(0.359 0.135 278.697 / 0.08);
+  color: oklch(0.359 0.135 278.697);
+  transform: translateY(-1px);
+}
+.hsx-btn-icon:not(:disabled):active {
+  background: oklch(0.359 0.135 278.697 / 0.14);
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+/* Outline — icon buttons with a hairline border (table row actions, pagers). */
+.hsx-btn-icon-outline {
+  background: oklch(1 0 0);
+  border: 1px solid oklch(0.943 0.006 265.3);
+  color: oklch(0.52 0.021 213.5);
+  border-radius: 8px;
+}
+.hsx-btn-icon-outline:not(:disabled):hover {
+  background: oklch(0.359 0.135 278.697 / 0.06);
+  border-color: oklch(0.359 0.135 278.697);
+  color: oklch(0.359 0.135 278.697);
+  transform: translateY(-1px);
+}
+.hsx-btn-icon-outline:not(:disabled):active {
+  transform: translateY(0) scale(0.96);
+  transition-duration: 80ms;
+}
+.hsx-btn:focus-visible {
+  outline: 2px solid oklch(0.359 0.135 278.697);
+  outline-offset: 3px;
+}
+@media (hover: none), (pointer: coarse) {
+  .hsx-btn-primary:hover, .hsx-btn-icon:hover, .hsx-btn-icon-outline:hover {
+    transform: none !important;
+    filter: none !important;
+    background: inherit;
+    border-color: inherit;
+    color: inherit;
+    box-shadow: inherit;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hsx-btn, .hsx-btn-primary, .hsx-btn-icon, .hsx-btn-icon-outline {
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -65,33 +269,36 @@ input[type="range"]:focus-visible {
   }
 }
 
-/* ─── Focus Visible ─── */
-*:focus-visible {
-  outline: 2px solid #B45309;
-  outline-offset: 2px;
-}
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #B45309;
-  outline-offset: 2px;
-}
-
 /* ─── Skip to Content ─── */
 .skip-to-content {
   position: absolute;
-  left: -9999px;
   top: 8px;
+  left: 16px;
   z-index: 9999;
   padding: 12px 24px;
-  background: #B45309;
-  color: #FAF7F0;
-  font-family: "Satoshi", system-ui, sans-serif;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: "Geist Sans", system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   border-radius: 10px;
   text-decoration: none;
+  /* Visually hidden until focused. clip-path is more reliable than
+     left:-9999px — avoids phantom scroll areas in some browsers. */
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .skip-to-content:focus {
-  left: 16px;
+  clip: auto;
+  clip-path: none;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  white-space: normal;
 }
 
 html {
@@ -100,11 +307,11 @@ html {
 
 body {
   margin: 0;
-  font-family: "Satoshi", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #FAF7F0;
-  color: #0E0C08;
+  background: var(--background);
+  color: var(--foreground);
   overflow-x: hidden;
   /* Prevent the browser's native pull-to-refresh — a user scrolling up on
      the dashboard would accidentally reload the page, losing filter state
@@ -133,9 +340,9 @@ body {
   left: 16px;
   z-index: 9999;
   padding: 12px 24px;
-  background: #B45309;
-  color: #FAF7F0;
-  font-family: "Satoshi", system-ui, sans-serif;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: "Geist Sans", system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   border-radius: 0 0 8px 8px;
@@ -144,17 +351,25 @@ body {
 }
 .skip-to-content:focus {
   top: 0;
-  outline: 2px solid #B45309;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 /* ─── Mobile Touch Targets ─── */
 @media (pointer: coarse) {
+  :root { --coarse-min: 44px; }
   input, select, textarea { min-height: 44px; }
-  button { min-height: 36px; }
+  button { min-height: 44px; }
+  /* Switches/checkboxes/radios are buttons too; their hit area is already extended with ::after, so the blanket 44px would stretch them into tall pills. */
+  button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; min-width: 0; }
 }
 
 /* ─── Keyframe Animations ─── */
+
+@keyframes jd-flash {
+  from { background-color: color-mix(in oklch, var(--btn-primary) 14%, transparent); }
+}
+.jd-flash { animation: jd-flash 1400ms cubic-bezier(0.25, 1, 0.5, 1); }
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(24px); }
@@ -206,7 +421,6 @@ body {
   50% { opacity: 0.7; transform: scale(1.02); }
 }
 
-
 @keyframes subtleFloat {
   0%, 100% { transform: translateY(0) rotate(0deg); }
   33% { transform: translateY(-6px) rotate(0.5deg); }
@@ -237,11 +451,11 @@ body {
 
 .gradient-border-card {
   position: relative;
-  background: linear-gradient(180deg, #FFFFFF 0%, #F4EFE3 100%);
+  background: linear-gradient(180deg, var(--background) 0%, var(--secondary) 100%);
   border-radius: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid oklch(from var(--background) l c h / 0.06);
   transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.03);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.2), inset 0 1px 0 oklch(from var(--background) l c h / 0.03);
 }
 
 .gradient-border-card::before {
@@ -252,13 +466,13 @@ body {
   padding: 1px;
   background: linear-gradient(
     135deg,
-    rgba(212, 179, 127, 0) 0%,
-    rgba(212, 179, 127, 0) 35%,
-    rgba(212, 179, 127, 0.25) 50%,
-    rgba(212, 179, 127, 0) 65%,
-    rgba(212, 179, 127, 0) 100%
+    oklch(0.784 0.078 78.581 / 0) 0%,
+    oklch(0.784 0.078 78.581 / 0) 35%,
+    oklch(0.784 0.078 78.581 / 0.25) 50%,
+    oklch(0.784 0.078 78.581 / 0) 65%,
+    oklch(0.784 0.078 78.581 / 0) 100%
   );
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask: linear-gradient(var(--background) 0 0) content-box, linear-gradient(var(--background) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   opacity: 0;
@@ -266,18 +480,7 @@ body {
   pointer-events: none;
 }
 
-.gradient-border-card:hover {
-  border-color: rgba(255, 255, 255, 0.10);
-  transform: translateY(-3px);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.35),
-    0 0 48px rgba(212, 179, 127, 0.04),
-    inset 0 1px 0 rgba(255,255,255,0.04);
-}
 
-.gradient-border-card:hover::before {
-  opacity: 1;
-}
 
 .gradient-border-card::after {
   content: '';
@@ -288,7 +491,7 @@ body {
   height: 60%;
   background: radial-gradient(
     ellipse at top right,
-    rgba(212, 179, 127, 0.03) 0%,
+    oklch(0.784 0.078 78.581 / 0.03) 0%,
     transparent 70%
   );
   border-radius: 14px;
@@ -297,40 +500,37 @@ body {
   pointer-events: none;
 }
 
-.gradient-border-card:hover::after {
-  opacity: 1;
-}
 
 /* ─── Accent Variants ─── */
 
 .gradient-border-card.accent-sage::before {
-  background: linear-gradient(135deg, rgba(122,158,126,0) 0%, rgba(122,158,126,0) 35%, rgba(122,158,126,0.25) 50%, rgba(122,158,126,0) 65%, rgba(122,158,126,0) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(135deg, oklch(0.663 0.061 147.815 / 0) 0%, oklch(0.663 0.061 147.815 / 0) 35%, oklch(0.663 0.061 147.815 / 0.25) 50%, oklch(0.663 0.061 147.815 / 0) 65%, oklch(0.663 0.061 147.815 / 0) 100%);
+  -webkit-mask: linear-gradient(var(--background) 0 0) content-box, linear-gradient(var(--background) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 .gradient-border-card.accent-sage::after {
-  background: radial-gradient(ellipse at top right, rgba(122,158,126,0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse at top right, oklch(0.663 0.061 147.815 / 0.04) 0%, transparent 70%);
 }
 
 .gradient-border-card.accent-ember::before {
-  background: linear-gradient(135deg, rgba(196,112,90,0) 0%, rgba(196,112,90,0) 35%, rgba(196,112,90,0.25) 50%, rgba(196,112,90,0) 65%, rgba(196,112,90,0) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(135deg, oklch(0.634 0.112 35.569 / 0) 0%, oklch(0.634 0.112 35.569 / 0) 35%, oklch(0.634 0.112 35.569 / 0.25) 50%, oklch(0.634 0.112 35.569 / 0) 65%, oklch(0.634 0.112 35.569 / 0) 100%);
+  -webkit-mask: linear-gradient(var(--background) 0 0) content-box, linear-gradient(var(--background) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 .gradient-border-card.accent-ember::after {
-  background: radial-gradient(ellipse at top right, rgba(196,112,90,0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse at top right, oklch(0.634 0.112 35.569 / 0.04) 0%, transparent 70%);
 }
 
 .gradient-border-card.accent-slate::before {
-  background: linear-gradient(135deg, rgba(126,141,152,0) 0%, rgba(126,141,152,0) 35%, rgba(126,141,152,0.25) 50%, rgba(126,141,152,0) 65%, rgba(126,141,152,0) 100%);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(135deg, oklch(0.635 0.024 239.652 / 0) 0%, oklch(0.635 0.024 239.652 / 0) 35%, oklch(0.635 0.024 239.652 / 0.25) 50%, oklch(0.635 0.024 239.652 / 0) 65%, oklch(0.635 0.024 239.652 / 0) 100%);
+  -webkit-mask: linear-gradient(var(--background) 0 0) content-box, linear-gradient(var(--background) 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
 }
 .gradient-border-card.accent-slate::after {
-  background: radial-gradient(ellipse at top right, rgba(126,141,152,0.04) 0%, transparent 70%);
+  background: radial-gradient(ellipse at top right, oklch(0.635 0.024 239.652 / 0.04) 0%, transparent 70%);
 }
 
 /* ─── Premium Shimmer Button ─── */
@@ -345,7 +545,7 @@ body {
               color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.2);
 }
 
 .shimmer-btn::after {
@@ -358,7 +558,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.1) 50%,
+    oklch(from var(--background) l c h / 0.1) 50%,
     transparent 100%
   );
   transform: translateX(-100%);
@@ -371,16 +571,16 @@ body {
 
 .shimmer-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(212, 179, 127, 0.2), 0 2px 8px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 24px oklch(0.784 0.078 78.581 / 0.2), 0 2px 8px oklch(0 0 0 / 0.2);
 }
 
 /* ─── Premium Button (gilt with inner shine) ─── */
 .premium-btn {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, #B45309 0%, #F4E5D8 50%, #B45309 100%);
+  background: linear-gradient(135deg, var(--primary) 0%, oklch(0.94 0.03 58.318) 50%, var(--primary) 100%);
   background-size: 200% 200%;
-  color: #FAF7F0;
+  color: var(--primary-foreground);
   border: none;
   font-weight: 600;
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -390,12 +590,12 @@ body {
               color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1),
               filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 8px rgba(212,179,127,0.2), inset 0 1px 0 rgba(255,255,255,0.2);
+  box-shadow: 0 2px 8px oklch(0.784 0.078 78.581 / 0.2), inset 0 1px 0 oklch(from var(--background) l c h / 0.2);
 }
 .premium-btn:hover {
   background-position: 100% 100%;
   transform: translateY(-2px);
-  box-shadow: 0 8px 28px rgba(212,179,127,0.3), inset 0 1px 0 rgba(255,255,255,0.25);
+  box-shadow: 0 8px 28px oklch(0.784 0.078 78.581 / 0.3), inset 0 1px 0 oklch(from var(--background) l c h / 0.25);
 }
 
 /* ─── Grid Dot Background Pattern ─── */
@@ -408,7 +608,7 @@ body {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+  background-image: radial-gradient(oklch(from var(--background) l c h / 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
   pointer-events: none;
   mask-image: radial-gradient(ellipse at center, black 20%, transparent 70%);
@@ -418,7 +618,7 @@ body {
 /* ─── Text Glow ─── */
 
 .text-glow {
-  text-shadow: 0 0 80px rgba(212, 179, 127, 0.15), 0 0 40px rgba(212, 179, 127, 0.05);
+  text-shadow: 0 0 80px oklch(0.784 0.078 78.581 / 0.15), 0 0 40px oklch(0.784 0.078 78.581 / 0.05);
 }
 
 /* ─── Link hover underline effect ─── */
@@ -452,8 +652,8 @@ body {
 .mockup-window:hover {
   transform: translateY(-6px) scale(1.005);
   box-shadow:
-    0 40px 100px rgba(0, 0, 0, 0.5),
-    0 0 80px rgba(212, 179, 127, 0.04);
+    0 40px 100px oklch(0 0 0 / 0.5),
+    0 0 80px oklch(0.784 0.078 78.581 / 0.04);
 }
 
 /* ─── Video player hover ─── */
@@ -470,8 +670,8 @@ body {
 
 .video-player:hover .video-play-btn {
   transform: scale(1.08);
-  background: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 0 48px rgba(212, 179, 127, 0.12);
+  background: oklch(from var(--background) l c h / 0.12);
+  box-shadow: 0 0 48px oklch(0.784 0.078 78.581 / 0.12);
 }
 
 /* ─── Testimonial image hover ─── */
@@ -481,10 +681,6 @@ body {
   transition: filter 0.4s ease, box-shadow 0.4s ease, transform 0.4s ease;
 }
 
-.gradient-border-card:hover .testimonial-avatar {
-  filter: grayscale(0%) brightness(1);
-  box-shadow: 0 0 24px rgba(212, 179, 127, 0.1);
-}
 
 /* ─── Icon container pulse ─── */
 
@@ -498,21 +694,17 @@ body {
               filter 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.gradient-border-card:hover .icon-container {
-  transform: scale(1.08);
-  box-shadow: 0 0 28px var(--icon-glow, rgba(212, 179, 127, 0.12));
-}
 
 /* ─── Pricing card featured glow ─── */
 
 .pricing-featured {
-  box-shadow: 0 0 48px rgba(212, 179, 127, 0.06);
+  box-shadow: 0 0 48px oklch(0.784 0.078 78.581 / 0.06);
 }
 
 .pricing-featured:hover {
   box-shadow:
-    0 12px 48px rgba(0, 0, 0, 0.4),
-    0 0 80px rgba(212, 179, 127, 0.08);
+    0 12px 48px oklch(0 0 0 / 0.4),
+    0 0 80px oklch(0.784 0.078 78.581 / 0.08);
 }
 
 /* Session quantity slider thumb */
@@ -522,23 +714,23 @@ input[type="range"]::-webkit-slider-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #B45309;
-  border: 2px solid #F4EFE3;
+  background: var(--primary);
+  border: 2px solid var(--secondary);
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(212, 179, 127, 0.35);
+  box-shadow: 0 0 8px oklch(0.784 0.078 78.581 / 0.35);
   transition: box-shadow 0.15s;
 }
 input[type="range"]::-webkit-slider-thumb:hover {
-  box-shadow: 0 0 14px rgba(212, 179, 127, 0.5);
+  box-shadow: 0 0 14px oklch(0.784 0.078 78.581 / 0.5);
 }
 input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #B45309;
-  border: 2px solid #F4EFE3;
+  background: var(--primary);
+  border: 2px solid var(--secondary);
   cursor: pointer;
-  box-shadow: 0 0 8px rgba(212, 179, 127, 0.35);
+  box-shadow: 0 0 8px oklch(0.784 0.078 78.581 / 0.35);
 }
 
 /* ─── Score bar animation ─── */
@@ -555,7 +747,7 @@ input[type="range"]::-moz-range-thumb {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, oklch(from var(--background) l c h / 0.15) 50%, transparent 100%);
   animation: shimmerSlide 2s ease-in-out 1s 1 forwards;
 }
 
@@ -565,9 +757,6 @@ input[type="range"]::-moz-range-thumb {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.gradient-border-card:hover .stat-icon {
-  transform: scale(1.15) translateY(-2px);
-}
 
 /* ─── Carousel Slide ─── */
 
@@ -578,22 +767,22 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── Glass input field ─── */
 .glass-input {
-  background: #F4EFE3;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--secondary);
+  border: 1px solid oklch(from var(--background) l c h / 0.06);
   border-radius: 10px;
-  color: #0E0C08;
-  font-family: "Satoshi", system-ui, sans-serif;
+  color: var(--foreground);
+  font-family: "Geist Sans", system-ui, sans-serif;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .glass-input:focus {
-  border-color: rgba(212, 179, 127, 0.3);
-  box-shadow: 0 0 0 3px rgba(212, 179, 127, 0.08);
+  border-color: oklch(0.784 0.078 78.581 / 0.3);
+  box-shadow: 0 0 0 3px oklch(0.784 0.078 78.581 / 0.08);
 }
 .glass-input:focus:not(:focus-visible) {
   outline: none;
 }
 .glass-input::placeholder {
-  color: #8E8983;
+  color: var(--muted-foreground);
 }
 
 /* ─── Noise texture overlay (lightweight repeating pattern) ─── */
@@ -615,18 +804,18 @@ input[type="range"]::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #B45309;
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 1px 3px rgba(20,17,10,0.25);
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px oklch(0.179 0.014 87.485 / 0.25);
   cursor: pointer;
 }
 .upgrade-session-slider::-moz-range-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #B45309;
-  border: 2px solid #FFFFFF;
-  box-shadow: 0 1px 3px rgba(20,17,10,0.25);
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 1px 3px oklch(0.179 0.014 87.485 / 0.25);
   cursor: pointer;
 }
 
@@ -705,6 +894,7 @@ input[type="range"]::-moz-range-thumb {
   .session-setup-grid { grid-template-columns: 1fr !important; }
 
   button, a { min-height: 44px; }
+  button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; }
 
   .session-detail-grid { grid-template-columns: 1fr !important; }
   .session-detail-header { flex-direction: column !important; gap: 16px !important; }
@@ -751,7 +941,7 @@ input[type="range"]::-moz-range-thumb {
   .quick-stats-bar { gap: 16px !important; flex-wrap: wrap !important; }
 
   .streak-widget { flex-wrap: wrap !important; gap: 0 !important; }
-  .streak-label { border-radius: 100px !important; border-right: 1px solid rgba(212,179,127,0.12) !important; }
+  .streak-label { border-radius: 100px !important; border-right: 1px solid oklch(0.784 0.078 78.581 / 0.12) !important; }
   .streak-dots { border-radius: 100px !important; margin-top: 6px; }
 
   .landing-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
@@ -819,7 +1009,7 @@ input[type="range"]::-moz-range-thumb {
   100% { background-position: 200% 0; }
 }
 .skeleton {
-  background: linear-gradient(90deg, rgba(14,12,8,0.05) 25%, rgba(14,12,8,0.11) 50%, rgba(14,12,8,0.05) 75%);
+  background: linear-gradient(90deg, oklch(0.155 0.009 85.192 / 0.05) 25%, oklch(0.155 0.009 85.192 / 0.11) 50%, oklch(0.155 0.009 85.192 / 0.05) 75%);
   background-size: 200% 100%;
   animation: skeletonShimmer 1.8s ease-in-out infinite;
   border-radius: 10px;
@@ -829,8 +1019,8 @@ input[type="range"]::-moz-range-thumb {
 .skeleton-text-sm { height: 10px; margin-bottom: 8px; }
 .skeleton-heading { height: 22px; margin-bottom: 14px; width: 60%; }
 .skeleton-card {
-  background: linear-gradient(180deg, rgba(14,12,8,0.04) 0%, rgba(14,12,8,0.02) 100%);
-  border: 1px solid rgba(14, 12, 8, 0.08);
+  background: linear-gradient(180deg, oklch(0.155 0.009 85.192 / 0.04) 0%, oklch(0.155 0.009 85.192 / 0.02) 100%);
+  border: 1px solid oklch(0.155 0.009 85.192 / 0.08);
   border-radius: 14px;
   padding: 20px;
 }
@@ -843,7 +1033,7 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── Canonical motion primitives ─────────────────────────────────────
    Single global home for the @keyframes that previously drifted across
-   component <style> blocks (Interview, SessionSetup, Toast, Onboarding,
+   component \3c style> blocks (Interview, SessionSetup, Toast, Onboarding,
    SessionDetailPanels). Components reference these by name via
    `animation: <name> <dur> <easing>` — never re-declare them locally.
 
@@ -898,11 +1088,10 @@ input[type="range"]::-moz-range-thumb {
 .spinner-sm { width: 12px; height: 12px; border-width: 1.5px; animation-duration: 0.6s; }
 .spinner-md { width: 16px; height: 16px; border-width: 2px; }
 
-
 /* ─── Badge Earned Animation ─── */
 @keyframes badgeGlow {
-  0%, 100% { box-shadow: 0 0 0 rgba(212,179,127,0); }
-  50% { box-shadow: 0 0 20px rgba(212,179,127,0.15); }
+  0%, 100% { box-shadow: 0 0 0 oklch(0.784 0.078 78.581 / 0); }
+  50% { box-shadow: 0 0 20px oklch(0.784 0.078 78.581 / 0.15); }
 }
 @keyframes badgePop {
   0% { transform: scale(0.6); opacity: 0; }
@@ -916,8 +1105,8 @@ input[type="range"]::-moz-range-thumb {
   100% { opacity: 0; transform: scale(0) rotate(360deg); }
 }
 @keyframes newBadgePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(212,179,127,0.3); }
-  50% { box-shadow: 0 0 0 8px rgba(212,179,127,0); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.784 0.078 78.581 / 0.3); }
+  50% { box-shadow: 0 0 0 8px oklch(0.784 0.078 78.581 / 0); }
 }
 .badge-earned {
   animation: badgeGlow 2s ease-in-out 0.5s 1;
@@ -926,14 +1115,14 @@ input[type="range"]::-moz-range-thumb {
   animation: badgePop 0.6s cubic-bezier(0.16,1,0.3,1) forwards, newBadgePulse 2s ease-in-out 0.8s 3;
 }
 .badge-earned:hover .badge-icon-glow {
-  filter: drop-shadow(0 0 10px rgba(212,179,127,0.4));
+  filter: drop-shadow(0 0 10px oklch(0.784 0.078 78.581 / 0.4));
 }
 .badge-sparkle {
   position: absolute;
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(212,179,127,0.8);
+  background: oklch(0.784 0.078 78.581 / 0.8);
   pointer-events: none;
   animation: badgeSparkle 1s ease-out forwards;
 }
@@ -959,8 +1148,8 @@ input[type="range"]::-moz-range-thumb {
 
 /* ─── Focus Within for Cards ─── */
 .gradient-border-card:focus-within {
-  border-color: rgba(255, 255, 255, 0.10);
-  box-shadow: 0 0 0 3px rgba(212, 179, 127, 0.12);
+  border-color: oklch(from var(--background) l c h / 0.10);
+  box-shadow: 0 0 0 3px oklch(0.784 0.078 78.581 / 0.12);
 }
 
 /* ─── Reduced Motion ─── */
@@ -972,7 +1161,6 @@ input[type="range"]::-moz-range-thumb {
     transition-duration: 0.01ms !important;
   }
   .reveal { opacity: 1; transform: none; }
-  .gradient-border-card:hover { transform: none; }
   .mockup-window:hover { transform: none; }
   .shimmer-btn:hover { transform: none; }
   .hero-mesh-gradient { animation: none !important; }
@@ -986,8 +1174,6 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ─── Settings ─── */
-.settings-pills { scrollbar-width: none; }
-.settings-pills::-webkit-scrollbar { display: none; }
 .settings-form-grid { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
 .settings-referral-grid { grid-template-columns: minmax(0, 1fr) 280px; }
 .settings-payment-row { grid-template-columns: auto 1fr auto auto; }
@@ -1019,13 +1205,6 @@ input[type="range"]::-moz-range-thumb {
   .settings-refer-row > :nth-child(4) { grid-area: status; justify-self: end; align-self: start; }
 }
 
-/* Touch target for tab pills on coarse pointers (iOS/Android) */
-@media (pointer: coarse) {
-  .settings-pills [role="tab"] { min-height: 44px; }
-  /* Numeric hotkey chips are keyboard cues — hide on touch devices. */
-  .settings-pills [role="tab"] kbd { display: none !important; }
-}
-
 /* Narrow phones — tighten card padding and trim non-essential chrome. */
 @media (max-width: 480px) {
   .editorial-card { padding: 20px 18px !important; }
@@ -1042,11 +1221,11 @@ input[type="range"]::-moz-range-thumb {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.08);
+  background: oklch(from var(--background) l c h / 0.08);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255,255,255,0.14);
+  background: oklch(from var(--background) l c h / 0.14);
 }
 
 /* ─── Selection ───
@@ -1054,23 +1233,23 @@ input[type="range"]::-moz-range-thumb {
    the cream-themed auth / marketing surfaces. The previous pale-beige
    bg + near-white text was invisible against the cream background. */
 ::selection {
-  background: #312E81; /* brand indigo */
-  color: #FAF7F0;      /* brand cream */
+  background: oklch(0.359 0.135 278.697); /* brand indigo */
+  color: var(--primary-foreground);      /* brand cream */
 }
 ::-moz-selection {
-  background: #312E81;
-  color: #FAF7F0;
+  background: oklch(0.359 0.135 278.697);
+  color: var(--primary-foreground);
 }
 
 /* ─── Print Stylesheet ─── */
 /* ─── Active Button States ─── */
 .shimmer-btn:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  box-shadow: 0 1px 4px oklch(0 0 0 / 0.3);
 }
 .premium-btn:active {
   transform: translateY(0) scale(0.98);
-  box-shadow: 0 1px 4px rgba(212,179,127,0.2), inset 0 1px 0 rgba(255,255,255,0.15);
+  box-shadow: 0 1px 4px oklch(0.784 0.078 78.581 / 0.2), inset 0 1px 0 oklch(from var(--background) l c h / 0.15);
 }
 .gradient-border-card:active {
   transform: translateY(0) scale(0.995);
@@ -1084,12 +1263,27 @@ input[type="range"]::-moz-range-thumb {
   }
 }
 
+/* Full-viewport shells: 100dvh tracks the collapsing mobile URL bar; the 100vh
+   line is only the fallback for browsers without dvh. Never pair with
+   min-height:100vh — that wins over the shorter dvh and hides the bottom. */
+.app-vh { height: 100vh; height: 100dvh; }
+
+/* iOS Safari zooms the page when a focused field is under 16px. Phones and
+   tablets (touch, including iPad landscape) get a 16px floor; inline font
+   sizes are overridden here. */
+@media (pointer: coarse), (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
 /* ─── Responsive: Tablet (≤ 768px) ─── */
 @media (max-width: 768px) {
   .settings-form-grid { grid-template-columns: 1fr !important; }
   .settings-chip-grid { grid-template-columns: repeat(2, 1fr) !important; }
   .stat-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  .dash-main { padding: 76px 20px 80px !important; }
   .landing-section { padding-left: 28px !important; padding-right: 28px !important; }
 }
 
@@ -1170,34 +1364,19 @@ input[type="range"]::-moz-range-thumb {
    base today but growing; cheap to support. */
 @media (max-width: 340px) {
   body { font-size: 14px; }
-  .dash-main { padding: 76px 12px 64px !important; }
-  .iv-controls { gap: 4px !important; padding: 8px 6px max(8px, env(safe-area-inset-bottom, 8px)) !important; }
-  .iv-controls button { min-width: 44px !important; min-height: 44px !important; padding: 0 !important; }
   h1 { font-size: 22px !important; }
   h2 { font-size: 18px !important; }
 }
 
-/* ─── Interview canvas visualizer animations ────────────────────────
-   Driven by hsx-viz-${state} className applied by CanvasVoiceVisualizer.
-   Idle = barely-there breath; ai-speaking = gentle outward pulse;
-   ai-thinking = slow rotate ripple; user-speaking = tighter pulse;
-   warning = slow opacity heartbeat. */
+/* ─── Interview canvas visualizer ────────────────────────────────────
+   CanvasVoiceVisualizer renders a thinking-orbs <ThinkingOrb>, which
+   drives its own per-state animation and respects prefers-reduced-motion
+   internally — no CSS keyframes needed here. */
 .hsx-viz {
   display: inline-block; position: relative;
   transform-origin: 50% 50%;
-  will-change: transform, opacity, filter;
 }
-.hsx-viz svg { display: block; }
-@keyframes hsx-viz-breath { 0%,100% { transform: scale(1); opacity: .95; } 50% { transform: scale(1.012); opacity: 1; } }
-.hsx-viz-idle { animation: hsx-viz-breath 5.6s ease-in-out infinite; }
-@keyframes hsx-viz-speak { 0% { transform: scale(1); filter: brightness(1); } 35% { transform: scale(1.06); filter: brightness(1.06); } 70% { transform: scale(.99); filter: brightness(.99); } 100% { transform: scale(1); filter: brightness(1); } }
-.hsx-viz-ai-speaking { animation: hsx-viz-speak 2.4s cubic-bezier(.45,0,.55,1) infinite; }
-@keyframes hsx-viz-think { 0% { transform: rotate(0) scale(1); opacity: .85; } 50% { transform: rotate(180deg) scale(1.02); opacity: 1; } 100% { transform: rotate(360deg) scale(1); opacity: .85; } }
-.hsx-viz-ai-thinking { animation: hsx-viz-think 7.2s linear infinite; }
-@keyframes hsx-viz-listen { 0%,100% { transform: scale(1); } 50% { transform: scale(1.045); } }
-.hsx-viz-user-speaking { animation: hsx-viz-listen 1.4s cubic-bezier(.45,0,.55,1) infinite; }
-@keyframes hsx-viz-warn { 0%,100% { opacity: .85; } 50% { opacity: 1; } }
-.hsx-viz-warning { animation: hsx-viz-warn 1.8s ease-in-out infinite; }
+.hsx-viz canvas { display: block; }
 
 /* Halo behind visualizer — color-tinted per state.
    Opacities bumped 1.6× from the original canvas mockup because
@@ -1205,15 +1384,15 @@ input[type="range"]::-moz-range-thumb {
    were nearly invisible. New range 12-22% reads clearly without
    competing with the dotted sphere itself. */
 .hsx-viz-halo { position: absolute; inset: -32px; border-radius: 999px; pointer-events: none; transition: background 360ms ease; }
-.hsx-viz-halo--idle         { background: radial-gradient(closest-side, rgba(110,103,89,.12), transparent 70%); }
-.hsx-viz-halo--ai-speaking  { background: radial-gradient(closest-side, rgba(14,12,8,.14), transparent 70%); }
-.hsx-viz-halo--ai-thinking  { background: radial-gradient(closest-side, rgba(180,83,9,.18), transparent 70%); }
-.hsx-viz-halo--user-speaking{ background: radial-gradient(closest-side, rgba(49,46,129,.22), transparent 70%); }
-.hsx-viz-halo--warning      { background: radial-gradient(closest-side, rgba(161,98,7,.20), transparent 70%); }
+.hsx-viz-halo--idle         { background: radial-gradient(closest-side, oklch(0.516 0.023 84.576 / .12), transparent 70%); }
+.hsx-viz-halo--ai-speaking  { background: radial-gradient(closest-side, oklch(0.155 0.009 85.192 / .14), transparent 70%); }
+.hsx-viz-halo--ai-thinking  { background: radial-gradient(closest-side, oklch(from var(--primary) l c h / .18), transparent 70%); }
+.hsx-viz-halo--user-speaking{ background: radial-gradient(closest-side, oklch(0.359 0.135 278.697 / .22), transparent 70%); }
+.hsx-viz-halo--warning      { background: radial-gradient(closest-side, oklch(0.53 0.121 66.442 / .20), transparent 70%); }
 
 /* Voice rings — concentric pulses while user speaks */
 @keyframes hsx-ring-pulse { 0% { transform: scale(.92); opacity: .55; } 100% { transform: scale(1.45); opacity: 0; } }
-.hsx-iv-ring { position: absolute; inset: 0; border-radius: 999px; border: 1px solid rgba(49,46,129,.35); pointer-events: none; animation: hsx-ring-pulse 2.4s cubic-bezier(.16,1,.3,1) infinite; }
+.hsx-iv-ring { position: absolute; inset: 0; border-radius: 999px; border: 1px solid oklch(0.359 0.135 278.697 / .35); pointer-events: none; animation: hsx-ring-pulse 2.4s cubic-bezier(.16,1,.3,1) infinite; }
 .hsx-iv-ring--delay { animation-delay: 1.2s; }
 
 /* Indigo links — animated underline */
@@ -1222,10 +1401,10 @@ input[type="range"]::-moz-range-thumb {
 .hsx-link-indigo:hover::after { transform: scaleX(1); }
 
 /* Push-to-talk keycap — soft glow when active */
-.hsx-iv-keycap[data-state="active"] { box-shadow: 0 0 0 6px rgba(49,46,129,.10), 0 6px 22px -6px rgba(49,46,129,.45); }
+.hsx-iv-keycap[data-state="active"] { box-shadow: 0 0 0 6px oklch(0.359 0.135 278.697 / .10), 0 6px 22px -6px oklch(0.359 0.135 278.697 / .45); }
 
 /* End-button hover — copper wash */
-.iv-canvas-endbtn:hover { background: rgba(180,83,9,.06); border-color: rgba(180,83,9,.35); }
+.iv-canvas-endbtn:hover { background: oklch(from var(--primary) l c h / .06); border-color: oklch(from var(--primary) l c h / .35); }
 .iv-canvas-endbtn:active { transform: translateY(1px); }
 
 /* Canvas page entrance fade.
@@ -1243,7 +1422,6 @@ input[type="range"]::-moz-range-thumb {
 
 /* Reduced motion — kill animations */
 @media (prefers-reduced-motion: reduce) {
-  .hsx-viz-idle, .hsx-viz-ai-speaking, .hsx-viz-ai-thinking, .hsx-viz-user-speaking, .hsx-viz-warning,
   .hsx-iv-ring, .iv-canvas-stage > * { animation: none !important; }
 }
 
@@ -1259,7 +1437,9 @@ input[type="range"]::-moz-range-thumb {
 .iv-reconnecting button:focus-visible,
 .iv-coachmark button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 4px rgba(49, 46, 129, 0.20); /* indigoRing */
+  /* Two-tone ring: white gap + solid indigo stays >=3:1 on cream and dark
+     surfaces alike (the old 20%-alpha indigoRing halo was ~1.4:1). */
+  box-shadow: 0 0 0 2px oklch(1 0 0), 0 0 0 4px oklch(0.359 0.135 278.697);
 }
 
 /* ─── First-time coachmarks ──────────────────────────────────────────
@@ -1269,7 +1449,7 @@ input[type="range"]::-moz-range-thumb {
    prefers-reduced-motion override below. */
 .iv-coachmark-backdrop {
   position: fixed; inset: 0; z-index: 130;
-  background: rgba(14, 12, 8, 0.55);
+  background: oklch(0.155 0.009 85.192 / 0.55);
   backdrop-filter: blur(2px);
   -webkit-backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
@@ -1278,11 +1458,11 @@ input[type="range"]::-moz-range-thumb {
 }
 .iv-coachmark-card {
   max-width: 460px; width: 100%;
-  background: #FAF7F0;
-  border: 1px solid #EBE5D2;
+  background: var(--card);
+  border: 1px solid oklch(0.922 0.026 92.405);
   border-radius: 20px;
   padding: 28px 28px 22px;
-  box-shadow: 0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24);
+  box-shadow: 0 2px 4px oklch(0.179 0.014 87.485 / .06), 0 32px 64px -16px oklch(0.179 0.014 87.485 / .24);
   animation: slideUp 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -1295,11 +1475,7 @@ input[type="range"]::-moz-range-thumb {
   .iv-info-bar { padding: 0 !important; }
   .iv-info-bar > div:first-child { padding: 8px 14px !important; flex-wrap: wrap; gap: 6px !important; }
   .iv-info-bar > div:nth-child(2) { padding: 0 14px 8px !important; }
-  .iv-controls { gap: 6px !important; padding: 8px 12px max(8px, env(safe-area-inset-bottom, 8px)) !important; }
-  .iv-controls button { min-width: 44px; min-height: 44px; }
   .iv-hide-mobile { display: none !important; }
-  /* Self-view tile shrinks on phone so it doesn't cover the question */
-  .iv-video-preview { width: 96px !important; height: 72px !important; top: 64px !important; right: 8px !important; }
   /* Pace meter compresses gracefully */
   .iv-pace-meter { max-width: 100% !important; }
   /* Save toast shifts above the controls bar */
@@ -1310,28 +1486,412 @@ input[type="range"]::-moz-range-thumb {
   .iv-reconnecting > div { padding: 24px 20px 20px !important; }
   /* ContextChip — tighten on phone so the 3-segment chip stays one
      visual unit and doesn't push other topbar items off-screen. */
-  .iv-canvas-contextchip { font-size: 9.5px !important; gap: 6px !important; padding: 4px 8px !important; max-width: 60vw !important; letter-spacing: 1.2px !important; }
+  .iv-canvas-contextchip { font-size: 11px !important; gap: 6px !important; padding: 4px 8px !important; max-width: 60vw !important; letter-spacing: 1.2px !important; }
   /* Self-view tile becomes smaller card with a softer position */
   .iv-canvas-selfview { width: 110px !important; height: 72px !important; right: 12px !important; bottom: 92px !important; }
 }
 
+/* ── Forced-colors (Windows High Contrast) ──────────────────────────────── */
+/* Recording and status pips are pure background-color circles with no text
+   content. In forced-colors mode the OS replaces all author backgrounds with
+   Canvas, making the pip invisible. forced-color-adjust: none preserves the
+   author color so the pip remains a meaningful red/green state indicator; the
+   adjacent text label ("Listening", "Muted") also carries the semantic state
+   for users who rely on text rather than color. */
+@media (forced-colors: active) {
+  .hsx-rec-pip {
+    forced-color-adjust: none;
+    outline: 1px solid ButtonText;
+    outline-offset: 1px;
+  }
+
+  /* OA-B11: interview control buttons suppress outline via inline style;
+     forced-colors must restore a visible focus ring with !important
+     since inline styles outrank regular CSS specificity. */
+  .iv-ctrl-btn:focus-visible {
+    outline: 3px solid ButtonText !important;
+    outline-offset: 2px;
+  }
+  /* Ensure the button border is always visible (RGBA borders can become
+     invisible when the system palette maps them to Canvas). */
+  .iv-ctrl-btn {
+    border: 1px solid ButtonText !important;
+  }
+
+  /* Voice-ring pulse: RGBA border becomes invisible; switch to Highlight
+     so the listening-state indicator remains legible. */
+  .hsx-iv-ring {
+    forced-color-adjust: none;
+    border-color: Highlight !important;
+  }
+}
+
 @media print {
-  body { background: #fff !important; color: #111 !important; }
+  body { background: var(--background) !important; color: var(--foreground) !important; }
   aside, .mobile-nav-toggle, [role="dialog"], [role="status"],
   .shimmer-btn::after, .gradient-border-card::before, .gradient-border-card::after { display: none !important; }
   main { margin-left: 0 !important; padding: 20px !important; height: auto !important; overflow: visible !important; }
   .gradient-border-card {
-    background: #fff !important;
-    border: 1px solid #ddd !important;
+    background: var(--background) !important;
+    border: 1px solid var(--border) !important;
     box-shadow: none !important;
     transform: none !important;
     break-inside: avoid;
   }
-  h1, h2, h3 { color: #111 !important; }
-  p, span, button { color: #333 !important; }
+  h1, h2, h3 { color: var(--foreground) !important; }
+  p, span, button { color: var(--muted-foreground) !important; }
   button:not([aria-expanded]) { opacity: 0.6; }
-  input, select, textarea { border: 1px solid #ccc !important; }
+  input, select, textarea { border: 1px solid var(--border) !important; }
   .stat-grid { grid-template-columns: repeat(5, 1fr) !important; gap: 8px !important; }
   .score-ring { animation: none !important; }
   .dash-card > div { break-inside: avoid; }
+}
+
+@theme inline {
+  --font-heading: var(--font-sans);
+  /* Mirrors src/auth/_tokens.ts so Tailwind classes can use the design tokens
+     (employer dashboard). Keep values in sync with that file. */
+  --color-hx-coal: oklch(0.148 0.004 228.8);
+  --color-hx-ink-soft: oklch(0.52 0.021 213.5);
+  --color-hx-line: oklch(0.943 0.006 265.3);
+  --color-hx-soft: oklch(0.967 0.001 286.375);
+  --color-hx-indigo: oklch(0.359 0.135 278.697);
+  --color-hx-indigo-100: oklch(0.920 0.022 294.573);
+  --color-hx-indigo-deep: oklch(0.257 0.086 281.288);
+  --color-hx-success: oklch(0.527 0.137 150.069);
+  --color-hx-success-100: oklch(0.962 0.043 156.743);
+  --color-hx-success-ink: oklch(0.448 0.108 151.328);
+  --color-hx-error-ink: oklch(0.405 0.152 27.518);
+  --color-hx-copper: oklch(0.53 0.163 48.998);
+  --color-hx-copper-dark: oklch(0.468 0.146 48.998);
+  --color-hx-copper-100: oklch(0.94 0.03 58.318);
+  --color-hx-warning: oklch(0.53 0.121 66.442);
+  --color-hx-warning-100: oklch(0.962 0.058 95.617);
+  --color-hx-warning-ink: oklch(0.457 0.100 66.296);
+  --color-hx-error: oklch(0.505 0.190 27.518);
+  --color-hx-error-100: oklch(0.936 0.031 17.717);
+  --color-hx-row: oklch(0.9789 0.0029 264.5);
+  --color-hx-neutral-ink: oklch(0.373 0.017 261.4);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+.dark {
+  --background: oklch(0.148 0.004 228.8);
+  --foreground: oklch(0.987 0.002 197.1);
+  --card: oklch(0.218 0.008 223.9);
+  --card-foreground: oklch(0.987 0.002 197.1);
+  --popover: oklch(0.218 0.008 223.9);
+  --popover-foreground: oklch(0.987 0.002 197.1);
+  --primary: oklch(0.666 0.179 58.318);
+  --primary-foreground: oklch(0.148 0.004 228.8);
+  --secondary: oklch(0.274 0.006 286.033);
+  --secondary-foreground: oklch(0.987 0.002 197.1);
+  --muted: oklch(0.275 0.011 216.9);
+  --muted-foreground: oklch(0.72 0.019 213.9);
+  --accent: oklch(0.275 0.011 216.9);
+  --accent-foreground: oklch(0.987 0.002 197.1);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(0.378 0.015 216);
+  --input: oklch(0.378 0.015 216);
+  --ring: oklch(0.666 0.179 58.318);
+  --chart-1: oklch(0.666 0.179 58.318);
+  --chart-2: oklch(0.72 0.019 213.9);
+  --chart-3: oklch(0.56 0.021 213.5);
+  --chart-4: oklch(0.45 0.017 213.2);
+  --chart-5: oklch(0.987 0.002 197.1);
+  --sidebar: oklch(0.148 0.004 228.8);
+  --sidebar-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-primary: oklch(0.666 0.179 58.318);
+  --sidebar-primary-foreground: oklch(0.148 0.004 228.8);
+  --sidebar-accent: oklch(0.275 0.011 216.9);
+  --sidebar-accent-foreground: oklch(0.987 0.002 197.1);
+  --sidebar-border: oklch(0.378 0.015 216);
+  --sidebar-ring: oklch(0.666 0.179 58.318);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* Text links underline on hover/focus everywhere. !important because many
+   links carry inline textDecoration: "none". Skipped for links that are
+   really buttons, nav/menu items, tabs, cards (contain block content) or
+   icon-only/logo links. Opt out with data-no-underline. */
+a[href]:not([data-slot]):not([data-sidebar]):not([role]):not([data-no-underline]):not([aria-current="page"]):not(:has(div, img, h1, h2, h3, h4, h5, h6, p, ul, button, svg:only-child)):is(:hover, :focus-visible) {
+  text-decoration: underline !important;
+  text-underline-offset: 3px;
+}
+
+/* ─── Motion kit ───
+   Shared micro-interaction primitives (own implementations of common UI
+   motion patterns). Entrances live inside no-preference so reduced-motion
+   users get the final state with no movement; hover/press effects add no
+   layout shift. Transforms are only applied to leaf cards, never page
+   containers (a transformed ancestor breaks position:sticky children). */
+@keyframes mxRise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes mxFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mxPop { 0% { transform: scale(0.5); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+@keyframes mxShake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-4px); } 40%, 60% { transform: translateX(4px); } }
+@keyframes mxDraw { to { stroke-dashoffset: 0; } }
+@keyframes mxPing { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes mxSwap { 0% { opacity: 0.3; transform: translateY(-4px); } 100% { opacity: 1; transform: none; } }
+
+.mx-fade { animation: mxFade 320ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-rise { animation: mxRise 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-pop { animation: mxPop 380ms cubic-bezier(0.2, 0.9, 0.3, 1.2) backwards; }
+.mx-shake { animation: mxShake 420ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.mx-swap { animation: mxSwap 260ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+/* Children rise in one after another (capped so long lists don't drag). */
+.mx-stagger > * { animation: mxRise 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.mx-stagger > :nth-child(2) { animation-delay: 60ms; }
+.mx-stagger > :nth-child(3) { animation-delay: 120ms; }
+.mx-stagger > :nth-child(4) { animation-delay: 180ms; }
+.mx-stagger > :nth-child(5) { animation-delay: 240ms; }
+.mx-stagger > :nth-child(6) { animation-delay: 300ms; }
+.mx-stagger > :nth-child(n + 7) { animation-delay: 360ms; }
+
+/* Check mark that draws itself; the svg path needs pathLength="1". */
+.mx-check path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: mxDraw 360ms cubic-bezier(0.65, 0, 0.35, 1) 120ms forwards; }
+
+/* Pulsing "live" dot. */
+.mx-live { position: relative; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.mx-live::after { content: ""; position: absolute; inset: 0; border-radius: 50%; background: currentColor; animation: mxPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
+
+/* Tactile press on anything clickable. */
+.mx-press { transition: transform 160ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mx-press:active { transform: scale(0.98); }
+
+/* Progress fill that grows from the left on mount (scaleX, not width, so no layout work). */
+@keyframes mxGrow { from { transform: scaleX(0); } to { transform: none; } }
+.mx-grow { transform-origin: left; animation: mxGrow 700ms cubic-bezier(0.16, 1, 0.3, 1) 150ms backwards; }
+
+/* Arrow/chevron nudge when its parent link or button is hovered. */
+.mx-nudge { display: inline-block; transition: transform 200ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+:is(a, button):hover > .mx-nudge, :is(a, button):hover .mx-nudge { transform: translateX(3px); }
+
+/* Segment bars (funnel, skill meters) fill in left to right; set --i on each
+   segment for the stagger. scaleX keeps it off the layout path. */
+@keyframes mxSeg { from { transform: scaleX(0); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.mx-seg { transform-origin: left; animation: mxSeg 520ms cubic-bezier(0.16, 1, 0.3, 1) calc(160ms + var(--i, 0) * 45ms) backwards; }
+
+/* Leaf cards and links that react to the pointer: a 1px lift and a firmer border. */
+.mx-lift { transition: transform 200ms cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 200ms cubic-bezier(0.2, 0.7, 0.2, 1), border-color 200ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mx-lift:hover { transform: translateY(-1px); border-color: oklch(0.87 0.01 265); box-shadow: 0 8px 20px -12px oklch(0.25 0.03 270 / 0.28); }
+
+/* Content that is refetching dims instead of flashing to a skeleton. */
+.mx-busy { transition: opacity 200ms cubic-bezier(0.2, 0.7, 0.2, 1); }
+.mx-busy[aria-busy="true"] { opacity: 0.55; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mx-fade, .mx-rise, .mx-pop, .mx-swap, .mx-grow, .mx-seg, .mx-stagger > * { animation: none; }
+  .mx-live::after { animation: none; opacity: 0; }
+  .mx-press:active, :is(a, button):hover .mx-nudge, .mx-lift:hover { transform: none; }
+}
+
+/* ── Cookie consent banner (app/CookieConsent.tsx) ──
+   Token-only: surface/border/text come from the shadcn vars so it follows the
+   rest of the product (and dark mode); actions use --btn-primary indigo. */
+.hsx-cookie {
+  position: fixed;
+  z-index: 9999;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  margin-inline: auto;
+  max-width: 560px;
+  max-height: min(85dvh, 640px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) * 1.4);
+  font-family: var(--font-ui);
+  animation: hsx-cookie-in 0.22s ease-out;
+}
+body { padding-bottom: var(--hsx-cookie-h, 0px); }
+@keyframes hsx-cookie-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hsx-cookie { animation: none; }
+}
+.hsx-cookie__scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 20px 4px;
+}
+.hsx-cookie__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hsx-cookie__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--foreground);
+  outline: none;
+}
+.hsx-cookie__text {
+  margin: 6px 0 0;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  color: var(--muted-foreground);
+}
+.hsx-cookie__text--small { margin-top: 12px; font-size: var(--text-sm); }
+.hsx-cookie__link {
+  color: var(--btn-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  border-radius: 4px;
+}
+.hsx-cookie__link:hover { color: var(--btn-primary-hover); }
+.hsx-cookie__link:focus-visible,
+.hsx-cookie [role="switch"]:focus-visible {
+  outline: 2px solid var(--btn-primary);
+  outline-offset: 2px;
+}
+/* The whole row is the touch target, so the switch keeps its drawn size
+   instead of inheriting the global 44px coarse-pointer minimum. */
+.hsx-cookie [role="switch"] { min-width: 0; min-height: 0; }
+.hsx-cookie__rows {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.hsx-cookie__rows > li + li { border-top: 1px solid var(--border); }
+.hsx-cookie__row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+}
+.hsx-cookie__row--toggle { cursor: pointer; }
+.hsx-cookie__row--toggle:hover { background: var(--muted); border-radius: inherit; }
+.hsx-cookie__row-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hsx-cookie__row-title { font-size: var(--text-md); font-weight: 600; color: var(--foreground); }
+.hsx-cookie__row-desc { font-size: var(--text-sm); line-height: 1.5; color: var(--muted-foreground); }
+.hsx-cookie__badge {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+.hsx-cookie__actions {
+  flex: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px 18px;
+}
+.hsx-cookie__actions > button { min-width: 112px; }
+.hsx-cookie__customize { margin-right: auto; }
+.hsx-cookie__short { display: none; }
+@media (max-width: 640px) {
+  .hsx-cookie {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-width: none;
+    border-width: 1px 0 0;
+    border-radius: 14px 14px 0 0;
+  }
+  .hsx-cookie__scroll { padding: 16px 16px 2px; }
+  .hsx-cookie__actions {
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom, 0px));
+    gap: 8px;
+  }
+  .hsx-cookie__actions > button { flex: 1 1 0; min-width: 0; }
+  .hsx-cookie__actions > .hsx-cookie__customize { flex: 1 1 100%; order: 3; margin-right: 0; }
+  .hsx-cookie__actions > .hsx-cookie__save { flex: 1 1 100%; order: -1; }
+
+  /* First-visit banner: a compact strip (~100px) so it doesn't cover a
+     third of a phone screen. The heading stays for screen readers
+     (aria-labelledby); the privacy link flows inline after the sentence. */
+  .hsx-cookie--compact .hsx-cookie__title {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  .hsx-cookie--compact .hsx-cookie__long { display: none; }
+  .hsx-cookie--compact .hsx-cookie__short { display: inline; }
+  .hsx-cookie--compact .hsx-cookie__scroll { padding: 10px 12px 0; overflow-y: visible; }
+  .hsx-cookie--compact .hsx-cookie__text,
+  .hsx-cookie--compact .hsx-cookie__text--small {
+    display: inline;
+    margin: 0;
+    font-size: var(--text-xs, 12px);
+    line-height: 1.35;
+  }
+  .hsx-cookie--compact .hsx-cookie__text--small::before { content: " "; }
+  .hsx-cookie--compact .hsx-cookie__actions {
+    padding: 8px 12px max(8px, env(safe-area-inset-bottom, 0px));
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .hsx-cookie--compact .hsx-cookie__actions > button { padding-inline: 6px; }
+  .hsx-cookie--compact .hsx-cookie__actions > .hsx-cookie__customize { flex: 1 1 0; order: 0; }
 }

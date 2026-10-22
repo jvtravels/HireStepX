@@ -5,10 +5,14 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  merge_group:
 
+# One group per commit on main (so a newer push never cancels the check that
+# guards an earlier deploy); one group per PR, where superseded runs are safe
+# to cancel.
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -28,6 +32,29 @@ jobs:
         # eslint.config.js (max-lines, no-restricted-syntax on `as unknown
         # as X`). Ratchet downward as we fix each hit.
         run: npx eslint . --max-warnings 200
+      - name: Debt ratchet (file size, type escapes, raw colors, inline styles)
+        run: node scripts/ratchet.mjs
+
+  security-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # --omit=dev: audit only what ships to production. Without it, this
+      # gate red-lines on CVEs in @vercel/node's build-time-only toolchain
+      # (path-to-regexp ReDoS, minimatch, ajv — exercised by Vercel's deploy
+      # pipeline, never by our own runtime code), and the only fix npm
+      # offers for those is downgrading @vercel/node to 4.0.0 — a real
+      # regression, not a fix. Runtime deps still fail the build on any
+      # high/critical finding.
+      - name: npm audit (high + critical, production deps)
+        run: npm audit --omit=dev --audit-level=high
 
   unit-tests:
     name: Unit Tests
@@ -118,14 +145,18 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      # Rebased 2026-10-22 from CI: total client chunks 9704KB (`du -sk`, disk
+      # blocks, not gzip), largest chunk 476KB, plus ~8% headroom on the total.
+      # Fails on regression; lower them as the bundle shrinks.
       - name: Check bundle sizes
         run: |
-          MAX_VENDOR_KB=200
-          VENDOR_SIZE=$(du -k dist/assets/vendor-react-*.js | cut -f1)
-          echo "vendor-react: ${VENDOR_SIZE}KB (limit: ${MAX_VENDOR_KB}KB)"
-          if [ "$VENDOR_SIZE" -gt "$MAX_VENDOR_KB" ]; then
-            echo "::warning::vendor-react bundle exceeds ${MAX_VENDOR_KB}KB"
-          fi
+          MAX_TOTAL_KB=10500
+          MAX_CHUNK_KB=600
+          TOTAL=$(du -sk .next/static/chunks | cut -f1)
+          LARGEST=$(find .next/static/chunks -name '*.js' -exec du -k {} + | sort -n | tail -1 | cut -f1)
+          echo "client chunks total: ${TOTAL}KB (limit ${MAX_TOTAL_KB}KB); largest chunk: ${LARGEST}KB (limit ${MAX_CHUNK_KB}KB)"
+          [ "$TOTAL" -le "$MAX_TOTAL_KB" ] || { echo "::error::client JS total exceeds ${MAX_TOTAL_KB}KB"; exit 1; }
+          [ "$LARGEST" -le "$MAX_CHUNK_KB" ] || { echo "::error::largest client chunk exceeds ${MAX_CHUNK_KB}KB"; exit 1; }
 
   # NOTE: E2E moved to .github/workflows/e2e.yml — it now runs against the
   # Vercel preview deploy URL (deployment_status trigger), so the runtime

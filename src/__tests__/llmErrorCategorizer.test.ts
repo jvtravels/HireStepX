@@ -48,6 +48,14 @@ describe("categorizeLlmError", () => {
     expect(categorizeLlmError("error", "Invalid API key")).toBe("auth");
   });
 
+  it("classifies org-level model-gating 403s as modelAccess, not auth", () => {
+    // Distinct from a bad/expired API key — the fix is enabling the model in
+    // the provider console, not rotating a credential. Must win over the
+    // generic \b40[13]\b auth check despite also containing "403".
+    expect(categorizeLlmError("error", 'Groq error 403: {"error":{"message":"The model `openai/gpt-oss-20b` is blocked at the organization level. Please have the org admin enable this model in the org settings"}}')).toBe("modelAccess");
+    expect(categorizeLlmError("error", "This model is not enabled for your organization")).toBe("modelAccess");
+  });
+
   it("classifies safety blocks", () => {
     expect(categorizeLlmError("error", "Response blocked by safety settings")).toBe("safety");
     expect(categorizeLlmError("error", "Content policy violation")).toBe("safety");
@@ -82,6 +90,7 @@ describe("emptyBreakdown", () => {
       contextLength: 0,
       timeout: 0,
       serverError: 0,
+      modelAccess: 0,
       auth: 0,
       safety: 0,
       other: 0,

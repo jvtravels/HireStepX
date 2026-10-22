@@ -40,6 +40,8 @@ export interface NetworkInformationLike {
   saveData?: boolean;
   downlink?: number;
   rtt?: number;
+  addEventListener?: (type: "change", listener: () => void) => void;
+  removeEventListener?: (type: "change", listener: () => void) => void;
 }
 
 export function getNetworkInfo(): NetworkInformationLike | null {
@@ -66,4 +68,42 @@ export function yieldToMainThread(): Promise<void> {
   };
   if (g.scheduler?.yield) return g.scheduler.yield();
   return new Promise((r) => setTimeout(r, 0));
+}
+
+/* ─── gtag — GA4, Consent Mode v2
+ *
+ * gtag.js is NOT loaded until the visitor accepts (see
+ * app/ConsentGatedTelemetry.tsx); window.gtag therefore doesn't exist
+ * pre-consent and sendGtagEvent safely no-ops via optional chaining. On
+ * withdrawal updateGtagConsent(false) flips all four Consent Mode v2 signals
+ * back to denied and sets Google's documented `ga-disable-<ID>` kill switch,
+ * because denied-mode gtag still sends cookieless pings unless disabled. */
+
+type GtagFn = (...args: unknown[]) => void;
+
+export type GtagConsentSignals = {
+  ad_storage: "granted" | "denied";
+  analytics_storage: "granted" | "denied";
+  ad_user_data: "granted" | "denied";
+  ad_personalization: "granted" | "denied";
+};
+
+/** analytics_storage follows the analytics choice; the three ad_* signals follow the advertising choice. */
+export function gtagConsentSignals(analytics: boolean, advertising: boolean = analytics): GtagConsentSignals {
+  const a = analytics ? "granted" : "denied";
+  const ad = analytics && advertising ? "granted" : "denied";
+  return { ad_storage: ad, analytics_storage: a, ad_user_data: ad, ad_personalization: ad };
+}
+
+export function sendGtagEvent(name: string, params?: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  w.gtag?.("event", name, params);
+}
+
+export function updateGtagConsent(granted: boolean, gaId?: string, advertising: boolean = granted): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  if (gaId) Reflect.set(window, `ga-disable-${gaId}`, !granted);
+  w.gtag?.("consent", "update", gtagConsentSignals(granted, advertising));
 }

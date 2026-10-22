@@ -81,6 +81,14 @@ describe("kickoffEagerGrade", () => {
     expect(headers.Authorization).toBe("Bearer user-jwt-token-xyz");
   });
 
+  it("sends the app's own Origin so the CSRF guard in evaluate-session accepts it", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    kickoffEagerGrade(validInput({ fetchImpl: fetchMock as unknown as typeof fetch }));
+    await new Promise((r) => setTimeout(r, 0));
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers.Origin).toBe("https://hirestepx.com");
+  });
+
   it("marks the request with X-Eager-Grade so observability can split it", async () => {
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     kickoffEagerGrade(validInput({ fetchImpl: fetchMock as unknown as typeof fetch }));

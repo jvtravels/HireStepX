@@ -1,0 +1,270 @@
+/* Health-alert signal computation, extracted from admin-data.ts so the
+ * daily uptime-check cron can push these signals via email instead of
+ * them sitting poll-only behind the admin dashboard's "health" tab. */
+
+import { getEmployerHealthAlerts } from "./_employer-health-signals";
+import { readAllPages } from "./_paged-fetch";
+import { RATES_LAST_VERIFIED_AT, RATE_STALENESS_THRESHOLD_DAYS, rateCardAgeDays, isRateCardStale } from "./_cost-helpers";
+
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+
+function supa(path: string, opts?: RequestInit) {
+  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: {
+      apikey: SUPABASE_SERVICE_ROLE_KEY,
+      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      "Content-Type": "application/json",
+      ...(opts?.headers || {}),
+    },
+  });
+}
+
+/** Row cap per signal source. Well above a day of sessions or a fortnight of LLM calls today. */
+const SOURCE_MAX_ROWS = 20_000;
+
+interface Source<T> { rows: T[]; truncated: boolean; failed: boolean }
+
+/** Pages the whole window (PostgREST caps one response at 1000 rows, so a bare `limit=2000`
+    silently under-counts) and reports a failed read instead of returning [] as if it were empty. */
+async function readSource<T>(name: string, path: string): Promise<Source<T>> {
+  try {
+    const r = await readAllPages<T>((p) => supa(p), path, { keyset: "id", maxRows: SOURCE_MAX_ROWS });
+    return { rows: r.rows, truncated: r.truncated, failed: false };
+  } catch (err) {
+    console.error(`[health-alerts] read of ${name} failed:`, err instanceof Error ? err.message : err);
+    return { rows: [], truncated: false, failed: true };
+  }
+}
+
+function daysAgo(n: number): string {
+  return new Date(Date.now() - n * 86400000).toISOString();
+}
+
+type AlertSeverity = "critical" | "warning";
+export interface HealthAlert {
+  severity: AlertSeverity;
+  code: string;
+  message: string;
+  action: string;
+}
+
+/** Codes that mean money is owed or a scheduled job is dead; these lead the alert subject. */
+const ACTION_CODES: Readonly<Record<string, string>> = {
+  unlock_refund_due: "refund owed",
+  unlock_order_stuck_paid: "paid order stuck",
+  cron_stale: "cron stale",
+  employer_health_unreadable: "order check blind",
+};
+
+const actionBit = (code: string): string | undefined => (Object.prototype.hasOwnProperty.call(ACTION_CODES, code) ? ACTION_CODES[code] : undefined);
+
+export function isActionRequired(alerts: readonly HealthAlert[]): boolean {
+  return alerts.some((a) => actionBit(a.code) !== undefined);
+}
+
+/** Subject fragments for the action codes, deduped, in the order they appear. */
+export function actionSubjectBits(alerts: readonly HealthAlert[]): string[] {
+  const out: string[] = [];
+  for (const a of alerts) {
+    const bit = actionBit(a.code);
+    if (bit && !out.includes(bit)) out.push(bit);
+  }
+  return out;
+}
+
+export interface HealthAlertsResult {
+  alerts: HealthAlert[];
+  checkedAt: string;
+  /** A source read failed, so the signals that depend on it were skipped rather than computed from nothing. */
+  degraded: boolean;
+  degradedSources: string[];
+  /** A source hit its row cap, so its counts are lower bounds. */
+  truncated: boolean;
+  truncatedSources: string[];
+}
+
+export async function getHealthAlerts(): Promise<HealthAlertsResult> {
+  const now = Date.now();
+  const today = new Date(now).toISOString().slice(0, 10);
+  const yesterday = new Date(now - 86400000).toISOString().slice(0, 10);
+  const sevenDaysAgo = daysAgo(7);
+  const fourteenDaysAgo = daysAgo(14);
+
+  const [todaySrc, recentSrc, usageRecentSrc, usagePrevSrc] = await Promise.all([
+    // Sessions today (count + cost coverage)
+    readSource<{ id: string; llm_cost_inr: number | null; score: number | null; created_at: string }>(
+      "sessions_today",
+      `sessions?select=id,llm_cost_inr,score,created_at&created_at=gte.${today}`,
+    ),
+    // Sessions last 7d for the volume baseline
+    readSource<{ id: string; created_at: string }>(
+      "sessions_7d",
+      `sessions?select=id,created_at&created_at=gte.${sevenDaysAgo}`,
+    ),
+    // LLM usage last 24h for fallback rate
+    readSource<{ id: string; is_fallback: boolean; total_tokens: number }>(
+      "llm_usage_24h",
+      `llm_usage?select=id,is_fallback,total_tokens&created_at=gte.${yesterday}`,
+    ),
+    // LLM usage prior week for WoW fallback comparison
+    readSource<{ id: string; is_fallback: boolean }>(
+      "llm_usage_prev_week",
+      `llm_usage?select=id,is_fallback&created_at=gte.${fourteenDaysAgo}&created_at=lt.${sevenDaysAgo}`,
+    ),
+  ]);
+  const sources: Array<[string, Source<unknown>]> = [
+    ["sessions_today", todaySrc], ["sessions_7d", recentSrc], ["llm_usage_24h", usageRecentSrc], ["llm_usage_prev_week", usagePrevSrc],
+  ];
+  const degradedSources = sources.filter(([, s]) => s.failed).map(([n]) => n);
+  const truncatedSources = sources.filter(([, s]) => s.truncated).map(([n]) => n);
+  const todaySessions = todaySrc.rows;
+  const recentSessions = recentSrc.rows;
+  const llmUsageRecent = usageRecentSrc.rows;
+  const llmUsagePrev = usagePrevSrc.rows;
+  const llmReadable = !usageRecentSrc.failed && !usagePrevSrc.failed;
+  const sessionsReadable = !todaySrc.failed;
+  const volumeReadable = !todaySrc.failed && !recentSrc.failed;
+
+  const alerts: HealthAlert[] = [];
+  if (degradedSources.length > 0) {
+    // An unreadable source is not an empty one: say so instead of letting the dependent signals pass quietly.
+    alerts.push({
+      severity: "warning",
+      code: "health_read_degraded",
+      message: `Could not read ${degradedSources.join(", ")}, so the signals that depend on them were skipped this run.`,
+      action: "Check Supabase status and the service-role key, then re-run /api/uptime-check.",
+    });
+  }
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+
+  // ── Signal 1: LLM fallback rate ──
+  const totalCalls24h = llmUsageRecent.length;
+  const fallbackCalls24h = llmUsageRecent.filter(u => u.is_fallback).length;
+  const fallbackRate = totalCalls24h > 0 ? fallbackCalls24h / totalCalls24h : 0;
+  const prevFallbackRate = llmUsagePrev.length > 0
+    ? llmUsagePrev.filter(u => u.is_fallback).length / llmUsagePrev.length
+    : 0;
+
+  if (!llmReadable) {
+    // skipped: see health_read_degraded
+  } else if (fallbackRate > 0.5 && totalCalls24h >= 5) {
+    alerts.push({
+      severity: "critical",
+      code: "llm_groq_down",
+      message: `Groq is down or heavily throttled — ${Math.round(fallbackRate * 100)}% of LLM calls in the last 24h routed to Gemini fallback (${fallbackCalls24h}/${totalCalls24h} calls).`,
+      action: "Check status.groq.com and Groq dashboard. Gemini fallback is active but costs ~2.3× more per token.",
+    });
+  } else if (fallbackRate > 0.2 && totalCalls24h >= 5 && fallbackRate > prevFallbackRate * 1.5) {
+    alerts.push({
+      severity: "warning",
+      code: "llm_fallback_elevated",
+      message: `Groq fallback rate elevated — ${Math.round(fallbackRate * 100)}% vs ${Math.round(prevFallbackRate * 100)}% last week (${fallbackCalls24h}/${totalCalls24h} calls in 24h).`,
+      action: "Monitor Groq latency. If this continues, check rate limits on the Groq console.",
+    });
+  }
+
+  // ── Signal 2: Session cost coverage ──
+  if (sessionsReadable && todaySessions.length >= 3) {
+    const costed = todaySessions.filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0).length;
+    const coverage = costed / todaySessions.length;
+    if (coverage < 0.4) {
+      alerts.push({
+        severity: "critical",
+        code: "cost_patch_broken",
+        message: `Cost tracking broken — only ${Math.round(coverage * 100)}% of today's ${todaySessions.length} sessions have llm_cost_inr (${costed} have data, ${todaySessions.length - costed} missing).`,
+        action: "Check save-session.ts fire-and-forget PATCH. The llm_usage insert or the PATCH itself is failing silently.",
+      });
+    } else if (coverage < 0.7) {
+      alerts.push({
+        severity: "warning",
+        code: "cost_coverage_low",
+        message: `Cost coverage is ${Math.round(coverage * 100)}% today (${costed}/${todaySessions.length} sessions). Missing data will skew averages.`,
+        action: "Investigate llm_usage write failures in save-session.ts.",
+      });
+    }
+  }
+
+  // ── Signal 3: Session volume anomaly ──
+  // Compare today vs prior 7-day daily average
+  const priorDayCounts: Record<string, number> = {};
+  for (const s of recentSessions) {
+    const d = s.created_at?.slice(0, 10);
+    if (d && d !== today) priorDayCounts[d] = (priorDayCounts[d] || 0) + 1;
+  }
+  const priorDays = Object.values(priorDayCounts);
+  if (volumeReadable && priorDays.length >= 3) {
+    const dailyAvg = priorDays.reduce((a, b) => a + b, 0) / priorDays.length;
+    const todayCount = todaySessions.length;
+    const hourOfDay = new Date(now).getUTCHours();
+    // Pro-rate today based on how far through the day we are (avoid false alerts at midnight)
+    const prorated = hourOfDay >= 8 ? (todayCount / (hourOfDay / 24)) : null;
+
+    if (prorated != null && dailyAvg > 5) {
+      if (prorated < dailyAvg * 0.2) {
+        alerts.push({
+          severity: "critical",
+          code: "session_volume_crash",
+          message: `Session volume is critically low — ${todayCount} sessions so far today (est. ${Math.round(prorated)}/day extrapolated), vs ${round1(dailyAvg)} daily avg. Possible app outage.`,
+          action: "Check Vercel function logs, Supabase status, and the interview flow end-to-end.",
+        });
+      } else if (prorated < dailyAvg * 0.4) {
+        alerts.push({
+          severity: "warning",
+          code: "session_volume_low",
+          message: `Session volume is down — ${todayCount} sessions so far today (est. ${Math.round(prorated)}/day), vs ${round1(dailyAvg)} daily avg (7d).`,
+          action: "Monitor for the next hour. Could be time-of-day variation or a soft funnel issue.",
+        });
+      }
+    }
+  }
+
+  // ── Signal 4: Failed sessions (score=null or score=0) ──
+  if (sessionsReadable && todaySessions.length >= 3) {
+    const failed = todaySessions.filter(s => s.score == null || s.score === 0).length;
+    const failRate = failed / todaySessions.length;
+    if (failRate > 0.4) {
+      alerts.push({
+        severity: "critical",
+        code: "session_failures_high",
+        message: `${Math.round(failRate * 100)}% of today's sessions have null/zero score (${failed}/${todaySessions.length}). Likely evaluation pipeline failing.`,
+        action: "Check evaluate-session.ts, Groq/Gemini response parsing, and recent error logs.",
+      });
+    } else if (failRate > 0.2) {
+      alerts.push({
+        severity: "warning",
+        code: "session_failures_elevated",
+        message: `${Math.round(failRate * 100)}% of today's sessions scored 0 or null (${failed}/${todaySessions.length}).`,
+        action: "Spot-check recent sessions in the Sessions tab. May indicate LLM JSON parse errors.",
+      });
+    }
+  }
+
+  // ── Signal 5: Rate-card staleness ──
+  const ageDays = rateCardAgeDays(now);
+  if (isRateCardStale(now)) {
+    alerts.push({
+      severity: ageDays > RATE_STALENESS_THRESHOLD_DAYS * 2 ? "critical" : "warning",
+      code: "cost_rate_card_stale",
+      message: `LLM/TTS/STT rate card hasn't been reverified in ${ageDays} days (last verified ${RATES_LAST_VERIFIED_AT}). The admin cost dashboard and both Sarvam/Deepgram credit guardrails all read this same rate card.`,
+      action: "Check current Groq/Sarvam/Deepgram list prices (or your negotiated invoice rate) against DEFAULT_COST_RATES in _cost-helpers.ts, update the rate + RATES_LAST_VERIFIED_AT together, and log an actual invoice total via the Cost tab's reconciliation form.",
+    });
+  }
+
+  // ── Signal 6: employer unlock orders + cron heartbeats ──
+  try {
+    alerts.push(...(await getEmployerHealthAlerts(now)));
+  } catch (err) {
+    console.error("[health-alerts] employer signals failed:", err);
+  }
+
+  return {
+    alerts,
+    checkedAt: new Date(now).toISOString(),
+    degraded: degradedSources.length > 0,
+    degradedSources,
+    truncated: truncatedSources.length > 0,
+    truncatedSources,
+  };
+}

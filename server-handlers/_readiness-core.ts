@@ -524,15 +524,20 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   const coverage = { focusDone: distinctFocus, focusTotal: FOCUS_CATALOG.length, star, commonPct };
 
   // Blind spots — dedupe by competency, keep highest frequency.
+  // Exclude salary-negotiation sessions: their competencies (comp transparency,
+  // logistics clarity) are format-specific and pollute behavioral/campus data.
   const bsMap = new Map<string, BlindSpot>();
-  for (const s of sessions) for (const b of s.report?.blindSpots || []) {
-    if (!b?.competency) continue;
-    // The UI renders frequencyPct as a hard "N%". An unranked blind spot has
-    // no measured frequency, so skip it rather than show a fabricated 50%.
-    if (typeof b.frequencyPct !== "number") continue;
-    const f = b.frequencyPct;
-    const prev = bsMap.get(b.competency);
-    if (!prev || f > prev.frequencyPct) bsMap.set(b.competency, { competency: b.competency, frequencyPct: f, note: b.note || "" });
+  for (const s of sessions) {
+    if (focusKey(s) === "negotiation") continue;
+    for (const b of s.report?.blindSpots || []) {
+      if (!b?.competency) continue;
+      // The UI renders frequencyPct as a hard "N%". An unranked blind spot has
+      // no measured frequency, so skip it rather than show a fabricated 50%.
+      if (typeof b.frequencyPct !== "number") continue;
+      const f = b.frequencyPct;
+      const prev = bsMap.get(b.competency);
+      if (!prev || f > prev.frequencyPct) bsMap.set(b.competency, { competency: b.competency, frequencyPct: f, note: b.note || "" });
+    }
   }
   const blindSpots = [...bsMap.values()].sort((a, b) => b.frequencyPct - a.frequencyPct).slice(0, 4);
 
@@ -554,8 +559,13 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   // Refresh queue (skill decay).
   const refresh = buildRefresh(skillAgg, nowMs);
 
-  // Cross-session insights (latest report).
-  const crossSession: CrossInsight[] = (latestReport?.crossSessionInsights || []).map((c) => ({
+  // Cross-session insights: use latest report's insights; if empty (e.g. a
+  // brief campus session as the most recent), walk back to the most recent
+  // session that actually produced insights so the RI doesn't go blank.
+  const crossSessionSource = (latestReport?.crossSessionInsights?.length ?? 0) > 0
+    ? latestReport
+    : [...sessions].reverse().find((s) => (s.report?.crossSessionInsights?.length ?? 0) > 0)?.report ?? null;
+  const crossSession: CrossInsight[] = (crossSessionSource?.crossSessionInsights || []).map((c) => ({
     kind: c.kind, metric: c.metric || "", delta: c.delta, text: c.text,
   }));
 
@@ -609,10 +619,15 @@ export function computeReadiness(input: ReadinessInput): ReadinessPayload | null
   return {
     ri, band: bandFromRi(ri, threshold), confidence, threshold, delta14d, sessions: n,
     percentile, hireBand, bandMix,
-    cohort: { label: `${[resolvedCompany, profile.targetRole].filter(Boolean).join(" ") || "target"} hire bar`, ri: cohortRi },
+    cohort: { label: `${[resolvedCompany, focusKey(sessions[n - 1]) === "campus" ? "campus fresher" : profile.targetRole].filter(Boolean).join(" ") || "target"} hire bar`, ri: cohortRi },
     baseline: { ri: baselineRi, label: `your first session, ${weeksAgoLabel(Date.parse(sessions[0].createdAt), nowMs)}` },
     target: {
-      role: profile.targetRole || "Your role",
+      // When the candidate's most recent sessions are campus-placement,
+      // "Senior Product Designer" (or whatever profile.targetRole holds) is
+      // misleading — override with the campus-appropriate label.
+      role: focusKey(sessions[n - 1]) === "campus"
+        ? "Campus / Fresher"
+        : (profile.targetRole || "Your role"),
       // Empty when the candidate has not named a target company. The UI reads
       // hasCompany and switches to a holistic, role-level / strong-hire-bar
       // framing rather than printing the placeholder "your target company".
@@ -838,9 +853,13 @@ function buildRefresh(skillAgg: Map<string, SkillAgg>, nowMs: number): { skill: 
 }
 
 function buildRedFlags(sessions: RawSession[]): TypedFlag[] {
-  const n = sessions.length;
+  // Exclude salary-negotiation sessions — their red flags (comp discrepancy,
+  // salary discussion) are format-specific and not meaningful for behavioral/campus prep.
+  const nonNeg = sessions.filter((s) => focusKey(s) !== "negotiation");
+  const relevant = nonNeg.length > 0 ? nonNeg : sessions;
+  const n = relevant.length;
   const byType = new Map<string, { flag: RIRedFlag; hits: number }>();
-  for (const s of sessions) {
+  for (const s of relevant) {
     const seen = new Set<string>();
     for (const rf of s.report?.redFlags || []) {
       if (!rf?.type || seen.has(rf.type)) continue;
@@ -883,22 +902,24 @@ function buildResume(sessions: RawSession[]): ReadinessPayload["resume"] {
 }
 
 function buildAttention(sessions: RawSession[]): Attention[] {
-  for (let i = sessions.length - 1; i >= 0; i--) {
-    const s = sessions[i];
-    const tb = s.report?.thoughtBubble;
-    if (tb && tb.length) {
-      const durMs = Math.max((s.duration || 0) * 1000, ...tb.map((t) => t.endMs));
-      if (durMs <= 0) continue;
-      return tb.map((t) => ({ atPct: clamp(round((t.startMs / durMs) * 100), 0, 100), state: t.state, note: t.note }));
-    }
-  }
-  return [];
+  // Only read from the latest session — walking back to older sessions causes
+  // stale negotiation attention to bleed into campus/behavioral views when the
+  // most recent session doesn't produce a thoughtBubble.
+  const s = sessions[sessions.length - 1];
+  const tb = s?.report?.thoughtBubble;
+  if (!tb || !tb.length) return [];
+  const durMs = Math.max((s.duration || 0) * 1000, ...tb.map((t) => t.endMs));
+  if (durMs <= 0) return [];
+  return tb.map((t) => ({ atPct: clamp(round((t.startMs / durMs) * 100), 0, 100), state: t.state, note: t.note }));
 }
 
 function buildFollowUps(sessions: RawSession[]): FollowUp[] {
-  const recent = sessions.slice(-4);
+  // Prefer non-negotiation sessions for follow-up prep — negotiation follow-ups
+  // ("Can you elaborate on your market research?") are format-specific.
+  const nonNeg = sessions.filter((s) => focusKey(s) !== "negotiation");
+  const source = (nonNeg.length > 0 ? nonNeg : sessions).slice(-4);
   const byQ = new Map<string, FollowUp>();
-  for (const s of recent) for (const pq of s.report?.perQuestion || []) {
+  for (const s of source) for (const pq of s.report?.perQuestion || []) {
     const fu = pq.likelyFollowUp;
     if (!fu?.question) continue;
     const freq = typeof pq.frequencyPct === "number" ? pq.frequencyPct : 0;

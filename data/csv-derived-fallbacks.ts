@@ -24,7 +24,7 @@ import type {
   LiquidityRisk,
 } from "./company-negotiation-context";
 import type { ExperienceLevel } from "./salaries";
-import { matchRoleKey } from "./salaries";
+import { matchRoleKeyResolved } from "./salaries";
 import {
   getCsvCompanyBand,
   type CsvLevel,
@@ -77,9 +77,15 @@ function nonEmpty(s: unknown): s is string {
  */
 /** Per-company cache of "roleKey → CSV role label" map. The CSV ships
  *  with freeform role labels ("Backend Developer", "Senior Backend SDE-3");
- *  matchRoleKey collapses these to canonical role keys. Caching avoids
- *  re-running matchRoleKey on every (role, level) lookup — critical for
- *  tests that walk the full 3900-cell matrix. */
+ *  matchRoleKeyResolved collapses these to canonical role keys. Caching
+ *  avoids re-running the match on every (role, level) lookup — critical
+ *  for tests that walk the full 3900-cell matrix.
+ *
+ *  Only genuinely-matched labels are indexed (matched === true) — a label
+ *  that only falls through to the software-engineer catch-all default
+ *  (e.g. "Customer Support Executive", "Fraud Analyst") must NOT be cached
+ *  as that role's CSV source, or an unrelated row gets mislabeled as
+ *  Software Engineer data. */
 const ROLE_KEY_INDEX_CACHE = new WeakMap<CsvCompany, Map<string, string>>();
 
 function getRoleKeyIndex(co: CsvCompany): Map<string, string> {
@@ -87,9 +93,10 @@ function getRoleKeyIndex(co: CsvCompany): Map<string, string> {
   if (cached) return cached;
   cached = new Map<string, string>();
   for (const csvRoleLabel of Object.keys(co.roles)) {
-    const k = matchRoleKey(csvRoleLabel);
+    const { key, matched } = matchRoleKeyResolved(csvRoleLabel);
+    if (!matched) continue;
     // First label that resolves to this roleKey wins (CSV ordering preserved).
-    if (!cached.has(k)) cached.set(k, csvRoleLabel);
+    if (!cached.has(key)) cached.set(key, csvRoleLabel);
   }
   ROLE_KEY_INDEX_CACHE.set(co, cached);
   return cached;

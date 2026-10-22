@@ -6,22 +6,26 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHmac, timingSafeEqual } from "crypto";
 import { escapeHtml } from "./_shared";
+import { handleEmployerUnlockWebhook } from "./_employer-unlock-webhook";
+import { alertUnlockProblem } from "./_unlock-fulfillment";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
-import { grantSessionCredits } from "./_session-credits";
+import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
+import { notify } from "./_notify";
+import { PLAN_AMOUNT_PAISE } from "../data/plans";
 
 
 const RAZORPAY_WEBHOOK_SECRET = (process.env.RAZORPAY_WEBHOOK_SECRET || "").trim();
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
-const PLAN_DURATION: Record<string, number> = { weekly: 30, monthly: 30 }; // weekly = Sprint Pack 30-day validity
-const PLAN_TIER: Record<string, string> = { weekly: "starter", monthly: "pro" };
-const PLAN_AMOUNT: Record<string, number> = { weekly: 3900, monthly: 14900 }; // weekly = Sprint Pack ₹39
+const PLAN_DURATION: Record<string, number> = { weekly: 30 }; // weekly = Sprint Pack 30-day validity
+const PLAN_TIER: Record<string, string> = { weekly: "starter" };
+const PLAN_AMOUNT: Record<string, number> = { weekly: PLAN_AMOUNT_PAISE.weekly };
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -53,6 +57,24 @@ async function checkDedup(dedupKey: string): Promise<"new" | "duplicate" | "redi
     return "redis_unavailable";
   }
 }
+
+/** Undo the event-level dedup so a Razorpay re-delivery is processed instead of
+ *  short-circuiting as "duplicate" after a failed attempt. Best effort. */
+async function releaseDedup(dedupKey: string): Promise<void> {
+  _processedEvents.delete(dedupKey);
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return;
+  try {
+    await fetch(`${UPSTASH_URL}/DEL/${encodeURIComponent(`webhook:${dedupKey}`)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { /* the 24h TTL is the backstop */ }
+}
+
+/** Events the employer contact-unlock flow may own (see _employer-unlock-webhook.ts). */
+const EMPLOYER_UNLOCK_EVENTS = new Set([
+  "payment.captured", "order.paid", "refund.created", "refund.processed",
+  "payment.dispute.created", "payment.dispute.won", "payment.dispute.lost",
+]);
 
 /** Atomically CLAIM a payment for processing via the payment_dedup table's
  *  primary-key constraint. This is the cross-instance backstop the in-memory
@@ -173,6 +195,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (sigBuffer.length !== expectedBuffer.length || !timingSafeEqual(sigBuffer, expectedBuffer)) {
     clearTimeout(globalTimeout);
     console.error("[webhook] Signature mismatch");
+    // Misconfigured secret or a forged call: tell ops now (rate-limited per hour, per source IP).
+    await alertUnlockProblem({
+      kind: "webhook_signature", key: String(req.headers["x-forwarded-for"] || "unknown").split(",")[0].trim().slice(0, 64),
+      subject: "Razorpay webhook signature mismatch",
+      detail: "A Razorpay webhook failed signature verification. If this repeats for real events, RAZORPAY_WEBHOOK_SECRET is wrong and payments will not be fulfilled by the webhook.",
+    });
     return res.status(400).json({ error: "Invalid signature" });
   }
 
@@ -185,7 +213,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: "Invalid JSON" });
   }
   const eventType = event?.event;
-  const eventId = event?.entity?.id || event?.payload?.payment?.entity?.id || event?.payload?.subscription?.entity?.id || "";
+  // refund.* envelopes carry entity:"event", and every refund on a payment shares
+  // the payment id, so keying on it would swallow the 2nd partial refund as a
+  // "duplicate". Key refund events on the refund entity's own id.
+  const refundEntityId = typeof eventType === "string" && eventType.startsWith("refund.")
+    ? event?.payload?.refund?.entity?.id
+    : undefined;
+  const eventId = refundEntityId || event?.entity?.id || event?.payload?.payment?.entity?.id || event?.payload?.subscription?.entity?.id || "";
   const dedupKey = `${eventType}:${eventId}`;
   if (dedupKey.length > 5) {
     const dedupResult = await checkDedup(dedupKey);
@@ -204,6 +238,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const HANDLED_EVENTS = [
     "payment.captured",
+    "order.paid",
     "payment.failed",
     "payment.dispute.created",
     "payment.dispute.won",
@@ -224,6 +259,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // ─── Employer contact-unlock orders (payment.captured / order.paid / refunds / disputes) ───
+    // Claims the event only when it belongs to an employer_unlock_orders row;
+    // anything else falls through to the candidate branches below unchanged.
+    if (EMPLOYER_UNLOCK_EVENTS.has(eventType)) {
+      let outcome: Awaited<ReturnType<typeof handleEmployerUnlockWebhook>>;
+      try {
+        outcome = await handleEmployerUnlockWebhook({
+          eventType, event, supabaseUrl: SUPABASE_URL,
+          razorpayKeyId: (process.env.RAZORPAY_KEY_ID || "").trim(),
+          razorpayKeySecret: (process.env.RAZORPAY_KEY_SECRET || "").trim(),
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` },
+        });
+      } catch (unlockErr) {
+        console.error("[webhook] employer unlock handler threw:", unlockErr);
+        await alertUnlockProblem({
+          kind: "unlock_webhook_threw", key: String(event?.payload?.payment?.entity?.order_id || event?.payload?.payment?.entity?.id || eventType),
+          subject: "Employer unlock webhook handler threw",
+          detail: `Event ${String(eventType)} could not be processed (${unlockErr instanceof Error ? unlockErr.message : String(unlockErr)}). Razorpay will redeliver; check that a captured payment was fulfilled.`,
+          error: unlockErr,
+        });
+        if (dedupKey.length > 5) await releaseDedup(dedupKey);
+        return res.status(500).json({ error: "Internal error" });
+      }
+      if (outcome.handled) {
+        if (outcome.retry && dedupKey.length > 5) await releaseDedup(dedupKey);
+        return res.status(outcome.status).json(outcome.body);
+      }
+      if (eventType === "order.paid") return res.status(200).json({ received: true, skipped: eventType });
+    }
+
     // ─── Subscription lifecycle events ───
     if (eventType.startsWith("subscription.")) {
       const subscription = event?.payload?.subscription?.entity;
@@ -261,15 +326,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const dedupKey = `${subscriptionId}:activated`;
         const dedupRes = await fetch(`${SUPABASE_URL}/rest/v1/payment_dedup`, {
           method: "POST",
-          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+          headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
           body: JSON.stringify({ razorpay_payment_id: dedupKey, user_id: userId }),
         });
-        if (dedupRes.status === 409 || (dedupRes.ok && dedupRes.status === 200 && (await dedupRes.text()) === "")) {
+        if (dedupRes.status === 409) {
           // Conflict = already processed by a prior delivery of this webhook event
           return res.status(200).json({ received: true, already_processed: true });
         }
-        // A non-conflict 2xx means we own it; a 4xx/5xx means Redis-fallback below.
-        // Either way we proceed — failing to write dedup never blocks a first delivery.
+        // A 2xx means we own it; a non-409 4xx/5xx means best-effort, proceed anyway —
+        // failing to write dedup never blocks a first delivery.
 
         // First activation — save subscription ID and activate tier
         const tier = PLAN_TIER[plan] || "starter";
@@ -303,34 +368,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const payment = event?.payload?.payment?.entity;
         const paymentId = payment?.id;
 
-        if (paymentId) {
-          // Atomic claim FIRST — wins the cross-instance race before we extend
-          // the subscription. "duplicate" means another instance already owns
-          // this payment; bail without re-extending. "error" falls back to the
-          // best-effort read check so a transient DB blip can't strand a renewal.
-          const claim = await claimPayment(paymentId, userId);
-          if (claim === "duplicate") {
+        // Guard: without a paymentId we cannot dedup this event. Two concurrent
+        // deliveries of the same subscription.charged (no paymentId) would both
+        // extend subscription_end, doubling validity. Reject cleanly so Razorpay
+        // retries with a fully-populated payload before we touch the profile.
+        if (!paymentId) {
+          console.warn(`[webhook] subscription.charged missing paymentId for user ${userId?.slice(0, 8)} — skipping to avoid double-extension`);
+          return res.status(200).json({ received: true, skipped: "missing_payment_id" });
+        }
+
+        // Atomic claim FIRST — wins the cross-instance race before we extend
+        // the subscription. "duplicate" means another instance already owns
+        // this payment; bail without re-extending. "error" falls back to the
+        // best-effort read check so a transient DB blip can't strand a renewal.
+        const claim = await claimPayment(paymentId, userId);
+        if (claim === "duplicate") {
+          return res.status(200).json({ received: true, already_processed: true });
+        }
+        if (claim === "error") {
+          const dupCheck = await fetch(
+            `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
+            { headers: dbHeaders },
+          );
+          const dupRows = await dupCheck.json();
+          if (Array.isArray(dupRows) && dupRows.length > 0) {
             return res.status(200).json({ received: true, already_processed: true });
-          }
-          if (claim === "error") {
-            const dupCheck = await fetch(
-              `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(paymentId)}&select=id`,
-              { headers: dbHeaders },
-            );
-            const dupRows = await dupCheck.json();
-            if (Array.isArray(dupRows) && dupRows.length > 0) {
-              return res.status(200).json({ received: true, already_processed: true });
-            }
           }
         }
 
         const tier = PLAN_TIER[plan] || "starter";
         const now = new Date();
         // Extend from current end if still active
-        const profileRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_end,email,name`,
-          { headers: dbHeaders },
-        );
+        const profileAc = new AbortController();
+        const profileTimer = setTimeout(() => profileAc.abort(), 8_000);
+        let profileRes: Response;
+        try {
+          profileRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=subscription_end,email,name`,
+            { headers: dbHeaders, signal: profileAc.signal },
+          );
+        } catch (e) {
+          clearTimeout(profileTimer);
+          const aborted = (e as { name?: string })?.name === "AbortError";
+          console.error("[webhook] subscription.charged profile read", aborted ? "timed out" : "failed");
+          return res.status(aborted ? 504 : 502).json({ error: "Profile read failed" });
+        }
+        clearTimeout(profileTimer);
         const profileRows = await profileRes.json();
         const currentEnd = Array.isArray(profileRows) && profileRows[0]?.subscription_end ? new Date(profileRows[0].subscription_end) : null;
         const base = currentEnd && currentEnd > now ? currentEnd : now;
@@ -364,9 +447,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               user_id: userId,
               razorpay_payment_id: paymentId,
               razorpay_order_id: payment?.order_id || "",
-              plan: plan || "monthly",
+              plan: plan || "weekly",
               tier,
-              amount: payment?.amount || PLAN_AMOUNT[plan] || 14900,
+              amount: payment?.amount || PLAN_AMOUNT[plan] || PLAN_AMOUNT_PAISE.weekly,
               currency: "INR",
               status: "completed",
               subscription_start: now.toISOString(),
@@ -403,6 +486,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           } catch (emailErr) { console.error("[webhook] Renewal email failed:", emailErr); }
         }
+
+        void notify({
+          userId,
+          type: "subscription_renewed",
+          title: `${tier} plan renewed`,
+          body: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+          link: "/dashboard",
+        });
 
         await captureServerEvent("subscription_renewed", userId, {
           tier,
@@ -443,19 +534,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Send payment-failed notification email (best-effort, non-blocking)
         if (RESEND_API_KEY && profileEmail) {
           const safeName = escapeHtml(profileName || "there");
-          const lostRows: [string, string][] = previousTier === "pro"
-            ? [
-                ["Unlimited sessions", "Removed"],
-                ["Full AI coaching feedback", "Removed"],
-                ["Performance analytics", "Removed"],
-                ["Priority support", "Removed"],
-              ]
-            : [
-                ["7 sessions per week", "Removed"],
-                ["All question types", "Removed"],
-                ["Detailed feedback", "Removed"],
-                ["Resume analysis", "Removed"],
-              ];
+          const lostRows: [string, string][] = [
+            ["5 sessions per Sprint Pack", "Removed"],
+            ["All question types", "Removed"],
+            ["Detailed feedback", "Removed"],
+            ["Resume analysis", "Removed"],
+          ];
 
           try {
             await fetch("https://api.resend.com/emails", {
@@ -485,6 +569,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             });
           } catch (emailErr) { console.error("[webhook] Payment-failed email failed:", emailErr); }
         }
+
+        void notify({
+          userId,
+          type: "payment_failed",
+          title: "Payment failed, your plan is paused",
+          body: `We couldn't renew your ${previousTier} plan, so it's been moved to the free tier. Update your payment method to restore it.`,
+          link: "/dashboard?tab=settings",
+        });
 
         await captureServerEvent("payment_failed", userId, {
           previous_tier: previousTier,
@@ -679,11 +771,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const dbHeaders = { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` };
 
       const pmtRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(refundPaymentId)}&select=user_id`,
+        `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(refundPaymentId)}&select=user_id,plan`,
         { headers: dbHeaders },
       );
       const pmtRows = await pmtRes.json();
       const refundUserId: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.user_id ? pmtRows[0].user_id : undefined;
+      const refundPlan: string | undefined = Array.isArray(pmtRows) && pmtRows[0]?.plan ? pmtRows[0].plan : undefined;
 
       if (!refundUserId) {
         console.warn(`[webhook] refund: no payment record for ${refundPaymentId.slice(0, 8)}`);
@@ -736,11 +829,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (eventType === "refund.processed") {
         // Refund complete — downgrade to free
+        const refundPatch: Record<string, unknown> = { subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null };
         await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(refundUserId)}`, {
           method: "PATCH",
           headers: { ...dbHeaders, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ subscription_tier: "free", cancel_at_period_end: true, razorpay_subscription_id: null }),
+          body: JSON.stringify(refundPatch),
         });
+        // Single-session credit purchases: revoke unused credits so a refunded
+        // user can't keep the sessions they got credit for. This MUST write the
+        // authoritative session_credits TABLE via reconcile_session_credits —
+        // the old code PATCHed `profiles.session_credits`, a column dropped from
+        // the schema, so the real balance was never touched and refunded buyers
+        // kept every credit.
+        if (refundPlan === "single") {
+          await revokeSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, refundUserId, 0, `refund:${refundPaymentId.slice(0, 12)}`);
+        }
         if (RESEND_API_KEY && prof?.email) {
           const safeName = escapeHtml(prof.name || "there");
           try {
@@ -856,7 +959,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Money-critical: payment is captured, so retry the grant through transient
       // Supabase failures. On total failure, release the dedup claim so a Razorpay
       // re-delivery re-processes instead of short-circuiting as "duplicate".
-      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, quantity, fetch, 3);
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, quantity, fetch, 3, { paymentId: paymentId });
       if (newBalance === null) {
         console.error("[webhook] Credit grant failed after retries for", userId.slice(0, 8));
         await releasePaymentClaim(paymentId);
@@ -872,6 +975,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }).catch(() => {});
 
       if (orderId) await clearPaymentIntent(orderId);
+
+      void notify({
+        userId,
+        type: "payment_success",
+        title: "Payment received",
+        body: `${quantity} session credit${quantity === 1 ? "" : "s"} added to your account.`,
+        link: "/dashboard",
+      });
 
       if (RESEND_API_KEY && notes.email) {
         const safeName = escapeHtml(notes.userName || "there");
@@ -967,6 +1078,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (orderId) await clearPaymentIntent(orderId);
 
+    void notify({
+      userId,
+      type: "payment_success",
+      title: `${tier} is live`,
+      body: `Your payment went through — your plan is active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+      link: "/dashboard",
+    });
+
     if (RESEND_API_KEY && notes.email) {
       const safeName = escapeHtml(notes.userName || "there");
       try {
@@ -985,7 +1104,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               preview: `Your ${tier} plan is live until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
               body:
                 title(`${tier} is`, { accentWord: "live." }) +
-                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. We'll renew it automatically so your practice never pauses.`) +
+                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. This is a one-time purchase — it won't auto-renew, so buy again anytime to keep practising after it ends.`) +
                 button("Start practising", `${APP_URL}/dashboard`),
             }),
           }),

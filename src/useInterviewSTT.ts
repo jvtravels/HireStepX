@@ -1,11 +1,11 @@
 /* ─── Interview Speech-to-Text Hook ─── */
-/* Manages the STT fallback chain: Deepgram Nova-3 → Sarvam AI → Web Speech API.
+/* Manages the STT fallback chain: Deepgram Nova-3 → Web Speech API.
    Also handles mic stream capture for waveform visualization.
    Extracted from useInterviewEngine. */
 
 import { useEffect, useRef } from "react";
+import { micConstraints } from "./audioDevices";
 import { createDeepgramSTT, type DeepgramSTTHandle } from "./deepgramSTT";
-import { createSarvamSTT, type SarvamSTTHandle } from "./sarvamSTT";
 import { createSpeechRecognition } from "./speechRecognition";
 import type { SpeechRecognitionInstance, SpeechRecognitionEvent } from "./speechRecognition";
 import type { ToastType } from "./Toast";
@@ -38,14 +38,13 @@ export interface STTCallbacks {
 export interface STTRefs {
   recognitionRef: React.MutableRefObject<SpeechRecognitionInstance | null>;
   deepgramRef: React.MutableRefObject<DeepgramSTTHandle | null>;
-  sarvamRef: React.MutableRefObject<SarvamSTTHandle | null>;
   noSpeechCountRef: React.MutableRefObject<number>;
   micStreamRef: React.MutableRefObject<MediaStream | null>;
 }
 
 /**
  * Manages the full STT lifecycle: starts/stops recognition based on phase,
- * handles the Deepgram → Sarvam → Web Speech API fallback chain,
+ * handles the Deepgram → Web Speech API fallback chain,
  * and captures the mic stream for waveform visualization.
  */
 export function useInterviewSTT(
@@ -61,15 +60,24 @@ export function useInterviewSTT(
 ) {
   const recognitionRestartCountRef = useRef(0);
   const deepgramRetryRef = useRef(0);
+  /* B-EMP3 (2026-08-20): Chrome's Web Speech API "network" error is a
+   * well-documented transient blip (it round-trips audio to Google's
+   * servers even though the API is "free" client-side) — it fires and
+   * clears within seconds on a healthy connection. Treating it as fatal
+   * on the FIRST occurrence (previous behavior) permanently disabled
+   * voice input for the rest of the interview on one hiccup. Tolerate a
+   * few before giving up, matching the existing no-speech retry pattern. */
+  const networkErrorCountRef = useRef(0);
 
   // Start/stop speech recognition based on phase
   useEffect(() => {
     if (phase === "listening" && !isMuted && !speechUnavailable) {
       recognitionRestartCountRef.current = 0;
       deepgramRetryRef.current = 0;
+      networkErrorCountRef.current = 0;
       let stopped = false;
 
-      // Billable-STT instrumentation. Deepgram/Sarvam bill by audio (≈ wall-clock
+      // Billable-STT instrumentation. Deepgram bills by audio (≈ wall-clock
       // the mic streams), but until now we logged only the *provider name*, never
       // duration — so per-session STT cost was unmeasurable. Stamp the moment this
       // listening turn opens and emit the elapsed seconds (tagged with whichever
@@ -78,7 +86,6 @@ export function useInterviewSTT(
       let activeSttProvider = "deepgram";
 
       let deepgramCleanup: (() => void) | null = null;
-      let sarvamCleanup: (() => void) | null = null;
 
       // Rolling-silence safety timer. Hoisted above all STT branches so
       // every provider's onTranscript can re-arm it. Previous version was
@@ -109,57 +116,8 @@ export function useInterviewSTT(
         setTimeout(() => callbacks.textareaRef.current?.focus(), 100);
       };
 
-      // Fallback chain: Deepgram Nova-3 → Sarvam AI → Web Speech API
-      const trySarvam = async () => {
-        if (stopped) return;
-        console.warn("[STT] Trying Sarvam AI fallback...");
-        const handle = await createSarvamSTT({
-          onTranscript: (finalText, interim) => {
-            if (!stopped) {
-              if (finalText || interim) armSafetyTimer();
-              // preservedFinalText carries any partial answer captured by
-              // Deepgram before it dropped — without prefixing it here, the
-              // candidate's earlier sentences disappear from the visible
-              // transcript the moment Sarvam takes over.
-              callbacks.setCurrentTranscript(preservedFinalText + finalText + interim);
-            }
-          },
-          onError: (error) => {
-            if (stopped) return;
-            if (error === "not-allowed") {
-              handleMicDenied();
-            } else {
-              console.warn("[Sarvam] error, falling back to Web Speech API:", error);
-              callbacks.toast("Speech recognition switched to browser fallback.", "info");
-              refs.sarvamRef.current = null;
-              startWebSpeechAPI();
-            }
-          },
-          onEnd: () => {
-            if (stopped || callbacks.interviewEndedRef.current) return;
-            refs.sarvamRef.current = null;
-            console.warn("[Sarvam] connection ended, falling back to Web Speech API");
-            callbacks.toast("Speech recognition switched to browser fallback.", "info");
-            startWebSpeechAPI();
-          },
-        });
-        if (stopped) { handle?.abort(); return; }
-        if (handle) {
-          refs.sarvamRef.current = handle;
-          sarvamCleanup = () => { handle.stop(); refs.sarvamRef.current = null; };
-          activeSttProvider = "sarvam";
-          captureClientEvent("stt_provider_used", { provider: "sarvam", fellThroughFrom: "deepgram" });
-        } else {
-          // Previously this branch only logged to console — users hit Web
-          // Speech with no signal in PostHog and no toast, masking a real
-          // failure pattern (e.g. Sarvam token endpoint regressions).
-          console.warn("[Sarvam] setup failed, falling back to Web Speech API");
-          callbacks.toast("Speech recognition switched to browser fallback.", "info");
-          captureClientEvent("stt_setup_failed", { provider: "sarvam", fellThroughTo: "webspeech" });
-          startWebSpeechAPI();
-        }
-      };
-
+      // Fallback chain: Deepgram Nova-3 (scoped short-lived key) → Web Speech API.
+      // No vendor master key ever reaches the browser.
       // Preserve transcript across Deepgram reconnects — without this, the
       // user's words spoken before the disconnect are lost on retry and they
       // have to repeat themselves.
@@ -214,15 +172,15 @@ export function useInterviewSTT(
             if (error === "not-allowed") {
               handleMicDenied();
             } else {
-              console.warn("[Deepgram] error, falling back to Sarvam AI:", error);
+              console.warn("[Deepgram] error, falling back to Web Speech API:", error);
               // Emit a distinguishable PostHog signal so ops can tell
               // "Deepgram 429" apart from "Deepgram WS dropped" — both
               // surface as `error` here but the recovery and incidence
-              // patterns differ. The toast on Sarvam fallback already
+              // patterns differ. The toast on fallback already
               // tells the user, so we don't re-toast.
-              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: typeof error === "string" ? error.slice(0, 60) : "unknown", fellThroughTo: "sarvam" });
+              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: typeof error === "string" ? error.slice(0, 60) : "unknown", fellThroughTo: "webspeech" });
               refs.deepgramRef.current = null;
-              trySarvam();
+              startWebSpeechAPI();
             }
           },
           onEnd: () => {
@@ -238,9 +196,9 @@ export function useInterviewSTT(
               callbacks.toast("Reconnecting speech recognition...", "info");
               setTimeout(() => { if (!stopped) tryDeepgram(); }, backoffMs);
             } else {
-              console.warn("[Deepgram] retries exhausted, falling back to Sarvam AI");
-              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: "ws_ended_retries_exhausted", fellThroughTo: "sarvam" });
-              trySarvam();
+              console.warn("[Deepgram] retries exhausted, falling back to Web Speech API");
+              captureClientEvent("stt_provider_error", { provider: "deepgram", reason: "ws_ended_retries_exhausted", fellThroughTo: "webspeech" });
+              startWebSpeechAPI();
             }
           },
         });
@@ -251,9 +209,9 @@ export function useInterviewSTT(
           activeSttProvider = "deepgram";
           captureClientEvent("stt_provider_used", { provider: "deepgram" });
         } else {
-          console.warn("[Deepgram] setup failed, falling back to Sarvam AI");
-          captureClientEvent("stt_setup_failed", { provider: "deepgram", fellThroughTo: "sarvam" });
-          trySarvam();
+          console.warn("[Deepgram] setup failed, falling back to Web Speech API");
+          captureClientEvent("stt_setup_failed", { provider: "deepgram", fellThroughTo: "webspeech" });
+          startWebSpeechAPI();
         }
       };
 
@@ -261,11 +219,20 @@ export function useInterviewSTT(
         if (stopped) return;
         const recognition = createSpeechRecognition();
         if (!recognition) {
+          callbacks.setMicError("Voice input isn't supported in this browser. You can type your answers instead.");
           callbacks.setSpeechUnavailable(true);
           return;
         }
         let finalText = "";
         recognition.onresult = (event: SpeechRecognitionEvent) => {
+          // `.stop()` (unlike `.abort()`) is specified to let one more
+          // trailing result through asynchronously, sometimes seconds later
+          // (worse under tab-backgrounding). Without this guard, that stray
+          // event writes into this closure's `finalText` from a turn that's
+          // already over, silently overwriting the next question's answer
+          // box with the previous question's text — confirmed as the cause
+          // of duplicate back-to-back answers in production transcripts.
+          if (stopped) return;
           let interim = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
@@ -287,7 +254,12 @@ export function useInterviewSTT(
               handleFallbackToText("No speech detected after multiple attempts. Type your answer below.");
             }
           } else if (error === "network") {
-            handleFallbackToText("Speech recognition network error. Type your answer below.");
+            networkErrorCountRef.current += 1;
+            if (networkErrorCountRef.current >= 3) {
+              handleFallbackToText("Speech recognition network error. Type your answer below.");
+            } else {
+              console.warn(`[speech] transient network error (${networkErrorCountRef.current}/3), letting onend retry`);
+            }
           } else if (error !== "aborted") {
             handleFallbackToText("Microphone issue detected. Try unmuting or refreshing.");
           }
@@ -298,6 +270,7 @@ export function useInterviewSTT(
           return (event: SpeechRecognitionEvent) => {
             refs.noSpeechCountRef.current = 0;
             recognitionRestartCountRef.current = 0;
+            networkErrorCountRef.current = 0;
             armSafetyTimer();
             origOnResult(event);
           };
@@ -321,7 +294,7 @@ export function useInterviewSTT(
         try {
           recognition.start();
           activeSttProvider = "webspeech";
-          captureClientEvent("stt_provider_used", { provider: "webspeech", fellThroughFrom: "sarvam" });
+          captureClientEvent("stt_provider_used", { provider: "webspeech", fellThroughFrom: "deepgram" });
         } catch (e) {
           console.warn("Speech recognition failed to start:", e);
           callbacks.setMicError("Could not start speech recognition. Try refreshing.");
@@ -343,15 +316,14 @@ export function useInterviewSTT(
           captureClientEvent("stt_listening_seconds", { provider: activeSttProvider, seconds });
         }
         deepgramCleanup?.();
-        sarvamCleanup?.();
-        refs.recognitionRef.current?.stop();
+        // abort(), not stop(): stop() is specified to flush one trailing
+        // result asynchronously; abort() suppresses it outright.
+        refs.recognitionRef.current?.abort();
         refs.recognitionRef.current = null;
       };
     } else {
       refs.deepgramRef.current?.abort();
       refs.deepgramRef.current = null;
-      refs.sarvamRef.current?.abort();
-      refs.sarvamRef.current = null;
       refs.recognitionRef.current?.stop();
       refs.recognitionRef.current = null;
       return;
@@ -360,16 +332,23 @@ export function useInterviewSTT(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, isMuted, speechUnavailable, restartTrigger]);
 
-  // Capture mic stream for waveform visualizer
+  // Capture mic stream for waveform visualizer.
+  // Delayed 800ms so Deepgram's own getUserMedia resolves first — on Android
+  // MIUI a concurrent second getUserMedia triggers a redundant OS permission
+  // dialog mid-interview. The stream is optional (waveform only); missing it
+  // is silent.
   useEffect(() => {
     if (phase !== "listening" || isMuted) { refs.micStreamRef.current = null; return; }
     let cancelled = false;
-    navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
-      if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
-      refs.micStreamRef.current = stream;
-    }).catch(() => {});
+    const timer = window.setTimeout(() => {
+      navigator.mediaDevices.getUserMedia({ audio: micConstraints() }).then(stream => {
+        if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
+        refs.micStreamRef.current = stream;
+      }).catch(() => {});
+    }, 800);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
       refs.micStreamRef.current?.getTracks().forEach(t => t.stop());
       refs.micStreamRef.current = null;
     };

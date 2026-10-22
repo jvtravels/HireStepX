@@ -1,6 +1,8 @@
 /* Vercel Cron Function — Send subscription renewal reminder emails */
 /* Runs daily at 9 AM UTC. Sends reminders to users whose subscription expires within 3 days. */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
@@ -8,13 +10,11 @@ import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Protect cron endpoint — fail closed: require CRON_SECRET to be set
-  if (!CRON_SECRET || req.headers.authorization !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -55,6 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const profiles = await profilesRes.json();
     if (!Array.isArray(profiles) || profiles.length === 0) {
+      await recordCronResult("send-renewal-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No expiring subscriptions" });
     }
 
@@ -66,8 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const endDate = new Date(profile.subscription_end);
       const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86400000);
       const tier = profile.subscription_tier;
-      const plan = tier === "pro" ? "monthly" : "weekly";
-      const renewUrl = `${APP_URL}/dashboard?plan=${plan}`;
+      const renewUrl = `${APP_URL}/dashboard?plan=weekly`;
 
       const emailBody = JSON.stringify({
         from: FROM_EMAIL,
@@ -126,6 +126,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    await recordCronResult("send-renewal-reminders", { errors: failed });
     return res.status(200).json({ sent, failed, total: profiles.length });
   } catch (err) {
     console.error("Renewal reminder error:", err);

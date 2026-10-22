@@ -13,8 +13,12 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { c, font } from "@/tokens";
+import { Button } from "@/components/ui/button";
+import { tokens as T } from "@/auth/_tokens";
+import { CopyEmailLink } from "@/_CopyEmailLink";
+import { captureClientEvent } from "@/posthogClient";
 
-const SUPPORT_EMAIL = "support@hirestepx.com";
+const SUPPORT_EMAIL = "hello@hirestepx.com";
 
 export default function GlobalRouteError({
   error,
@@ -28,6 +32,9 @@ export default function GlobalRouteError({
     // Sentry / errorReporter will pick it up if configured.
     try {
       console.error("[app/error] unhandled:", error.message, error.digest);
+      // Digest + path only (never the message, which can echo user data) so an
+      // intermittent crash can be tied to the server log line that shares it.
+      captureClientEvent("route_error", { digest: error.digest ?? null, path: window.location.pathname });
     } catch {
       /* noop */
     }
@@ -48,10 +55,10 @@ export default function GlobalRouteError({
     >
       <span
         style={{
-          fontFamily: font.display,
+          fontFamily: font.ui,
           fontSize: 80,
-          fontWeight: 400,
-          color: c.gilt,
+          fontWeight: 600,
+          color: T.indigo,
           lineHeight: 1,
           marginBottom: 16,
         }}
@@ -99,23 +106,9 @@ export default function GlobalRouteError({
         </p>
       ) : null}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
-        <button
-          type="button"
-          onClick={reset}
-          style={{
-            fontFamily: font.ui,
-            fontSize: 14,
-            fontWeight: 500,
-            color: c.obsidian,
-            background: c.gilt,
-            padding: "12px 28px",
-            borderRadius: 8,
-            border: "none",
-            cursor: "pointer",
-          }}
-        >
+        <Button type="button" onClick={reset} >
           Try again
-        </button>
+        </Button>
         <Link
           href="/"
           style={{
@@ -132,8 +125,8 @@ export default function GlobalRouteError({
         >
           Back home
         </Link>
-        <a
-          href={`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent("HireStepX error")}${error.digest ? `&body=${encodeURIComponent(`Ref: ${error.digest}`)}` : ""}`}
+        <CopyEmailLink
+          email={SUPPORT_EMAIL}
           style={{
             fontFamily: font.ui,
             fontSize: 14,
@@ -147,7 +140,7 @@ export default function GlobalRouteError({
           }}
         >
           Contact support
-        </a>
+        </CopyEmailLink>
       </div>
     </div>
   );

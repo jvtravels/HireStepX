@@ -2,8 +2,13 @@
  *
  * Pulls completed sessions from the previous 25h that haven't been
  * analyzed yet, dispatches each to its focus-specific analyzer, and
- * writes findings to session_insights. Then aggregates by focus into
- * daily_quality_report so the internal dashboard surfaces drift.
+ * writes findings to session_insights — the table real features read
+ * (credibility callout, "your next move" CTA, resume cross-check).
+ *
+ * No daily digest/aggregate step: removed 2026-10 after confirming
+ * nothing reads `daily_quality_report` or `daily_digests` outside this
+ * file — they fed an admin dashboard that was never built. Cut an
+ * extra nightly LLM call for zero functional loss.
  *
  * Auth: CRON_SECRET in the Authorization header (Vercel sets it
  * automatically for /api/cron/* paths). Manual runs require the same
@@ -17,23 +22,27 @@
  * is "no insight row exists" rather than a date window.
  */
 
-export const config = { runtime: "edge" };
+// Runtime declared at route level (app/api/cron/analyze-sessions/route.ts).
+// This handler-level config export is dead code for Next.js App Router but
+// kept for documentation: Node.js, maxDuration 240s.
+export const config = { runtime: "nodejs" };
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import { pickAnalyzer, registeredFocuses } from "./analyzers/_dispatch";
 import type { SessionRowForAnalysis } from "./analyzers/_types";
 import { llmRescore, isRescoreEnabled } from "./analyzers/_llm-rescore";
-import { buildDigestPrompt, parseDigest, computeSeverity, type DigestInput } from "./_digest-helpers";
-import { callLLM } from "./_llm";
+import { computeSeverity } from "./_digest-helpers";
+import { callLLM } from "./_llm-pii";
 import { computeOutcome, countFlagInWindow, primaryFlagFor } from "./_fix-outcome-helpers";
 import { captureServerEvent } from "./_posthog";
-import { buildFixPlanPrompt, parseFixPlan, type FixPlanInput } from "./_fix-plan-helpers";
+import { buildFixPlanPrompt, parseFixPlan, buildDedupKey, type FixPlanInput } from "./_fix-plan-helpers";
 import { fetchResumeForAnalyzer } from "./_resume-versioning";
 import { freshnessSnapshot } from "./_data-freshness";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
 const MAX_SESSIONS_PER_RUN = 200;
 const LOOKBACK_HOURS = 25;
 
@@ -42,6 +51,16 @@ function jsonResponse(body: unknown, status = 200): Response {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/* Campus-placement sessions have type="behavioral" and focus="campus-placement"
+ * because the sessions.type column stores the base interview type. The dispatch
+ * registry maps by focus key, so we must prefer session.focus when it names a
+ * registered analyzer (e.g. "campus-placement") and fall back to session.type
+ * only when focus is absent or not registered (e.g. focus="general"). */
+const _registeredSet = new Set(registeredFocuses());
+function analyzerFocus(session: Pick<SessionRowForAnalysis, "type" | "focus">): string {
+  return (session.focus && _registeredSet.has(session.focus)) ? session.focus : session.type;
 }
 
 function authHeaders(): Record<string, string> {
@@ -108,7 +127,7 @@ async function fetchUnanalyzedSessions(overrideHours?: number, forceReanalyze = 
       // analyzer version. pickAnalyzer().version is the current code-level
       // version — if the row's stored version differs, code has shipped
       // since and the row's findings are stale.
-      const currentVersion = pickAnalyzer(r.type).version;
+      const currentVersion = pickAnalyzer(analyzerFocus(r)).version;
       const storedVersion = insights[0]?.analyzer_version || "";
       return storedVersion !== currentVersion;
     })
@@ -162,57 +181,13 @@ async function writeInsights(rows: InsightRow[]): Promise<{ ok: number; failed: 
   return { ok: rows.length, failed: 0 };
 }
 
-interface FocusAggregate {
-  day: string;
-  focus: string;
-  sessions_analyzed: number;
-  drift_sum: number;
-  drift_count: number;
-  hallucination_sessions: number;
-  flagged_question_count: number;
-  flag_counts: Map<string, number>;
-}
-
-async function writeDailyReport(aggs: FocusAggregate[]): Promise<void> {
-  if (aggs.length === 0) return;
-  const rows = aggs.map((a) => {
-    const flags = Array.from(a.flag_counts.entries())
-      .map(([flag, count]) => ({ flag, count }))
-      .sort((x, y) => y.count - x.count)
-      .slice(0, 5);
-    return {
-      day: a.day,
-      focus: a.focus,
-      sessions_analyzed: a.sessions_analyzed,
-      avg_score_drift: a.drift_count ? a.drift_sum / a.drift_count : 0,
-      hallucination_rate: a.sessions_analyzed ? a.hallucination_sessions / a.sessions_analyzed : 0,
-      flagged_question_count: a.flagged_question_count,
-      top_flags: flags,
-      top_weak_signals: [],
-    };
-  });
-  const res = await supa(`daily_quality_report?on_conflict=day,focus`, {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify(rows),
-  });
-  if (!res.ok) {
-    console.error(`[analyze-sessions] daily report upsert failed ${res.status}: ${(await res.text()).slice(0, 300)}`);
-  }
-}
-
 export default async function handler(req: Request): Promise<Response> {
+  if (!verifyCronAuth(req)) {
+    return jsonResponse({ error: "Unauthorized" }, 401);
+  }
+
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return jsonResponse({ error: "Server misconfigured" }, 503);
-  }
-
-  // Vercel sets `Authorization: Bearer <CRON_SECRET>` for /api/cron/*.
-  // In dev, allow unauthenticated calls when no secret is configured.
-  if (CRON_SECRET) {
-    const auth = req.headers.get("authorization") || "";
-    if (auth !== `Bearer ${CRON_SECRET}`) {
-      return jsonResponse({ error: "Unauthorized" }, 401);
-    }
   }
 
   const t0 = Date.now();
@@ -245,7 +220,6 @@ export default async function handler(req: Request): Promise<Response> {
   const sessions = await fetchUnanalyzedSessions(overrideHours, forceReanalyze);
 
   const insights: InsightRow[] = [];
-  const aggregates = new Map<string, FocusAggregate>();
   let rescoreBudget = isRescoreEnabled() ? MAX_RESCORES_PER_RUN : 0;
 
   // Batch-fetch user feedback for all the sessions we're about to analyze.
@@ -254,7 +228,21 @@ export default async function handler(req: Request): Promise<Response> {
   const feedbackBySession = await fetchFeedbackBySession(sessions.map((s) => s.id));
 
   for (const session of sessions) {
-    const analyzer = pickAnalyzer(session.type);
+    // Skip sessions where no candidate answered — same guard as evaluate-session.ts.
+    // `questions > 0` (DB filter) only counts generated questions, not answered ones.
+    // A session where the user never typed/spoke has only "user" transcript turns
+    // with empty text; analyzing it produces fabricated coaching (L-039).
+    const hasAnswers = (session.transcript ?? []).some(
+      (t) => (t.speaker === "user" || t.speaker === "User") && t.text?.trim().length > 0
+    );
+    if (!hasAnswers) {
+      void captureServerEvent("analyzer_skipped_no_answers", session.user_id, {
+        session_id: session.id,
+        focus: analyzerFocus(session),
+      });
+      continue;
+    }
+    const analyzer = pickAnalyzer(analyzerFocus(session));
     const turnT0 = Date.now();
     let row: InsightRow;
     try {
@@ -272,7 +260,7 @@ export default async function handler(req: Request): Promise<Response> {
       if (session.resume_version_id && !resume) {
         void captureServerEvent("analyzer_resume_fetch_miss", session.user_id, {
           session_id: session.id,
-          focus: session.type,
+          focus: analyzerFocus(session),
           resume_version_id: session.resume_version_id,
           analyzer_version: analyzer.version,
         });
@@ -316,7 +304,7 @@ export default async function handler(req: Request): Promise<Response> {
       row = {
         session_id: session.id,
         user_id: session.user_id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         rescore,
         score_drift: scoreDrift,
@@ -336,7 +324,7 @@ export default async function handler(req: Request): Promise<Response> {
       row = {
         session_id: session.id,
         user_id: session.user_id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         rescore: null,
         score_drift: null,
@@ -357,7 +345,7 @@ export default async function handler(req: Request): Promise<Response> {
       // gives us a real-time signal in PostHog.
       void captureServerEvent("analyzer_error", session.user_id, {
         session_id: session.id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         analyzer_version: analyzer.version,
         error_message: errMsg,
       });
@@ -369,7 +357,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (row.flags.length > 0 || (row.hallucinations as unknown[]).length > 0) {
       void captureServerEvent("session_quality_analyzed", session.user_id, {
         session_id: session.id,
-        focus: session.type,
+        focus: analyzerFocus(session),
         severity: row.severity,
         flag_count: row.flags.length,
         flags_csv: row.flags.join(","),
@@ -387,7 +375,7 @@ export default async function handler(req: Request): Promise<Response> {
       for (const flag of row.flags) {
         void captureServerEvent("analyzer_flag_fired", session.user_id, {
           session_id: session.id,
-          focus: session.type,
+          focus: analyzerFocus(session),
           flag,
           severity: row.severity,
           analyzer_version: row.analyzer_version,
@@ -396,79 +384,9 @@ export default async function handler(req: Request): Promise<Response> {
         });
       }
     }
-
-    // Aggregate by (day, focus) for daily_quality_report.
-    const day = (session.created_at || new Date().toISOString()).slice(0, 10);
-    const key = `${day}::${session.type}`;
-    const agg = aggregates.get(key) || {
-      day,
-      focus: session.type,
-      sessions_analyzed: 0,
-      drift_sum: 0,
-      drift_count: 0,
-      hallucination_sessions: 0,
-      flagged_question_count: 0,
-      flag_counts: new Map<string, number>(),
-    };
-    agg.sessions_analyzed += 1;
-    if (typeof row.score_drift === "number") {
-      agg.drift_sum += row.score_drift;
-      agg.drift_count += 1;
-    }
-    if (Array.isArray(row.hallucinations) && row.hallucinations.length > 0) {
-      agg.hallucination_sessions += 1;
-    }
-    if (Array.isArray(row.bad_questions)) {
-      agg.flagged_question_count += row.bad_questions.length;
-    }
-    for (const flag of row.flags) {
-      agg.flag_counts.set(flag, (agg.flag_counts.get(flag) || 0) + 1);
-    }
-    aggregates.set(key, agg);
   }
 
   const writeRes = await writeInsights(insights);
-  await writeDailyReport(Array.from(aggregates.values()));
-
-  // ── Daily AI digest ───────────────────────────────────────────
-  // Synthesizes today's data into 4 short paragraphs. Best-effort —
-  // a digest failure must not fail the cron.
-  let digestStatus: "written" | "skipped" | "failed" = "skipped";
-  try {
-    const today = new Date().toISOString().slice(0, 10);
-    const digestInput = await buildDigestInput(today);
-    if (digestInput.totalAnalyzed > 0) {
-      const prompt = buildDigestPrompt(digestInput);
-      const llmRes = await callLLM({ prompt, temperature: 0.3, maxTokens: 800, jsonMode: true }, 18000, {
-        endpoint: "quality-digest",
-      });
-      const parsed = parseDigest(llmRes.text);
-      const digestRow = {
-        day: today,
-        generated_at: new Date().toISOString(),
-        model: llmRes.model,
-        fixes_summary: parsed.fixes_summary,
-        improvements_summary: parsed.improvements_summary,
-        patterns_summary: parsed.patterns_summary,
-        recommendations: parsed.recommendations,
-        raw_input: digestInput,
-        error: null,
-      };
-      const dRes = await supa(`daily_digests?on_conflict=day`, {
-        method: "POST",
-        headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-        body: JSON.stringify([digestRow]),
-      });
-      digestStatus = dRes.ok ? "written" : "failed";
-    }
-  } catch (e) {
-    console.error(`[analyze-sessions] digest failed: ${(e as Error).message}`);
-    digestStatus = "failed";
-    void captureServerEvent("analyze_sessions_subtask_failed", "system", {
-      subtask: "digest",
-      error_message: String((e as Error)?.message || e).slice(0, 500),
-    });
-  }
 
   // ── Fix-outcome verification ──────────────────────────────────
   // For resolved sessions whose 7-day post-resolution window has now
@@ -515,6 +433,7 @@ export default async function handler(req: Request): Promise<Response> {
     });
   }
 
+  await recordCronResult("analyze-sessions-cron", { errors: writeRes.failed });
   return jsonResponse({
     ok: true,
     scanned: sessions.length,
@@ -522,7 +441,6 @@ export default async function handler(req: Request): Promise<Response> {
     failed: writeRes.failed,
     rescore_enabled: isRescoreEnabled(),
     rescore_budget_remaining: rescoreBudget,
-    digest: digestStatus,
     fix_outcomes_computed: outcomesComputed,
     recommendations_written: recommendationsWritten,
     revisions_measured: revisionsMeasured,
@@ -601,72 +519,6 @@ async function computeFixOutcomes(): Promise<number> {
   return computed;
 }
 
-/** Pulls the day's data needed by the digest prompt. */
-async function buildDigestInput(today: string): Promise<DigestInput> {
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
-
-  // Today's per-focus rollup
-  const dailyRes = await supa(`daily_quality_report?day=eq.${today}&select=focus,sessions_analyzed,avg_score_drift,hallucination_rate,top_flags`);
-  const dailyArr = dailyRes.ok ? ((await dailyRes.json()) as Array<{ focus: string; sessions_analyzed: number; avg_score_drift: number; hallucination_rate: number; top_flags: { flag: string; count: number }[] | null }>) : [];
-
-  // Resolutions logged today
-  const resStartOfDay = `${today}T00:00:00Z`;
-  const resRes = await supa(`session_insights?resolved_at=gte.${resStartOfDay}&select=focus,resolution_status&limit=500`);
-  const resArr = resRes.ok ? ((await resRes.json()) as Array<{ focus: string; resolution_status: string }>) : [];
-  const resGroup = new Map<string, number>();
-  for (const r of resArr) {
-    const key = `${r.focus}::${r.resolution_status}`;
-    resGroup.set(key, (resGroup.get(key) || 0) + 1);
-  }
-
-  // Open issue count
-  const openCountRes = await supa(`session_insights?resolution_status=eq.open&select=session_id&limit=1`, { headers: { Prefer: "count=exact" } });
-  const openRange = openCountRes.headers.get("content-range") || "";
-  const openMatch = openRange.match(/\/(\d+)/);
-  const totalOpenIssues = openMatch ? parseInt(openMatch[1], 10) : 0;
-
-  // 7d trend per (focus, flag) — pull aggregate data, compute delta vs week avg.
-  const weekRes = await supa(`daily_quality_report?day=gte.${sevenDaysAgo}&select=day,focus,top_flags`);
-  const weekArr = weekRes.ok ? ((await weekRes.json()) as Array<{ day: string; focus: string; top_flags: { flag: string; count: number }[] | null }>) : [];
-  const flagSeries = new Map<string, { today: number; sum: number; days: number }>();
-  for (const w of weekArr) {
-    for (const f of w.top_flags || []) {
-      const key = `${w.focus}::${f.flag}`;
-      const s = flagSeries.get(key) || { today: 0, sum: 0, days: 0 };
-      if (w.day === today) s.today = f.count;
-      else { s.sum += f.count; s.days += 1; }
-      flagSeries.set(key, s);
-    }
-  }
-  const weekTrend = Array.from(flagSeries.entries())
-    .map(([key, s]) => {
-      const [focus, flag] = key.split("::");
-      const week_avg = s.days > 0 ? s.sum / s.days : 0;
-      return { focus, flag, today_count: s.today, week_avg };
-    })
-    .filter((t) => t.today_count >= 2 && Math.abs(t.today_count - t.week_avg) >= 1)
-    .sort((a, b) => Math.abs(b.today_count - b.week_avg) - Math.abs(a.today_count - a.week_avg));
-
-  return {
-    day: today,
-    byFocus: dailyArr.map((d) => ({
-      focus: d.focus,
-      sessions: d.sessions_analyzed,
-      avg_drift: d.avg_score_drift,
-      hallucination_rate: d.hallucination_rate,
-      top_flags: d.top_flags || [],
-    })),
-    resolutionsToday: Array.from(resGroup.entries()).map(([key, count]) => {
-      const [focus, status] = key.split("::");
-      return { focus, status, count };
-    }),
-    recentCommits: [], // populated via git log requires a separate node handler; v1 skips this
-    weekTrend,
-    totalAnalyzed: dailyArr.reduce((s, d) => s + d.sessions_analyzed, 0),
-    totalOpenIssues,
-  };
-}
-
 /** Generate fix recommendations from current open issues + flagged sessions.
  *  Idempotent — dedupes by (target_file::title) and increments seen_count
  *  rather than creating duplicates on each cron run. */
@@ -730,7 +582,7 @@ async function generateRecommendations(): Promise<number> {
   let written = 0;
   const nowIso = new Date().toISOString();
   for (const item of plan.items.slice(0, 8)) {
-    const dedup = `${item.target_file || "_"}::${item.title}`.slice(0, 400).toLowerCase();
+    const dedup = buildDedupKey(item);
     const focusGuess = (item.affected_flags || []).map((f) => focusForFlag.get(f)).find(Boolean) || "";
 
     const row = {

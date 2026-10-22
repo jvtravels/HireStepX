@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import type { NegotiationOutcome } from "../derivations";
+import { atCompany } from "../roleLabel";
 import { SectionHeader, EyebrowLabel, t, f, radius, space } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 /* Inline glossary — terms in the counter-offer letter that first-time
    negotiators (especially first-job-in-family) won't know. The browser's
@@ -95,15 +97,26 @@ export function CounterOfferLetterPanel({
   const closing = outcome.finalTotal ?? (outcome.offers[outcome.offers.length - 1]?.total ?? null);
   const [copied, setCopied] = useState(false);
 
-  if (closing === null) return null;
+  /* S4S5-B4 — joining bonus (if any) belongs in the acceptance letter so
+     the email matches the actual deal. It is a one-time payment distinct
+     from the annual CTC, so it's called out separately rather than added
+     into the headline number. */
+  const jb = typeof outcome.joiningBonusLpa === "number" && outcome.joiningBonusLpa > 0
+    ? outcome.joiningBonusLpa
+    : null;
+  const closingLine = jb
+    ? `₹${closing} LPA total CTC plus a one-time joining bonus of ₹${jb}L`
+    : `₹${closing} LPA total CTC`;
+  /* No offer was ever tabled, so there is no number to accept or counter.
+   * The letter still has to exist: the verdict above promises an email draft. */
 
   let letter: string;
   let commentary: string[];
 
-  if (outcome.outcome === "accepted") {
+  if (outcome.outcome === "accepted" && closing !== null) {
     letter = `Hi <Recruiter>,
 
-Thank you for the offer for the ${role} role at ${company}. I'm happy to formally accept the package at ₹${closing} LPA total CTC.
+Thank you for the offer for the ${role} role${atCompany(company)}. I'm happy to formally accept the package at ${closingLine}.
 
 Could you send the formal offer letter at your convenience? Happy to confirm notice period and start date once that's in hand.
 
@@ -111,13 +124,14 @@ Best,
 <Your name>`;
     commentary = [
       "Confirms acceptance in plain language, no ambiguity for the recruiter",
+      ...(jb ? [`Explicitly names the joining bonus of ₹${jb}L so the offer letter can't omit it`] : []),
       "Asks for the formal letter without making it adversarial",
       "Closes with notice period, surfaces the next concrete step",
     ];
-  } else if (outcome.candidateAsk !== null) {
+  } else if (outcome.candidateAsk !== null && closing !== null) {
     letter = `Hi <Recruiter>,
 
-Thanks for the productive call. I want to keep the conversation alive, I'm genuinely interested in the ${role} role at ${company}.
+Thanks for the productive call. I want to keep the conversation alive, I'm genuinely interested in the ${role} role${atCompany(company)}.
 
 Where I think we are: you're at ₹${closing} LPA, I'm anchored at ₹${outcome.candidateAsk} LPA. A few questions that might help us close the gap:
 
@@ -134,10 +148,30 @@ Best,
       "Asks 3 specific lever questions, opening 3 negotiation surfaces at once",
       "Stays collaborative: 'looking forward to closing this together' invites a counter, not a refusal",
     ];
+  } else if (outcome.candidateAsk !== null) {
+    letter = `Hi <Recruiter>,
+
+Thanks for the conversation about the ${role} role${atCompany(company)}. We didn't get to a number on the call, so I'd like to put mine on the table: based on the market for this band, I'm targeting ₹${outcome.candidateAsk} LPA total CTC.
+
+To help us get there, could you share:
+
+  · The compensation range for this role and level
+  · Whether variable pay is a target with upside or a hard cap
+  · Whether a signing component or stock-option grant is available at this band
+
+Happy to jump on a call this week to work through it.
+
+Best,
+<Your name>`;
+    commentary = [
+      `Names your number (₹${outcome.candidateAsk} LPA) in writing, so the recruiter responds to your anchor`,
+      "Asks for their range, which is the number the call never surfaced",
+      "Opens variable pay and equity as extra levers instead of fighting on base alone",
+    ];
   } else {
     letter = `Hi <Recruiter>,
 
-Thanks for the offer for the ${role} role at ${company}. I'd like to take a moment to think it through against the market for this band before responding fully.
+Thanks for the offer for the ${role} role${atCompany(company)}. I'd like to take a moment to think it through against the market for this band before responding fully.
 
 A few questions that would help me put together a thoughtful response:
 
@@ -153,7 +187,7 @@ Best,
 
 — — —
 Before you send: name a specific counter number in your follow-up call. Look up the band on Levels.fyi or
-Glassdoor for "${role}" at companies similar to ${company} this quarter. A defended range
+Glassdoor for "${role}" at ${company ? `companies similar to ${company}` : "similar companies"} this quarter. A defended range
 ("I was anchoring at ₹X–Y based on what I'm seeing") is stronger than a single number.`;
     commentary = [
       "Buys time without committing to a number you haven't researched yet",
@@ -177,7 +211,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
         style={{
           display: "flex", alignItems: "center", gap: 8,
           padding: "8px 14px", marginBottom: 10,
-          background: "#FEF3C7", border: `1px solid ${t.warning}`,
+          background: t.warning100, border: `1px solid ${t.warning}`,
           borderRadius: radius.lg, fontSize: 12, color: t.coal,
         }}
       >
@@ -205,8 +239,8 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
         ))}
       </div>
       <div className="nfr-letter-actions">
-        <button
-          className="nfr-btn-primary"
+        <Button
+          type="button"
           onClick={() => {
             if (typeof navigator !== "undefined" && navigator.clipboard) {
               navigator.clipboard.writeText(letter).then(() => {
@@ -218,7 +252,7 @@ Glassdoor for "${role}" at companies similar to ${company} this quarter. A defen
           aria-live="polite"
         >
           {copied ? "✓ Copied" : "Copy as email"}
-        </button>
+        </Button>
       </div>
     </div>
   );

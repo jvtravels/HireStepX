@@ -2,7 +2,8 @@
    The cover page. The front door. The TL;DR.
    If you only read one storyboard, read this one. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius, type } from "./_tokens";
 import { MonoLabel, SectionHead, Footer } from "./_atoms";
 /* ─── Storyboard tile — used in the index grid ─── */
 function StoryboardTile({
@@ -21,7 +22,7 @@ function StoryboardTile({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         padding: "20px 24px",
         boxShadow: shadows.card,
         transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
@@ -32,7 +33,7 @@ function StoryboardTile({
         style={{
           height: 80,
           background: t.creamSoft,
-          borderRadius: 8,
+          borderRadius: radius.md,
           marginBottom: 16,
           display: "flex",
           alignItems: "center",
@@ -46,8 +47,8 @@ function StoryboardTile({
         <span
           style={{
             fontFamily: f.mono,
-            fontSize: 10,
-            color: t.copper,
+            fontSize: type.micro.size,
+            color: t.inkSoft,
             letterSpacing: "0.1em",
             fontWeight: 500,
           }}
@@ -56,9 +57,9 @@ function StoryboardTile({
         </span>
         <h3
           style={{
-            fontFamily: f.serif,
-            fontSize: 18,
-            fontWeight: 500,
+            fontFamily: f.sans,
+            fontSize: type.h3.size,
+            fontWeight: type.h3.weight,
             margin: 0,
             color: t.coal,
             letterSpacing: "-0.01em",
@@ -67,7 +68,7 @@ function StoryboardTile({
           {name}
         </h3>
       </div>
-      <p style={{ fontSize: 12, color: t.indigoGray, margin: 0, lineHeight: 1.5 }}>
+      <p style={{ fontSize: type.small.size, color: t.inkMuted, margin: 0, lineHeight: type.small.lineHeight }}>
         {oneLiner}
       </p>
     </div>
@@ -95,14 +96,14 @@ const visuals = {
   type: (
     <div
       style={{
-        fontFamily: f.serif,
-        fontSize: 36,
-        fontWeight: 400,
+        fontFamily: f.sans,
+        fontSize: 24,
+        fontWeight: 600,
         color: t.coal,
-        letterSpacing: "-0.02em",
+        letterSpacing: "-0.01em",
       }}
     >
-      <em style={{ fontStyle: "italic", color: t.copper }}>Aa</em>
+      Aa
     </div>
   ),
   foundations: (
@@ -113,7 +114,7 @@ const visuals = {
           style={{
             width: px / 3,
             height: 32,
-            background: t.copper,
+            background: t.gray[400],
             borderRadius: 2,
           }}
         />
@@ -134,7 +135,7 @@ const visuals = {
           top: -3,
           width: 14,
           height: 14,
-          background: t.copper,
+          background: t.gray[600],
           borderRadius: "50%",
           animation: "idx-motion 2400ms cubic-bezier(0.16, 1, 0.3, 1) infinite",
         }}
@@ -145,10 +146,10 @@ const visuals = {
     <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
       <div
         style={{
-          background: t.indigo,
+          background: t.copper,
           color: t.white,
           padding: "8px 14px",
-          borderRadius: 8,
+          borderRadius: radius.md,
           fontSize: 12,
           fontWeight: 500,
         }}
@@ -161,7 +162,7 @@ const visuals = {
           height: 32,
           background: t.white,
           border: `1px solid ${t.lineStrong}`,
-          borderRadius: 8,
+          borderRadius: radius.md,
         }}
       />
     </div>
@@ -171,38 +172,35 @@ const visuals = {
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 6,
+        borderRadius: radius.sm,
         width: 140,
         padding: 8,
       }}
     >
       <div style={{ height: 4, width: "60%", background: t.coal, borderRadius: 2, marginBottom: 4 }} />
-      <div style={{ height: 3, width: "40%", background: t.indigoGray, borderRadius: 2, marginBottom: 6 }} />
-      <div style={{ height: 14, background: t.indigo, borderRadius: 4 }} />
+      <div style={{ height: 3, width: "40%", background: t.gray[400], borderRadius: 2, marginBottom: 6 }} />
+      <div style={{ height: 14, background: t.copper, borderRadius: 4 }} />
     </div>
   ),
   voice: (
     <div
       style={{
-        fontFamily: f.serif,
+        fontFamily: f.sans,
         fontSize: 14,
         color: t.coal,
-        fontStyle: "italic",
         textAlign: "center",
       }}
     >
-      "Clarity{" "}
-      <em style={{ fontStyle: "italic", color: t.copper }}>wins</em>{" "}
-      interviews."
+      "Clarity <span style={{ fontWeight: 600 }}>wins</span> interviews."
     </div>
   ),
   a11y: (
     <div
       style={{
         background: t.white,
-        border: `2px solid ${t.indigo}`,
-        boxShadow: `0 0 0 3px ${"rgba(49, 46, 129, 0.20)"}`,
-        borderRadius: 6,
+        border: `2px solid ${t.copper}`,
+        boxShadow: `0 0 0 3px ${t.copperLine}`,
+        borderRadius: radius.sm,
         width: 100,
         height: 28,
       }}
@@ -211,7 +209,7 @@ const visuals = {
   brand: (
     <div
       style={{
-        fontFamily: f.serif,
+        fontFamily: f.sans,
         fontSize: 14,
         color: t.coal,
         textAlign: "center",
@@ -222,7 +220,7 @@ const visuals = {
     >
       Make interview prep
       <br />
-      <em style={{ fontStyle: "italic", color: t.copper }}>a skill</em>.
+      <span style={{ fontWeight: 600 }}>a skill</span>.
     </div>
   ),
   email: (
@@ -232,14 +230,14 @@ const visuals = {
         height: 60,
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 6,
+        borderRadius: radius.sm,
         padding: 6,
       }}
     >
       <div style={{ height: 3, width: "70%", background: t.coal, marginBottom: 3, borderRadius: 1 }} />
-      <div style={{ height: 2, width: "100%", background: t.indigoGray, marginBottom: 2, borderRadius: 1 }} />
-      <div style={{ height: 2, width: "85%", background: t.indigoGray, marginBottom: 6, borderRadius: 1 }} />
-      <div style={{ height: 8, width: 50, background: t.indigo, borderRadius: 2 }} />
+      <div style={{ height: 2, width: "100%", background: t.gray[300], marginBottom: 2, borderRadius: 1 }} />
+      <div style={{ height: 2, width: "85%", background: t.gray[300], marginBottom: 6, borderRadius: 1 }} />
+      <div style={{ height: 8, width: 50, background: t.copper, borderRadius: 2 }} />
     </div>
   ),
   photo: (
@@ -282,9 +280,9 @@ const visuals = {
   personas: (
     <div style={{ display: "flex", gap: -4 }}>
       {[
-        { initials: "AM", bg: t.copper100, fg: t.copper },
+        { initials: "AM", bg: t.gray[200], fg: t.inkMuted },
         { initials: "PS", bg: t.indigo100, fg: t.indigo },
-        { initials: "RI", bg: t.copper100, fg: t.copper },
+        { initials: "RI", bg: t.gray[200], fg: t.inkMuted },
       ].map((p, i) => (
         <div
           key={i}
@@ -309,7 +307,7 @@ const visuals = {
     </div>
   ),
   sound: (
-    <div style={{ display: "flex", gap: 2, alignItems: "center", color: t.copper }}>
+    <div style={{ display: "flex", gap: 2, alignItems: "center", color: t.indigo }}>
       {[12, 24, 32, 28, 40, 36, 24, 16, 28, 20].map((h, i) => (
         <div key={i}>
           <style>{`
@@ -336,7 +334,7 @@ const visuals = {
       <path
         d="M 10 46 L 30 38 L 50 32 L 70 24 L 90 18 L 110 10"
         fill="none"
-        stroke={t.copper}
+        stroke={t.indigo}
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -354,8 +352,8 @@ const visuals = {
           cx={p.cx}
           cy={p.cy}
           r={i === 5 ? 4 : 2.5}
-          fill={i === 5 ? t.copper : t.white}
-          stroke={t.copper}
+          fill={i === 5 ? t.indigo : t.white}
+          stroke={t.indigo}
           strokeWidth="1.5"
         />
       ))}
@@ -375,9 +373,9 @@ const visuals = {
           height: 50,
           background: t.white,
           border: `1px solid ${t.line}`,
-          borderRadius: 8,
+          borderRadius: radius.md,
           padding: 6,
-          boxShadow: "0 2px 4px rgba(20,17,10,.06)",
+          boxShadow: shadows.card,
         }}
       >
         <div
@@ -390,7 +388,7 @@ const visuals = {
           }}
         />
         <div style={{ height: 3, background: t.creamSoft, marginBottom: 4 }} />
-        <div style={{ height: 8, width: 32, background: t.indigo, borderRadius: 2 }} />
+        <div style={{ height: 8, width: 32, background: t.copper, borderRadius: 2 }} />
       </div>
     </div>
   ),
@@ -399,76 +397,76 @@ const visuals = {
 /* ─── Main ─── */
 export default function DesignSystemIndex() {
   const storyboards = [
-    { num: "01", name: "Color", line: "Cream surface · indigo interactive · copper editorial. Never mix.", visual: visuals.color },
-    { num: "02", name: "Typography", line: "Instrument Serif display · Satoshi UI · JetBrains mono · italic copper accent.", visual: visuals.type },
-    { num: "03", name: "Foundations", line: "4px grid · 6 radii · 3 shadows · Lucide icons.", visual: visuals.foundations },
+    { num: "01", name: "Color", line: "Neutral surface · copper for the one primary action · indigo for data-viz.", visual: visuals.color },
+    { num: "02", name: "Typography", line: "Compact functional scale · AF Sobremesa · JetBrains mono for code.", visual: visuals.type },
+    { num: "03", name: "Foundations", line: "4px grid · 3 radii · 3 shadows · Lucide icons.", visual: visuals.foundations },
     { num: "04", name: "Motion", line: "5 named easings · 6 durations · meaning over decoration.", visual: visuals.motion },
     { num: "05", name: "Components", line: "Buttons · inputs · cards · tags · toasts · empty.", visual: visuals.components },
     { num: "06", name: "Patterns", line: "Auth · score reveal · dashboard · empty/loading/error.", visual: visuals.patterns },
     { num: "07", name: "Voice & Tone", line: "Confident, specific, no fluff. CTA verb library.", visual: visuals.voice },
     { num: "08", name: "Accessibility", line: "WCAG AA minimum, AAA on text. Keyboard-first.", visual: visuals.a11y },
     { num: "09", name: "Brand Story", line: "Mission · pillars · positioning · founder origin.", visual: visuals.brand },
-    { num: "10", name: "Email Design", line: "5 templates · subject voice · editorial layout.", visual: visuals.email },
+    { num: "10", name: "Email Design", line: "5 templates · subject voice · compact layout.", visual: visuals.email },
     { num: "11", name: "Photography", line: "Real, not stock. Warm, not corporate. Indian, not generic.", visual: visuals.photo },
     { num: "12", name: "Personas", line: "Arjun · Priya · Rahul. Read before every decision.", visual: visuals.personas },
     { num: "13", name: "Sound Identity", line: "Neerja voice · panel personas · UI sounds rare and quiet.", visual: visuals.sound },
-    { num: "14", name: "Data Visualization", line: "One copper number per chart. Editorial restraint.", visual: visuals.dataviz },
+    { num: "14", name: "Data Visualization", line: "Indigo for charts and secondary data series.", visual: visuals.dataviz },
     { num: "15", name: "Components · Advanced", line: "Modals · tables · navigation · dropdowns · search.", visual: visuals.componentsAdv },
   ];
 
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "80px 56px 120px",
+          padding: "48px 48px 96px",
           fontFamily: f.sans,
           color: t.coal,
           background: t.cream,
         }}
       >
-        {/* MASTHEAD — extra tall, more dramatic for cover */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 64, marginBottom: 80 }}>
+        {/* HEADER — compact, functional. No display headline, no accent word. */}
+        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 32, marginBottom: 48 }}>
           <MonoLabel>Design System · v1.0 · Index</MonoLabel>
           <h1
             style={{
-              fontFamily: f.serif,
-              fontSize: 84,
-              fontWeight: 400,
-              letterSpacing: "-0.025em",
-              lineHeight: 1,
-              margin: "20px 0 0",
+              fontFamily: f.sans,
+              fontSize: type.h1.size,
+              fontWeight: type.h1.weight,
+              letterSpacing: type.h1.letterSpacing,
+              lineHeight: type.h1.lineHeight,
+              color: t.coal,
+              margin: "10px 0 0",
             }}
           >
-            The HireStepX{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>system</em>.
+            The HireStepX system.
           </h1>
           <p
             style={{
-              color: t.indigoGray,
-              fontSize: 18,
-              margin: "28px 0 0",
-              maxWidth: 640,
-              lineHeight: 1.55,
-              fontFamily: f.serif,
+              color: t.inkMuted,
+              fontSize: type.bodyLg.size,
+              lineHeight: type.bodyLg.lineHeight,
+              margin: "12px 0 0",
+              maxWidth: 620,
             }}
           >
-            Fifteen storyboards. One brand. Cream surface, indigo for
-            everything you click, copper for one highlighted fact per moment —
-            and nothing else.
+            Fifteen storyboards, one system: a restrained neutral scale does
+            almost all the work, copper is the one accent reserved for the
+            primary action, and type stays compact and functional — clean,
+            modern SaaS in the vein of Linear, Notion, and Stripe, not a
+            magazine layout.
           </p>
           <div
             style={{
-              marginTop: 32,
+              marginTop: 24,
               display: "flex",
               gap: 32,
               fontFamily: f.mono,
-              fontSize: 11,
+              fontSize: type.micro.size,
               color: t.inkSoft,
               letterSpacing: "0.04em",
             }}
@@ -477,10 +475,10 @@ export default function DesignSystemIndex() {
               <b style={{ color: t.coal, fontWeight: 500 }}>15</b> storyboards
             </span>
             <span>
-              <b style={{ color: t.coal, fontWeight: 500 }}>4</b> brand colors
+              <b style={{ color: t.coal, fontWeight: 500 }}>11</b> neutral steps
             </span>
             <span>
-              <b style={{ color: t.coal, fontWeight: 500 }}>3</b> type families
+              <b style={{ color: t.coal, fontWeight: 500 }}>1</b> accent color
             </span>
             <span>
               <b style={{ color: t.coal, fontWeight: 500 }}>v1.0</b> · 2026
@@ -489,74 +487,43 @@ export default function DesignSystemIndex() {
         </header>
 
         {/* THE DISCIPLINE — quick reference */}
-        <section style={{ marginBottom: 80 }}>
+        <section style={{ marginBottom: 48 }}>
           <div
             style={{
               background: t.coal,
               color: t.cream,
-              borderRadius: 14,
-              padding: "48px 56px",
+              borderRadius: radius.lg,
+              padding: "32px 40px",
               display: "grid",
               gridTemplateColumns: "180px 1fr",
-              gap: 48,
+              gap: 32,
               alignItems: "center",
             }}
           >
-            <MonoLabel color={t.copper}>The discipline</MonoLabel>
+            <MonoLabel color={t.cream}>The discipline</MonoLabel>
             <div
               style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
+                fontFamily: f.sans,
+                fontSize: type.h2.size,
+                fontWeight: type.h2.weight,
                 lineHeight: 1.4,
-                letterSpacing: "-0.01em",
+                letterSpacing: type.h2.letterSpacing,
                 color: t.cream,
               }}
             >
-              <b style={{ color: t.cream, fontWeight: 500 }}>Indigo</b> is
-              interactive.{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>Copper</em>{" "}
-              is editorial.
+              Restrained neutral, plus{" "}
+              <span style={{ color: t.copper, fontWeight: 600 }}>one accent</span>.
               <br />
-              <span style={{ color: "rgba(250,247,240,.65)" }}>Never mix.</span>
+              <span style={{ color: "rgba(250,247,240,.65)", fontSize: type.body.size, fontWeight: 400 }}>
+                One clear primary action per screen, always in copper. Everything else stays quiet.
+              </span>
             </div>
           </div>
         </section>
 
         {/* STORYBOARD GRID */}
-        <section style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 16,
-              borderBottom: `1px solid ${t.line}`,
-              paddingBottom: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MonoLabel color={t.copper}>The system</MonoLabel>
-            <h2
-              style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                margin: 0,
-              }}
-            >
-              All fifteen
-            </h2>
-            <p
-              style={{
-                margin: "0 0 0 auto",
-                color: t.inkSoft,
-                fontSize: 13,
-              }}
-            >
-              Click any tile to navigate.
-            </p>
-          </div>
+        <section style={{ marginBottom: 48 }}>
+          <SectionHead num="01" title="All fifteen" desc="Click any tile to navigate." />
           <div
             style={{
               display: "grid",
@@ -577,66 +544,37 @@ export default function DesignSystemIndex() {
         </section>
 
         {/* QUICK REFERENCE CARD */}
-        <section style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 16,
-              borderBottom: `1px solid ${t.line}`,
-              paddingBottom: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MonoLabel color={t.copper}>Quick reference</MonoLabel>
-            <h2
-              style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                margin: 0,
-              }}
-            >
-              The cheat sheet
-            </h2>
-            <p
-              style={{
-                margin: "0 0 0 auto",
-                color: t.inkSoft,
-                fontSize: 13,
-                maxWidth: 380,
-                textAlign: "right",
-              }}
-            >
-              Tape this to the wall. Eight rules that govern everything.
-            </p>
-          </div>
+        <section style={{ marginBottom: 48 }}>
+          <SectionHead
+            num="02"
+            title="The cheat sheet"
+            desc="Tape this to the wall. Eight rules that govern everything."
+          />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
-              padding: "40px 48px",
+              borderRadius: radius.lg,
+              padding: "32px 40px",
               boxShadow: shadows.card,
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: 40,
+              gap: 32,
             }}
           >
             <div>
-              <MonoLabel color={t.copper}>Brand</MonoLabel>
+              <MonoLabel>Brand</MonoLabel>
               <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
                 {[
-                  "Cream is the canvas. Never pure white.",
-                  "One italic copper accent word per moment. Never twice.",
-                  "Indigo on every clickable thing. Always.",
-                  "Coal for primary text. Indigo-gray for secondary.",
+                  "White surface. Never off-white or tinted.",
+                  "One primary action per screen, always in copper.",
+                  "Indigo appears only in charts and data visualization.",
+                  "Coal for primary text. Ink-muted for secondary.",
                 ].map((line, i) => (
                   <li
                     key={i}
                     style={{
-                      fontSize: 14,
+                      fontSize: type.body.size,
                       color: t.coal,
                       lineHeight: 1.6,
                       paddingLeft: 24,
@@ -648,8 +586,8 @@ export default function DesignSystemIndex() {
                         position: "absolute",
                         left: 0,
                         fontFamily: f.mono,
-                        fontSize: 11,
-                        color: t.copper,
+                        fontSize: type.micro.size,
+                        color: t.inkSoft,
                         fontWeight: 500,
                       }}
                     >
@@ -661,18 +599,18 @@ export default function DesignSystemIndex() {
               </ul>
             </div>
             <div>
-              <MonoLabel color={t.copper}>System</MonoLabel>
+              <MonoLabel>System</MonoLabel>
               <ul style={{ margin: "16px 0 0", padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
                 {[
                   "4px grid for spacing. Multiples only.",
-                  "Maximum 600ms on any animation. Anything more = sluggish.",
-                  "One primary CTA per screen. Tie-break in design.",
+                  "Compact type scale — H1 tops out at 28px. No display headlines.",
+                  "Thin 1px borders define cards, not heavy shadows.",
                   "WCAG AA minimum, AAA on every text pairing.",
                 ].map((line, i) => (
                   <li
                     key={i}
                     style={{
-                      fontSize: 14,
+                      fontSize: type.body.size,
                       color: t.coal,
                       lineHeight: 1.6,
                       paddingLeft: 24,
@@ -684,8 +622,8 @@ export default function DesignSystemIndex() {
                         position: "absolute",
                         left: 0,
                         fontFamily: f.mono,
-                        fontSize: 11,
-                        color: t.copper,
+                        fontSize: type.micro.size,
+                        color: t.inkSoft,
                         fontWeight: 500,
                       }}
                     >
@@ -700,30 +638,8 @@ export default function DesignSystemIndex() {
         </section>
 
         {/* THE NUMBERS — token snapshot */}
-        <section style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 16,
-              borderBottom: `1px solid ${t.line}`,
-              paddingBottom: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MonoLabel color={t.copper}>The numbers</MonoLabel>
-            <h2
-              style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                margin: 0,
-              }}
-            >
-              Brand at a glance
-            </h2>
-          </div>
+        <section style={{ marginBottom: 48 }}>
+          <SectionHead num="03" title="Brand at a glance" desc="The four colors that carry the whole system." />
           <div
             style={{
               display: "grid",
@@ -732,17 +648,17 @@ export default function DesignSystemIndex() {
             }}
           >
             {[
-              { label: "Cream", val: "#FAF7F0", color: t.cream },
-              { label: "Coal", val: "#0E0C08", color: t.coal },
+              { label: "Surface", val: "#FFFFFF", color: t.cream },
+              { label: "Coal", val: "#18181B", color: t.coal },
               { label: "Indigo", val: "#312E81", color: t.indigo },
-              { label: "Copper", val: "#B45309", color: t.copper },
+              { label: "Copper", val: "#BB4D00", color: t.copper },
             ].map((c) => (
               <div
                 key={c.label}
                 style={{
                   background: t.white,
                   border: `1px solid ${t.line}`,
-                  borderRadius: 12,
+                  borderRadius: radius.lg,
                   padding: 20,
                   boxShadow: shadows.card,
                   display: "flex",
@@ -755,7 +671,7 @@ export default function DesignSystemIndex() {
                     width: 48,
                     height: 48,
                     background: c.color,
-                    borderRadius: 8,
+                    borderRadius: radius.sm,
                     border: `1px solid ${t.line}`,
                   }}
                 />
@@ -764,7 +680,7 @@ export default function DesignSystemIndex() {
                   <div
                     style={{
                       fontFamily: f.mono,
-                      fontSize: 12,
+                      fontSize: type.caption.size,
                       color: t.coal,
                       marginTop: 2,
                     }}
@@ -778,36 +694,14 @@ export default function DesignSystemIndex() {
         </section>
 
         {/* GOVERNANCE */}
-        <section style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 16,
-              borderBottom: `1px solid ${t.line}`,
-              paddingBottom: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MonoLabel color={t.copper}>Governance</MonoLabel>
-            <h2
-              style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                margin: 0,
-              }}
-            >
-              How this system evolves
-            </h2>
-          </div>
+        <section style={{ marginBottom: 48 }}>
+          <SectionHead num="04" title="How this system evolves" desc="Who owns it, and how it changes." />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
-              padding: "32px 40px",
+              borderRadius: radius.lg,
+              padding: "28px 32px",
               boxShadow: shadows.card,
             }}
           >
@@ -831,7 +725,7 @@ export default function DesignSystemIndex() {
                 },
                 {
                   k: "Breaking the rules",
-                  v: "Every system has exceptions. Document them. 'Copper on a CTA on the landing page hero' — write it down with the reason. Don't do it silently.",
+                  v: "Every system has exceptions. Document them. 'An extra-large copper numeral in a hero stat' — write it down with the reason. Don't do it silently.",
                 },
                 {
                   k: "Quarterly review",
@@ -844,15 +738,15 @@ export default function DesignSystemIndex() {
                     display: "grid",
                     gridTemplateColumns: "180px 1fr",
                     gap: 24,
-                    fontSize: 14,
+                    fontSize: type.body.size,
                     lineHeight: 1.6,
                   }}
                 >
                   <span
                     style={{
                       fontFamily: f.mono,
-                      fontSize: 11,
-                      color: t.copper,
+                      fontSize: type.micro.size,
+                      color: t.inkSoft,
                       fontWeight: 500,
                       textTransform: "uppercase",
                       letterSpacing: "0.08em",
@@ -861,7 +755,7 @@ export default function DesignSystemIndex() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -869,30 +763,8 @@ export default function DesignSystemIndex() {
         </section>
 
         {/* HOW TO USE */}
-        <section style={{ marginBottom: 80 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              gap: 16,
-              borderBottom: `1px solid ${t.line}`,
-              paddingBottom: 16,
-              marginBottom: 28,
-            }}
-          >
-            <MonoLabel color={t.copper}>How to use</MonoLabel>
-            <h2
-              style={{
-                fontFamily: f.serif,
-                fontSize: 28,
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                margin: 0,
-              }}
-            >
-              Reading order
-            </h2>
-          </div>
+        <section style={{ marginBottom: 48 }}>
+          <SectionHead num="05" title="Reading order" desc="How to get through this system." />
           <div
             style={{
               display: "grid",
@@ -904,20 +776,20 @@ export default function DesignSystemIndex() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>If you have 30 minutes</MonoLabel>
+              <MonoLabel>If you have 30 minutes</MonoLabel>
               <ol
                 style={{
                   margin: "16px 0 0",
                   paddingLeft: 24,
                   display: "grid",
                   gap: 10,
-                  color: t.indigoGray,
-                  fontSize: 14,
+                  color: t.inkMuted,
+                  fontSize: type.body.size,
                   lineHeight: 1.7,
                 }}
               >
@@ -928,7 +800,7 @@ export default function DesignSystemIndex() {
                   <b style={{ color: t.coal }}>Color</b> — the discipline rule
                 </li>
                 <li>
-                  <b style={{ color: t.coal }}>Typography</b> — the signature
+                  <b style={{ color: t.coal }}>Typography</b> — the type scale
                 </li>
                 <li>
                   <b style={{ color: t.coal }}>Voice & Tone</b> — how we sound
@@ -942,16 +814,16 @@ export default function DesignSystemIndex() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
-                padding: "28px 32px",
+                borderRadius: radius.lg,
+                padding: "24px 28px",
                 boxShadow: shadows.card,
               }}
             >
-              <MonoLabel color={t.copper}>If you have 2 hours</MonoLabel>
+              <MonoLabel>If you have 2 hours</MonoLabel>
               <p
                 style={{
-                  fontSize: 14,
-                  color: t.indigoGray,
+                  fontSize: type.body.size,
+                  color: t.inkMuted,
                   margin: "16px 0 0",
                   lineHeight: 1.7,
                 }}
@@ -972,23 +844,22 @@ export default function DesignSystemIndex() {
           style={{
             background: t.coal,
             color: t.cream,
-            borderRadius: 14,
-            padding: "56px 64px",
+            borderRadius: radius.lg,
+            padding: "40px 48px",
             textAlign: "center",
           }}
         >
           <p
             style={{
-              fontFamily: f.serif,
-              fontSize: 32,
-              fontWeight: 400,
-              lineHeight: 1.35,
+              fontFamily: f.sans,
+              fontSize: type.h2.size,
+              fontWeight: type.h2.weight,
+              lineHeight: 1.4,
               margin: 0,
-              letterSpacing: "-0.015em",
+              letterSpacing: type.h2.letterSpacing,
             }}
           >
-            Make every choice trace back to{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>this</em>.
+            Make every choice trace back to <b style={{ fontWeight: 700 }}>this</b>.
           </p>
         </div>
 

@@ -12,6 +12,7 @@
 import { describe, it, expect } from "vitest";
 import {
   groundNegotiationReport,
+  capAnchorSkillsIfNoCounter,
   sessionReportToInterviewResult,
   type AdapterContext,
 } from "../sessionReport/adapter";
@@ -125,15 +126,34 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     expect(r.band).toBe("strongHire");
   });
 
-  it("never touches a walk-away, even with high skills", () => {
+  it("never touches a walk-away for leverage/anchoring/closing — but caps Concession Strategy (S3-B4)", () => {
     const r = groundNegotiationReport(
       inflatedSkills(), 82, "hire",
       outcome({ outcome: "walked_away", gapClosurePct: 0 }), FLIPKART_BANDS,
     );
-    // Declining a lowball is not a fold — leverage may legitimately be high.
+    // Declining a lowball is not a fold — leverage, anchoring, and closing may
+    // legitimately be high on a walk-away (you DID anchor and use leverage).
     expect(byName(r.skills, "Leverage Use")).toBe(95);
+    expect(byName(r.skills, "Anchoring")).toBe(95);
+    expect(byName(r.skills, "Package Thinking")).toBe(95);
+    // Overall and band are preserved — walk-away is not a weak outcome.
     expect(r.overallScore).toBe(82);
     expect(r.band).toBe("hire");
+    // S3-B4: "Concession Strategy" at 95 on a walk-away is misleading — no
+    // give-and-take occurred to evaluate. Capped at a neutral band (≤60).
+    expect(byName(r.skills, "Concession Strategy")).toBeLessThanOrEqual(60);
+  });
+
+  it("S3-B4: Concession Strategy cap on walk-away is monotonic (never raises a low score)", () => {
+    const lowConcession = inflatedSkills().map((s) =>
+      s.name === "Concession Strategy" ? { ...s, score: 40 } : s,
+    );
+    const r = groundNegotiationReport(
+      lowConcession, 65, "leanHire",
+      outcome({ outcome: "walked_away", gapClosurePct: 0 }), FLIPKART_BANDS,
+    );
+    // A scorer that already gave a low concession score must not be raised.
+    expect(byName(r.skills, "Concession Strategy")).toBe(40);
   });
 
   it("does not second-guess the scorer when gap closure is unknown", () => {
@@ -163,6 +183,38 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     expect(byName(r.skills, "Composure")).toBe(90);
     expect(r.overallScore).toBe(58);
     expect(r.band).toBe("leanHire");
+  });
+
+  /* S20-B5 (2026-07-22): a no_agreement session where the candidate never
+   * named a number (candidateAsk === null) was rendering "71/100 Hire" while
+   * the kernel execution score was 5/100 and ₹0 was gained. The closing-skill
+   * cap (45) brought down Closing Technique but left the headline overallScore
+   * at 71. Cap the overall score at NOT_CLOSED_CEILING + 10 (= 55) so the
+   * verdict can't read "Hire" when no number was ever on the table. */
+  it("S20-B5: caps overall score to ≤55 when no_agreement and candidate named no number", () => {
+    const r = groundNegotiationReport(
+      inflatedSkills(), 71, "hire",
+      outcome({ outcome: "no_agreement", candidateAsk: null, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    expect(r.overallScore).toBeLessThanOrEqual(55);
+    expect(r.band).not.toBe("hire");
+    expect(r.band).not.toBe("strongHire");
+    // Closing Technique also capped (the existing no_agreement cap).
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+  });
+
+  it("S20-B5: does NOT apply headline cap when candidateAsk is present (named a number but didn't close)", () => {
+    // candidateAsk !== null → they anchored; only the closing-skills cap applies.
+    const r = groundNegotiationReport(
+      inflatedSkills(), 62, "leanHire",
+      outcome({ outcome: "no_agreement", candidateAsk: 55, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // Headline score preserved — the existing closing-skill-only path is correct here.
+    expect(r.overallScore).toBe(62);
+    expect(r.band).toBe("leanHire");
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
   });
 
   it("is a no-op for a non-negotiation (undefined outcome)", () => {
@@ -195,6 +247,84 @@ describe("groundNegotiationReport — report-layer coherence", () => {
     // Default profile: leanHire 55, hire 70. Grounded score ≤60 → not "hire".
     expect(r.overallScore).toBeLessThanOrEqual(60);
     expect(r.band).not.toBe("hire");
+  });
+});
+
+/* REPORT-4b — anchor/counter/specificity bars vs the kernel's counter-named
+ * truth (candidateAsk === null). This was the last counter-aware report surface
+ * not pinned to candidateAsk: a session that never named a number rendered
+ * "Anchoring 70 / Specificity 70" beside the same report's "0 of 5 skills",
+ * "Numbers stated 0%", and the "No counter named" headline. An anchor score IS
+ * the strength of the number you named — none named ⇒ provable failure.
+ *
+ * It is a SEPARATE, UNGATED pass (not folded into groundNegotiationReport) so it
+ * reaches heuristic/legacy rows that skip grounding — the live session 686b5699
+ * that first exposed the contradiction was exactly such a row. It keys only on
+ * candidateAsk (reliable on every row) and composes with any gap cap via
+ * Math.min at the call site. */
+describe("capAnchorSkillsIfNoCounter — REPORT-4b anchor grounding on no-counter", () => {
+  const noCounter = (over: Partial<NonNullable<Outcome>> = {}) =>
+    outcome({ candidateAsk: null, ...over });
+
+  it("caps anchor/counter/specificity bars when the kernel recorded no counter", () => {
+    const skills = [
+      ...inflatedSkills(),
+      { name: "Specificity", score: 92 },
+      { name: "Counter-Offer Handling", score: 90 },
+    ];
+    const r = capAnchorSkillsIfNoCounter(skills, noCounter());
+    expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Specificity")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Counter-Offer Handling")).toBeLessThanOrEqual(35);
+  });
+
+  it("caps the DETERMINISTIC-scorer anchor/counter axes on a no-counter session", () => {
+    const detSkills = NEG_AXES.map((name) => ({ name, score: 95 }));
+    const r = capAnchorSkillsIfNoCounter(detSkills, noCounter());
+    expect(byName(r, "Anchor strength")).toBeLessThanOrEqual(35);
+    expect(byName(r, "Counter-offer judgement")).toBeLessThanOrEqual(35);
+  });
+
+  it("does NOT touch demeanour / discovery / package / leverage axes on no-counter", () => {
+    const r = capAnchorSkillsIfNoCounter(inflatedSkills(), noCounter());
+    // A candidate can research the package and stay composed without a counter.
+    expect(byName(r, "Composure")).toBe(90);
+    expect(byName(r, "Professional Tone")).toBe(88);
+    expect(byName(r, "Leverage Use")).toBe(95);
+    expect(byName(r, "Package Thinking")).toBe(95);
+  });
+
+  it("fires regardless of outcome — walk-away, stalemate, or accepted", () => {
+    for (const o of ["walked_away", "no_agreement", "accepted"] as const) {
+      const r = capAnchorSkillsIfNoCounter(inflatedSkills(), noCounter({ outcome: o }));
+      expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    }
+  });
+
+  it("composes with the accepted fold cap via Math.min (takes the lower)", () => {
+    // groundNegotiationReport caps outcome axes to 45 on a fold; the ungated
+    // anchor pass then lowers the anchor axis further to ≤35.
+    const grounded = groundNegotiationReport(
+      inflatedSkills(), 79, "hire",
+      noCounter({ outcome: "accepted", gapClosurePct: 0 }), FLIPKART_BANDS,
+    );
+    const r = capAnchorSkillsIfNoCounter(grounded.skills, noCounter({ outcome: "accepted", gapClosurePct: 0 }));
+    expect(byName(r, "Anchoring")).toBeLessThanOrEqual(35);
+    // A non-anchor outcome axis stays at the fold ceiling (45), not 35.
+    expect(byName(r, "Leverage Use")).toBeLessThanOrEqual(45);
+    expect(byName(r, "Leverage Use")).toBeGreaterThan(35);
+  });
+
+  it("leaves anchor bars intact once a counter WAS named (candidateAsk set)", () => {
+    const skills = inflatedSkills();
+    const r = capAnchorSkillsIfNoCounter(skills, outcome({ candidateAsk: 62 }));
+    expect(r).toBe(skills); // untouched reference
+    expect(byName(r, "Anchoring")).toBe(95);
+  });
+
+  it("is a no-op for a non-negotiation (undefined outcome)", () => {
+    const skills = inflatedSkills();
+    expect(capAnchorSkillsIfNoCounter(skills, undefined)).toBe(skills);
   });
 });
 
@@ -314,5 +444,354 @@ describe("sessionReportToInterviewResult — fold is grounded end-to-end", () =>
     expect(out.skills.find((s) => s.name === "Leverage Use")!.score).toBe(95);
     expect(out.overallScore).toBe(79);
     expect(out.verdict).toBe("hire");
+  });
+
+  /* S6-B5 — "Numbers stated" undercount regression.
+   * buildNegotiationMetrics was scanning report.perQuestion (always 1 LLM-
+   * collapsed item for negotiations) instead of the raw transcript user turns.
+   * Denominator = 1 so ANY miss gave 0 → floored to 25. Fix: pass session.transcript
+   * and scan user turns directly. Also extends anchorRe to match ₹N without unit. */
+  it("S6-B5: Numbers stated reflects per-turn transcript count, not collapsed perQuestion", () => {
+    // 4 user turns out of 5 contain an explicit number mention → 80%
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What are your salary expectations?" },
+          { speaker: "user", text: "I'm looking for ₹200 LPA minimum." },
+          { speaker: "ai",   text: "That's above our band. Our ceiling is ₹55 LPA." },
+          { speaker: "user", text: "I understand, but my ask is ₹200 LPA." },
+          { speaker: "ai",   text: "Can we discuss further?" },
+          { speaker: "user", text: "I need at least 200 LPA — that's firm." },
+          { speaker: "ai",   text: "Let me check with the team." },
+          { speaker: "user", text: "Sure, but my position remains 200 lakhs." },
+          { speaker: "ai",   text: "Unfortunately we cannot go that high." },
+          { speaker: "user", text: "Then I'll have to decline. Thank you." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // 4 of 5 user turns mention a number → 80%, not stuck at 25%.
+    expect(numStated!.value).toBeGreaterThan(25);
+    expect(numStated!.value).toBeGreaterThanOrEqual(75);
+  });
+
+  it("S6-B5: ₹N without unit suffix (e.g. '₹200') is counted by the expanded anchorRe", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What salary are you expecting?" },
+          { speaker: "user", text: "I want ₹200 — that's my target." },
+          { speaker: "ai",   text: "That is quite high." },
+          { speaker: "user", text: "I understand, but ₹200 is what I need." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // Both user turns have ₹200 (no unit) — should match with expanded regex.
+    // 2/2 turns = 100%, definitely above the stuck-at-25 floor.
+    expect(numStated!.value).toBeGreaterThanOrEqual(75);
+  });
+
+  it("S6-B5: falls back to perQuestion when transcript is empty (legacy rows)", () => {
+    const ctx = {
+      report: negReport({
+        perQuestion: [
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          { idx: 0, question: "What is your ask?", answerText: "I want ₹65 LPA.", score: 80, verdict: "strong", explanation: "", starPresence: { S: true, T: true, A: true, R: true, L: false } } as any,
+        ],
+      }),
+      session: negSession({ transcript: [] }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const numStated = out.metrics.find((m) => m.label === "Numbers stated");
+    expect(numStated).toBeDefined();
+    // Fallback: 1 of 1 perQuestion has a number → 100%, not 0%.
+    expect(numStated!.value).toBeGreaterThanOrEqual(25);
+  });
+});
+
+/* S13-B11 (2026-07-20) — frantic-mood pause tics ("Uh, " / "Umm, ") were
+ * leaking into Per-Question Review headings because buildNegotiationPerQuestion
+ * used the raw pendingRecruiter text verbatim. The strip happens in the adapter
+ * so the heading is clean regardless of which prose-realism layer fired. */
+describe("buildNegotiationPerQuestion — S13-B11 pause-tic heading strip", () => {
+  it("S13-B11: strips leading 'Uh,' from per-question heading", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Uh, what salary are you expecting?" },
+          { speaker: "user", text: "I'm looking for 65 LPA." },
+          { speaker: "ai",   text: "Umm, can you walk me through your current CTC?" },
+          { speaker: "user", text: "My current CTC is 42 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const headings = out.questions.map((q) => q.text);
+    // "Uh, what salary…" → "what salary…" (tic stripped, NOT sentence-cased by adapter)
+    expect(headings[0]).not.toMatch(/^Uh,/i);
+    expect(headings[0]).not.toMatch(/^Umm?,/i);
+    // Content is preserved after stripping
+    expect(headings[0]).toMatch(/salary/i);
+  });
+
+  it("S13-B11: strips stacked tics ('Uh, Umm, ') from heading", () => {
+    // Need ≥2 user turns so buildNegotiationPerQuestion returns items, not null.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Uh, Umm, that seems high." },
+          { speaker: "user", text: "I understand, but that's my ask." },
+          { speaker: "ai",   text: "Umm, can we come down a bit?" },
+          { speaker: "user", text: "No, 65 LPA is my final number." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.questions[0]?.text).not.toMatch(/^(?:Uh|Umm?),/i);
+    expect(out.questions[0]?.text).toMatch(/high/i);
+    expect(out.questions[1]?.text).not.toMatch(/^(?:Uh|Umm?),/i);
+  });
+
+  it("S13-B11: leaves heading intact when no tic present", () => {
+    // Need ≥2 user turns so buildNegotiationPerQuestion returns items, not null.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What are your expectations?" },
+          { speaker: "user", text: "I want 65 LPA." },
+          { speaker: "ai",   text: "Can you walk me through your current CTC?" },
+          { speaker: "user", text: "My current CTC is 42 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.questions[0]?.text).toBe("What are your expectations?");
+    expect(out.questions[1]?.text).toBe("Can you walk me through your current CTC?");
+  });
+});
+
+/* S21-B4 (2026-07-22) — "Disclosure leaks" penalised intentional strategic CTC
+ * disclosures. Root cause: buildNegotiationMetrics scanned all candidate text
+ * globally with a CTC-leak regex. Fix: per-turn scan — a match is a leak ONLY if
+ * the preceding AI turn did NOT ask for the candidate's CTC. */
+describe("buildNegotiationMetrics — S21-B4 disclosure leak elicitation gate", () => {
+  it("S21-B4: recruiter-elicited CTC answer is NOT counted as a leak", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What's your current CTC?" },
+          { speaker: "user", text: "My current CTC is 32 LPA." },
+          { speaker: "ai",   text: "And what's your target?" },
+          { speaker: "user", text: "I'm looking for 48 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBe(0); // recruiter asked → not a leak
+  });
+
+  it("S64-B1: volunteered CTC in a salary-negotiation session is NOT a leak (Indian standard practice)", () => {
+    // In Indian salary negotiations, opening with "my current CTC is X, I'm
+    // targeting Y" is structurally correct and explicitly praised in the LLM
+    // prompt. Counting it as a disclosure leak contradicts evaluate-session.ts:731
+    // ("NEVER penalise CTC disclosure"). buildNegotiationMetrics now zeroes leaks.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "Tell me about your background." },
+          { speaker: "user", text: "I'm currently earning 32 LPA and looking for a move." },
+          { speaker: "ai",   text: "Interesting. What are your expectations?" },
+          { speaker: "user", text: "I want 48 LPA." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBe(0); // S64-B1: CTC disclosure is standard — never a leak in negotiation
+  });
+
+  it("S21-B4 / S64-B1: all CTC mentions in negotiation sessions produce 0 leaks", () => {
+    // Even with multiple CTC disclosures (some elicited, some volunteered),
+    // the negotiation context zeroes out the leak count entirely since CTC
+    // disclosure is standard Indian practice regardless of who asked.
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        transcript: [
+          { speaker: "ai",   text: "What's your current salary?" }, // asks
+          { speaker: "user", text: "My current CTC is 32 LPA." },   // elicited
+          { speaker: "ai",   text: "Got it. Tell me about a key project." },
+          { speaker: "user", text: "I make 32 LPA and want to grow." }, // volunteered
+          { speaker: "ai",   text: "What's your current package?" },   // asks again
+          { speaker: "user", text: "I earn 32 LPA as mentioned." },    // elicited
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const leaks = out.metrics.find((m) => m.label === "Disclosure leaks");
+    expect(leaks).toBeDefined();
+    expect(leaks!.value).toBe(0); // S64-B1: all 0 in negotiation context
+  });
+});
+
+/* S18-B1 (2026-07-22) — "Per-Question Review (2 answered)" when candidate
+ * submitted only 1 real response. An incomplete AI turn (still generating when
+ * End was clicked) left `pendingRecruiter === ""` for the second user turn,
+ * creating an "Exchange 2" placeholder that inflated the count.
+ * Fix: skip user turns with no preceding AI question (empty heading). */
+describe("buildNegotiationPerQuestion — S18-B1 incomplete-turn count", () => {
+  it("S18-B1: skips user turn with no preceding AI question (placeholder exchange)", () => {
+    // base has 1 perQuestion item; transcript has 3 user turns — 2 with a real
+    // AI question and 1 with NO preceding AI turn (the AI was still generating
+    // when End was clicked). Old behaviour: 3 items, shows "3 answered".
+    // Fixed behaviour: 2 items (> 1 base → replaces), "2 answered", no "Exchange N".
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        negotiationMetrics: {
+          outcome: "stalemate", anchorTurn: null, leverDiversity: 0, lpaGained: 0,
+          lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 3,
+          score: 12, initialOfferLpa: undefined, finalOfferLpa: undefined, candidateAskLpa: null,
+          offerTrajectoryLpa: [],
+        },
+        transcript: [
+          { speaker: "ai",   text: "What are your salary expectations?" },
+          { speaker: "user", text: "I'm looking for around 48 LPA." },
+          { speaker: "ai",   text: "That seems high — our band is 35 LPA." },
+          { speaker: "user", text: "I understand, let me think about it." },
+          // Third user turn with NO preceding AI turn (AI still generating when End clicked)
+          { speaker: "user", text: "I'll stop here actually." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    // Should show 2 real exchanges (the ones with AI questions), not 3.
+    expect(out.questions.length).toBe(2);
+    // "Exchange N" placeholder must not appear — all headings should be real AI text.
+    expect(out.questions.every(q => !q.text.startsWith("Exchange "))).toBe(true);
+    expect(out.questions[0]?.text).toBe("What are your salary expectations?");
+    expect(out.questions[1]?.text).toBe("That seems high — our band is 35 LPA.");
+  });
+});
+
+/* S18-B4 (2026-07-22) — Coach Notes surfaced 4 blind spots ("Anchor strength",
+ * "Confidence under pressure", etc.) for a 1-turn bailout session. The evaluator
+ * generated these from barely any content (scoreConfidence = 0.2). Suppress blind
+ * spots entirely when scoreConfidence < 0.5 — near-empty sessions cannot
+ * meaningfully evaluate competencies. */
+describe("sessionReportToInterviewResult — S18-B4 blind spots suppressed on low-confidence session", () => {
+  it("S18-B4: blindSpots is empty when scoreConfidence < 0.5", () => {
+    const ctx = {
+      report: negReport({
+        scoreConfidence: 0.2,
+        blindSpots: [
+          { competency: "Closing Technique", note: "Never closed.", frequencyPct: null },
+          { competency: "Anchor strength", note: "No anchor named.", frequencyPct: null },
+        ],
+      }),
+      session: negSession(),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    expect(out.blindSpots).toHaveLength(0);
+  });
+
+  it("S18-B4: blindSpots pass through when scoreConfidence >= 0.5", () => {
+    const ctx = {
+      report: negReport({
+        scoreConfidence: 0.75,
+        blindSpots: [
+          { competency: "Closing Technique", note: "Never closed.", frequencyPct: null },
+        ],
+      }),
+      session: negSession(),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    // negotiation-relevant blind spot should pass through
+    expect((out.blindSpots ?? []).length).toBeGreaterThan(0);
+  });
+});
+
+/* S1-B7 (2026-07-22) — "Concession rate: 10%" on a zero-counter session where the
+ * candidate accepted the first offer. Root cause: the concessionRe included
+ * acceptance-close phrases ("i accept", "i'll take", "happy with") that fire on
+ * the closing utterance, not on mid-negotiation concessions. Fix: remove those
+ * closure phrases from the pattern. */
+describe("buildNegotiationMetrics — S1-B7 concession rate on zero-counter session", () => {
+  it("S1-B7: concession rate is 0 when candidate accepted first offer (no counter phrases)", () => {
+    const ctx = {
+      report: negReport(),
+      session: negSession({
+        negotiationMetrics: {
+          outcome: "accepted", anchorTurn: null, leverDiversity: 0, lpaGained: 0,
+          lpaPerTurn: 0, bandTraversal: 0, overBandViolation: false, totalTurns: 3,
+          score: 40, initialOfferLpa: 35.8, finalOfferLpa: 35.8, candidateAskLpa: null,
+          offerTrajectoryLpa: [35.8],
+        },
+        transcript: [
+          { speaker: "ai",   text: "We can offer you ₹35.8 LPA." },
+          { speaker: "user", text: "I accept the offer." },
+          { speaker: "ai",   text: "Great! Let me send you the details." },
+          { speaker: "user", text: "I'm happy with that. Let's proceed." },
+        ],
+      }),
+    } as AdapterContext;
+    const out = sessionReportToInterviewResult(ctx);
+    const rate = out.metrics.find((m) => m.label === "Concession rate");
+    expect(rate).toBeDefined();
+    // "I accept" / "I'm happy with" are closure phrases — must NOT count as concessions.
+    expect(rate!.value).toBe(0);
+  });
+});
+
+/* S1-B8 (2026-07-22) — skill scores stayed at 95/92 on a zero-counter immediate-
+ * accept session because groundNegotiationReport had an early return when
+ * gapClosurePct === null (can't compute gap when candidateAsk is null). Fix: treat
+ * accepted + candidateAsk === null as 0% gap closure — apply the gap<10 ceiling. */
+describe("groundNegotiationReport — S1-B8 zero-counter immediate-accept grounding", () => {
+  it("S1-B8: caps outcome-gated skills to ≤45 when accepted with no counter named", () => {
+    const r = groundNegotiationReport(
+      inflatedSkills(), 79, "hire",
+      // accepted, gapClosurePct null (no counter) — previously early-returned unchanged
+      outcome({ outcome: "accepted", candidateAsk: null, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // All outcome-gated axes must hit the gap<10 ceiling (45).
+    expect(byName(r.skills, "Leverage Use")).toBeLessThanOrEqual(45);
+    expect(byName(r.skills, "Closing Technique")).toBeLessThanOrEqual(45);
+    expect(byName(r.skills, "Anchoring")).toBeLessThanOrEqual(45);
+    // Overall score capped at ceiling+15 = 60.
+    expect(r.overallScore).toBeLessThanOrEqual(60);
+    expect(r.band).not.toBe("hire");
+    expect(r.band).not.toBe("strongHire");
+    // Demeanour untouched.
+    expect(byName(r.skills, "Composure")).toBe(90);
+  });
+
+  it("S1-B8: does NOT touch accepted sessions with a non-null candidateAsk (gap known)", () => {
+    // candidateAsk = 55 but gapClosurePct = null (shouldn't happen in practice;
+    // guard that we only apply the 0-gap synthetic when candidateAsk IS null).
+    const r = groundNegotiationReport(
+      inflatedSkills(), 79, "hire",
+      outcome({ outcome: "accepted", candidateAsk: 55, gapClosurePct: null }),
+      FLIPKART_BANDS,
+    );
+    // Unknown gap with a non-null ask → trust scorer, no cap.
+    expect(byName(r.skills, "Leverage Use")).toBe(95);
+    expect(r.overallScore).toBe(79);
   });
 });

@@ -226,15 +226,18 @@ export function isSalaryNegotiationLengthOk(
 /**
  * The number of total interview steps to request from the LLM, given the
  * format. Salary-negotiation gets a fixed 3 steps (intro + initial offer +
- * closing) regardless of mini/regular; the kernel fills the middle. Other
- * types: mini → 3 questions, regular → 5 questions. HR-round → 7 questions
- * (7-dimension Indian HR gate can't be covered in 5 turns). Total = +2 for
- * intro and closing.
+ * closing) regardless of mini/regular; the kernel fills the middle.
+ * HR-round is checked BEFORE mini: it always gets 7 questions (8-dimension
+ * Indian HR gate can't be covered in 3-5 turns), even though hr-round's only
+ * session length is the 10-minute "mini" tier (FOCUS_MINUTES in
+ * SessionSetup.tsx) — mini here governs timing/UI, not hr-round's question
+ * count. Other types: mini → 3 questions, regular → 5 questions. Total = +2
+ * for intro and closing.
  */
 export function computeStepCount(opts: { mini: boolean; isSalaryType: boolean; interviewType?: string }): number {
   if (opts.isSalaryType) return 3; // intro + initial-offer + closing
-  if (opts.mini) return 3 + 2;
   if (opts.interviewType === "hr-round") return 7 + 2;
+  if (opts.mini) return 3 + 2;
   return 5 + 2;
 }
 
@@ -294,9 +297,10 @@ export function buildSalaryNegotiationFallbackQuestions(opts: {
       { kind: "open-with-offer" } as Parameters<typeof renderCanonicalProse>[0],
       kernelState,
     );
-  } catch {
+  } catch (err) {
     // Prose render should never throw, but if it does, ship a safe greeting
     // rather than a blank turn — the kernel re-renders on its first reply.
+    console.error("[generate-questions] renderCanonicalProse opener failed:", err);
     opener = "Thanks for taking the time today. Let's get into it — to start, can you walk me through your current compensation structure?";
   }
   const introText = "Thanks for making time today — let's keep this conversational. Take your time, and feel free to type if that's easier.";
@@ -359,10 +363,25 @@ export function hrDimensionsForSeniority(
    their own affinity-tagged questions, but so the sampler STEERS them out
    of other disciplines' locked questions (a marketer was observed live to
    draw an engineer's "complex codebase" onboarding probe on the LLM-down
-   path, 2026-06). Families with genuinely no analogue (finance, legal,
-   civil-services…) still return undefined → the sampler keeps its
-   universal/standard mix, which is the correct neutral behaviour. */
-function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
+   path, 2026-06).
+   Families with genuinely no analogue (finance, legal, civil-services,
+   healthcare, consultant, quant, scientist, campus, bfsi-sales, hr, …) map
+   to the "general" sentinel rather than `undefined`. This used to return
+   `undefined`, on the theory that the sampler would then fall back to a
+   universal/standard mix — but `sampleBehavioralQuestions` only runs its
+   role-partition step `if (opts.role)` (behavioral-question-bank.ts), so a
+   falsy `undefined` skipped partitioning ENTIRELY: other-discipline-tagged
+   questions (e.g. an "engineer"-tagged "pushback on your technical
+   decision" conflict question) competed on equal footing with genuinely
+   universal ones instead of being deprioritised. "general" is never a tag
+   on any bank entry, so passing it still activates the partition — only
+   true-universal (untagged) questions and the sentinel itself match, every
+   other-discipline-tagged question is pushed to the back — which is the
+   neutral behaviour the old comment intended but the old code didn't
+   deliver (live QA: a Chartered Accountant candidate drew an engineer-
+   tagged conflict question and an untagged "production incident" probe,
+   2026-Q3). */
+function toBehavioralRole(roleFamily: string): BehavioralRole {
   switch (roleFamily) {
     case "swe": case "ml": case "psu-engineer": return "engineer";
     case "pm": return "pm";
@@ -372,7 +391,7 @@ function toBehavioralRole(roleFamily: string): BehavioralRole | undefined {
     case "ops": return "ops";
     case "marketing": return "marketing";
     case "sales": return "sales";
-    default: return undefined;
+    default: return "general";
   }
 }
 

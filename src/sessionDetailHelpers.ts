@@ -1,4 +1,6 @@
+import { SCORE_BAND_LABEL, SCORE_BAND_TIP, scoreBandKey } from "./scoreBands";
 import { c } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import type { DashboardSession } from "./dashboardTypes";
 
 export const RESULTS_KEY = "hirestepx_sessions";
@@ -17,22 +19,21 @@ export function extractReason(raw: unknown): string {
 
 /* ─── Helpers ─── */
 
+// Score-band color: green/copper/red thresholds are gamification-domain
+// (session score), so the middle band stays copper — re-sourced from the
+// canonical T.copper rather than the legacy c.gilt alias.
 export function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 75) return c.gilt;
+  if (score >= 75) return T.copper;
   return c.ember;
 }
 
 export function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 75) return "Good";
-  return "Needs work";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
 export function scoreTip(score: number) {
-  if (score >= 85) return "Strong: Interview-ready performance";
-  if (score >= 75) return "Good: Solid foundation, minor areas to refine";
-  return "Needs work: Key areas need practice before interviews";
+  return SCORE_BAND_TIP[scoreBandKey(score)];
 }
 
 /** What each skill score measures — shown as tooltips in score breakdown */
@@ -76,7 +77,7 @@ export function normalizeType(type: string): string {
 export function ratingBadge(rating: string | undefined): { label: string; color: string; bg: string } {
   switch (rating) {
     case "strong": return { label: "Strong", color: c.sage, bg: "rgba(122,158,126,0.1)" };
-    case "good": return { label: "Good", color: c.gilt, bg: "rgba(212,179,127,0.1)" };
+    case "good": return { label: "Good", color: T.copper, bg: "rgba(212,179,127,0.1)" };
     case "partial": return { label: "Partial", color: "#E89B5A", bg: "rgba(232,155,90,0.1)" };
     case "weak": return { label: "Weak", color: c.ember, bg: "rgba(196,112,90,0.1)" };
     default: return { label: "Reviewed", color: c.stone, bg: "rgba(142,137,131,0.1)" };
@@ -102,7 +103,11 @@ export function computeSpeechMetrics(transcript: { speaker: string; text: string
   const userText = userEntries.map(t => t.text).join(" ");
   const words = userText.split(/\s+/).filter(Boolean);
   const wordCount = words.length;
-  const userMinutes = Math.max(1, durationSec / 60 * 0.5); // ~50% of time is user speaking
+  // Estimate user speaking time as ~50% of session, minimum 1 minute.
+  // But for very sparse answers (<30 words) this formula yields nonsensically
+  // low WPM (e.g. 14 wpm for a 14-word mini session against a 1-min floor).
+  // Use 0 as a sentinel for "not enough signal" in that case.
+  const userMinutes = Math.max(1, durationSec / 60 * 0.5);
 
   // Filler words
   let fillerCount = 0;
@@ -111,10 +116,10 @@ export function computeSpeechMetrics(transcript: { speaker: string; text: string
     const matches = userText.match(regex);
     if (matches) fillerCount += matches.length;
   }
-  const fillerPerMin = fillerCount / userMinutes;
+  const fillerPerMin = wordCount >= 30 ? fillerCount / userMinutes : 0;
 
-  // Speaking pace (words per minute)
-  const pace = Math.round(wordCount / userMinutes);
+  // Speaking pace — suppress (0) when answers are too sparse to give a valid reading.
+  const pace = wordCount >= 30 ? Math.round(wordCount / userMinutes) : 0;
 
   // Silence ratio — approximate from answer lengths vs total time
   const estimatedSpeakingTime = (wordCount / 150) * 60; // at 150 wpm

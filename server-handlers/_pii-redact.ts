@@ -96,9 +96,19 @@ export function redactProfilePii(
     if (typeof v === "string") {
       profile[key] = redactPii(v);
     } else if (Array.isArray(v)) {
-      profile[key] = v.map((item) =>
-        typeof item === "string" ? redactPii(item) : item,
-      );
+      // Array items can themselves be objects (e.g. experiences[].scope /
+      // .partners / .topProjects) — redact strings in place, and recurse
+      // into object items so their nested string fields get the same
+      // treatment. Without this, PII inside an array-of-objects field
+      // passed through untouched even though the top-level string/object
+      // cases both handled it.
+      profile[key] = v.map((item) => {
+        if (typeof item === "string") return redactPii(item);
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          return redactProfilePii(item as Record<string, unknown>);
+        }
+        return item;
+      });
     } else if (v && typeof v === "object" && !Array.isArray(v)) {
       // Shallow recursion — the LLM occasionally returns nested objects
       // (e.g. scoreBreakdown). One level is enough; deeper structures

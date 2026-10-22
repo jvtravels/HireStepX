@@ -3,18 +3,24 @@
    link; we collect a new password + confirmation and submit.
    Layout mirrors ForgotPassword: text-first hero, narrow form column,
    inline shield + headphones for trust + help.
-   Discipline rule: Indigo is interactive · Copper is editorial · Never mix. */
+
+   Rebuilt on shadcn/ui primitives (Button, Input, Label, Alert) +
+   Tailwind theme tokens, matching Login's Phase-3 redesign: clean sans
+   hierarchy + a restrained background glow in place of the retired serif
+   headline and cream card surface. No italics per design system rule —
+   emphasis is weight/color only. PasswordStrengthMeter/PasswordChecklist
+   have no shadcn equivalent and stay as bespoke atoms from _auth-fields. */
 import React, { useEffect, useMemo, useState } from "react";
-import { tokens as t, fonts as f, shadows } from "../design-system/_tokens";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
-  Field,
-  Wordmark,
   Spinner,
   EyeIcon,
   PasswordStrengthMeter,
   PasswordChecklist,
 } from "./_auth-fields";
-import { AUTH_STYLES } from "./_auth-styles";
 import { passwordHasEdgeWhitespace, validateSignupPassword } from "./_auth-validation";
 
 /** Discriminated token state. Different copy for each — best-in-class
@@ -134,268 +140,309 @@ export default function ResetPassword({
   })();
 
   return (
-    <>
-      <style>{AUTH_STYLES}</style>
+    <div className="relative isolate flex min-h-dvh flex-col overflow-hidden bg-background text-foreground">
       <div
-        style={{ background: t.cream, minHeight: "100dvh", fontFamily: f.sans, color: t.coal, position: "relative", display: "flex", flexDirection: "column" }}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[620px]"
       >
-        <header
-          className="hsx-login-topbar"
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "32px 48px", gap: 16 }}
+        <div className="absolute top-[-220px] left-1/2 h-[520px] w-[900px] -translate-x-1/2 rounded-full bg-primary/[0.14] blur-[110px]" />
+      </div>
+
+      <header className="flex items-center justify-between gap-4 px-6 py-6 sm:px-12">
+        <div className="flex items-baseline gap-0 text-xl font-semibold tracking-tight">
+          <span>HireStep</span>
+          <span className="text-primary">X</span>
+        </div>
+        <a
+          href="#login"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-primary underline-offset-4 hover:underline"
         >
-          <Wordmark />
-          <a
-            href="#login"
-            className="hsx-link-indigo"
-            style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.indigo, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="19" y1="12" x2="5" y2="12" />
-              <polyline points="12 19 5 12 12 5" />
-            </svg>
-            Back to Log in
-          </a>
-        </header>
+            <line x1="19" y1="12" x2="5" y2="12" />
+            <polyline points="12 19 5 12 12 5" />
+          </svg>
+          Back to Log in
+        </a>
+      </header>
 
-        <main
-          className="hsx-login-main"
-          style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "clamp(24px, 4vh, 64px) 24px" }}
-        >
-          {/* Text-first hero — matches ForgotPassword. No icon tile. */}
-          <div className="hsx-login-hero" style={{ width: "100%", textAlign: "center", marginBottom: 32 }}>
-            <h1
-              id="reset-heading"
-              style={{ fontFamily: f.serif, fontSize: "clamp(2.5rem, 6vw, 4.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", whiteSpace: "nowrap", margin: 0, color: t.coal }}
-            >
-              Set a new{" "}
-              <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>
-                password
-              </em>
-            </h1>
-            <p
-              className="hsx-login-subtitle"
-              style={{ fontFamily: f.sans, fontSize: 16, lineHeight: 1.55, color: t.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}
-            >
-              {email
-                ? <>Choose a strong password for <strong style={{ color: t.coal, fontWeight: 600 }}>{email}</strong>.</>
-                : <>Choose something strong. You&apos;ll use this on every login.</>}
-            </p>
-          </div>
-
-          <div className="hsx-login-form" style={{ width: "100%", maxWidth: 440 }}>
-            {/* Token-error surface short-circuits the form */}
-            {!isFormVisible ? (
-              <div
-                role="alert"
-                className="hsx-error-banner"
-                style={{ background: t.error100, border: `1px solid ${t.error}`, borderRadius: 10, padding: "16px 18px", fontFamily: f.sans, fontSize: 14, color: t.error, lineHeight: 1.5 }}
-              >
-                <strong style={{ fontWeight: 600 }}>{tokenSurface.title}</strong>
-                <br />
-                {tokenSurface.body}
-                <div style={{ marginTop: 14 }}>
-                  <a
-                    href="#forgot"
-                    className="hsx-login-cta"
-                    style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "12px 18px", borderRadius: 10, background: t.indigo, color: "#fff", fontWeight: 600, fontSize: 14, textDecoration: "none", boxShadow: shadows.cta }}
-                  >
-                    Request a new link
-                  </a>
-                </div>
-              </div>
-            ) : (
+      <main className="flex flex-1 flex-col items-center px-6 pt-10 pb-16 sm:pt-20">
+        {/* Text-first hero — matches ForgotPassword. No icon tile. */}
+        <div className="mb-11 w-full max-w-xl text-center">
+          <h1
+            id="reset-heading"
+            className="text-5xl leading-[1.05] font-semibold tracking-tight text-balance sm:text-7xl"
+          >
+            Set a new <span className="text-primary">password</span>
+          </h1>
+          <p className="mt-4.5 text-base text-muted-foreground text-balance">
+            {email ? (
               <>
-                {error && (
-                  <div
-                    role="alert"
-                    id="reset-error"
-                    className="hsx-error-banner"
-                    style={{ background: t.error100, border: `1px solid ${t.error}`, borderRadius: 10, padding: "12px 14px", marginBottom: 16, fontFamily: f.sans, fontSize: 13, color: t.error, lineHeight: 1.4 }}
+                Choose a strong password for{" "}
+                <strong className="font-semibold text-foreground">{email}</strong>.
+              </>
+            ) : (
+              <>Choose something strong. You&apos;ll use this on every login.</>
+            )}
+          </p>
+        </div>
+
+        <div className="w-full max-w-[400px]">
+          {/* Token-error surface short-circuits the form */}
+          {!isFormVisible ? (
+            <div className="flex flex-col gap-4">
+              <Alert variant="destructive">
+                <AlertTitle>{tokenSurface.title}</AlertTitle>
+                <AlertDescription>{tokenSurface.body}</AlertDescription>
+              </Alert>
+              <Button asChild size="lg" className="h-12 gap-2 text-[15px] font-semibold">
+                <a href="#forgot">
+                  Request a new link
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
                   >
-                    {error}
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                    <polyline points="12 5 19 12 12 19" />
+                  </svg>
+                </a>
+              </Button>
+            </div>
+          ) : (
+            <>
+              {error && (
+                <Alert variant="destructive" id="reset-error" className="mb-4">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <form
+                onSubmit={handleSubmit}
+                aria-labelledby="reset-heading"
+                aria-describedby={error ? "reset-error" : undefined}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="reset-password">New password</Label>
+                  <div className="relative">
+                    <Input
+                      id="reset-password"
+                      type={showPassword ? "text" : "password"}
+                      name="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      onFocus={() => setPasswordTouched(true)}
+                      autoComplete="new-password"
+                      placeholder="At least 8 characters"
+                      autoFocus={shouldAutoFocus}
+                      enterKeyHint="next"
+                      maxLength={PASSWORD_MAX_LENGTH}
+                      aria-invalid={
+                        !!error || (passwordTouched && !pwV.valid && password.length > 0)
+                      }
+                      className="h-12 px-4 pr-11 text-[15px]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-pressed={showPassword}
+                      className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <EyeIcon open={showPassword} />
+                    </button>
                   </div>
-                )}
-
-                <form
-                  onSubmit={handleSubmit}
-                  aria-labelledby="reset-heading"
-                  aria-describedby={error ? "reset-error" : undefined}
-                  style={{ display: "flex", flexDirection: "column", gap: 14 }}
-                >
-                  <Field
-                    label="New password"
-                    type={showPassword ? "text" : "password"}
-                    name="new-password"
-                    value={password}
-                    onChange={setPassword}
-                    onFocus={() => setPasswordTouched(true)}
-                    onAutofill={() => setPasswordTouched(true)}
-                    autoComplete="new-password"
-                    placeholder="At least 8 characters"
-                    autoFocus={shouldAutoFocus}
-                    enterKeyHint="next"
-                    maxLength={PASSWORD_MAX_LENGTH}
-                    invalid={!!error || (passwordTouched && !pwV.valid && password.length > 0)}
-                    errorMessage={passwordError}
-                    rightSlot={
-                      <button
-                        type="button"
-                        className="hsx-eye-toggle"
-                        onClick={() => setShowPassword((v) => !v)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
-                        style={{ background: "transparent", border: "none", color: t.inkSoft, cursor: "pointer", padding: 4, display: "flex", alignItems: "center" }}
-                      >
-                        <EyeIcon open={showPassword} />
-                      </button>
-                    }
-                  />
-
+                  {passwordError && (
+                    <p className="mt-0.5 text-xs text-destructive">{passwordError}</p>
+                  )}
                   {password.length > 0 && (
-                    <div style={{ marginTop: -2 }}>
+                    <div className="-mt-0.5">
                       <PasswordStrengthMeter score={pwV.score} label={pwV.label} />
-                      <div style={{ marginTop: 12 }}>
+                      <div className="mt-3">
                         <PasswordChecklist checks={pwV.checks} />
                       </div>
                     </div>
                   )}
+                </div>
 
-                  <Field
-                    label="Confirm password"
-                    type={showPassword ? "text" : "password"}
-                    name="confirm-password"
-                    value={confirm}
-                    onChange={setConfirm}
-                    onFocus={() => setConfirmTouched(true)}
-                    onAutofill={() => setConfirmTouched(true)}
-                    autoComplete="new-password"
-                    placeholder="Re-enter the password"
-                    enterKeyHint="go"
-                    maxLength={PASSWORD_MAX_LENGTH}
-                    invalid={!!confirmError}
-                    errorMessage={confirmError}
-                    rightSlot={
-                      matches ? (
-                        <span
-                          aria-label="Passwords match"
-                          style={{ display: "flex", alignItems: "center", color: t.success, padding: 4 }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                            <polyline points="20 6 9 17 4 12" />
-                          </svg>
-                        </span>
-                      ) : undefined
-                    }
-                  />
-
-                  {/* Trust beat — surfaces the always-on security posture so
-                      users understand why every device gets signed out. */}
-                  <div
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, marginTop: 2 }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
-                      <polyline points="9 12 11 14 15 10" />
-                    </svg>
-                    For safety, every device will be signed out.
-                  </div>
-
-                  {/* Ghost-when-disabled treatment matches Login + Forgot. */}
-                  {(() => {
-                    const isGhost = !canSubmit && !loading;
-                    const tooltip = isGhost
-                      ? expired
-                        ? "Request a fresh reset link to continue"
-                        : !pwV.valid
-                          ? "Choose a stronger password to continue"
-                          : !matches
-                            ? "Confirm your new password to continue"
-                            : "Complete the form to continue"
-                      : undefined;
-                    return (
-                      <button
-                        type="submit"
-                        disabled={!canSubmit}
-                        aria-busy={loading || undefined}
-                        title={tooltip}
-                        className="hsx-login-cta"
-                        style={{
-                          width: "100%",
-                          fontFamily: f.sans,
-                          fontSize: 15,
-                          fontWeight: 600,
-                          color: isGhost ? t.inkFaint : t.cream,
-                          background: isGhost ? t.creamSoft : t.indigo,
-                          border: isGhost ? `1px solid ${t.line}` : "1px solid transparent",
-                          borderRadius: 10,
-                          padding: "16px 18px",
-                          cursor: canSubmit ? "pointer" : "not-allowed",
-                          marginTop: 4,
-                          boxShadow: isGhost ? "none" : shadows.cta,
-                          letterSpacing: 0.1,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: 10,
-                          opacity: loading ? 0.95 : 1,
-                        }}
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="reset-confirm">Confirm password</Label>
+                  <div className="relative">
+                    <Input
+                      id="reset-confirm"
+                      type={showPassword ? "text" : "password"}
+                      name="confirm-password"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                      onFocus={() => setConfirmTouched(true)}
+                      autoComplete="new-password"
+                      placeholder="Re-enter the password"
+                      enterKeyHint="go"
+                      maxLength={PASSWORD_MAX_LENGTH}
+                      aria-invalid={!!confirmError}
+                      className="h-12 px-4 pr-11 text-[15px]"
+                    />
+                    {matches && (
+                      <span
+                        aria-label="Passwords match"
+                        className="absolute top-1/2 right-3 -translate-y-1/2 text-green-600 dark:text-green-500"
                       >
-                        {loading ? (
-                          <>
-                            <Spinner />
-                            Updating…
-                          </>
-                        ) : (
-                          <>
-                            Update password
-                            <svg className="hsx-login-cta-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                              <line x1="5" y1="12" x2="19" y2="12" />
-                              <polyline points="12 5 19 12 12 19" />
-                            </svg>
-                          </>
-                        )}
-                      </button>
-                    );
-                  })()}
-
-                  {/* Inline shield row: live countdown when valid, red when
-                      expired. Same visual treatment as ForgotPassword's
-                      "expires in 30 minutes" line — kept consistent. */}
-                  <div
-                    aria-live="polite"
-                    style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: f.sans, fontSize: 13, color: expired ? t.error : t.inkSoft }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={expired ? t.error : t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                      <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
-                      <path d="M12 8v4" />
-                      <circle cx="12" cy="15" r="0.6" fill={expired ? t.error : t.copper} stroke="none" />
-                    </svg>
-                    {expired ? "Link expired — request a new one." : <>For your security, this link expires in {expiryLabel}.</>}
+                        <svg
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          aria-hidden="true"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      </span>
+                    )}
                   </div>
-                </form>
-              </>
-            )}
-          </div>
-        </main>
+                  {confirmError && (
+                    <p className="mt-0.5 text-xs text-destructive">{confirmError}</p>
+                  )}
+                </div>
 
-        {/* Single-line headphones footer — matches ForgotPassword */}
-        <footer
-          className="hsx-login-footer"
-          style={{ textAlign: "center", padding: "24px 24px 32px", fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}
-        >
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-              <path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4z" />
-              <path d="M3 19a2 2 0 0 0 2 2h1v-6H3v4z" />
-            </svg>
-            Need help?{" "}
-            <a href="#contact" className="hsx-link-indigo" style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}>
-              Contact support
-            </a>
-          </span>
-        </footer>
-      </div>
-    </>
+                {/* Trust beat — surfaces the always-on security posture so
+                    users understand why every device gets signed out. */}
+                <div className="flex items-center justify-center gap-2 text-[13px] text-muted-foreground">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="text-green-600 dark:text-green-500"
+                  >
+                    <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                    <polyline points="9 12 11 14 15 10" />
+                  </svg>
+                  For safety, every device will be signed out.
+                </div>
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={loading || expired}
+                  aria-busy={loading || undefined}
+                  className="mt-1 h-12 gap-2 text-[15px] font-semibold"
+                >
+                  {loading ? (
+                    <>
+                      <Spinner />
+                      Updating…
+                    </>
+                  ) : (
+                    <>
+                      Update password
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
+                      >
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                      </svg>
+                    </>
+                  )}
+                </Button>
+
+                {/* Inline shield row: live countdown when valid, destructive
+                    tone when expired. Same visual treatment as
+                    ForgotPassword's "expires in 30 minutes" line. */}
+                <div
+                  aria-live="polite"
+                  className={`flex items-center justify-center gap-2 text-[13px] ${
+                    expired ? "text-destructive" : "text-muted-foreground"
+                  }`}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className={expired ? "text-destructive" : "text-primary"}
+                  >
+                    <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                    <path d="M12 8v4" />
+                    <circle cx="12" cy="15" r="0.6" fill="currentColor" stroke="none" />
+                  </svg>
+                  {expired ? (
+                    "Link expired — request a new one."
+                  ) : (
+                    <>For your security, this link expires in {expiryLabel}.</>
+                  )}
+                </div>
+              </form>
+            </>
+          )}
+        </div>
+      </main>
+
+      {/* Single-line headphones footer — matches ForgotPassword */}
+      <footer className="mx-auto px-6 pt-5 pb-8 text-center text-[13px] leading-relaxed text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="text-primary"
+          >
+            <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
+            <path d="M21 19a2 2 0 0 1-2 2h-1v-6h3v4z" />
+            <path d="M3 19a2 2 0 0 0 2 2h1v-6H3v4z" />
+          </svg>
+          Need help?{" "}
+          <a
+            href="#contact"
+            className="font-semibold text-primary underline-offset-4 hover:underline"
+          >
+            Contact support
+          </a>
+        </span>
+      </footer>
+    </div>
   );
 }

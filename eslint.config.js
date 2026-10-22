@@ -26,6 +26,9 @@ export default tseslint.config(
       // File still gets type-checked via `tsc --noEmit`; lint-only
       // exemption keeps CI green until the strings move to data/.
       "server-handlers/_negotiate-turn-helpers.ts",
+      // Mobile audit screenshot spec — work-in-progress file with explicit
+      // `any` casts in CDP mock helpers; excluded until properly typed.
+      "tests/e2e/mobile-audit-screenshots.spec.ts",
     ],
   },
   js.configs.recommended,
@@ -38,11 +41,20 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      "react-refresh/only-export-components": [
-        "warn",
-        { allowConstantExport: true },
-      ],
+      // Next.js App Router pages always export both a default component
+      // and generateMetadata/generateStaticParams/config. This rule fires
+      // on every such file (1400+ warnings) and is a false positive for
+      // App Router — fast refresh is handled by the Next.js runtime, not
+      // the Vite/CRA path this rule was designed for.
+      "react-refresh/only-export-components": "off",
       "no-console": ["warn", { allow: ["warn", "error"] }],
+      // Allow the deliberate `role="list"` on <ul>/<ol> that also carry
+      // `list-style: none`. Safari + VoiceOver strip the implicit list
+      // semantics the moment list-style is removed, so re-asserting
+      // role="list" is the standard a11y workaround (not cargo-cult) —
+      // used across the pSEO/marketing pages. Every OTHER redundant role
+      // (button, navigation, listitem, …) is still an error.
+      "jsx-a11y/no-redundant-roles": ["error", { ul: ["list"], ol: ["list"] }],
       "@typescript-eslint/no-unused-vars": [
         "warn",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
@@ -103,6 +115,8 @@ export default tseslint.config(
     rules: {
       "no-restricted-syntax": "off",
       "max-lines": "off",
+      // Test mocks routinely cast to `any` — acceptable in test-only code.
+      "@typescript-eslint/no-explicit-any": "off",
     },
   },
   // E2E-only bans: `page.waitForTimeout` and `waitForLoadState('networkidle')`

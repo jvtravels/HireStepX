@@ -49,6 +49,44 @@ describe("computeFallbackScores", () => {
     expect(result.score).toBeLessThanOrEqual(30);
   });
 
+  /* OA-B41 — a no-answer transcript caps the overall at 30, but the skill
+     dimensions used to build off the ≥60 fallbackScore and floor at 40, so
+     every dimension rendered ABOVE the overall it aggregates into. The
+     dimensions must not outrun a no-answer overall. */
+  it("keeps skill dimensions from outrunning a no-answer overall (B41)", () => {
+    const transcript: TranscriptEntry[] = [
+      { speaker: "ai", text: "Tell me about yourself", time: "00:00" },
+      { speaker: "user", text: "[skipped]", time: "00:01" },
+      { speaker: "ai", text: "Walk me through a project", time: "00:02" },
+      { speaker: "user", text: "[no response]", time: "00:03" },
+    ];
+    const result = computeFallbackScores({
+      transcript, currentStep: 2, scriptLength: 5, difficulty: "standard", elapsed: 120,
+    });
+    expect(result.hasAnyAnswers).toBe(false);
+    // L-054: no-answer sessions get score=0 (not the old 30 sentinel).
+    expect(result.score).toBe(0);
+    const dims = Object.values(result.skillScores);
+    // No dimension may sit far above the overall it aggregates into.
+    // With score=0, dimFloor=0 so every dimension must also be 0.
+    const maxDim = Math.max(...dims);
+    expect(maxDim).toBeLessThanOrEqual(result.score + 10);
+    // And no dim should have the old 40-floor for no-answer sessions.
+    expect(Math.min(...dims)).toBeLessThan(40);
+  });
+
+  it("preserves the ≥40 dimension floor when the candidate DID answer (B41 back-compat)", () => {
+    const transcript = makeTranscript(["I led a migration that cut costs 20% for the team."]);
+    const result = computeFallbackScores({
+      transcript, currentStep: 3, scriptLength: 5, difficulty: "standard", elapsed: 200,
+    });
+    expect(result.hasAnyAnswers).toBe(true);
+    for (const v of Object.values(result.skillScores)) {
+      expect(v).toBeGreaterThanOrEqual(40);
+      expect(v).toBeLessThanOrEqual(95);
+    }
+  });
+
   it("gives difficulty bonus for intense", () => {
     const transcript = makeTranscript(["I built a system handling 1M users daily."]);
     const base = computeFallbackScores({

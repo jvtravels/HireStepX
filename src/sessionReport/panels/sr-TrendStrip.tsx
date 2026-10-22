@@ -23,7 +23,9 @@ export function TrendStrip({
       className="ir-trend-strip"
       style={{ scrollMarginTop: 72 }}
     >
-      <span className="ir-trend-eyebrow">Across {priorSessionCount + 1} sessions</span>
+      <h2 className="ir-trend-eyebrow" style={{ margin: 0, fontSize: "inherit", fontWeight: "inherit" }}>
+        Across {priorSessionCount + 1} sessions
+      </h2>
       {items.map((it) => {
         const cls =
           it.kind === "improvement" ? "ir-trend-delta-up"

@@ -20,6 +20,7 @@ import type { DashboardSession } from "../dashboardTypes";
 import { detectBias, countBias, BIAS_LABELS, type BiasPatternKind } from "../biasDetector";
 import { stripProsodyMarkup } from "../_prosody";
 import { pickIdealAnswerSnippet } from "./_idealAnswerSnippets";
+import { negotiationHeadlineVerdict } from "./derivations";
 import type {
   AnswerSpan,
   BehavioralFullReportData,
@@ -45,6 +46,31 @@ import {
   type BehavioralFlag,
 } from "../../tempo/designs/canvases/interview-result-focus/_behavioral-coach";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
+import { normalizeCoaching } from "../../server-handlers/_evaluate-session-helpers";
+
+/* S69-B1 (2026-07-25): sessions that only ever received a deterministic fallback
+ * evaluation have report_json.coaching = null because there was no LLM to write
+ * the pair. Synthesize a coaching pair from wins[0] and fixes[0] so Coach Notes
+ * renders even without an LLM-generated pair. Both arrays are always populated
+ * by the deterministic fallback. Headlines are extracted from the first clause
+ * (up to the first ":" or "—") to keep them card-length. The synthesized pair
+ * goes through normalizeCoaching so S63-B2 domain-token contradiction check
+ * still applies. */
+function synthesizeCoachingFromReport(wins: Array<{ text: string }>, fixes: Array<{ text: string }>) {
+  const win = wins?.[0]?.text;
+  const fix = fixes?.[0]?.text;
+  if (!win || !fix) return null;
+  const headline = (s: string): string => {
+    const clip = s.split(/[:—]/)[0].trim();
+    if (clip.length <= 55) return clip.replace(/[.,]$/, "");
+    const cut = clip.slice(0, 55).lastIndexOf(" ");
+    return clip.slice(0, cut > 15 ? cut : 55).replace(/[.,]$/, "");
+  };
+  return normalizeCoaching({
+    strength: { headline: headline(win), meaning: win },
+    gap:      { headline: headline(fix), meaning: fix, example: "" },
+  });
+}
 
 /* ─── Focus banner chrome constants ────────────────────────────────────
    Icon/label/tagline/accent per focus type. Keys match the focus-type
@@ -303,9 +329,6 @@ export interface AdapterContext {
   session: DashboardSession;
   /** Score history for the inline sparkline. Most-recent-LAST. */
   recentScores?: number[];
-  /** Cohort percentile (0-100) — derived server-side or computed via
-   *  `roleBenchmarks.bucketPercentile`. Optional. */
-  percentile?: number;
   /** Days until the user's scheduled interview, if any (from
    *  AuthContext / profile). */
   daysUntilInterview?: number;
@@ -326,7 +349,7 @@ export function sessionReportToInterviewResult(
 ): InterviewResultData {
   const { report, session } = ctx;
 
-  const company = ctx.targetCompany || session.company || "Your target";
+  const company = ctx.targetCompany || session.company || "";
   const role = ctx.targetRole || session.role || "Candidate";
   // Seniority band for the "Level" pill. The previous derivation took the
   // last whitespace token of `companyLabel` ("Flipkart", "Big Tech
@@ -376,7 +399,11 @@ export function sessionReportToInterviewResult(
         report.calibration?.bands,
       )
     : { skills: report.skills, overallScore: report.overallScore, band: report.band };
-  const weakestSkill = pickWeakestSkill(grounded.skills);
+  // REPORT-4b — cap anchor/counter/specificity bars the kernel's counter truth
+  // denies (candidateAsk === null). Ungated: keyed only on candidateAsk, it
+  // reaches heuristic/legacy rows that skip grounding, unlike the gap-based caps.
+  const groundedSkills = capAnchorSkillsIfNoCounter(grounded.skills, negotiationOutcome);
+  const weakestSkill = pickWeakestSkill(groundedSkills);
 
   /* R-4 (2026-07-10, live staging) — sparkline / headline coherence. The hero
    * gauge renders the GROUNDED overall score (grounded.overallScore), but the
@@ -413,21 +440,19 @@ export function sessionReportToInterviewResult(
     overallScore: grounded.overallScore,
     verdict: grounded.band as Verdict,
     scoreDelta,
-    percentile: ctx.percentile,
     recentScores: groundedRecentScores,
     readiness: report.readiness
       ? {
           pct: clamp(grounded.overallScore, 0, 100),
+          // One strong session is not readiness: the previous session has to clear 70 too.
+          confirmed: (groundedRecentScores?.length ?? 0) >= 2 && (groundedRecentScores?.[groundedRecentScores.length - 2] ?? 0) >= 70,
           /* R-9 (2026-07-10, live staging) — the hero's "~N weeks" ETA and the
-           * readinessSentence's "~H hours over ~S sessions" are two views of the
+           * readinessPlan's "~S sessions" are two views of the
            * SAME plan and must agree. Deriving weeks from hours (÷3) while the
            * sentence quoted an independent session count made them diverge
            * ("~13 weeks" beside "~8 sessions"). Derive the ETA from the same
            * session count the sentence shows, at ~3 focused sessions/week. */
-          etaWeeks: estimateWeeksFromSessions(
-            report.readiness.estimatedSessions,
-            report.readiness.estimatedHours,
-          ),
+          etaWeeks: estimateWeeksFromSessions(report.readiness.estimatedSessions, report.readiness.estimatedHours),
         }
       : undefined,
     daysUntilInterview: ctx.daysUntilInterview,
@@ -435,22 +460,34 @@ export function sessionReportToInterviewResult(
     role,
     level,
     difficulty,
-    aiVerdict: report.verdict,
-    strengths: report.wins.map((w) => w.text),
+    // REPORT-3e: for negotiations the headline is derived from the kernel
+    // outcome (the single source every other hero surface uses), never the raw
+    // LLM verdict — which hallucinated "You negotiated well but didn't quantify
+    // results" on a no-counter/no-deal session. See negotiationHeadlineVerdict.
+    aiVerdict:
+      isNegotiation && negotiationOutcome
+        ? negotiationHeadlineVerdict(negotiationOutcome)
+        : report.verdict,
+    strengths: isNegotiation
+      ? filterNegotiationStrengths(
+          report.wins.map((w) => w.text),
+          negotiationOutcome?.candidateAsk != null,
+        )
+      : report.wins.map((w) => w.text),
     improvements: report.fixes.map((f) => f.text),
     metrics: isNegotiation
-      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null)
+      ? buildNegotiationMetrics(report, negotiationOutcome?.candidateAsk ?? null, session.transcript, session.negotiationMetrics?.initialOfferLpa ?? null)
       : buildMetrics(report),
-    skills: buildSkills(grounded.skills),
+    skills: buildSkills(groundedSkills),
     weakestSkill: {
       name: weakestSkill?.name || "—",
       tip:
         weakestSkill
-          ? `Focus your next session on ${weakestSkill.name.toLowerCase()} — it's your lowest signal at ${weakestSkill.score}/100.`
+          ? `Focus your next session on ${weakestSkill.name.toLowerCase()}. It's your lowest role skill at ${weakestSkill.score}/100.`
           : "Keep practising consistently.",
     },
     questions: (() => {
-      const base = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
+      const raw = report.perQuestion.map((q) => adaptQuestion(q, report.redFlags));
       /* I-13 (2026-07-11, live staging) — for salary negotiations the evaluator
        * collapses the whole call into a SINGLE aggregate perQuestion item, so the
        * Per-Question Review showed "1" for a six-turn negotiation. The real
@@ -460,9 +497,12 @@ export function sessionReportToInterviewResult(
        * the heading count is honest. Falls back to the aggregate base when the
        * transcript can't be split into more turns than we already have (legacy
        * rows without a stored transcript) — we never invent exchanges. */
-      if (!isNegotiation) return base;
-      const reconstructed = buildNegotiationPerQuestion(session.transcript, base);
-      return reconstructed ?? base;
+      const base = isNegotiation
+        ? (buildNegotiationPerQuestion(session.transcript, raw) ?? raw)
+        : raw;
+      // q.idx is the transcript-turn index, not the sequential question number.
+      // Re-index to 1, 2, 3… so the report shows "Q1", "Q2" not "Q5", "Q9".
+      return base.map((q, i) => ({ ...q, index: i + 1 }));
     })(),
     scoreConfidence: confidenceBucket(report.scoreConfidence),
     scoreConfidenceNote:
@@ -496,16 +536,21 @@ export function sessionReportToInterviewResult(
      * off-domain noise — the reader is here to learn why the number didn't move,
      * not about their conflict style. Keep only negotiation-relevant blind spots
      * on a negotiation report; behavioral reports pass through untouched. */
+    /* S18-B4: a near-empty / bailout session (scoreConfidence < 0.5) cannot
+     * meaningfully evaluate blind spots — the evaluator saw 1–2 turns and
+     * surfaces hallucinated items ("Anchor strength", "Confidence under pressure")
+     * for content that was never demonstrated. Suppress blind spots entirely on
+     * low-confidence sessions so the section doesn't mislead with fabricated gaps. */
     blindSpots: (isNegotiation
       ? report.blindSpots.filter((b) => isNegotiationCompetency(b.competency))
       : report.blindSpots
-    ).map((b) => ({
+    ).filter(() => report.scoreConfidence >= 0.5).map((b) => ({
       title: b.competency,
       body: b.note,
     })),
     thoughtBubble: collapseThoughtBubble(report.thoughtBubble),
-    readinessSentence: report.readiness
-      ? `~${report.readiness.estimatedHours} hours over ~${report.readiness.estimatedSessions} sessions to reach the ${formatBand(report.readiness.targetBand)} band — ${report.readiness.confidence} confidence. ${report.readiness.rationale}`
+    readinessPlan: report.readiness && report.readiness.estimatedSessions > 0
+      ? { sessions: report.readiness.estimatedSessions, weeks: estimateWeeksFromSessions(report.readiness.estimatedSessions, report.readiness.estimatedHours), targetBand: formatBand(report.readiness.targetBand) }
       : undefined,
     biasFindings: buildBiasFindings(report.perQuestion, ctx.nonNativeEnglish),
     reverseInterview: report.reverseInterview
@@ -518,8 +563,11 @@ export function sessionReportToInterviewResult(
     resumeImprovements: Array.isArray(ctx.resumeImprovements) && ctx.resumeImprovements.length > 0
       ? ctx.resumeImprovements.slice(0, 3)
       : undefined,
+    coaching: normalizeCoaching(report.coaching) ?? synthesizeCoachingFromReport(report.wins ?? [], report.fixes ?? []) ?? undefined,
     negotiationOutcome,
-    kernelMetrics: isNegotiation ? session.negotiationMetrics : undefined,
+    kernelMetrics: isNegotiation
+      ? reconcileKernelMetricsForReport(session.negotiationMetrics, negotiationOutcome)
+      : undefined,
     focusBanner: buildFocusBanner(session, report),
     hrReport: isHrRound ? buildHrReport(report) : undefined,
   };
@@ -558,10 +606,92 @@ const NEG_BLINDSPOT_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|
 function isNegotiationCompetency(name: string): boolean {
   return NEG_BLINDSPOT_RE.test(name || "");
 }
+
+/* REPORT-4 (2026-07-12, live staging — session 686b5699). A negotiation that
+ * ended before the candidate ever named a number rendered TOP STRENGTHS
+ * "Anchored with a clear target salary" beside the kernel's own "NO COUNTER
+ * NAMED" / "You named a counter number — NOT SHOWN". The LLM `wins` array is
+ * the ONE counter-aware report surface NOT pinned to the kernel's counter-named
+ * truth — `candidateAsk !== null`, the exact single source the cross-surface
+ * counter-coherence invariant (negotiationReportCounterCoherence) and the R-8
+ * blindSpot filter already key off. Praising an anchor/counter the kernel says
+ * never happened is a fabricated strength, the worst report failure mode.
+ *
+ * Gate it at that same single source: when no counter was named, drop any win
+ * whose text CLAIMS an anchor / counter / stated number, and leave every other
+ * strength (composure, tone, research, questions asked) untouched. Once a
+ * counter WAS named the list passes through verbatim. If the gate empties the
+ * list we substitute one honest, claim-free line rather than render an empty
+ * column — true of any session that ran, asserting no performance the kernel
+ * can't back. */
+const WIN_CLAIMS_ANCHOR_RE =
+  /\b(?:anchor(?:ed|ing)?|counter(?:ed|-?offers?|-?offered)?|named (?:a|your|the) (?:number|counter|figure|target|ask)|stated (?:a|your|the) (?:number|figure|target|ask)|clear target (?:salary|number|figure)|target (?:salary|number|figure)|asked for (?:a )?(?:higher|specific|₹|\d))\b/i;
+const NO_COUNTER_STRENGTH_FALLBACK =
+  "You practised the opening of the conversation.";
+export function filterNegotiationStrengths(
+  wins: string[],
+  counterNamed: boolean,
+): string[] {
+  if (counterNamed) return wins;
+  const kept = wins.filter((w) => !WIN_CLAIMS_ANCHOR_RE.test(w));
+  return kept.length > 0 ? kept : [NO_COUNTER_STRENGTH_FALLBACK];
+}
+
 /* PRI-67 — the close-specific axis. Capped on a "no_agreement" outcome, where
  * the close stage was provably never reached (derivePhases.reachedClose false). */
 const NEG_CLOSING_SKILL_RE = /clos(?:e|ing)/i;
 const NOT_CLOSED_CEILING = 45;
+
+/* S3-B4 — "Concession Strategy" capped on walk-away.
+ * "Concession Strategy" (LLM evaluator scheme) implies give-and-take execution
+ * that is provably impossible when the candidate walked away — no concessions
+ * were ever exchanged. The LLM hands out 95 because "you didn't cave", which
+ * conflates walk-away discipline with concession execution. Cap to a neutral
+ * band (60) so the progress bar doesn't claim "Concession Strategy: Master"
+ * for a session where no concessions were actually made or evaluated. Leverage,
+ * Anchoring, and Closing are intentionally left untouched: all three are
+ * demonstrable on a walk-away (you anchored, used leverage, and DID close —
+ * just not in the recruiter's favour). */
+const NEG_CONCESSION_ONLY_RE = /concession/i;
+const WALK_AWAY_CONCESSION_CEILING = 60;
+
+/* REPORT-4b (2026-07-13, live staging — session 686b5699). candidateAsk is the
+ * kernel's single source (persisted OR transcript-recovered) for "did the
+ * candidate name a counter" — the exact field the strengths filter
+ * (filterNegotiationStrengths), the "Numbers stated" metric
+ * (buildNegotiationMetrics), and the hero headline (negotiationHeadlineVerdict)
+ * already key off. The skill bars were the LAST counter-aware surface not pinned
+ * to it: a session that never named a number still rendered "Anchoring 70 /
+ * Specificity 70" beside the same report's "0 of 5 skills" and "No counter
+ * named". An anchor / counter / specificity score is BY DEFINITION the strength
+ * of the number you named — if the kernel says none was named, those axes are a
+ * provable failure, so cap them into the weak band. Demeanour, discovery,
+ * package-thinking and leverage axes — demonstrable without a hard counter —
+ * are left untouched.
+ *
+ * CRITICAL — why this is NOT folded into groundNegotiationReport: that pass is
+ * gated on `outcomeIsAuthoritative` (a KERNEL-derived outcome), because its
+ * other caps key off gapClosurePct, a field only trustworthy on kernel rows.
+ * But candidateAsk is the superset detector (kernel OR transcript-recovered)
+ * and is reliable on EVERY row — the same field the ungated headline
+ * (negotiationHeadlineVerdict) and "Numbers stated" metric already key off. A
+ * heuristic/legacy no-counter row (live: session 686b5699) skips grounding
+ * entirely, so a cap living inside it would never reach exactly the reports
+ * that show the contradiction. It therefore runs UNGATED at the call site,
+ * after grounding, composing with any gap cap via Math.min. */
+const NEG_ANCHOR_SKILL_RE = /anchor|counter|specificity/i;
+const NO_ANCHOR_CEILING = 35;
+export function capAnchorSkillsIfNoCounter(
+  skills: Array<{ name: string; score: number; weight?: number }>,
+  outcome: InterviewResultData["negotiationOutcome"],
+): Array<{ name: string; score: number; weight?: number }> {
+  if (!outcome || outcome.candidateAsk !== null) return skills;
+  return skills.map((s) =>
+    NEG_ANCHOR_SKILL_RE.test(s.name)
+      ? { ...s, score: Math.min(s.score, NO_ANCHOR_CEILING) }
+      : s,
+  );
+}
 
 /** Report-layer coherence guarantee for salary-negotiation.
  *
@@ -605,11 +735,46 @@ export function groundNegotiationReport(
         ? { ...s, score: Math.min(s.score, NOT_CLOSED_CEILING) }
         : s,
     );
+    /* S20-B5: when no number was ever named (candidateAsk === null), the
+     * negotiation stalled in pure discovery — the candidate never anchored.
+     * The closing-skill cap (45) is not enough: the overall score can still
+     * read "71/100 Hire" while the kernel says 5/100 and ₹0 gained. Cap the
+     * headline score too so the verdict can't outrun the skills it summarises.
+     * candidateAsk !== null → they named a number but couldn't close; the
+     * existing closing-skills-only cap is appropriate there. */
+    if (outcome.candidateAsk === null) {
+      const cap = NOT_CLOSED_CEILING + 10; // 55 → leanHire at most
+      const groundedScore = Math.min(overallScore, cap);
+      const b = calibrationBands ?? { strongHire: 85, hire: 70, leanHire: 55, noHire: 40 };
+      const groundedBand: SessionReportBand =
+        groundedScore >= b.strongHire ? "strongHire"
+        : groundedScore >= b.hire ? "hire"
+        : groundedScore >= b.leanHire ? "leanHire"
+        : groundedScore >= b.noHire ? "noHire"
+        : "strongNoHire";
+      return { skills: groundedSkills, overallScore: groundedScore, band: groundedBand };
+    }
     return { skills: groundedSkills, overallScore, band };
   }
-  if (outcome.outcome !== "accepted") return unchanged; // walk-away → untouched
-  const gap = outcome.gapClosurePct;
-  if (gap == null) return unchanged; // no authoritative gap → don't second-guess the scorer
+  if (outcome.outcome === "walked_away") {
+    // S3-B4: cap concession-execution axes only — leverage, anchoring, and
+    // closing are all demonstrable (and legitimately high) on a walk-away.
+    const groundedSkills = skills.map((s) =>
+      NEG_CONCESSION_ONLY_RE.test(s.name)
+        ? { ...s, score: Math.min(s.score, WALK_AWAY_CONCESSION_CEILING) }
+        : s,
+    );
+    const anyChanged = groundedSkills.some((s, i) => s.score !== skills[i].score);
+    return anyChanged ? { skills: groundedSkills, overallScore, band } : unchanged;
+  }
+  if (outcome.outcome !== "accepted") return unchanged; // no_agreement handled above
+  /* S1-B8: when the candidate accepted with NO counter named (candidateAsk === null),
+   * gapClosurePct is null (can't divide by zero gap) but the economic reality is
+   * 0% closure — they took the opening. Apply the gap<10 ceiling (45) rather than
+   * returning unchanged and letting skills sit at 95/92. */
+  const rawGap = outcome.gapClosurePct;
+  const gap = rawGap ?? (outcome.candidateAsk === null ? 0 : null);
+  if (gap == null) return unchanged; // gap unknown with a non-null ask → trust scorer
 
   let ceiling: number | null = null;
   if (gap < 10) ceiling = 45;       // accepted, closed ~nothing → clear cave
@@ -660,7 +825,11 @@ function adoptKernelOutcome(
     : "no_agreement"; // stalemate / in-progress → no close
 
   const trajectory = km.offerTrajectoryLpa;
-  const offers = trajectory.map((total, i) => ({
+  // S14-REPORT-B5: collapse consecutive identical cash offers so a session
+  // where the kernel logged the same number multiple times (e.g. [55.3,55.3,55.3])
+  // renders as a single pill rather than a misleading flat progression.
+  const uniqueTrajectory = trajectory.filter((v, i) => i === 0 || v !== trajectory[i - 1]);
+  const offers = uniqueTrajectory.map((total, i) => ({
     turn: i + 1,
     total,
     question: "",
@@ -699,6 +868,13 @@ function adoptKernelOutcome(
   const leverDiversity = typeof km.leverDiversity === "number" ? km.leverDiversity : 0;
   const tacticsUsed = Array.isArray(km.vossTacticsUsed) ? km.vossTacticsUsed : undefined;
   const infoAsked = Array.isArray(km.infoAsked) ? km.infoAsked : undefined;
+  // S13-B9 — candidate-INITIATED info subset. Fall back to the full infoAsked
+  // ONLY for legacy rows that predate the split (no infoAskedInitiated key at
+  // all) so their stage-2 behaviour is unchanged; a present-but-empty array is
+  // authoritative (recruiter elicited everything) and must NOT fall back.
+  const infoAskedInitiated = Array.isArray(km.infoAskedInitiated)
+    ? km.infoAskedInitiated
+    : infoAsked;
 
   return {
     offers,
@@ -709,6 +885,36 @@ function adoptKernelOutcome(
     leverDiversity,
     ...(tacticsUsed ? { tacticsUsed } : {}),
     ...(infoAsked ? { infoAsked } : {}),
+    ...(infoAskedInitiated ? { infoAskedInitiated } : {}),
+    /* S4S5-B3 — surface joining bonus so report panels (email letter,
+       OfferEconomicsPanel) can display "₹X CTC + ₹Y joining bonus".
+       S71-B1 — use the recruiter's formula amount only when the clawback was
+       explicitly discussed (proxy for the recruiter verbally naming a specific
+       number during the session). When clawback was not discussed, fall back to
+       the candidate's stated ask (joiningBonusAsk) so the report shows what
+       the candidate requested rather than a formula-computed amount that was
+       never spoken in the conversation. */
+    ...((() => {
+      const confirmed = typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0;
+      const clawbackDiscussed = (km as Record<string, unknown>).joiningBonusClawbackDiscussed === true;
+      const candidateAskJb = typeof (km as Record<string, unknown>).joiningBonusAsk === "number"
+        ? ((km as Record<string, unknown>).joiningBonusAsk as number)
+        : null;
+      const jbLpa = clawbackDiscussed
+        ? (confirmed ? km.lastJoiningBonusOffered : null)
+        : (candidateAskJb != null && candidateAskJb > 0 ? candidateAskJb : null);
+      return jbLpa != null && jbLpa > 0 ? { joiningBonusLpa: jbLpa } : {};
+    })()),
+    /* S3-B2 — surface Phase-11 hike-justification rationale so
+       derivePhases stage-2 ("You justified your number") fires. */
+    ...(typeof km.rationaleKind === "string" ? { rationaleKind: km.rationaleKind } : {}),
+    /* S6-B3 — grounded pushback events from kernel hold-firm moves; drives
+       derivePhases stage-3 ("You handled their pushback"). Previously always
+       undefined because the classifier was never built — now computed at
+       write time from the move history and propagated here. */
+    ...(Array.isArray(km.pushbacks) && km.pushbacks.length > 0
+      ? { pushbacks: km.pushbacks as Array<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }> }
+      : {}),
   };
 }
 
@@ -724,6 +930,28 @@ export function negotiationOutcomeDerivation(
   kernelMetrics?: DashboardSession["negotiationMetrics"],
 ): "kernel" | "heuristic" {
   return kernelMetrics && adoptKernelOutcome(kernelMetrics) ? "kernel" : "heuristic";
+}
+
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). The N1
+ * "Anchored at" tile renders anchorAtLabel(km.anchorTurn, km.candidateAskLpa) from
+ * the RAW kernel metrics. A legacy fixed-only row persisted candidateAskLpa null
+ * (the old engine snapshotted the total-scoped candidateTarget, which a "65 fixed"
+ * ask leaves null — it sets candidateTargetFixed instead). The report's
+ * authoritative ask — negotiationOutcome.candidateAsk, the single source every
+ * body surface renders (I-10) — recovered ₹65 from the transcript, so N1 read
+ * "Never anchored" beside the body's "you'd countered at ₹65 LPA". Reconcile the
+ * ask N1 sees to that single source: fill candidateAskLpa from the derived ask
+ * ONLY when the kernel didn't persist one. Fresh rows (kernel carries the fold)
+ * are untouched — the sole km.candidateAskLpa consumer in the report layer is
+ * that anchor tile, so this can't introduce a new divergence. */
+export function reconcileKernelMetricsForReport(
+  km: DashboardSession["negotiationMetrics"],
+  outcome: InterviewResultData["negotiationOutcome"],
+): DashboardSession["negotiationMetrics"] {
+  if (!km || typeof km.candidateAskLpa === "number") return km;
+  const derivedAsk = outcome?.candidateAsk;
+  if (typeof derivedAsk !== "number") return km;
+  return { ...km, candidateAskLpa: derivedAsk };
 }
 
 /** Derive the offer trajectory + deal outcome. Prefers the kernel's
@@ -773,6 +1001,11 @@ export function buildNegotiationOutcome(
    * surfaces read one outcome. Stalemate / in-progress stay "no_agreement". */
   if (kernelMetrics?.outcome === "accepted") outcome = "accepted";
   else if (kernelMetrics?.outcome === "walked-away") outcome = "walked_away";
+  /* S8-B23: an abandoned / discovery-only session has kernel outcome "stalemate" or
+   * "in-progress". The transcript heuristic above can misclassify it as "walked_away"
+   * if the candidate used a stopping phrase ("I'll stop here"). Kernel stalemate is
+   * authoritative — override any heuristic walk-away with no_agreement. */
+  else if (kernelMetrics?.outcome) outcome = "no_agreement";
 
   // Candidate's highest stated target (their ask). The cue set mirrors the
   // kernel's TARGET_CUE_PRESENCE (_number-role-classifier) so a counter the
@@ -944,6 +1177,16 @@ function pickWeakestSkill(
  *  per pixel of report real estate. */
 function buildMetrics(report: SessionReport): DeliveryMetric[] {
   const { coreMetrics, advancedDelivery } = report;
+  // No voice signal => every metric is 0 (absent data, not "Good"): return []
+  // to hide the section. Zero silence/latency are likewise unmeasured, so omitted.
+  const hasVoiceData =
+    coreMetrics.fillerPerMin > 0 ||
+    coreMetrics.silenceRatio > 0 ||
+    coreMetrics.paceWpm >= 20 ||
+    coreMetrics.energy > 0 ||
+    advancedDelivery.medianLatencyMs > 0 ||
+    advancedDelivery.selfCorrectionRate > 0;
+  if (!hasVoiceData) return [];
   return [
     {
       label: "Filler words / min",
@@ -951,40 +1194,45 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
       targetLabel: "Target 0–3",
       band: bandForFiller(coreMetrics.fillerPerMin),
     },
-    {
+    ...(coreMetrics.silenceRatio > 0 ? [{
       label: "Silence ratio",
       value: Math.round(coreMetrics.silenceRatio * 100),
       unit: "%",
       targetLabel: "Target 0–20%",
       band: bandForSilence(coreMetrics.silenceRatio),
-    },
-    {
+    }] : []),
+    // Suppress pace when the LLM reports an implausibly low value (< 20 wpm) —
+    // this happens on mini/brief sessions where the LLM divides word count by
+    // total session clock time (including AI turns) rather than user speaking time.
+    ...(coreMetrics.paceWpm >= 20 ? [{
       label: "Pace (WPM)",
       value: Math.round(coreMetrics.paceWpm),
       targetLabel: "Target 140–180",
       band: bandForPace(coreMetrics.paceWpm),
-    },
-    {
+    }] : []),
+    // A pegged 0 or 100 is a saturated heuristic, not a measurement, so hide it.
+    ...(coreMetrics.energy > 0 && coreMetrics.energy < 100 ? [{
       label: "Energy",
       value: Math.round(coreMetrics.energy),
       unit: "/100",
       targetLabel: "Target 60–100",
       band: bandForEnergy(coreMetrics.energy),
-    },
-    {
+    }] : []),
+    ...(advancedDelivery.medianLatencyMs > 0 ? [{
       label: "Median latency",
       value: round1(advancedDelivery.medianLatencyMs / 1000),
       unit: "s",
       targetLabel: "Target <2.0s",
       band: bandForLatency(advancedDelivery.medianLatencyMs),
-    },
-    {
+    }] : []),
+    // Zero is unmeasured here (same as latency and silence), so omit it.
+    ...(advancedDelivery.selfCorrectionRate > 0 ? [{
       label: "Self-correction rate",
       value: round1(advancedDelivery.selfCorrectionRate),
       unit: "/min",
       targetLabel: "Target <1.0",
       band: bandForSelfCorrection(advancedDelivery.selfCorrectionRate),
-    },
+    }] : []),
   ];
 }
 
@@ -997,9 +1245,20 @@ function buildMetrics(report: SessionReport): DeliveryMetric[] {
 function buildNegotiationMetrics(
   report: SessionReport,
   kernelAsk: number | null,
+  rawTranscript?: { speaker: string; text: string }[],
+  initialOfferLpa?: number | null,
 ): DeliveryMetric[] {
-  const candidateAnswers = report.perQuestion.map((q) => q.answerText || "");
-  const allText = candidateAnswers.join(" ");
+  // S6-B5: report.perQuestion is the LLM-collapsed single aggregate at this
+  // call site (the per-turn expansion via buildNegotiationPerQuestion runs
+  // later and never feeds back here). Scanning one aggregated item means
+  // answersWithAnchor is always 0 or 1, making the denominator irrelevant
+  // and the value stuck at the REPORT-3c floor (25%). Use the raw transcript
+  // user turns when available — they contain the verbatim text as typed
+  // by the candidate, one entry per turn, giving an honest per-turn ratio.
+  const candidateAnswers = (rawTranscript ?? []).filter(t => t.speaker === "user").map(t => t.text || "");
+  const fallbackAnswers = report.perQuestion.map((q) => q.answerText || "");
+  const effectiveAnswers = candidateAnswers.length > 0 ? candidateAnswers : fallbackAnswers;
+  const allText = effectiveAnswers.join(" ");
 
   // "Numbers stated" — % of negotiation answers where the candidate stated a
   // specific figure. This used to be mislabelled "Anchor strength", which
@@ -1008,8 +1267,11 @@ function buildNegotiationMetrics(
   // show "Anchor strength 100" here next to "Anchor strength 78" in the
   // Skills section. Renamed so each metric has one unambiguous owner; the
   // skill axis is now the single source for "Anchor strength". (REPORT-3.)
-  const anchorRe = /(?:₹\s*)?\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
-  const answersWithAnchor = candidateAnswers.filter((t) => anchorRe.test(t)).length;
+  // S6-B5: also match ₹N without explicit unit (candidate writes "₹200" or
+  // "₹25.5" without appending "LPA"). Unit suffix is required when no ₹
+  // prefix is present to avoid counting recruiter-context bare numbers.
+  const anchorRe = /₹\s*\d+(?:\.\d+)?(?:\s*(?:LPA|lpa|lakhs?|cr|crore|l\b))?|\d+(?:\.\d+)?\s*(?:LPA|lpa|lakhs?|cr|crore|l\b)/i;
+  const answersWithAnchor = effectiveAnswers.filter((t) => anchorRe.test(t)).length;
   // REPORT-3b (2026-07-11, live staging) — cross-surface coherence. The kernel
   // authoritatively tracks whether the candidate named a counter-number
   // (`candidateAsk`, the same field derivePhases renders as "Asked for ₹X LPA").
@@ -1032,24 +1294,60 @@ function buildNegotiationMetrics(
   // No effect when the candidate genuinely never anchored (kernelAsk === null):
   // that 0% · Needs Work is the honest, coherent verdict.
   const kernelAnchored = kernelAsk !== null;
-  let numbersStated = candidateAnswers.length > 0
-    ? Math.round((answersWithAnchor / candidateAnswers.length) * 100)
+  let numbersStated = effectiveAnswers.length > 0
+    ? Math.round((answersWithAnchor / effectiveAnswers.length) * 100)
     : 0;
-  if (kernelAnchored) numbersStated = Math.max(numbersStated, 25);
+  if (kernelAnchored) {
+    numbersStated = Math.max(numbersStated, 25);
+  } else {
+    // REPORT-3d (2026-07-13, live staging — session 686b5699, Senior Product
+    // Designer @ Flipkart): the symmetric case the REPORT-3b/3c floor left open.
+    // `kernelAsk` is negotiationOutcome.candidateAsk — the SUPERSET ask detector
+    // (kernel-persisted OR recovered from the transcript). When it is null, NO
+    // source found a counter, so every kernel surface commits to "no counter on
+    // the table / never named a number" (30-second read, 0-of-5 stages, N1 "No
+    // counter named"). The bespoke `anchorRe` above is a weaker, divergent second
+    // detector over raw answerText: it false-positives on figures that are NOT
+    // the candidate's counter — a disclosed current CTC ("I'm at ₹30 LPA") or a
+    // market reference — and here inflated to "Numbers stated 100% · Anchor a
+    // figure · Good" beside the report's own "never naming a number". Stating a
+    // figure that isn't YOUR counter is not anchoring, and the superset detector
+    // already had first crack at the transcript, so bind the CEILING to the
+    // kernel too (mirroring the floor): no credited ask ⇒ 0% · Needs Work, the
+    // honest, coherent verdict.
+    numbersStated = 0;
+  }
   const numbersBand: DeliveryMetric["band"] =
     numbersStated >= 50 ? "good" : numbersStated >= 25 ? "ok" : "needsWork";
 
   // Concession rate — count "I'd be open to / I can lower / how about / fine
   // with X" type concessions. Low concession = strong negotiator.
-  const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at|i.?ll\s+take|happy\s+with|i\s+accept)\b/gi;
+  /* S1-B7: "i accept" / "i'll take" / "happy with" are acceptance/close phrases —
+   * they fire on the final close utterance, not on a mid-negotiation concession,
+   * producing "Concession rate: 10%" on a zero-counter immediate-accept session.
+   * Only keep genuinely mid-negotiation concession cues. */
+  const concessionRe = /\b(i.?d\s+be\s+open|i\s+can\s+lower|fine\s+with|how\s+about|let.?s\s+meet\s+at)\b/gi;
   const concessions = (allText.match(concessionRe) || []).length;
-  const concessionRate = Math.min(100, concessions * 10);
+  // S20-B4 — symmetric to REPORT-3d (numbersStated). Phrases like "fine with"
+  // / "how about" fire when no cash counter was named (equity-only counter);
+  // "Concession rate: 20%" beside "NO COUNTER NAMED" is contradictory. You
+  // cannot concede on a number you never stated: floor to 0 when the kernel
+  // found no counter (same authority as the Numbers-stated ceiling). Raw
+  // phrase-counting is a divergent second detector — cap it at the kernel truth.
+  const concessionRate = kernelAnchored
+    ? Math.min(100, concessions * 10)
+    : 0;
 
-  // Disclosure leaks — count times candidate volunteered current CTC or
-  // hard target without a deflect. Detection heuristic: "my current ctc",
-  // "i make / i earn / i'm at ₹X".
-  const leakRe = /\b(my\s+current\s+(ctc|salary|package)|i\s+(make|earn|.?m\s+at|currently\s+make)|currently\s+earning)\b/gi;
-  const leaks = (allText.match(leakRe) || []).length;
+  /* S64-B1 (2026-07-24, live Accenture EM session): disclosing "my current
+   * CTC is ₹X" in a salary-negotiation session is STANDARD Indian practice —
+   * often legally required, always culturally expected. Counting it as a leak
+   * directly contradicts evaluate-session.ts:731 ("NEVER penalise CTC
+   * disclosure … a candidate who states their CTC clearly … is demonstrating
+   * STRUCTURAL FLUENCY, not naivety"). This function is only ever called for
+   * salary-negotiation sessions (gated at the call site on isNegotiation), so
+   * disclosure-leak detection is inapplicable here. Zero it out; the metric
+   * still renders so the tile exists on the card, but correctly shows 0. */
+  const leaks = 0;
 
   // Silence tolerance proxy — use median latency as the closest existing
   // signal. A candidate who pauses before responding to pushback often
@@ -1064,18 +1362,26 @@ function buildNegotiationMetrics(
       targetLabel: "Anchor a figure",
       band: numbersBand,
     },
-    {
-      label: "Concession rate",
-      value: concessionRate,
-      unit: "%",
-      targetLabel: "Target <15%",
-      band: concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork",
-    },
+    /* S49-B4/S50-B15 (2026-07-24): only show concession rate when the recruiter
+     * actually made an offer (initialOfferLpa !== null). A broken/empty session
+     * with no offer on the table produced 0% "Good", falsely implying strong
+     * negotiation where none happened. Gate on initialOfferLpa, NOT kernelAsk —
+     * a candidate who accepted first offer had !kernelAnchored but offer WAS made
+     * and 0% concession is the honest, correct result to show. */
+    ...(typeof initialOfferLpa === "number"
+      ? [{
+          label: "Concession rate",
+          value: concessionRate,
+          unit: "%",
+          targetLabel: "Target <15%",
+          band: (concessionRate < 15 ? "good" : concessionRate < 30 ? "ok" : "needsWork") as "good" | "ok" | "needsWork",
+        }]
+      : []),
     {
       label: "Disclosure leaks",
       value: leaks,
       targetLabel: "Target 0",
-      band: leaks === 0 ? "good" : leaks <= 1 ? "ok" : "needsWork",
+      band: leaks === 0 ? "good" : "needsWork",
     },
   ];
 
@@ -1115,7 +1421,12 @@ function adaptQuestion(
   // exemplar/restructured content but replace the candidate's answer
   // body with an explicit "Skipped" line so the report doesn't show
   // the "[SKIPPED — reason: …]" sentinel verbatim.
-  const isSkipped = q.verdict === "skipped" || /^\[SKIPPED/i.test(q.answerText || "");
+  // STT came back empty but the candidate spent long enough "answering"
+  // that useInterviewEngine falls back to a `[Answer recorded — Ns]`
+  // placeholder instead of blocking — that placeholder still gets scored
+  // like a real (weak) answer unless treated as skipped here too.
+  const noSpeechDetected = /^\[Answer recorded/i.test(q.answerText || "");
+  const isSkipped = q.verdict === "skipped" || /^\[SKIPPED/i.test(q.answerText || "") || noSpeechDetected;
   const skipReasonMatch = (q.answerText || "").match(/reason:\s*([a-z_]+)/i);
   const skipReasonLabel: Record<string, string> = {
     too_easy: "marked it too easy",
@@ -1137,7 +1448,9 @@ function adaptQuestion(
     // signaled by the answer-body line and a 0 score in the row.
     band: isSkipped || q.verdict === "skipped" ? "weak" : q.verdict,
     answer: isSkipped
-      ? [{ text: `(Skipped — you ${reasonText}. Counted as 0/100.)` }]
+      ? [{ text: noSpeechDetected
+          ? "(No speech detected — your mic didn't pick up an answer. Counted as 0/100.)"
+          : `(Skipped — you ${reasonText}. Counted as 0/100.)` }]
       : highlightAnswer(q.answerText),
     restructured: q.restructured ? plainSpans(q.restructured.text) : undefined,
     topPerformerAnswer: q.topPerformerAnswer
@@ -1176,10 +1489,19 @@ function adaptQuestion(
     likelyFollowUp: q.likelyFollowUp
       ? stripProsodyMarkup(`${q.likelyFollowUp.question} ${q.likelyFollowUp.why}`)
       : undefined,
-    idealAnswerSnippet: pickIdealAnswerSnippet(
-      stripProsodyMarkup(q.question),
-      isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
-    ),
+    // Prefer the LLM-generated topPerformerAnswer (already mapped above as
+    // the "Top Performer Answer" tab) over the hardcoded snippet library —
+    // the canned "Acme" examples only stand in when evaluate-session.ts
+    // didn't return a real exemplar for this question.
+    idealAnswerSnippet: q.topPerformerAnswer
+      ? {
+          text: stripProsodyMarkup(q.topPerformerAnswer.text),
+          whyBetter: q.topPerformerAnswer.whatMakesItStrong.map((b) => b.trim().replace(/[.\s]+$/, "")).filter(Boolean).join(". ") + ".",
+        }
+      : pickIdealAnswerSnippet(
+          stripProsodyMarkup(q.question),
+          isSkipped || q.verdict === "skipped" ? "weak" : q.verdict
+        ),
     focusMetrics: q.focusMetrics?.length
       ? q.focusMetrics.map((m) => ({
           label: m.label,
@@ -1190,6 +1512,16 @@ function adaptQuestion(
   };
 }
 
+/** Map a per-question score to its display band so the row's color/label can
+ *  never contradict the number beside it. Thresholds mirror the report's own
+ *  Hire-band rubric (strong ≥ 70, partial ≥ 40, weak below). "complete" is only
+ *  ever an explicit evaluator verdict, so it is not synthesized here. */
+function bandForQuestionScore(score: number): "weak" | "partial" | "strong" {
+  if (score >= 70) return "strong";
+  if (score >= 40) return "partial";
+  return "weak";
+}
+
 /** I-13 — reconstruct per-turn negotiation exchanges from the recorded
  *  transcript when the evaluator only produced a single aggregate item.
  *
@@ -1198,8 +1530,9 @@ function adaptQuestion(
  *  is the answer. This is a pure re-projection of REAL recorded turns — no
  *  scores or exchanges are invented. Per-turn scores don't exist for a
  *  negotiation (the evaluator scored the call as a whole), so every item carries
- *  a neutral band and the aggregate's score, and the section shows the true
- *  number of exchanges instead of claiming a per-turn breakdown we don't have.
+ *  the aggregate's score with a band DERIVED from that score (so the label never
+ *  contradicts the number), and the section shows the true number of exchanges
+ *  instead of claiming a per-turn breakdown we don't have.
  *
  *  Returns null (caller keeps the aggregate) when the transcript can't yield
  *  MORE exchanges than the aggregate already shows — a legacy row with no stored
@@ -1226,14 +1559,31 @@ function buildNegotiationPerQuestion(
     }
     if (entry.speaker !== "user") continue;
     if (/^\[.*\]$/.test(text)) continue; // skipped-turn sentinel
+    // S13-B11: strip leading pause tics ("Uh, " / "Umm, ") from the heading.
+    // The tic is realistic in audio but reads as a typo in a report heading.
+    const heading = pendingRecruiter.replace(/^(?:Uh,\s*|Umm?,\s*)+/i, "").trim();
+    /* S18-B1: if no AI turn was seen before this user turn (heading is empty),
+     * the exchange is incomplete — the AI was still generating when End was
+     * clicked. Skip it so the Per-Question count shows only real exchanges. */
+    if (!heading) { pendingRecruiter = ""; continue; }
     items.push({
       index: items.length + 1,
-      text: pendingRecruiter || `Exchange ${items.length + 1}`,
-      // No per-turn score exists — the evaluator scored the whole call. Carry
-      // the aggregate score with a neutral band rather than fabricate a per-turn
-      // number the kernel never recorded.
+      text: heading,
+      // S6-B4 — no per-turn score EXISTS for a negotiation exchange: the
+      // evaluator scored the whole call, not each turn. Rendering the aggregate
+      // as "0/100" (heuristic path) or even as the call score on every row is a
+      // fabricated per-turn number. Flag the row as score-unavailable so the
+      // card shows a neutral "—". `score` still carries the aggregate purely so
+      // the band label derives from a real signal, never displayed as this
+      // row's own grade.
       score: aggregate?.score ?? 0,
-      band: "partial",
+      scoreUnavailable: true,
+      // Band must agree with the score it's shown beside — a hardcoded "partial"
+      // rendered "Partial · 0/100" on the degraded heuristic path (aggregate
+      // score 0, live session 734493c9) and would equally misread a healthy
+      // aggregate as "Partial · 90". Derive the band from the carried score so
+      // the label never fights the number.
+      band: bandForQuestionScore(aggregate?.score ?? 0),
       answer: highlightAnswer(entry.text),
       star: { situation: false, task: false, action: false, result: false, learning: false },
       metrics: {
@@ -1315,10 +1665,11 @@ export function collapseThoughtBubble(
 }
 
 /** Score-confidence number → bucket for the chip. Above 0.85 we don't
- *  render a chip ("high"). Treat 0.6-0.85 as medium; below as low. */
+ *  render a chip ("high"). 0.7–0.85 medium; below 0.7 low — aligned with
+ *  the scoreConfidenceNote threshold so chip and note stay consistent. */
 export function confidenceBucket(n: number): "high" | "medium" | "low" {
   if (n >= 0.85) return "high";
-  if (n >= 0.6) return "medium";
+  if (n >= 0.7) return "medium";
   return "low";
 }
 
@@ -1448,7 +1799,7 @@ function estimateWeeks(hours: number): number {
   // ~3 focused sessions/week × ~1hr each → 3hrs/week effective practice.
   return Math.max(1, Math.round(hours / 3));
 }
-/* R-9 — single ETA model shared with the readinessSentence. Sessions are the
+/* R-9 — single ETA model shared with the readinessPlan. Sessions are the
  * planning unit the sentence quotes ("~S sessions"), so pace the ETA off them
  * at ~3 focused sessions/week; fall back to the hours model when the session
  * count is missing so legacy readiness rows still get a sane number. */
@@ -1490,7 +1841,6 @@ export interface BehavioralFullReportContext {
   /** Cohort percentile (0..100) for this candidate's track. */
   percentile?: number | null;
   /** Number-this-session — defaults to recentScores.length. */
-  sessionNumber?: number;
   /** Persona overrides — typically derived from session.type. */
   personaVoice?: string;
   /** LPA band label, e.g. "₹38 LPA". */
@@ -1579,7 +1929,7 @@ export function toBehavioralFullReportData(
   ctx: BehavioralFullReportContext,
   behavioralMeta: BehavioralMeta | null | undefined,
 ): BehavioralFullReportData {
-  const { report, session, recentScores, percentile, sessionNumber } = ctx;
+  const { report, session, recentScores, percentile } = ctx;
   const meta: BehavioralMeta = behavioralMeta ?? {
     starBreakdown: [],
   };
@@ -1597,7 +1947,7 @@ export function toBehavioralFullReportData(
    * the persona but the report should still read like one. */
   const persona: BehavioralFullReportData["persona"] = {
     voice: ctx.personaVoice || "Hiring Manager",
-    tier: session.company ? `${session.company}-tier` : "your target tier",
+    tier: session.company ? `${session.company}-tier` : "",
     role: session.role || "Candidate",
     lpaBand: ctx.lpaBand || "—",
   };
@@ -1807,7 +2157,6 @@ export function toBehavioralFullReportData(
     depthProbes: probing?.aiProbedDepth ?? 0,
     vagueAccepted: probing?.aiAcceptedVague ?? 0,
     ownershipProbes: probing?.aiProbedOwnership ?? 0,
-    deflected: 0,
   };
 
   const transcript: BehavioralTranscriptRow[] = star.map((row, idx) => {
@@ -1845,7 +2194,6 @@ export function toBehavioralFullReportData(
     track: report.calibration?.companyLabel || "your track",
     persona,
     sessionMeta: {
-      number: sessionNumber ?? (recentScores?.length ?? 1),
       dateISO: session.date ?? new Date().toISOString().slice(0, 10),
       durationMin: Math.max(
         1,

@@ -46,7 +46,7 @@ describe("FL2 — canonical layer prepends neutral bridge for probes after non-t
       ],
     });
     const line = renderCanonicalProse(PROBE, s);
-    expect(/^(?:Got it\.|Right\.|Okay\.)/.test(line)).toBe(true);
+    expect(/^(?:Got it\.|Noted\.|Okay\.)/.test(line)).toBe(true);
   });
 
   it("turn>0 with a numeric reply (1-word w/ digits) still triggers the bridge", () => {
@@ -58,7 +58,7 @@ describe("FL2 — canonical layer prepends neutral bridge for probes after non-t
       ],
     });
     const line = renderCanonicalProse(PROBE, s);
-    expect(/^(?:Got it\.|Right\.|Okay\.)/.test(line)).toBe(true);
+    expect(/^(?:Got it\.|Noted\.|Okay\.)/.test(line)).toBe(true);
   });
 
   it("trivial single-word reply ('okay'/'yes') → no bridge prepended", () => {

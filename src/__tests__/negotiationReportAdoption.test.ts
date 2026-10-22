@@ -16,8 +16,8 @@
  * regardless of what the transcript text says. Legacy rows (no
  * trajectory persisted) still fall back to the regex heuristic. */
 import { describe, it, expect } from "vitest";
-import { buildNegotiationOutcome } from "../sessionReport/adapter";
-import { derivePhases, TOTAL_PHASES } from "../sessionReport/derivations";
+import { buildNegotiationOutcome, reconcileKernelMetricsForReport } from "../sessionReport/adapter";
+import { derivePhases, TOTAL_PHASES, anchorAtLabel, deriveAnchorBracket } from "../sessionReport/derivations";
 import type { SessionReport } from "../dashboardData";
 import type { DashboardSession } from "../dashboardTypes";
 
@@ -42,7 +42,7 @@ const kernel = (over: Partial<KernelMetrics>): KernelMetrics => ({
   // and the report's stage ladder (derivePhases) now reads stages 2/3/4
   // from these rather than from the recruiter's offer count (REPORT-6).
   vossTacticsUsed: ["mirror", "calibrated-question"],
-  infoAsked: ["band-range"],
+  infoAsked: ["clawback-period"], // expert lever intent (S19-B6: generic intents don't qualify)
   ...over,
 });
 
@@ -77,7 +77,7 @@ describe("report adopts the kernel's authoritative negotiation outcome", () => {
     expect(phases[0].reached).toBe(true); // candidateAsk present
     expect(phases[1].reached).toBe(true); // tactics/info → justified
     expect(phases[2].reached).toBe(true); // tactics → handled pushback
-    expect(phases[3].reached).toBe(true); // leverDiversity → levers
+    expect(phases[3].reached).toBe(true); // infoAsked expert lever intent → levers
     expect(phases[4].reached).toBe(true); // accepted
     expect(phases[4].note).toBe("Accepted");
     expect(phases.filter((p) => p.reached)).toHaveLength(TOTAL_PHASES);
@@ -97,6 +97,26 @@ describe("report adopts the kernel's authoritative negotiation outcome", () => {
     const stalemate = buildNegotiationOutcome(opaqueReport, kernel({ outcome: "stalemate" }));
     expect(stalemate!.outcome).toBe("no_agreement");
     expect(derivePhases(stalemate!)[4].reached).toBe(false);
+  });
+
+  // S14-REPORT-B5: consecutive identical offer values must be deduplicated so
+  // a session where the kernel logged [55.3, 55.3, 55.3] (cash frozen) renders
+  // a single ₹55.3 pill rather than a misleading three-arrow progression.
+  it("S14-REPORT-B5: deduplicates consecutive identical offer values in the trajectory", () => {
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ offerTrajectoryLpa: [55.3, 55.3, 55.3], finalOfferLpa: 55.3, candidateAskLpa: 48 }),
+    );
+    expect(outcome!.offers.map((o) => o.total)).toEqual([55.3]);
+  });
+
+  it("S14-REPORT-B5: does NOT collapse non-consecutive identical values", () => {
+    // [40, 45, 40] — valid oscillation: deduplicate only consecutive runs.
+    const outcome = buildNegotiationOutcome(
+      opaqueReport,
+      kernel({ offerTrajectoryLpa: [40, 45, 40], finalOfferLpa: 40, candidateAskLpa: 50 }),
+    );
+    expect(outcome!.offers.map((o) => o.total)).toEqual([40, 45, 40]);
   });
 });
 
@@ -158,5 +178,149 @@ describe("legacy rows without a persisted trajectory fall back to the transcript
     expect(outcome!.candidateAsk).toBe(65);
     expect(derivePhases(outcome!)[0].reached).toBe(true); // counter IS named
     expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹65 LPA");
+  });
+
+  /* Live-staging audit (2026-07-13, report 81d0ea0a — Flipkart EM, KERNEL
+   * derivation path). The candidate anchored fixed-only: "I see myself landing
+   * at 65 fixed" (recruiter quoted it back: "On closing at ₹65L fixed…"). The
+   * saved report — a pre-fix artifact — read "NO COUNTER NAMED", "Never
+   * anchored", "0 of 5 stages", and "never named a number" across four surfaces
+   * beside its own "Numbers stated 100%" and "3 levers explored". Root cause:
+   * the persisted `candidateAskLpa` was null because the OLD engine snapshotted
+   * the opaque state's raw total-scoped `candidateTarget` (null for a fixed-only
+   * ask) instead of the fold. The metrics layer (computeNegotiationMetrics →
+   * effectiveTargetCtcLpaLocal) and the per-turn snapshot (7a0fb9e, server-emits
+   * effectiveTargetCtcLpa as candidateTargetAtTurn) now both fold the fixed
+   * anchor. This locks the ADAPTER→DERIVATIONS seam the metrics-layer tests
+   * don't reach: given a folded non-null candidateAskLpa on a KERNEL row, every
+   * report surface must agree the candidate named a counter — no surface may
+   * read "no counter / never anchored" beside the stated ask. */
+  it("fixed-only anchor on a KERNEL row: no surface contradicts the stated counter", () => {
+    // candidateAskLpa 65 = the fold of a "65 fixed" ask (effectiveTargetCtcLpaLocal);
+    // anchorTurn 1 = credited because the snapshot now reads the same fold.
+    const km = kernel({
+      outcome: "accepted",
+      anchorTurn: 1,
+      candidateAskLpa: 65,
+      initialOfferLpa: 32.7,
+      finalOfferLpa: 51,
+      offerTrajectoryLpa: [32.7, 45, 51],
+      leverDiversity: 3,
+    });
+    // A transcript whose fixed-only ask phrasing the regex would MISS — proving
+    // the coherence comes from kernel adoption, not the transcript heuristic.
+    const report = {
+      perQuestion: [
+        { question: "What's your current CTC?", answerText: "I'd rather talk about the role fitment first." },
+        { question: "Where do you see yourself landing?", answerText: "I see myself landing at 65 fixed. That's the number that makes this an easy yes for me." },
+        { question: "That's above the cash band.", answerText: "Understood — let's look at the equity side then." },
+      ],
+    } as unknown as SessionReport;
+
+    const outcome = buildNegotiationOutcome(report, km);
+    expect(outcome!.candidateAsk).toBe(65);
+    // Stage 1 "You named a counter number" must light up.
+    expect(derivePhases(outcome!)[0].reached).toBe(true);
+    expect(derivePhases(outcome!)[0].note).toBe("Asked for ₹65 LPA");
+    // N1 "Anchored at" tile must not read the false "Never anchored".
+    expect(anchorAtLabel(km.anchorTurn, outcome!.candidateAsk)).not.toBe("Never anchored");
+    // Counter-ladder must not render the "NO COUNTER NAMED" none-verdict.
+    const bracket = deriveAnchorBracket(outcome!);
+    expect(bracket?.type).not.toBe("none");
+  });
+});
+
+/* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM). N1's
+ * "Anchored at" tile renders anchorAtLabel from the RAW kernel metrics, but a
+ * legacy fixed-only row persisted candidateAskLpa null while the report's
+ * authoritative ask (negotiationOutcome.candidateAsk) recovered ₹65 from the
+ * transcript — so N1 read "Never anchored" beside the body's "you'd countered at
+ * ₹65". reconcileKernelMetricsForReport fills the ask N1 sees from that single
+ * source when — and ONLY when — the kernel didn't persist one. */
+describe("N1 anchor tile reconciles to the report's single-source ask", () => {
+  const legacyNoAsk = {
+    outcome: "accepted", anchorTurn: null, leverDiversity: 3, lpaGained: 20.5,
+    lpaPerTurn: 2.9, bandTraversal: 1, overBandViolation: false, totalTurns: 7,
+    score: 47,
+    // legacy fixed-only row: the fold was never persisted
+  } as unknown as KernelMetrics;
+
+  it("fills candidateAskLpa from the derived ask when the kernel row lacks one", () => {
+    const outcome = { candidateAsk: 65 } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(legacyNoAsk, outcome);
+    expect(reconciled!.candidateAskLpa).toBe(65);
+    // With the ask present, N1's tile reads "Anchored (turn not tracked)" — never
+    // the false "Never anchored" that stood beside the body's stated ₹65.
+    expect(anchorAtLabel(reconciled!.anchorTurn, reconciled!.candidateAskLpa)).toBe(
+      "Anchored (turn not tracked)",
+    );
+  });
+
+  it("never overrides a kernel-persisted ask (fresh rows untouched)", () => {
+    const fresh = { ...legacyNoAsk, candidateAskLpa: 58 } as KernelMetrics;
+    const outcome = { candidateAsk: 65 } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(fresh, outcome);
+    expect(reconciled!.candidateAskLpa).toBe(58); // kernel's own value wins
+  });
+
+  it("leaves the row unchanged when neither source has an ask (honest 'Never anchored')", () => {
+    const outcome = { candidateAsk: null } as NonNullable<ReturnType<typeof buildNegotiationOutcome>>;
+    const reconciled = reconcileKernelMetricsForReport(legacyNoAsk, outcome);
+    expect(reconciled!.candidateAskLpa).toBeUndefined();
+    expect(anchorAtLabel(reconciled!.anchorTurn, reconciled!.candidateAskLpa)).toBe("Never anchored");
+  });
+});
+
+/* S8-B23 (2026-07-22) — abandoned session (discovery only, exchange 3, no offer made)
+ * generated report with fabricated walk-away verdict "You walked away from a ₹50.4 LPA
+ * offer". Root cause: the heuristic transcript scan matched a stopping phrase and
+ * classified "walked_away"; the kernel's authoritative "stalemate" outcome was not
+ * overriding the heuristic's walk-away classification.
+ * Fix: any kernel outcome that is NOT "accepted" / "walked-away" (i.e. "stalemate" /
+ * "in-progress") forces "no_agreement" even when the transcript heuristic fired. */
+describe("buildNegotiationOutcome — S8-B23 stalemate kernel overrides heuristic walk-away", () => {
+  const stalemateMetics = {
+    outcome: "stalemate" as const,
+    anchorTurn: null, leverDiversity: 0, lpaGained: 0, lpaPerTurn: 0,
+    bandTraversal: 0, overBandViolation: false, totalTurns: 3, score: 12,
+    // No trajectory — abandonment in discovery, no offer was made.
+  } as unknown as NonNullable<DashboardSession["negotiationMetrics"]>;
+
+  it("S8-B23: stalemate kernel → no_agreement even when transcript has walk-away phrase", () => {
+    // The candidate's stopping phrase ("I'll stop here") matches the walk-away heuristic.
+    const report = {
+      perQuestion: [
+        { question: "What are you looking for?", answerText: "I'll stop here." },
+        { question: "Any questions?", answerText: "No thanks, I decline to continue." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, stalemateMetics);
+    expect(outcome).not.toBeUndefined();
+    // Must be no_agreement — NOT walked_away (heuristic misclassification).
+    expect(outcome!.outcome).toBe("no_agreement");
+    // No offers were made — verdict should reflect discovery-only termination.
+    expect(outcome!.offers).toHaveLength(0);
+  });
+
+  it("S8-B23: in-progress kernel also forces no_agreement", () => {
+    const inProgressMetrics = { ...stalemateMetics, outcome: "in-progress" as const };
+    const report = {
+      perQuestion: [
+        { question: "Tell me about yourself.", answerText: "I'm walking away, not worth it." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, inProgressMetrics);
+    expect(outcome!.outcome).toBe("no_agreement");
+  });
+
+  it("S8-B23: walked-away kernel still produces walked_away (legitimate walk-away preserved)", () => {
+    const walkedMetrics = { ...stalemateMetics, outcome: "walked-away" as const };
+    const report = {
+      perQuestion: [
+        { question: "₹48 LPA is our offer.", answerText: "I'll pass — too low for me." },
+      ],
+    } as unknown as import("../dashboardData").SessionReport;
+    const outcome = buildNegotiationOutcome(report, walkedMetrics);
+    expect(outcome!.outcome).toBe("walked_away");
   });
 });

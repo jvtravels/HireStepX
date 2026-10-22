@@ -5,7 +5,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "../AuthContext";
+import { Button } from "@/components/ui/button";
+import { storePendingReferralCode, storePendingConsent, clearPendingConsent, useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -30,8 +31,10 @@ import {
   mapAuthError,
   markSessionStart,
   readStaySignedInPref,
+  UNVERIFIED_EMAIL_MESSAGE,
   useIsMounted,
 } from "./_shell";
+import ResendVerification from "./ResendVerification";
 
 // Auto-hide password if visible for this long (over-shoulder protection)
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -113,6 +116,17 @@ export default function Login() {
   // Plan + redirect param preservation (matches existing SignUp behavior)
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
+  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+
+  // Re-capture a referral code forwarded through the verification-email
+  // redirect (verify-email.ts appends ?ref= for us). The signup browser's
+  // localStorage rarely survives the trip through a mail client into this
+  // browser, so this is what lets applyPendingReferral() (fired on the
+  // SIGNED_IN event right after the user logs in below) actually find it.
+  useEffect(() => {
+    const ref = searchParams?.get("ref") ?? null;
+    if (ref) storePendingReferralCode(ref);
+  }, [searchParams]);
 
   const computeRedirect = useCallback(
     () =>
@@ -198,9 +212,13 @@ export default function Login() {
 
     const start = Date.now();
     try {
+      // The footer text ("you confirm you are 18 or older and agree...") is the
+      // affirmation for a first-time Google account created from this page.
+      storePendingConsent();
       const result = await loginWithGoogle(computeRedirect());
       if (!isMounted.current) return;
       if (!result.success) {
+        clearPendingConsent();
         setError(mapAuthError(result.error));
         trackAuth({
           type: "login_failed",
@@ -291,20 +309,24 @@ export default function Login() {
   };
 
   // Notices set by upstream redirects (verify-email handler, OAuth callback,
-  // expired reset link, etc.) — read from query params and surface here.
+  // expired reset link, etc.) — read from query params.
   const verifiedParam = searchParams?.get("verified") ?? null;
   const errorParam = searchParams?.get("error") ?? null;
 
   // Map known error codes to user-facing copy. Falls back to a generic
   // message for unrecognized codes so users never see raw error tokens.
   const errorParamMessage = errorParam
-    ? errorParam === "verification-failed"
-      ? "We couldn't verify your email. The link may have expired — sign up again or try a fresh reset link."
-      : errorParam === "verification-expired"
-        ? "Your verification link has expired. Sign up again to receive a new one."
-        : errorParam === "session-expired"
-          ? "Your session expired. Please log in again."
-          : "Something went wrong. Try again or contact support."
+    ? errorParam === "verification-failed" || errorParam === "config"
+      ? "We couldn't verify your email just now. Open the link in your email again in a minute; it still works. If it keeps failing, contact hello@hirestepx.com."
+      : errorParam === "link-expired" || errorParam === "verification-expired"
+        ? "Your verification link has expired. Enter your email below and request a new one."
+        : errorParam === "invalid-token"
+          ? "That verification link isn't valid. Use the latest email we sent you, or enter your email below and request a new one."
+          : errorParam === "user-not-found"
+            ? "We couldn't find an account for that link. Sign up to create one."
+            : errorParam === "session-expired"
+              ? "Your session expired. Please log in again."
+              : "Something went wrong. Try again or contact hello@hirestepx.com."
     : null;
 
   const verifiedNotice =
@@ -313,6 +335,14 @@ export default function Login() {
       : verifiedParam === "already"
         ? "This email is already verified. Log in below to continue."
         : null;
+
+  // Offer a fresh link on every screen state where the old one is unusable.
+  const needsVerificationHelp =
+    error === UNVERIFIED_EMAIL_MESSAGE ||
+    errorParam === "link-expired" ||
+    errorParam === "verification-expired" ||
+    errorParam === "invalid-token" ||
+    errorParam === "verification-failed";
 
   const displayError = isLocked
     ? `Account temporarily locked after too many attempts. Try again in ${Math.ceil(lockoutSeconds / 60)} minute${lockoutSeconds > 60 ? "s" : ""}.`
@@ -362,6 +392,9 @@ export default function Login() {
               className="hsx-link-indigo"
               onClick={() => trackAuth({ type: "login_signup_clicked" })}
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "max(24px, var(--coarse-min, 0px))",
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -396,27 +429,29 @@ export default function Login() {
             <h1
               id="login-heading"
               style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: f.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
                 color: t.coal,
               }}
             >
-              Clarity{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                wins
-              </em>{" "}
-              interviews
+              {isEmployerFlow ? (
+                <>
+                  Hire{" "}
+                  faster{" "}
+                  with proof
+                </>
+              ) : (
+                <>
+                  Clarity{" "}
+                  wins{" "}
+                  interviews
+                </>
+              )}
             </h1>
             <p
               className="hsx-login-subtitle"
@@ -430,8 +465,9 @@ export default function Login() {
                 textWrap: "balance",
               }}
             >
-              Practise interviews with an AI coach. Get scored, structured
-              feedback after every session.
+              {isEmployerFlow
+                ? "Sign in to review your shortlist of candidates who've already been scored on real interview practice."
+                : "Practise interviews with an AI coach. Get scored, structured feedback after every session."}
             </p>
           </div>
 
@@ -439,37 +475,29 @@ export default function Login() {
             className="hsx-login-form"
             style={{ width: "100%", maxWidth: 540 }}
           >
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               className="hsx-login-google"
               onClick={handleGoogle}
               disabled={googleInFlight || loading || isLocked}
               aria-busy={googleInFlight ? "true" : "false"}
               style={{
                 width: "100%",
+                height: "auto",
                 fontFamily: f.sans,
-                fontSize: 15,
+                fontSize: 16,
                 fontWeight: 500,
-                color: t.coal,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                padding: "14px 18px",
-                cursor:
-                  googleInFlight || loading || isLocked
-                    ? "not-allowed"
-                    : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
                 gap: 12,
+                padding: "16px 18px",
                 boxShadow: shadows.card,
                 opacity: googleInFlight || loading || isLocked ? 0.7 : 1,
               }}
             >
               <GoogleIcon />
               {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </button>
+            </Button>
 
             <div
               className="hsx-login-divider"
@@ -532,6 +560,8 @@ export default function Login() {
                 {displayError}
               </div>
             )}
+
+            {needsVerificationHelp && !isLocked && <ResendVerification email={email} />}
 
             <form
               onSubmit={handleSubmit}
@@ -596,26 +626,20 @@ export default function Login() {
                 }
                 errorMessage={passwordError}
                 rightSlot={
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon-xs"
                     className="hsx-eye-toggle"
                     onClick={handlePasswordVisibility}
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
                     aria-pressed={showPassword}
-                    style={{
-                      background: "transparent",
-                      border: "none",
-                      color: t.inkSoft,
-                      cursor: "pointer",
-                      padding: 4,
-                      display: "flex",
-                      alignItems: "center",
-                    }}
+                    style={{ color: t.inkSoft }}
                   >
                     <EyeIcon open={showPassword} />
-                  </button>
+                  </Button>
                 }
               />
 
@@ -644,7 +668,7 @@ export default function Login() {
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    height: 20,
+                    minHeight: "max(24px, var(--coarse-min, 0px))",
                     fontFamily: f.sans,
                     fontSize: 13,
                     fontWeight: 500,
@@ -658,9 +682,6 @@ export default function Login() {
               </div>
 
               {(() => {
-                // Three states: enabled CTA, in-flight (loading), or
-                // ghost-disabled (form not yet valid). The ghost treatment
-                // signals "no action available" without looking dimmed-active.
                 const isGhost = !canSubmit && !loading;
                 const tooltip = isGhost
                   ? !emailV.valid
@@ -670,36 +691,29 @@ export default function Login() {
                       : "Complete the form to continue"
                   : undefined;
                 return (
-                  <button
+                  <Button
                     type="submit"
+                    variant="default"
+                    size="lg"
                     disabled={!canSubmit}
                     aria-busy={loading ? "true" : "false"}
                     title={tooltip}
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
+                      height: "auto",
                       fontFamily: f.sans,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 600,
-                      color: isGhost ? t.inkSoft : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      /* lineStrong instead of line — more definition against
-                         the cream page background so the button reads as
-                         "waiting" rather than absent. */
-                      border: isGhost
-                        ? `1px solid ${t.lineStrong}`
-                        : "1px solid transparent",
-                      borderRadius: 10,
+                      borderRadius: 8,
                       padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
                       marginTop: 14,
-                      boxShadow: isGhost ? "none" : shadows.cta,
+                      boxShadow: `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
                       letterSpacing: 0.1,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 10,
-                      opacity: loading ? 0.95 : 1,
                     }}
                   >
                     {loading ? (
@@ -709,7 +723,7 @@ export default function Login() {
                       </>
                     ) : (
                       <>
-                        Continue to practise
+                        {isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"
@@ -727,7 +741,7 @@ export default function Login() {
                         </svg>
                       </>
                     )}
-                  </button>
+                  </Button>
                 );
               })()}
             </form>
@@ -747,17 +761,20 @@ export default function Login() {
             margin: "0 auto",
           }}
         >
-          By clicking "Log in with Google" or "Continue with email" you agree to
-          our{" "}
+          By clicking "Log in with Google" or "Continue with email" you confirm you
+          are 18 or older and agree to our{" "}
           <a
             href="/terms"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Terms of Use
@@ -766,12 +783,15 @@ export default function Login() {
           <a
             href="/privacy"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Privacy Policy

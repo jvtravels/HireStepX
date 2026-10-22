@@ -14,7 +14,15 @@
  * InterviewPanels.tsx for backwards-compat with existing imports.
  */
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import { e, ef } from "./interviewTokens";
+import { e, ef, resolveOrbColor } from "./interviewTokens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { ThinkingOrb } from "thinking-orbs";
 
 /* ─── PaceMeter — sweet-spot bar shown while user is answering ─── */
 
@@ -28,14 +36,14 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
   const idealEndPct = (ideal.max / ceiling) * 100;
   const zone = seconds < ideal.min ? "early" : seconds <= ideal.max ? "ideal" : seconds <= ceiling ? "late" : "over";
   const labelMap = { early: "Take your time…", ideal: "Good pace", late: "Wrap it up", over: "Cut it short" } as const;
-  const tint = zone === "ideal" ? e.success : zone === "early" ? e.inkSoft : zone === "late" ? e.copper : e.error;
+  const tint = zone === "ideal" ? e.success : zone === "early" ? e.inkSoft : zone === "late" ? e.indigo : e.error;
   return (
     <div role="meter" aria-label="Answer length pace" aria-valuemin={0} aria-valuemax={ceiling} aria-valuenow={Math.round(seconds)} className="iv-pace-meter" style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%", maxWidth: 280 }}>
       <div style={{ position: "relative", height: 4, background: "rgba(20,17,10,0.04)", borderRadius: 999, overflow: "hidden" }}>
-        <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: "rgba(21,128,61,0.22)" }} />
+        <span aria-hidden style={{ position: "absolute", left: `${idealStartPct}%`, width: `${idealEndPct - idealStartPct}%`, top: 0, bottom: 0, background: e.success100 }} />
         <span aria-hidden style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${pct}%`, background: tint, opacity: 0.9, transition: "width 240ms ease, background 240ms ease" }} />
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft }}>
         <span>{Math.floor(seconds)}s spoken</span>
         <span style={{ color: tint }}>{labelMap[zone]}</span>
       </div>
@@ -47,31 +55,27 @@ export const PaceMeter = memo(function PaceMeter({ seconds, ideal = { min: 60, m
 
 export const RepeatButton = memo(function RepeatButton({ onClick, disabled = false }: { onClick: () => void; disabled?: boolean }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      aria-label="Repeat the question"
-      title="Repeat the question (Press R)"
-      className="iv-repeat-btn"
-      style={{
-        display: "inline-flex", alignItems: "center", gap: 6,
-        background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-        borderRadius: 999, padding: "6px 12px", minHeight: 32,
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.coal,
-        transition: "background 0.16s ease, border-color 0.16s ease",
-      }}
-      onMouseEnter={ev => { if (!disabled) { ev.currentTarget.style.background = "rgba(20,17,10,0.05)"; ev.currentTarget.style.borderColor = e.lineStrong; } }}
-      onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}
-    >
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <polyline points="1 4 1 10 7 10" />
-        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-      </svg>
-      Repeat
-    </button>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClick}
+            disabled={disabled}
+            aria-label="Repeat the question"
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="1 4 1 10 7 10" />
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            Repeat
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Repeat the question (Press R)</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 });
 
@@ -101,10 +105,10 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
   return (
     <div role="alert" className="iv-mic-quiet" style={{
       display: "inline-flex", alignItems: "center", gap: 10, padding: "10px 14px",
-      background: "rgba(180,83,9,0.13)", border: "1px solid rgba(180,83,9,0.25)",
+      background: "oklch(0.359 0.135 278.697 / 0.13)", border: "1px solid oklch(0.359 0.135 278.697 / 0.25)",
       borderRadius: 12, maxWidth: 460, marginTop: 8,
     }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
         <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
         <line x1="12" y1="19" x2="12" y2="23" />
@@ -114,13 +118,14 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
         {onSwitchToText && (
           <>
             , or{" "}
-            <button
+            <Button
               type="button"
+              variant="link"
+              className="h-auto p-0 text-[inherit]"
               onClick={onSwitchToText}
-              style={{ background: "transparent", border: "none", padding: 0, color: e.copper, fontWeight: 600, cursor: "pointer", fontFamily: ef.sans, fontSize: 12, textDecoration: "underline" }}
             >
               switch to typing
-            </button>
+            </Button>
           </>
         )}
         .
@@ -142,21 +147,44 @@ export const MicQuietBanner = memo(function MicQuietBanner({ onSwitchToText }: {
  * sustained and blocking interaction is the right move.
  */
 
-export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, currentQuestion, totalQuestions, baseQuestionCount, onPause }: {
+function useSecondsUntil(at: number | null | undefined): number | null {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!at) return;
+    setNow(Date.now());
+    const id = window.setInterval(() => setNow(Date.now()), 500);
+    return () => window.clearInterval(id);
+  }, [at]);
+  if (!at) return null;
+  return Math.max(0, Math.ceil((at - now) / 1000));
+}
+
+export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt = 1, nextProbeAt, onRetryNow, currentQuestion, totalQuestions, baseQuestionCount }: {
+  /** Real count of failed reconnect probes, from the connection monitor. */
   attempt?: number;
+  /** Epoch ms of the next automatic probe, from the connection monitor. */
+  nextProbeAt?: number | null;
+  onRetryNow?: () => Promise<unknown> | void;
   currentQuestion: number;
   totalQuestions: number;
   /** Base-question count (questions only, follow-ups excluded). Shares the
    *  numerator's basis so "Q3 of 5" can't render as "Q3 of 8". Falls back to
    *  totalQuestions only when base is 0 (degenerate script). */
   baseQuestionCount?: number;
-  onPause?: () => void;
 }) {
   const escalate = attempt >= 3;
   const questionTotal = baseQuestionCount || totalQuestions;
   const questionPos = Math.min(currentQuestion, questionTotal);
+  const secs = useSecondsUntil(nextProbeAt);
+  const [retrying, setRetrying] = useState(false);
+  const retry = useCallback(async () => {
+    if (!onRetryNow || retrying) return;
+    setRetrying(true);
+    try { await onRetryNow(); } finally { setRetrying(false); }
+  }, [onRetryNow, retrying]);
+  const nextLabel = retrying ? "Checking…" : secs === null ? "" : secs <= 0 ? "Retrying…" : `Next try in ${secs}s`;
 
-  /* ─── Lightweight inline banner (attempts 1–2) ──────────────────── */
+  /* ─── Lightweight inline banner (first attempts) ───────────────── */
   if (!escalate) {
     return (
       <div
@@ -170,22 +198,26 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
           zIndex: 220, maxWidth: 480, width: "min(92%, calc(100vw - 32px))",
           display: "flex", alignItems: "center", gap: 10,
           padding: "10px 14px",
-          background: "rgba(180,83,9,0.14)",
-          border: "1px solid rgba(180,83,9,0.30)",
+          background: "oklch(0.359 0.135 278.697 / 0.14)",
+          border: "1px solid oklch(0.359 0.135 278.697 / 0.30)",
           borderRadius: 10,
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
           boxShadow: "0 4px 16px rgba(20,17,10,0.10)",
         }}
       >
-        <div style={{ width: 14, height: 14, border: `2px solid rgba(180,83,9,0.30)`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite", flexShrink: 0 }} />
-        <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4 }}>
-          Reconnecting… your progress is safe (Q{questionPos} of {questionTotal}).
+        <ThinkingOrb state="connecting" size={20} color={resolveOrbColor(e.indigo)} style={{ width: 14, height: 14, flexShrink: 0 }} />
+        <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.coal, lineHeight: 1.4, flex: 1 }}>
+          Connection lost. Your answers are saved on this device (Q{questionPos} of {questionTotal}) and the timer is paused.
+          {nextLabel ? ` ${nextLabel}.` : ""}
         </span>
+        {onRetryNow && (
+          <Button type="button" variant="outline" size="sm" onClick={retry} disabled={retrying}>Retry now</Button>
+        )}
       </div>
     );
   }
 
-  /* ─── Escalated full-screen modal (attempt 3+) ──────────────────── */
+  /* ─── Escalated full-screen modal (sustained outage) ───────────── */
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="iv-reconnecting-title" className="iv-reconnecting" style={{
       position: "fixed", inset: 0, zIndex: 220,
@@ -199,51 +231,37 @@ export const ReconnectingOverlay = memo(function ReconnectingOverlay({ attempt =
         padding: "32px 28px 24px", textAlign: "center",
       }}>
         <div style={{
-          width: 52, height: 52, borderRadius: "50%", background: "rgba(180,83,9,0.10)",
+          width: 52, height: 52, borderRadius: "50%", background: "oklch(0.359 0.135 278.697 / 0.10)",
           display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 16,
         }}>
-          <div style={{ width: 26, height: 26, border: `2.5px solid ${e.line}`, borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+          <ThinkingOrb state="connecting" size={32} color={resolveOrbColor(e.indigo)} style={{ width: 26, height: 26 }} />
         </div>
         <h2 id="iv-reconnecting-title" style={{
-          margin: 0, fontFamily: ef.serif, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
+          margin: 0, fontFamily: ef.sans, fontSize: 22, fontWeight: 400, color: e.coal, letterSpacing: "-0.01em",
         }}>
-          Reconnecting…
+          You&rsquo;re offline
         </h2>
         <p style={{
           margin: "8px 0 0", fontFamily: ef.sans, fontSize: 13, color: e.coal, lineHeight: 1.55,
         }}>
-          Your network blipped. We&rsquo;ve saved everything up to question{" "}
+          Your answers up to question{" "}
           <strong style={{ color: e.coal }}>{questionPos} of {questionTotal}</strong>
-          . You&rsquo;ll pick up where you left off.
+          {" "}are saved on this device and will sync when you&rsquo;re back. The timer is paused. Keep this tab open and the interview will continue automatically.
         </p>
         <div style={{
           marginTop: 18, display: "inline-flex", alignItems: "center", gap: 8,
           padding: "5px 12px", background: e.creamSoft, border: `1px solid ${e.line}`,
-          borderRadius: 999, fontFamily: ef.mono, fontSize: 10,
+          borderRadius: 999, fontFamily: ef.mono, fontSize: 11,
           textTransform: "uppercase", letterSpacing: 1.2, color: e.inkSoft,
         }}>
-          <span style={{ width: 5, height: 5, borderRadius: 999, background: e.copper }} />
-          Attempt {attempt} of 5
+          <span style={{ width: 5, height: 5, borderRadius: 999, background: e.indigo }} />
+          {attempt} {attempt === 1 ? "check" : "checks"} so far{nextLabel ? ` · ${nextLabel}` : ""}
         </div>
-        {onPause && (
-          <div style={{ marginTop: 22, display: "flex", flexDirection: "column", gap: 6 }}>
-            <button
-              type="button"
-              onClick={onPause}
-              style={{
-                background: "transparent", color: e.coal,
-                border: `1px solid ${e.line}`, borderRadius: 10,
-                padding: "10px 18px", fontFamily: ef.sans, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                transition: "background 0.16s ease, border-color 0.16s ease",
-              }}
-              onMouseEnter={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
-              onMouseLeave={ev => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
-            >
-              Pause and resume later
-            </button>
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
-              We&rsquo;ll email you a link to come back.
-            </span>
+        {onRetryNow && (
+          <div style={{ marginTop: 22 }}>
+            <Button type="button" variant="outline" onClick={retry} disabled={retrying}>
+              {retrying ? "Checking…" : "Retry now"}
+            </Button>
           </div>
         )}
       </div>
@@ -341,11 +359,11 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
         <h2
           id="iv-coachmark-title"
           style={{
-            margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
+            margin: 0, fontFamily: ef.sans, fontSize: 28, fontWeight: 400,
             lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
           }}
         >
-          A quick <em style={{ color: e.copper, fontStyle: "italic" }}>three things</em>.
+          A quick <em style={{ color: e.indigo, fontWeight: 600 }}>three things</em>.
         </h2>
         <p style={{
           margin: "8px 0 22px", fontFamily: ef.sans, fontSize: 13,
@@ -385,23 +403,9 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
           ))}
         </ul>
         <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
-          <button
-            ref={dismissBtnRef}
-            type="button"
-            onClick={dismiss}
-            style={{
-              background: e.indigo, color: e.cream, border: "none",
-              borderRadius: 999, padding: "10px 22px",
-              fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
-              cursor: "pointer",
-              boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-              transition: "filter 0.16s ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
-          >
+          <Button ref={dismissBtnRef} type="button" size="lg" onClick={dismiss}>
             Got it — let&rsquo;s start
-          </button>
+          </Button>
         </div>
       </div>
     </div>

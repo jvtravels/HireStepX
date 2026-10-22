@@ -1,5 +1,7 @@
 import { Component, type ReactNode, type ErrorInfo } from "react";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 // Raw error messages can leak stack traces, internal identifiers, or PII into
 // the UI. Show them only in development; production users get the friendly copy.
@@ -74,8 +76,8 @@ export default class ErrorBoundary extends Component<Props, State> {
               width: 56,
               height: 56,
               borderRadius: 14,
-              background: "rgba(185,28,28,0.08)",
-              border: "1px solid rgba(185,28,28,0.2)",
+              background: T.error100,
+              border: `1px solid ${T.errorLine}`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -99,8 +101,8 @@ export default class ErrorBoundary extends Component<Props, State> {
               style={{
                 fontSize: 11,
                 color: c.ember,
-                background: "rgba(185,28,28,0.06)",
-                border: `1px solid rgba(185,28,28,0.15)`,
+                background: T.error100,
+                border: `1px solid ${T.errorLine}`,
                 borderRadius: 8,
                 padding: "12px 16px",
                 maxWidth: 500,
@@ -114,36 +116,15 @@ export default class ErrorBoundary extends Component<Props, State> {
             </pre>
           )}
           <div style={{ display: "flex", gap: 12 }}>
-            <button
-              onClick={this.handleReset}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 8,
-                border: `1px solid ${c.border}`,
-                background: "transparent",
-                color: c.ivory,
-                fontSize: 13,
-                fontWeight: 500,
-                cursor: "pointer",
-              }}
-            >
+            <Button variant="outline" onClick={this.handleReset} >
               Try Again
-            </button>
-            <button
-              onClick={() => { window.location.replace("/dashboard"); }}
-              style={{
-                padding: "10px 24px",
-                borderRadius: 8,
-                border: "none",
-                background: c.gilt,
-                color: c.obsidian,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
+            </Button>
+            {/* General navigation CTA, not score-related — indigo is the
+                one brand/interactive color; copper stays reserved for
+                score/streak/reward visuals. */}
+            <Button onClick={() => { window.location.replace("/dashboard"); }} >
               Go to Dashboard
-            </button>
+            </Button>
           </div>
         </div>
       );
@@ -195,7 +176,7 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
         <div role="alert" style={{ padding: "48px 24px", textAlign: "center", fontFamily: font.ui }}>
           <div style={{
             width: 48, height: 48, borderRadius: 12,
-            background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.2)",
+            background: T.error100, border: `1px solid ${T.errorLine}`,
             display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
           }}>
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round">
@@ -208,19 +189,15 @@ export class RouteErrorBoundary extends Component<{ children: ReactNode }, Route
           </p>
           {IS_DEV && this.state.error && (
             <pre style={{
-              fontSize: 11, color: c.ember, background: "rgba(185,28,28,0.06)",
-              border: "1px solid rgba(185,28,28,0.15)", borderRadius: 8,
+              fontSize: 11, color: c.ember, background: T.error100,
+              border: `1px solid ${T.errorLine}`, borderRadius: 8,
               padding: "8px 12px", maxWidth: 400, margin: "0 auto 16px",
               overflow: "auto", fontFamily: font.mono, textAlign: "left",
             }}>{this.state.error.message}</pre>
           )}
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            style={{
-              padding: "8px 20px", borderRadius: 8, border: `1px solid ${c.border}`,
-              background: "transparent", color: c.ivory, fontSize: 13, fontWeight: 500, cursor: "pointer",
-            }}
-          >Try Again</button>
+          <Button variant="outline" size="sm" onClick={() => this.setState({ hasError: false, error: null })} >
+            Try Again
+          </Button>
         </div>
       );
     }
@@ -265,10 +242,10 @@ export class SectionErrorBoundary extends Component<{ children: ReactNode; label
   render() {
     if (this.state.hasError) {
       return (
-        <div role="alert" style={{ padding: "20px 16px", textAlign: "center", borderRadius: 12, background: "rgba(185,28,28,0.04)", border: "1px solid rgba(185,28,28,0.12)" }}>
+        <div role="alert" style={{ padding: "20px 16px", textAlign: "center", borderRadius: 12, background: T.error100, border: `1px solid ${T.errorLine}` }}>
           <p style={{ fontSize: 13, color: c.stone, margin: 0 }}>
             {this.props.label ? `Could not load ${this.props.label}.` : "This section could not load."}{" "}
-            <button onClick={() => this.setState({ hasError: false })} style={{ fontSize: 13, color: c.gilt, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button>
+            <button onClick={() => this.setState({ hasError: false })} style={{ fontSize: 13, color: T.indigo, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button>
           </p>
         </div>
       );

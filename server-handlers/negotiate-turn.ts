@@ -27,8 +27,10 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, validateContentType, hashStable, redisGet, redisSetEx, checkSessionLimit, countPriorNegotiationSessions, readPriorNegotiationCompanies } from "./_shared";
 import { computeScenarioSeed, reconstructSeenPersonas, tierBucketForCompanyTier } from "./_scenario-seed";
-import { callLLM } from "./_llm";
-import { captureServerEvent, distinctIdFrom } from "./_posthog";
+import { callLLM } from "./_llm-pii";
+import { isServerFlagEnabled } from "./_feature-flags";
+import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
+import { deriveKernelEvents, type KernelEvent } from "./_kernel-audit";
 import {
   initState,
   applyCandidateAnswer,
@@ -37,6 +39,7 @@ import {
   serializeState,
   deserializeState,
   isTerminalPhase,
+  effectiveTargetCtcLpa,
   type NegotiationState,
   type AiMove,
 } from "./_negotiation-kernel";
@@ -157,10 +160,16 @@ const defaultLlmCaller: LlmCaller = async (system, user, opts) => {
    * cannot decode. Pass jsonMode: true only when the caller's prompt
    * explicitly asks for a JSON envelope. Default false. */
   const jsonMode = opts.jsonMode === true;
+  // totalBudgetMs bounds the WHOLE groq→gemini chain (including each
+  // provider's one-shot transient-error retry) so this stays well inside
+  // Vercel's Edge ~25s ceiling — without it the real worst case is
+  // (8000 + 800ms retry backoff) × 2 providers ≈ 17.6s per provider that
+  // retries, closer to 35s if both do. 18s leaves headroom for the kernel
+  // logic / sanitization / response assembly that runs around this call.
   const result = await callLLM(
     { prompt: `${system}\n\n${user}`, temperature: 0.7, maxTokens: 320, fast: true, jsonMode },
     8000,
-    { userId: opts.userId, endpoint: "negotiate-turn" },
+    { userId: opts.userId, endpoint: "negotiate-turn", totalBudgetMs: 18000 },
   );
   return result.text;
 };
@@ -277,6 +286,13 @@ export default async function handler(
   if (pre instanceof Response) return pre;
   const { headers, auth } = pre;
 
+  if (!(await isServerFlagEnabled("SALARY_NEGOTIATION_MODE", auth.userId))) {
+    return new Response(
+      JSON.stringify({ error: "Salary negotiation practice is temporarily unavailable. Please try another interview type." }),
+      { status: 503, headers: { ...headers, "Retry-After": "300" } },
+    );
+  }
+
   let rawBody: unknown;
   try {
     rawBody = await req.json();
@@ -305,15 +321,38 @@ export default async function handler(
   try {
     const distinctId = distinctIdFrom(req, auth.userId);
 
+    /* H4 (2026-07-12) — pipe the structured kernel-audit trail to PostHog.
+     * deriveKernelEvents is the single source of truth for "what changed in
+     * the kernel this transition"; it was fully built and unit-tested but
+     * only ever called from tests, so production had NO fine-grained
+     * decision trail. Emitting each derived event as `kernel_audit` (one
+     * row per transition, discriminated by `audit_type`) surfaces the
+     * decisions the coarse kernel_turn/kernel_terminal events don't carry:
+     * verbal acceptance, band rebase, hard-cap flip, highest-offer bump,
+     * close-floor clamp (the Bug-12 signature), lever fired, joining-bonus
+     * set, walk-away return, fresh-grad disclosure. Fire-and-forget;
+     * captureServerEvent never throws. Call after each kernel mutation:
+     * applyCandidateAnswer (no move) and applyAiMove (pass the move). */
+    const emitKernelAudit = (events: KernelEvent[]): void => {
+      for (const e of events) {
+        const { type, ...rest } = e;
+        void captureServerEvent("kernel_audit", distinctId, { audit_type: type, ...rest }, req);
+      }
+    };
+
     if (body.action === "init") {
       /* Free-session cap enforcement (audit P0-1). generate-questions and
        * evaluate both gate on checkSessionLimit; negotiate-turn previously
        * relied only on checkQuota, letting a free user start unlimited
        * negotiation sessions. The limit is enforced ONLY at init — a single
        * negotiation counts as one session, so subsequent "turn" actions in
-       * the same negotiation are never blocked. */
+       * the same negotiation are never blocked.
+       * consumeCredit: false because record-session-start is also called by
+       * the client for every session type including salary-negotiation, and
+       * that call consumes the credit. Consuming here too caused a double-spend
+       * (2 credits per negotiation session). */
       if (auth.userId) {
-        const limit = await checkSessionLimit(auth.userId);
+        const limit = await checkSessionLimit(auth.userId, { consumeCredit: false });
         if (!limit.allowed) {
           return new Response(JSON.stringify({ error: limit.reason }), { status: 403, headers });
         }
@@ -349,7 +388,7 @@ export default async function handler(
          coherence. The original band is preserved in telemetry so
          curator review can fix the source data upstream. */
       const clampResult = clampBandToTierP50(resolvedBand, role, companyTier);
-      const serverBand = clampResult.clamped
+      let serverBand = clampResult.clamped
         ? { ...resolvedBand, ...clampResult.band }
         : resolvedBand;
 
@@ -371,6 +410,39 @@ export default async function handler(
           `tier=${clampResult.tier} family=${clampResult.family}: ` +
           `${clampResult.originalInitial}→${serverBand.initialOffer} LPA (P50=${clampResult.p50})`,
         );
+      }
+
+      /* B6 — Opening-offer headroom clamp (2026-07-23).
+       *
+       * When the candidate has pre-stated a target salary (from the
+       * setup wizard, forwarded as body.candidateTargetLpa), enforce a
+       * minimum 12% gap between the opening offer and their target.
+       * Without this guard the recruiter could open at or above the
+       * candidate's stated ask, killing negotiation tension and making
+       * the session feel scripted. The guard only fires when the
+       * candidate's target is known AND the computed initialOffer sits
+       * within 3% of it (≥0.97×); it clamps to 88% of the target
+       * (rounded to the nearest 0.5L) and leaves maxStretch / walkAway
+       * untouched so the kernel's concession math remains coherent. */
+      const candidateTargetLpa = body.candidateTargetLpa ?? null;
+      if (
+        candidateTargetLpa != null &&
+        serverBand.initialOffer >= candidateTargetLpa * 0.97
+      ) {
+        const clampedInitial = Math.round(candidateTargetLpa * 0.88 * 2) / 2;
+        void captureServerEvent("kernel_opening_offer_headroom_clamped", distinctId, {
+          role,
+          company: company.slice(0, 80),
+          original_initial: serverBand.initialOffer,
+          clamped_initial: clampedInitial,
+          candidate_target: candidateTargetLpa,
+        }, req);
+        console.warn(
+          `[negotiate-turn] B6 opening-offer headroom clamp: ` +
+          `initialOffer ${serverBand.initialOffer}→${clampedInitial} LPA ` +
+          `(candidateTarget=${candidateTargetLpa}, 88% floor)`,
+        );
+        serverBand = { ...serverBand, initialOffer: clampedInitial };
       }
 
       /* Phase 4 of the rebuild: log a sanity warning when the resolved
@@ -399,7 +471,9 @@ export default async function handler(
        *   BFSI → soft (conservative hike norms, variable-heavy)
        *   STARTUP → hot (equity-upside framing, aggressive hike expectations)
        *   MNC → neutral (competitive but band-governed)
+       *   CONSULTING → neutral (structured bands, not affected by IT-services compression)
        *   IT_SERVICES → soft (service-pricing compression 2025-26)
+       *   PRODUCT_INDIA → neutral (healthy salary budgets, independent of IT services)
        */
       const companyMode = inferCompanyMode(role, company);
       const inferredMarketMode = (
@@ -519,7 +593,9 @@ export default async function handler(
       const promptVariant = selectPromptVariant(state.sessionId);
       const { text, source, failureKinds, envelopeMissingAttempts, action: initAction } = await generateAiText(state, move, "", llm, auth.userId, promptVariant, distinctId);
       const initMoveTag: MoveTag = deriveMoveTag(initAction, state);
+      const stateBeforeInitMove = state;
       state = applyAiMove(state, move, text);
+      emitKernelAudit(deriveKernelEvents(stateBeforeInitMove, state, move));
       const terminal = isTerminalPhase(state.phase);
       if (failureKinds.length > 0) {
         void captureServerEvent("kernel_validate_fail", distinctId, {
@@ -617,6 +693,15 @@ export default async function handler(
           aiText: initText,
           aiTextDisplay: initText,
           move,
+          /* Per-turn snapshot of the candidate's EFFECTIVE anchor (Class-A
+           * accessor — folds a fixed-only ask into a CTC-equivalent total).
+           * The client records this as candidateTargetAtTurn so anchor-turn
+           * detection ("named a counter") reads the same source of truth as
+           * the report's "YOUR ASK" surface (effectiveTargetCtcLpaLocal).
+           * Prevents the divergence where a "48 LPA fixed" anchor showed as
+           * "Numbers stated 100%" yet "no counter named / never named a
+           * number". Null at init (candidate hasn't spoken). */
+          candidateAnchorLpa: effectiveTargetCtcLpa(state),
           source: initSource,
           terminal,
           moveTag: initMoveTag,
@@ -765,7 +850,9 @@ export default async function handler(
         }, req);
       }
 
+      const stateBeforeCandidate = state;
       state = applyCandidateAnswer(state, sanitizedAnswer);
+      emitKernelAudit(deriveKernelEvents(stateBeforeCandidate, state));
 
       /* PDF#48 Layer 2 — terminal-intent pre-classifier.
        *
@@ -1093,7 +1180,9 @@ export default async function handler(
         }
       }
 
+      const stateBeforeMove = state;
       state = applyAiMove(state, move, text);
+      emitKernelAudit(deriveKernelEvents(stateBeforeMove, state, move));
       const terminal = isTerminalPhase(state.phase);
 
       /* F2 (2026-05-15) — post-acceptance dispatch. When the kernel
@@ -1220,6 +1309,14 @@ export default async function handler(
         aiText: text,
         aiTextDisplay: text,
         move,
+        /* Per-turn snapshot of the candidate's EFFECTIVE anchor (Class-A
+         * accessor — folds a fixed-only ask into a CTC-equivalent total),
+         * recorded by the client as candidateTargetAtTurn. See the init
+         * branch above: this keeps anchor-turn / "named a counter" detection
+         * on the same source as the report's "YOUR ASK" surface, so a
+         * base-only "48 LPA fixed" anchor can no longer read as "never named
+         * a number" while Delivery Metrics show "Numbers stated 100%". */
+        candidateAnchorLpa: effectiveTargetCtcLpa(state),
         source,
         terminal,
         moveTag,
@@ -1249,7 +1346,11 @@ export default async function handler(
 
     return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400, headers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
-    return new Response(JSON.stringify({ error: msg }), { status: 500, headers });
+    // Awaited: an unawaited capture here races the Response return and can
+    // be silently dropped if the invocation tears down first (see the
+    // evaluate-session.ts fix for the confirmed 2026-10-03 incident this
+    // same pattern caused).
+    await captureServerException(err, undefined, { endpoint: "negotiate-turn" });
+    return new Response(JSON.stringify({ error: "An error occurred — please try again or contact support@hirestepx.com" }), { status: 500, headers });
   }
 }

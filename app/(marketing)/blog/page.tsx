@@ -1,26 +1,116 @@
 import type { Metadata } from "next";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import BlogPage from "@/BlogPage";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { BLOG_META } from "@/blog-meta";
 
-export const metadata: Metadata = {
-  title: "Blog | HireStepX",
-  description:
-    "Interview tips, career advice, and job search strategies from HireStepX.",
-  alternates: { canonical: "/blog" },
+/* ?page=N renders a real, separately-crawlable subset of BLOG_META (see
+   <Link href="/blog?page=N"> in BlogPage), but alternates.canonical always
+   pointed back to plain /blog with no noindex — same self-canonical-but-
+   not-noindexed gap already fixed on /questions, /salary, and /companies.
+   Without it Google is free to index each page separately, the thin/
+   duplicate-URL pattern behind the AdSense "Low value content" flag. */
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
+
+  /* GSC: same generic-title pattern already fixed on /questions, /salary,
+     and /companies — no concrete figure in the title tag. Prefix with the
+     actual indexed post count. */
+  const count = BLOG_META.length;
+  const title = `${count} Interview Prep Guides India 2026 | HireStepX`;
+  const ogTitle = `${count} Interview Preparation Guides — India 2026`;
+
+  return {
+    title,
+    description:
+      `${count} company interview guides for India 2026. TCS NQT, Google behavioral, Flipkart system design, Amazon leadership, campus placement, and salary negotiation.`,
+    keywords: [
+      "interview preparation blog India",
+      "TCS interview guide 2026",
+      "Google interview questions India",
+      "campus placement tips India",
+      "fresher interview tips 2026",
+      "behavioral interview India",
+    ].join(", "),
+    alternates: { canonical: "/blog" },
+    ...(pageNum === 1 ? {} : { robots: { index: false, follow: true } }),
+    openGraph: {
+      type: "website",
+      title: ogTitle,
+      description: "Guides for TCS, Google, Flipkart, Amazon, Deloitte and more. 2026 India job market.",
+      url: "https://hirestepx.com/blog",
+      siteName: "HireStepX",
+      locale: "en_IN",
+      images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX Interview Preparation Blog" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: ogTitle,
+      description: "Company-specific interview guides for Indian candidates. TCS, Google, Flipkart, Amazon, and 20+ more.",
+      images: ["https://hirestepx.com/opengraph-image"],
+    },
+  };
+}
+
+/* Accessing searchParams makes this page dynamic — intentional, mirrors
+   app/(marketing)/questions/page.tsx. The ?page= param drives real
+   crawlable pagination via <Link href="/blog?page=N"> in BlogIndex. */
+const BLOG_ITEM_LIST_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "HireStepX Interview Preparation Blog",
+  description: "Company-specific interview guides for Indian job seekers: TCS, Google, Flipkart, Amazon, and more.",
+  url: "https://hirestepx.com/blog",
+  numberOfItems: BLOG_META.length,
+  itemListElement: BLOG_META.map((post, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    url: `https://hirestepx.com/blog/${post.slug}`,
+    name: post.title,
+  })),
 };
 
-// Blog index — static CDN cache, 1-hour revalidate so new posts go live fast.
-export const dynamic = "force-static";
-export const revalidate = 3600;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { headers } = await import("next/headers");
+  const nonce = (await headers()).get("x-nonce") ?? "";
+  const { page } = await searchParams;
+  const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
-export default function Page() {
   return (
     <>
+      {/* This page reads its own headers()-derived nonce above (it's already
+          dynamic — searchParams opts it out of static rendering regardless
+          of the root-layout split). BlogPage's client-side useSEO() call
+          looks up this meta tag to nonce its own client-injected JSON-LD
+          <script>, so it needs to be rendered here now that the root layout
+          no longer renders it globally. */}
+      <meta name="csp-nonce" content={nonce} />
       <script
         type="application/ld+json"
+        nonce={nonce || undefined}
         dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Blog", path: "/blog" }]))}
       />
-      <BlogPage />
+      <script
+        type="application/ld+json"
+        nonce={nonce || undefined}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(BLOG_ITEM_LIST_SCHEMA) }}
+      />
+      {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
+          noindex meta tag above — only loading ads on the canonical page 1
+          keeps thin, noindexed pagination pages out of ad-serving scope. */}
+      {pageNum === 1 && (
+        <ConsentGatedAdSense />
+      )}
+      <BlogPage metas={BLOG_META} page={pageNum} />
     </>
   );
 }

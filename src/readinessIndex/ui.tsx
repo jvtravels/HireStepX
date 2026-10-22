@@ -4,7 +4,7 @@
    canonical brand source (src/auth/_tokens). */
 
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "../auth/_tokens";
+import { tokens as t, fonts as f } from "../auth/_tokens";
 import type { Band, HireBand, Tone, Meter, Skill } from "./types";
 
 /* Alpha-border siblings of the status/brand colors, for borders on tinted
@@ -18,17 +18,15 @@ export const SHEET = `
   .rix-btn { transition: background 160ms ease, border-color 160ms ease, transform 160ms cubic-bezier(.16,1,.3,1), color 160ms ease; }
   .rix-cta:hover  { background: ${t.indigoDeep}; transform: translateY(-1px); }
   .rix-cta:active { transform: translateY(0); }
-  .rix-ghost:hover { background: rgba(180,83,9,0.06); border-color: ${COPPER_LINE}; }
+  .rix-ghost:hover { background: ${t.indigoMist}; border-color: ${t.indigo}; }
   .rix-seg:hover  { background: ${t.creamSoft}; }
-  .rix-pillar { transition: box-shadow 200ms cubic-bezier(.16,1,.3,1), transform 200ms cubic-bezier(.16,1,.3,1); }
-  .rix-pillar:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(20,17,10,.04), 0 18px 40px -22px rgba(20,17,10,.22); }
-  .rix-nav-link { transition: color 140ms ease, border-color 140ms ease; }
-  .rix-nav-link:hover { color: ${t.coal}; border-color: ${t.lineStrong}; }
   .rix-focus:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 10px; }
-  .rix-evi { transition: background 140ms ease; }
-  .rix-evi:hover { background: ${t.creamSoft}; }
+  .rix-stack > * { padding: 24px 0; }
+  .rix-stack > * + * { border-top: 1px solid ${t.line}; }
+  .rix-div-x > * + * { border-left: 1px solid ${t.line}; }
+  .rix-div-y > * + * { border-top: 1px solid ${t.line}; }
   @media (max-width: 640px) { .rix-tap { min-height: 44px; } }
-  @media (prefers-reduced-motion: reduce) { .rix-btn, .rix-pillar { transition-duration: 0.01ms !important; } }
+  @media (prefers-reduced-motion: reduce) { .rix-btn { transition-duration: 0.01ms !important; } }
 `;
 
 export const TONE_FG: Record<Tone, string> = { good: t.success, watch: t.warning, miss: t.error, neutral: t.inkSoft };
@@ -84,15 +82,15 @@ export function Eyebrow({ children, tone = "copper", as: As = "span" }: { childr
 
 export function Title({ children, as: As = "h3", size = 20 }: { children: React.ReactNode; as?: "h1" | "h2" | "h3"; size?: number }) {
   return (
-    <As style={{ margin: 0, fontFamily: f.serif, fontSize: size, fontWeight: 500, color: t.coal, letterSpacing: -0.3, lineHeight: 1.1 }}>
+    <As style={{ margin: 0, fontFamily: f.sans, fontSize: size, fontWeight: 700, color: t.coal, letterSpacing: -0.3, lineHeight: 1.1 }}>
       {children}
     </As>
   );
 }
 
-export function Card({ children, pad = 22, style, className, as: As = "div", id }: { children: React.ReactNode; pad?: number; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
+export function Card({ children, style, className, as: As = "div", id }: { children: React.ReactNode; style?: React.CSSProperties; className?: string; as?: "div" | "section" | "article"; id?: string }) {
   return (
-    <As id={id} className={className} style={{ background: t.white, borderRadius: 16, padding: pad, boxShadow: shadows.card, ...style }}>
+    <As id={id} className={className} style={style}>
       {children}
     </As>
   );
@@ -135,9 +133,9 @@ export function MetricStat({ label, value, unit, tone = "ink", hint, meter }: { 
   const markerColor = tone === "good" ? t.success : tone === "warn" ? t.copper : tone === "bad" ? t.error : t.indigo;
   return (
     <div style={{ background: t.creamSoft, borderRadius: 12, padding: "12px 14px" }}>
-      <div style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, textTransform: "uppercase" }}>{label}</div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginTop: 6 }}>
-        <span style={{ fontFamily: f.serif, fontSize: 28, color, lineHeight: 1 }}>{value}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 28, fontWeight: 700, color, lineHeight: 1 }}>{value}</span>
         {unit && <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft }}>{unit}</span>}
       </div>
       {meter && <BandTick meter={meter} color={markerColor} />}
@@ -158,7 +156,7 @@ export function StackBar({ segments, label }: { segments: { label: string; n: nu
         {segments.map((s) => (
           <li key={s.label} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
             <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 3, background: s.color }} />
-            {s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 11.5 }}>{s.n}</strong>
+            {s.label} <strong style={{ color: t.coal, fontFamily: f.mono, fontSize: 12 }}>{s.n}</strong>
           </li>
         ))}
       </ul>
@@ -193,7 +191,7 @@ export function RiGauge({ ri, threshold, band, cohort, size = 220 }: { ri: numbe
         {typeof cohort === "number" && notch(cohort, t.indigo, 6)}
       </svg>
       <div aria-hidden="true" style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: f.serif, fontSize: 64, lineHeight: 1, color: t.coal, fontWeight: 500 }}>{ri}</span>
+        <span style={{ fontFamily: f.sans, fontSize: 64, lineHeight: 1, color: t.coal, fontWeight: 700 }}>{ri}</span>
         <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, letterSpacing: 0.5, marginTop: 2 }}>/ 100 · RI now</span>
         <span style={{ fontFamily: f.sans, fontSize: 11, color: t.inkSoft, marginTop: 8 }}>bar · <strong style={{ color: t.coal }}>{threshold}</strong></span>
       </div>
@@ -238,15 +236,15 @@ export function Spark({ points, color = t.indigo, width = 96, height = 28 }: { p
   );
 }
 
-export function SkillBar({ s }: { s: Skill }) {
+export function SkillBar({ s, modelled }: { s: Skill; modelled?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
       <span style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, width: 122, flexShrink: 0 }}>{s.name}</span>
-      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${s.percentile}${ordinalSuffix(s.percentile)} percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
+      <div role="img" aria-label={`${s.name}: ${s.score} out of 100, ${modelled ? "estimated " : ""}${s.percentile}${ordinalSuffix(s.percentile)} percentile`} style={{ flex: 1, height: 8, background: t.creamSoft, borderRadius: 999, overflow: "hidden" }}>
         <div style={{ width: `${s.score}%`, height: "100%", background: scoreColor(s.score), borderRadius: 999 }} />
       </div>
       <span style={{ fontFamily: f.mono, fontSize: 12, color: t.coal, width: 26, textAlign: "right" }}>{s.score}</span>
-      <span style={{ fontFamily: f.mono, fontSize: 10, color: t.inkSoft, width: 44, textAlign: "right" }} title={`Better than ${s.percentile}% of candidates targeting this role`}>p{s.percentile}</span>
+      <span style={{ fontFamily: f.mono, fontSize: 11, color: t.inkSoft, width: 44, textAlign: "right" }} title={`${modelled ? "Estimated: better" : "Better"} than ${s.percentile}% of candidates targeting this role`}>p{s.percentile}{modelled ? "*" : ""}</span>
       <span style={{ width: 30, textAlign: "right" }}><DeltaTag value={s.delta} /></span>
     </div>
   );
@@ -276,7 +274,7 @@ export function StarChips({ star }: { star: { S: boolean; T: boolean; A: boolean
    target for red flags, blind spots, and weak verdicts. */
 export function EvidenceQuote({ quote }: { quote: string }) {
   return (
-    <blockquote style={{ margin: "8px 0 0", padding: "8px 12px", borderRadius: 8, background: t.creamSoft, fontFamily: f.serif, fontSize: 14, fontStyle: "italic", color: t.coal, lineHeight: 1.5 }}>
+    <blockquote style={{ margin: "8px 0 0", padding: "8px 12px", borderRadius: 8, background: t.creamSoft, fontFamily: f.sans, fontSize: 14, fontStyle: "italic", color: t.coal, lineHeight: 1.5 }}>
       {quote}
     </blockquote>
   );

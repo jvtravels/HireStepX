@@ -1,22 +1,25 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
-import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, type Profile } from "./supabase";
+import { Button } from "@/components/ui/button";
+import LoadingScreen from "./_LoadingScreen";
+import { routeSkeletonFor } from "./routeSkeletons";
+import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
   clearSessionStart,
   isSessionExpiredByPreference,
 } from "./auth/_shell";
 import { captureClientEvent, identifyClient, resetClient } from "./posthogClient";
-import { isSlowConnection } from "./_browser-api-guards";
 import {
-  decideDeviceAction,
-  markDeviceGrace,
-  isWithinDeviceGrace,
-  clearDeviceGrace,
-  DEVICE_GRACE_MS,
-} from "./deviceSession";
+  PENDING_CONSENT_KEY,
+  consentDoneKey,
+  currentSignupConsent,
+  resolveConsentToRecord,
+} from "./_consent-record";
+import { preloadRouteChunk } from "./routeChunkPreload";
+import { isSlowConnection, sendGtagEvent } from "./_browser-api-guards";
 
-import type { Session, SupabaseClient } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 import type { StoredResume } from "./resumeParser";
 
 /** Check if Supabase has a session token stored in localStorage */
@@ -145,7 +148,7 @@ function cacheTier(
   } catch { /* storage unavailable */ }
 }
 function getCachedTier(userId: string): {
-  tier: "free" | "starter" | "pro" | "team";
+  tier: "free" | "starter" | "team";
   subscriptionEnd?: string;
   practiceTimestamps?: string[];
   targetRole?: string;
@@ -157,47 +160,8 @@ function getCachedTier(userId: string): {
   } catch { return null; }
 }
 
-/* ─── Single-Device Session Enforcement ─── */
+/* ─── Inactivity auto-logout ─── */
 const INACTIVITY_TIMEOUT_MS = 4 * 60 * 60 * 1000; // 4 hours default (configurable: 4-8 hrs)
-const DEVICE_TOKEN_KEY = "hirestepx_device_token";
-
-function generateDeviceToken(): string {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
-  return Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-export function getStoredDeviceToken(): string | null {
-  try { return localStorage.getItem(DEVICE_TOKEN_KEY); } catch { return null; }
-}
-
-function storeDeviceToken(token: string) {
-  try { localStorage.setItem(DEVICE_TOKEN_KEY, token); } catch { /* expected */ }
-}
-
-/** Confirm a would-be single-device eviction against AUTHORITATIVE server
- *  metadata before signing out. The JWT in a cached session is a snapshot — it
- *  can still carry the PREVIOUS session's device token for a beat after our own
- *  login rotated it, which is exactly what produced the self-eviction bug.
- *  getUser() hits Supabase for the current value. Returns the decideDeviceAction
- *  verdict against that fresh read plus the fresh token (so an "adopt" can store
- *  it without a second round-trip). Fail-safe: any error → "keep", because
- *  eviction is destructive and must never fire on an inconclusive read. */
-async function resolveDeviceWithServer(
-  client: SupabaseClient,
-  localToken: string | null,
-): Promise<{ action: "keep" | "adopt" | "evict"; serverToken: string | null }> {
-  try {
-    const { data, error } = await client.auth.getUser();
-    if (error || !data?.user) return { action: "keep", serverToken: null };
-    const freshServerToken = (data.user.user_metadata?.active_device_token as string | undefined) ?? null;
-    return {
-      action: decideDeviceAction({ localToken, serverToken: freshServerToken, withinGrace: isWithinDeviceGrace() }),
-      serverToken: freshServerToken,
-    };
-  } catch {
-    return { action: "keep", serverToken: null };
-  }
-}
 
 /* ─── Referral capture/apply ───
    A referral link lands on /signup?ref=HSX-XXXXXX. The code is stashed here at
@@ -222,6 +186,124 @@ function readPendingReferralCode(): string | null {
 
 function clearPendingReferralCode(): void {
   try { localStorage.removeItem(PENDING_REFERRAL_KEY); } catch { /* expected */ }
+}
+
+/* ─── Employer company-profile capture/apply ───
+   An employer signs up at /signup?next=/employer with just their company
+   name entered right on the signup form (see src/auth/Signup.tsx) — there's
+   no session yet to authenticate the /api/employer-profile call with, so the
+   value is stashed here and applied once a real session exists, same
+   pattern as the referral code above. Website is optional at signup and can
+   also be added later in Settings. */
+const PENDING_EMPLOYER_PROFILE_KEY = "hirestepx_pending_employer_profile";
+
+interface PendingEmployerProfile { companyName: string; website?: string }
+
+/** Stash the company name from the employer signup form for later
+ *  application. No-ops if blank. Exported for Signup.tsx to call right
+ *  before submitting the signup form. */
+export function storePendingEmployerProfile(companyName: string, website = ""): void {
+  const name = companyName.trim();
+  if (!name) return;
+  try {
+    localStorage.setItem(PENDING_EMPLOYER_PROFILE_KEY, JSON.stringify({ companyName: name, website: website.trim() }));
+  } catch { /* expected */ }
+}
+
+function readPendingEmployerProfile(): PendingEmployerProfile | null {
+  try {
+    const raw = localStorage.getItem(PENDING_EMPLOYER_PROFILE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as unknown;
+    if (
+      typeof parsed === "object" && parsed !== null &&
+      typeof (parsed as PendingEmployerProfile).companyName === "string"
+    ) {
+      return parsed as PendingEmployerProfile;
+    }
+    return null;
+  } catch { return null; }
+}
+
+function clearPendingEmployerProfile(): void {
+  try { localStorage.removeItem(PENDING_EMPLOYER_PROFILE_KEY); } catch { /* expected */ }
+}
+
+/* ─── Signup consent ledger (DPDP) ───
+   The signup form's "I am 18 or older and agree to the Terms of Use and
+   Privacy Policy" affirmation is recorded server-side (user_consents) once,
+   on the first authenticated session — same pending-localStorage pattern as
+   the employer profile above. Google sign-in sets the flag from the signup /
+   login page right before the OAuth redirect. */
+export function storePendingConsent(): void {
+  try { localStorage.setItem(PENDING_CONSENT_KEY, JSON.stringify(currentSignupConsent())); } catch { /* expected */ }
+}
+
+export function clearPendingConsent(): void {
+  try { localStorage.removeItem(PENDING_CONSENT_KEY); } catch { /* expected */ }
+}
+
+/** Fire-and-forget. Keeps the pending flag on 5xx/202-retry/network errors
+ *  (e.g. the user_consents migration isn't applied yet) and clears it on a
+ *  definitive outcome. Server is idempotent per (user, purpose, version). */
+async function applyPendingConsent(session: Session): Promise<void> {
+  try {
+    const userId = session.user?.id;
+    if (!userId || !session.access_token) return;
+    let rawPending: string | null = null;
+    try { rawPending = localStorage.getItem(PENDING_CONSENT_KEY); } catch { /* expected */ }
+    const consent = resolveConsentToRecord(rawPending, session.user.user_metadata);
+    if (!consent) return;
+    const doneKey = consentDoneKey(userId, consent);
+    try { if (localStorage.getItem(doneKey)) { clearPendingConsent(); return; } } catch { /* expected */ }
+    const res = await fetch("/api/record-consent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify(consent),
+    });
+    const body: unknown = await res.json().catch(() => null);
+    const recorded = typeof body === "object" && body !== null && (body as { recorded?: unknown }).recorded === true;
+    if (recorded || (res.status >= 400 && res.status < 500 && res.status !== 429)) {
+      clearPendingConsent();
+      try { localStorage.setItem(doneKey, "1"); } catch { /* expected */ }
+    }
+  } catch {
+    /* transient — keep the pending flag for the next session */
+  }
+}
+
+/* ─── Deferred-onboarding redirect (SEO signups only) ───
+   Salary/questions SEO CTAs append ?next=/interview so that cohort can reach
+   a session immediately after verifying instead of being forced through
+   onboarding first (SEO copy promises "practice free" — onboarding's resume
+   upload + profile analysis broke that promise). Stashed at /signup mount,
+   consumed once the user is verified and would otherwise be bounced to
+   /onboarding. Allowlisted to exactly "/interview" — this is a targeted
+   funnel fix, not a general redirect mechanism. */
+const PENDING_NEXT_KEY = "hirestepx_pending_next";
+/* Fixed prefix, not an arbitrary-path allowlist — the only supported skip
+ * target is /interview, optionally with a ?role= query string carried over
+ * from the SEO page for personalization. Same-origin path always, so the
+ * query content can't turn this into an open redirect. */
+function isAllowedPendingNext(raw: string): boolean {
+  return raw === "/interview" || raw.startsWith("/interview?");
+}
+
+/** Stash a post-verification redirect target from a signup link. No-ops
+ *  unless the target is in the allowlist. Exported for the signup page. */
+export function storePendingNextTarget(raw: string | null | undefined): void {
+  if (typeof raw !== "string" || !isAllowedPendingNext(raw)) return;
+  try { localStorage.setItem(PENDING_NEXT_KEY, raw); } catch { /* expected */ }
+}
+
+function consumePendingNextTarget(): string | null {
+  try {
+    const target = localStorage.getItem(PENDING_NEXT_KEY);
+    if (target) localStorage.removeItem(PENDING_NEXT_KEY);
+    return target && isAllowedPendingNext(target) ? target : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Build the canonical referral signup URL for a code. Falls back to the app
@@ -263,6 +345,37 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
   }
 }
 
+/** A stashed profile is worth keeping across a transient 4xx (429 rate limit, 401 from a
+ *  not-yet-settled session, 403 work_email_required the user may resolve by signing in
+ *  with another email). It is dropped only on a validation failure (400/422): the stashed
+ *  values themselves are bad and retrying on every sign-in would never succeed. */
+export function shouldDiscardPendingEmployerProfile(status: number): boolean {
+  return status === 400 || status === 422;
+}
+
+/** Apply a captured employer company profile now that we have an
+ *  authenticated session — closes the "sign up as an employer" loop so a
+ *  new employer lands straight on an already-approved /employer dashboard
+ *  instead of the CompanyOnboarding form. Fire-and-forget, same
+ *  keep-on-5xx/clear-on-definitive-outcome shape as applyPendingReferral. */
+async function applyPendingEmployerProfile(accessToken: string): Promise<void> {
+  const pending = readPendingEmployerProfile();
+  if (!pending) return;
+  try {
+    const res = await fetch("/api/employer-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(pending.website ? { companyName: pending.companyName, website: pending.website } : { companyName: pending.companyName }),
+    });
+    // Keep the stash on any failure that might clear up (409/423/429, a free-mail 403 the
+    // user can fix by switching accounts); drop it only once applied or when the server
+    // rejects the stashed values themselves.
+    if (res.ok || shouldDiscardPendingEmployerProfile(res.status)) clearPendingEmployerProfile();
+  } catch {
+    /* transient — keep the pending profile for the next SIGNED_IN */
+  }
+}
+
 /* Session-fingerprint hijack detection used to live here. Removed —
    the only path was storeSessionFingerprint() at login, but no code
    ever read the stored value back to compare against a fresh
@@ -273,7 +386,6 @@ async function applyPendingReferral(accessToken: string): Promise<void> {
 
    Real session-hijack defence in this codebase comes from:
    - Supabase HttpOnly secure cookies + SameSite=Lax
-   - Single-device token rotation (active_device_token in user_metadata)
    - Server-side rate-limit on /api/send-welcome
    - Lockout after 5 failed login attempts
 
@@ -298,6 +410,7 @@ function logAuditEvent(event: string, details?: Record<string, unknown>) {
     }).catch(() => {});
     // 2. Function-log backup (for events that arrive before the table exists)
     const payload = {
+      level: "info",
       message: `[audit] ${event}`,
       timestamp: new Date().toISOString(),
       url: window.location.pathname,
@@ -454,31 +567,50 @@ export interface User {
    * on resume removal.
    */
   resumeVersionId?: string | null;
-  subscriptionTier?: "free" | "starter" | "pro" | "team";
+  subscriptionTier?: "free" | "starter" | "team";
   subscriptionStart?: string;
   subscriptionEnd?: string;
   cancelAtPeriodEnd?: boolean;
   subscriptionPaused?: boolean;
+  /** True only for a legacy/active recurring Razorpay subscription. New
+   *  paid purchases (Sprint Pack included) are one-time orders with no
+   *  subscription_id, so Settings must not offer Pause/Cancel for them. */
+  hasRecurringSubscription?: boolean;
   referralCode?: string;
   emailVerified: boolean;
   deletedAt?: string | null;
+  /** Employer signup only: the company name/website typed at signup, kept in user_metadata
+   *  so onboarding can prefill after an email confirmed on a different device. */
+  pendingCompanyName?: string;
+  pendingCompanyWebsite?: string;
+  /** Candidate-submitted proof-of-work links (GitHub, portfolio site, case
+   *  studies, etc). Only what the candidate entered — never synthesized —
+   *  surfaced to employers alongside practice-session evidence. */
+  portfolioLinks?: Array<{ title: string; url: string }>;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   isLoggedIn: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, name: string, password: string) => Promise<{ success: boolean; error?: string; userId?: string }>;
+  signup: (email: string, name: string, password: string, redirectPath?: string, employer?: { companyName: string; website?: string }) => Promise<{ success: boolean; error?: string; userId?: string }>;
   loginWithGoogle: (returnTo?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
-const AuthContext = createContext<AuthContextType | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<AuthContext.Provider value={...}>` — the real AuthProvider performs
+ *  live Supabase network calls unsuitable for canvas mode. */
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-function profileToUser(profile: Profile, session: Session): User {
+function metaString(v: unknown): string | undefined {
+  return typeof v === "string" && v.trim() ? v.trim() : undefined;
+}
+
+export function profileToUser(profile: Profile, session: Session): User {
   // Completion signals, strongest to weakest:
   //   1. Postgres column explicitly true — canonical source of truth.
   //   2. Per-user localStorage flag (hirestepx_onboarding_done_<id>) — set
@@ -518,8 +650,9 @@ function profileToUser(profile: Profile, session: Session): User {
     // undefined — callers use isAiResume/isFallbackResume to narrow.
     resumeData: (profile.resume_data as StoredResume | null | undefined) || undefined,
     resumeVersionId: (profile.resume_version_id as string | null | undefined) || null,
+    portfolioLinks: (profile.portfolio_links as Array<{ title: string; url: string }> | null | undefined) || undefined,
     subscriptionTier: (() => {
-      const tier = (profile.subscription_tier as "free" | "starter" | "pro" | "team") || "free";
+      const tier = (profile.subscription_tier as "free" | "starter" | "team") || "free";
       // Auto-downgrade expired subscriptions
       if (tier !== "free" && profile.subscription_end) {
         if (new Date(profile.subscription_end) < new Date()) {
@@ -535,6 +668,7 @@ function profileToUser(profile: Profile, session: Session): User {
     subscriptionEnd: profile.subscription_end || undefined,
     cancelAtPeriodEnd: profile.cancel_at_period_end || false,
     subscriptionPaused: !!profile.subscription_paused,
+    hasRecurringSubscription: !!profile.razorpay_subscription_id,
     referralCode: profile.referral_code || undefined,
     emailVerified:
       session.user.user_metadata?.custom_email_verified === true ||
@@ -545,13 +679,19 @@ function profileToUser(profile: Profile, session: Session): User {
       session.user.app_metadata?.provider === "google" ||
       session.user.app_metadata?.providers?.includes?.("google") === true,
     deletedAt: profile.deleted_at,
+    pendingCompanyName: metaString(session.user.user_metadata?.pending_company_name),
+    pendingCompanyWebsite: metaString(session.user.user_metadata?.pending_company_website),
     // OAuth provider — used by Settings to hide "Reset Password" for
     // Google-only users (they have no internal-app password to reset).
+    // Checked against the linked-providers list, not the current
+    // session's provider: a dual-provider account (email + Google both
+    // linked) has a real password to reset even on a session where they
+    // happened to sign in via Google, so it must not be misreported as
+    // Google-only just because Google is one of the linked providers.
     signedInVia:
-      session.user.app_metadata?.provider === "google" ||
-      session.user.app_metadata?.providers?.includes?.("google")
-        ? "google"
-        : "email",
+      session.user.app_metadata?.providers?.includes?.("email")
+        ? "email"
+        : "google",
   };
 }
 
@@ -564,11 +704,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signingUpRef = useRef(false);
   // Prevent race condition: onAuthStateChange should not override getSession result during init
   const initialSessionRestoredRef = useRef(false);
-  // The post-login "don't evict me yet" grace window now lives in localStorage
-  // (see deviceSession.ts: markDeviceGrace / isWithinDeviceGrace) rather than an
-  // in-memory ref, so it survives the (auth)→(app) route-group provider remount
-  // that the old ref could not — that remount resetting the ref to false was the
-  // root cause of the post-login self-eviction.
   // Stable ref so checkExpiry can read user.id without depending on the full user object.
   // The full user dep caused the effect to restart on every setUser() call (fast-render,
   // profile load, TOKEN_REFRESHED → 3+ restarts on page load), stacking 10s timers and
@@ -585,18 +720,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try { localStorage.removeItem("hirestepx_auth"); } catch { /* expected: localStorage may be unavailable */ }
   }, []);
 
-  // Global unhandled rejection handler — catches promises without .catch()
+  // Auto-assign referral code: every user gets one, but it's lazy (created on
+  // first GET /api/referral). Without this, new users complete their first
+  // session and see no WhatsApp/LinkedIn share option because their profile
+  // still has referral_code = null. This fires once per authenticated session
+  // when the code is absent, silently updating state so the share section is
+  // live the next time the report renders.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    const handler = (event: PromiseRejectionEvent) => {
-      const reason = event.reason;
-      const msg = reason instanceof Error ? reason.message : String(reason);
-      // Ignore expected abort errors
-      if (msg.includes("abort") || msg.includes("AbortError")) return;
-      console.error("[unhandled-rejection]", msg, reason);
-    };
-    window.addEventListener("unhandledrejection", handler);
-    return () => window.removeEventListener("unhandledrejection", handler);
+    if (!user?.id || user.referralCode) return;
+    authHeaders()
+      .then((headers) => fetch("/api/referral", { headers }))
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { code?: string } | null) => {
+        if (data?.code) {
+          setUser((prev) => prev ? { ...prev, referralCode: data.code } : prev);
+        }
+      })
+      .catch(() => { /* non-critical — share section stays hidden this session */ });
+  }, [user?.id, user?.referralCode]);
+
+  // Register global error reporter: captures unhandled errors + promise rejections
+  // and forwards them to /api/log-error (and optional Sentry). Idempotent.
+  // Dynamic import keeps errorReporter's optional @sentry/browser dynamic import
+  // out of the static module graph (Vitest transform can't resolve @sentry/browser).
+  useEffect(() => {
+    import("./errorReporter").then(m => m.initErrorReporter()).catch(() => {});
   }, []);
 
   // "Remember me" — clear session on tab/browser close if ephemeral
@@ -635,22 +783,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabaseConfigured) return;
 
-    // Start loading the Supabase SDK — defer on marketing domain to avoid blocking FCP
-    const isMarketing = typeof window !== "undefined" &&
-      !window.location.hostname.includes("app.") &&
-      !window.location.hostname.includes("staging.") &&
-      !window.location.hostname.includes("localhost") &&
-      !window.location.hostname.includes("127.0.0.1") &&
-      !window.location.hostname.includes("vercel.app");
-    if (isMarketing) {
-      // On marketing domain, defer Supabase load until browser is idle — avoids blocking FCP/LCP
+    // Start loading the Supabase SDK eagerly when an app route is active (dashboard,
+    // session, interview, onboarding, settings, login/signup). The SDK (~191KB) dynamic
+    // import must be underway BEFORE getSession() is awaited — otherwise the import
+    // itself consumes most of the 7s getSession timeout on slow Indian mobile connections.
+    //
+    // On pure marketing paths (homepage, pricing, blog …) with no authenticated route
+    // in the URL, defer until browser idle to avoid blocking FCP/LCP.
+    const isAppRoute = typeof window !== "undefined" && (
+      window.location.hostname.includes("staging.") ||
+      window.location.hostname.includes("localhost") ||
+      window.location.hostname.includes("127.0.0.1") ||
+      window.location.hostname.includes("vercel.app") ||
+      window.location.pathname.startsWith("/dashboard") ||
+      window.location.pathname.startsWith("/session") ||
+      window.location.pathname.startsWith("/interview") ||
+      window.location.pathname.startsWith("/onboarding") ||
+      window.location.pathname.startsWith("/settings") ||
+      window.location.pathname.startsWith("/login") ||
+      window.location.pathname.startsWith("/signup") ||
+      window.location.pathname.startsWith("/auth/")
+    );
+    if (isAppRoute) {
+      preloadSupabase();
+    } else {
+      // Pure marketing page — defer until browser is idle to avoid blocking FCP/LCP
       if (typeof requestIdleCallback !== "undefined") {
         requestIdleCallback(() => preloadSupabase());
       } else {
         setTimeout(preloadSupabase, 4000);
       }
-    } else {
-      preloadSupabase();
     }
 
     // Helper: build a new user from session metadata and seed the profiles table
@@ -692,7 +854,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // When getProfile times out (extension-blocked fetch), we set a basic
     // user from the JWT alone — missing subscriptionTier, resumeData, etc.
-    // That makes Pro users briefly see "Free Plan" in the sidebar until a
+    // That makes paid-plan users briefly see "Free Plan" in the sidebar until a
     // hard refresh re-fetches the profile. Retry in the background with
     // exponential backoff so the UI self-corrects without user action.
     const retryProfileInBackground = (sess: Session) => {
@@ -773,13 +935,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // can read it. Set to true inside if(session) when fast render ran.
         let didFastRender = false;
         if (!session) {
-          session = await Promise.race([
-            client.auth.getSession().then(r => r.data.session ?? null),
-            new Promise<null>((resolve) => setTimeout(() => {
-              console.warn("[auth] getSession() exceeded 3s — treating as no session (browser extension may be blocking fetch)");
-              resolve(null);
-            }, 3000)),
-          ]);
+          let getSessionTimer: ReturnType<typeof setTimeout> | undefined;
+          try {
+            session = await Promise.race([
+              client.auth.getSession().then(r => r.data.session ?? null),
+              new Promise<null>((resolve) => {
+                getSessionTimer = setTimeout(() => {
+                  console.warn("[auth] getSession() exceeded 7s — treating as no session (browser extension may be blocking fetch)");
+                  resolve(null);
+                }, 7000);
+              }),
+            ]);
+          } finally {
+            clearTimeout(getSessionTimer);
+          }
         } else {
           // Background refresh — fire-and-forget. If the SDK manages to
           // resolve quickly it'll merely confirm what we already have;
@@ -811,9 +980,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // has aged past 24h (unchecked) or 30d (checked), force re-auth.
           if (isSessionExpiredByPreference()) {
             console.info("[auth] session expired by Stay-signed-in TTL — signing out");
+            const staleAccessToken = session.access_token;
             setUser(null);
             clearSessionStart();
-            await client.auth.signOut().catch(() => {});
+            // Don't route this through client.auth.signOut() — it acts on
+            // the shared client's CURRENT session, not the stale one we
+            // captured above. This init flow runs on every mount including
+            // /login, so a user submitting the login form while this await
+            // was still in flight would have their brand-new session
+            // silently wiped the moment the stale signOut() finally
+            // resolved (reproduced live: login succeeded, a delayed global
+            // logout fired right after, every following authed call —
+            // including analyze-resume — came back 401). Guard the local
+            // wipe on the stale token still being current, and revoke it
+            // server-side with a direct call scoped to that exact token so
+            // it can never touch a session established after this check
+            // started.
+            if (readSessionFromLocalStorage()?.access_token === staleAccessToken) {
+              try {
+                const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const ref = url ? new URL(url).hostname.split(".")[0] : null;
+                if (ref) localStorage.removeItem(`sb-${ref}-auth-token`);
+              } catch { /* ignore */ }
+              const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+              const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+              if (supabaseUrl && anonKey) {
+                fetch(`${supabaseUrl}/auth/v1/logout?scope=global`, {
+                  method: "POST",
+                  headers: { apikey: anonKey, Authorization: `Bearer ${staleAccessToken}` },
+                }).catch(() => {});
+              }
+            }
             clearTimeout(safetyTimer);
             setLoading(false);
             return;
@@ -821,6 +1018,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Capture Google provider token if present (after OAuth redirect)
           if (session.provider_token) {
             try { sessionStorage.setItem("hirestepx_google_token", session.provider_token); } catch { /* expected: sessionStorage may be unavailable */ }
+          }
+          // Close the referral/employer-profile loops for sessions established
+          // directly from URL hash tokens (email verification / magic links).
+          // supabase-js resolves these via getSession() right here and fires
+          // onAuthStateChange with "INITIAL_SESSION" rather than "SIGNED_IN" for
+          // this path, so the equivalent calls in the SIGNED_IN branch below
+          // never run for a fresh signup landing straight off a verify link.
+          // Both helpers no-op when there's no pending data, so this is safe
+          // to run on every restore. Awaited (like the SIGNED_IN branch) since
+          // an employer lands on /employer immediately after and that route
+          // reads companyStatus on mount.
+          if (session.access_token) {
+            void applyPendingReferral(session.access_token);
+            void applyPendingConsent(session);
+            await applyPendingEmployerProfile(session.access_token);
           }
           // ── Fast render for returning users ──────────────────────────────────
           // On slow Indian mobile connections getProfile consistently hits the 5s
@@ -882,42 +1094,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const loadedUser = profileToUser(profile, session);
               setUser(loadedUser);
               cacheTier(session.user.id, loadedUser.subscriptionTier, loadedUser.subscriptionEnd, loadedUser.practiceTimestamps, loadedUser.targetRole);
-              // ─── Single-device enforcement (restore path) ───
-              // decideDeviceAction encodes the keep/adopt/evict rule; see
-              // deviceSession.ts for the full rationale. Two safeguards make a
-              // FALSE eviction (the self-eviction bug) impossible:
-              //   1. The grace window is read from localStorage (isWithinDeviceGrace),
-              //      so it survives the (auth)→(app) route-group provider remount
-              //      that an in-memory ref could not.
-              //   2. A would-be eviction is re-confirmed against AUTHORITATIVE server
-              //      metadata via getUser() before we sign out — the session JWT here
-              //      can be a stale snapshot from before our own login rotated the token.
-              const localToken = getStoredDeviceToken();
-              const serverToken = session.user.user_metadata?.active_device_token as string | undefined;
-              const action = decideDeviceAction({ localToken, serverToken, withinGrace: isWithinDeviceGrace() });
-              if (action === "adopt" && serverToken) {
-                // First login on this origin (or cleared localStorage): adopt the
-                // server token so the next check compares like-for-like.
-                storeDeviceToken(serverToken);
-              } else if (action === "evict") {
-                const confirmed = await resolveDeviceWithServer(client, localToken);
-                if (confirmed.action === "evict") {
-                  console.warn("[auth] single-device: another device has taken over — signing out");
-                  logAuditEvent("single_device_enforcement", { userId: session.user.id });
-                  setUser(null);
-                  await client.auth.signOut().catch(() => {});
-                  try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
-                  clearDeviceGrace();
-                  clearTimeout(safetyTimer);
-                  setLoading(false);
-                  return;
-                }
-                // Authoritative server disagreed with the stale JWT — keep the
-                // session, and adopt the fresh token if we had none locally.
-                if (confirmed.action === "adopt" && confirmed.serverToken) {
-                  storeDeviceToken(confirmed.serverToken);
-                }
-              }
             } else {
               // No profile found — create one rather than signing out
               await ensureProfile(session);
@@ -1052,23 +1228,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
 
           // ── SIGNED_IN: full profile fetch (real login / re-login) ─────────────
-          // Single-device enforcement: mint a device token on a genuine new login
-          // that didn't already rotate one (OAuth/email-verify callbacks land here,
-          // not via login()). Skip session restores/refreshes (which also fire
-          // SIGNED_IN but keep the existing token), and skip while login()'s own
-          // rotation is mid-flight (grace open) so the two writers never race.
-          if (!getStoredDeviceToken() && !isWithinDeviceGrace()) {
-            const newDeviceToken = generateDeviceToken();
-            storeDeviceToken(newDeviceToken);
-            // Open the durable grace window so the downstream/remounted check
-            // doesn't evict on local=newToken vs a stale JWT serverToken.
-            markDeviceGrace(DEVICE_GRACE_MS);
-            client.auth.updateUser({ data: { active_device_token: newDeviceToken } }).catch(err => console.warn("[auth] updateUser(device_token) failed:", err?.message));
-          }
           // Close the referral loop: apply any code captured from a signup link.
           // Fire-and-forget; the server is idempotent for re-applies.
           if (session.access_token) {
             void applyPendingReferral(session.access_token);
+            void applyPendingConsent(session);
+            // Awaited (unlike the referral above) — the employer lands on
+            // /employer right after this handler resolves, and that route
+            // reads companyStatus on mount. Racing it would show the
+            // CompanyOnboarding form instead of the dashboard it just built.
+            await applyPendingEmployerProfile(session.access_token);
           }
           try {
             // Same connection-aware timeout guard as the restore path
@@ -1084,6 +1253,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const refreshedUser = profileToUser(profile, session);
               setUser(refreshedUser);
               cacheTier(session.user.id, refreshedUser.subscriptionTier, refreshedUser.subscriptionEnd, refreshedUser.practiceTimestamps, refreshedUser.targetRole);
+              // Identify Google OAuth users in PostHog — email/password users are
+              // identified in login() and signup(); OAuth users only land here.
+              if (isGoogleProvider) {
+                identifyClient(session.user.id, { signup_method: "google" });
+              }
             } else {
               await ensureProfile(session);
             }
@@ -1137,7 +1311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { unsubscribe?.(); };
   }, []);
 
-  const signup = useCallback(async (email: string, name: string, password: string): Promise<{ success: boolean; error?: string; userId?: string }> => {
+  const signup = useCallback(async (email: string, name: string, password: string, _redirectPath?: string, employer?: { companyName: string; website?: string }): Promise<{ success: boolean; error?: string; userId?: string }> => {
     track("signup_started");
     if (!supabaseConfigured) {
       // localStorage fallback
@@ -1168,182 +1342,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!/[^A-Za-z0-9]/.test(password)) return { success: false, error: "Password must include a special character." };
     if (!name.trim() || name.trim().length > 48) return { success: false, error: "Name is required (max 48 characters)." };
 
-    // Server-side signup rate limiting (prevents spam signups from same IP)
-    try {
-      const rlCheck = await fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "check", email: email.toLowerCase().trim(), intent: "signup" }),
-      });
-      if (rlCheck.status === 429) {
-        return { success: false, error: "Too many signup attempts. Please try again in a few minutes." };
-      }
-    } catch { /* rate limit check failed, proceed */ }
-
-    const client = await getSupabase();
-    const metadata: Record<string, string> = { name };
-
-    // Suppress auth listener during signup to prevent premature redirect
+    // Account creation, rate limiting and the single Resend verification mail
+    // all happen server-side (admin createUser with email_confirm:false), so
+    // Supabase never sends its own confirmation mail. The server answers
+    // { ok: true } for new and existing emails alike (enumeration defense).
     signingUpRef.current = true;
-
     try {
-      const { data, error } = await client.auth.signUp({
-        email,
-        password,
-        options: { data: metadata, emailRedirectTo: `${window.location.origin}/dashboard` },
-      });
-
-      if (error) {
-        // OWASP-aligned UX even when Supabase returns an explicit
-        // "already registered" error (instead of the fake-success
-        // path we handle below). Fire the "you already have an
-        // account" email and return success — UI then shows the
-        // same "Check your email" state regardless of whether the
-        // account is new, existing-verified, or existing-pending-
-        // verification. User never reads "couldn't complete signup".
-        const lower = (error.message || "").toLowerCase();
-        const isAlreadyRegistered =
-          lower.includes("already registered") ||
-          lower.includes("already exists") ||
-          lower.includes("user already");
-        if (isAlreadyRegistered) {
-          fetch("/api/send-welcome", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "signup-attempted-existing",
-              email: email.toLowerCase().trim(),
-              name,
-            }),
-          }).catch(() => {});
-          track("signup_attempted_existing");
-          return { success: true };
-        }
-        return { success: false, error: error.message };
-      }
-
-      // Detect existing-email signups across Supabase's response shapes:
-      //
-      //   1. OWASP enumeration protection ON (default): data.user is
-      //      returned with `identities: []` — empty array. We fall
-      //      through to the existing-account email.
-      //   2. Newer Supabase configs / "Confirm email" enabled but
-      //      enumeration protection lax: data.user is returned with the
-      //      REAL user record (populated identities). For an already-
-      //      VERIFIED email, email_confirmed_at is a non-null timestamp.
-      //      For an existing-but-UNVERIFIED email, identities are
-      //      populated AND email_confirmed_at is null — indistinguishable
-      //      from a fresh signup based on those fields alone. The tell
-      //      is data.user.created_at: a fresh signup has it within a few
-      //      seconds of "now"; an existing user's is older.
-      //   3. Enumeration protection OFF entirely: Supabase returns an
-      //      explicit "already registered" error — handled in the
-      //      `if (error)` block above.
-      //
-      // Hitting any path funnels into the same "Check your email" UX so
-      // legit users never read "couldn't complete signup", and we never
-      // double-fire a verification email at someone whose account already
-      // exists (verified or not).
-      const userObj = data?.user as
-        | (typeof data.user & {
-            email_confirmed_at?: string | null;
-            created_at?: string | null;
-          })
-        | undefined;
-      const createdAtMs = userObj?.created_at
-        ? new Date(userObj.created_at).getTime()
-        : NaN;
-      const looksOlderThanFreshSignup =
-        Number.isFinite(createdAtMs) && Date.now() - createdAtMs > 5_000;
-
-      // Confirm-email startup probe (#33 from the audit).
-      //
-      // If Supabase's "Confirm email" project setting is OFF, every
-      // new signup comes back with email_confirmed_at IMMEDIATELY
-      // set — bypassing our verification flow entirely. Without this
-      // detection we'd misclassify the new user as "existing" (they
-      // hit the email_confirmed_at branch below) and silently route
-      // them through the "you already have an account" mail.
-      //
-      // The reliable distinguisher: created_at is fresh (<5s) AND
-      // identities is populated AND email_confirmed_at is set. That
-      // can only happen if Supabase auto-confirmed.
-      //
-      // When detected:
-      //   • Log CRITICAL so monitoring catches the misconfig
-      //   • Treat the user as a successfully-signed-up new user (the
-      //     verification email is moot — they're already confirmed)
-      //   • Do NOT route through the existing-account email path
-      const isFreshSignup =
-        Number.isFinite(createdAtMs) && Date.now() - createdAtMs <= 5_000;
-      const looksAutoConfirmed =
-        isFreshSignup &&
-        !!userObj?.email_confirmed_at &&
-        !!userObj?.identities &&
-        userObj.identities.length > 0;
-      if (looksAutoConfirmed) {
-        console.error(
-          "[CRITICAL] Supabase auto-confirm appears enabled — new signup " +
-          "arrived with email_confirmed_at already set. Verification flow " +
-          "is bypassed. Toggle 'Confirm email' ON in Supabase Auth settings.",
-        );
-        track("supabase_autoconfirm_detected");
-      }
-
-      const isExistingEmail =
-        !!userObj &&
-        !looksAutoConfirmed &&
-        (!userObj.identities ||
-          userObj.identities.length === 0 ||
-          !!userObj.email_confirmed_at ||
-          looksOlderThanFreshSignup);
-      if (isExistingEmail) {
-        // Fire-and-forget — non-blocking. Server routes to the
-        // "existing-account" template via the action flag.
-        fetch("/api/send-welcome", {
+      let res: Response;
+      try {
+        res = await fetch("/api/send-welcome", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            action: "signup-attempted-existing",
-            email: email.toLowerCase().trim(),
+            action: "create-account",
+            email: email.trim(),
             name,
+            password,
+            ref: readPendingReferralCode() || undefined,
+            ...(employer?.companyName.trim() ? { companyName: employer.companyName.trim(), companyWebsite: employer.website?.trim() || undefined } : {}),
           }),
-        }).catch(() => {});
-        track("signup_attempted_existing");
-        // Return success to client — the UI shows the same "Check your
-        // email" screen, the user gets either a verification email (new
-        // account) or a "you already have an account, sign in here"
-        // email (existing account). Either way, attacker can't tell.
-        return { success: true };
-      }
-
-      // Record signup attempt server-side (fire-and-forget)
-      fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "signup", email: email.toLowerCase().trim() }),
-      }).catch(err => console.warn("[auth] signup rate-limit tracking failed (non-blocking):", err?.message));
-
-      // Send verification email via Resend API (don't block signup on failure)
-      const userId = data?.user?.id;
-      try {
-        await fetch("/api/send-welcome", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, name, userId }),
         });
-      } catch { /* verification email is best-effort */ }
-
-      // Sign out so user must verify email before using the app
-      await client.auth.signOut();
-      setUser(null);
+      } catch {
+        return { success: false, error: "Couldn't reach the server. Check your connection and try again." };
+      }
+      if (!res.ok) {
+        const body: { error?: string } | null = await res.json().catch(() => null);
+        if (res.status === 429) return { success: false, error: body?.error || "Too many signup attempts. Please try again in a few minutes." };
+        return { success: false, error: body?.error || "Couldn't complete signup. Please try again." };
+      }
 
       track("signup_completed", { method: "email" });
-      if (userId) {
-        identifyClient(userId, { email, name, signup_method: "email" });
-        captureClientEvent("user_signed_up", { method: "email", email });
-      }
-      return { success: true, userId };
+      captureClientEvent("user_signed_up", { method: "email" });
+      sendGtagEvent("sign_up", { method: "email" });
+      return { success: true };
     } finally {
       signingUpRef.current = false;
     }
@@ -1483,20 +1514,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Successful login — clear lockout counter (client + server)
     clearLoginLockout();
 
-    // ─── Single-device enforcement — token rotation (BEFORE the optimistic setUser) ───
-    // setUser() below flips isLoggedIn, and the Login screen's effect immediately
-    // router.replace()s into the (app) route group — which UNMOUNTS this (auth)
-    // provider and MOUNTS a fresh (app) provider whose restore-path device check
-    // runs at once. The new token and the grace window must therefore be persisted
-    // FIRST: both live in localStorage (storeDeviceToken / markDeviceGrace), which
-    // the remounted provider reads. The server write + refreshSession happen just
-    // below and bring the JWT into agreement. (This ordering is the core fix for
-    // the post-login self-eviction.)
-    const existingServerToken = data?.user?.user_metadata?.active_device_token;
-    const deviceToken = generateDeviceToken();
-    storeDeviceToken(deviceToken);
-    markDeviceGrace(DEVICE_GRACE_MS);
-
     // Optimistically set the user NOW so isLoggedIn flips in this tab and
     // the Login screen's redirect effect fires immediately. Previously
     // login() relied entirely on the async onAuthStateChange(SIGNED_IN)
@@ -1532,46 +1549,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    // Persist the rotated token to the server so any OTHER device holding the
-    // old token is kicked on its next restore / 60s poll. We AWAIT updateUser so
-    // the rest of the flow knows the server really has the new token (previously
-    // fire-and-forget, which made the other-device kick-out unreliable).
-    // Build / update recent_devices history (max 5 entries, newest first).
-    // This is purely audit data for the Settings → Recent activity list;
-    // single-device enforcement still uses active_device_token alone.
-    const ua = typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "";
-    const prevDevices = (data?.user?.user_metadata?.recent_devices as Array<{ id: string; ua?: string; at?: number }> | undefined) || [];
-    const filtered = prevDevices.filter((d) => d?.id && d.id !== deviceToken);
-    const recentDevices = [
-      { id: deviceToken, ua, at: Date.now() },
-      ...filtered,
-    ].slice(0, 5);
-    try {
-      await client.auth.updateUser({
-        data: { active_device_token: deviceToken, recent_devices: recentDevices },
-      });
-      // Refresh so THIS tab's next getSession() returns metadata containing
-      // the new token — eliminates the race where our own check would see
-      // the stale pre-update snapshot.
-      await client.auth.refreshSession().catch(() => {});
-    } catch (err) {
-      console.warn("[auth] updateUser(device_token) failed:", err instanceof Error ? err.message : err);
-    }
-
-    // Security: if an existing session on another device is being displaced, notify user via email
-    if (existingServerToken && existingServerToken !== deviceToken) {
-      fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "new_device_login",
-          email: email.toLowerCase().trim(),
-          userAgent: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 200) : "",
-        }),
-      }).catch(err => console.warn("[auth] new-device email failed (non-blocking):", err?.message));
-      logAuditEvent("new_device_login", { email });
-    }
-
     // Clear server-side rate limit (fire-and-forget)
     fetch("/api/send-welcome", {
       method: "POST",
@@ -1581,7 +1558,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logAuditEvent("login_success", { email, method: "email" });
     track("login_success");
     if (data?.user?.id) {
-      identifyClient(data.user.id, { email });
+      identifyClient(data.user.id);
       captureClientEvent("user_logged_in", { method: "email" });
     }
     return { success: true };
@@ -1664,21 +1641,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logAuditEvent("logout", { userId: user?.id });
     resetClient();
     setUser(null);
-    // Audit P0 #6: clear server-side `active_device_token` BEFORE
-    // signOut so a stolen JWT from this device can't pass the
-    // single-device check after we walk away. Race-conditioned with
-    // signOut on purpose — if updateUser fails or times out, we
-    // still proceed to signOut. Best-effort defense in depth on top
-    // of the JWT revocation that signOut performs.
-    if (supabaseConfigured) {
-      try {
-        const client = await getSupabase();
-        await Promise.race([
-          client.auth.updateUser({ data: { active_device_token: null } }),
-          new Promise((resolve) => setTimeout(resolve, 1500)),
-        ]);
-      } catch { /* expected: token may already be invalid */ }
-    }
     // Clear stored session tokens BEFORE signOut to prevent the routing guard
     // from re-restoring the session via hasStoredSession() retry logic
     try {
@@ -1687,8 +1649,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) localStorage.removeItem(key);
       }
     } catch { /* expected */ }
-    try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
-    clearDeviceGrace();
     if (supabaseConfigured) { const client = await getSupabase(); await client.auth.signOut().catch(() => {}); }
     clearSessionStart();
     track("logout");
@@ -1749,6 +1709,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (updates.practiceTimestamps !== undefined) payload.practice_timestamps = updates.practiceTimestamps;
     if (updates.cancelAtPeriodEnd !== undefined) payload.cancel_at_period_end = updates.cancelAtPeriodEnd;
     if (updates.hasCompletedOnboarding !== undefined) payload.has_completed_onboarding = updates.hasCompletedOnboarding;
+    if (updates.portfolioLinks !== undefined) payload.portfolio_links = updates.portfolioLinks;
 
     if (Object.keys(payload).length === 0) return;
 
@@ -1757,7 +1718,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //    This replaces the previous direct supabase-js call so third-party
     //    fetch wrappers can't silently drop the write.
     const { apiFetch } = await import("./apiClient");
-    const result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    // The write is an idempotent upsert, so a dropped connection (status 0) or
+    // a 5xx is safe to resend. Three back-to-back ERR_TIMED_OUTs during
+    // onboarding once left a freshly analysed resume unpersisted, and the next
+    // page's profile fetch then wiped it from the UI.
+    let result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    for (const delayMs of [1000, 3000]) {
+      if (result.ok || !(result.status === 0 || result.status >= 500)) break;
+      await new Promise((r) => setTimeout(r, delayMs));
+      result = await apiFetch<{ profile: unknown; details?: string; missingColumn?: string }>("/api/profile/update", payload);
+    }
     if (!result.ok) {
       const details = result.data?.details || "";
       const missing = result.data?.missingColumn;
@@ -1854,39 +1824,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await client.auth.getSession();
         if (!session) return;
 
-        // ─── Single-device enforcement (periodic check) ───
-        // Runs every 60s. If another device logged in since we last synced, THIS
-        // tab's local token no longer matches the server's → we've been displaced.
-        // Same two safeguards as the restore path: honour the durable grace window
-        // (a login that just happened in another route group), and confirm against
-        // authoritative server metadata via getUser() before the destructive
-        // sign-out, so a stale cached JWT can never kick a legitimate session.
-        const localDeviceToken = getStoredDeviceToken();
-        const serverDeviceToken = session.user.user_metadata?.active_device_token as string | undefined;
-        const periodicAction = decideDeviceAction({
-          localToken: localDeviceToken,
-          serverToken: serverDeviceToken,
-          withinGrace: isWithinDeviceGrace(),
-        });
-        if (periodicAction === "adopt" && serverDeviceToken) {
-          storeDeviceToken(serverDeviceToken);
-        } else if (periodicAction === "evict") {
-          const confirmed = await resolveDeviceWithServer(client, localDeviceToken);
-          if (confirmed.action === "evict") {
-            logAuditEvent("single_device_kicked", { userId: userRef.current?.id });
-            setSessionExpiryWarning("Signed in on another device — signing out here.");
-            setUser(null);
-            await client.auth.signOut().catch(() => {});
-            broadcastLogout();
-            try { localStorage.removeItem(DEVICE_TOKEN_KEY); } catch { /* expected */ }
-            clearDeviceGrace();
-            return;
-          }
-          if (confirmed.action === "adopt" && confirmed.serverToken) {
-            storeDeviceToken(confirmed.serverToken);
-          }
-        }
-
         const exp = session.expires_at; // Unix timestamp in seconds
         if (!exp) return;
         const expiresMs = exp * 1000;
@@ -1941,7 +1878,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // timers — causing spurious getSession() calls and redundant refreshSession() calls
   // that can delay the plan widget from settling. userRef provides the current user.id
   // inside the effect without adding it as a dep.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, broadcastLogout, broadcastSessionRefreshed]);
 
   const resetPassword = useCallback(async (email: string): Promise<{ success: boolean; error?: string }> => {
@@ -1960,7 +1896,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (res.status === 429) return { success: false, error: "Too many reset requests. Please try again later." };
       // 4xx other than rate-limit shouldn't happen post-enumeration
       // fix; treat as transient failure rather than leaking specifics.
-      if (!res.ok) return { success: false, error: "We couldn't send the reset email right now. Try again in a moment, or contact support@hirestepx.com" };
+      if (!res.ok) return { success: false, error: "We couldn't send the reset email right now. Try again in a moment, or contact hello@hirestepx.com" };
       return { success: true };
     } catch {
       return { success: false, error: "Connection error. Check your internet and try again." };
@@ -1969,9 +1905,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Restore handler for soft-deleted accounts
   const [restoring, setRestoring] = useState(false);
+  const [restoreFailed, setRestoreFailed] = useState(false);
   const restoreAccount = async () => {
     if (restoring) return;
     setRestoring(true);
+    setRestoreFailed(false);
     try {
       const client = await getSupabase();
       const { data: { session } } = await client.auth.getSession();
@@ -1986,6 +1924,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       window.location.reload();
     } catch (err) {
       console.error("[auth] Restore account failed:", err);
+      setRestoreFailed(true);
       setRestoring(false);
     }
   };
@@ -2007,35 +1946,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally { setRefreshing(false); }
   };
 
+  // Memoized so local state here (restoring/refreshing/sessionExpiryWarning)
+  // re-rendering AuthProvider doesn't force every useAuth() consumer in the
+  // app to re-render too — the same wide-blast-radius bug as the UIContext
+  // fix, except this wraps every authenticated route, so it hits mid-navigation.
+  const contextValue = useMemo(() => ({
+    user, isLoggedIn: !!user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword,
+  }), [user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword]);
+
   return (
-    <AuthContext.Provider value={{ user, isLoggedIn: !!user, loading, login, signup, loginWithGoogle, logout, updateUser, resetPassword }}>
+    <AuthContext.Provider value={contextValue}>
       {/* Soft-delete restore banner */}
       {user?.deletedAt && (
         <div role="alert" style={{
-          position: "fixed", top: 0, left: 0, right: 0, zIndex: 10001,
+          // Sticky (in flow), not fixed: a fixed bar sat on top of the employer shell header.
+          position: "sticky", top: 0, zIndex: 10001,
           padding: "12px 20px",
           background: "rgba(196,112,90,0.12)", borderBottom: "1px solid rgba(196,112,90,0.3)",
           backdropFilter: "blur(10px)", WebkitBackdropFilter: "blur(10px)",
-          fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#E5A590",
+          fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: "#E5A590",
           display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap",
         }}>
           <span>
             ⚠️ Your account is scheduled for permanent deletion on{" "}
             <strong>{new Date(new Date(user.deletedAt).getTime() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}</strong>.
           </span>
-          <button
+          <Button
             type="button"
+            variant="default"
             onClick={restoreAccount}
             disabled={restoring}
             style={{
               fontFamily: "inherit", fontSize: 12, fontWeight: 600,
               color: "#060607", background: "#E5A590",
-              border: "none", borderRadius: 6, padding: "6px 14px",
+              border: "none", borderRadius: 8, padding: "6px 14px",
               cursor: restoring ? "default" : "pointer", opacity: restoring ? 0.6 : 1,
             }}
           >
             {restoring ? "Restoring..." : "Restore account"}
-          </button>
+          </Button>
+          {restoreFailed && <span role="status" className="text-xs">Couldn&apos;t restore your account. Try again, or contact support@hirestepx.com.</span>}
         </div>
       )}
       {/* Session expiry banner with Refresh Now action */}
@@ -2045,24 +1995,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           padding: "10px 16px 10px 20px", borderRadius: 10, maxWidth: 480,
           background: "rgba(212,179,127,0.15)", border: "1px solid rgba(212,179,127,0.3)",
           backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
-          fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#C9A96E",
+          fontFamily: "'Geist Sans', system-ui, sans-serif", fontSize: 13, color: "#C9A96E",
           display: "flex", alignItems: "center", gap: 12,
         }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span style={{ flex: 1 }}>{sessionExpiryWarning}</span>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={refreshSessionNow}
             disabled={refreshing}
             style={{
               fontFamily: "inherit", fontSize: 12, fontWeight: 600,
               color: "#C9A96E", background: "transparent",
-              border: "1px solid rgba(212,179,127,0.4)", borderRadius: 6, padding: "4px 10px",
+              border: "1px solid rgba(212,179,127,0.4)", borderRadius: 8, padding: "4px 10px",
               cursor: refreshing ? "default" : "pointer", opacity: refreshing ? 0.6 : 1,
             }}
           >
             {refreshing ? "Refreshing..." : "Refresh now"}
-          </button>
+          </Button>
         </div>
       )}
       {children}
@@ -2082,6 +2033,9 @@ export function RequireAuth({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const retryCount = useRef(0);
+
+  // Overlap the destination screen's chunk download with session restore.
+  useEffect(() => { preloadRouteChunk(pathname); }, [pathname]);
 
   // Track the last authenticated route so users return where they left off
   useEffect(() => {
@@ -2124,21 +2078,49 @@ export function RequireAuth({ children }: { children: ReactNode }) {
       // cross-user localStorage leakage used to surface stale resume
       // data that would trick this guard into letting a brand-new user
       // through.
-      router.replace("/onboarding");
+      const pendingNext = consumePendingNextTarget();
+      router.replace(pendingNext || "/onboarding");
     }
   }, [isLoggedIn, loading, user, router, pathname]);
 
-  if (loading || (!isLoggedIn && hasStoredSession())) return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ minHeight: "100vh", background: "#FAF7F0", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
-      <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 10, background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ width: 16, height: 16, border: "2px solid rgba(180,83,9,0.25)", borderTopColor: "#B45309", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-      </div>
-      <span style={{ fontFamily: "'Satoshi', system-ui, sans-serif", fontSize: 13, color: "#6B635A" }}>Loading...</span>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+  // Session restore runs on every hard load, so this is the first loader the
+  // user sees — show the destination screen's shape, not a generic blob.
+  if (loading || (!isLoggedIn && hasStoredSession())) return routeSkeletonFor(pathname) ?? <LoadingScreen />;
+  if (!isLoggedIn) return <LoadingScreen message="Taking you to sign in…" />;
+  if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return <LoadingScreen message="Let's finish setting up your profile first…" />;
+
+  return <>{children}</>;
+}
+
+/* Route guard for non-candidate surfaces (e.g. the employer console) — same
+   login redirect as RequireAuth, but deliberately skips the emailVerified /
+   hasCompletedOnboarding bounce, which is specific to the candidate
+   onboarding funnel and doesn't apply here. */
+export function RequireAuthOnly({ children }: { children: ReactNode }) {
+  const { isLoggedIn, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+  const retryCount = useRef(0);
+
+  useEffect(() => {
+    if (isLoggedIn) saveLastRoute(pathname);
+  }, [isLoggedIn, pathname]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (!isLoggedIn) {
+      if (hasStoredSession() && retryCount.current < 3) {
+        const delay = 500 * Math.pow(2, retryCount.current);
+        retryCount.current++;
+        setTimeout(() => getSupabase().then(c => c.auth.getSession()), delay);
+        return;
+      }
+      router.replace(`/login?next=${encodeURIComponent(pathname)}`);
+    }
+  }, [isLoggedIn, loading, router, pathname]);
+
+  if (loading || (!isLoggedIn && hasStoredSession())) return <LoadingScreen />;
   if (!isLoggedIn) return null;
-  if (user && !user.hasCompletedOnboarding && !getLocalOnboardingDone(user.id) && !["/onboarding", "/interview", "/onboarding/complete"].includes(pathname) && !pathname.startsWith("/session/")) return null;
 
   return <>{children}</>;
 }

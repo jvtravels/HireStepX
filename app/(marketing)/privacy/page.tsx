@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PrivacyV2 } from "@/marketing-v2/MarketingPagesV2";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { buildPrivacyJsonLd } from "./_jsonld";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | HireStepX",
@@ -9,13 +9,14 @@ export const metadata: Metadata = {
   alternates: { canonical: "/privacy" },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 86400;
 
-export default function Page() {
+export default async function Page() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Privacy", path: "/privacy" }]))} />
+      {buildPrivacyJsonLd().map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
       <PrivacyV2 />
     </>
   );

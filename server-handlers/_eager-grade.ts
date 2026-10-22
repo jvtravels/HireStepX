@@ -21,7 +21,8 @@
      `report_json` cache before calling the LLM, so this can race the
      user's actual report-view request without producing two LLM calls
      — whichever lands first writes the cache, the second hits the
-     cache. Belt-and-suspenders for the post-LLM "second cache check"
+     cache (and _eval-lock.ts keeps an in-flight overlap from running
+     the LLM twice). Belt-and-suspenders for the post-LLM "second cache check"
      pattern we use in analyze-resume.
 
    • Failures are silent (logged, never thrown). The response from
@@ -73,6 +74,11 @@ export function kickoffEagerGrade(input: EagerGradeInput): void {
     return;
   }
 
+  // evaluate-session rejects mutating requests that carry no Origin (CSRF
+  // guard). A server-to-server fetch sends none, so every eager grade used to
+  // 403 silently and the user always paid the full LLM wait on the report page.
+  const origin = new URL(evaluateUrl).origin;
+
   const f = input.fetchImpl || fetch;
   const body = JSON.stringify({
     sessionId: input.sessionId,
@@ -88,6 +94,7 @@ export function kickoffEagerGrade(input: EagerGradeInput): void {
     headers: {
       "Content-Type": "application/json",
       Authorization: input.authorization,
+      Origin: origin,
       // Mark this as an eager (internal) call so observability can
       // distinguish it from a real user-initiated grade. Doesn't
       // affect handler logic — both paths produce the same report.

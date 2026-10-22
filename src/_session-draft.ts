@@ -15,6 +15,13 @@
 import type { InterviewStep } from "./interviewScripts";
 
 export interface InterviewDraftSnapshot {
+  /** Live session id this draft belongs to. Persisted so a mid-interview
+   *  refresh resumes under the SAME id — record-session-start and
+   *  save-session dedup the quota bump on session id, and a fresh id per
+   *  mount would be counted as a second session (H1 double-count). Optional
+   *  on read: drafts persisted before this field existed simply lack it,
+   *  in which case the engine keeps its freshly-minted id. */
+  sessionId?: string;
   /** Conversation transcript so far. */
   transcript: { speaker: "ai" | "user"; text: string; time: string }[];
   /** Live in-progress answer text (so a refresh mid-typing doesn't lose words). */
@@ -37,6 +44,7 @@ export interface InterviewDraftSnapshot {
 }
 
 export interface DraftSnapshotInput {
+  sessionId: string;
   transcript: InterviewDraftSnapshot["transcript"];
   currentTranscript: string;
   currentStep: number;
@@ -55,6 +63,7 @@ export interface DraftSnapshotInput {
  */
 export function buildDraftSnapshot(input: DraftSnapshotInput): InterviewDraftSnapshot {
   return {
+    sessionId: input.sessionId,
     transcript: input.transcript,
     currentTranscript: input.currentTranscript,
     currentStep: input.currentStep,
@@ -98,6 +107,11 @@ export function validateRestoredDraft(
   const draft = parsed as Partial<InterviewDraftSnapshot>;
   if (!Array.isArray(draft.transcript)) return null;
   if (typeof draft.currentStep !== "number" || draft.currentStep < 0) return null;
+  // OA-B40: an abandoned session where the AI asked Q1 but the user never
+  // answered has currentStep > 0 (question was shown) yet no user turn in the
+  // transcript. Restoring such a draft shows a near-empty partial report as if
+  // it were a completed session. Require at least one candidate answer.
+  if (!draft.transcript.some((t) => t && t.speaker === "user")) return null;
   if (typeof draft.savedAt === "number" && Date.now() - draft.savedAt > DRAFT_TTL_MS) return null;
   if (expectedInterviewType && draft.interviewType && draft.interviewType !== expectedInterviewType) return null;
   return draft as InterviewDraftSnapshot;

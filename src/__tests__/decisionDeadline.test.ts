@@ -184,3 +184,25 @@ describe("extractDecisionDeadline — PRI-64 clause-less conditional accepts", (
     expect(extractDecisionDeadline("if you match 30 LPA, I'll sign").conditionalAcceptance).toBe(true);
   });
 });
+
+describe("extractDecisionDeadline — OA-B66 festival deadlines", () => {
+  const festivals = [
+    "I need to decide before Diwali",
+    "have to respond by Eid",
+    "I'll let you know by Holi",
+    "can I get back to you before Dussehra",
+    "need to close this ahead of Ganesh Chaturthi",
+  ];
+  for (const s of festivals) {
+    it(`treats a festival deadline as explicit: "${s}"`, () => {
+      const r = extractDecisionDeadline(s);
+      expect(r.deadlineExplicit).toBe(true);
+      /* Festival dates float year-to-year — no bogus day-count. */
+      expect(r.deadlineDays).toBe(null);
+      expect(r.hasAny).toBe(true);
+    });
+  }
+  it("does NOT fire on a festival mentioned without deadline framing", () => {
+    expect(extractDecisionDeadline("I was travelling during Diwali").deadlineExplicit).toBe(false);
+  });
+});

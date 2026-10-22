@@ -10,116 +10,103 @@
  * the shell encodes. */
 
 import { useState } from "react";
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { Question } from "../types";
-import { SectionEyebrow } from "./sr-JumpNav";
+import { StatusPill, type Tone } from "./_primitives";
 import { QuestionDetail } from "./sr-QuestionDetail";
+import { Button } from "@/components/ui/button";
 
-const BAND_META: Record<Question["band"], { label: string; color: string }> = {
-  weak:     { label: "Weak",     color: t.error },
-  partial:  { label: "Partial",  color: t.copper },
-  complete: { label: "Complete", color: t.success },
-  strong:   { label: "Strong",   color: t.success },
+const BAND_META: Record<Question["band"], { label: string; tone: Tone }> = {
+  weak:     { label: "Weak",     tone: "bad" },
+  partial:  { label: "Partial",  tone: "warn" },
+  complete: { label: "Complete", tone: "good" },
+  strong:   { label: "Strong",   tone: "good" },
 };
 
 export function PerQuestionSection({ questions }: { questions: Question[] }) {
   const [openIdx, setOpenIdx] = useState<number | null>(0);
-  const PRIMARY_COUNT = 3;
-  /* R-7 (2026-07-10, live staging — Senior Product Designer @ Lollypop Design
-   * Studio): a negotiation runs as a handful of turns, and every turn is
-   * load-bearing (anchor, counter, close) — collapsing to the first 3 hid the
-   * close and read as "the report is truncating my negotiation". Short sessions
-   * (≤ AUTO_EXPAND_MAX turns) open fully; only long Q&A interviews keep the
-   * top-3 progressive disclosure. */
-  const AUTO_EXPAND_MAX = 6;
-  const [showAll, setShowAll] = useState<boolean>(questions.length <= AUTO_EXPAND_MAX);
-  const visible = showAll ? questions : questions.slice(0, PRIMARY_COUNT);
-  const hiddenCount = questions.length - visible.length;
-  const handleExpandAll = () => {
-    setShowAll(true);
-    setOpenIdx(null);
-  };
   return (
     <section
       id="ir-section-questions"
       aria-labelledby="ir-questions-heading"
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
-        padding: 0,
-        boxShadow: shadows.card,
-        overflow: "hidden",
         scrollMarginTop: 72,
       }}
     >
-      <div style={{ padding: "24px 28px 0" }}>
-        <SectionEyebrow num="04" label="Question by question" />
-      </div>
       <header
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "baseline",
-          padding: "0 28px 16px",
+          padding: "14px 0",
         }}
       >
-        <h2 id="ir-questions-heading" style={{ fontFamily: f.serif, fontSize: 22, fontWeight: 400, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
-          Per-Question Review <span style={{ color: t.inkFaint, fontSize: 16, marginLeft: 6 }}>({questions.length})</span>
+        <h2 id="ir-questions-heading" style={{ fontFamily: f.sans, fontSize: size.xl, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>
+          Your answers <span style={{ color: t.inkSoft, fontSize: size.base, fontWeight: 400, marginLeft: 6 }}>{questions.length} {questions.length === 1 ? "question" : "questions"}</span>
         </h2>
-        {showAll ? (
-          <button
+        {openIdx !== null ? (
+          <Button
             type="button"
+            variant="link"
+            size="sm"
             onClick={() => setOpenIdx(null)}
-            style={{ background: "transparent", border: "none", color: t.indigo, fontFamily: f.sans, fontSize: 12, cursor: "pointer", fontWeight: 500 }}
+            style={{ color: t.inkSoft, fontFamily: f.sans, height: "auto" }}
           >
             Collapse all
-          </button>
+          </Button>
         ) : null}
       </header>
       <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-        {visible.map((q, idx) => {
+        {questions.map((q, idx) => {
           const open = openIdx === idx;
           const band = BAND_META[q.band];
           const panelId = `ir-q-panel-${q.index}`;
           return (
             <li key={q.index} style={{ borderTop: `1px solid ${t.line}` }}>
-              <button
+              <Button
                 type="button"
-                className="ir-q-card-trigger"
+                variant="ghost"
                 aria-expanded={open}
                 aria-controls={panelId}
                 onClick={() => setOpenIdx(open ? null : idx)}
+                style={{
+                  width: "calc(100% + 24px)",
+                  margin: "0 -12px",
+                  height: "auto",
+                  padding: "14px 12px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  justifyContent: "flex-start",
+                  textAlign: "left",
+                  fontFamily: "inherit",
+                  color: "inherit",
+                  borderRadius: 0,
+                  minWidth: 0,
+                  whiteSpace: "normal",
+                }}
               >
                 <span
                   style={{
                     width: 28,
                     height: 28,
                     borderRadius: radius.lg,
-                    background: open ? t.indigo : t.creamSoft,
-                    color: open ? t.cream : t.coal,
+                    background: open ? t.coal : t.creamSoft,
+                    color: open ? t.white : t.coal,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: f.mono,
-                    fontSize: 13,
-                    fontWeight: 700,
+                    fontFamily: f.sans,
+                    fontSize: size.base,
+                    fontWeight: 600,
                     flexShrink: 0,
                   }}
                 >
                   {q.index}
                 </span>
-                <span className="ir-q-trigger-text" style={{ flex: 1, fontFamily: f.sans, fontSize: 14, color: t.coal, fontWeight: open ? 600 : 500 }}>
+                <span className="ir-q-trigger-text" style={{ flex: 1, minWidth: 0, whiteSpace: "normal", overflowWrap: "anywhere", display: "-webkit-box", WebkitLineClamp: open ? "unset" : 3, WebkitBoxOrient: "vertical", overflow: "hidden", fontFamily: f.sans, fontSize: size.md, color: t.coal, fontWeight: open ? 600 : 500 }}>
                   {q.text}
                 </span>
-                {q.frequencyPct !== undefined && q.frequencyPct >= 70 && (
-                  <span
-                    className="ir-q-meta-pill high-freq ir-q-trigger-band"
-                    title={q.frequencyNote ?? `${q.frequencyPct}% of rounds`}
-                  >
-                    {q.frequencyPct}% asked
-                  </span>
-                )}
                 {q.lengthVerdict && q.lengthVerdict !== "justRight" && (
                   <span
                     className={`ir-q-meta-pill ${q.lengthVerdict === "tooShort" ? "too-short" : "too-long"} ir-q-trigger-band`}
@@ -140,24 +127,18 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
                     {q.redFlags.length} flag{q.redFlags.length === 1 ? "" : "s"}
                   </span>
                 )}
-                <span
-                  className="ir-q-trigger-band"
-                  style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    padding: "3px 10px",
-                    borderRadius: radius.pill,
-                    background: band.color === t.error ? t.errorTint : band.color === t.copper ? t.copperAccent : t.successTint,
-                    color: band.color,
-                    fontFamily: f.sans,
-                    fontSize: 11,
-                    fontWeight: 600,
-                  }}
-                >
-                  {band.label}
-                </span>
-                <span style={{ fontFamily: f.mono, fontSize: 13, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
-                  {q.score} <span style={{ color: t.inkFaint, fontWeight: 400 }}>/100</span>
+                <StatusPill tone={band.tone}>{band.label}</StatusPill>
+                <span style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, fontWeight: 600, minWidth: 60, textAlign: "right" }}>
+                  {/* S6-B4 — a row with no genuine per-turn score (reconstructed
+                      negotiation exchange) shows a neutral "—", never a
+                      misleading 0/100 or a fabricated per-turn number. */}
+                  {q.scoreUnavailable ? (
+                    <span style={{ color: t.inkFaint, fontWeight: 400 }} aria-label="No per-turn score">—</span>
+                  ) : (
+                    <>
+                      {q.score}<span style={{ color: t.inkFaint, fontWeight: 400 }}>/100</span>
+                    </>
+                  )}
                 </span>
                 <svg
                   width="14"
@@ -172,7 +153,7 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
                 >
                   <polyline points="6 9 12 15 18 9" />
                 </svg>
-              </button>
+              </Button>
               <div id={panelId} role="region" hidden={!open}>
                 {open && <QuestionDetail q={q} />}
               </div>
@@ -180,28 +161,6 @@ export function PerQuestionSection({ questions }: { questions: Question[] }) {
           );
         })}
       </ul>
-      {hiddenCount > 0 && (
-        <div
-          style={{
-            borderTop: `1px solid ${t.line}`,
-            padding: "14px 28px",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          <button
-            type="button"
-            className="ir-cta-ghost"
-            onClick={handleExpandAll}
-            aria-label={`Show ${hiddenCount} more question${hiddenCount === 1 ? "" : "s"}`}
-          >
-            Show {hiddenCount} more question{hiddenCount === 1 ? "" : "s"}
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
-        </div>
-      )}
     </section>
   );
 }

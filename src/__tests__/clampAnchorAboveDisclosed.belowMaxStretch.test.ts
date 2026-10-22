@@ -33,6 +33,7 @@ function mkState(disclosed: number): NegotiationState {
     finalOfferAssertedCount: 0,
     vossTacticsUsed: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     verbalAcceptanceTurn: null,
     postVerbalRenegotiationCount: 0,
     counterRound: 0,

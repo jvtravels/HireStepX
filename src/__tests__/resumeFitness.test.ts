@@ -108,8 +108,8 @@ describe("computeResumeFitness", () => {
 describe("computeAllFitness", () => {
   it("returns one score per interview type", () => {
     const all = computeAllFitness(baseProfile);
-    expect(Object.keys(all).sort()).toEqual(["behavioral", "case", "system_design", "technical"]);
-    for (const key of ["behavioral", "case", "system_design", "technical"] as const) {
+    expect(Object.keys(all).sort()).toEqual(["behavioral", "campus", "case", "system_design", "technical"]);
+    for (const key of ["behavioral", "campus", "case", "system_design", "technical"] as const) {
       expect(typeof all[key].score).toBe("number");
       expect(typeof all[key].rationale).toBe("string");
     }

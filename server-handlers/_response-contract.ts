@@ -164,6 +164,16 @@ const FILLER_PATTERNS: RegExp[] = [
  * "Thanks for the conversation today. We'll be in touch with next
  * steps." also trip. The check is gated on planner-non-terminal +
  * no-terminal-intent so legitimate close turns are unaffected. */
+/* S49-B3 (2026-07-24) — "Thanks for talking it through with me today" and
+ * "we'll follow up with you" were not caught by the original pattern set.
+ * The LLM can hallucinate a farewell closing with just the thank-you sentence
+ * (without the "next steps" clause), so the phrase itself must be detected.
+ * Added three new patterns:
+ *   (a) "thanks / thank you for talking it through (with me)" — exact S49-B3 phrase
+ *   (b) "thanks / thank you for your time today" — common generic farewell
+ *   (c) "we'll / I'll follow up with you (soon/shortly)" — common follow-up farewell
+ * These are all structurally farewell openers that signal session-end prose; they
+ * must not appear when the planner chose a non-terminal action. */
 const CLOSING_SHAPE_RE = new RegExp(
   [
     String.raw`\bwe.?ll\s+be\s+in\s+touch\b`,
@@ -175,6 +185,11 @@ const CLOSING_SHAPE_RE = new RegExp(
     String.raw`\bthat.?s\s+all\s+(?:from|i\s+had)\s+(?:my\s+side|for\s+(?:today|now))\b`,
     String.raw`\bwe.?ll\s+wrap\s+(?:up\s+)?here\b`,
     String.raw`\bappreciate\s+(?:you\s+)?taking\s+the\s+time\s+today\b`,
+    /* S49-B3 additions */
+    String.raw`\bthanks?\s+for\s+talk(?:ing\s+(?:it\s+through|with\s+me|to\s+me|through\s+with\s+me))\b`,
+    String.raw`\bthank\s+you\s+for\s+talk(?:ing\s+(?:it\s+through|with\s+me|to\s+me|through\s+with\s+me))\b`,
+    String.raw`\bthanks?\s+for\s+(?:your\s+time|joining\s+(?:us|me|the\s+call))\s+today\b`,
+    String.raw`\b(?:we.?ll|i.?ll)\s+follow\s+up\s+with\s+(?:you)\s+(?:soon|shortly)\b`,
   ].join("|"),
   "i",
 );

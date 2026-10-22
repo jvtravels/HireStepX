@@ -150,6 +150,18 @@ export const ROLE_SKILLS: Record<string, string[]> = {
   behavioral: ["Structure", "Ownership", "Impact", "Communication", "Composure"],
 };
 
+/* Campus / fresher sessions are graded on entry-level hiring dimensions, not
+   mid-senior competencies. "Trade-off Reasoning" or "Technical Depth" score 40
+   means nothing to a fresher preparing for TCS NQT — these five axes map to
+   what campus interviewers actually evaluate. */
+export const CAMPUS_SKILL_AXES: readonly string[] = [
+  "Technical Knowledge",
+  "STAR Structure",
+  "Company Fit Narration",
+  "Communication Clarity",
+  "Background Articulation",
+];
+
 /* HR-round sessions are graded on the 8 HR rubric dimensions, not the
    candidate's role-family competencies — so the DimensionGate in the report
    gets real per-axis scores instead of role-family proxies. */
@@ -206,20 +218,24 @@ const RECOGNIZED_INSIGHT_METRICS: ReadonlySet<string> = new Set(
     ...Object.values(ROLE_SKILLS).flat(),
     ...HR_ROUND_SKILL_AXES,
     ...NEGOTIATION_SKILL_AXES,
+    ...CAMPUS_SKILL_AXES,
     ...RECOGNIZED_DELIVERY_METRICS,
   ].map(canonicalizeAxisName),
 );
 
-/* Single source of truth for the report's skill axes. Focus type wins over
-   role family: an HR round or a salary negotiation is graded on what the
-   interviewer actually evaluated, regardless of the candidate's role. Falls
-   back to role-family competencies (then behavioral) for everything else. */
+/* Single source of truth for the report's skill axes. Focus/type wins over
+   role family: an HR round, negotiation, or campus-placement session is graded
+   on what the interviewer actually evaluated, not the candidate's seniority
+   level. Falls back to role-family competencies (then behavioral) for everything
+   else. */
 export function resolveSkillAxes(
   metaType: string | undefined,
   roleFamily: string | undefined,
+  focus?: string | undefined,
 ): string[] {
   if (metaType === "hr-round") return [...HR_ROUND_SKILL_AXES];
   if (metaType === "salary-negotiation") return [...NEGOTIATION_SKILL_AXES];
+  if (focus === "campus-placement") return [...CAMPUS_SKILL_AXES];
   const family = (roleFamily || "behavioral") as keyof typeof ROLE_SKILLS;
   return [...(ROLE_SKILLS[family] || ROLE_SKILLS.behavioral)];
 }
@@ -324,7 +340,7 @@ export function skillsCoverAxes(
 }
 
 /* A parsed LLM response can be syntactically valid JSON yet semantically
-   empty — e.g. a verbose fallback model (gemini-2.5-flash) truncates the large
+   empty — e.g. a verbose fallback model (the Gemini model) truncates the large
    report at its token cap, closing the object after the early fields but before
    `skills`/`hrReport`. extractJSON happily returns that object, and the report
    builder then defaults the missing arrays to [] and the score to 50 — surfacing
@@ -413,6 +429,7 @@ export function resolveCalibrationLabel(
   targetCompany: string | null | undefined,
   profile: CompanyProfile | null,
   hrSector: HrSectorOverlay = "none",
+  focus?: string | null,
 ): { companyLabel: string; companyNote: string } {
   if (profile) return { companyLabel: profile.label, companyNote: profile.note };
   const named = (targetCompany ?? "").trim();
@@ -430,10 +447,14 @@ export function resolveCalibrationLabel(
     "consulting": "Consulting calibration — 'why this firm' specificity, up-or-out switch rationale, and travel/utilisation commitment weighted up.",
     "psu": "Government / PSU calibration — compliance and document readiness weighted up; compensation treated as fixed pay-scale, not negotiable.",
   };
-  const companyNote =
-    hrSector !== "none"
-      ? sectorNote[hrSector]
+  // Campus / fresher sessions are graded on an entry-level rubric, so the
+  // fallback copy must not say "senior bar" — that misdescribes the bar to the
+  // exact audience (final-year students) the campus focus targets.
+  const defaultBar =
+    focus === "campus-placement"
+      ? `Calibrated to a general fresher / campus bar — ${named} isn't in our tuned profile set yet, so band thresholds use the default rubric.`
       : `Calibrated to a general senior bar — ${named} isn't in our tuned profile set yet, so band thresholds use the default rubric.`;
+  const companyNote = hrSector !== "none" ? sectorNote[hrSector] : defaultBar;
   return { companyLabel: named, companyNote };
 }
 
@@ -833,6 +854,22 @@ export function normalizeCoaching(raw: unknown): Coaching | null {
     example: str(g.example, 160),
   };
   if (!strength.headline || !gap.headline) return null;
+  /* S63-B2 (2026-07-24): If the gap headline recycles the same skill the
+   * strength already credits, the LLM violated its own coaching rule ("do NOT
+   * suggest as top improvement if transcript shows candidate already did it").
+   * Shared key tokens between the two headlines are a reliable signal — e.g.
+   * strength "Anchored the number first" + gap "Anchor your number first" both
+   * contain "anchor". Return null so the card renders no coaching rather than
+   * showing a self-contradicting pair. Fall-through: if no contradiction the
+   * coaching pair is retained as-is. */
+  const domainTokens = [
+    "anchor", "state your ask", "name a number", "name your number",
+    "walk away", "competing offer", "competing option", "walk-away",
+  ];
+  const lStr = strength.headline.toLowerCase();
+  const lGap = gap.headline.toLowerCase();
+  const contradicts = domainTokens.some(t => lStr.includes(t) && lGap.includes(t));
+  if (contradicts) return null;
   return { strength, gap };
 }
 
@@ -1290,4 +1327,39 @@ export function validateVerdictCoherence(
   return weakestName
     ? `Below the bar at ${overallScore}/100 — ${weakestName} is the weakest axis and the place to start.`
     : `Below the bar at ${overallScore}/100 — several axes need work before this reads as a hire.`;
+}
+
+/* ── Split report generation ──
+   One call used to emit the whole ~5,100-token report, so a single slow or
+   truncated generation lost everything. The per-question block (restructured
+   answer, exemplar, follow-up, length verdict per question) is the bulk of it
+   and is independent of the verdict/skills/coaching block, so the two are
+   generated in parallel and merged. */
+
+const SHAPE_MARKER = "Return a JSON object with EXACTLY this shape:";
+const RULES_TAIL_MARKER = "Apply all the CRITICAL RULES above to every field.";
+
+export function splitReportEnabled(raw: string | undefined): boolean {
+  return raw === "1" || raw?.toLowerCase() === "true";
+}
+
+/** Derive the two split prompts from the monolithic prompt. Returns null when the prompt
+ *  no longer contains the expected anchors, so the caller falls back to the single call. */
+export function buildSplitPrompts(prompt: string, perQuestionShape: string): { core: string; perQuestion: string } | null {
+  const shapeAt = prompt.indexOf(SHAPE_MARKER);
+  const tailAt = prompt.indexOf(RULES_TAIL_MARKER);
+  if (shapeAt < 0 || tailAt < shapeAt || !prompt.includes(perQuestionShape)) return null;
+  const head = prompt.slice(0, shapeAt);
+  const tail = prompt.slice(tailAt);
+  const core = prompt.replace(perQuestionShape, "") +
+    "\n\nSPLIT-REPORT NOTE: a separate pass produces perQuestion. Do NOT include a perQuestion field in this response; every other field is still required.";
+  const perQuestion = `${head}SPLIT-REPORT NOTE: this pass produces ONLY the per-question breakdown; other fields (overallScore, skills, verdict, coaching, ...) are generated separately. Ignore instructions to return them.\n\n${SHAPE_MARKER}\n{\n${perQuestionShape}\n}\n\n${tail}`;
+  return { core, perQuestion };
+}
+
+/** A per-question pass is usable when it yields a non-empty array of graded items. */
+export function isUsablePerQuestion(parsed: { perQuestion?: unknown } | null | undefined): boolean {
+  const pq = parsed?.perQuestion;
+  if (!Array.isArray(pq) || pq.length === 0) return false;
+  return pq.every((q) => q && typeof q === "object" && typeof (q as { idx?: unknown }).idx === "number" && typeof (q as { score?: unknown }).score === "number");
 }

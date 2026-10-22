@@ -1,29 +1,42 @@
 "use client";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { readInviteJd } from "./interviewInvite";
+import { useState, useEffect, useRef, useMemo, type CSSProperties } from "react";
+import { getCtaReason } from "./setupCtaReason";
 import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "./posthogClient";
 
-/* Editorial brand surface — same tokens as auth, onboarding, and the
-   interview surface. Discipline rule:
-   Indigo is interactive · Copper is editorial · Never mix. */
+/* Same tokens as auth, onboarding, and the interview surface. Discipline
+   rule: indigo is the primary interactive/brand color; copper is reserved
+   strictly for score/streak/badge visuals elsewhere in the app — this
+   surface has none, so no copper appears here. */
 import { tokens as T, fonts as F } from "./auth/_tokens";
-import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL, ROLE_SUGGESTIONS } from "./onboardingData";
-import { profileFromRole, type InterviewFocus } from "./roleInterviewMatrix";
+import { ROLE_SUGGESTIONS } from "./onboardingData";
+import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "../data/company-suggestions";
+import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
 import { matchRoleKey } from "../data/salaries";
-import { Wordmark } from "./auth/_fields";
+import { sessionMinutesForFocus } from "../data/session-length";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
+import SetupTopbarLeft from "./SetupTopbarLeft";
+import AudioDevicePicker from "./AudioDevicePicker";
+import { micConstraints } from "./audioDevices";
+import { FOCUS_TO_TYPE as focusToType, isFocusComingSoon, resolveFocusDefaults } from "./setupFocus";
+import { roundStatusByLabel } from "./focusRounds";
+import { useFocusRounds } from "./DashboardContext";
 import { AUTH_STYLES } from "./auth/_styles";
 
 import { useAuth } from "./AuthContext";
 import { getCreditBalance } from "./supabase";
 import { getAudioContextCtor } from "./_browser-api-guards";
 import { useToast } from "./Toast";
-import { unlockAudio, prefetchTTS } from "./tts";
+import { unlockAudio, prefetchTTS, VOICE_OUTPUT_DISABLED } from "./tts";
 import { UpgradeModal } from "./dashboardComponents";
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT } from "./dashboardData";
 import { GAP_CTA_MAP } from "./nextMove";
 
 /**
@@ -38,7 +51,9 @@ import { GAP_CTA_MAP } from "./nextMove";
  */
 const DRILL_TO_CTA: Record<string, { label: string; headline: string }> = Object.values(GAP_CTA_MAP).reduce(
   (acc, cta) => {
-    acc[cta.drill] = { label: cta.label, headline: cta.headline };
+    /* Campus-placement entries omit drill — they go to the setup page
+     * rather than a micro-drill session; skip them here. */
+    if (cta.drill) acc[cta.drill] = { label: cta.label, headline: cta.headline };
     return acc;
   },
   {} as Record<string, { label: string; headline: string }>,
@@ -186,28 +201,36 @@ function AutocompleteInput({
           else if (e.key === "Enter" && selectedIdx >= 0) { e.preventDefault(); onChange(filtered[selectedIdx]); setFocused(false); }
         }}
         placeholder={placeholder} autoComplete="off"
+        role="combobox" aria-autocomplete="list" aria-haspopup="listbox"
+        aria-expanded={filtered.length > 0 && !!dropdownPos}
+        aria-controls={`${id}-listbox`}
+        aria-activedescendant={selectedIdx >= 0 && filtered[selectedIdx] ? `${id}-opt-${selectedIdx}` : undefined}
+        aria-required={required || undefined}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
         style={{
           width: "100%", padding: "12px 16px", borderRadius: 10,
           background: T.white, border: `1.5px solid ${error ? T.error : focused ? T.indigo : T.line}`,
-          color: T.coal, fontFamily: F.sans, fontSize: 14,
-          outline: "none", transition: "border-color 0.2s", boxSizing: "border-box",
+          color: T.coal, fontFamily: F.sans, fontSize: 16,
+          outline: "none", transition: "border-color 0.2s, box-shadow 0.2s", boxSizing: "border-box",
+          // Border colour alone does not change when the field is in error,
+          // so focus always gets a solid two-tone ring as well.
+          boxShadow: focused ? `0 0 0 2px ${T.white}, 0 0 0 4px ${error ? T.error : T.indigo}` : "none",
         }}
       />
       {error && <p id={`${id}-error`} role="alert" style={{ fontFamily: F.sans, fontSize: 11, color: T.error, marginTop: 4 }}>{error}</p>}
       {filtered.length > 0 && dropdownPos && createPortal(
-        <div role="listbox" style={{
+        <div role="listbox" id={`${id}-listbox`} style={{
           position: "fixed", top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999,
           background: T.white, border: `1px solid ${T.line}`, borderRadius: 10,
           boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)", maxHeight: 260, overflowY: "auto",
         }}>
           {filtered.map((s, i) => (
-            <button key={s} role="option" aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
+            <button key={s} id={`${id}-opt-${i}`} role="option" tabIndex={-1} aria-selected={i === selectedIdx} onMouseDown={() => { onChange(s); setFocused(false); }}
+              className={`hsx-option-row${i === selectedIdx ? " hsx-option-row--selected" : ""}`}
               style={{
                 display: "block", width: "100%", padding: "10px 16px", border: "none", textAlign: "left",
                 fontFamily: F.sans, fontSize: 13, cursor: "pointer",
-                background: i === selectedIdx ? "rgba(49,46,129,0.08)" : "transparent",
                 color: i === selectedIdx ? T.coal : T.inkSoft,
               }}>
               {s}
@@ -219,7 +242,7 @@ function AutocompleteInput({
             position: "sticky", bottom: 0,
             display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "8px 14px", background: T.creamSoft, borderTop: `1px solid ${T.line}`,
-            fontFamily: F.mono, fontSize: 10, color: T.inkFaint, letterSpacing: 0.4,
+            fontFamily: F.mono, fontSize: 11, color: T.inkFaint, letterSpacing: 0.4,
           }}>
             <span>↑↓ navigate</span>
             <span>↵ select · esc to close</span>
@@ -246,44 +269,11 @@ const introByType: Record<string, string> = {
   "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?",
 };
 
-/* Focus type → interview type mapping */
-const focusToType: Record<string, string> = {
-  "Behavioral": "behavioral",
-  "Strategic": "strategic",
-  "Technical Leadership": "technical",
-  "Case Study": "case-study",
-  "Salary Negotiation": "salary-negotiation",
-  "Panel Interview": "panel",
-  "Campus Placement": "campus-placement",
-  "HR Round": "hr-round",
-  "Management": "management",
-  "Government / PSU": "government-psu",
+/* Locked focuses render as "Coming soon" in the picker; the rule lives in
+   setupFocus.ts so the job detail screen recommends from the same live set. */
+const COMING_SOON_FOCUSES = {
+  has: (f: InterviewFocus): boolean => isFocusComingSoon(f),
 };
-
-/* MVP launch (2026-06): these focuses are shown in the picker but render as
-   "Coming soon" — visible so users see the roadmap and get interested, but
-   not yet selectable. The other five (Behavioral, Case Study, Campus
-   Placement, HR Round, Salary Negotiation) are live. To ship one of these,
-   remove it from this set — no other change needed. */
-const COMING_SOON_FOCUSES = new Set<InterviewFocus>([
-  "Strategic",
-  "Technical Leadership",
-  "Management",
-  "Panel Interview",
-  "Government / PSU",
-]);
-
-function getRecommendedFocus(role?: string): string {
-  if (!role) return "Behavioral";
-  const r = role.toLowerCase();
-  if (/engineer|developer|sde|swe|programmer|coder/i.test(r)) return "Technical Leadership";
-  if (/product\s*manager|pm\b/i.test(r)) return "Strategic";
-  if (/analyst|data/i.test(r)) return "Technical Leadership";
-  if (/intern|fresher|graduate|campus|entry/i.test(r)) return "Campus Placement";
-  if (/consult/i.test(r)) return "Case Study";
-  if (/manager|director|vp|head of|cto|ceo/i.test(r)) return "Management";
-  return "Behavioral";
-}
 
 /* ─── MicMeter ──────────────────────────────────────────────────────────
    3-bar live audio meter rendered inside the mic permission card once
@@ -327,12 +317,12 @@ function MicMeter({ level, active }: { level: number; active: boolean }) {
    visual language as the focus chips so it feels native to the form. */
 function PermissionCard({
   kind, label, sublabel, sublabelTone, status, onRequest, onSkip, onDisable,
-  level, voiceDetected, denyReason, isIOS, cameraStream, faceLooksGood, cameraSignals,
+  level, voiceDetected, denyReason, isIOS, cameraStream, cameraSignals,
 }: {
   kind: "mic" | "camera";
   label: string;
   sublabel: string;
-  sublabelTone: "copper" | "muted";
+  sublabelTone: "indigo" | "muted";
   status: "idle" | "requesting" | "granted" | "denied" | "skipped";
   onRequest: () => void;
   onSkip?: () => void;
@@ -371,6 +361,12 @@ function PermissionCard({
       videoRef.current.srcObject = cameraStream;
     }
   }, [cameraStream]);
+  const [slowRequest, setSlowRequest] = useState(false);
+  useEffect(() => {
+    if (status !== "requesting") { setSlowRequest(false); return; }
+    const id = window.setTimeout(() => setSlowRequest(true), 6000);
+    return () => window.clearTimeout(id);
+  }, [status]);
   const isGranted = status === "granted";
   const isDenied = status === "denied";
   const isSkipped = status === "skipped";
@@ -425,11 +421,10 @@ function PermissionCard({
             ? `linear-gradient(180deg, ${T.error100}, ${T.white})`
             : T.white,
         border: `1px solid ${isGranted ? T.success : isDenied ? T.error : T.line}`,
-        boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
         display: "flex",
         alignItems: "center",
         gap: 12,
-        transition: "all 220ms cubic-bezier(.2,.7,.2,1)",
+        transition: "background-color 220ms cubic-bezier(.2,.7,.2,1), border-color 220ms cubic-bezier(.2,.7,.2,1), color 220ms cubic-bezier(.2,.7,.2,1), box-shadow 220ms cubic-bezier(.2,.7,.2,1), opacity 220ms cubic-bezier(.2,.7,.2,1), transform 220ms cubic-bezier(.2,.7,.2,1)",
         opacity: isSkipped ? 0.7 : 1,
       }}
     >
@@ -509,11 +504,11 @@ function PermissionCard({
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal, display: "flex", alignItems: "center", gap: 8 }}>
           <span>{label}</span>
-          <span style={{ fontSize: 11, fontWeight: 500, color: sublabelTone === "copper" ? T.copper : T.inkFaint }}>· {sublabel}</span>
+          <span style={{ fontSize: 12, fontWeight: 500, color: sublabelTone === "indigo" ? T.indigo : T.inkFaint }}>· {sublabel}</span>
         </div>
-        <div style={{ fontFamily: F.sans, fontSize: 12, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
+        <div style={{ fontFamily: F.sans, fontSize: 13, color: isDenied ? T.error : T.inkSoft, marginTop: 2, lineHeight: 1.4 }}>
           {status === "idle" && (kind === "mic" ? "Used to capture your answers." : "Practice eye contact and presence.")}
-          {status === "requesting" && "Waiting for your permission…"}
+          {status === "requesting" && (slowRequest ? "Taking a while? Check your browser's permission prompt." : "Waiting for your permission…")}
           {isGranted && kind === "camera" && cameraSignals && (() => {
             // Concrete per-signal sub-statuses. Replaces the static
             // "Centered, well-lit, in focus" claim that users called
@@ -523,7 +518,7 @@ function PermissionCard({
               lighting: {
                 checking: { label: "Lighting · checking…", tone: T.inkSoft },
                 pass: { label: "Lighting ✓", tone: T.success },
-                "warn-low": { label: "Lighting · a touch dim", tone: T.copper },
+                "warn-low": { label: "Lighting · a touch dim", tone: T.indigo },
                 "warn-offcenter": { label: "Lighting ✓", tone: T.success },
                 "warn-motion": { label: "Lighting ✓", tone: T.success },
                 "fail-dark": { label: "Add more light", tone: T.error },
@@ -535,7 +530,7 @@ function PermissionCard({
                 checking: { label: "Framing · checking…", tone: T.inkSoft },
                 pass: { label: "Centered ✓", tone: T.success },
                 "warn-low": { label: "Centered ✓", tone: T.success },
-                "warn-offcenter": { label: "Center yourself a bit", tone: T.copper },
+                "warn-offcenter": { label: "Center yourself a bit", tone: T.indigo },
                 "warn-motion": { label: "Centered ✓", tone: T.success },
                 "fail-dark": { label: "Centered ✓", tone: T.success },
                 "fail-bright": { label: "Centered ✓", tone: T.success },
@@ -547,7 +542,7 @@ function PermissionCard({
                 pass: { label: "Sharp ✓", tone: T.success },
                 "warn-low": { label: "Sharp ✓", tone: T.success },
                 "warn-offcenter": { label: "Sharp ✓", tone: T.success },
-                "warn-motion": { label: "Hold a bit steadier", tone: T.copper },
+                "warn-motion": { label: "Hold a bit steadier", tone: T.indigo },
                 "fail-dark": { label: "Sharp ✓", tone: T.success },
                 "fail-bright": { label: "Sharp ✓", tone: T.success },
                 "fail-offcenter": { label: "Sharp ✓", tone: T.success },
@@ -583,22 +578,29 @@ function PermissionCard({
       </div>
       <div className="hsx-permission-actions" style={{ display: "inline-flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
         {status === "idle" && (
-          <button
+          <Button
             type="button"
+            variant="default"
+            size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.indigo, color: T.cream, border: "1px solid transparent",
-              cursor: "pointer", transition: "all 160ms ease",
-              boxShadow: "0 1px 2px rgba(20,17,10,.08)",
-            }}
+            style={{ background: T.indigo, color: T.cream, border: "1px solid transparent", cursor: "pointer", transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease" }}
           >
             Allow
-          </button>
+          </Button>
         )}
-        {status === "requesting" && (
-          <span style={{ width: 16, height: 16, border: `2px solid ${T.indigoRing}`, borderTopColor: T.indigo, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+        {status === "requesting" && !slowRequest && (
+          <Spinner aria-label="Waiting for permission" style={{ color: T.indigo }} />
+        )}
+        {status === "requesting" && slowRequest && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onRequest}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer" }}
+          >
+            Retry
+          </Button>
         )}
         {isGranted && (
           <span aria-hidden style={{ width: 22, height: 22, borderRadius: 999, background: T.success, color: T.cream, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
@@ -606,61 +608,49 @@ function PermissionCard({
           </span>
         )}
         {isGranted && kind === "camera" && onDisable && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onDisable}
             aria-label="Turn camera off for this session"
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "6px 10px", borderRadius: 6,
-              background: "transparent", color: T.inkSoft, border: 0,
-              cursor: "pointer",
-            }}
+            style={{ background: "transparent", color: T.inkSoft, border: 0, cursor: "pointer" }}
           >
             Turn off
-          </button>
+          </Button>
         )}
         {isDenied && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
-              cursor: "pointer", transition: "all 160ms ease",
-            }}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer", transition: "background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, transform 160ms ease" }}
           >
             Retry
-          </button>
+          </Button>
         )}
         {kind === "camera" && status === "idle" && onSkip && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             onClick={onSkip}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 12px", borderRadius: 8,
-              background: "transparent", color: T.inkSoft, border: "0",
-              cursor: "pointer",
-            }}
+            style={{ background: "transparent", color: T.inkSoft, border: "0", cursor: "pointer" }}
           >
             Skip
-          </button>
+          </Button>
         )}
         {isSkipped && onRequest && (
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onRequest}
-            style={{
-              fontFamily: F.sans, fontSize: 12, fontWeight: 500,
-              padding: "8px 14px", borderRadius: 8,
-              background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`,
-              cursor: "pointer",
-            }}
+            style={{ background: T.white, color: T.coal, border: `1px solid ${T.lineStrong}`, cursor: "pointer" }}
           >
             Enable
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -680,8 +670,12 @@ export default function SessionSetup() {
      "Your next move" engine emits (nextMove.ts). For gap CTAs that means
      `?focus=hr-round`, which maps to the HR Round type below. Skill-name
      focuses (e.g. ?focus=Communication) don't match a type and harmlessly
-     fall through to the role-recommended focus. */
-  const preselectedFocus = searchParams.get("type") || searchParams.get("focus");
+     fall through to the role-recommended focus.
+     When both params are present (e.g. Re-run emits ?type=behavioral&focus=campus-placement),
+     prefer `focus` when it's a specific slug — it's more precise than the generic `type`. */
+  const _focusParam = searchParams.get("focus");
+  const _typeParam = searchParams.get("type");
+  const preselectedFocus = (_focusParam && _focusParam !== "general") ? _focusParam : (_typeParam || _focusParam);
   /* Bounce-back from useInterviewEngine when /interview was hit with a
      hard role × company mismatch. We prefill role + company from the
      URL so the candidate sees what got rejected, and surface the warn
@@ -689,6 +683,7 @@ export default function SessionSetup() {
   const prefillRole = searchParams.get("role") || "";
   const prefillCompany = searchParams.get("company") || "";
   const warnFlag = searchParams.get("warn");
+  const inviteJd = readInviteJd(searchParams.get("invite"));
   /* Drill mode (v1) — when the dashboard "Your next move" CTA fires
      from a known gap (see nextMove.GAP_CTA_MAP), the user lands here
      with `?drill=<key>` (e.g. ?drill=comp_floor). We:
@@ -701,7 +696,21 @@ export default function SessionSetup() {
   const drillKey = searchParams.get("drill") || "";
   const drillCta = drillKey ? DRILL_TO_CTA[drillKey] || null : null;
 
-  const [targetRole, setTargetRole] = useState(prefillRole || user?.targetRole || "");
+  // When the user arrives via ?focus=campus-placement but has a non-student
+  // Settings role (e.g. "Senior Product Designer"), seeding that role would
+  // contaminate the entire campus session. In that case, start blank and let
+  // the user type their actual campus role — only explicit ?role= wins.
+  const [targetRole, setTargetRole] = useState(() => {
+    if (prefillRole) return prefillRole;
+    if (preselectedFocus === "campus-placement") {
+      const profileRole = user?.targetRole || "";
+      const isStudentLike =
+        inferRoleFamily(profileRole) === "student" ||
+        inferSeniority(profileRole) === "fresher";
+      if (!isStudentLike) return "";
+    }
+    return user?.targetRole || "";
+  });
   const [roleTouched, setRoleTouched] = useState(false);
   const [companyTouched, setCompanyTouched] = useState(false);
   // User-added companies persisted in localStorage. Re-read on mount so
@@ -746,23 +755,46 @@ export default function SessionSetup() {
     if (rd && rd._type === "fallback") return rd.experience?.[0]?.company || "";
     return "";
   });
-  const recommendedFocus = getRecommendedFocus(user?.targetRole);
+  const focusRounds = useFocusRounds();
+  const { defaultFocus } = resolveFocusDefaults({
+    rounds: roundStatusByLabel(focusRounds),
+    role: targetRole.trim() || user?.targetRole,
+    experienceLevel: user?.experienceLevel,
+    relevant: relevantFocusSet,
+    isComingSoon: (f) => COMING_SOON_FOCUSES.has(f as InterviewFocus),
+  });
   const [interviewFocus, setInterviewFocus] = useState<string[]>(() => {
     if (preselectedFocus) {
       const match = Object.entries(focusToType).find(([, v]) => v === preselectedFocus);
       if (match) return [match[0]];
     }
-    return [getRecommendedFocus(user?.targetRole)];
+    return [defaultFocus];
   });
+  // Follows the recommendation as profile/role data loads, until the user picks a card.
+  const [focusPicked, setFocusPicked] = useState(false);
+  useEffect(() => {
+    if (focusPicked || preselectedFocus) return;
+    setInterviewFocus((cur) => (cur[0] === defaultFocus ? cur : [defaultFocus]));
+  }, [defaultFocus, focusPicked, preselectedFocus]);
 
   /* Auto-correct the focus selection when the user changes their role
      so the chip set and the selected chip stay coherent. If the
      currently-picked focus is no longer relevant for the new role,
      swap to a sensible default (the role's recommended focus if it's
      in the new relevant set, else the first available). Empty/unknown
-     role → no filter → no auto-correct. */
+     role → no filter → no auto-correct.
+
+     Exception: when the focus was explicitly preselected via URL param
+     (e.g. a dashboard deep-link ?focus=campus-placement), never
+     auto-correct it away — the URL is an explicit user intent signal that
+     outranks the role-matrix heuristic. The user can still change the
+     chip manually. roleTouched tracks this: the effect only fires once
+     the user has actually changed the role field after arrival. */
   useEffect(() => {
     if (!relevantFocusSet) return;
+    // Don't auto-correct a URL-preselected focus on the initial render
+    // before the user has changed the role field themselves.
+    if (preselectedFocus && !roleTouched) return;
     const current = interviewFocus[0];
     // A "Coming soon" focus is never a valid selection — fall through and
     // pick a live one even if it's in the relevant set (handles persisted
@@ -772,13 +804,7 @@ export default function SessionSetup() {
       !COMING_SOON_FOCUSES.has(current as InterviewFocus) &&
       relevantFocusSet.has(current as InterviewFocus)
     ) return;
-    const recommended = getRecommendedFocus(targetRole);
-    const fallback =
-      !COMING_SOON_FOCUSES.has(recommended as InterviewFocus) &&
-      relevantFocusSet.has(recommended as InterviewFocus)
-        ? recommended
-        : roleProfile.focuses.find((f) => !COMING_SOON_FOCUSES.has(f)) || "Behavioral";
-    setInterviewFocus([fallback]);
+    setInterviewFocus([defaultFocus]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relevantFocusSet]);
   /* Session length is no longer a knob — but we vary it by focus so the
@@ -790,51 +816,36 @@ export default function SessionSetup() {
        - Case study / technical leadership: structured deep-dives
        - Panel: 3 interviewers, each gets a turn → longest
      The engine still computes step-count from the script — these
-     minutes only drive the time-pill copy + the `&length=` URL param
-     (analytics + mini-mode threshold at "10m"). */
-  const FOCUS_MINUTES: Record<string, number> = {
-    "Behavioral": 15,
-    "Strategic": 20,
-    "Technical Leadership": 20,
-    "Case Study": 25,
-    "Salary Negotiation": 12,
-    "Panel Interview": 25,
-    "Campus Placement": 15,
-    "HR Round": 10,
-    "Management": 18,
-    "Government / PSU": 18,
-  };
-  const sessionMinutes = FOCUS_MINUTES[interviewFocus[0]] ?? 15;
+     minutes only drive the `&length=` URL param
+     (analytics + mini-mode threshold at "10m"). Table lives in
+     data/session-length.ts so other surfaces (dashboard Next Move card)
+     can preview the same real number instead of guessing. */
+  const sessionMinutes = sessionMinutesForFocus(interviewFocus[0]);
   const SESSION_LENGTH = `${sessionMinutes}m`;
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const isFreeUser = !user?.subscriptionTier || user.subscriptionTier === "free";
   const isStarterUser = user?.subscriptionTier === "starter";
-  const isProUser = user?.subscriptionTier === "pro";
   const freeSessionCount = user?.practiceTimestamps?.length ?? 0;
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   // Starter is a "Sprint Pack": 5 sessions counted from subscription_start
   // over a 30-day window, NOT a calendar week — mirror the server gate in
   // _shared.ts checkSessionLimit (and DashboardContext). Anchoring on the
   // calendar week wrongly counted pre-purchase free sessions from the same
   // week, showing a freshly bought pack as already exhausted.
-  const STARTER_PACK_CLAMP_MS = 8 * 24 * 60 * 60 * 1000; // 8d clamp — just over 7d pack
-  const STARTER_PACK_7_MS = 7 * 24 * 60 * 60 * 1000;
+  const STARTER_PACK_CLAMP_MS = 31 * 24 * 60 * 60 * 1000; // 31d clamp — the 30d pack + 1 day slack, mirrors the server gate
+  const STARTER_PACK_30_MS = 30 * 24 * 60 * 60 * 1000;
   const starterSubStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
   const starterSubEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
-  // Prefer subscription_start; else derive from subscription_end (pack = 7d);
-  // else rolling 7-day lookback. Never the calendar week (see DashboardContext).
+  // Prefer subscription_start; else derive from subscription_end (pack = 30d);
+  // else rolling 30-day lookback. Never the calendar week (see DashboardContext).
   const starterDerivedStartMs = Number.isFinite(starterSubStartMs)
     ? starterSubStartMs
     : Number.isFinite(starterSubEndMs)
-      ? starterSubEndMs - STARTER_PACK_7_MS
-      : Date.now() - STARTER_PACK_7_MS;
+      ? starterSubEndMs - STARTER_PACK_30_MS
+      : Date.now() - STARTER_PACK_30_MS;
   const packStartMs = Math.max(starterDerivedStartMs, Date.now() - STARTER_PACK_CLAMP_MS);
   const practiceTimestamps = user?.practiceTimestamps ?? [];
   const sessionsThisWeek = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= packStartMs; } catch { return false; } }).length;
-  const sessionsThisMonth = practiceTimestamps.filter((t: string) => { try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; } }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
-  const proRemaining = Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth);
   // Purchased session credits — fetched on mount so users who bought ₹9
   // top-ups aren't falsely blocked by the plan-exhausted check below.
   // SessionSetup lives outside the DashboardProvider scope and can't use
@@ -892,7 +903,13 @@ export default function SessionSetup() {
   const atSessionLimit = creditBalance !== null && (
     (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT && creditBalance === 0)
     || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
-    || (isProUser && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0)
+  );
+  // True when this session will consume a purchased credit (plan quota exhausted
+  // but credits are available). Shown as an informational note near the CTA so
+  // the user knows a credit will be spent before they click Start.
+  const usingCredit = creditBalance !== null && creditBalance > 0 && (
+    (isFreeUser && freeSessionCount >= FREE_SESSION_LIMIT)
+    || (isStarterUser && sessionsThisWeek >= STARTER_WEEKLY_LIMIT)
   );
   const { toast } = useToast();
 
@@ -929,9 +946,12 @@ export default function SessionSetup() {
 
   // Launch
   const [starting, setStarting] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  // Match the server's initial markup; read the live network state after
+  // hydration to avoid rendering different CTA state on the first client pass.
+  const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
+    setIsOnline(navigator.onLine);
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
     window.addEventListener("online", goOnline);
@@ -1050,7 +1070,7 @@ export default function SessionSetup() {
     setMicStatus("requesting");
     setMicDenyReason(null);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: micConstraints() });
       micStreamRef.current = stream;
       setMicStatus("granted");
       startLevelMeter(stream);
@@ -1314,9 +1334,9 @@ export default function SessionSetup() {
   // LLM grounds the offer band, equity policy, and negotiation style on
   // company tier. An unspecified target makes the negotiation generic
   // and the offer numbers calibration-less. So company is *required*
-  // for that focus only; for other focuses it stays optional.
+  // for that focus (and HR rounds); other focuses stay optional.
   const isNegotiationFocus = interviewFocus[0] === "Salary Negotiation";
-  const companyRequired = isNegotiationFocus;
+  const companyRequired = isNegotiationFocus || interviewFocus[0] === "HR Round";
   const companyMissing = companyRequired && !targetCompany.trim();
 
   /* Role × company sector-fit check (salary-neg only). Hard mismatches
@@ -1335,12 +1355,44 @@ export default function SessionSetup() {
   }, [isNegotiationFocus, targetRole, targetCompany]);
   const hardRoleCompanyMismatch = roleCompanyFit?.fit === "hard_mismatch";
 
+  /* S40-B8 (2026-07-23) — derive market mode client-side using the same
+   * inferCompanyMode → marketMode mapping that negotiate-turn.ts uses at
+   * session init, so we can disclose the simulation context before the
+   * session starts. Mirrors: GCC/MNC → neutral, BFSI/IT_SERVICES → soft,
+   * STARTUP → hot, PRODUCT_INDIA → neutral (B5 2026-07-23). */
+  const simulatedMarketMode = useMemo<"soft" | "neutral" | "hot" | null>(() => {
+    if (!isNegotiationFocus || !targetCompany.trim()) return null;
+    const c = targetCompany;
+    /* GCC — expanded (S53-B3/S52-WL-B2, 2026-07-24): mirrors _market-mode.ts GCC_RE.
+     * Walmart Labs, Adobe, Cisco etc. were missing, causing them to hit the "soft" default. */
+    if (/(gcc|global\s+capability|captive|walmart|target\s+corp|lowe'?s|tesco|american\s+express|\bamex\b|optum|unitedhealth|wells\s+fargo|jpmorgan|jp\s+morgan|jpmc|goldman|morgan\s+stanley|deutsche|hsbc|bank\s+of\s+america|bofa|barclays|standard\s+chartered|nomura|ubs|credit\s+suisse|citibank|citi\b|nvidia|\bintel\b|qualcomm|adobe|cisco|vmware|\bdell\b|\bhp\b|\bhpe\b|shell\b|mastercard|\bvisa\b|paypal|expedia|uber\b|linkedin)/i.test(c)) return "neutral";
+    if (/(bank|insurance|nbfc|mutual\s+fund|hdfc|icici|kotak|axis|sbi|bajaj\s+finserv|lic|life\s+insurance)/i.test(c)) return "soft";
+    if (/(zomato|swiggy|zepto|meesho|razorpay|cred\b|groww|slice\b|navi\b|jupiter\b|niyo|jar\b|fi\s+money|smallcase|zetwerk|moglix|ofbusiness|spinny|cars24|droom|ola\b|rapido|dunzo|blinkit)/i.test(c)) return "hot";
+    if (/(google|microsoft|amazon|meta\b|apple|netflix|salesforce|oracle|sap\b|ibm)/i.test(c)) return "neutral";
+    /* B5 (2026-07-23) — Indian product companies: neutral, not soft.
+     * Must precede the IT_SERVICES fallback (return "soft" below). */
+    if (/(freshworks|zoho\b|chargebee|postman\b|browserstack|hasura\b|clevertap|eka\b|druva\b|icertis|uniphore|kissflow|sprinklr|capillary(\s+tech(?:nologies)?)?|salto\b|mindtickle|whatfix|saastr\b|razorpayx\b|perfios|darwinbox)/i.test(c)) return "neutral";
+    /* CONSULTING (S53-B3, 2026-07-24): MBB + Big-4 + strategy houses = neutral,
+     * not soft. Structured comp bands independent of IT-services pricing compression. */
+    if (/(mckinsey|bcg|boston\s+consulting|\bbain\b|deloitte|\bey\b|ernst\s+(?:&|and)\s+young|\bkpmg\b|\bpwc\b|pricewaterhouse|kearney|oliver\s+wyman|\bzs\b|zs\s+associates|roland\s+berger|alvarez|grant\s+thornton|accenture)/i.test(c)) return "neutral";
+    return "soft";
+  }, [isNegotiationFocus, targetCompany]);
+
   const formComplete =
     !!targetRole.trim() &&
     interviewFocus.length > 0 &&
     !companyMissing &&
     !hardRoleCompanyMismatch;
-  const canProceed = formComplete && micStatus === "granted";
+
+  /* Mic is only a hard requirement when the AI actually speaks. With the
+     TTS kill-switch on (VOICE_OUTPUT_DISABLED), the interview is text-first
+     and fully answerable by typing — the engine's `?nomic=1` path drives a
+     complete typed session. Requiring mic permission in that state locks
+     mic-denied / locked-down-device users out of a text-only product for no
+     reason. Gate the requirement on the same flag that puts the composer in
+     text mode, so the two never drift apart. */
+  const micRequired = !VOICE_OUTPUT_DISABLED;
+  const canProceed = formComplete && (micStatus === "granted" || !micRequired);
 
   // Launch interview
   const handleStart = () => {
@@ -1383,6 +1435,7 @@ export default function SessionSetup() {
       role: targetRole || null,
       company: targetCompany || null,
       session_minutes: sessionMinutes,
+      difficulty: "standard",
     });
     const introText = introByType[focusType] || introByType.behavioral;
     prefetchTTS(introText);
@@ -1410,16 +1463,24 @@ export default function SessionSetup() {
       // Forward drill key when present + recognized. Unknown keys are
       // dropped so /interview doesn't receive an unrecognized directive.
       const drillParam = drillCta ? `&drill=${encodeURIComponent(drillKey)}` : "";
-      /* HR rounds carry their type forward as the focus so useInterviewEngine
-         resolves interviewFocus="hr-round" instead of the "general" default.
-         The whole HR pipeline is already keyed on "hr-round": the personalization
-         prebias gate, the session_insights read bucket (analyze-sessions writes
-         focus = session.type), and HR-specific reference-question retrieval
-         (FOCUS_MAP "hr-round" -> "hr"). Without this the prebias never fires and
-         the insight read queries the wrong bucket. Scoped to hr-round only so
-         every other interview type's focus handling stays unchanged. */
-      const focusParam = focusType === "hr-round" ? "&focus=hr-round" : "";
-      router.push(`/interview?type=${focusType}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}`);
+      /* Some focuses need both a `type=` and `focus=` param on the interview URL:
+         - HR Round: type=hr-round, focus=hr-round (pipeline keyed on "hr-round")
+         - Campus Placement: type=behavioral, focus=campus-placement
+           (stored as behavioral in DB; focus distinguishes it from behavioral)
+         Every other type: type=<focusType>, no separate focus param. */
+      let interviewTypeParam = focusType;
+      let focusParam = "";
+      if (focusType === "hr-round") {
+        focusParam = "&focus=hr-round";
+      } else if (focusType === "campus-placement") {
+        interviewTypeParam = "behavioral";
+        focusParam = "&focus=campus-placement";
+      }
+      /* Starting without a granted mic (allowed when voice output is off) —
+         hand the engine its text-only hatch so it doesn't try to acquire a
+         mic the user never gave and doesn't render a dead "Listening" state. */
+      const micParam = micStatus === "granted" ? "" : "&nomic=1";
+      router.push(`/interview?type=${interviewTypeParam}${focusParam}&difficulty=standard&new=1${targetCompany ? `&company=${encodeURIComponent(targetCompany)}` : ""}&role=${encodeURIComponent(targetRole)}&length=${SESSION_LENGTH}${cameraParam}${drillParam}${micParam}${inviteJd ? `&jd=${encodeURIComponent(inviteJd)}` : ""}`);
     }, 1900);
   };
 
@@ -1431,7 +1492,7 @@ export default function SessionSetup() {
       if (e.key !== "Enter" || !(e.metaKey || e.ctrlKey)) return;
       e.preventDefault();
       if (canProceed && !starting && isOnline) handleStart();
-      else if (formComplete && micStatus !== "granted" && micStatus !== "requesting") void requestMic();
+      else if (micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting") void requestMic();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -1464,23 +1525,12 @@ export default function SessionSetup() {
       <style>{`
         /* Canonical fadeUp / spin / pulse live in src/index.css.
            Setup-local keyframes (launchIn, launchPulse, countdown*,
-           hsxAccent*, hsxShimmer) stay here — they're not reused. */
+           hsxAccent*) stay here — they're not reused. */
         @keyframes launchIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes launchPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.08); opacity: 0.85; } }
         @keyframes countdownPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         @keyframes countdownFade { 0% { opacity: 1; transform: scale(1); } 80% { opacity: 1; } 100% { opacity: 0.6; transform: scale(0.95); } }
         @keyframes hsxAccentIn { 0% { opacity: 0; transform: translateY(6px); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
-        @keyframes hsxBadgePulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(49,46,129,0.35); } 50% { box-shadow: 0 0 0 6px rgba(49,46,129,0); } }
-        @keyframes hsxShimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
-        /* Skeleton placeholder for elements that load async (identity
-           chip while useAuth resolves). Reserves space + telegraphs
-           "loading" without flashing or shifting. */
-        .hsx-shimmer {
-          background-image: linear-gradient(90deg, ${T.creamSoft} 0%, ${T.line} 40%, ${T.creamSoft} 80%);
-          background-size: 200px 100%;
-          background-repeat: no-repeat;
-          animation: hsxShimmer 1.4s ease-in-out infinite;
-        }
         .ob-card { background: ${T.white}; border: 1px solid ${T.line}; }
         /* Uses canonical 'pulse' from index.css (1.6s ease-in-out). */
         .ob-mic-pulse { animation: pulse 1.6s ease-in-out infinite; }
@@ -1489,18 +1539,12 @@ export default function SessionSetup() {
            Hero "ready" italic-copper word slides in 100ms after the
            rest of the headline so the eye lands on it. Small, tasteful. */
         .hsx-setup-hero-h1 em { animation: hsxAccentIn 600ms 120ms cubic-bezier(.2,.7,.2,1) both; }
-        /* "For you" recommendation badge — single soft pulse on first
-           render so a returning user's eye finds the suggestion. */
-        .hsx-recommend-badge { animation: hsxBadgePulse 1.6s ease-out 1; }
-
         /* ─── Completed-zone dim ─────────────────────────────────────────
            Once the user has met the form requirements (role + focus + mic
            granted), Focus and Permissions sections fade to 88% opacity
            so the CTA visually owns the page. Hovering or focusing inside
            a section restores full opacity — users can still change
            selections without fighting the dim. */
-        .hsx-completed-zone { transition: opacity 320ms ease; }
-        .hsx-completed-zone:hover, .hsx-completed-zone:focus-within { opacity: 1 !important; }
 
         /* ─── Focus rings (a11y) ─────────────────────────────────────────
            Default browser :focus-visible is inconsistent across browsers
@@ -1510,8 +1554,29 @@ export default function SessionSetup() {
         .hsx-setup-cta:focus-visible,
         .hsx-permission-card button:focus-visible,
         .hsx-link-indigo:focus-visible {
+          /* Two-tone ring (white gap + solid indigo): >=3:1 on any surface,
+             unlike the 20%-alpha indigoRing halo (~1.4:1) it replaces. */
           outline: none;
-          box-shadow: 0 0 0 3px ${T.indigoRing}, 0 1px 2px rgba(20,17,10,.04);
+          box-shadow: 0 0 0 2px ${T.white}, 0 0 0 4px ${T.indigo};
+        }
+
+        /* ─── Hover feedback ─────────────────────────────────────────────
+           transform/filter only — background/border/box-shadow on these
+           elements are already set inline (conditional on selected/disabled
+           state), so a non-!important hover rule can't win against them.
+           Both already carry their own inline transition style prop, so no
+           extra transition declaration is needed here. */
+        .ob-focus-card:not(:disabled):hover {
+          transform: translateY(-2px);
+        }
+        .hsx-option-row:hover {
+          background: oklch(0.359 0.135 278.697 / 0.06);
+        }
+        .hsx-option-row--selected {
+          background: oklch(0.359 0.135 278.697 / 0.08);
+        }
+        .hsx-option-row--selected:hover {
+          background: oklch(0.359 0.135 278.697 / 0.10);
         }
 
         /* ─── prefers-reduced-motion ─────────────────────────────────────
@@ -1525,11 +1590,13 @@ export default function SessionSetup() {
             scroll-behavior: auto !important;
           }
           .ob-mic-pulse { animation: none !important; }
-          .hsx-recommend-badge { animation: none !important; }
         }
+        .ob-focus-card:focus-visible, .hsx-setup-cta:focus-visible, .hsx-permission-actions button:focus-visible { outline: 2px solid ${T.indigo}; outline-offset: 2px; }
+        @media (max-width: 1024px), (pointer: coarse) { .hsx-permission-actions button { min-height: 44px; min-width: 44px; } }
+        @media (max-width: 860px) { .ob-permissions-grid { grid-template-columns: 1fr !important; } }
         .ob-s2-role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-        .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .ob-s2-focus-grid { display: grid; grid-template-columns: repeat(var(--focus-cols, 3), 1fr); gap: 10px; }
+        .ob-permissions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: stretch; }
         .ob-s2-session-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
 
         /* ─── Responsive layout ─────────────────────────────────────────
@@ -1546,17 +1613,12 @@ export default function SessionSetup() {
           .hsx-setup-content { padding: 12px 32px 32px !important; }
           .hsx-setup-hero-h1 { font-size: clamp(1.5rem, 3vw, 2rem) !important; line-height: 1.1 !important; }
           .hsx-setup-hero { margin-bottom: 14px !important; }
-          .hsx-setup-hero-sub { margin-top: 6px !important; font-size: 13px !important; line-height: 1.45 !important; }
-          .hsx-setup-hero-pillrow { margin-top: 8px !important; gap: 4px !important; }
-          .hsx-setup-hero-pillrow p { font-size: 12px !important; }
-          .hsx-setup-time-pill { font-size: 11px !important; padding: 4px 10px !important; }
           .hsx-setup-form-sections { gap: 16px !important; }
           .hsx-setup-cta-zone { margin-top: 16px !important; padding-top: 12px !important; gap: 8px !important; }
-          .hsx-setup-cta { padding: 14px 28px !important; font-size: 14px !important; }
           .ob-focus-card { padding: 10px !important; }
         }
         @media (max-width: 1024px) {
-          .ob-s2-focus-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          .ob-s2-focus-grid { grid-template-columns: repeat(var(--focus-cols-md, 3), 1fr) !important; }
         }
         @media (max-width: 760px) {
           /* The hero clamp settles to its floor here and the nowrap
@@ -1567,7 +1629,7 @@ export default function SessionSetup() {
           .hsx-setup-topbar { padding: 16px 20px !important; }
           .hsx-setup-content { padding: 20px 20px 64px !important; }
           .ob-s2-role-grid { grid-template-columns: 1fr !important; gap: 16px !important; }
-          .ob-s2-focus-grid { grid-template-columns: 1fr 1fr !important; }
+          .ob-s2-focus-grid { grid-template-columns: repeat(var(--focus-cols-sm, 2), 1fr) !important; }
           .ob-s2-session-grid { grid-template-columns: 1fr !important; }
           .ob-permissions-grid { grid-template-columns: 1fr !important; }
           /* Keep the icon+copy+action row inline on mobile — wrapping made
@@ -1588,10 +1650,24 @@ export default function SessionSetup() {
           /* On phones the CTA is full-width AND the zone above it gets a
              1px hairline + extra padding so it reads as the commit zone.
              min-height 48 ensures Apple HIG touch target floor. */
-          .hsx-setup-cta { width: 100% !important; min-width: 0 !important; padding: 16px 24px !important; font-size: 15px !important; min-height: 48px !important; }
-          .hsx-setup-cta-zone { border-top: 1px solid #EBE5D2; padding-top: 28px !important; margin-top: 32px !important; }
-          /* Time pill bumps to 13/regular for legibility on phones. */
-          .hsx-setup-time-pill { font-size: 13px !important; padding: 6px 14px !important; }
+          .hsx-setup-cta { width: 100% !important; min-height: 44px !important; }
+          .hsx-setup-cta-group { flex-direction: column !important; align-items: stretch !important; gap: 10px !important; }
+          .hsx-setup-cta-group > div { text-align: center !important; flex: none !important; }
+          .hsx-setup-card { border-radius: 12px !important; }
+          /* Sticky Start bar: the zone dissolves so the CTA group can stick to
+             the viewport bottom (sticky is bounded by its parent). The scroll
+             wrapper must not clip it with overflow. */
+          .hsx-setup-content { overflow: visible !important; }
+          .hsx-setup-card { padding: 20px !important; }
+          .hsx-setup-cta-zone { display: contents !important; }
+          .hsx-setup-cta-group {
+            position: sticky; bottom: 0; z-index: 5; background: ${T.white};
+            margin: 24px -20px 0 !important;
+            padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+            border-top: 1px solid ${T.line};
+            box-shadow: 0 -6px 16px oklch(0.2 0 0 / 0.06);
+          }
+          .hsx-setup-notes { margin-top: 16px; }
         }
         @media (max-width: 500px) {
           /* Drop the name to keep the right cluster from overflowing —
@@ -1606,7 +1682,6 @@ export default function SessionSetup() {
           .hsx-setup-content { padding: 16px 14px 56px !important; }
           .ob-s2-focus-grid { grid-template-columns: 1fr !important; }
           .hsx-permission-card { padding: 10px !important; gap: 8px !important; }
-          .hsx-setup-cta { font-size: 14px !important; padding: 14px 18px !important; }
         }
       `}</style>
 
@@ -1617,9 +1692,7 @@ export default function SessionSetup() {
           1080px-capped inner wrapper was making the logo + name look
           bunched toward the centre on wide displays. */}
       <div className="hsx-setup-topbar" style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "center", gap: 16, borderBottom: `1px solid ${T.line}`, background: T.cream }}>
-        <div role="button" tabIndex={0} onClick={() => router.push("/dashboard")} onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/dashboard"); } }} style={{ justifySelf: "start", cursor: "pointer" }} title="Back to dashboard">
-          <Wordmark />
-        </div>
+        <SetupTopbarLeft />
         <div style={{ justifySelf: "center" }} />
         {/* Identity chip — always reserves a fixed-height slot so the
             topbar doesn't reflow when useAuth resolves (zero CLS).
@@ -1631,15 +1704,15 @@ export default function SessionSetup() {
               // Shimmer placeholder — same dimensions as the loaded chip.
               return (
                 <div aria-hidden style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span className="hsx-shimmer" style={{ width: 30, height: 30, borderRadius: 999, background: T.creamSoft }} />
-                  <span className="hsx-shimmer hsx-setup-identity-name" style={{ width: 96, height: 14, borderRadius: 4, background: T.creamSoft }} />
+                  <Skeleton className="skeleton-circle" style={{ width: 30, height: 30, flexShrink: 0 }} />
+                  <Skeleton className="hsx-setup-identity-name" style={{ width: 96, height: 14, borderRadius: 4 }} />
                 </div>
               );
             }
             const initials = trimmed.split(/\s+/).filter(Boolean).slice(0, 2).map(p => p[0]?.toUpperCase()).join("");
             return (
               <div title={trimmed} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: F.sans, fontSize: 14, fontWeight: 500, color: T.coal }}>
-                <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: T.indigo100, color: T.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: F.serif, fontSize: 13, fontWeight: 400, flexShrink: 0 }}>
+                <span aria-hidden style={{ width: 30, height: 30, borderRadius: 999, background: T.indigo100, color: T.indigo, display: "inline-flex", alignItems: "center", justifyContent: "center", fontFamily: F.sans, fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
                   {initials || (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
@@ -1655,8 +1728,8 @@ export default function SessionSetup() {
       </div>
 
       {/* ─── Content ─── */}
-      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto" }}>
-        <div id="hsx-setup-form" style={{ width: "100%", maxWidth: "min(1080px, calc(100vw - 32px))", animation: "fadeUp 0.3s ease" }}>
+      <div className="hsx-setup-content" style={{ flex: 1, display: "flex", alignItems: "flex-start", justifyContent: "center", overflow: "auto", background: T.white }}>
+        <main id="hsx-setup-form" tabIndex={-1} className="hsx-setup-card" style={{ width: "100%", maxWidth: 1080, margin: "0 auto", boxSizing: "border-box", padding: "clamp(20px, 4vw, 40px)", background: T.white, animation: "fadeUp 0.3s ease", outline: "none" }}>
 
           <div>
               {/* Drill mode banner — shown when the user arrived from a
@@ -1673,20 +1746,20 @@ export default function SessionSetup() {
                     marginBottom: 20,
                     padding: "14px 18px",
                     borderRadius: 10,
-                    background: T.copper100,
-                    border: `1px solid ${T.copper}`,
+                    background: T.indigo100,
+                    border: `1px solid ${T.indigo}`,
                     display: "flex",
                     alignItems: "flex-start",
                     gap: 12,
                   }}
                 >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0, marginTop: 1 }}>
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="8" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.copper, marginBottom: 4 }}>
+                    <div style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, marginBottom: 4 }}>
                       Drilling from your last HR round
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 14, color: T.coal, lineHeight: 1.45 }}>
@@ -1695,40 +1768,16 @@ export default function SessionSetup() {
                   </div>
                 </div>
               )}
-              {/* Hero — centered, matches the canvas SetupEmpty storyboard. */}
-              <div style={{ marginBottom: 32, textAlign: "center" }} className="fade-up-1 hsx-setup-hero">
-                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.serif, fontSize: "clamp(1.75rem, 5.6vw, 4rem)", fontWeight: 400, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>
+              <div style={{ marginBottom: 28, display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "center", textAlign: "center", gap: "8px 14px" }} className="fade-up-1 hsx-setup-hero">
+                <h1 className="hsx-setup-hero-h1" style={{ fontFamily: F.sans, fontSize: "clamp(1.5rem, 3vw, 2rem)", fontWeight: 600, color: T.coal, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
                   Let&apos;s get you{" "}
-                  <em style={{ fontStyle: "italic", fontWeight: 400, color: T.copper }}>ready</em>
+                  <em style={{ fontStyle: "normal", fontWeight: 600, color: T.indigo }}>ready</em>
                 </h1>
-                <p className="hsx-setup-hero-sub" style={{ fontFamily: F.sans, fontSize: 16, lineHeight: 1.55, color: T.inkSoft, marginTop: 14, marginBottom: 0, textWrap: "balance" }}>
-                  Tell us a few things and we&apos;ll personalize the experience for you.
-                </p>
-                {/* Time pill + value-reframe — answers "how long?" and ties
-                    the time investment to outcome in one breath. */}
-                <div className="hsx-setup-hero-pillrow" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 14 }}>
-                  <div className="hsx-setup-time-pill" style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 999, background: T.copper100, color: T.copper, fontFamily: F.sans, fontSize: 12, fontWeight: 500 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
-                    ~{sessionMinutes} minutes
-                  </div>
-                </div>
               </div>
 
               <div className="hsx-setup-form-sections" style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                {/* ── Role & Company — canvas-style: clean field rows, no card chrome ── */}
+                {/* ── Role & Company — field rows carry their own labels ── */}
                 <div className="fade-up-1">
-                  <div style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
-                      <span>About the role</span>
-                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
-                    </div>
-                    <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      We tailor questions to the role and company you're targeting.
-                    </div>
-                  </div>
                   <div className="ob-s2-role-grid">
                     <div>
                       <AutocompleteInput id="setup-role" value={targetRole} onChange={(v) => { setTargetRole(v); setRoleTouched(true); }} suggestions={ROLE_SUGGESTIONS} placeholder="e.g. Senior Engineering Manager..." label="Role" required error={roleTouched && !targetRole.trim() ? "Required to personalize your questions" : undefined} />
@@ -1756,27 +1805,75 @@ export default function SessionSetup() {
                           ⓘ {roleCompanyFit.reason}
                         </div>
                       )}
+                      {/* S40-B8: market-mode disclosure before session starts */}
+                      {simulatedMarketMode && !companyMissing && !hardRoleCompanyMismatch && (
+                        <div style={{ marginTop: 8, fontFamily: F.sans, fontSize: 12, lineHeight: 1.4, display: "flex", alignItems: "flex-start", gap: 5, color: T.inkSoft }}>
+                          <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
+                          <span>
+                            {simulatedMarketMode === "soft"
+                              ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Soft market simulation</strong> — recruiter will concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.</>
+                              : simulatedMarketMode === "hot"
+                                ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong> — recruiter has more flex to stretch. Push confidently on your ask.</>
+                                : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong> — standard recruiter concession behaviour.</>
+                            }
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 {/* ── Interview Focus — canvas-style: clean label, 5-col grid ── */}
-                <div className="fade-up-2 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
+                <div className="fade-up-2">
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
+                    <h2 style={{ display: "flex", alignItems: "center", gap: 6, margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>
                       <span>Interview focus</span>
-                      <span style={{ color: T.copper, fontSize: 12 }}>*</span>
-                    </div>
+                      <span style={{ color: T.error, fontSize: 12 }}>*</span>
+                    </h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      {relevantFocusSet
-                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
-                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus)
-                          ? "Choose one area to focus on. The recommended pick for your role is highlighted."
-                          : "Choose one area to focus on."}
+                      {targetRole.trim()
+                        ? `${relevantFocusSet ? `Matched to "${targetRole.trim()}" interviews. ` : ""}Choose one area to focus on.`
+                        : "Enter a role to see relevant focuses."}
                     </div>
                   </div>
+                    {(() => {
+                      const allOpts = [
+                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
+                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
+                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
+                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
+                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
+                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
+                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
+                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
+                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
+                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
+                      ];
+                      /* Role-aware filtering: when the user has typed a
+                         classifiable role, hide focuses that real interview
+                         loops for that role wouldn't include (e.g. don't
+                         show "Technical Leadership" to a Customer Success
+                         rep, don't show "Campus Placement" to a Senior
+                         Engineering Manager). When the role is empty or
+                         unclassified, show all 10 — see relevantFocusSet
+                         derivation above. */
+                      const filtered = relevantFocusSet
+                        ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
+                        : allOpts;
+                      const available = filtered.filter((o) => !COMING_SOON_FOCUSES.has(o.value as InterviewFocus));
+                      const soon = filtered.filter((o) => COMING_SOON_FOCUSES.has(o.value as InterviewFocus));
+                      const n = available.length;
+                      const cols = n <= 4 ? Math.max(n, 1) : n === 6 || n === 9 ? 3 : n === 7 || n === 8 ? 4 : 5;
+                      const gridVars = {
+                        "--focus-cols": cols,
+                        "--focus-cols-md": Math.min(cols, 3),
+                        "--focus-cols-sm": n <= 3 ? 1 : 2,
+                      } as CSSProperties;
+                      return (
+                        <>
                   <div
                     className="ob-s2-focus-grid"
+                    style={gridVars}
                     role="radiogroup"
                     aria-label="Interview focus"
                     /* tabIndex={-1} so the radiogroup is programmatically
@@ -1804,101 +1901,61 @@ export default function SessionSetup() {
                       arr[nextIdx]?.focus();
                     }}
                   >
-                    {(() => {
-                      const allOpts = [
-                        { value: "Behavioral", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>, desc: "Tell stories about how you handled past situations" },
-                        { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
-                        { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
-                        { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
-                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
-                        { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
-                        { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
-                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
-                        { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
-                        { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
-                      ];
-                      /* Role-aware filtering: when the user has typed a
-                         classifiable role, hide focuses that real interview
-                         loops for that role wouldn't include (e.g. don't
-                         show "Technical Leadership" to a Customer Success
-                         rep, don't show "Campus Placement" to a Senior
-                         Engineering Manager). When the role is empty or
-                         unclassified, show all 10 — see relevantFocusSet
-                         derivation above. */
-                      const filtered = relevantFocusSet
-                        ? allOpts.filter((o) => relevantFocusSet.has(o.value as InterviewFocus))
-                        : allOpts;
-                      return filtered.map(opt => {
-                        /* MVP gate: "Coming soon" focuses stay visible (so
-                           users see the roadmap) but aren't selectable. They
-                           drop role=radio so the roving-tabindex arrow nav
-                           skips them, and `disabled` blocks clicks. */
-                        const comingSoon = COMING_SOON_FOCUSES.has(opt.value as InterviewFocus);
-                        const sel = !comingSoon && interviewFocus[0] === opt.value;
-                        const isRecommended = !comingSoon && opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
-                        return (
-                          <button key={opt.value} className="ob-focus-card"
-                            onClick={comingSoon ? undefined : () => setInterviewFocus([opt.value])}
-                            type="button"
-                            disabled={comingSoon}
-                            {...(comingSoon
-                              ? { "aria-disabled": true as const }
-                              : { role: "radio", "aria-checked": sel })}
-                            /* Roving tabindex: only the selected (or first
-                               if none selected) chip is in the tab order;
-                               arrow keys move between siblings. Coming-soon
-                               cards are never in the tab order. */
-                            tabIndex={comingSoon ? -1 : sel ? 0 : -1}
-                            title={comingSoon ? "Coming soon — not available yet" : undefined}
-                            style={{
-                              padding: 14, borderRadius: 12, cursor: comingSoon ? "not-allowed" : "pointer", transition: "all 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
-                              background: comingSoon ? T.cream : sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
-                              border: `1px ${comingSoon ? "dashed" : "solid"} ${sel ? T.indigo : T.line}`,
-                              boxShadow: comingSoon ? "none" : sel ? `0 0 0 3px ${T.indigoRing}` : "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-                              opacity: comingSoon ? 0.65 : 1,
-                              display: "flex", alignItems: "center", gap: 10, color: T.coal,
-                              position: "relative", fontFamily: F.sans,
-                            }}>
-                            {isRecommended && (
-                              <span className="hsx-recommend-badge" style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.cream, background: T.indigo, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>For you</span>
-                            )}
-                            {comingSoon && (
-                              <span style={{ position: "absolute", top: -8, right: 10, fontFamily: F.sans, fontSize: 10, fontWeight: 600, color: T.inkSoft, background: T.white, border: `1px solid ${T.line}`, padding: "2px 8px", borderRadius: 4, letterSpacing: "0.04em", textTransform: "uppercase" }}>Coming soon</span>
-                            )}
-                            <span style={{ width: 32, height: 32, borderRadius: 6, background: comingSoon ? T.line : T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {opt.icon}
-                            </span>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
-                            {comingSoon ? (
-                              <span aria-hidden style={{ width: 18, height: 18, color: T.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                              </span>
-                            ) : (
-                              <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                                {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                              </span>
-                            )}
-                          </button>
-                        );
-                      });
-                    })()}
+                    {available.map((opt) => {
+                      const sel = interviewFocus[0] === opt.value;
+                      return (
+                        <button key={opt.value} className="ob-focus-card"
+                          onClick={() => { setFocusPicked(true); setInterviewFocus([opt.value]); }}
+                          type="button"
+                          role="radio"
+                          aria-checked={sel}
+                          /* Roving tabindex: only the selected chip is in the
+                             tab order; arrow keys move between siblings. */
+                          tabIndex={sel ? 0 : -1}
+                          style={{
+                            padding: 14, borderRadius: 12, cursor: "pointer", transition: "background-color 0.22s cubic-bezier(.2,.7,.2,1), border-color 0.22s cubic-bezier(.2,.7,.2,1), box-shadow 0.22s cubic-bezier(.2,.7,.2,1)", textAlign: "left",
+                            background: sel ? `linear-gradient(180deg, ${T.indigo100}, ${T.white})` : T.white,
+                            border: `1px solid ${sel ? T.indigo : T.line}`,
+                            boxShadow: sel ? `inset 0 0 0 1px ${T.indigo}` : "none",
+                            display: "flex", alignItems: "center", gap: 10, color: T.coal,
+                            position: "relative", fontFamily: F.sans,
+                          }}>
+                          <span style={{ width: 32, height: 32, borderRadius: 6, background: T.indigo100, color: T.coal, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {opt.icon}
+                          </span>
+                          <span style={{ fontSize: 14, fontWeight: 500, color: T.coal, flex: 1, lineHeight: 1.2 }}>{opt.value}</span>
+                          <span aria-hidden style={{ width: 18, height: 18, borderRadius: 999, border: `1.5px solid ${sel ? T.indigo : T.line}`, background: sel ? T.indigo : "transparent", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                            {sel && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={T.white} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
+                  {soon.length > 0 && (
+                    <p style={{ display: "flex", alignItems: "center", gap: 6, margin: "12px 0 0", fontFamily: F.sans, fontSize: 13, color: T.inkSoft }}>
+                      <svg aria-hidden width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      <span>Coming soon: {soon.map((o) => o.value).join(", ")}</span>
+                    </p>
+                  )}
+                        </>
+                      );
+                    })()}
                 </div>
 
                 {/* ── Permissions — mic compulsory, camera optional ── */}
-                <div className="fade-up-3 hsx-completed-zone" style={{ opacity: canProceed ? 0.88 : 1 }}>
+                <div className="fade-up-3">
                   <div style={{ marginBottom: 14 }}>
-                    <div style={{ fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</div>
+                    <h2 style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      We&apos;ll only use these for this practice session. Nothing is recorded or shared.
+                      Used live for this session only — audio and video are never recorded. Only your session transcript is saved, so you can review your report.
                     </div>
                   </div>
                   <div className="ob-permissions-grid">
                     <PermissionCard
                       kind="mic"
                       label="Microphone"
-                      sublabel="Required"
-                      sublabelTone="copper"
+                      sublabel={micRequired ? "Required" : "Optional"}
+                      sublabelTone={micRequired ? "indigo" : "muted"}
                       status={micStatus}
                       onRequest={requestMic}
                       level={micLevel}
@@ -1922,65 +1979,22 @@ export default function SessionSetup() {
                       cameraSignals={cameraSignals}
                     />
                   </div>
+                  {micStatus === "granted" && (
+                    <AudioDevicePicker
+                      onMicChange={() => {
+                        stopLevelMeter();
+                        micStreamRef.current?.getTracks().forEach((t) => t.stop());
+                        micStreamRef.current = null;
+                        setVoiceDetected(false);
+                        void requestMic();
+                      }}
+                    />
+                  )}
                 </div>
 
               </div>
             </div>
 
-
-          {/* ─── Resume coaching brief — shown when AI resume exists.
-                A 2-line card surfacing interviewStrengths / interviewGaps
-                so the candidate knows what to lean on and watch for before
-                the first question fires. Data already exists on the profile;
-                zero extra network calls. */}
-          {(() => {
-            const rd = user?.resumeData as Record<string, unknown> | undefined;
-            const ap = rd?.aiProfile as { interviewStrengths?: string[]; interviewGaps?: string[] } | undefined;
-            const strengths = Array.isArray(ap?.interviewStrengths) ? ap.interviewStrengths.slice(0, 2) : [];
-            const gaps = Array.isArray(ap?.interviewGaps) ? ap.interviewGaps.slice(0, 2) : [];
-            if (strengths.length === 0 && gaps.length === 0) return null;
-            return (
-              <div
-                style={{
-                  background: T.warning100,
-                  border: `1px solid rgba(180,83,9,0.18)`,
-                  borderLeft: `3px solid ${T.copper}`,
-                  borderRadius: 10,
-                  padding: "14px 18px",
-                  marginTop: 28,
-                  maxWidth: 560,
-                  width: "100%",
-                  margin: "28px auto 0",
-                }}
-              >
-                <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 700, color: T.copper, margin: "0 0 10px", textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                  Your resume coaching brief
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: strengths.length > 0 && gaps.length > 0 ? "1fr 1fr" : "1fr", gap: 12 }}>
-                  {strengths.length > 0 && (
-                    <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.success, margin: "0 0 4px" }}>✓ Lean on these</p>
-                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
-                        {strengths.map((s, i) => (
-                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {gaps.length > 0 && (
-                    <div>
-                      <p style={{ fontFamily: F.sans, fontSize: 11, fontWeight: 600, color: T.copper, margin: "0 0 4px" }}>⚡ Prepare for these</p>
-                      <ul style={{ margin: 0, padding: "0 0 0 14px" }}>
-                        {gaps.map((g, i) => (
-                          <li key={i} style={{ fontFamily: F.sans, fontSize: 12, color: T.coal, lineHeight: 1.5, marginBottom: 2 }}>{g}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
 
           {/* ─── Single canvas-style "Start practice" CTA + trust line.
                 The CTA stays clickable when only the mic is missing — it
@@ -1991,33 +2005,28 @@ export default function SessionSetup() {
             const freeLeft = FREE_SESSION_LIMIT - freeSessionCount;
             const showFree = isFreeUser && freeLeft <= 2;
             const showStarter = isStarterUser && starterRemaining <= 2;
-            const showPro = isProUser && proRemaining <= 5;
-            if (!showFree && !showStarter && !showPro) return null;
-            const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0) || (isProUser && proRemaining === 0);
+            if (!showFree && !showStarter) return null;
+            const isUrgent = (isFreeUser && freeLeft <= 1) || (isStarterUser && starterRemaining === 0);
             // Don't show the alarming "limit reached" banner when purchased credits
             // cover the shortfall — the plan limit is a soft ceiling, not a hard wall.
             // The non-urgent "N sessions left" nudge is still useful, so only hide
             // the urgent "limit reached" variant when credits are available.
             if (isUrgent && creditBalance !== null && creditBalance > 0) return null;
-            const message = showPro
-              ? proRemaining === 0
-                ? 'Monthly session limit reached — resets 1st of next month.'
-                : `${proRemaining} of ${PRO_MONTHLY_LIMIT} sessions left this month.`
-              : showStarter
+            const message = showStarter
               ? starterRemaining === 0
                 ? 'Sprint Pack used up — buy session credits to keep going.'
                 : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left in your pack.`
               : freeLeft <= 0
               ? 'No free sessions left — upgrade to continue.'
               : freeLeft === 1
-              ? 'This is your last free session.'
+              ? 'Last free session — make it your hardest target company.'
               : `${freeLeft} free sessions remaining.`;
             return (
               <div
                 style={{
-                  background: isUrgent ? 'rgba(185,28,28,0.08)' : 'rgba(180,83,9,0.08)',
-                  color: isUrgent ? T.error : T.copper,
-                  border: `1px solid ${isUrgent ? 'rgba(185,28,28,0.2)' : 'rgba(180,83,9,0.2)'}`,
+                  background: isUrgent ? 'rgba(185,28,28,0.08)' : 'oklch(0.359 0.135 278.697 / 0.08)',
+                  color: isUrgent ? T.error : T.indigo,
+                  border: `1px solid ${isUrgent ? 'rgba(185,28,28,0.2)' : 'oklch(0.359 0.135 278.697 / 0.2)'}`,
                   borderRadius: 10,
                   padding: '10px 16px',
                   marginBottom: 14,
@@ -2030,94 +2039,84 @@ export default function SessionSetup() {
               >
                 <span>{message}</span>
                 {(showFree || showStarter) && (
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
                     onClick={() => setShowUpgradeModal(true)}
-                    style={{ background: 'none', border: 'none', fontWeight: 600,
-                             color: 'inherit', cursor: 'pointer', fontSize: 13,
-                             textDecoration: 'underline', padding: 0 }}
+                    style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', textDecoration: 'underline' }}
                   >
                     Upgrade
-                  </button>
+                  </Button>
                 )}
               </div>
             );
           })()}
-          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, marginTop: 48, paddingTop: 24 }}>
+          <div className="hsx-setup-cta-zone" style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 16, marginTop: 32, paddingTop: 24, borderTop: `1px solid ${T.line}` }}>
+            <div className="hsx-setup-cta-group" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12 }}>
             {(() => {
-              const needsMic = formComplete && micStatus !== "granted" && micStatus !== "requesting";
+              const needsMic = micRequired && formComplete && micStatus !== "granted" && micStatus !== "requesting";
               const isHardDisabled = !formComplete || starting || !isOnline || micStatus === "requesting";
               const ctaLabel = starting
                 ? "Starting…"
                 : needsMic
                   ? "Allow microphone to start"
                   : "Start practice";
-              const shortcutHint = isIOS ? "" : " · ⌘/Ctrl + Enter";
-              const ctaTitle = !formComplete
-                ? "Pick a target role and interview focus to continue."
-                : needsMic
-                  ? micStatus === "denied"
-                    ? "Microphone is blocked. Open browser settings to allow it, then try again."
-                    : "We need microphone access to start a voice interview."
-                  : !isOnline
-                    ? "You're offline. Reconnect to start."
-                    : `Start your practice interview${shortcutHint}`;
+              const ctaReason = getCtaReason({
+                starting, formComplete, hasRole: !!targetRole.trim(), companyMissing,
+                roleCompanyMismatch: hardRoleCompanyMismatch, isOnline, micStatus, needsMic,
+              });
               const onCtaClick = () => {
                 if (needsMic) { void requestMic(); return; }
                 handleStart();
               };
               return (
-                <button
-                  type="button"
-                  onClick={onCtaClick}
-                  disabled={isHardDisabled}
-                  title={ctaTitle}
-                  aria-label={ctaTitle ?? ctaLabel}
-                  className="hsx-setup-cta"
-                  style={{
-                    fontFamily: F.sans, fontSize: 16, fontWeight: 600, padding: "18px 36px", borderRadius: 12,
-                    /* Disabled state uses a fully-saturated neutral pair
-                       (creamSoft + inkSoft) so contrast stays AA and the
-                       button is unmistakably non-actionable. Avoids the
-                       contrast trap of "indigo at 45% opacity on cream". */
-                    background: isHardDisabled ? T.creamSoft : T.indigo,
-                    color: isHardDisabled ? T.inkSoft : T.cream,
-                    border: `1px solid ${isHardDisabled ? T.line : "transparent"}`,
-                    cursor: isHardDisabled ? "not-allowed" : "pointer",
-                    opacity: needsMic && !isHardDisabled ? 0.85 : 1,
-                    transition: "all 180ms cubic-bezier(.2,.7,.2,1)",
-                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 12,
-                    boxShadow: isHardDisabled ? "none" : "0 2px 4px rgba(20,17,10,.10), 0 12px 28px -10px rgba(49,46,129,.45)",
-                    letterSpacing: 0.1,
-                    minWidth: 320,
-                  }}
-                >
-                  {starting ? (
-                    <span style={{ width: 16, height: 16, border: `2.5px solid ${T.indigoRing}`, borderTopColor: T.cream, borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-                  ) : null}
-                  {ctaLabel}
-                  {!starting && (
-                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                  )}
-                </button>
+                <>
+                  <Button
+                    type="button"
+                    variant="default"
+                    size="lg"
+                    onClick={onCtaClick}
+                    disabled={isHardDisabled}
+                    title={!isHardDisabled && !needsMic && !isIOS ? "⌘/Ctrl + Enter" : undefined}
+                    aria-describedby={ctaReason ? "hsx-cta-reason" : undefined}
+                    className="hsx-setup-cta px-4"
+                    style={{ opacity: needsMic && !isHardDisabled ? 0.85 : undefined }}
+                  >
+                    {starting ? (
+                      <Spinner aria-hidden="true" style={{ color: T.cream }} />
+                    ) : null}
+                    {ctaLabel}
+                    {!starting && (
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                    )}
+                  </Button>
+                  <div id="hsx-cta-reason" aria-live="polite" style={{ fontFamily: F.sans, fontSize: 13, color: micStatus === "denied" && needsMic ? T.error : T.inkSoft, textAlign: "center", margin: 0, minWidth: 0 }}>
+                    {ctaReason}
+                  </div>
+                </>
               );
             })()}
-
-            <div aria-live="polite" style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 6, fontFamily: F.sans, fontSize: 12, color: T.inkSoft, minHeight: 18 }}>
-              {micStatus === "granted" && cameraStatus === "granted" && "Mic and camera ready — you're all set."}
-              {micStatus === "granted" && cameraStatus !== "granted" && "Mic ready. Camera is optional."}
-              {micStatus !== "granted" && (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  </svg>
-                  Your responses stay private and are never shared.
-                </>
-              )}
             </div>
+            <div className="hsx-setup-notes" style={{ display: "flex", flexWrap: "wrap", gap: "8px 24px", minWidth: 0, justifyContent: "center" }}>
+            {usingCredit && (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
+                <svg width="14" height="14" style={{ flexShrink: 0, marginTop: 2 }} viewBox="0 0 24 24" fill="none" stroke={T.inkSoft} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                1 session credit will be used · {creditBalance} remaining
+              </div>
+            )}
 
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: F.sans, fontSize: 13, color: T.inkSoft, lineHeight: 1.4 }}>
+              <svg aria-hidden width="14" height="14" style={{ flexShrink: 0, marginTop: 2 }} viewBox="0 0 24 24" fill="none" stroke={T.success} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Your name and contact stay hidden from employers. Manage this in Settings.
+            </div>
+            </div>
+            <span className="sr-only" aria-live="polite">{micStatus === "granted" && (cameraStatus === "granted" ? "Mic and camera ready." : "Mic ready. Camera is optional.")}</span>
           </div>
-        </div>
+        </main>
       </div>
 
       {/* Countdown overlay */}
@@ -2138,14 +2137,14 @@ export default function SessionSetup() {
                 animation: "countdownPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
               }}>
                 <span style={{
-                  fontFamily: F.serif, fontSize: 56, fontWeight: 600,
+                  fontFamily: F.sans, fontSize: 56, fontWeight: 600,
                   color: T.indigo, lineHeight: 1,
                   animation: "countdownFade 1s ease",
                 }}>
                   {countdown}
                 </span>
               </div>
-              <p style={{ fontFamily: F.sans, fontSize: 15, color: T.inkFaint, letterSpacing: "0.02em" }}>
+              <p style={{ fontFamily: F.sans, fontSize: 16, color: T.inkFaint, letterSpacing: "0.02em" }}>
                 Get ready...
               </p>
             </>
@@ -2160,7 +2159,7 @@ export default function SessionSetup() {
               }}>
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2" strokeLinecap="round"><polygon points="5,3 19,12 5,21"/></svg>
               </div>
-              <h2 style={{ fontFamily: F.serif, fontSize: 28, fontWeight: 400, color: T.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
+              <h2 style={{ fontFamily: F.sans, fontSize: 28, fontWeight: 600, color: T.coal, marginBottom: 8, letterSpacing: "-0.02em" }}>
                 Let's go!
               </h2>
             </>
@@ -2183,10 +2182,10 @@ export default function SessionSetup() {
               getCreditBalance(user.id).then(b => setCreditBalance(b)).catch(() => {});
             }
             // Sync tier change into in-memory user so the limit check updates.
-            // Subscription purchases return tier="starter"|"pro"; credit
-            // purchases return tier="free" (no tier change) — only upgrade.
+            // Subscription purchases return tier="starter"; credit purchases
+            // return tier="free" (no tier change) — only upgrade.
             if (tier && tier !== "free" && authUpdateUser) {
-              authUpdateUser({ subscriptionTier: tier as "starter" | "pro", subscriptionEnd: end || undefined });
+              authUpdateUser({ subscriptionTier: tier as "starter", subscriptionEnd: end || undefined });
             }
           }}
         />

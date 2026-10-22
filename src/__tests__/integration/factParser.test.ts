@@ -45,6 +45,15 @@ describe("_fact-parser — parseSalaryFacts", () => {
     expect(parseSalaryFacts("22 lacs")[0].value).toBe(22);
   });
 
+  /* B38 — elongated "laakh"/"laaks" STT typo for lakh (verified real: the
+   * old UNIT_TOKEN missed the double-a spelling). */
+  it("handles laakh/laaks elongated spellings (B38)", () => {
+    expect(parseSalaryFacts("22 laakh")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laaks")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laakhs")[0].value).toBe(22);
+    expect(parseSalaryFacts("22 laakh")[0].unit).toBe("lakh");
+  });
+
   it("range '22-24 LPA' produces two facts with isRangeLower/Upper flags", () => {
     const f = parseSalaryFacts("expecting ₹22-24 LPA total");
     expect(f).toHaveLength(2);
@@ -100,12 +109,47 @@ describe("_fact-parser — parseSalaryFacts", () => {
     expect(f).toHaveLength(2);
   });
 
-  it("strips thousand separators in ₹-prefixed bare numbers", () => {
-    /* Edge case: "₹22,00,000" — Indian comma style. We still treat as
-     * LPA-scale (matches legacy RUPEE_NUM_RE behaviour). */
-    const f = parseSalaryFacts("₹22,00,000");
-    expect(f).toHaveLength(1);
-    expect(f[0].rawDigits).toBe("2200000");
+  /* Family A / OA-B1 / OA-B29 (CRITICAL) — absolute-rupee resolution.
+   *
+   * A ₹-prefixed integer of ≥1 lakh rupees is an ABSOLUTE RUPEE amount,
+   * not an LPA shorthand: ₹22,00,000 = 22 lakh p.a. = 22 LPA, and
+   * ₹1,20,00,000 = 1.2 crore p.a. = 120 LPA. The old parser returned the
+   * bare rupee count as "LPA" (2,200,000 LPA / 12,000,000 LPA), poisoning
+   * every downstream hike/band/score computation. Indian comma grouping
+   * makes the magnitude unambiguous, so this is a deterministic conversion,
+   * not a guess. */
+  describe("Family A — absolute-rupee (Indian grouping) resolution", () => {
+    it("₹22,00,000 (22 lakh) → 22 LPA, not 2.2M LPA", () => {
+      const f = parseSalaryFacts("₹22,00,000");
+      expect(f).toHaveLength(1);
+      expect(f[0].rawDigits).toBe("2200000");
+      expect(f[0].value).toBe(22);
+    });
+
+    it("₹1,20,00,000 (1.2 crore) → 120 LPA, not 12M LPA (the CRITICAL case)", () => {
+      const f = parseSalaryFacts("My current CTC is ₹1,20,00,000");
+      expect(f).toHaveLength(1);
+      expect(f[0].value).toBe(120);
+    });
+
+    it("₹2500000 without commas (25 lakh) → 25 LPA", () => {
+      expect(parseSalaryFacts("₹2500000")[0].value).toBe(25);
+    });
+
+    it("small ₹ shorthand is still LPA (₹25 base → 25 LPA)", () => {
+      const f = parseSalaryFacts("₹25 base");
+      expect(f[0].value).toBe(25);
+      expect(f[0].confidence).toBe("medium");
+    });
+
+    it("a mid-range ₹ amount too big for LPA but too small for absolute is flagged low-confidence", () => {
+      /* ₹35,000 — ambiguous (monthly? noise?). Not silently stored as
+       * 35,000 LPA with false confidence; carried as low so the downstream
+       * plausibility band can drop it. */
+      const f = parseSalaryFacts("₹35,000 joining");
+      expect(f).toHaveLength(1);
+      expect(f[0].confidence).toBe("low");
+    });
   });
 
   it("₹-prefixed without unit token gets medium confidence", () => {
@@ -164,5 +208,95 @@ describe("_fact-parser — hasSalaryAbove / maxSalaryLpa", () => {
   it("maxSalaryLpa returns the largest LPA-normalised value", () => {
     expect(maxSalaryLpa("base 18 LPA, total 28 LPA, equity 0.2 crore")).toBe(28);
     expect(maxSalaryLpa("base 18 LPA, total 28 LPA, equity 0.5 crore")).toBe(50);
+  });
+});
+
+describe("_fact-parser — OA-B2 bare comma-grouped absolute rupees", () => {
+  it("binds Indian-grouped '48,00,000' with a money cue as 48 LPA", () => {
+    expect(maxSalaryLpa("my current CTC is 48,00,000")).toBe(48);
+  });
+  it("binds crore-scale '1,20,00,000' as 120 LPA", () => {
+    expect(maxSalaryLpa("current package 1,20,00,000")).toBe(120);
+  });
+  it("binds Western-grouped '4,800,000' as 48 LPA", () => {
+    expect(maxSalaryLpa("my salary is 4,800,000 per annum")).toBe(48);
+  });
+  it("keeps a leading ₹ prefix working", () => {
+    expect(maxSalaryLpa("I earn ₹48,00,000 currently")).toBe(48);
+  });
+  it("does NOT bind a comma-grouped count with no money cue", () => {
+    /* "1,50,000 users" is not pay — the money-cue gate keeps it out. */
+    expect(parseSalaryFacts("we serve 1,50,000 users")).toHaveLength(0);
+  });
+  it("leaves a context-free bare number unparsed (conservative)", () => {
+    expect(parseSalaryFacts("48,00,000")).toHaveLength(0);
+  });
+});
+
+describe("_fact-parser — OA-B71 foreign currency", () => {
+  it("binds 'AED 400,000' as 90.4 LPA (was ₹4L)", () => {
+    expect(maxSalaryLpa("my current is AED 400,000")).toBe(90.4);
+  });
+  it("binds '£90,000' as 94.5 LPA (was raw 90 LPA)", () => {
+    expect(maxSalaryLpa("salary £90,000")).toBe(94.5);
+  });
+  it("binds '€85,000' as 76.5 LPA", () => {
+    expect(maxSalaryLpa("earning €85,000 per year")).toBe(76.5);
+  });
+  it("binds a k-suffixed '£120k' as 126 LPA", () => {
+    expect(maxSalaryLpa("I want £120k")).toBe(126);
+  });
+  it("binds amount-before-code '90,000 AED'", () => {
+    expect(maxSalaryLpa("offered 90,000 AED")).toBe(20.3);
+  });
+  it("leaves a tiny sub-salary foreign amount untouched", () => {
+    /* "€5 coffee" is not a salary — below the 1-LPA emit floor. */
+    expect(parseSalaryFacts("grabbed a €5 coffee")).toHaveLength(0);
+  });
+});
+
+describe("_fact-parser — OA-B13 thousand/grand scale word", () => {
+  it("drops sub-lakh 'fifty thousand' rather than binding 50 LPA (100x)", () => {
+    expect(parseSalaryFacts("I earn fifty thousand")).toHaveLength(0);
+  });
+  it("drops '50 thousand' (₹50k = 0.5 LPA, below the 1-LPA emit floor)", () => {
+    expect(parseSalaryFacts("my current is 50 thousand")).toHaveLength(0);
+  });
+  it("binds lakh-scale '500 thousand' as 5 LPA", () => {
+    expect(maxSalaryLpa("my current is 500 thousand")).toBe(5);
+  });
+  it("drops 'eighty grand' (sub-lakh grand variant)", () => {
+    expect(parseSalaryFacts("they offered eighty grand")).toHaveLength(0);
+  });
+});
+
+describe("_fact-parser — OA-B12 million unit", () => {
+  it("parses '4.8 million' as 48 LPA", () => {
+    expect(maxSalaryLpa("targeting 4.8 million")).toBe(48);
+  });
+  it("parses the 'mn' abbreviation", () => {
+    expect(maxSalaryLpa("looking for 5 mn")).toBe(50);
+  });
+  it("parses '₹4.8 million' with rupee prefix", () => {
+    expect(maxSalaryLpa("current is ₹4.8 million")).toBe(48);
+  });
+  it("does NOT bind a bare 'm' (collision guard)", () => {
+    /* "48m" must not resolve as 480 LPA — bare single-letter m is excluded. */
+    expect(maxSalaryLpa("ping me at 48m")).not.toBe(480);
+  });
+});
+
+describe("_fact-parser — OA-B15 absurd-magnitude clamp", () => {
+  it("drops '₹1 lakh crore' (100000 LPA) rather than emitting garbage", () => {
+    expect(maxSalaryLpa("they said ₹1 lakh crore")).not.toBe(100000);
+  });
+  it("drops '1000 crore' (100000 LPA)", () => {
+    expect(maxSalaryLpa("our band tops at 1000 crore")).toBe(null);
+  });
+  it("still keeps a legitimate crore figure", () => {
+    expect(maxSalaryLpa("our band tops at 1.2 crore")).toBe(120);
+  });
+  it("drops an absurd range bound", () => {
+    expect(maxSalaryLpa("range is 500-2000 crore")).toBe(null);
   });
 });

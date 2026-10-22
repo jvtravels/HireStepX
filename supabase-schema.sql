@@ -39,11 +39,19 @@ create table if not exists profiles (
   -- FK (no foreign key constraint) so a deleted version doesn't cascade
   -- to the profile; readers should tolerate dangling pointers.
   resume_version_id uuid,
-  created_at timestamptz default now()
+  -- Candidate-submitted proof-of-work links (GitHub, Behance, Notion,
+  -- personal site, etc). Array of { title, url }, capped and validated at
+  -- the update-profile API boundary (ALLOWED_COLUMNS + sanitizePortfolioLinks)
+  -- — never synthesized or inferred, only what the candidate entered.
+  portfolio_links jsonb default '[]'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 -- Backfill column on existing deployments. Idempotent — safe to re-run.
 alter table profiles add column if not exists resume_version_id uuid;
+alter table profiles add column if not exists portfolio_links jsonb default '[]'::jsonb;
+alter table profiles add column if not exists updated_at timestamptz default now();
 
 -- 2. Interview sessions
 create table if not exists sessions (
@@ -183,25 +191,6 @@ create table if not exists feedback (
   created_at timestamptz default now()
 );
 
--- 4c. Coming-soon / launch waitlist
--- Public anon-insertable list of emails captured before launch via the
--- ComingSoon page. Email is the primary key so the upsert {onConflict:'email'}
--- pattern in src/ComingSoon.tsx works without creating duplicates.
--- Anonymous SELECT is intentionally NOT granted — waitlist emails are
--- private; only the service role reads them (for the launch broadcast).
-create table if not exists waitlist (
-  email text primary key,
-  created_at timestamptz default now(),
-  source text default 'coming_soon',
-  -- Optional referral / UTM fields for future attribution. Nullable so
-  -- existing form callers (which only send email + created_at) still work.
-  referrer text default '',
-  utm_source text default '',
-  utm_medium text default '',
-  utm_campaign text default ''
-);
-create index if not exists idx_waitlist_created on waitlist(created_at desc);
-
 -- 4b. Per-question feedback (active-learning loop)
 -- Captures the user's signal on EACH generated question so we can mine
 -- under-performing patterns and feed corrections back into the curated
@@ -248,7 +237,8 @@ create unique index if not exists ux_credibility_disputes_per_flag on credibilit
 -- 5. Payments
 create table if not exists payments (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid references profiles(id) on delete cascade not null,
+  -- Nullable + SET NULL (migration 0038): erasure anonymises the row, never deletes the tax record.
+  user_id uuid references profiles(id) on delete set null,
   razorpay_payment_id text unique not null,
   razorpay_order_id text default '',
   plan text not null,
@@ -262,6 +252,24 @@ create table if not exists payments (
   created_at timestamptz default now()
 );
 alter table payments add column if not exists receipt_url text default '';
+alter table payments alter column user_id drop not null;
+alter table payments drop constraint if exists payments_user_id_fkey;
+alter table payments
+  add constraint payments_user_id_fkey
+  foreign key (user_id) references profiles(id) on delete set null;
+
+-- Erasure audit trail (migration 0038): no PII, service-role only.
+create table if not exists account_erasure_log (
+  id uuid primary key default gen_random_uuid(),
+  user_hash text not null,
+  trigger text not null check (trigger in ('user_hard', 'scheduled', 'admin')),
+  retained_financial boolean not null default false,
+  counts jsonb not null default '{}'::jsonb,
+  processors jsonb not null default '{}'::jsonb,
+  completed_at timestamptz not null default now()
+);
+create index if not exists idx_account_erasure_log_hash on account_erasure_log(user_hash);
+alter table account_erasure_log enable row level security;
 
 -- 5b. Payment dedup
 -- Atomic guard against duplicate verify-payment activations. A single
@@ -288,7 +296,7 @@ create index if not exists idx_sessions_user_date on sessions(user_id, date);
 -- Serves the per-user, per-type ordered query in fetchSkillProgressTrends
 -- (user_id = $1 AND type = $2 ORDER BY created_at DESC). See migration 0007.
 create index if not exists idx_sessions_user_type_created on sessions(user_id, type, created_at desc);
-create index if not exists idx_payments_razorpay_id on payments(razorpay_payment_id);
+create index if not exists idx_payments_razorpay on payments(razorpay_payment_id);
 create index if not exists idx_calendar_events_user on calendar_events(user_id, date);
 create index if not exists idx_calendar_events_user_start on calendar_events(user_id, start_utc);
 create index if not exists idx_calendar_events_parent on calendar_events(parent_interview_id);
@@ -358,7 +366,7 @@ create table if not exists llm_usage (
   id uuid primary key default gen_random_uuid(),
   user_id uuid references profiles(id) on delete set null,
   endpoint text not null,          -- 'generate' | 'follow-up' | 'evaluate' | 'analyze-resume'
-  model text not null,             -- 'llama-3.3-70b-versatile' | 'gemini-2.0-flash' etc.
+  model text not null,             -- e.g. 'openai/gpt-oss-20b' | 'gemini-2.5-flash'
   is_fallback boolean default false,
   prompt_tokens integer default 0,
   completion_tokens integer default 0,
@@ -438,7 +446,7 @@ alter table report_shares enable row level security;
 -- role from /api/get-shared-report, NOT via RLS.
 drop policy if exists "Users manage own shares" on report_shares;
 create policy "Users manage own shares" on report_shares
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- 11. Outcome tracking — voluntary self-report so we can build real
 -- "X candidates landed Y offers" case studies (currently the biggest
@@ -464,7 +472,7 @@ create index if not exists idx_user_outcomes_share on user_outcomes(may_share_pu
 alter table user_outcomes enable row level security;
 drop policy if exists "Users manage own outcomes" on user_outcomes;
 create policy "Users manage own outcomes" on user_outcomes
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- ═══════════════════════════════════════════════════════
 -- 11. Resume management — multi-resume + version history
@@ -715,7 +723,7 @@ create table if not exists credit_ledger (
   balance_before integer     not null,
   balance_after  integer     not null,
   payment_id     text,                           -- razorpay_payment_id for grants
-  session_id     uuid,                           -- sessions.id for consumes
+  session_id     text references sessions(id) on delete set null, -- sessions.id for consumes
   note           text,                           -- human-readable context
   created_at     timestamptz not null default now()
 );
@@ -763,7 +771,7 @@ revoke all on function grant_session_credits(uuid, integer, text, text) from pub
 grant execute on function grant_session_credits(uuid, integer, text, text) to service_role;
 
 -- ── Updated consume function — writes ledger row ──────────────────────────────
-create or replace function consume_session_credit(p_user_id uuid, p_session_id uuid default null)
+create or replace function consume_session_credit(p_user_id uuid, p_session_id text default null)
 returns boolean
 language plpgsql
 security definer
@@ -794,8 +802,8 @@ begin
 end;
 $$;
 
-revoke all on function consume_session_credit(uuid, uuid) from public, anon, authenticated;
-grant execute on function consume_session_credit(uuid, uuid) to service_role;
+revoke all on function consume_session_credit(uuid, text) from public, anon, authenticated;
+grant execute on function consume_session_credit(uuid, text) to service_role;
 
 -- Keep old single-arg overload for backward compat with any undeployed callers
 -- (drop after next deploy confirms the new sig is live)
@@ -806,7 +814,7 @@ security definer
 set search_path = public
 as $$
 begin
-  return consume_session_credit(p_user_id, null::uuid);
+  return consume_session_credit(p_user_id, null::text);
 end;
 $$;
 revoke all on function consume_session_credit(uuid) from public, anon, authenticated;
@@ -882,6 +890,16 @@ alter table profiles add column if not exists re_engage_sent timestamptz;
 -- retained — older ones get pruned on each write.
 alter table profiles add column if not exists started_session_ids jsonb default '[]'::jsonb;
 
+-- B-EMP1 (2026-08-20): per-entry start timestamps for started_session_ids,
+-- same order and same 50-entry cap so the two arrays stay index-aligned.
+-- Used by detectConcurrentSession (_record-session-start-helpers.ts) to tell
+-- a genuinely in-flight cross-device session apart from an old abandoned one
+-- that never got a `sessions` row — without this, any unsaved start stayed
+-- flagged as "concurrent" forever, regardless of age (production incident:
+-- a single abandoned first session permanently false-flagged every later
+-- attempt for a low-frequency user).
+alter table profiles add column if not exists started_session_ts jsonb default '[]'::jsonb;
+
 -- Soft-delete marker. delete-account.ts (PATCH path) sets this on
 -- user-requested account deletion; cleanup-deleted-accounts.ts
 -- permanently removes profiles where deleted_at < now() - 7 days.
@@ -934,6 +952,15 @@ create trigger trg_bump_sessions_lifetime
   after insert on sessions
   for each row execute function bump_sessions_started_lifetime();
 
+-- DB audit (2026-09-28): update-profile.ts's ALLOWED_COLUMNS has permitted
+-- writes to `city` since it was added, and the Settings UI + interview-setup
+-- flow (Onboarding.tsx, DashboardSettings.tsx, useInterviewEngine.ts) have
+-- been reading/writing it as if the column existed — but it was never
+-- actually created here. Every save silently hit update-profile.ts's
+-- column-stripping retry loop, so the value never persisted and every
+-- consumer always saw undefined.
+alter table profiles add column if not exists city text;
+
 -- ═══════════════════════════════════════════════════════
 -- Support messages (Help & Support widget "Send Feedback")
 -- ═══════════════════════════════════════════════════════
@@ -967,6 +994,10 @@ alter table support_messages add column if not exists first_response_at timestam
 alter table support_messages add column if not exists resolved_at timestamptz;
 create index if not exists idx_support_messages_type on support_messages (type) where type is not null;
 create index if not exists idx_support_messages_status_created on support_messages (status, created_at desc);
+-- Audit fix (2026-10-07, migration 0024): the SELECT policy below filters
+-- on user_id with no supporting index — every "my tickets" read was a
+-- full table scan.
+create index if not exists idx_support_messages_user on support_messages (user_id);
 
 drop policy if exists "Users read own support messages" on support_messages;
 create policy "Users read own support messages" on support_messages
@@ -1035,6 +1066,10 @@ begin
       new.sessions_started_lifetime := old.sessions_started_lifetime;
     end if;
   end if;
+  -- Keep updated_at honest on every write regardless of role or which
+  -- columns changed — bumped here rather than a second BEFORE UPDATE
+  -- trigger since this one already fires unconditionally.
+  new.updated_at := now();
   return new;
 end;
 $$;
@@ -1053,9 +1088,11 @@ create trigger trg_guard_profile_billing
 drop policy if exists "Users can view own sessions" on sessions;
 create policy "Users can view own sessions" on sessions
   for select using ((auth.uid())::text = user_id::text);
+-- SECURITY (0032): NO client INSERT policy on sessions. Scores are what
+-- employers pay for; every write goes through the service-role handlers
+-- (/api/sessions/save, /api/evaluate-session). guard_session_grade_columns()
+-- below also blocks client writes should a policy ever be recreated.
 drop policy if exists "Users can insert own sessions" on sessions;
-create policy "Users can insert own sessions" on sessions
-  for insert with check ((auth.uid())::text = user_id::text);
 -- Explicitly drop any pre-existing delete policy (idempotent cleanup).
 drop policy if exists "Users can delete own sessions" on sessions;
 
@@ -1088,18 +1125,6 @@ create policy "Users can update own feedback" on feedback
 drop policy if exists "Users can delete own feedback" on feedback;
 create policy "Users can delete own feedback" on feedback
   for delete using ((auth.uid())::text = user_id::text);
-
--- Waitlist: anyone (including unauthenticated visitors on the
--- ComingSoon page) can INSERT their email. Nobody can SELECT — the
--- service role reads it for the launch broadcast. Update/delete
--- locked too; admin tooling uses the service role.
-alter table waitlist enable row level security;
-drop policy if exists "Anyone can insert waitlist email" on waitlist;
-create policy "Anyone can insert waitlist email" on waitlist
-  for insert to anon, authenticated with check (true);
-drop policy if exists "Service role manages waitlist" on waitlist;
-create policy "Service role manages waitlist" on waitlist
-  for all to service_role using (true) with check (true);
 
 -- Question feedback (active-learning loop): users CRUD their own only.
 -- Service role aggregates across all rows for the curation pipeline.
@@ -1134,14 +1159,14 @@ drop policy if exists "Users can view own payments" on payments;
 create policy "Users can view own payments" on payments
   for select using ((auth.uid())::text = user_id::text);
 
--- Referrals: users can view/create their own referrals
+-- Referrals: users can view their own referrals. Rows are created ONLY by the
+-- service role (/api/referral); a client insert policy would let anyone forge
+-- referral rows for any code.
 alter table referrals enable row level security;
 drop policy if exists "Users can view own referrals" on referrals;
 create policy "Users can view own referrals" on referrals
   for select using ((auth.uid())::text = referrer_id::text);
 drop policy if exists "Users can insert own referrals" on referrals;
-create policy "Users can insert own referrals" on referrals
-  for insert with check ((auth.uid())::text = referrer_id::text);
 
 -- Promo codes: restrict public SELECT to avoid code enumeration.
 -- Validation is server-side via /api/validate-promo (service-role key).
@@ -1329,7 +1354,7 @@ create index if not exists idx_session_insights_flags on session_insights using 
 alter table session_insights enable row level security;
 drop policy if exists "session_insights_select_own" on session_insights;
 create policy "session_insights_select_own" on session_insights
-  for select using (auth.uid() = user_id);
+  for select using ((auth.uid())::text = user_id::text);
 
 create table if not exists daily_quality_report (
   day date not null,
@@ -1346,6 +1371,11 @@ create table if not exists daily_quality_report (
 
 create index if not exists idx_daily_quality_report_day on daily_quality_report(day);
 alter table daily_quality_report enable row level security;
+-- Service-role-only: written by the nightly quality cron, read only via the
+-- admin dashboard using the service key. No authenticated/anon policy is
+-- intentional, not an oversight.
+comment on table daily_quality_report is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Quality v2 — resolution tracking + severity + AI digests
@@ -1404,6 +1434,8 @@ create table if not exists daily_digests (
 
 alter table daily_digests enable row level security;
 -- No user-facing select — internal admin only via service role.
+comment on table daily_digests is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Prompt revisions — A/B harness for live prompt changes
@@ -1428,6 +1460,8 @@ create index if not exists idx_prompt_revisions_deployed_at on prompt_revisions(
 
 alter table prompt_revisions enable row level security;
 -- Internal admin only — accessed via service role.
+comment on table prompt_revisions is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- Quality recommendations — proactive fix suggestions
@@ -1465,6 +1499,8 @@ create index if not exists idx_quality_recs_priority on quality_recommendations(
 create index if not exists idx_quality_recs_last_seen on quality_recommendations(last_seen_at);
 
 alter table quality_recommendations enable row level security;
+comment on table quality_recommendations is
+  'Service-role-only: no authenticated/anon policy is intentional.';
 
 -- ═══════════════════════════════════════════════════════
 -- 21. Salary offers — user-reported ground truth
@@ -1529,7 +1565,7 @@ create index if not exists idx_salary_offers_aggregate on salary_offers(company,
 alter table salary_offers enable row level security;
 drop policy if exists "Users manage own offers" on salary_offers;
 create policy "Users manage own offers" on salary_offers
-  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  for all using ((auth.uid())::text = user_id::text) with check ((auth.uid())::text = user_id::text);
 
 -- ── Service Usage Monitoring ──────────────────────────────────────────────────
 -- Tracks TTS, LLM, and STT provider calls for cost and error-rate visibility.
@@ -1584,3 +1620,1372 @@ ALTER TABLE sessions ADD COLUMN IF NOT EXISTS stt_calls INTEGER DEFAULT 0;
 revoke select (refresh_token, access_token) on google_calendar_sync from authenticated;
 revoke select (refresh_token, access_token) on google_calendar_sync from anon;
 
+-- ═══════════════════════════════════════════════════════
+-- Performance indexes (2026-07-17)
+-- ═══════════════════════════════════════════════════════
+
+-- Cohort-averages queries and nightly analysis sort/filter by created_at and focus;
+-- service_usage cost attribution joins on session_id. All were doing full-table scans.
+CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON sessions (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_focus ON sessions (focus);
+CREATE INDEX IF NOT EXISTS idx_service_usage_session_id ON service_usage (session_id);
+
+-- ═══════════════════════════════════════════════════════
+-- Employer talent-roster feature (2026-08-08)
+--
+-- Employers are modeled as a separate table keyed by auth.users id, not a
+-- role flag on `profiles` — a company account is a distinct entity with its
+-- own approval lifecycle, even though it authenticates via the same
+-- Supabase Auth session as candidates. See CLAUDE.md scope note in
+-- app/(employer). Matching is a deterministic heuristic scorer (role/skill
+-- token overlap + roster performance), not LLM-based, to keep this pass's
+-- cost/blast-radius bounded — see server-handlers/_requirement-match-helpers.ts.
+-- ═══════════════════════════════════════════════════════
+
+create table if not exists employers (
+  id uuid references auth.users on delete cascade primary key,
+  company_name text not null default '',
+  website text not null default '',
+  -- Path within the `employer-logos` Storage bucket (public bucket, created by
+  -- 0033-employer-logos-bucket.sql), e.g. "{employer_id}/logo-<version>.png". NULL when no logo was uploaded.
+  logo_path text,
+  -- Legacy column: employers need no admin approval and nothing in the app
+  -- reads this value any more (employer-profile.ts reports 'approved' for
+  -- every row). Kept, rather than dropped, to avoid a destructive migration;
+  -- default is 'approved'.
+  status text not null default 'approved' check (status in ('pending', 'approved', 'rejected')),
+  submitted_at timestamptz default now(),
+  approved_at timestamptz,
+  created_at timestamptz default now()
+);
+alter table employers add column if not exists logo_path text;
+alter table employers alter column status set default 'approved';
+
+alter table employers enable row level security;
+-- Select-only for client JWTs (0032): all employer writes are service-role.
+drop policy if exists "Employers manage own profile" on employers;
+drop policy if exists "Employers view own profile" on employers;
+create policy "Employers view own profile" on employers
+  for select using ((auth.uid())::text = id::text);
+
+create table if not exists employer_requirements (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid references employers(id) on delete cascade not null,
+  title text not null,
+  location text not null default '',
+  notice_period_pref text default 'Any',
+  description text default '',
+  status text not null default 'generating' check (status in ('generating', 'ready', 'partial', 'zero', 'failed', 'closed')),
+  experience_min integer,
+  experience_max integer,
+  due_date date,
+  budget_min integer,
+  budget_max integer,
+  locations text[] not null default '{}',
+  open_positions integer,
+  work_mode text default 'remote' check (work_mode in ('remote', 'onsite', 'hybrid')),
+  skills text[] not null default '{}',
+  responsibilities text,
+  nice_to_have text,
+  preferred_industry text,
+  preferred_colleges text[] not null default '{}',
+  target_companies text[] not null default '{}',
+  perks_and_benefits text[] not null default '{}',
+  created_at timestamptz default now()
+);
+alter table employer_requirements add column if not exists experience_min integer;
+alter table employer_requirements add column if not exists experience_max integer;
+alter table employer_requirements add column if not exists due_date date;
+alter table employer_requirements add column if not exists budget_min integer;
+alter table employer_requirements add column if not exists budget_max integer;
+alter table employer_requirements add column if not exists locations text[] not null default '{}';
+alter table employer_requirements add column if not exists open_positions integer;
+alter table employer_requirements add column if not exists work_mode text default 'remote' check (work_mode in ('remote', 'onsite', 'hybrid'));
+alter table employer_requirements add column if not exists skills text[] not null default '{}';
+alter table employer_requirements add column if not exists responsibilities text;
+alter table employer_requirements add column if not exists nice_to_have text;
+alter table employer_requirements add column if not exists preferred_industry text;
+alter table employer_requirements add column if not exists preferred_colleges text[] not null default '{}';
+alter table employer_requirements add column if not exists target_companies text[] not null default '{}';
+alter table employer_requirements add column if not exists perks_and_benefits text[] not null default '{}';
+alter table employer_requirements add column if not exists employment_type text default 'full-time' check (employment_type in ('full-time', 'part-time', 'contract', 'internship'));
+alter table employer_requirements add column if not exists salary_type text default 'per-annum' check (salary_type in ('per-month', 'fixed', 'per-annum'));
+alter table employer_requirements add column if not exists preferred_domain text;
+alter table employer_requirements add column if not exists work_schedule text;
+alter table employer_requirements add column if not exists availability text;
+alter table employer_requirements add column if not exists relevant_experience text;
+alter table employer_requirements add column if not exists portfolio_required boolean not null default false;
+alter table employer_requirements add column if not exists custom_skill_sets text[] not null default '{}';
+-- Manually-set hiring-pipeline stage, distinct from `status` (which tracks
+-- AI matching/generation lifecycle, not where the employer is in hiring).
+alter table employer_requirements add column if not exists stage text not null default 'ai_matching' check (stage in ('ai_matching', 'ready_for_review', 'interviewing', 'hired'));
+-- Contract/project length and weekly-hours commitment, shown in the Jobs
+-- table's Opportunity-column tooltip. Nullable — most postings won't set
+-- these (they only matter for contract/part-time roles).
+alter table employer_requirements add column if not exists duration_weeks integer;
+alter table employer_requirements add column if not exists hours_per_week integer;
+-- Free-text department label (2026-09-29) — employers type their own, no
+-- fixed enum: department taxonomies vary too much across employers to be
+-- worth a controlled list.
+alter table employer_requirements add column if not exists department text;
+-- Archive reason/disposition (2026-09-29) — captured when an employer
+-- archives a posting via the Jobs table row menu. archive_disposition
+-- drives whether the still-open candidate pipeline for this requirement
+-- gets bulk-rejected on archive (see employer-requirement-detail.ts
+-- handleStatusAction) or left as-is for the employer to keep working.
+alter table employer_requirements add column if not exists archive_reason text;
+alter table employer_requirements add column if not exists archive_disposition text check (archive_disposition in ('keep_candidates', 'reject_remaining'));
+-- Quality-bar hard filter (2026-10-04) — lets an employer require candidates
+-- to clear a minimum readiness band and/or STAR-completeness percentage
+-- from their latest practice session before they're surfaced as a match at
+-- all (see meetsQualityBar in _requirement-match-helpers.ts). Both null by
+-- default: no quality bar unless the employer opts in.
+alter table employer_requirements add column if not exists min_readiness_band text check (min_readiness_band in ('strongHire', 'hire', 'leanHire'));
+alter table employer_requirements add column if not exists min_star_completeness smallint check (min_star_completeness between 0 and 100);
+-- True size of the floor-filtered matched-candidate pool at the last
+-- matching pass (rankAndCap's totalMatched), before the pool gets capped
+-- at 20 and persisted to requirement_matches. Lets the Jobs/detail UI show
+-- "Top 20 (of 45 matched)" instead of reporting the post-cap count as if
+-- it were the whole pool. Set alongside `status` in runMatching
+-- (employer-requirements.ts); defaults to 0 for any row from before this
+-- column existed, until the next create/edit re-runs matching.
+alter table employer_requirements add column if not exists matched_pool_size integer not null default 0;
+-- Last time `runMatching` scored this requirement against the candidate
+-- pool (2026-10-07) — set by every call site (create, edit, the incremental
+-- rematch fired from update-profile.ts, and the nightly rematch-requirements
+-- cron). Null means "never matched since this column existed" and sorts
+-- first, so the incremental and cron sweeps both prioritize the most stale
+-- requirements when bounding how many they re-score per run.
+alter table employer_requirements add column if not exists last_matched_at timestamptz;
+-- Stamped at the start of every matching attempt, success or failure (0044),
+-- so a requirement that keeps failing cannot sit at the front of the rematch
+-- sweeps' stalest-first order and starve the live ones behind it.
+alter table employer_requirements add column if not exists last_rematch_attempt_at timestamptz;
+create index if not exists idx_employer_requirements_rematch_order
+  on employer_requirements (last_rematch_attempt_at nulls first, last_matched_at nulls first)
+  where status <> 'closed';
+
+create index if not exists idx_employer_requirements_employer on employer_requirements(employer_id, created_at desc);
+
+alter table employer_requirements enable row level security;
+-- Select-only for client JWTs (0032): all requirement writes are service-role.
+drop policy if exists "Employers manage own requirements" on employer_requirements;
+drop policy if exists "Employers view own requirements" on employer_requirements;
+create policy "Employers view own requirements" on employer_requirements
+  for select using ((auth.uid())::text = employer_id::text);
+
+-- Requirement activity log (2026-09-29) — backs the "History" action on the
+-- Jobs table's per-row menu. Written server-side only (service role, via
+-- logRequirementActivity in employer-requirements.ts) on create/edit/
+-- archive/reopen; no client insert policy is needed.
+create table if not exists employer_requirement_activity (
+  id uuid primary key default gen_random_uuid(),
+  requirement_id uuid references employer_requirements(id) on delete cascade not null,
+  employer_id uuid references employers(id) on delete cascade not null,
+  action text not null check (action in ('created', 'updated', 'archived', 'reopened', 'stage_changed')),
+  detail text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_employer_requirement_activity_requirement on employer_requirement_activity(requirement_id, created_at desc);
+-- The "Employers view own requirement activity" policy below filters on
+-- employer_id directly — index it too, not just requirement_id.
+create index if not exists idx_employer_requirement_activity_employer on employer_requirement_activity(employer_id, created_at desc);
+alter table employer_requirement_activity drop constraint if exists employer_requirement_activity_action_check;
+alter table employer_requirement_activity add constraint employer_requirement_activity_action_check check (action in ('created', 'updated', 'archived', 'reopened', 'stage_changed'));
+
+alter table employer_requirement_activity enable row level security;
+drop policy if exists "Employers view own requirement activity" on employer_requirement_activity;
+create policy "Employers view own requirement activity" on employer_requirement_activity
+  for select using ((auth.uid())::text = employer_id::text);
+
+create table if not exists requirement_matches (
+  id uuid primary key default gen_random_uuid(),
+  requirement_id uuid references employer_requirements(id) on delete cascade not null,
+  candidate_user_id uuid references profiles(id) on delete cascade not null,
+  match_score integer not null default 0,
+  roster_score integer not null default 0,
+  unlocked boolean default false,
+  unlocked_at timestamptz,
+  -- Point-in-time snapshot of who was unlocked, taken at unlock time —
+  -- candidate_user_id cascades on profile deletion, so without this an
+  -- employer's paid unlock survives as a charge with no way to tell who it
+  -- was for once the candidate deletes their account. Null on rows unlocked
+  -- before this column existed.
+  unlocked_candidate_name text,
+  unlocked_candidate_email text,
+  -- Set on the employer's first evidence view (server-handlers/employer-
+  -- candidate-evidence.ts), via a conditional PATCH so the candidate gets
+  -- exactly one "an employer viewed your profile" notification per match.
+  profile_viewed_at timestamptz,
+  created_at timestamptz default now(),
+  unique (requirement_id, candidate_user_id)
+);
+alter table requirement_matches add column if not exists profile_viewed_at timestamptz;
+alter table requirement_matches add column if not exists missed_passes integer not null default 0;
+alter table requirement_matches add column if not exists strong_alerted_at timestamptz;
+
+create index if not exists idx_requirement_matches_requirement on requirement_matches(requirement_id, match_score desc);
+-- The "Candidates view own matches" policy further below filters directly
+-- on candidate_user_id — without this, every candidate-side read was a
+-- full table scan.
+create index if not exists idx_requirement_matches_candidate on requirement_matches(candidate_user_id, created_at desc);
+
+-- Per-candidate hiring-pipeline status (2026-09-29) — distinct from the
+-- requirement-level `stage` above: this tracks where THIS candidate stands
+-- within the posting (shortlisted through hired/rejected), set by the
+-- employer via employer-candidate-status.ts. candidate_status_note carries
+-- free-text notes for both an interview-invite reason and a final-outcome
+-- note (see the outcome-feedback page) — one column, since only one note
+-- is ever "current" for a candidate at a time. interview_scheduled_at is
+-- optional and only meaningful once status is interview_invited/interviewing.
+alter table requirement_matches add column if not exists candidate_status text not null default 'shortlisted' check (candidate_status in ('shortlisted', 'interview_invited', 'interviewing', 'hired', 'rejected', 'not_a_fit', 'no_response'));
+alter table requirement_matches add column if not exists candidate_status_note text;
+alter table requirement_matches add column if not exists candidate_status_updated_at timestamptz;
+alter table requirement_matches add column if not exists interview_scheduled_at timestamptz;
+-- Raw model opinion behind match_score (migration 0048), reused when the model is unavailable.
+alter table requirement_matches add column if not exists llm_score integer;
+alter table requirement_matches add column if not exists llm_scored_at timestamptz;
+-- Provenance for llm_score (migration 0050): what the stored opinion was computed
+-- against. A score is reused only while both still match the current posting and
+-- candidate profile.
+alter table requirement_matches add column if not exists llm_criteria_fingerprint text;
+alter table requirement_matches add column if not exists llm_profile_stamp text;
+
+alter table requirement_matches enable row level security;
+-- Owner-only, scoped via the parent requirement's employer_id. No direct
+-- client writes are exposed — matching + unlock happen server-side with
+-- the service role key.
+drop policy if exists "Employers view own matches" on requirement_matches;
+create policy "Employers view own matches" on requirement_matches
+  for select using (
+    exists (
+      select 1 from employer_requirements r
+      where r.id = requirement_matches.requirement_id
+        and (auth.uid())::text = r.employer_id::text
+    )
+  );
+
+-- Audit fix (2026-10-07): "Candidates view own matches" was intentionally
+-- dropped in migration 0016 — this table carries employer-private columns
+-- (candidate_status_note, match_score, roster_score, interview_scheduled_at)
+-- that row-level RLS cannot hide at the column level, and the only
+-- legitimate candidate-facing reader (candidate-hiring-activity.ts) already
+-- uses the service role and selects a safe column subset. A later schema
+-- edit silently recreated this policy; it must stay dropped on every re-run.
+drop policy if exists "Candidates view own matches" on requirement_matches;
+
+-- Employer contact-unlock payments (2026-08-09). A dedicated table rather
+-- than reusing `payments`: that table's user_id FK requires a `profiles`
+-- row, which employer accounts never have (see the "Employer talent-roster
+-- feature" note above — employers are keyed by auth.users, not profiles).
+-- Mirrors payment_dedup's shape: service-role-only, no client policies —
+-- writes happen server-side in employer-verify-unlock-payment.ts.
+-- Exactly one of match_id (single-candidate unlock, ₹59) / match_ids
+-- (batch unlock, ₹299 for up to UNLOCK_BUNDLE_SIZE candidates in one
+-- Razorpay payment — see _unlock-pricing.ts) is set per row.
+-- match_id intentionally does NOT cascade-delete: this table is a financial
+-- audit trail (a real Razorpay payment happened), and re-running matching
+-- (runMatching() in employer-requirements.ts replaces requirement_matches
+-- rows) must never silently erase paid-for records just because the match
+-- row it referenced was replaced. `on delete set null` preserves the payment
+-- row — amount/employer/razorpay id all stay intact — and just drops the
+-- now-dangling pointer to the deleted match.
+create table if not exists employer_unlock_payments (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid references requirement_matches(id) on delete set null,
+  match_ids uuid[],
+  employer_id uuid references employers(id) on delete cascade not null,
+  razorpay_payment_id text unique not null,
+  razorpay_order_id text default '',
+  amount integer not null,
+  currency text default 'INR',
+  status text default 'completed',
+  created_at timestamptz default now(),
+  constraint employer_unlock_payments_match_xor check ((match_id is not null) <> (match_ids is not null))
+);
+
+create index if not exists idx_employer_unlock_payments_employer on employer_unlock_payments(employer_id, created_at desc);
+-- 0043: admin employer-financials scans payments by date across all employers.
+create index if not exists idx_employer_unlock_payments_created on employer_unlock_payments(created_at);
+
+-- Idempotent upgrade for existing installs created before the fix above:
+-- the FK was originally `on delete cascade`, which deleted payment records
+-- whenever a match row was replaced (e.g. by re-running matching). Repoint
+-- it at `on delete set null` without touching any existing data.
+alter table employer_unlock_payments drop constraint if exists employer_unlock_payments_match_id_fkey;
+alter table employer_unlock_payments
+  add constraint employer_unlock_payments_match_id_fkey
+  foreign key (match_id) references requirement_matches(id) on delete set null;
+
+alter table employer_unlock_payments enable row level security;
+
+-- Growth/CRO audit follow-up: `_cost-helpers.ts`'s DEFAULT_COST_RATES are
+-- admittedly "list estimates, not billed amounts" (see its own header
+-- comment). This table is where a real, closed-period invoice total gets
+-- recorded once and compared against that period's modeled estimate — the
+-- FinOps "operational clock vs. financial clock" split. One row per
+-- calendar month; re-saving the same month overwrites (see
+-- saveCostReconciliation's upsert in admin-data.ts), it doesn't accumulate
+-- duplicates. Admin-only: no client ever reads or writes this table
+-- directly, so — mirroring promo_codes below — there is no anon/authenticated
+-- policy at all; all access is via admin-data.ts's service-role key.
+create table if not exists cost_rate_reconciliations (
+  month text primary key check (month ~ '^\d{4}-\d{2}$'),
+  actual_invoice_inr numeric not null check (actual_invoice_inr >= 0),
+  modeled_inr numeric not null,
+  note text,
+  created_at timestamptz default now()
+);
+
+alter table cost_rate_reconciliations enable row level security;
+
+-- Audit fix (2026-10-07): product_ratings and interview_turns were live
+-- tables in production (product-rating.ts, src/supabase.ts) with no DDL
+-- anywhere in the repo. See supabase-migrations/0022-product-ratings-
+-- interview-turns.sql for the full rationale.
+create table if not exists product_ratings (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references profiles(id) on delete cascade not null,
+  session_id text references sessions(id) on delete cascade not null,
+  rating integer not null check (rating >= 1 and rating <= 5),
+  created_at timestamptz default now()
+);
+create unique index if not exists ux_product_ratings_user_session on product_ratings(user_id, session_id);
+
+alter table product_ratings enable row level security;
+drop policy if exists "Users can view own product ratings" on product_ratings;
+create policy "Users can view own product ratings" on product_ratings
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can upsert own product ratings" on product_ratings;
+create policy "Users can upsert own product ratings" on product_ratings
+  for insert with check ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can update own product ratings" on product_ratings;
+create policy "Users can update own product ratings" on product_ratings
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
+
+-- src/supabase.ts (initLiveSession / saveInterviewTurn): per-turn transcript
+-- rows written in real time during a live interview. No update/delete policy
+-- for the authenticated role: transcripts are append-only from the client,
+-- matching the `sessions` DELETE-denial rationale above.
+create table if not exists interview_turns (
+  id uuid primary key,
+  session_id text references sessions(id) on delete cascade not null,
+  user_id uuid references profiles(id) on delete cascade not null,
+  turn_index integer not null,
+  turn_type text not null check (turn_type in ('session_start', 'question', 'answer', 'follow_up')),
+  speaker text not null check (speaker in ('ai', 'user', 'system')),
+  content text not null default '',
+  metadata jsonb,
+  created_at timestamptz default now()
+);
+create index if not exists idx_interview_turns_user on interview_turns(user_id);
+create index if not exists idx_interview_turns_session on interview_turns(session_id, turn_index);
+
+alter table interview_turns enable row level security;
+drop policy if exists "Users can view own interview turns" on interview_turns;
+create policy "Users can view own interview turns" on interview_turns
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users can insert own interview turns" on interview_turns;
+create policy "Users can insert own interview turns" on interview_turns
+  for insert with check ((auth.uid())::text = user_id::text);
+
+-- In-app notification feed (2026-10-07), shared by both candidate and
+-- employer consoles — both `profiles.id` and `employers.id` reference
+-- `auth.users(id)`, so one table keyed on `auth.users` covers either side
+-- without a separate `audience` discriminator for RLS purposes. Written
+-- server-side only (service role, via notify() in _notify.ts) from existing
+-- event sites — streak milestones, referral rewards, employer candidate
+-- status changes, unlock payment confirmations. No client insert policy:
+-- a user can read and mark their own notifications read, never create one.
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  type text not null,
+  title text not null,
+  body text not null default '',
+  link text,
+  read_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_notifications_user on notifications(user_id, created_at desc);
+
+alter table notifications enable row level security;
+drop policy if exists "Users view own notifications" on notifications;
+create policy "Users view own notifications" on notifications
+  for select using ((auth.uid())::text = user_id::text);
+drop policy if exists "Users update own notifications" on notifications;
+create policy "Users update own notifications" on notifications
+  for update using ((auth.uid())::text = user_id::text)
+  with check ((auth.uid())::text = user_id::text);
+
+-- Notifications v2 (2026-10-10): priority, grouping, triage state, per-user preferences.
+-- Additive only. Apply BEFORE deploying the code that reads these columns.
+alter table notifications
+  add column if not exists priority text not null default 'normal',
+  add column if not exists group_key text,
+  add column if not exists count int not null default 1,
+  add column if not exists action_label text,
+  add column if not exists snoozed_until timestamptz,
+  add column if not exists archived_at timestamptz;
+
+do $$ begin
+  alter table notifications add constraint notifications_priority_chk check (priority in ('critical','normal','low'));
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter table notifications add constraint notifications_len_chk check (char_length(title) <= 200 and char_length(body) <= 1000 and count >= 1);
+exception when duplicate_object then null; end $$;
+
+create index if not exists idx_notifications_inbox on notifications(user_id, created_at desc) where archived_at is null;
+create index if not exists idx_notifications_group on notifications(user_id, group_key) where group_key is not null and read_at is null;
+
+-- Clients may only change triage state, never content columns.
+revoke update on notifications from authenticated, anon;
+grant update (read_at, archived_at, snoozed_until) on notifications to authenticated;
+
+create table if not exists notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  prefs jsonb not null default '{}'::jsonb,
+  quiet_start smallint check (quiet_start between 0 and 23),
+  quiet_end smallint check (quiet_end between 0 and 23),
+  updated_at timestamptz not null default now()
+);
+alter table notification_preferences enable row level security;
+drop policy if exists "Users view own notification prefs" on notification_preferences;
+create policy "Users view own notification prefs" on notification_preferences
+  for select using ((auth.uid())::text = user_id::text);
+
+-- Employer <-> candidate messaging (2026-10-07). One conversation per
+-- requirement_matches row (1:1), so a thread is always scoped to a specific
+-- job/candidate pairing rather than a free-floating DM. employer_id and
+-- candidate_user_id are denormalized onto both conversations and messages
+-- (same pattern as employer_requirement_activity above) so RLS never needs a
+-- join. Unlike requirement_matches, this table carries no employer-private
+-- columns, so a blanket per-side select policy is safe here (see the
+-- "Candidates view own matches" note further up for why that is NOT true on
+-- requirement_matches). All writes are service-role-only from
+-- send-message.ts / flag-message.ts — no client insert/update policy on any
+-- of these three tables.
+create table if not exists conversations (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid references requirement_matches(id) on delete cascade not null unique,
+  requirement_id uuid references employer_requirements(id) on delete cascade not null,
+  employer_id uuid references employers(id) on delete cascade not null,
+  candidate_user_id uuid references profiles(id) on delete cascade not null,
+  last_message_at timestamptz,
+  created_at timestamptz not null default now(),
+  -- employers.id and profiles.id share the auth.users(id) uuid space, so a
+  -- corrupted match row (candidate_user_id == employer_id, e.g. a self-match
+  -- bug) used to resolve a conversation's role inconsistently and leak the
+  -- wrong counterpart (an employer's own name) to the candidate side. This
+  -- constraint makes that corruption impossible to insert at all, rather
+  -- than relying solely on resolveRole()'s check order in
+  -- _messages-helpers.ts as the only defense.
+  constraint conversations_parties_distinct check (employer_id <> candidate_user_id)
+);
+create index if not exists idx_conversations_employer on conversations(employer_id, last_message_at desc nulls last);
+create index if not exists idx_conversations_candidate on conversations(candidate_user_id, last_message_at desc nulls last);
+
+-- Per-side read-tracking (2026-10-08) so the inbox/bell can show an unread
+-- indicator. last_sender_role is denormalized here (rather than re-derived
+-- by joining the latest conversation_messages row) so the unread check in
+-- messages.ts stays a single-table read per conversation.
+alter table conversations add column if not exists employer_last_read_at timestamptz;
+alter table conversations add column if not exists candidate_last_read_at timestamptz;
+alter table conversations add column if not exists last_sender_role text check (last_sender_role in ('employer', 'candidate', 'system'));
+
+-- No client policy (migration 0051): every read goes through the API handlers
+-- with the service-role key, which apply the unlock gate and contact redaction.
+alter table conversations enable row level security;
+drop policy if exists "Employers view own conversations" on conversations;
+drop policy if exists "Candidates view own conversations" on conversations;
+
+create table if not exists conversation_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid references conversations(id) on delete cascade not null,
+  employer_id uuid references employers(id) on delete cascade not null,
+  candidate_user_id uuid references profiles(id) on delete cascade not null,
+  sender_id uuid references auth.users(id) on delete cascade not null,
+  sender_role text not null check (sender_role in ('employer', 'candidate')),
+  body text not null default '',
+  attachment_path text,
+  attachment_name text,
+  attachment_mime text,
+  auto_flag_reason text,
+  created_at timestamptz not null default now(),
+  constraint conversation_messages_parties_distinct check (employer_id <> candidate_user_id)
+);
+create index if not exists idx_conversation_messages_conversation on conversation_messages(conversation_id, created_at);
+create index if not exists idx_conversation_messages_employer on conversation_messages(employer_id, created_at desc);
+create index if not exists idx_conversation_messages_candidate on conversation_messages(candidate_user_id, created_at desc);
+
+-- No client policy (migration 0051): a direct employer SELECT returned the raw
+-- body and attachment_path, bypassing the unlock gate in messages.ts.
+alter table conversation_messages enable row level security;
+drop policy if exists "Employers view own conversation messages" on conversation_messages;
+drop policy if exists "Candidates view own conversation messages" on conversation_messages;
+
+-- Admin-only: flags raised either automatically (auto_flag_reason on the
+-- message itself trips a flag row too, so the admin queue has one place to
+-- look) or by either party reporting a message. No client policy at all —
+-- mirrors cost_rate_reconciliations above — reads/writes go through
+-- admin-data.ts and flag-message.ts with the service-role key.
+create table if not exists message_flags (
+  id uuid primary key default gen_random_uuid(),
+  message_id uuid references conversation_messages(id) on delete cascade not null,
+  conversation_id uuid references conversations(id) on delete cascade not null,
+  flagged_by uuid references auth.users(id) on delete cascade not null,
+  flagged_by_role text not null check (flagged_by_role in ('employer', 'candidate', 'system')),
+  reason text not null,
+  note text,
+  status text not null default 'open' check (status in ('open', 'reviewed', 'dismissed')),
+  reviewed_at timestamptz,
+  reviewed_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_message_flags_status on message_flags(status, created_at desc);
+create index if not exists idx_message_flags_conversation on message_flags(conversation_id, created_at desc);
+
+alter table message_flags enable row level security;
+
+-- Trigger-only SECURITY DEFINER functions must not be callable over the public
+-- REST RPC endpoint. Triggers run as the table owner, so revoking is safe.
+revoke execute on function public.bump_sessions_started_lifetime() from public, anon, authenticated;
+revoke execute on function public.guard_profile_billing_columns()  from public, anon, authenticated;
+revoke execute on function public.handle_new_user()                from public, anon, authenticated;
+revoke execute on function public.notify_new_signup()              from public, anon, authenticated;
+revoke execute on function public.rls_auto_enable()                from public, anon, authenticated;
+alter function public.handle_new_user()   set search_path = public, pg_temp;
+alter function public.notify_new_signup() set search_path = public, pg_temp;
+
+-- ═══════════════════════════════════════════════════════
+-- Migration 0032 — employer trust hardening (mirrors supabase-migrations/0032)
+-- ═══════════════════════════════════════════════════════
+-- Employer-side trust hardening (2026-10-10). Idempotent; safe to re-run.
+-- Run in the Supabase SQL editor BEFORE deploying the matching code.
+--
+--  1. sessions: no client writes (forged-score fix) + column guard trigger
+--  2. employers / employer_requirements: server-only writes (select-only RLS)
+--  3. employers: verification tier, suspension, GSTIN
+--  4. profiles: candidate employer-visibility consent + append-only consent log
+--  5. candidate agency: employer_blocks, employer_reports, match response
+--  6. match_status_events: audit trail of pipeline transitions
+--  7. employer_unlock_orders + invoice numbering on employer_unlock_payments
+--  8. indexes
+
+-- ── 1. sessions ─────────────────────────────────────────────────────────
+-- Scores are what employers pay for. The only writers are the service-role
+-- handlers (/api/sessions/save, /api/evaluate-session). A client INSERT
+-- policy let any user forge score / skill_scores / report_json directly via
+-- PostgREST, so it is dropped, and a trigger keeps it that way even if a
+-- later schema re-run recreates a policy.
+drop policy if exists "Users can insert own sessions" on public.sessions;
+
+create or replace function public.guard_session_grade_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  -- auth.role() is NULL for the SQL editor / migrations, 'service_role' for
+  -- the server handlers; only end-user JWT roles are restricted.
+  if coalesce(auth.role(), '') in ('authenticated', 'anon') then
+    if tg_op = 'INSERT' then
+      raise exception 'sessions are written by the server only' using errcode = '42501';
+    end if;
+    new.score                := old.score;
+    new.skill_scores         := old.skill_scores;
+    new.report_json          := old.report_json;
+    new.report_version       := old.report_version;
+    new.report_generated_at  := old.report_generated_at;
+    new.ai_feedback          := old.ai_feedback;
+    new.transcript           := old.transcript;
+    new.user_id              := old.user_id;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists trg_guard_session_grade on public.sessions;
+create trigger trg_guard_session_grade
+  before insert or update on public.sessions
+  for each row execute function public.guard_session_grade_columns();
+revoke execute on function public.guard_session_grade_columns() from public, anon, authenticated;
+
+-- ── 2. employers / employer_requirements: select-only for client JWTs ───
+-- The app never writes these tables from the browser; a "for all" policy let
+-- an employer PATCH their own verification tier / status via PostgREST.
+drop policy if exists "Employers manage own profile" on public.employers;
+drop policy if exists "Employers view own profile" on public.employers;
+create policy "Employers view own profile" on public.employers
+  for select using (((select auth.uid()))::text = (id)::text);
+
+drop policy if exists "Employers manage own requirements" on public.employer_requirements;
+drop policy if exists "Employers view own requirements" on public.employer_requirements;
+create policy "Employers view own requirements" on public.employer_requirements
+  for select using (((select auth.uid()))::text = (employer_id)::text);
+
+-- ── 3. employers: verification tier, suspension, billing identity ───────
+alter table public.employers add column if not exists verification_tier text not null default 'basic'
+  check (verification_tier in ('basic', 'email_verified', 'verified'));
+alter table public.employers add column if not exists verified_at timestamptz;
+alter table public.employers add column if not exists suspended_at timestamptz;
+alter table public.employers add column if not exists suspended_reason text;
+alter table public.employers add column if not exists gstin text;
+alter table public.employers add column if not exists billing_name text;
+-- Grandfather employers that existed before tiers: they keep unlocking as
+-- 'email_verified'. New signups start at 'basic' and are promoted server-side.
+update public.employers set verification_tier = 'email_verified', verified_at = coalesce(verified_at, now())
+  where verification_tier = 'basic' and created_at < now() - interval '1 minute';
+
+-- ── 4. candidate consent to employer discovery (DPDP Act 2023) ──────────
+-- 'masked' = appears to employers with name/contact/employer-identifying
+-- detail hidden until the employer pays to unlock (today's behaviour).
+-- 'off'    = never matched, viewed or messaged by employers.
+-- Existing users default to 'masked' (current behaviour); they are told and
+-- can switch off at /settings. Changes go through /api/candidate-visibility
+-- (service role) so the consent log below is always accurate.
+alter table public.profiles add column if not exists employer_visibility text not null default 'masked'
+  check (employer_visibility in ('masked', 'off'));
+alter table public.profiles add column if not exists employer_visibility_updated_at timestamptz;
+-- When the candidate first saw/answered the one-time dashboard notice (migration 0037; optional).
+alter table public.profiles add column if not exists employer_notice_seen_at timestamptz;
+
+create table if not exists public.candidate_consent_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  purpose text not null default 'employer_discovery',
+  action text not null check (action in ('granted', 'withdrawn')),
+  policy_version text not null,
+  source text not null default 'settings',
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_candidate_consent_log_user on public.candidate_consent_log(user_id, created_at desc);
+alter table public.candidate_consent_log enable row level security;
+drop policy if exists "Users read own consent log" on public.candidate_consent_log;
+create policy "Users read own consent log" on public.candidate_consent_log
+  for select using (((select auth.uid()))::text = (user_id)::text);
+
+create or replace function public.guard_profile_consent_columns()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if coalesce(auth.role(), '') in ('authenticated', 'anon') then
+    new.employer_visibility := old.employer_visibility;
+    new.employer_visibility_updated_at := old.employer_visibility_updated_at;
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists trg_guard_profile_consent on public.profiles;
+create trigger trg_guard_profile_consent
+  before update on public.profiles
+  for each row execute function public.guard_profile_consent_columns();
+revoke execute on function public.guard_profile_consent_columns() from public, anon, authenticated;
+
+-- ── 5. candidate agency ─────────────────────────────────────────────────
+create table if not exists public.employer_blocks (
+  candidate_user_id uuid not null references public.profiles(id) on delete cascade,
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (candidate_user_id, employer_id)
+);
+alter table public.employer_blocks enable row level security;
+drop policy if exists "Candidates view own blocks" on public.employer_blocks;
+create policy "Candidates view own blocks" on public.employer_blocks
+  for select using (((select auth.uid()))::text = (candidate_user_id)::text);
+
+create table if not exists public.employer_reports (
+  id uuid primary key default gen_random_uuid(),
+  reporter_user_id uuid not null references public.profiles(id) on delete cascade,
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  match_id uuid references public.requirement_matches(id) on delete set null,
+  reason text not null check (reason in ('spam', 'fake_company', 'harassment', 'off_platform_solicitation', 'discriminatory', 'other')),
+  note text,
+  status text not null default 'open' check (status in ('open', 'reviewed', 'actioned', 'dismissed')),
+  created_at timestamptz not null default now(),
+  reviewed_at timestamptz,
+  unique (reporter_user_id, employer_id)
+);
+create index if not exists idx_employer_reports_employer on public.employer_reports(employer_id, status);
+create index if not exists idx_employer_reports_status on public.employer_reports(status, created_at desc);
+alter table public.employer_reports enable row level security; -- admin/service-role only
+
+alter table public.requirement_matches add column if not exists candidate_response text not null default 'none'
+  check (candidate_response in ('none', 'interested', 'declined'));
+alter table public.requirement_matches add column if not exists candidate_responded_at timestamptz;
+
+-- ── 6. pipeline audit trail ─────────────────────────────────────────────
+create table if not exists public.match_status_events (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid references public.requirement_matches(id) on delete set null,
+  requirement_id uuid references public.employer_requirements(id) on delete cascade not null,
+  employer_id uuid references public.employers(id) on delete cascade not null,
+  candidate_user_id uuid references public.profiles(id) on delete cascade not null,
+  from_status text,
+  to_status text not null,
+  actor text not null check (actor in ('employer', 'candidate', 'system')),
+  note text,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_match_status_events_candidate on public.match_status_events(candidate_user_id, created_at desc);
+create index if not exists idx_match_status_events_requirement on public.match_status_events(requirement_id, created_at desc);
+alter table public.match_status_events enable row level security; -- service-role only; candidates read via API
+
+-- ── 7. unlock orders (webhook-first payments) + invoices ────────────────
+create sequence if not exists public.employer_invoice_seq;
+
+create table if not exists public.employer_unlock_orders (
+  id uuid primary key default gen_random_uuid(),
+  razorpay_order_id text unique not null,
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  requirement_id uuid references public.employer_requirements(id) on delete set null,
+  mode text not null check (mode in ('single', 'batch')),
+  match_ids uuid[] not null,
+  amount integer not null,
+  currency text not null default 'INR',
+  status text not null default 'created'
+    check (status in ('created', 'paid', 'fulfilled', 'partial', 'refunded', 'disputed', 'expired', 'failed')),
+  razorpay_payment_id text,
+  created_at timestamptz not null default now(),
+  paid_at timestamptz,
+  fulfilled_at timestamptz,
+  updated_at timestamptz not null default now()
+);
+create index if not exists idx_unlock_orders_employer on public.employer_unlock_orders(employer_id, created_at desc);
+create index if not exists idx_unlock_orders_open on public.employer_unlock_orders(status, created_at)
+  where status in ('created', 'paid');
+-- 0043: health check + admin financials also read failed/partial orders.
+create index if not exists idx_unlock_orders_status_created on public.employer_unlock_orders(status, created_at);
+-- At most one open single-candidate order per (employer, match) — replaces
+-- the 90s Redis lock that failed open when Upstash was unavailable.
+create unique index if not exists uq_unlock_orders_open_single
+  on public.employer_unlock_orders (employer_id, (match_ids[1]))
+  where mode = 'single' and status in ('created', 'paid');
+alter table public.employer_unlock_orders enable row level security; -- service-role only
+
+alter table public.employer_unlock_payments add column if not exists requirement_id uuid;
+alter table public.employer_unlock_payments add column if not exists invoice_no text
+  default ('HSX-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('public.employer_invoice_seq')::text, 6, '0'));
+alter table public.employer_unlock_payments add column if not exists refunded_at timestamptz;
+
+-- ── 8. indexes ──────────────────────────────────────────────────────────
+create index if not exists idx_conversations_requirement on public.conversations(requirement_id);
+create index if not exists idx_message_flags_message on public.message_flags(message_id);
+create index if not exists idx_requirement_matches_status on public.requirement_matches(candidate_user_id, candidate_status);
+create index if not exists idx_sessions_user_graded on public.sessions(user_id, report_generated_at desc)
+  where report_generated_at is not null;
+
+-- ── Email opt-outs (2026-10-11, migration 0036) ─────────────────────────
+-- Separate table, not columns on profiles: employers have no profiles row, and a
+-- narrow service-written table keeps opt-out state out of the wide profiles RLS surface.
+create table if not exists public.email_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  marketing_opt_out boolean not null default false,
+  employer_notifications_opt_out boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+alter table public.email_preferences enable row level security;
+-- Owner may read their own row; every write goes through service-role handlers
+-- (/api/unsubscribe, /api/email-preferences), same as notification_preferences.
+drop policy if exists "Users view own email prefs" on public.email_preferences;
+create policy "Users view own email prefs" on public.email_preferences
+  for select using ((select auth.uid()) = user_id);
+
+-- Consent ledger (2026-10-11): one row per (user, purpose, version) for DPDP Act 2023.
+-- Additive only; safe to apply before or after the code deploy (record-consent
+-- answers 202/retry until this table exists). Inserts are service-role only
+-- (server-handlers/record-consent.ts) -- no client insert/update/delete policy.
+create table if not exists user_consents (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  purpose text not null,
+  version text not null,
+  accepted_at timestamptz not null default now(),
+  ip_hash text,
+  user_agent text,
+  constraint user_consents_unique unique (user_id, purpose, version),
+  constraint user_consents_len_chk check (char_length(purpose) <= 64 and char_length(version) <= 64 and (user_agent is null or char_length(user_agent) <= 300))
+);
+alter table user_consents enable row level security;
+drop policy if exists "Users view own consents" on user_consents;
+create policy "Users view own consents" on user_consents
+  for select using ((auth.uid())::text = user_id::text);
+revoke insert, update, delete on user_consents from anon, authenticated;
+
+-- ── 0039: scale indexes + policy cleanup (see supabase-migrations/0039-*.sql) ──
+CREATE INDEX IF NOT EXISTS idx_employer_blocks_employer ON public.employer_blocks (employer_id);
+CREATE INDEX IF NOT EXISTS idx_employer_reports_match ON public.employer_reports (match_id);
+CREATE INDEX IF NOT EXISTS idx_unlock_orders_requirement ON public.employer_unlock_orders (requirement_id);
+CREATE INDEX IF NOT EXISTS idx_match_status_events_employer ON public.match_status_events (employer_id);
+CREATE INDEX IF NOT EXISTS idx_match_status_events_match ON public.match_status_events (match_id);
+CREATE INDEX IF NOT EXISTS idx_employer_requirements_open_stage ON public.employer_requirements (stage) WHERE status <> 'closed';
+CREATE INDEX IF NOT EXISTS idx_notifications_created ON public.notifications (created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON public.notifications (user_id) WHERE read_at IS NULL AND archived_at IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_unlock_orders_payment ON public.employer_unlock_orders (razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_requirement_matches_unlocked_at ON public.requirement_matches (unlocked_at) WHERE unlocked;
+CREATE INDEX IF NOT EXISTS idx_profiles_created ON public.profiles (created_at DESC, id);
+
+-- ── Candidate requests (2026-10-15, migration 0040) ────────────────────
+create table if not exists public.candidate_requests (
+  id uuid primary key default gen_random_uuid(),
+  match_id uuid not null references public.requirement_matches(id) on delete cascade,
+  requirement_id uuid not null references public.employer_requirements(id) on delete cascade,
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  candidate_user_id uuid not null references auth.users(id) on delete cascade,
+  kind text not null check (kind in ('contact', 'document', 'practice', 'clarification')),
+  topic text check (topic is null or char_length(topic) <= 120),
+  fields text[],
+  note text check (note is null or char_length(note) <= 300),
+  status text not null default 'pending' check (status in ('pending', 'fulfilled', 'declined', 'cancelled')),
+  response_note text check (response_note is null or char_length(response_note) <= 500),
+  created_at timestamptz not null default now(),
+  resolved_at timestamptz
+);
+
+create index if not exists idx_candidate_requests_match on public.candidate_requests(match_id, created_at desc);
+create index if not exists idx_candidate_requests_candidate_pending on public.candidate_requests(candidate_user_id, created_at desc)
+  where status = 'pending';
+create index if not exists idx_candidate_requests_employer_day on public.candidate_requests(employer_id, created_at desc);
+-- One open request per (match, kind, topic): re-asking the same thing is a no-op.
+create unique index if not exists uq_candidate_requests_open
+  on public.candidate_requests (match_id, kind, (coalesce(topic, '')))
+  where status = 'pending';
+
+alter table public.candidate_requests enable row level security;
+
+drop policy if exists "Employers view own requests" on public.candidate_requests;
+create policy "Employers view own requests" on public.candidate_requests
+  for select using (employer_id = (select auth.uid()));
+drop policy if exists "Candidates view own requests" on public.candidate_requests;
+create policy "Candidates view own requests" on public.candidate_requests
+  for select using (candidate_user_id = (select auth.uid()));
+
+-- ── Employer credit ledger (2026-10-17, migration 0041) ────────────────
+-- 0041: employer credit ledger (refund-as-credit for unreachable paid candidates).
+--
+-- One signed row per movement; an employer's balance is the sum of `amount`
+-- (paise). Positive: `refund` (a paid candidate could not be reached) and
+-- `release` (credit returned because the order it was spent on never completed).
+-- Negative: `spend` (credit applied to an unlock order).
+--
+-- Optional: until this is applied the handlers treat every balance as 0 and
+-- skip refunds, so the code can ship first. Service-role only (no client policy).
+create table if not exists public.employer_credit_ledger (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  amount integer not null check (amount <> 0),
+  kind text not null check (kind in ('refund', 'spend', 'release', 'clawback', 'conversion')),
+  reason text check (reason in ('declined', 'withdrew', 'blocked', 'no_response', 'unavailable', 'payment_refunded', 'payment_disputed', 'late_payment', 'employer_suspended')),
+  match_id uuid,
+  order_ref text,
+  created_at timestamptz not null default now(),
+  constraint employer_credit_ledger_sign check (
+    (kind in ('spend', 'clawback') and amount < 0) or (kind not in ('spend', 'clawback') and amount > 0)
+  )
+);
+
+create index if not exists idx_employer_credit_employer on public.employer_credit_ledger (employer_id, created_at desc);
+-- A match is refunded as credit at most once per order, however many triggers fire (0052; was per match, 0041).
+create unique index if not exists uq_employer_credit_refund_match_order
+  on public.employer_credit_ledger (match_id, order_ref) where kind = 'refund';
+create unique index if not exists uq_employer_credit_refund_match_noorder
+  on public.employer_credit_ledger (match_id) where kind = 'refund' and order_ref is null;
+-- An order spends credit once and releases it once.
+create unique index if not exists uq_employer_credit_spend_order
+  on public.employer_credit_ledger (order_ref) where kind = 'spend';
+create unique index if not exists uq_employer_credit_release_order
+  on public.employer_credit_ledger (order_ref) where kind = 'release';
+
+alter table public.employer_credit_ledger enable row level security; -- service-role only
+
+-- 0042: clawback/conversion adjustments are keyed by a synthetic order_ref and applied once.
+create unique index if not exists uq_employer_credit_adjustment_ref
+  on public.employer_credit_ledger (order_ref) where kind in ('clawback', 'conversion');
+alter table public.employer_unlock_orders
+  add column if not exists credit_applied_paise integer,
+  add column if not exists refund_due_paise integer;
+
+-- Atomically spends up to p_amount of credit for one order. Returns the amount
+-- actually spent: p_amount, or 0 when the balance no longer covers it. Locks
+-- the employer row so two concurrent unlocks cannot both spend the same credit,
+-- and is idempotent per p_order_ref.
+create or replace function public.spend_employer_credit(p_employer uuid, p_amount integer, p_order_ref text)
+returns integer
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_existing integer;
+  v_balance integer;
+begin
+  if p_amount is null or p_amount <= 0 then
+    return 0;
+  end if;
+
+  perform 1 from public.employers where id = p_employer for update;
+
+  select -amount into v_existing
+    from public.employer_credit_ledger
+   where kind = 'spend' and order_ref = p_order_ref;
+  if found then
+    return v_existing;
+  end if;
+
+  select coalesce(sum(amount), 0) into v_balance
+    from public.employer_credit_ledger
+   where employer_id = p_employer;
+  if v_balance < p_amount then
+    return 0;
+  end if;
+
+  insert into public.employer_credit_ledger (employer_id, amount, kind, order_ref)
+  values (p_employer, -p_amount, 'spend', p_order_ref);
+  return p_amount;
+end;
+$$;
+
+revoke all on function public.spend_employer_credit(uuid, integer, text) from public, anon, authenticated;
+grant execute on function public.spend_employer_credit(uuid, integer, text) to service_role;
+
+-- ── 0045: employer invoice snapshot, partial refunds, gap-free invoice numbers ──
+alter table public.employer_unlock_payments add column if not exists invoice_snapshot jsonb;
+
+-- Cumulative amount refunded (paise) when a payment is only partly refunded.
+-- refunded_at stays reserved for a full refund; other code treats it as one.
+alter table public.employer_unlock_payments add column if not exists partial_refund_paise integer;
+alter table public.employer_unlock_payments add column if not exists partial_refund_at timestamptz;
+
+-- The nextval() default burned a number on every insert that hit the unique
+-- index on razorpay_payment_id (webhook/verify races) and numbered rows that
+-- never became a tax invoice. Numbers are now assigned by the RPC below, only
+-- for a fulfilled order with cash > 0. Historical gaps are not backfilled.
+alter table public.employer_unlock_payments alter column invoice_no drop default;
+
+create or replace function public.assign_unlock_invoice_no(p_payment_id text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_no text;
+begin
+  update public.employer_unlock_payments
+     set invoice_no = 'HSX-' || to_char(now(), 'YYMM') || '-' || lpad(nextval('public.employer_invoice_seq')::text, 6, '0')
+   where razorpay_payment_id = p_payment_id
+     and invoice_no is null
+     and amount > 0
+  returning invoice_no into v_no;
+
+  if v_no is null then
+    -- already numbered (idempotent replay) or not eligible
+    select invoice_no into v_no
+      from public.employer_unlock_payments
+     where razorpay_payment_id = p_payment_id and amount > 0;
+  end if;
+  return v_no;
+end;
+$$;
+
+revoke all on function public.assign_unlock_invoice_no(text) from public, anon, authenticated;
+grant execute on function public.assign_unlock_invoice_no(text) to service_role;
+
+-- ── 0047: per-refund credit notes, IST/untruncated invoice numbers, employer_suspended reason ──
+-- Credit notes: one row per refund event, numbered from a gap-free-as-possible sequence.
+create sequence if not exists public.employer_credit_note_seq;
+
+create table if not exists public.employer_credit_notes (
+  id uuid primary key default gen_random_uuid(),
+  order_id text not null,
+  -- Razorpay refund id (rfnd_...), or a synthetic ref such as 'unavailable:<order>' for credit returned
+  -- instead of cash. Unique, so a redelivered webhook can never mint a second note for the same refund.
+  refund_id text not null unique,
+  amount_paise integer not null check (amount_paise > 0),
+  credit_note_no text not null unique,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_employer_credit_notes_order on public.employer_credit_notes (order_id);
+
+alter table public.employer_credit_notes enable row level security; -- service-role only, no client policy
+revoke all on table public.employer_credit_notes from public, anon, authenticated;
+grant select, insert on table public.employer_credit_notes to service_role;
+
+-- Idempotent per refund id: a repeat call returns the existing row and burns no number.
+-- The month in the number is the IST month, matching the date the document shows.
+create or replace function public.assign_employer_credit_note(p_order_id text, p_refund_id text, p_amount_paise integer)
+returns public.employer_credit_notes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.employer_credit_notes;
+  v_seq text;
+begin
+  if p_order_id is null or p_refund_id is null or p_amount_paise is null or p_amount_paise <= 0 then
+    return null;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('credit_note:' || p_refund_id));
+
+  select * into v_row from public.employer_credit_notes where refund_id = p_refund_id;
+  if found then
+    return v_row;
+  end if;
+
+  v_seq := nextval('public.employer_credit_note_seq')::text;
+  insert into public.employer_credit_notes (order_id, refund_id, amount_paise, credit_note_no)
+  values (
+    p_order_id, p_refund_id, p_amount_paise,
+    -- lpad() would TRUNCATE a 7-digit sequence value; only pad when shorter.
+    'CN-' || to_char(now() at time zone 'Asia/Kolkata', 'YYMM') || '-' || case when length(v_seq) >= 6 then v_seq else lpad(v_seq, 6, '0') end
+  )
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.assign_employer_credit_note(text, text, integer) from public, anon, authenticated;
+grant execute on function public.assign_employer_credit_note(text, text, integer) to service_role;
+
+-- Invoice numbers: same IST month and no truncation above 999999.
+create or replace function public.assign_unlock_invoice_no(p_payment_id text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_no text;
+  v_seq text;
+begin
+  select invoice_no into v_no
+    from public.employer_unlock_payments
+   where razorpay_payment_id = p_payment_id and amount > 0;
+  if v_no is not null then
+    return v_no;
+  end if;
+
+  v_seq := nextval('public.employer_invoice_seq')::text;
+  update public.employer_unlock_payments
+     set invoice_no = 'HSX-' || to_char(now() at time zone 'Asia/Kolkata', 'YYMM') || '-' || case when length(v_seq) >= 6 then v_seq else lpad(v_seq, 6, '0') end
+   where razorpay_payment_id = p_payment_id
+     and invoice_no is null
+     and amount > 0
+  returning invoice_no into v_no;
+
+  if v_no is null then
+    -- lost a race (or not eligible): read the winner's number
+    select invoice_no into v_no
+      from public.employer_unlock_payments
+     where razorpay_payment_id = p_payment_id and amount > 0;
+  end if;
+  return v_no;
+end;
+$$;
+
+revoke all on function public.assign_unlock_invoice_no(text) from public, anon, authenticated;
+grant execute on function public.assign_unlock_invoice_no(text) to service_role;
+
+-- A suspended employer's paid unlock is returned as credit with this reason.
+alter table public.employer_credit_ledger drop constraint if exists employer_credit_ledger_reason_check;
+alter table public.employer_credit_ledger add constraint employer_credit_ledger_reason_check
+  check (reason in ('declined', 'withdrew', 'blocked', 'no_response', 'unavailable', 'payment_refunded', 'payment_disputed', 'late_payment', 'employer_suspended'));
+
+-- 0051: chat tables are service-role only (see the policy notes above); one
+-- report per person per message, enforced rather than check-then-insert.
+revoke select, insert, update, delete on public.conversation_messages from anon, authenticated;
+revoke select, insert, update, delete on public.conversations from anon, authenticated;
+create unique index if not exists uq_message_flags_reporter
+  on public.message_flags (message_id, flagged_by)
+  where flagged_by_role <> 'system';
+
+-- 0052: a repurchased match can be refunded as credit again (the unique key above is now per order).
+drop index if exists public.uq_employer_credit_refund_match;
+
+-- 0053: gap-free invoice numbers per Indian financial year; credit-only purchases get a tax invoice.
+-- Number shape HSX-YYMM-NNNNNN is unchanged; the counter restarts each April and is seeded from the highest
+-- number already issued in the year. Eligible: a cash order or one paid wholly from credit (credit_pay_ id).
+create table if not exists public.employer_invoice_counters (
+  fy text primary key,
+  last_no bigint not null check (last_no >= 0)
+);
+alter table public.employer_invoice_counters enable row level security; -- service-role only, no client policy
+revoke all on table public.employer_invoice_counters from public, anon, authenticated;
+grant select, insert, update on table public.employer_invoice_counters to service_role;
+
+create or replace function public.assign_unlock_invoice_no(p_payment_id text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_no text;
+  v_ist timestamp := now() at time zone 'Asia/Kolkata';
+  v_start_year int;
+  v_fy text;
+  v_from int;
+  v_to int;
+  v_seed bigint := 0;
+  v_n bigint;
+  v_seq text;
+begin
+  select invoice_no into v_no
+    from public.employer_unlock_payments
+   where razorpay_payment_id = p_payment_id
+     and (amount > 0 or razorpay_payment_id like 'credit\_pay\_%')
+   for update;
+  if not found then
+    return null;
+  end if;
+  if v_no is not null then
+    return v_no;
+  end if;
+
+  v_start_year := case when extract(month from v_ist) >= 4 then extract(year from v_ist)::int else extract(year from v_ist)::int - 1 end;
+  v_fy := v_start_year::text || '-' || lpad(((v_start_year + 1) % 100)::text, 2, '0');
+
+  if not exists (select 1 from public.employer_invoice_counters where fy = v_fy) then
+    v_from := (v_start_year % 100) * 100 + 4;
+    v_to := ((v_start_year + 1) % 100) * 100 + 3;
+    -- The casts sit inside CASE so the shape guard is guaranteed to run first (a WHERE clause gives no
+    -- evaluation-order guarantee, and a malformed invoice_no would raise on the ::int cast).
+    select coalesce(max(s.n), 0) into v_seed
+      from (
+        select case when invoice_no ~ '^HSX-[0-9]{4}-[0-9]+$' then
+                 case when substring(invoice_no from 5 for 4)::int between v_from and v_to
+                      then substring(invoice_no from '^HSX-[0-9]{4}-([0-9]+)$')::bigint
+                 end
+               end as n
+          from public.employer_unlock_payments
+      ) s;
+  end if;
+
+  insert into public.employer_invoice_counters (fy, last_no) values (v_fy, v_seed + 1)
+  on conflict (fy) do update set last_no = public.employer_invoice_counters.last_no + 1
+  returning last_no into v_n;
+
+  v_seq := v_n::text;
+  v_no := 'HSX-' || to_char(v_ist, 'YYMM') || '-' || case when length(v_seq) >= 6 then v_seq else lpad(v_seq, 6, '0') end;
+  update public.employer_unlock_payments set invoice_no = v_no where razorpay_payment_id = p_payment_id;
+  return v_no;
+end;
+$$;
+
+revoke all on function public.assign_unlock_invoice_no(text) from public, anon, authenticated;
+grant execute on function public.assign_unlock_invoice_no(text) to service_role;
+
+-- 0054: money guards for employer unlocks (see supabase-migrations/0054-unlock-money-guards.sql).
+-- Batch orders claim their matches (one open order per match), credit notes get a per-FY series (HCN-<FY>-N),
+-- invoice_no is unique, and an issued invoice survives employer deletion.
+/* ── 1. open-order match claims ── */
+create table if not exists public.employer_unlock_match_claims (
+  match_id uuid primary key,
+  order_id uuid not null references public.employer_unlock_orders(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create index if not exists idx_unlock_match_claims_order on public.employer_unlock_match_claims (order_id);
+alter table public.employer_unlock_match_claims enable row level security; -- service-role only, no client policy
+revoke all on table public.employer_unlock_match_claims from public, anon, authenticated;
+grant select, insert, update, delete on table public.employer_unlock_match_claims to service_role;
+
+-- An order holds a claim on each of its matches while it is open (created or paid). Inserting an order whose
+-- match another live order already claims fails with a unique violation (the handler answers 409
+-- order_in_progress). Everything else is fail-open: a status change must never be blocked by claim upkeep,
+-- because a paid order has to be able to move to paid / fulfilled. A claim whose order is no longer open, or is
+-- an abandoned 'created' order older than 30 minutes (the app's STALE_CREATED_ORDER_MS), is taken over rather
+-- than blocking a new purchase; a late payment on such an order is handled when it is fulfilled.
+create or replace function public.sync_unlock_match_claims()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+begin
+  if new.status not in ('created', 'paid') then
+    begin
+      delete from public.employer_unlock_match_claims where order_id = new.id;
+    exception when others then
+      raise warning 'unlock claim release failed for order %: %', new.id, sqlerrm;
+    end;
+    return null;
+  end if;
+
+  -- Sorted so concurrent inserts take their locks in the same order and cannot deadlock each other.
+  for v_id in select distinct m from unnest(new.match_ids) as m order by m loop
+    begin
+      if tg_op = 'INSERT' then
+        delete from public.employer_unlock_match_claims c
+         using public.employer_unlock_orders o
+         where c.match_id = v_id
+           and c.order_id = o.id
+           and o.id <> new.id
+           and (o.status not in ('created', 'paid')
+                or (o.status = 'created' and o.created_at < now() - interval '30 minutes'));
+        insert into public.employer_unlock_match_claims (match_id, order_id) values (v_id, new.id);
+      else
+        insert into public.employer_unlock_match_claims (match_id, order_id) values (v_id, new.id)
+        on conflict (match_id) do nothing;
+      end if;
+    exception
+      when unique_violation then
+        if tg_op = 'INSERT' then
+          raise exception 'unlock_match_claim_conflict' using errcode = '23505', detail = v_id::text;
+        end if;
+      when others then
+        raise warning 'unlock claim upkeep failed for order %: %', new.id, sqlerrm;
+    end;
+  end loop;
+  return null;
+end;
+$$;
+
+revoke all on function public.sync_unlock_match_claims() from public, anon, authenticated;
+
+drop trigger if exists trg_sync_unlock_match_claims on public.employer_unlock_orders;
+create trigger trg_sync_unlock_match_claims
+  after insert or update of status, match_ids on public.employer_unlock_orders
+  for each row execute function public.sync_unlock_match_claims();
+
+-- Orders already open when this runs hold their claims too (the oldest wins an existing overlap).
+insert into public.employer_unlock_match_claims (match_id, order_id)
+select distinct on (s.m) s.m, s.id
+  from (
+    select unnest(o.match_ids) as m, o.id, o.created_at
+      from public.employer_unlock_orders o
+     where o.status in ('created', 'paid')
+  ) s
+ order by s.m, s.created_at, s.id
+on conflict (match_id) do nothing;
+
+/* ── 2. per-financial-year credit-note series ── */
+create table if not exists public.employer_credit_note_counters (
+  fy text primary key,
+  last_no bigint not null check (last_no >= 0)
+);
+alter table public.employer_credit_note_counters enable row level security; -- service-role only, no client policy
+revoke all on table public.employer_credit_note_counters from public, anon, authenticated;
+grant select, insert, update on table public.employer_credit_note_counters to service_role;
+
+-- Same contract as 0047 (idempotent per refund id, returns the row), new numbering. The counter row is
+-- locked by the upsert and rolls back with the transaction, so a failed call burns no number.
+-- Number: HCN-<FY start YY><FY end YY>-<6+ digit counter>, e.g. HCN-2627-000001 (15 chars, within GST rule 46's 16).
+create or replace function public.assign_employer_credit_note(p_order_id text, p_refund_id text, p_amount_paise integer)
+returns public.employer_credit_notes
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row public.employer_credit_notes;
+  v_ist timestamp := now() at time zone 'Asia/Kolkata';
+  v_start_year int;
+  v_fy text;
+  v_n bigint;
+  v_seq text;
+begin
+  if p_order_id is null or p_refund_id is null or p_amount_paise is null or p_amount_paise <= 0 then
+    return null;
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('credit_note:' || p_refund_id));
+
+  select * into v_row from public.employer_credit_notes where refund_id = p_refund_id;
+  if found then
+    return v_row;
+  end if;
+
+  v_start_year := case when extract(month from v_ist) >= 4 then extract(year from v_ist)::int else extract(year from v_ist)::int - 1 end;
+  v_fy := v_start_year::text || '-' || lpad(((v_start_year + 1) % 100)::text, 2, '0');
+
+  insert into public.employer_credit_note_counters (fy, last_no) values (v_fy, 1)
+  on conflict (fy) do update set last_no = public.employer_credit_note_counters.last_no + 1
+  returning last_no into v_n;
+
+  v_seq := v_n::text;
+  insert into public.employer_credit_notes (order_id, refund_id, amount_paise, credit_note_no)
+  values (
+    p_order_id, p_refund_id, p_amount_paise,
+    'HCN-' || lpad((v_start_year % 100)::text, 2, '0') || lpad(((v_start_year + 1) % 100)::text, 2, '0') || '-'
+      || case when length(v_seq) >= 6 then v_seq else lpad(v_seq, 6, '0') end
+  )
+  returning * into v_row;
+  return v_row;
+end;
+$$;
+
+revoke all on function public.assign_employer_credit_note(text, text, integer) from public, anon, authenticated;
+grant execute on function public.assign_employer_credit_note(text, text, integer) to service_role;
+
+/* ── 3. invoice integrity ── */
+-- Skipped (with a notice) rather than failing the migration if a duplicate already exists; fix the data and re-run.
+do $$
+begin
+  if exists (
+    select 1 from public.employer_unlock_payments where invoice_no is not null group by invoice_no having count(*) > 1
+  ) then
+    raise notice '0054: duplicate invoice_no values found, uq_employer_unlock_payments_invoice_no not created';
+  else
+    create unique index if not exists uq_employer_unlock_payments_invoice_no
+      on public.employer_unlock_payments (invoice_no) where invoice_no is not null;
+  end if;
+end;
+$$;
+
+-- An issued invoice is a tax record: deleting an employer must not take it along. Erasure anonymises employers
+-- that have payment rows (see _delete-account-helpers.ts), so nothing in the app relies on this cascade.
+-- match_id already uses on delete set null (the invoice keeps its amounts when a match row is replaced).
+alter table public.employer_unlock_payments drop constraint if exists employer_unlock_payments_employer_id_fkey;
+alter table public.employer_unlock_payments
+  add constraint employer_unlock_payments_employer_id_fkey
+  foreign key (employer_id) references public.employers(id) on delete restrict not valid;
+alter table public.employer_unlock_payments validate constraint employer_unlock_payments_employer_id_fkey;
+
+-- 0057: profile matching-input change stamp (see supabase-migrations/0057-profile-matching-inputs-changed.sql).
+-- Stamps when a profile field that feeds employer matching last changed (role,
+-- industry, resume, employer visibility, deletion). profiles.updated_at cannot
+-- serve: every write bumps it (streaks, device tokens, credits), so a sweep
+-- keyed on it would rescan every requirement every night. The nightly rematch
+-- cron compares the newest stamp with each requirement's last_matched_at and
+-- skips requirements nothing changed for. Optional for the code: without this
+-- column the cron treats every open requirement as due, as before.
+alter table profiles add column if not exists matching_inputs_changed_at timestamptz;
+
+create index if not exists idx_profiles_matching_inputs_changed_at
+  on profiles (matching_inputs_changed_at desc)
+  where matching_inputs_changed_at is not null;
+
+-- The trigger owns the column: a client-supplied value is discarded, and an
+-- update that touches none of the matching inputs keeps the previous stamp.
+create or replace function profiles_stamp_matching_inputs()
+returns trigger
+language plpgsql
+as $$
+begin
+  if tg_op = 'INSERT' then
+    new.matching_inputs_changed_at := now();
+  elsif (new.target_role is distinct from old.target_role)
+     or (new.industry is distinct from old.industry)
+     or (new.resume_data is distinct from old.resume_data)
+     or (new.employer_visibility is distinct from old.employer_visibility)
+     or (new.deleted_at is distinct from old.deleted_at) then
+    new.matching_inputs_changed_at := now();
+  else
+    new.matching_inputs_changed_at := old.matching_inputs_changed_at;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists trg_profiles_stamp_matching_inputs on profiles;
+create trigger trg_profiles_stamp_matching_inputs
+  before insert or update on profiles
+  for each row execute function profiles_stamp_matching_inputs();

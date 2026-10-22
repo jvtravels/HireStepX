@@ -167,6 +167,13 @@ export const BANNED_RECRUITER_IDIOM = [
   "level with you",
   "i've given you my best",
   "i have given you my best",
+  /* S38-B6 (2026-07-23) — restyle LLM produced meta-commentary narrating
+   * the session's own state when the kernel had regressed. No real recruiter
+   * says "starting from scratch" or "revisit that conversation" — these are
+   * self-referential structural comments, not recruiter speech. */
+  "starting from scratch",
+  "rather than starting from scratch",
+  "revisit that conversation",
 ] as const;
 
 /** PDF#48 B1 (2026-05-25) — paraphrase-family bans expressed as regex
@@ -361,7 +368,11 @@ export function pickProbeOpener(
  * NOTE: deliberately kept distinct from DISCOVERY_PROBE_OPENERS — the
  * opener rotation is decorative (variety), this set is functional
  * (turn-bridge under uncertainty). */
-export const NEUTRAL_TURN_BRIDGE_ACKS = ["Got it.", "Right.", "Okay."] as const;
+/* S44-B6 (2026-07-23) — "Right." as a standalone bridge ack sounds cold/dismissive
+ * and the LLM restyler occasionally garbles it into "Right. So, let's start…" or
+ * leaves it as a clipped single-word opener. Replaced with "Noted." which carries
+ * the same acknowledgement function but reads more natural for Indian HR cadence. */
+export const NEUTRAL_TURN_BRIDGE_ACKS = ["Got it.", "Noted.", "Okay."] as const;
 
 export function pickNeutralBridgeAck(turnIndex: number): string {
   const n = NEUTRAL_TURN_BRIDGE_ACKS.length;
@@ -576,13 +587,21 @@ const FRUSTRATED_ACK_HEDGE = " and I want to be straight with you here.";
 
 export function renderSentimentPrefix(
   sentiment: import("./_negotiation-kernel").TurnDelta["candidateSentiment"] | undefined | null,
+  /* S13-B6 (2026-07-18) — the "excited" arm asserts range alignment
+   * ("Glad we're in the same range —"), which is a lie before any offer
+   * is on the table (pre-anchor discovery). Gate that arm on the same
+   * `highestOfferMade > 0` signal the rest of this file uses (e.g. the
+   * escalating close-out ~2145) so it only fires once a range exists.
+   * When no offer is on the table, fall back to a neutral acknowledgement
+   * that carries the same warm affect without claiming alignment. */
+  offerOnTable = false,
 ): string | null {
   if (sentiment == null) return null;
   switch (sentiment) {
     case "frustrated":
       return FRUSTRATED_ACK_HEAD + FRUSTRATED_ACK_HEDGE;
     case "excited":
-      return "Glad we're in the same range —";
+      return offerOnTable ? "Glad we're in the same range —" : "Good to hear —";
     case "hesitant":
       return "Take your time on this —";
     case "decisive":
@@ -1026,8 +1045,16 @@ const PROSE_ARMS: ProseArmRegistry = {
      * inline, where we fall through to the generic line (regression
      * guard in pdf48LeverExploreNumberAwareness.test.ts). */
     switch (action.leverKind) {
-      case "equity-grant":
-        return `${counterAck}On the equity side — I can add an ESOP grant at this level, vesting over four years, over and above the cash fitment. Let me put the annual-value figure together and share it before the offer letter.`;
+      case "equity-grant": {
+        /* S40-B6 (2026-07-23) — name a concrete ESOP grant figure rather than
+         * deferring with "let me put the annual-value figure together". The
+         * kernel stamps equityGrantAmountLpa = Math.round(maxStretch * 0.5) in
+         * applyAiMove, but that runs AFTER prose generation. Compute the same
+         * formula here so the recruiter quotes an actual ₹ total on first offer. */
+        const esopTotal = Math.round(state.band.maxStretch * 0.5);
+        const cashRef = state.highestOfferMade > 0 ? ` over and above the ₹${state.highestOfferMade}L cash fitment` : "";
+        return `${counterAck}On the equity side — I can add an ESOP grant worth ₹${esopTotal}L over four years (one-year cliff, then quarterly vesting)${cashRef}. That brings the effective package meaningfully higher.`;
+      }
       case "joining-bonus": {
         const amt = action.joiningBonusLpa;
         const amtPart =
@@ -1052,10 +1079,19 @@ const PROSE_ARMS: ProseArmRegistry = {
     return "Let me see what else we can structure on the fitment.";
   },
 
-  "hold-firm": (_action, state) =>
-    state.highestOfferMade > 0
+  "hold-firm": (action, state) => {
+    /* S23-B1 (2026-07-21) — time-bridge prose when the candidate asked for
+     * thinking time. The recruiter acknowledges gracefully and steps back
+     * rather than continuing to push. */
+    if (action.grantTime) {
+      return state.highestOfferMade > 0
+        ? `Of course — take some time to think it through. The offer stands at ₹${state.highestOfferMade}L. Let me know whenever you're ready.`
+        : "Of course — take some time to think it through. Let me know whenever you're ready.";
+    }
+    return state.highestOfferMade > 0
       ? `We'll hold the fitment at ₹${state.highestOfferMade}L as per our band for this grade. Take some time on it and revert.`
-      : "We'll hold here as per our band for this grade. Take some time on it and revert.",
+      : "We'll hold here as per our band for this grade. Take some time on it and revert.";
+  },
 
   "rescission": () =>
     "Given how this discussion has gone, we won't be able to move ahead with this offer.",
@@ -1216,8 +1252,11 @@ const PROSE_ARMS: ProseArmRegistry = {
    * (acceptable to ship standalone for v1 — lastUserFrustrated is
    * cleared in applyAiMove so the next turn resumes the normal
    * cascade). */
+  /* S40-B2/S41-B2/S42-B3 (2026-07-23) — removed "let me not loop on that"
+   * (meta-commentary a real recruiter would never say). Kept the apology
+   * token so the NEXT_ACTION_CONTRACT /apolog/ pin is satisfied. */
   "acknowledge-and-recover": () =>
-    "You're right, my apologies — let me not loop on that. Moving on.",
+    "You're right, my apologies — let's move forward.",
 
   /* Memory feature (2026-05-29) — contradiction-callout. Polite-but-firm
    * reconciliation. Two variants rotated by turnIndex parity so
@@ -1668,9 +1707,11 @@ const PROSE_ARMS: ProseArmRegistry = {
           ? `${lead} you are currently at ₹${lpa} LPA — let me anchor the discussion off that for a moment.`
           : `To revisit a point you made earlier — your current package is ₹${lpa} LPA. Let me reference that as we continue.`;
       }
+      /* S38-B3 (2026-07-23) — "anchor off that" is a banned phrase in the
+       * restyle prompt; fix the canonical source to use the replacement. */
       return variant === 0
-        ? `You said you're at ₹${lpa} LPA right now — let's anchor off that for a sec.`
-        : `Hey, you're at ₹${lpa} LPA right now, yeah? Let me come back to that.`;
+        ? `You said you're at ₹${lpa} LPA right now — let me use that as a reference point.`
+        : `Hey, you're at ₹${lpa} LPA right now, na? Let me come back to that.`;
     }
     if (action.claim === "noticePeriod") {
       const n = action.value;
@@ -1855,13 +1896,21 @@ const PROSE_ARMS: ProseArmRegistry = {
    * planner; the prose arm dispatches on `helpers.sectorPersona`
    * directly to keep the same per-sector record-lookup pattern the
    * other arms use. */
-  "proactive-sweetener": (_action, _state, helpers) => {
+  "proactive-sweetener": (_action, state, helpers) => {
     const persona = helpers.sectorPersona;
     return helpers.selectBySectorPersona(persona, {
-      "it-services":
-        "Look, I know the 90-day notice is a real concern — we can " +
-        "structure a notice buyout component to help bridge that. " +
-        "Would that move things along?",
+      /* S54-B5 (2026-07-24) — the previous it-services arm hardcoded "90-day
+       * notice is a real concern" regardless of whether the candidate had ever
+       * mentioned a notice period. This fabricated a constraint that could be
+       * factually wrong (candidate may have 30-day notice or none). Gate on
+       * state.noticePeriodDays: if notice period is known, address it; otherwise
+       * use a base-structure sweetener that doesn't invent facts. */
+      "it-services": state.noticeJoining.noticePeriodDays != null
+        ? "Look, I know the notice period is a real concern — we can " +
+          "structure a notice buyout component to help bridge that. " +
+          "Would that move things along?"
+        : "On the structure — I can look at front-loading more into the base " +
+          "component rather than performance-linked variable. Would that help?",
       "gcc":
         "We have relocation budget that hasn't been factored in yet — " +
         "covering shifting + first-month accommodation. Does that " +
@@ -1984,11 +2033,24 @@ function escalatingCloseOut(
   state: NegotiationState,
 ): string {
   const offer = `₹${offerLpa}L`;
-  /* Widened to 6 lines (was 3) so a realistic ~8-10-turn negotiation
-   * doesn't exhaust the pool before the phase-cap drives a terminal. */
+  /* S48-B7 / S53-B4 (2026-07-24) — "I've stretched as far as I can" is
+   * factually wrong when the recruiter never moved the cash number. Gate on
+   * whether any concession was actually made (highestOfferMade > initialOffer).
+   * Zero-movement sessions get an honest pool that doesn't claim effort that
+   * never happened. Widened to 6 lines (was 3) so a realistic ~8-10-turn
+   * negotiation doesn't exhaust the pool before the phase-cap drives a terminal. */
+  const hasConceded = offerLpa > state.band.initialOffer;
   const POOL = [
     `I don't want to keep circling on this. The strongest fitment I can stand behind at this grade is ${offer} — take a day to sit with it and let me know how you'd like to proceed.`,
-    `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
+    /* Only emit "stretched" language when we've actually moved the number —
+     * otherwise it's a factual misrepresentation (S48-B7 / S53-B4). */
+    ...(hasConceded
+      ? [
+          `I've stretched as far as the band allows on this one. If ${offer} works for you, I'll get the paperwork moving; if it doesn't, I completely understand and we can revisit if anything changes on our side.`,
+        ]
+      : [
+          `To be transparent: ${offer} is the fitment the band supports for this grade and I haven't been in a position to move it. Have a think and let me know how you'd like to proceed.`,
+        ]),
     `Let's not go round in circles. ${offer} is the number I can commit to today — shall I go ahead and start rolling out the offer letter?`,
     `I'd rather be honest than keep you waiting: ${offer} is the ceiling I can sign off on for this role right now. Have a think overnight and tell me where you stand tomorrow.`,
     `We've gone back and forth a fair bit, and my number hasn't moved because it genuinely can't — ${offer} is it. Shall I get the formal offer drafted so you have it in writing to decide against?`,
@@ -2011,7 +2073,10 @@ export function renderCanonicalProse(
    * prefix even when sentiment qualifies, because those flows carry
    * their own tone register. */
   const sentiment = state.lastTurnDelta?.candidateSentiment ?? null;
-  let sentimentPrefix: string | null = renderSentimentPrefix(sentiment);
+  let sentimentPrefix: string | null = renderSentimentPrefix(
+    sentiment,
+    state.highestOfferMade > 0,
+  );
   if (sentimentPrefix != null) {
     if (SENTIMENT_PREFIX_SUPPRESSED_KINDS.has(action.kind)) {
       sentimentPrefix = null;
@@ -2458,6 +2523,26 @@ export function buildRestylePrompt(
     `- You MUST NOT add any specific numbers not in the canonical line.\n` +
     `- You MUST NOT add any facts (company policy, team size, perks, benefits) not in the canonical line.\n` +
     `- You MUST NOT change the meaning or the question being asked.\n` +
+    /* S38-B1 (2026-07-23) — restyle LLM converted "help me understand
+     * what's anchoring the expectation at that level" (salary probe) to
+     * "how do you gauge your current impact on the business?" (behavioral
+     * question). Adding an explicit topic-preservation guard for questions. */
+    `- PROBE TOPIC LOCK: when the canonical line asks a question about compensation, target expectations, hike justification, notice period, or competing offers — your restyle must ask that SAME question. Do NOT convert a salary-negotiation probe into a behavioral or role-scope question. "Why do you expect ₹X?" stays about the ₹X ask; "what scope justifies that jump?" stays about the salary gap — it does NOT become "how do you gauge impact?" or "walk me through your responsibilities".\n` +
+    /* S42-B6 (2026-07-23) — restyle LLM hallucinated "the other opportunity
+     * you mentioned" when the candidate had never disclosed a competing offer.
+     * Gate this instruction on the kernel state: only suppress when there is
+     * genuinely no competing offer in state; when hasAny is true the probe is
+     * legitimate and the instruction would be counterproductive. */
+    (state.competingOffer == null && !state.competingOfferDetail.hasAny
+      ? `- COMPETING-OFFER LOCK: the candidate has NOT mentioned any competing offer or other opportunity in this conversation. Do NOT introduce references like "the other opportunity you mentioned", "the competing offer", "another process", "other offer", or any phrase implying the candidate has disclosed a competing opportunity. If you feel the urge to mention one, suppress it entirely.\n`
+      : "") +
+    /* S34-B4 (2026-07-23) — restyle LLM converted the cash-ceiling ack
+     * ("that's above the cash band I can structure on this grade") into
+     * a terminal walk-away phrase ("I've stretched as far as I can").
+     * Cash-ceiling acks precede a NON-CASH lever pivot — they are NOT
+     * final offers; the recruiter is about to offer equity / joining
+     * bonus / WFH. Block the terminal conversion explicitly. */
+    `- CASH-CEILING PIVOT: when the canonical line says the candidate's number exceeds the cash band (e.g. "that's above the cash band I can structure on this grade"), this is NOT a terminal or final statement — the recruiter is about to offer a non-cash lever. Do NOT rephrase it as "I've stretched as far as I can", "that's my final offer", "we've done all we can", or any language implying the negotiation is over. Keep it as a factual observation.\n` +
     /* PDF#47 (2026-05-25) — banned next-cycle framing. The Flipkart
      * Sr-PD transcript shipped "How does the base split look for the
      * next cycle?" mid-discovery, conflating the current negotiation
@@ -2503,7 +2588,8 @@ export function buildAnswerCandidatePrompt(
     `- NEVER mention internal vocabulary in your answer — banned words include: "fact pack", "factPack", "the system", "the prompt", "internal data", "according to my data", "I don't have data on", "missing from my context". Speak in plain recruiter idiom only. If a fact is missing, defer gracefully (e.g. "that's something the HM walks through later") without referring to your data source.\n` +
     `- If you cannot answer from the data, say "that's something the HM walks through later" — do NOT mention data sources, fact packs, internal notes, or any meta-reference to where information comes from.\n` +
     `- You MUST NOT reference future appraisal cycles ("next cycle", "next appraisal cycle", "next review cycle", "next year's appraisal"). This negotiation is about the joining offer, not future cycles.\n` +
-    `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n\n` +
+    `- Keep it conversational, max 2 sentences, max 25 words per sentence. Real recruiters speak in short clauses. If multiple concepts come up, name the top one and ask "which one do you want to dig into?" instead of bundling them.\n` +
+    `- FIELD LABELS (critical): "candidateCurrentEmployerCtc_lpa" = what the candidate earns at their PRESENT job — completely unrelated to any offer. "ourOfferBand" = OUR internal offer range (ourOpeningOffer_lpa = our starting number, ourMaximumFlexibility_lpa = our ceiling, ourWalkaway_lpa = our floor). NEVER describe any field inside "ourOfferBand" as the candidate's "current CTC" or "what you're currently making".\n\n` +
     `OUTPUT: just your answer, no preamble.`;
   const user =
     `CANDIDATE ASKED: "${candidateQuestion}"\n\n` +

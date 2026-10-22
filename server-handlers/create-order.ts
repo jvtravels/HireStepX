@@ -1,16 +1,11 @@
 /* Vercel Serverless Function — Razorpay Order Creation */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import {
-  applyCorsHeaders,
-  handlePreflightAndMethod,
-  isRateLimited,
-  getVercelClientIp,
-  supabaseUrl,
-  supabaseAnonKey,
-} from "./_shared";
+import { withNodeAuthAndRateLimit, supabaseUrl, slog } from "./_shared";
 import { captureServerEvent } from "./_posthog";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import { checkPromoValidity, computeDiscountAmount } from "./_promo";
+import { PLAN_AMOUNT_PAISE } from "../data/plans";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
@@ -22,63 +17,25 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const INTENT_KEY_TTL_SEC = 86_400;
 
 const PRICE_MAP: Record<string, { amount: number; name: string; description: string }> = {
-  single:           { amount: 900,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
-  weekly:           { amount: 3900,   name: "HireStepX Sprint Pack",      description: "Interview Sprint Pack — ₹39 · 5 sessions · 30-day validity" },
-  monthly:          { amount: 14900,  name: "HireStepX Monthly",          description: "Monthly Plan — ₹149 · 40 sessions over 30 days" },
+  single:           { amount: PLAN_AMOUNT_PAISE.single,    name: "HireStepX Single Session",   description: "Single mock interview session — ₹9" },
+  weekly:           { amount: PLAN_AMOUNT_PAISE.weekly,   name: "HireStepX Sprint Pack",      description: "Interview Sprint Pack — ₹39 · 5 sessions · 30-day validity" },
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const origin = applyCorsHeaders(req, res);
-  if (handlePreflightAndMethod(req, res)) return;
-
-  // Body size check
-  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyContentLength > 1048576) {
-    return res.status(413).json({ error: "Request too large" });
-  }
-
-  // CSRF: validate Origin header on state-changing requests
-  if (!origin) {
-    return res.status(403).json({ error: "Forbidden" });
-  }
-
-  // Rate limiting: 5 order creations per minute per IP
-  const ip = getVercelClientIp(req);
-  if (await isRateLimited(ip, "create-order", 5, 60_000)) {
-    res.setHeader("Retry-After", "60");
-    return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
-  }
-
-  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-    console.error("Missing Razorpay env vars:", { hasKeyId: !!RAZORPAY_KEY_ID, hasKeySecret: !!RAZORPAY_KEY_SECRET });
-    return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
-  }
-
   // Verify auth — always required. Never fall back to a client-supplied userId;
   // if Supabase is unreachable or misconfigured, fail hard so an attacker
   // cannot forge orders under another user's identity by supplying their UUID
   // in the request body (C-1 fix).
+  const pre = await withNodeAuthAndRateLimit(req, res, { endpoint: "create-order", ipLimit: 5 });
+  if (pre.handled) return;
+  const { userId: authenticatedUserId } = pre;
+
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    slog.error("create-order: missing Razorpay env vars", { hasKeyId: !!RAZORPAY_KEY_ID, hasKeySecret: !!RAZORPAY_KEY_SECRET });
+    return res.status(503).json({ error: "Payments not configured. Please contact support@hirestepx.com" });
+  }
+
   const SUPABASE_URL = supabaseUrl();
-  const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let authenticatedUserId: string | undefined;
-  const authToken = (req.headers.authorization || "").replace("Bearer ", "");
-  if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
-    const authRes = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-      headers: { Authorization: `Bearer ${authToken}`, apikey: SUPABASE_ANON_KEY },
-    });
-    if (!authRes.ok) return res.status(401).json({ error: "Unauthorized" });
-    try {
-      const userData = await authRes.json();
-      authenticatedUserId = userData.id;
-    } catch {
-      return res.status(401).json({ error: "Auth verification failed" });
-    }
-  }
-  // Guard: reject if auth was not satisfied — covers missing token, missing env
-  // vars, or any soft-failure path above. No fallback to req.body.userId.
-  if (!authenticatedUserId) {
-    return res.status(401).json({ error: "Authentication required" });
-  }
 
   try {
     // userId is intentionally omitted — we use authenticatedUserId (server-verified)
@@ -196,7 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } catch (dedupErr) { console.warn("[create-order] Idempotency check failed:", dedupErr); }
     }
 
-    const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const receipt = `${plan}_${Date.now()}`.slice(0, 40);
 
     const notes: Record<string, string> = { plan };
@@ -228,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!response.ok) {
       const errText = await response.text().catch(() => "");
-      console.error("Razorpay error:", response.status, errText);
+      slog.error("create-order: razorpay error", { status: response.status, body: errText.slice(0, 200) });
       const detail = response.status === 401
         ? "Payment gateway credentials are invalid. Please contact support."
         : "Could not create payment order. Please try again or contact support@hirestepx.com";
@@ -279,7 +236,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       description: finalDescription,
     });
   } catch (err) {
-    console.error("Order creation error:", err);
+    slog.error("create-order: unexpected error", { error: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   }
 }

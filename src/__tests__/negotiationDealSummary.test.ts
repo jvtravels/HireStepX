@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { extractCandidateAskLpa } from "../negotiationDealSummary";
+import { extractCandidateAskLpa, resolveCandidateAskLpa } from "../negotiationDealSummary";
 
 /* Deal Summary "Your Ask" extraction (live Flipkart-EM regression, 2026-06-30).
  *
@@ -107,5 +107,41 @@ describe("extractCandidateAskLpa", () => {
     ])("does NOT read a non-ask number as an ask: %s", (input) => {
       expect(extractCandidateAskLpa([input])).toBe(0);
     });
+  });
+});
+
+/* resolveCandidateAskLpa — single source of truth for the card's "Your Ask"
+ * tile (I-10 cross-surface fix, live Flipkart 2026-07-14). When the kernel
+ * value is available it MUST win over transcript regex, so the transient Deal
+ * Summary and the durable SessionReport never disagree. The live defect: the
+ * report showed the kernel final target (₹42 after a 48→44→42 climb-down) while
+ * the card's regex surfaced the MAX stated ask (₹48). */
+describe("resolveCandidateAskLpa", () => {
+  it("prefers the kernel ask over the transcript-extracted max", () => {
+    // Regex would surface 48 ("targeting 48"); the kernel tracked the final
+    // target 42 (un-cued "meet me at 44" / "bring it to 42" the regex misses).
+    expect(
+      resolveCandidateAskLpa(42, ["I'm targeting 48 lakhs fixed for this role."]),
+    ).toBe(42);
+  });
+
+  it("rounds the kernel ask to one decimal place", () => {
+    expect(resolveCandidateAskLpa(41.96, ["I want 65."])).toBe(42);
+    expect(resolveCandidateAskLpa(38.34, [])).toBe(38.3);
+  });
+
+  it("falls back to transcript extraction when the kernel ask is null", () => {
+    expect(resolveCandidateAskLpa(null, ["I'm looking for 65 LPA."])).toBe(65);
+    expect(resolveCandidateAskLpa(undefined, ["I'm looking for 65 LPA."])).toBe(65);
+  });
+
+  it("falls back to transcript extraction for a non-positive kernel ask", () => {
+    // 0 / negative are not real asks — legacy sessions without a tracked target.
+    expect(resolveCandidateAskLpa(0, ["Hoping for 62."])).toBe(62);
+    expect(resolveCandidateAskLpa(-5, ["Hoping for 62."])).toBe(62);
+  });
+
+  it("returns 0 (tile hidden) when neither kernel nor transcript has an ask", () => {
+    expect(resolveCandidateAskLpa(null, ["Thanks for the recap."])).toBe(0);
   });
 });

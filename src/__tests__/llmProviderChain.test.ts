@@ -1,0 +1,931 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+
+/* Tests for callLLM's provider failover chain: Groq → Gemini → Cloudflare.
+ *
+ * The 62% live error rate (2026-07-16) was caused by all three providers
+ * hitting free-tier limits simultaneously. These tests pin the routing
+ * decisions so a code change can't silently break failover behavior.
+ *
+ * Uses vi.resetModules() + dynamic import so each test starts with a fresh
+ * module that reads the env vars set in beforeEach. fetch is stubbed globally
+ * to intercept all outbound calls (LLM APIs + any PostHog/Supabase logging).
+ */
+
+type CallLLM = typeof import("../../server-handlers/_llm").callLLM;
+let callLLM: CallLLM;
+let fetchSpy: ReturnType<typeof vi.fn>;
+
+/* ── Response builders ─────────────────────────────────────────────── */
+
+function groqOk(content: string) {
+  return new Response(
+    JSON.stringify({
+      choices: [{ message: { content } }],
+      usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+    }),
+    { status: 200 },
+  );
+}
+
+function groqErr(status: number, body: string) {
+  return new Response(body, { status });
+}
+
+function geminiOk(content: string) {
+  return new Response(
+    JSON.stringify({
+      candidates: [{ content: { parts: [{ text: content }] } }],
+      usageMetadata: { promptTokenCount: 80, candidatesTokenCount: 40, totalTokenCount: 120 },
+    }),
+    { status: 200 },
+  );
+}
+
+function geminiErr(status: number, body: string) {
+  return new Response(body, { status });
+}
+
+/* ── Setup ─────────────────────────────────────────────────────────── */
+
+beforeEach(async () => {
+  vi.resetModules();
+  vi.useFakeTimers();
+
+  // Set env vars BEFORE importing so the module captures them at init time.
+  process.env.GROQ_API_KEY = "test-groq-key";
+  process.env.GEMINI_API_KEY = "test-gemini-key";
+  delete process.env.CLOUDFLARE_API_TOKEN;
+  delete process.env.CLOUDFLARE_ACCOUNT_ID;
+  // No Supabase → USAGE_LOGGING_ENABLED = false → no Supabase fetch calls.
+  delete process.env.SUPABASE_URL;
+  delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const mod = await import("../../server-handlers/_llm");
+  callLLM = mod.callLLM;
+
+  // Route fetch by URL prefix. Unknown URLs (PostHog event capture) return 200
+  // so logUsage's emitAiGeneration doesn't throw.
+  fetchSpy = vi.fn().mockImplementation(async (url: string) => {
+    if (String(url).includes("api.groq.com")) throw new Error("fetchSpy: no Groq stub for this call");
+    if (String(url).includes("generativelanguage")) throw new Error("fetchSpy: no Gemini stub for this call");
+    return new Response("{}", { status: 200 }); // PostHog, anything else
+  });
+  vi.stubGlobal("fetch", fetchSpy);
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+  delete process.env.GROQ_API_KEY;
+  delete process.env.GEMINI_API_KEY;
+});
+
+/* ── Happy path ─────────────────────────────────────────────────────── */
+/* Provider order (e3e634b): non-fast → Gemini primary, Groq fallback.
+ *                           fast    → Groq primary, Gemini fallback. */
+
+describe("happy path", () => {
+  it("returns Gemini result and does not fall over when Gemini succeeds", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
+      return new Response("{}", { status: 200 });
+    });
+
+    const result = await callLLM({ prompt: "Evaluate." });
+
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(result.text).toBe('{"score":85}');
+    expect(result.fallback).toBe(false);
+    const geminiCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("generativelanguage"));
+    expect(geminiCalls).toHaveLength(1);
+  });
+
+  it("uses GPT-OSS 20B when opts.fast is true (Groq primary for fast calls)", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("quick");
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Fast eval.", fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.model).toBe("openai/gpt-oss-20b");
+  });
+});
+
+/* ── Quota exhaustion (permanent — fail over immediately, no retry) ── */
+
+describe("quota exhaustion 429", () => {
+  it("fails over to Groq immediately — does NOT retry Gemini on quota exhaustion", async () => {
+    let geminiCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
+        return geminiErr(429, "RESOURCE_EXHAUSTED: You exceeded your quota, check your plan and billing details.");
+      }
+      if (String(url).includes("api.groq.com")) return groqOk('{"score":72}');
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result.model).toBe("openai/gpt-oss-120b");
+    expect(geminiCallCount).toBe(1); // quota exhaustion = no retry
+  });
+
+  it("fails over on RESOURCE_EXHAUSTED (Gemini quota format)", async () => {
+    let geminiCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
+        return geminiErr(429, "RESOURCE_EXHAUSTED: daily quota exceeded");
+      }
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    await promise;
+
+    expect(geminiCallCount).toBe(1);
+  });
+});
+
+/* ── Transient errors (retries once on same provider before failover) ─ */
+
+describe("transient rate limiting", () => {
+  it("retries Gemini once on a per-second rate-limit 429, then succeeds", async () => {
+    let geminiCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        if (geminiCallCount === 1) return geminiErr(429, "rate limit reached, retry in 1s");
+        return geminiOk('{"ok":true}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync(); // advance past 800ms retry delay
+    const result = await promise;
+
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(geminiCallCount).toBe(2); // 1 fail + 1 retry on same provider
+  });
+
+  it("falls over to Groq after Gemini exhausts both attempts on transient errors", async () => {
+    let geminiCallCount = 0;
+    let groqCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        if (String(url).includes("gemini-3.5-flash-lite")) geminiCallCount++; // count the primary model only
+        return geminiErr(429, "rate limit reached");
+      }
+      if (String(url).includes("api.groq.com")) {
+        groqCallCount++;
+        return groqOk('{"score":60}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(result.model).toBe("openai/gpt-oss-120b");
+    expect(geminiCallCount).toBe(2); // 1 initial + 1 retry, then fail over
+    expect(groqCallCount).toBe(1);
+  });
+
+  it("does not re-hit an overloaded model on 503 when another rung follows", async () => {
+    const models: string[] = [];
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        return model === "gemini-3.5-flash-lite" ? geminiErr(503, "model overloaded, retry later") : geminiOk("next rung");
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
+    expect(result.text).toBe("next rung");
+  });
+
+  it("reaches the third Gemini model when the first two are hung/out of quota", async () => {
+    const models: string[] = [];
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        if (model === "gemini-3.5-flash-lite") return geminiErr(503, "high demand");
+        if (model === "gemini-2.5-flash-lite") return geminiErr(429, "You exceeded your current quota, please check your plan and billing details.");
+        return geminiOk("third rung");
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"]);
+    expect(result.text).toBe("third rung");
+  });
+
+  it("still retries a 503 once when it is the only provider left", async () => {
+    process.env.GEMINI_MODELS = "gemini-3.5-flash-lite";
+    delete process.env.GROQ_API_KEY;
+    vi.resetModules();
+    const mod = await import("../../server-handlers/_llm");
+    let geminiCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) {
+        geminiCallCount++;
+        if (geminiCallCount === 1) return geminiErr(503, "model overloaded, retry later");
+        return geminiOk("success after retry");
+      }
+      return new Response("{}", { status: 200 });
+    });
+
+    const promise = mod.callLLM({ prompt: "Test." });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+    delete process.env.GEMINI_MODELS;
+
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(geminiCallCount).toBe(2);
+  });
+
+  it("excludeGemini keeps a last-resort tier off the Gemini rungs", async () => {
+    delete process.env.GROQ_API_KEY;
+    vi.resetModules();
+    const mod = await import("../../server-handlers/_llm");
+    await expect(mod.callLLM({ prompt: "Test." }, 5000, { excludeGemini: true })).rejects.toThrow(/No LLM configured/);
+    expect(fetchSpy.mock.calls.some((c) => String(c[0]).includes("generativelanguage"))).toBe(false);
+  });
+});
+
+/* ── All providers fail ─────────────────────────────────────────────── */
+
+describe("all providers fail", () => {
+  it("throws when Gemini and Groq both return 500", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiErr(500, "Gemini error 500: Internal Server Error");
+      if (String(url).includes("api.groq.com")) return groqErr(500, "Groq error 500: Internal Server Error");
+      return new Response("{}", { status: 200 });
+    });
+
+    // Attach .rejects BEFORE advancing timers so the rejection is handled
+    // immediately when the retry fires — avoids an unhandled-rejection warning.
+    const promise = callLLM({ prompt: "Test." });
+    const assertion = expect(promise).rejects.toThrow(/error 500/i);
+    await vi.runAllTimersAsync();
+    await assertion;
+  });
+
+  it("throws immediately when no API keys are configured", async () => {
+    vi.resetModules();
+    delete process.env.GROQ_API_KEY;
+    delete process.env.GEMINI_API_KEY;
+    const mod = await import("../../server-handlers/_llm");
+    await expect(mod.callLLM({ prompt: "Test." })).rejects.toThrow(/No LLM configured/);
+  });
+});
+
+/* ── jsonMode ───────────────────────────────────────────────────────── */
+
+describe("jsonMode", () => {
+  it("sets response_format: json_object on the Groq request body (fast=true, Groq primary)", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk('{"x":1}');
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.response_format).toEqual({ type: "json_object" });
+  });
+
+  it("omits response_format when jsonMode is false (fast=true, Groq primary)", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("plain text response");
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Answer in prose.", jsonMode: false, fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.response_format).toBeUndefined();
+  });
+});
+
+/* ── Gemini thinkingConfig ────────────────────────────────────────────
+ *
+ * Production 400 INVALID_ARGUMENT on every Gemini call (2026-10-04):
+ * gemini-3.5-flash-lite is a Gemini 3-family model and rejects
+ * `thinkingBudget` outright (thinking can't be disabled that way on
+ * Gemini 3 — only on 2.x). `thinkingLevel: "minimal"` is the supported
+ * equivalent, and it's mutually exclusive with `thinkingBudget` — never
+ * send both. Pin the request body shape so this can't regress silently. */
+
+describe("Gemini thinkingConfig", () => {
+  it("sends thinkingLevel: minimal, never thinkingBudget, on the Gemini request body", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Evaluate." });
+
+    const geminiCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("generativelanguage"));
+    const body = JSON.parse(geminiCall?.[1]?.body as string);
+    expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: "minimal" });
+    expect(body.generationConfig.thinkingConfig.thinkingBudget).toBeUndefined();
+  });
+});
+
+/* ── Groq TPM-cap-aware sizing (callGroq) ────────────────────────────
+ *
+ * Groq's free tier caps openai/gpt-oss-20b/120b at a flat 8,000
+ * tokens/minute, counting (prompt + max_tokens) against it regardless
+ * of actual output length. callGroq() sizes max_tokens off the actual
+ * prompt size and skips the call outright (no network round trip) when
+ * even its minimum usable completion floor doesn't fit under the cap.
+ * These tests pin that behavior so it can't silently regress back to a
+ * fixed max_tokens that 413s once a prompt grows large. */
+
+function tokenPaddedPrompt(tokens: number): string {
+  // No whitespace → countTokens' word-based upper bound collapses to a
+  // small constant, so the char-based lower bound (ceil(len/4)) decides
+  // the count alone — length = tokens * 4 yields exactly `tokens`.
+  return "a".repeat(tokens * 4);
+}
+
+describe("Groq TPM-cap-aware sizing", () => {
+  it("shrinks max_tokens to fit the remaining TPM budget on a large prompt", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 6000-token prompt leaves 8000 - 400 - 600 (10% estimator margin) - 6000
+    // = 1000 available, below the default 2000 maxTokens but above the floor.
+    await callLLM({ prompt: tokenPaddedPrompt(6000), fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.max_tokens).toBe(1000);
+  });
+
+  it("passes requestedMaxTokens through unmodified when the prompt is small", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+
+    await callLLM({ prompt: "Short prompt.", fast: true });
+
+    const groqCall = fetchSpy.mock.calls.find((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    const body = JSON.parse(groqCall?.[1]?.body as string);
+    expect(body.max_tokens).toBe(2000); // default requestedMaxTokens, untouched
+  });
+
+  it("skips Groq outright (no fetch) and fails over when the prompt alone leaves less than the default floor", async () => {
+    let groqCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) { groqCallCount++; return groqOk("ok"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("fallback result");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 7500-token prompt leaves 8000 - 400 - 7500 = 100 available, below
+    // the default 256-token floor — callGroq() must throw before any fetch.
+    const promise = callLLM({ prompt: tokenPaddedPrompt(7500), fast: true });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(groqCallCount).toBe(0);
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(result.text).toBe("fallback result");
+  });
+
+  it("skips Groq when a caller's custom groqMinCompletionTokens floor isn't met, even though the default floor would have allowed it", async () => {
+    let groqCallCount = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) { groqCallCount++; return groqOk("ok"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("fallback result");
+      return new Response("{}", { status: 200 });
+    });
+
+    // 7000-token prompt leaves 8000 - 400 - 7000 = 600 available — above
+    // the default 256-token floor (so the previous test's prompt wouldn't
+    // have skipped here) but below a caller-specified 1800-token floor,
+    // mirroring evaluate-session's real requirement.
+    const promise = callLLM({ prompt: tokenPaddedPrompt(7000), fast: true, groqMinCompletionTokens: 1800 });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+
+    expect(groqCallCount).toBe(0);
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+  });
+});
+
+/* ── totalBudgetMs — whole-chain wall-clock ceiling ──────────────────
+ *
+ * analyze-resume's real worst case (gemini → groq → cloudflare, each with
+ * a possible retry) could exceed both the client's fetch timeout and
+ * Vercel's edge execution ceiling, killing the isolate before the
+ * handler's own catch block could return a graceful timeout response.
+ * These tests pin totalBudgetMs so that regression can't come back
+ * silently. Omitting it must leave every other caller's behavior
+ * unchanged (covered by every other test in this file, none of which
+ * pass it). */
+
+describe("totalBudgetMs", () => {
+  it("throws immediately without calling any provider when the budget is already exhausted", async () => {
+    const result = callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 0 });
+    await expect(result).rejects.toThrow(/budget exhausted/);
+    expect(fetchSpy.mock.calls.filter((args: unknown[]) =>
+      String(args[0]).includes("generativelanguage") || String(args[0]).includes("api.groq.com"),
+    )).toHaveLength(0);
+  });
+
+  it("does not change the result when the budget comfortably covers the call", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk('{"score":85}');
+      return new Response("{}", { status: 200 });
+    });
+
+    const result = await callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 20000 });
+
+    expect(result.model).toBe("gemini-3.5-flash-lite");
+    expect(result.fallback).toBe(false);
+  });
+
+  it("skips the fallback provider once the first provider's timeout consumes the whole budget", async () => {
+    // Gemini hangs until its own abort signal fires — never resolves on
+    // its own, so the only way it settles is via the AbortController
+    // callLLM wires up from the (budget-capped) provider timeout.
+    fetchSpy.mockImplementation((url: string, init?: { signal?: AbortSignal }) => {
+      if (String(url).includes("generativelanguage")) {
+        return new Promise((_, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            const err = new Error("The operation was aborted");
+            err.name = "AbortError";
+            reject(err);
+          });
+        });
+      }
+      return Promise.resolve(new Response("{}", { status: 200 }));
+    });
+
+    const promise = callLLM({ prompt: "Evaluate." }, 15000, { totalBudgetMs: 3000 });
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.runAllTimersAsync();
+    await assertion;
+
+    const groqCalls = fetchSpy.mock.calls.filter((args: unknown[]) => String(args[0]).includes("api.groq.com"));
+    expect(groqCalls).toHaveLength(0); // budget was gone after Gemini's capped timeout fired
+  });
+});
+
+/* ── Oversized prompt + single-provider timeout (generate-questions) ──
+ *
+ * generate-questions prompts run ~9k tokens, always above Groq's 8000 TPM
+ * cap, so Groq can never serve them. The skip must not surface as an
+ * "error" row, and a slow or overloaded primary Gemini must fail over to the
+ * backup Gemini model instead of dropping the visitor to the static fallback. */
+
+describe("oversized prompt with a single viable provider", () => {
+  const hang = (init?: RequestInit) =>
+    new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(Object.assign(new Error("This operation was aborted"), { name: "AbortError" })));
+    });
+
+  it("does not report the Groq pre-flight skip as a provider failure", async () => {
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return geminiOk("ok");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400), fast: true }, 8000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    expect((await promise).model).toBe("gemini-3.5-flash-lite");
+    expect(errSpy.mock.calls.some((c) => String(c[0]).includes("groq failed"))).toBe(false);
+    errSpy.mockRestore();
+  });
+
+  it("fails over to the backup Gemini model when the primary hangs", async () => {
+    const models: string[] = [];
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("generativelanguage")) {
+        const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+        models.push(model);
+        return model === "gemini-3.5-flash-lite" ? hang(init) : geminiOk("backup answer");
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    const result = await promise;
+    expect(models).toEqual(["gemini-3.5-flash-lite", "gemini-2.5-flash-lite"]);
+    expect(result.text).toBe("backup answer");
+  });
+
+  it("fails over to the backup Gemini model on a 503 from the primary", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("overloaded", { status: 503 });
+      if (String(url).includes("generativelanguage")) return geminiOk("backup answer");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    expect((await promise).text).toBe("backup answer");
+  });
+
+  it("staggered hedge: a hung first rung plus a 429 on the second still reaches the third rung before the budget is gone", async () => {
+    const t0 = Date.now();
+    const started: Record<string, number> = {};
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model) started[model] = Date.now() - t0;
+      if (model === "gemini-3.5-flash-lite") return hang(init);
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "You exceeded your current quota, please check your plan and billing details.");
+      if (model === "gemini-2.5-flash") return geminiOk("third rung answer");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 50000, { totalBudgetMs: 52000, hedgeAfterMs: 22000 });
+    await vi.advanceTimersByTimeAsync(22000);
+    const result = await promise;
+    expect(result.text).toBe("third rung answer");
+    expect(started["gemini-2.5-flash-lite"]).toBeGreaterThanOrEqual(22000);
+    expect(started["gemini-2.5-flash"]).toBeLessThan(23000);
+    await vi.runAllTimersAsync();
+  });
+
+  it("hedges: starts the backup model after hedgeAfterMs and does not wait for a hung primary", async () => {
+    const started: Record<string, number> = {};
+    const t0 = Date.now();
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) { started.primary = Date.now() - t0; return hang(init); }
+      if (String(url).includes("gemini-2.5-flash-lite")) { started.backup = Date.now() - t0; return geminiOk("hedged answer"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.advanceTimersByTimeAsync(3500);
+    const result = await promise;
+    expect(result.text).toBe("hedged answer");
+    expect(started.backup).toBeGreaterThanOrEqual(3500);
+    expect(started.backup).toBeLessThan(7000);
+    await vi.runAllTimersAsync();
+  });
+
+  it("hedge: a primary that answers before hedgeAfterMs never starts the backup", async () => {
+    let backupCalls = 0;
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-2.5-flash-lite")) { backupCalls++; return geminiOk("backup"); }
+      if (String(url).includes("generativelanguage")) return geminiOk("primary");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.runAllTimersAsync();
+    expect((await promise).text).toBe("primary");
+    expect(backupCalls).toBe(0);
+  });
+
+  it("hedge: a primary failure starts the backup immediately instead of waiting out the hedge delay", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiOk("backup");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.advanceTimersByTimeAsync(10);
+    expect((await promise).text).toBe("backup");
+  });
+
+  it("hedge: falls through to Groq when both Gemini models fail", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("generativelanguage")) return new Response("overloaded", { status: 400 });
+      if (String(url).includes("api.groq.com")) return groqOk("groq answer");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short prompt that fits Groq." }, 7000, { totalBudgetMs: 20000, hedgeAfterMs: 3500 });
+    await vi.runAllTimersAsync();
+    expect((await promise).text).toBe("groq answer");
+  });
+
+  it("production incident: hung rung 0 + quota-429 rung 1 + hung rung 2 still reaches Groq (reserveMs)", async () => {
+    let groqCalls = 0;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "Quota exceeded for metric generate_content_free_tier_requests, limit: 20, PerDay");
+      if (model) return hang(init);
+      if (String(url).includes("api.groq.com")) { groqCalls++; return groqOk("groq rescued it"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short resume prompt." }, 10000, { totalBudgetMs: 21000, hedgeAfterMs: 6000, reserveMs: 8000 });
+    await vi.advanceTimersByTimeAsync(21000);
+    const result = await promise;
+    expect(result.text).toBe("groq rescued it");
+    expect(groqCalls).toBe(1);
+    await vi.runAllTimersAsync();
+  });
+
+  it("without reserveMs the same incident exhausts the budget before Groq (regression guard for the fix)", async () => {
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      const model = String(url).match(/models\/([^:]+):/)?.[1] ?? "";
+      if (model === "gemini-2.5-flash-lite") return geminiErr(429, "Quota exceeded for metric generate_content_free_tier_requests, limit: 20, PerDay");
+      if (model) return hang(init);
+      if (String(url).includes("api.groq.com")) return groqOk("never reached");
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: "Short resume prompt." }, 10000, { totalBudgetMs: 18000 });
+    const assertion = expect(promise).rejects.toThrow();
+    await vi.advanceTimersByTimeAsync(20000);
+    await assertion;
+  });
+
+  it("disables thinking on the backup model with thinkingBudget, not thinkingLevel", async () => {
+    let backupBody: { generationConfig: { thinkingConfig: Record<string, unknown> } } | undefined;
+    fetchSpy.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (String(url).includes("gemini-3.5-flash-lite")) return new Response("overloaded", { status: 400 });
+      if (String(url).includes("gemini-2.5-flash-lite")) { backupBody = JSON.parse(String(init?.body)); return geminiOk("ok"); }
+      return new Response("{}", { status: 200 });
+    });
+    const promise = callLLM({ prompt: tokenPaddedPrompt(8400) }, 7000, { totalBudgetMs: 20000 });
+    await vi.runAllTimersAsync();
+    await promise;
+    expect(backupBody?.generationConfig.thinkingConfig).toEqual({ thinkingBudget: 0 });
+  });
+});
+
+/* ── Model durability: env-driven ladder + retirement handling ───────── */
+
+describe("model registry", () => {
+  afterEach(() => { delete process.env.GEMINI_MODELS; });
+
+  const reload = async () => {
+    vi.resetModules();
+    callLLM = (await import("../../server-handlers/_llm")).callLLM;
+  };
+  const geminiModels = () =>
+    fetchSpy.mock.calls
+      .map((a: unknown[]) => String(a[0]).match(/models\/([^:]+):generateContent/)?.[1])
+      .filter(Boolean);
+
+  it("uses GEMINI_MODELS so a retirement is an env change, not a code change", async () => {
+    process.env.GEMINI_MODELS = "gemini-3.6-flash,gemini-2.5-flash-lite";
+    await reload();
+    fetchSpy.mockImplementation(async (url: string) =>
+      String(url).includes("generativelanguage") ? geminiOk("ok") : new Response("{}", { status: 200 }));
+    await callLLM({ prompt: "Evaluate." });
+    expect(geminiModels()).toEqual(["gemini-3.6-flash"]);
+  });
+
+  it("benches a retired model (404 not found) and answers from the next rung", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      const u = String(url);
+      if (u.includes("gemini-3.5-flash-lite")) return geminiErr(404, "models/gemini-3.5-flash-lite is not found for API version v1beta");
+      if (u.includes("generativelanguage")) return geminiOk("from backup");
+      return new Response("{}", { status: 200 });
+    });
+    const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    let p = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    expect((await p).text).toBe("from backup");
+
+    fetchSpy.mockClear();
+    p = callLLM({ prompt: "Evaluate again." });
+    await vi.runAllTimersAsync();
+    expect((await p).text).toBe("from backup");
+    expect(geminiModels()).toEqual(["gemini-2.5-flash-lite"]);
+    expect(errSpy.mock.calls.some((c) => String(c[0]).includes("MODEL RETIRED"))).toBe(true);
+    errSpy.mockRestore();
+  });
+
+  it("repointing GEMINI_MODELS clears the bench: the replacement id is not inherited-retired", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      const u = String(url);
+      if (u.includes("gemini-3.5-flash-lite")) return geminiErr(404, "models/gemini-3.5-flash-lite is not found");
+      return u.includes("generativelanguage") ? geminiOk("ok") : new Response("{}", { status: 200 });
+    });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const p = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    await p;
+
+    process.env.GEMINI_MODELS = "gemini-3.6-flash,gemini-2.5-flash-lite";
+    vi.resetModules();
+    // Same isolate memory would be fresh after a redeploy; the replacement id differs from the benched one.
+    callLLM = (await import("../../server-handlers/_llm")).callLLM;
+    fetchSpy.mockClear();
+    const p2 = callLLM({ prompt: "Evaluate." });
+    await vi.runAllTimersAsync();
+    await p2;
+    expect(geminiModels()[0]).toBe("gemini-3.6-flash");
+  });
+});
+
+/* ── Cloudflare Workers AI overflow rung ───────────────────────────── */
+
+describe("cloudflare overflow rung", () => {
+  const ACCOUNT = "0123456789abcdef0123456789abcdef";
+  const cfOk = (t: string) => new Response(JSON.stringify({ choices: [{ message: { content: t } }], usage: { prompt_tokens: 3, completion_tokens: 2, total_tokens: 5 } }), { status: 200 });
+
+  async function load(env: Record<string, string>) {
+    vi.resetModules();
+    Object.assign(process.env, env);
+    return (await import("../../server-handlers/_llm")).callLLM;
+  }
+
+  it("answers from Cloudflare when Gemini and Groq both fail, using the account URL and bearer token", async () => {
+    const call = await load({ CLOUDFLARE_API_TOKEN: "cf-token", CLOUDFLARE_ACCOUNT_ID: ACCOUNT });
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.cloudflare.com")) return cfOk('{"ok":true}');
+      if (String(url).includes("api.groq.com")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiErr(400, "bad request");
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate.", jsonMode: true });
+    expect(result.text).toBe('{"ok":true}');
+    expect(result.model).toBe("cloudflare-@cf/openai/gpt-oss-120b");
+    const cfCall = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.cloudflare.com"));
+    expect(String(cfCall?.[0])).toBe(`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT}/ai/v1/chat/completions`);
+    const init = cfCall?.[1] as { headers: Record<string, string>; body: string };
+    expect(init.headers.Authorization).toBe("Bearer cf-token");
+    expect(JSON.parse(init.body)).not.toHaveProperty("response_format");
+    expect(JSON.parse(init.body).reasoning_effort).toBe("low");
+  });
+
+  it("is left out of the chain when the account id is missing or malformed", async () => {
+    const call = await load({ CLOUDFLARE_API_TOKEN: "cf-token", CLOUDFLARE_ACCOUNT_ID: "../evil" });
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return new Response("bad request", { status: 400 });
+      if (String(url).includes("generativelanguage")) return geminiErr(400, "bad request");
+      return new Response("{}", { status: 200 });
+    });
+    await expect(call({ prompt: "Evaluate." })).rejects.toThrow();
+    expect(fetchSpy.mock.calls.some((a: unknown[]) => String(a[0]).includes("api.cloudflare.com"))).toBe(false);
+  });
+});
+
+/* ── Schema-enforced output ────────────────────────────────────────── */
+
+describe("jsonSchema", () => {
+  const schema = { name: "demo", schema: { type: "object", properties: { a: { type: "number" } }, required: ["a"] } };
+
+  it("sends a json_schema response_format to Groq", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk('{"a":1}');
+      return new Response("{}", { status: 200 });
+    });
+    await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true, jsonSchema: schema });
+    const call = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.groq.com"));
+    const body = JSON.parse(call?.[1]?.body as string);
+    expect(body.response_format.type).toBe("json_schema");
+    expect(body.response_format.json_schema.name).toBe("demo");
+    expect(body.response_format.json_schema.schema).toEqual(schema.schema);
+  });
+
+  it("retries Groq as json_object when the schema is rejected with a 400", async () => {
+    const bodies: Array<{ response_format?: { type: string } }> = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("api.groq.com")) {
+        bodies.push(JSON.parse(init?.body as string));
+        return bodies.length === 1 ? groqErr(400, "schema unsupported") : groqOk('{"a":2}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const result = await callLLM({ prompt: "Return JSON.", jsonMode: true, fast: true, jsonSchema: schema });
+    expect(result.text).toBe('{"a":2}');
+    expect(bodies.map((b) => b.response_format?.type)).toEqual(["json_schema", "json_object"]);
+  });
+
+  it("sends the schema to Gemini and retries without it on a 400", async () => {
+    const bodies: Array<{ generationConfig: Record<string, unknown> }> = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("generativelanguage")) {
+        bodies.push(JSON.parse(init?.body as string));
+        return bodies.length === 1 ? geminiErr(400, "bad schema") : geminiOk('{"a":3}');
+      }
+      return new Response("{}", { status: 200 });
+    });
+    const result = await callLLM({ prompt: "Return JSON.", jsonMode: true, jsonSchema: schema });
+    expect(result.text).toBe('{"a":3}');
+    expect(bodies[0].generationConfig.responseJsonSchema).toEqual(schema.schema);
+    expect(bodies[1].generationConfig.responseJsonSchema).toBeUndefined();
+  });
+
+  it("does not send a schema when jsonMode is off", async () => {
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("api.groq.com")) return groqOk("hi");
+      return new Response("{}", { status: 200 });
+    });
+    await callLLM({ prompt: "Hi.", fast: true, jsonSchema: schema });
+    const call = fetchSpy.mock.calls.find((a: unknown[]) => String(a[0]).includes("api.groq.com"));
+    expect(JSON.parse(call?.[1]?.body as string)).not.toHaveProperty("response_format");
+  });
+});
+
+/* ── Pre-emptive quota skipping ────────────────────────────────────── */
+
+describe("spent-provider skipping", () => {
+  async function loadWithRedis() {
+    vi.resetModules();
+    process.env.UPSTASH_REDIS_REST_URL = "https://redis.test";
+    process.env.UPSTASH_REDIS_REST_TOKEN = "tok";
+    delete process.env.GEMINI_DAILY_CALL_LIMIT;
+    return (await import("../../server-handlers/_llm")).callLLM;
+  }
+
+  afterEach(() => {
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.GEMINI_DAILY_CALL_LIMIT;
+  });
+
+  it("skips Gemini rungs whose daily counter is at the limit and goes straight to Groq", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:g:") ? "500" : null }))), { status: 200 });
+      }
+      if (String(url).includes("api.groq.com")) return groqOk('{"ok":1}');
+      if (String(url).includes("generativelanguage")) throw new Error("Gemini should have been skipped");
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate." });
+    expect(result.text).toBe('{"ok":1}');
+    expect(fetchSpy.mock.calls.some((a: unknown[]) => String(a[0]).includes("generativelanguage"))).toBe(false);
+  });
+
+  it("does not skip a 500/day Flash-Lite rung at 20 calls, only the 20/day rungs", async () => {
+    const call = await loadWithRedis();
+    const hit: string[] = [];
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:g:") ? "20" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) { hit.push(String(url)); return geminiOk('{"ok":5}'); }
+      return new Response("{}", { status: 200 });
+    });
+    await call({ prompt: "Evaluate." });
+    expect(hit).toHaveLength(1);
+    expect(hit[0]).toContain("gemini-3.5-flash-lite");
+  });
+
+  it("never empties the chain: if every provider reads as spent, it still tries them", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:") ? "999999" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":2}');
+      if (String(url).includes("api.groq.com")) return groqOk('{"ok":2}');
+      return new Response("{}", { status: 200 });
+    });
+    const result = await call({ prompt: "Evaluate." });
+    expect(result.text).toBe('{"ok":2}');
+  });
+
+  it("fails open when Redis errors", async () => {
+    const call = await loadWithRedis();
+    fetchSpy.mockImplementation(async (url: string) => {
+      if (String(url).includes("redis.test")) return new Response("boom", { status: 500 });
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":3}');
+      return new Response("{}", { status: 200 });
+    });
+    expect((await call({ prompt: "Evaluate." })).text).toBe('{"ok":3}');
+  });
+
+  it("GEMINI_DAILY_CALL_LIMIT=0 disables the Gemini skip", async () => {
+    const call = await loadWithRedis();
+    process.env.GEMINI_DAILY_CALL_LIMIT = "0";
+    vi.resetModules();
+    const callAgain = (await import("../../server-handlers/_llm")).callLLM;
+    fetchSpy.mockImplementation(async (url: string, init?: { body?: string }) => {
+      if (String(url).includes("redis.test")) {
+        const cmds = JSON.parse(init?.body as string) as string[][];
+        return new Response(JSON.stringify(cmds.map((c) => ({ result: c[1].startsWith("llm_lim:") ? "50" : null }))), { status: 200 });
+      }
+      if (String(url).includes("generativelanguage")) return geminiOk('{"ok":4}');
+      return new Response("{}", { status: 200 });
+    });
+    void call;
+    expect((await callAgain({ prompt: "Evaluate." })).text).toBe('{"ok":4}');
+  });
+});

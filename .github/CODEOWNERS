@@ -1,0 +1,9 @@
+# Default owner. Add a second reviewer here when a collaborator joins, then
+# enable "Require review from Code Owners" in branch protection.
+*                          @jvtravels
+# Money, auth and data-access paths: always review these deliberately.
+/server-handlers/_shared.ts            @jvtravels
+/server-handlers/*razorpay*            @jvtravels
+/supabase-schema.sql                   @jvtravels
+/supabase-migrations/                  @jvtravels
+/.github/workflows/                    @jvtravels

@@ -3,6 +3,7 @@ import {
   getSessionCredits,
   grantSessionCredits,
   consumeSessionCredit,
+  revokeSessionCredits,
 } from "../../server-handlers/_session-credits";
 
 const BASE = "https://proj.supabase.co";
@@ -129,6 +130,36 @@ describe("_session-credits", () => {
     expect(await grantSessionCredits(BASE, KEY, USER, 1, fn, 2)).toBeNull();
   });
 
+  it("retries the RPC on transient 5xx without ever touching the non-atomic fallback", async () => {
+    // This is the race-condition fix. A 5xx from the RPC means the DB is having
+    // a transient issue — NOT that the function is missing. Falling back to the
+    // non-atomic read-then-upsert in this case is what caused credit loss when
+    // the webhook and the client callback both hit the fallback simultaneously
+    // (both read balance=X, both write X+qty, one grant silently clobbered).
+    // The fix: retry the atomic RPC only; never touch the non-atomic path on 5xx.
+    let rpcAttempts = 0;
+    const fn = vi.fn(async (url: string) => {
+      if (url.includes("/rpc/grant_session_credits")) {
+        rpcAttempts++;
+        if (rpcAttempts < 3) return { ok: false, status: 500, json: async () => ({}) } as unknown as Response;
+        return { ok: true, status: 200, json: async () => 7 } as unknown as Response;
+      }
+      // If this line is ever reached, the non-atomic fallback fired — fail the test.
+      throw new Error("non-atomic fallback must not be called for transient RPC errors");
+    }) as unknown as typeof fetch;
+
+    const newBalance = await grantSessionCredits(BASE, KEY, USER, 3, fn, 3);
+    expect(newBalance).toBe(7);
+    expect(rpcAttempts).toBe(3);
+  });
+
+  it("passes paymentId to the RPC for credit ledger traceability", async () => {
+    const { fn, calls } = mockGrantFetch({ rpcOk: true, rpcBalance: 5 });
+    await grantSessionCredits(BASE, KEY, USER, 3, fn, 0, { paymentId: "pay_test123" });
+    const rpcCall = calls.find(c => c.url.includes("/rpc/grant_session_credits"));
+    expect((rpcCall?.body as { p_payment_id?: string })?.p_payment_id).toBe("pay_test123");
+  });
+
   /** Build a fetch mock for the atomic consume RPC: POST /rest/v1/rpc/consume_session_credit
    *  returns a bare boolean (the SQL function result). */
   function mockRpc(opts: { ok?: boolean; result?: unknown }) {
@@ -149,6 +180,7 @@ describe("_session-credits", () => {
     expect(rpc).toBeTruthy();
     expect(rpc!.url).toContain("/rpc/consume_session_credit");
     expect((rpc!.body as { p_user_id: string }).p_user_id).toBe(USER);
+    expect(rpc!.body).toHaveProperty("p_session_id", null);
   });
 
   it("reports no consume when the RPC returns false (zero balance)", async () => {
@@ -159,5 +191,26 @@ describe("_session-credits", () => {
   it("reports failure when the consume RPC call fails", async () => {
     const { fn } = mockRpc({ ok: false, result: null });
     expect(await consumeSessionCredit(BASE, KEY, USER, fn)).toBe(false);
+  });
+
+  /* Refund revocation (B5) — the old refund path PATCHed the long-dropped
+   * `profiles.session_credits` column, so refunded single-session buyers kept
+   * every credit. revokeSessionCredits must instead zero the authoritative
+   * session_credits TABLE via reconcile_session_credits. */
+  it("revokes credits by zeroing the ledger via reconcile_session_credits RPC", async () => {
+    const { fn, calls } = mockRpc({ ok: true, result: 0 });
+    expect(await revokeSessionCredits(BASE, KEY, USER, 0, "refund:pay_abc", fn)).toBe(0);
+    const rpc = calls.find(c => c.method === "POST");
+    expect(rpc).toBeTruthy();
+    expect(rpc!.url).toContain("/rpc/reconcile_session_credits");
+    expect(rpc!.url).not.toContain("/profiles"); // never touches the dead column
+    expect((rpc!.body as { p_user_id: string }).p_user_id).toBe(USER);
+    expect((rpc!.body as { p_correct_balance: number }).p_correct_balance).toBe(0);
+    expect((rpc!.body as { p_note: string }).p_note).toBe("refund:pay_abc");
+  });
+
+  it("returns null when the revoke RPC fails (surfaces the error, no silent no-op)", async () => {
+    const { fn } = mockRpc({ ok: false, result: null });
+    expect(await revokeSessionCredits(BASE, KEY, USER, 0, "refund", fn)).toBeNull();
   });
 });

@@ -109,6 +109,12 @@ export interface NegotiationMetrics {
   /** Info intents the candidate raised — clawback, vest schedule, etc.
    *  Each represents a *good* question they thought to ask. */
   infoAsked: ReadonlyArray<InfoIntent>;
+  /** S13-B9 — the subset of `infoAsked` the candidate raised on their OWN
+   *  initiative (the recruiter did not solicit it on the prior turn). The
+   *  report's "You justified your number" stage keys on THIS, so a
+   *  recruiter-elicited disclosure is not miscredited as candidate-initiated
+   *  justification. Subset of `infoAsked` by construction. */
+  infoAskedInitiated: ReadonlyArray<InfoIntent>;
   /** True if the candidate walked away and returned. Rare and risky;
    *  surfaced separately so the report can call it out. */
   walkAwayReturned: boolean;
@@ -148,6 +154,33 @@ export interface NegotiationMetrics {
   /** Chronological cash offers the recruiter made (LPA), most-recent last.
    *  One entry per cash turn; non-cash lever turns are excluded. */
   offerTrajectoryLpa: ReadonlyArray<number>;
+  /** S3-B2 — hike-justification rationale the candidate used at least once.
+   *  Sourced from `state.rationale.kind` (Phase-11 `_hike-rationale.ts`).
+   *  Absent when the candidate never gave a grounded reason for their ask
+   *  (bare-number counter with no market-data / YOE / scope framing).
+   *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+   *  "scope-expansion" | "specialization" | "col-relocation". */
+  rationaleKind?: string;
+  /** S4S5-B3 — one-time joining bonus the recruiter last offered (LPA).
+   *  Null when no joining bonus was ever offered. Distinct from the
+   *  annual CTC total (`finalOfferLpa`) — persisted separately so the
+   *  report can display "₹X CTC + ₹Y joining bonus" and the
+   *  OfferEconomicsPanel can compute clawback-honest net value. */
+  lastJoiningBonusOffered: number | null;
+  /** S6-B3 — grounded pushback events derived from hold-firm moves in the
+   *  kernel's move history. Each entry represents one turn where the recruiter
+   *  held their position after the candidate had already anchored. Drives the
+   *  "You handled their pushback" stage in derivePhases. Empty when the
+   *  recruiter never pulled a hold-firm lever, or when the candidate never
+   *  stated an ask before the hold-firm. */
+  pushbacks?: ReadonlyArray<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }>;
+  /** OA-B58 — the candidate's current CTC the kernel parsed from their
+   *  utterances (LPA). Null when the candidate never disclosed it during
+   *  the session (common when practising without a real package in mind).
+   *  When null the band falls back to role-average defaults; the report
+   *  surfaces a context note so the candidate understands the simulation
+   *  was not personalised to their actual package. */
+  candidateCurrentCtcLpa: number | null;
 }
 
 /** Compute kernel-aware metrics from final state + move history. Pure. */
@@ -178,7 +211,53 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const offerTrajectoryLpa = moves
     .map((m) => m.newTotalLpa)
     .filter((n): n is number => n != null);
-  const candidateAskLpa = effectiveTargetCtcLpaLocal(finalState);
+  /* S12-B26: candidateAskLpa must reflect the candidate's ORIGINAL counter-ask
+   * (the anchor), not the final conceded candidateTarget. When the candidate
+   * first countered at 60 then accepted the recruiter's 56 ("let's close at 56"),
+   * candidateTarget ends at 56 but firstAnchoredTarget stays 60. The report tile
+   * "You countered at X" and gap-closure % should use the anchor, not the
+   * concession. firstAnchoredTarget is set with first-wins semantics in the
+   * kernel and never mutated after it is written — it is always the original ask.
+   * Fallback to effectiveTargetCtcLpaLocal for sessions where the kernel
+   * pre-dates the firstAnchoredTarget field (null → legacy row).
+   *
+   * S42-B8 / S43-B7 (2026-07-23): Discovery-target contamination guard.
+   * A candidate who states "I want ₹55L" in the opening discovery exchange and
+   * then later accepts (or walks from) the recruiter's ₹48L offer without ever
+   * explicitly countering should see candidateAsk=null in the report — they did
+   * not "counter at ₹55L", they disclosed a discovery target. The new
+   * `firstCounterVsOffer` kernel field (set ONLY when highestOfferMade>0 at the
+   * time the counter is stated) is authoritative for this discrimination.
+   *
+   * Three-tier resolution when offers were made:
+   *   1. firstCounterVsOffer if present on the row (new sessions post-fix)
+   *   2. Legacy heuristic: firstAnchoredTarget > min(trajectory) signals the
+   *      candidate pushed above the opening offer — likely a real counter, not
+   *      just a discovery target already met by the offer. Covers legacy rows
+   *      that pre-date firstCounterVsOffer.
+   *   3. null — discovery-only disclosure, show no "YOUR ASK" tile.
+   * When NO offer was ever made the candidate's stated target IS their ask (a
+   * proactive anchor), so we fall through to the original firstAnchoredTarget
+   * chain (unchanged behaviour for pre-offer-walk-away sessions). */
+  const hasOffers = offerTrajectoryLpa.length > 0;
+  let candidateAskLpa: number | null;
+  if (hasOffers) {
+    if (finalState.lastCounterVsOffer !== undefined || finalState.firstCounterVsOffer !== undefined) {
+      /* New row (post S43-B8 fix): lastCounterVsOffer is the final explicit
+       * counter vs the offer (last-wins); fall back to firstCounterVsOffer
+       * for rows written between S42-B8 and S43-B8 that lack the new field. */
+      candidateAskLpa = finalState.lastCounterVsOffer ?? finalState.firstCounterVsOffer ?? null;
+    } else {
+      /* Legacy row: use firstAnchoredTarget only when it exceeds the opening
+       * offer, meaning the candidate genuinely pushed above what was offered. */
+      const openingOffer = offerTrajectoryLpa[0];
+      const fat = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
+      candidateAskLpa = (fat != null && fat > openingOffer) ? fat : null;
+    }
+  } else {
+    /* No offer made — candidate's stated target is their proactive anchor. */
+    candidateAskLpa = finalState.firstAnchoredTarget ?? effectiveTargetCtcLpaLocal(finalState);
+  }
 
   /* The recruiter's realized top offer — the SINGLE source of truth for every
      concession-derived metric below (final offer, LPA gained, band traversal).
@@ -215,7 +294,7 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
   const recruiterFirstOfferLpa = offerTrajectoryLpa.length > 0
     ? offerTrajectoryLpa[0]
     : band.initialOffer;
-  const lpaGained = Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa);
+  const lpaGained = Math.round(Math.max(0, recruiterTopOfferLpa - recruiterFirstOfferLpa) * 10) / 10;
   const cashTurns = moves.filter((m) => m.newTotalLpa != null).length;
   const lpaPerTurn = cashTurns > 0 ? Math.round((lpaGained / cashTurns) * 100) / 100 : 0;
 
@@ -244,15 +323,49 @@ export function computeNegotiationMetrics(input: NegotiationMetricsInput): Negot
     totalTurns: moves.length,
     vossTacticsUsed: [...(finalState.vossTacticsUsed ?? [])],
     infoAsked: [...(finalState.infoAsked ?? [])],
+    infoAskedInitiated: [...(finalState.infoAskedInitiated ?? [])],
     walkAwayReturned: finalState.walkAwayReturned ?? false,
     hardBandCap: finalState.hardBandCap ?? false,
     marketMode: finalState.marketMode ?? "neutral",
     recruiterCritique: critiqueRecruiterStrategy({ finalState, moves }),
     pivotalTurn: analyzePivotalTurn({ finalState, moves }),
-    initialOfferLpa: band.initialOffer,
+    /* S2-B10: store the actual first offer the recruiter stated, not the band
+       floor. When the recruiter opens at the ceiling the report previously
+       showed ₹35.8 as "INITIAL OFFER" even though that was the final value.
+       recruiterFirstOfferLpa falls back to band.initialOffer when the
+       trajectory is empty, so the pure-accept path is unchanged. */
+    initialOfferLpa: recruiterFirstOfferLpa,
     finalOfferLpa: recruiterTopOfferLpa,
     candidateAskLpa,
     offerTrajectoryLpa,
+    lastJoiningBonusOffered:
+      typeof finalState.lastJoiningBonusOffered === "number" &&
+      finalState.lastJoiningBonusOffered > 0
+        ? finalState.lastJoiningBonusOffered
+        : null,
+    ...(finalState.rationale?.kind ? { rationaleKind: finalState.rationale.kind } : {}),
+    candidateCurrentCtcLpa: finalState.candidateCurrentCtc ?? null,
+    /* S6-B3 — grounded pushback events from the kernel's move log.
+       A hold-firm turn where the candidate had already anchored
+       (candidateTargetAtTurn !== null) is definitionally a pushback
+       the candidate faced and continued through. Classified "held"
+       unconditionally: the kernel's own record shows the candidate
+       was still in the session after the hold-firm (they didn't
+       immediately accept), so they held their position at that moment.
+       Voss-tactic deflection upgrading isn't possible per-turn without
+       candidate-turn data; the "deflected" variant is reserved for
+       a future per-turn classifier. */
+    ...(candidateAskLpa !== null && moves.some(m => m.lever === "hold-firm" && m.candidateTargetAtTurn !== null)
+      ? {
+          pushbacks: moves
+            .filter(m => m.lever === "hold-firm" && m.candidateTargetAtTurn !== null)
+            .map(m => ({
+              pushback: "hold-firm",
+              outcome: "held" as const,
+              detail: `Recruiter held at turn ${m.turnIndex + 1}`,
+            })),
+        }
+      : {}),
   };
 }
 

@@ -13,12 +13,13 @@ import {
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, title, para, button, dataCard } from "./_email-theme";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -30,6 +31,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!origin) return res.status(403).json({ error: "Forbidden" });
 
   // Rate limit: 5 reactivation attempts per IP per minute
+  // This handler is Node runtime (VercelRequest), but getClientIp is shared with edge
+  // handlers and typed against the standard Request; both expose the same .headers reads.
   const clientIp = getClientIp(req as unknown as Request);
   const corsHeaders = { "Access-Control-Allow-Origin": origin };
   if (await isRateLimited(clientIp, "reactivate-subscription", 5, 60)) {
@@ -84,7 +87,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Re-activate on Razorpay if we have a subscription ID
     if (subscriptionId && RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+      const auth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
       try {
         // Step 1: fetch current subscription status from Razorpay
         const statusRes = await fetch(`https://api.razorpay.com/v1/subscriptions/${subscriptionId}`, {

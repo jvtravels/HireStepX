@@ -1,4 +1,3 @@
-import type { TempoPage, TempoStoryboard } from 'tempo-sdk';
 import CanvasProviders from "../../../CanvasProviders";
 import InterviewResult, {
   DEFAULT_RESULT,
@@ -6,27 +5,18 @@ import InterviewResult, {
   type AnswerSpan,
   type Question,
 } from './InterviewResult';
-
-const page: TempoPage = {
-  name: "Interview result",
-};
-
-export default page;
+import { Canvas, Storyboard as TempoCanvasStoryboard } from "tempo-sdk/canvas";
 
 /* Interview result canvas — best-in-class post-session feedback surface.
    Four storyboards demonstrate how the visual system + verdict + tile
    bands adapt across performance bands without changing structure:
    the report shape stays constant; colour-coding does the lifting. */
 
-export const InterviewResultHire: TempoStoryboard = {
-  render: () => (
+const InterviewResultHire = () => (
     <CanvasProviders>
       <InterviewResult />
     </CanvasProviders>
-  ),
-  name: "1. Hire — score 72",
-  layout: { x: 0, y: 0, width: 1440, height: 3522 },
-};
+  );
 
 const LEAN_HIRE: InterviewResultData = {
   ...DEFAULT_RESULT,
@@ -60,15 +50,11 @@ const LEAN_HIRE: InterviewResultData = {
   ],
 };
 
-export const InterviewResultLeanHire: TempoStoryboard = {
-  render: () => (
+const InterviewResultLeanHire = () => (
     <CanvasProviders>
       <InterviewResult data={LEAN_HIRE} />
     </CanvasProviders>
-  ),
-  name: "2. Lean Hire — score 58",
-  layout: { x: 1490, y: 0, width: 1440, height: 3351 },
-};
+  );
 
 const STRONG_HIRE: InterviewResultData = {
   ...DEFAULT_RESULT,
@@ -120,15 +106,11 @@ const STRONG_HIRE: InterviewResultData = {
   ],
 };
 
-export const InterviewResultStrongHire: TempoStoryboard = {
-  render: () => (
+const InterviewResultStrongHire = () => (
     <CanvasProviders>
       <InterviewResult data={STRONG_HIRE} />
     </CanvasProviders>
-  ),
-  name: "3. Strong Hire — score 89",
-  layout: { x: 0, y: 3050, width: 1440, height: 3379 },
-};
+  );
 
 const NO_HIRE: InterviewResultData = {
   ...DEFAULT_RESULT,
@@ -166,15 +148,11 @@ const NO_HIRE: InterviewResultData = {
   },
 };
 
-export const InterviewResultNoHire: TempoStoryboard = {
-  render: () => (
+const InterviewResultNoHire = () => (
     <CanvasProviders>
       <InterviewResult data={NO_HIRE} />
     </CanvasProviders>
-  ),
-  name: "4. No Hire — score 38",
-  layout: { x: 1490, y: 3050, width: 1440, height: 3359 },
-};
+  );
 
 /* ── Salary-negotiation context ──────────────────────────────────────
    The negotiation interview type has a separate evaluation rubric in
@@ -226,15 +204,11 @@ const NEGOTIATION: InterviewResultData = {
   },
 };
 
-export const InterviewResultNegotiation: TempoStoryboard = {
-  render: () => (
+const InterviewResultNegotiation = () => (
     <CanvasProviders>
       <InterviewResult data={NEGOTIATION} />
     </CanvasProviders>
-  ),
-  name: "5. Salary negotiation — score 64",
-  layout: { x: 0, y: 6100, width: 1440, height: 3437 },
-};
+  );
 
 /* ── Graceful degradation: first-session, missing optional fields ──
    Real signal that the report holds up when the optional fields the
@@ -270,15 +244,11 @@ const FIRST_SESSION_PARTIAL: InterviewResultData = {
   readinessSentence: undefined,
 };
 
-export const InterviewResultFirstSession: TempoStoryboard = {
-  render: () => (
+const InterviewResultFirstSession = () => (
     <CanvasProviders>
       <InterviewResult data={FIRST_SESSION_PARTIAL} />
     </CanvasProviders>
-  ),
-  name: "6. First session — partial data (graceful degrade)",
-  layout: { x: 1490, y: 6100, width: 1440, height: 3000 },
-};
+  );
 
 /* ── Long session (10 questions) — triggers progressive disclosure ──
    Pro users on Panel + Strategy tracks see 10+ questions per session.
@@ -318,12 +288,57 @@ const LONG_SESSION: InterviewResultData = {
   questions: LONG_SESSION_QUESTIONS,
 };
 
-export const InterviewResultLongSession: TempoStoryboard = {
-  render: () => (
+const InterviewResultLongSession = () => (
     <CanvasProviders>
       <InterviewResult data={LONG_SESSION} />
     </CanvasProviders>
-  ),
-  name: "7. Long session — 10 questions (progressive disclosure)",
-  layout: { x: 0, y: 9150, width: 1440, height: 3229 },
-};
+  );
+
+export default function InterviewResultCanvas() {
+  return (
+    <Canvas name="Interview result">
+      <TempoCanvasStoryboard
+        id="InterviewResultHire"
+        name="1. Hire — score 72"
+        component={InterviewResultHire}
+        layout={{ x: 0, y: 0, width: 1440, height: 3522 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultLeanHire"
+        name="2. Lean Hire — score 58"
+        component={InterviewResultLeanHire}
+        layout={{ x: 1490, y: 0, width: 1440, height: 3351 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultStrongHire"
+        name="3. Strong Hire — score 89"
+        component={InterviewResultStrongHire}
+        layout={{ x: 0, y: 3050, width: 1440, height: 3379 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultNoHire"
+        name="4. No Hire — score 38"
+        component={InterviewResultNoHire}
+        layout={{ x: 1490, y: 3050, width: 1440, height: 3359 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultNegotiation"
+        name="5. Salary negotiation — score 64"
+        component={InterviewResultNegotiation}
+        layout={{ x: 0, y: 6100, width: 1440, height: 3437 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultFirstSession"
+        name="6. First session — partial data (graceful degrade)"
+        component={InterviewResultFirstSession}
+        layout={{ x: 1490, y: 6100, width: 1440, height: 3000 }}
+      />
+      <TempoCanvasStoryboard
+        id="InterviewResultLongSession"
+        name="7. Long session — 10 questions (progressive disclosure)"
+        component={InterviewResultLongSession}
+        layout={{ x: 0, y: 9150, width: 1440, height: 3229 }}
+      />
+    </Canvas>
+  );
+}

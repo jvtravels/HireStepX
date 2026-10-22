@@ -28,7 +28,8 @@ function makeUser(overrides: Record<string, unknown> = {}) {
     industry: "fintech",
     resumeFileName: undefined as string | undefined,
     resumeData: undefined as
-      | { experience?: { title: string; company?: string }[] }
+      | { _type: "fallback"; experience?: { title: string; company?: string }[] }
+      | { _type: "ai"; headline?: string }
       | undefined,
     learningStyle: undefined as string | undefined,
     ...overrides,
@@ -42,8 +43,11 @@ describe("getMiniScript", () => {
     "returns correct steps (intro, questions, closing) for type=%s",
     (type) => {
       const steps = getMiniScript(null, undefined, type);
-      // Salary-negotiation gets 5 questions (longer arc), others get 3
-      const expectedQuestions = type === "salary-negotiation" ? 5 : 3;
+      // Salary-negotiation gets 5 questions (longer arc); hr-round's
+      // 8-dimension Indian HR gate needs 7 (see interviewScripts.test.ts in
+      // src/__tests__ for the dedicated hr-round regression); others get 3.
+      const expectedQuestions =
+        type === "salary-negotiation" ? 5 : type === "hr-round" ? 7 : 3;
       expect(steps).toHaveLength(expectedQuestions + 2); // +2 for intro + closing
       expect(steps[0].type).toBe("intro");
       for (let i = 1; i <= expectedQuestions; i++) {
@@ -216,8 +220,21 @@ describe("getScript", () => {
     expect(script[0].aiText).toContain("fintech");
   });
 
-  it("includes resume context when user has resume", () => {
+  it("omits the resume-personalization promise when no parseable resume data is available", () => {
+    // A filename alone (no resumeData) carries no title/headline to draw
+    // from, so the "I'll reference your background" promise must not fire —
+    // the question swap it would promise has nothing to swap in. See the
+    // honesty-gating note in interviewScripts.ts getScript.
     const user = makeUser({ resumeFileName: "resume.pdf" });
+    const script = getScript("behavioral", null, user);
+    expect(script[0].aiText).not.toContain("resume");
+  });
+
+  it("includes resume context when an AI-parsed resume has a headline", () => {
+    const user = makeUser({
+      resumeFileName: "resume.pdf",
+      resumeData: { _type: "ai", headline: "Senior Product Designer with 5+ years in B2B SaaS" },
+    });
     const script = getScript("behavioral", null, user);
     expect(script[0].aiText).toContain("resume");
   });

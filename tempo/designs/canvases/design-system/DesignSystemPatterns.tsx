@@ -2,8 +2,9 @@
    Full UI flows applied. Auth, score reveal, onboarding, empty,
    loading, error recovery — composed from color, type, components. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, radius, type } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 /* Mockup frame — visually represents an app screen */
 function ScreenFrame({
   title,
@@ -22,7 +23,7 @@ function ScreenFrame({
           marginTop: 12,
           background: t.cream,
           border: `1px solid ${t.line}`,
-          borderRadius: 14,
+          borderRadius: radius.lg,
           height,
           overflow: "hidden",
           boxShadow: shadows.card,
@@ -56,8 +57,7 @@ export default function DesignSystemPatterns() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -69,43 +69,18 @@ export default function DesignSystemPatterns() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Patterns, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>composition</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            The system applied. Auth flows, score reveals, onboarding,
-            dashboards, empty states — all composed from color, typography,
-            foundations, motion, and components. Nothing new.
-          </p>
-        </header>
+        {/* PAGE HEADER */}
+        <PageHeader
+          title="Patterns, by composition."
+          description="The system applied. Auth flows, score reveals, onboarding, dashboards, empty states — all composed from color, typography, foundations, motion, and components. Nothing new."
+        />
 
         {/* 01 — AUTH PATTERN */}
         <section style={{ marginBottom: 80 }}>
           <SectionHead
             num="01"
             title="Auth screen"
-            desc="The canonical pattern. Hero with italic accent. Single primary CTA. Trust footer."
+            desc="The canonical pattern. Compact header, single primary CTA in copper, trust footer."
           />
           <ScreenFrame title="Login" height={620}>
             <div
@@ -139,7 +114,7 @@ export default function DesignSystemPatterns() {
                 }}
               >
                 Don't have an account?{" "}
-                <a style={{ color: t.indigo, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${t.indigo}` }}>
+                <a style={{ color: t.copper, fontWeight: 500, textDecoration: "none", borderBottom: `1px solid ${t.copper}` }}>
                   Sign up
                 </a>
               </div>
@@ -147,23 +122,20 @@ export default function DesignSystemPatterns() {
                 <h2
                   style={{
                     fontFamily: f.serif,
-                    fontSize: 44,
-                    fontWeight: 400,
-                    letterSpacing: "-0.02em",
-                    lineHeight: 1.05,
+                    fontSize: type.h2.size,
+                    fontWeight: type.h2.weight,
+                    letterSpacing: type.h2.letterSpacing,
+                    lineHeight: type.h2.lineHeight,
+                    color: t.coal,
                     textAlign: "center",
                     margin: "0 0 16px",
                   }}
                 >
-                  Clarity{" "}
-                  <em style={{ fontStyle: "italic", fontWeight: 500, color: t.copper }}>
-                    wins
-                  </em>{" "}
-                  interviews.
+                  Clarity wins interviews.
                 </h2>
                 <p
                   style={{
-                    color: t.indigoGray,
+                    color: t.inkMuted,
                     fontSize: 13,
                     textAlign: "center",
                     margin: "0 0 28px",
@@ -179,7 +151,7 @@ export default function DesignSystemPatterns() {
                     background: t.white,
                     border: `1px solid ${t.lineStrong}`,
                     padding: "12px 20px",
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontSize: 14,
                     fontWeight: 500,
                     cursor: "pointer",
@@ -218,7 +190,7 @@ export default function DesignSystemPatterns() {
                     width: "100%",
                     padding: "11px 14px",
                     border: `1px solid ${t.lineStrong}`,
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontFamily: f.sans,
                     fontSize: 14,
                     marginBottom: 14,
@@ -241,7 +213,7 @@ export default function DesignSystemPatterns() {
                     width: "100%",
                     padding: "11px 14px",
                     border: `1px solid ${t.lineStrong}`,
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontFamily: f.sans,
                     fontSize: 14,
                     marginBottom: 18,
@@ -250,16 +222,16 @@ export default function DesignSystemPatterns() {
                 <button
                   style={{
                     width: "100%",
-                    background: t.indigo,
+                    background: t.copper,
                     color: t.white,
                     border: "none",
                     padding: "13px 22px",
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: "pointer",
                     fontFamily: f.sans,
-                    boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                    boxShadow: shadows.cta,
                   }}
                 >
                   Continue to practise →
@@ -269,9 +241,9 @@ export default function DesignSystemPatterns() {
           </ScreenFrame>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
             <b style={{ color: t.coal, fontWeight: 600 }}>Anatomy:</b> wordmark
-            top-left · context CTA top-right · centered hero with one italic
-            accent word · social-first auth · email/password fallback · single
-            indigo primary CTA at the bottom of the form.
+            top-left · context link top-right · compact centered header ·
+            social-first auth · email/password fallback · single primary CTA,
+            the only copper element on the screen, at the bottom of the form.
           </p>
         </section>
 
@@ -380,7 +352,7 @@ export default function DesignSystemPatterns() {
               </p>
               <p
                 style={{
-                  color: t.indigoGray,
+                  color: t.inkMuted,
                   fontSize: 13,
                   margin: "0 0 28px",
                   textAlign: "center",
@@ -393,16 +365,16 @@ export default function DesignSystemPatterns() {
               </p>
               <button
                 style={{
-                  background: t.indigo,
+                  background: t.coal,
                   color: t.white,
                   border: "none",
                   padding: "13px 28px",
-                  borderRadius: 10,
+                  borderRadius: radius.lg,
                   fontSize: 14,
                   fontWeight: 600,
                   cursor: "pointer",
                   fontFamily: f.sans,
-                  boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
+                  boxShadow: shadows.cta,
                 }}
               >
                 Practice your weakest area →
@@ -412,8 +384,10 @@ export default function DesignSystemPatterns() {
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
             <b style={{ color: t.coal, fontWeight: 600 }}>Anatomy:</b> success
             tag (green) confirms what just happened · mono-caps eyebrow · arc
-            draws from 0 → 62 with copper · serif headline reframes the score
-            positively · ONE primary action with a specific, rooted next step.
+            draws from 0 → 62 with copper — the one accent-colored moment on
+            this screen · headline reframes the score positively · the
+            forward-action button stays neutral ink, since the score already
+            owns the accent color here.
           </p>
         </section>
 
@@ -438,19 +412,18 @@ export default function DesignSystemPatterns() {
                   <p
                     style={{
                       fontFamily: f.serif,
-                      fontSize: 28,
-                      fontWeight: 400,
-                      letterSpacing: "-0.01em",
+                      fontSize: type.h2.size,
+                      fontWeight: type.h2.weight,
+                      letterSpacing: type.h2.letterSpacing,
                       margin: 0,
                       color: t.coal,
                     }}
                   >
-                    Good morning,{" "}
-                    <em style={{ fontStyle: "italic", color: t.copper }}>Jay</em>.
+                    Good morning, Jay.
                   </p>
                   <p
                     style={{
-                      color: t.indigoGray,
+                      color: t.inkMuted,
                       fontSize: 14,
                       margin: "6px 0 0",
                     }}
@@ -496,7 +469,7 @@ export default function DesignSystemPatterns() {
                     style={{
                       background: t.white,
                       border: `1px solid ${t.line}`,
-                      borderRadius: 10,
+                      borderRadius: radius.lg,
                       padding: 14,
                     }}
                   >
@@ -504,11 +477,11 @@ export default function DesignSystemPatterns() {
                     <div
                       style={{
                         fontFamily: f.serif,
-                        fontSize: 28,
-                        fontWeight: 500,
-                        color: t.copper,
+                        fontSize: type.h2.size,
+                        fontWeight: 600,
+                        color: t.coal,
                         marginTop: 4,
-                        letterSpacing: "-0.02em",
+                        letterSpacing: type.h2.letterSpacing,
                       }}
                     >
                       {kpi.val}
@@ -520,12 +493,13 @@ export default function DesignSystemPatterns() {
                 ))}
               </div>
 
-              {/* CTA card */}
+              {/* CTA card — the one accent-colored moment on this screen lives
+                  on the button, not the card. Card stays neutral-dark. */}
               <div
                 style={{
-                  background: t.indigo,
+                  background: t.coal,
                   color: t.white,
-                  borderRadius: 14,
+                  borderRadius: radius.lg,
                   padding: 24,
                   display: "flex",
                   justifyContent: "space-between",
@@ -537,10 +511,10 @@ export default function DesignSystemPatterns() {
                   <h3
                     style={{
                       fontFamily: f.serif,
-                      fontSize: 22,
-                      fontWeight: 400,
+                      fontSize: type.h3.size,
+                      fontWeight: type.h3.weight,
                       margin: "8px 0 4px",
-                      letterSpacing: "-0.01em",
+                      color: t.white,
                     }}
                   >
                     Practice salary negotiation
@@ -557,11 +531,11 @@ export default function DesignSystemPatterns() {
                 </div>
                 <button
                   style={{
-                    background: t.white,
-                    color: t.indigo,
+                    background: t.copper,
+                    color: t.white,
                     border: "none",
                     padding: "11px 20px",
-                    borderRadius: 10,
+                    borderRadius: radius.lg,
                     fontSize: 13,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -574,10 +548,11 @@ export default function DesignSystemPatterns() {
             </div>
           </ScreenFrame>
           <p style={{ marginTop: 16, fontSize: 13, color: t.inkSoft, lineHeight: 1.6 }}>
-            <b style={{ color: t.coal, fontWeight: 600 }}>Anatomy:</b> warm
-            greeting with italic name · KPI row with copper numerals · indigo
-            "next move" card that prescribes ONE specific action. Not a menu —
-            a recommendation.
+            <b style={{ color: t.coal, fontWeight: 600 }}>Anatomy:</b> plain
+            neutral greeting · KPI row in neutral ink, not accent color — four
+            numbers can't all be "the" accent · dark "next move" card with a
+            single copper button that prescribes ONE specific action. Not a
+            menu — a recommendation.
           </p>
         </section>
 
@@ -594,7 +569,7 @@ export default function DesignSystemPatterns() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "48px 28px",
                 textAlign: "center",
                 boxShadow: shadows.card,
@@ -630,16 +605,16 @@ export default function DesignSystemPatterns() {
               >
                 No interviews yet.
               </p>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: "0 0 16px", lineHeight: 1.55 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, margin: "0 0 16px", lineHeight: 1.55 }}>
                 Run your first one in 90 seconds.
               </p>
               <button
                 style={{
-                  background: t.indigo,
+                  background: t.copper,
                   color: t.white,
                   border: "none",
                   padding: "10px 18px",
-                  borderRadius: 8,
+                  borderRadius: radius.md,
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -655,7 +630,7 @@ export default function DesignSystemPatterns() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "32px 28px",
                 boxShadow: shadows.card,
               }}
@@ -669,7 +644,7 @@ export default function DesignSystemPatterns() {
                       height: 14,
                       width: `${w}%`,
                       background: t.creamSoft,
-                      borderRadius: 6,
+                      borderRadius: radius.sm,
                       marginBottom: 10,
                       animation: `pulse 1.4s ease-in-out infinite`,
                       animationDelay: `${i * 0.1}s`,
@@ -701,7 +676,7 @@ export default function DesignSystemPatterns() {
               style={{
                 background: t.white,
                 border: `1px solid ${t.line}`,
-                borderRadius: 14,
+                borderRadius: radius.lg,
                 padding: "48px 28px",
                 textAlign: "center",
                 boxShadow: shadows.card,
@@ -736,16 +711,16 @@ export default function DesignSystemPatterns() {
               >
                 Connection dropped.
               </p>
-              <p style={{ fontSize: 13, color: t.indigoGray, margin: "0 0 16px", lineHeight: 1.55 }}>
+              <p style={{ fontSize: 13, color: t.inkMuted, margin: "0 0 16px", lineHeight: 1.55 }}>
                 Your answers are saved. Reconnect to continue.
               </p>
               <button
                 style={{
-                  background: t.indigo,
+                  background: t.copper,
                   color: t.white,
                   border: "none",
                   padding: "10px 18px",
-                  borderRadius: 8,
+                  borderRadius: radius.md,
                   fontSize: 13,
                   fontWeight: 500,
                   cursor: "pointer",
@@ -768,13 +743,13 @@ export default function DesignSystemPatterns() {
           <SectionHead
             num="05"
             title="Pattern principles"
-            desc="Five rules that govern composition. Apply to every screen you ship."
+            desc="The rules that govern composition. Apply to every screen you ship."
           />
           <div
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -783,11 +758,7 @@ export default function DesignSystemPatterns() {
               {[
                 {
                   k: "One primary action",
-                  v: "Every screen has exactly one indigo CTA. Two means a tie — users freeze. Tie-break in design, not at runtime.",
-                },
-                {
-                  k: "One copper moment",
-                  v: "The italic accent word OR the score numeral. Never both. Pick the one that defines this screen.",
+                  v: "Every screen has exactly one clear primary action, always rendered in the accent color — the CTA button, or the score numeral where there's no button to press. Two accent-colored elements read as a tie; users freeze. Resolve it in design, not at runtime.",
                 },
                 {
                   k: "Trust at the foot",
@@ -795,7 +766,7 @@ export default function DesignSystemPatterns() {
                 },
                 {
                   k: "Read top-down",
-                  v: "Important > supporting > drill-down. Page hierarchy is a Z, not a grid. The eye path is editorial, not catalog.",
+                  v: "Important information first, supporting context next, drill-down last. Page hierarchy reads top to bottom — not a grid of equal-weight blocks.",
                 },
                 {
                   k: "Empty states sell",
@@ -816,7 +787,7 @@ export default function DesignSystemPatterns() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>
@@ -824,7 +795,7 @@ export default function DesignSystemPatterns() {
         </section>
 
         {/* FOOTER */}
-        <Footer section="Section" tagline="One primary action. One copper moment. Trust at the foot." />
+        <Footer section="Section" tagline="One primary action, always in copper. Trust at the foot." />
       </div>
     </>
   );

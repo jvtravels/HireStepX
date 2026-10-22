@@ -5,16 +5,18 @@
  * verify-payment.ts on successful payment.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
 
 interface PaymentIntent {
   userId: string;
@@ -57,13 +59,29 @@ async function redisDel(key: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
-function buildEmail(intent: PaymentIntent): { subject: string; html: string } {
+/* Claim before sending: SET NX so two overlapping cron runs can't both email the same intent.
+   The claim outlives a run (10 min) and is released when the send fails so the next run retries. */
+const CLAIM_TTL_SECONDS = 600;
+async function redisClaim(key: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${UPSTASH_URL}/SET/${encodeURIComponent(`claim:${key}`)}/1/NX/EX/${CLAIM_TTL_SECONDS}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.result === "OK";
+  } catch { return false; }
+}
+
+function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subject: string; html: string } {
   const safePlan = escapeHtml(intent.planName);
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
     subject: "You're one step away from Pro",
     html: emailShell({
+      footer,
       preview: "Your checkout is still open. Finish whenever you're ready.",
       body:
         title("One step", { accentWord: "away." }) +
@@ -80,23 +98,20 @@ function buildEmail(intent: PaymentIntent): { subject: string; html: string } {
 
 async function sendEmail(intent: PaymentIntent): Promise<boolean> {
   if (!RESEND_API_KEY) return false;
-  const { subject, html } = buildEmail(intent);
+  const parts = await marketingEmailParts(intent.userId, "marketing");
+  const { subject, html } = buildEmail(intent, parts.footer);
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM_EMAIL, to: [intent.email], subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: [intent.email], subject, html, ...parts.resend }),
     });
     return res.ok;
   } catch { return false; }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Auth: Vercel Cron or CRON_SECRET header
-  const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -128,11 +143,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (age < MIN_AGE_MS) { skipped++; continue; } // too fresh
         if (age > MAX_AGE_MS) { await redisDel(key); skipped++; continue; } // stale — forget
         if (!intent.email) { await redisDel(key); continue; }
+        // Left in place (not deleted) when suppressed: a transient lookup failure must not lose the intent.
+        if (await isSuppressed(preferenceDepsFromEnv(), intent.userId, "marketing")) { skipped++; continue; }
+        if (!(await redisClaim(key))) { skipped++; continue; }
         const ok = await sendEmail(intent);
-        if (ok) { sent++; await redisDel(key); }
+        if (ok) { sent++; await redisDel(key); } else { await redisDel(`claim:${key}`); }
       }
       if (cursor === "0") break; // SCAN finished
     }
+    await recordCronResult("send-abandonment-emails", { errors: 0 });
     return res.status(200).json({ sent, skipped, scanned });
   } catch (err) {
     console.error("[send-abandonment-emails] Error:", err);

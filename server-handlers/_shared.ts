@@ -3,13 +3,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { consumeSessionCredit } from "./_session-credits";
 import { verifyJwtLocally, importEs256VerifyKey } from "./_jwt-verify";
+import { after } from "next/server";
 
 declare const process: { env: Record<string, string | undefined> };
 
 /* ─── Plan Limits (single source of truth for backend) ─── */
 const FREE_SESSION_LIMIT = 2;
 const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
-const PRO_MONTHLY_LIMIT = 40;
 
 /** Timeout for Supabase auth/profile verification requests (ms) */
 const SUPABASE_TIMEOUT_MS = 5000;
@@ -33,14 +33,23 @@ export function getAllowedOrigin(req: Request): string {
   return getAllowedOriginFromString(origin);
 }
 
+function buildMethodList(opts?: { allowGet?: boolean; allowPatch?: boolean }): string {
+  const methods = ["POST"];
+  if (opts?.allowGet) methods.push("GET");
+  if (opts?.allowPatch) methods.push("PATCH");
+  methods.push("OPTIONS");
+  return methods.join(", ");
+}
+
 /** Build CORS response headers for an Edge Function request.
  *
  * Pass `allowGet: true` for endpoints that accept GET requests (e.g. credit-
- * balance) so the Allow-Methods header matches the actual method list.
- * Omitting it (or passing false) keeps the default POST-only list. */
-export function corsHeaders(req: Request, opts?: { allowGet?: boolean }): Record<string, string> {
+ * balance) and/or `allowPatch: true` for endpoints that accept PATCH (e.g.
+ * an in-place edit) so the Allow-Methods header matches the actual method
+ * list. Omitting both keeps the default POST-only list. */
+export function corsHeaders(req: Request, opts?: { allowGet?: boolean; allowPatch?: boolean }): Record<string, string> {
   const origin = getAllowedOrigin(req);
-  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
+  const methodList = buildMethodList(opts);
   if (!origin) return { "Content-Type": "application/json" };
   return {
     "Content-Type": "application/json",
@@ -52,8 +61,8 @@ export function corsHeaders(req: Request, opts?: { allowGet?: boolean }): Record
 }
 
 /** Handle OPTIONS preflight and reject disallowed methods. Returns Response if handled, null if should continue. */
-export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: boolean }): Response | null {
-  const methodList = opts?.allowGet ? "GET, POST, OPTIONS" : "POST, OPTIONS";
+export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: boolean; allowPatch?: boolean }): Response | null {
+  const methodList = buildMethodList(opts);
   if (req.method === "OPTIONS") {
     const origin = getAllowedOrigin(req);
     return new Response(null, {
@@ -68,7 +77,9 @@ export function handleCorsPreflightOrMethod(req: Request, opts?: { allowGet?: bo
         : {},
     });
   }
-  const allowed = req.method === "POST" || (opts?.allowGet === true && req.method === "GET");
+  const allowed = req.method === "POST"
+    || (opts?.allowGet === true && req.method === "GET")
+    || (opts?.allowPatch === true && req.method === "PATCH");
   if (!allowed) {
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -321,7 +332,7 @@ export async function checkSessionLimit(
           let tier = retryProfiles[0].subscription_tier || "free";
           const subEnd = retryProfiles[0].subscription_end;
           if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
-          if (tier === "team" || tier === "pro" || tier === "starter") return { allowed: true };
+          if (tier === "team" || tier === "starter") return { allowed: true };
           return { allowed: true }; // fail-open for free on transient error
         } catch {
           const failClosed = process.env.SESSION_LIMIT_FAIL_CLOSED === "1";
@@ -343,42 +354,6 @@ export async function checkSessionLimit(
     }
 
     if (tier === "team") { clearTimeout(timer); return { allowed: true }; }
-
-    if (tier === "pro") {
-      // Pro: 40 sessions per month
-      const now2 = new Date();
-      const monthStart = new Date(Date.UTC(now2.getUTCFullYear(), now2.getUTCMonth(), 1));
-      const monthISO = monthStart.toISOString();
-      const sessionsRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodeURIComponent(userId)}&created_at=gte.${encodeURIComponent(monthISO)}&select=id`,
-        { headers: { apikey: SERVICE_ROLE_KEY, Authorization: `Bearer ${SERVICE_ROLE_KEY}`, Prefer: "count=exact" }, signal: ac.signal },
-      );
-      clearTimeout(timer);
-      if (!sessionsRes.ok) { console.error("Session limit check: sessions fetch failed", sessionsRes.status); return { allowed: false, reason: "Could not verify session limit. Please try again." }; }
-      const range = sessionsRes.headers.get("content-range");
-      const thisMonth = range ? parseInt(range.split("/")[1] || "0", 10) : ((await sessionsRes.json()) as unknown[]).length;
-      if (thisMonth >= PRO_MONTHLY_LIMIT) {
-        // Exhausted Pro monthly allotment — allow only if the user holds a
-        // purchased session credit (same credit ledger as free-tier top-ups).
-        // End-of-session callers pass consumeCredit:false — the credit was
-        // already spent at session start, so scoring must not spend a second one.
-        if (!consumeCredit) return { allowed: true };
-        const consumed = await consumeSessionCredit(SUPABASE_URL, SERVICE_ROLE_KEY, userId);
-        if (!consumed) {
-          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
-        }
-        return { allowed: true };
-      }
-      // Atomic in-flight check: prevent race where two concurrent session starts
-      // both read thisMonth < PRO_MONTHLY_LIMIT and both slip through.
-      if (consumeCredit) {
-        const inFlight = await incrementInFlightCounter(userId, "pro", INFLIGHT_TTL_SEC);
-        if (inFlight !== null && thisMonth + inFlight > PRO_MONTHLY_LIMIT) {
-          return { allowed: false, reason: `Pro plan limit reached (${PRO_MONTHLY_LIMIT} sessions/month). Buy session credits or wait for next month.` };
-        }
-      }
-      return { allowed: true };
-    }
 
     if (tier === "free") {
       // Count total sessions at DB level
@@ -438,13 +413,16 @@ export async function checkSessionLimit(
       }
 
       // H-6: guard against a tampered or corrupted subscription_start that was
-      // moved back in time. A start date more than 8 days ago would make
-      // all sessions appear outside the current pack window and allow unlimited
-      // re-use across pack renewals. Clamp to now minus 8 days at most —
-      // the window is strictly the 7-day validity of the purchased pack.
+      // moved back in time. A start date older than the pack's own validity
+      // would make all sessions appear outside the current window and allow
+      // unlimited re-use across pack renewals. Clamp to the Sprint Pack's
+      // 30-day validity (+1 day slack) — the pack renews at 30 days, so a
+      // legitimate subscription_start is at most ~30 days old. Using a shorter
+      // window here (it was 8 days, a fossil from the old 7-day pack) fail-closes
+      // paying users for the back ~22 days of their 30-day pack.
       const packStartMs = new Date(packStart).getTime();
-      const eightDaysMs = 8 * 24 * 60 * 60 * 1000;
-      if (!Number.isFinite(packStartMs) || packStartMs < Date.now() - eightDaysMs) {
+      const packValidityMs = 31 * 24 * 60 * 60 * 1000;
+      if (!Number.isFinite(packStartMs) || packStartMs < Date.now() - packValidityMs) {
         console.error("[checkSessionLimit] starter subscription_start is invalid or too far in the past", { userId, packStart });
         // Fail-closed: a clearly wrong start date is a data integrity problem;
         // require the user to contact support rather than silently granting access.
@@ -565,15 +543,15 @@ export async function readPriorNegotiationCompanies(
 
 /* ─── Subscription Tier Check ─── */
 
-/** Get the user's current subscription tier, accounting for expiry. Returns "pro" in dev mode. */
-export async function getSubscriptionTier(userId: string): Promise<"free" | "starter" | "pro" | "team"> {
-  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return "pro"; // dev mode — unrestricted
+/** Get the user's current subscription tier, accounting for expiry. Returns "starter" in dev mode. */
+export async function getSubscriptionTier(userId: string): Promise<"free" | "starter" | "team"> {
+  if (!SUPABASE_URL || !SERVICE_ROLE_KEY) return "starter"; // dev mode — test paid features locally
 
   // One profile lookup attempt. Distinguishes transient (5xx / network / timeout
   // -> retry once) from definitive (2xx, or 4xx like a real not-found -> trust
   // the answer). Mirrors the transient-vs-permanent handling in verifyAuth so a
   // Supabase blip never silently downgrades a paying user and 403s their save.
-  const attempt = async (): Promise<{ tier: "free" | "starter" | "pro" | "team"; transient: boolean }> => {
+  const attempt = async (): Promise<{ tier: "free" | "starter" | "team"; transient: boolean }> => {
     try {
       const ac = new AbortController();
       const timer = setTimeout(() => ac.abort(), SUPABASE_TIMEOUT_MS);
@@ -585,7 +563,7 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
       if (!res.ok) return { tier: "free", transient: res.status >= 500 };
       const profiles = await res.json();
       if (!Array.isArray(profiles) || profiles.length === 0) return { tier: "free", transient: false };
-      let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "pro" | "team";
+      let tier = (profiles[0].subscription_tier || "free") as "free" | "starter" | "team";
       const subEnd = profiles[0].subscription_end;
       if (tier !== "free" && subEnd && new Date(subEnd) < new Date()) tier = "free";
       return { tier, transient: false };
@@ -594,10 +572,20 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
     }
   };
 
+  // Only paid tiers are cached: a free result is never stored, so an upgrade
+  // takes effect on the very next request without needing invalidation, and a
+  // downgrade lags at most TIER_CACHE_TTL_SEC.
+  const cacheKey = `tier:${userId}`;
+  const cached = await redisGet(cacheKey);
+  if (cached === "starter" || cached === "team") return cached;
+
   const first = await attempt();
-  if (!first.transient) return first.tier;
-  return (await attempt()).tier;
+  const result = first.transient ? (await attempt()).tier : first.tier;
+  if (result !== "free") void redisSetEx(cacheKey, TIER_CACHE_TTL_SEC, result);
+  return result;
 }
+
+const TIER_CACHE_TTL_SEC = 30;
 
 /* ─── CSRF Origin Validation ─── */
 
@@ -605,7 +593,11 @@ export async function getSubscriptionTier(userId: string): Promise<"free" | "sta
 export function validateOrigin(req: Request): boolean {
   const origin = req.headers.get("origin") || "";
   if (!origin) {
-    // GET requests from same-origin may not include Origin header — allow if Referer matches
+    // Only allow Referer fallback for safe read-only methods (GET, HEAD, OPTIONS).
+    // State-mutating methods must supply an Origin header; Referer can be spoofed
+    // by a cross-site form post and is insufficient as a CSRF guard on its own.
+    const method = req.method.toUpperCase();
+    if (method !== "GET" && method !== "HEAD" && method !== "OPTIONS") return false;
     const referer = req.headers.get("referer") || "";
     if (referer && isAllowedDomain(referer)) return true;
     return false;
@@ -622,10 +614,17 @@ function isAllowedDomain(urlOrOrigin: string): boolean {
     const hostname = urlOrOrigin.includes("://") ? new URL(urlOrOrigin).hostname : urlOrOrigin;
     // Allow *.hirestepx.com subdomains
     if (hostname === "hirestepx.com" || hostname.endsWith(".hirestepx.com")) return true;
-    // Allow this project's specific Vercel deployment (VERCEL_URL is set automatically per-deployment).
-    // We intentionally do NOT allow all *.vercel.app — that would let any Vercel tenant call our API.
-    const vercelUrl = process.env.VERCEL_URL; // e.g. "hirestepx-git-main-xyz.vercel.app"
+    // Allow this project's specific Vercel deployment(s). We intentionally do NOT
+    // allow all *.vercel.app — that would let any Vercel tenant call our API.
+    // VERCEL_URL is the unique per-deployment hostname (e.g. "hirestepx-abc123.vercel.app");
+    // VERCEL_BRANCH_URL is the stable per-branch alias (e.g.
+    // "hirestepx-git-feature-x-team.vercel.app") that PR/branch preview links actually point
+    // to — without it, opening the shared preview link (rather than the one-off deployment
+    // URL) fails every mutating request with a CSRF-origin 403.
+    const vercelUrl = process.env.VERCEL_URL;
+    const vercelBranchUrl = process.env.VERCEL_BRANCH_URL;
     if (vercelUrl && hostname === vercelUrl) return true;
+    if (vercelBranchUrl && hostname === vercelBranchUrl) return true;
   } catch { /* invalid URL */ }
   return false;
 }
@@ -657,11 +656,19 @@ function inMemoryRateLimit(ip: string, bucket: string, limit: number, windowMs: 
 async function redisRateLimit(ip: string, bucket: string, limit: number, windowSec: number): Promise<boolean> {
   const key = `rl:${bucket}:${ip}`;
   try {
-    // INCR + EXPIRE via Upstash REST API (single pipeline)
+    /* INCR + EXPIRE..NX via Upstash REST API (single pipeline). NX only
+       attaches a TTL when the key has none yet (i.e. the first hit of a
+       fresh window) — without it, EXPIRE renews on every request and a
+       bucket that's ever crossed `limit` never goes idle long enough to
+       reset while traffic (e.g. a client polling on a fixed interval)
+       keeps arriving, locking that caller out indefinitely. */
+    // Bounded wait: a stalled Redis degrades to the in-memory limiter instead
+    // of holding every request for the platform's full function timeout.
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec]]),
+      body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec, "NX"]]),
+      signal: AbortSignal.timeout(1500),
     });
     if (!res.ok) return inMemoryRateLimit(ip, bucket, limit, windowSec * 1000);
     const results = await res.json();
@@ -678,11 +685,15 @@ async function redisRateLimit(ip: string, bucket: string, limit: number, windowS
  * failure (Redis down, network blip, malformed JSON) so callers can fall
  * through to the live path without try/catch noise. */
 
+// A slow Redis must degrade to a cache miss, never stall the request.
+const REDIS_KV_TIMEOUT_MS = 800;
+
 export async function redisGet(key: string): Promise<string | null> {
   if (!useRedis) return null;
   try {
     const res = await fetch(`${UPSTASH_URL}/get/${encodeURIComponent(key)}`, {
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const data = await res.json();
@@ -697,6 +708,7 @@ export async function redisSetEx(key: string, ttlSec: number, value: string): Pr
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify([["SET", key, value, "EX", ttlSec]]),
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
   } catch { /* swallow — caching is best-effort */ }
 }
@@ -714,11 +726,30 @@ export async function redisIncrByWithExpiry(key: string, by: number, ttlSec: num
         ["INCRBY", key, String(by)],
         ["EXPIRE", key, String(ttlSec), "NX"],
       ]),
+      signal: AbortSignal.timeout(REDIS_KV_TIMEOUT_MS),
     });
     if (!res.ok) return null;
     const data = await res.json() as Array<{ result?: unknown }>;
     const incr = data?.[0]?.result;
     return typeof incr === "number" ? incr : null;
+  } catch { return null; }
+}
+
+/** Run raw Redis commands in one Upstash round trip under a hard timeout.
+ * Returns each command's result, or null when Redis is unavailable or slow —
+ * callers on a latency-critical path must treat null as "no information". */
+export async function redisPipeline(commands: Array<Array<string | number>>, timeoutMs = 400): Promise<unknown[] | null> {
+  if (!useRedis || commands.length === 0) return null;
+  try {
+    const res = await fetch(`${UPSTASH_URL}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify(commands),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as Array<{ result?: unknown }>;
+    return Array.isArray(data) ? data.map((d) => d?.result) : null;
   } catch { return null; }
 }
 
@@ -849,7 +880,7 @@ export function sanitizeForLLM(s: unknown, maxLen = 200): string {
 // so a generous daily LLM-call budget only widens the abuse window without helping a
 // genuine free user. 15 covers 2 full sessions of retries comfortably. Paid
 // tiers stay generous.
-const DAILY_LLM_LIMITS: Record<string, number> = { free: 15, starter: 60, pro: 200, team: 500 };
+const DAILY_LLM_LIMITS: Record<string, number> = { free: 50, starter: 200, team: 2000 };
 
 /** Check if a user has exceeded their daily LLM API call quota for a specific endpoint. */
 export async function checkLLMQuota(userId: string, endpoint: string): Promise<{ allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string }> {
@@ -869,7 +900,10 @@ export async function checkLLMQuota(userId: string, endpoint: string): Promise<{
   }
 
   const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
-  const key = `llm_quota:${userId}:${today}:${endpoint}`;
+  // Global per-user-per-day key (not per-endpoint) so free users can't
+  // multiply their budget by hitting 8 endpoints × 50 calls each.
+  void endpoint; // kept in signature for logging; not part of the key
+  const key = `llm_quota:${userId}:${today}`;
   try {
     const res = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
@@ -914,13 +948,60 @@ export function withRequestId(headers: Record<string, string>): Record<string, s
   return { ...headers, "X-Request-ID": crypto.randomUUID() };
 }
 
-/* ─── Structured Logging ─── */
+/* ─── Structured Logging + error capture ───────────────────────────────────
+ *
+ * slog.error both prints a JSON log line (Vercel's log viewer parses these)
+ * AND best-effort-forwards to Sentry when SENTRY_DSN is set, so a server-side
+ * failure is actually visible somewhere queryable instead of only in logs
+ * nobody is watching. No SDK dependency — Edge runtime can't rely on
+ * `@sentry/node`, and `@sentry/browser`'s client-side init doesn't apply
+ * here — so this posts a minimal envelope directly to the DSN's ingest URL,
+ * same fire-and-forget-with-timeout shape as the Resend email helpers. */
 
 type LogLevel = "info" | "warn" | "error";
+
+const SENTRY_DSN = process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN || "";
+
+/** Parse a Sentry DSN into its envelope-ingest store URL. Returns null if malformed/unset. */
+function sentryStoreUrl(dsn: string): string | null {
+  try {
+    const u = new URL(dsn);
+    const projectId = u.pathname.replace(/^\//, "");
+    if (!u.username || !projectId) return null;
+    return `${u.protocol}//${u.host}/api/${projectId}/store/`;
+  } catch {
+    return null;
+  }
+}
+
+function captureServerError(message: string, fields: Record<string, unknown>): void {
+  if (!SENTRY_DSN) return;
+  const storeUrl = sentryStoreUrl(SENTRY_DSN);
+  if (!storeUrl) return;
+  const dsnKey = SENTRY_DSN.split("://")[1]?.split("@")[0] || "";
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 3000);
+  fetch(storeUrl, {
+    method: "POST",
+    signal: ac.signal,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Sentry-Auth": `Sentry sentry_version=7, sentry_key=${dsnKey}, sentry_client=hirestepx-edge/1.0`,
+    },
+    body: JSON.stringify({
+      message,
+      level: "error",
+      platform: "node",
+      timestamp: Date.now() / 1000,
+      extra: fields,
+    }),
+  }).then(() => clearTimeout(timer)).catch(() => clearTimeout(timer));
+}
 
 /**
  * Emit a single structured log line (JSON) with consistent fields.
  * Vercel's log viewer can parse these for filtering/aggregation.
+ * `error`-level calls also best-effort-forward to Sentry (see above).
  */
 export function structuredLog(level: LogLevel, message: string, fields: Record<string, unknown> = {}): void {
   const line = JSON.stringify({
@@ -929,7 +1010,10 @@ export function structuredLog(level: LogLevel, message: string, fields: Record<s
     msg: message,
     ...fields,
   });
-  if (level === "error") console.error(line);
+  if (level === "error") {
+    console.error(line);
+    captureServerError(message, fields);
+  }
   else if (level === "warn") console.warn(line);
   else console.log(line);
 }
@@ -955,9 +1039,12 @@ export function applyCorsHeaders(req: VercelRequest, res: VercelResponse): strin
 }
 
 /** Handle OPTIONS preflight and reject non-POST methods for VercelRequest. Returns true if handled. */
-export function handlePreflightAndMethod(req: VercelRequest, res: VercelResponse): boolean {
+export function handlePreflightAndMethod(req: VercelRequest, res: VercelResponse, opts?: { allowGet?: boolean }): boolean {
   if (req.method === "OPTIONS") { res.status(204).end(); return true; }
-  if (req.method !== "POST") { res.status(405).json({ error: "Method not allowed" }); return true; }
+  if (req.method !== "POST" && !(opts?.allowGet && req.method === "GET")) {
+    res.status(405).json({ error: "Method not allowed" });
+    return true;
+  }
   return false;
 }
 
@@ -981,6 +1068,141 @@ export function supabaseUrl(): string {
 /** Return the configured Supabase anon key. */
 export function supabaseAnonKey(): string {
   return SUPABASE_ANON_KEY;
+}
+
+/** Node-runtime counterpart to verifyAuth()'s transient-vs-permanent
+ *  distinction (see that function's doc comment for the full rationale) —
+ *  used by the Vercel serverless (non-edge) employer-unlock handlers, which
+ *  can't use the edge verifyAuth()/withAuthAndRateLimit() path because they
+ *  need Node's Buffer/crypto for Razorpay HMAC verification. Without a
+ *  retry, a single Supabase Auth 5xx blip would 401 an employer mid-payment
+ *  instead of riding it out like every other auth'd endpoint does. */
+export async function verifyEmployerAuthToken(
+  authToken: string,
+  supabaseUrlStr: string,
+  anonKey: string,
+): Promise<{ kind: "ok"; employerId: string } | { kind: "auth-fail" } | { kind: "transient" }> {
+  const tryOnce = async (): Promise<{ kind: "ok"; employerId: string } | { kind: "auth-fail" } | { kind: "transient" }> => {
+    try {
+      const res = await fetch(`${supabaseUrlStr}/auth/v1/user`, {
+        headers: { Authorization: `Bearer ${authToken}`, apikey: anonKey },
+      });
+      if (res.status === 401 || res.status === 403) return { kind: "auth-fail" };
+      if ((res.status >= 500 && res.status <= 599) || res.status === 408 || res.status === 429) {
+        return { kind: "transient" };
+      }
+      if (!res.ok) return { kind: "auth-fail" };
+      const userData = await res.json().catch(() => null);
+      if (!userData || typeof userData.id !== "string") return { kind: "auth-fail" };
+      return { kind: "ok", employerId: userData.id };
+    } catch {
+      return { kind: "transient" };
+    }
+  };
+
+  let result = await tryOnce();
+  if (result.kind === "transient") {
+    console.warn("[verifyEmployerAuthToken] transient (attempt 1) — retrying after 500ms");
+    await new Promise((r) => setTimeout(r, 500));
+    result = await tryOnce();
+  }
+  return result;
+}
+
+/**
+ * Node-runtime counterpart to withAuthAndRateLimit() for the Vercel
+ * serverless (non-edge) handlers — payment/account endpoints that need
+ * Node's Buffer/crypto and so can't run on the edge. Runs the same shape
+ * of preamble (CORS/method, body size, origin/CSRF, per-IP rate limit,
+ * Bearer-token verification against Supabase) that cancel-subscription.ts,
+ * create-subscription.ts, create-order.ts, delete-account.ts,
+ * export-user-data.ts, and pause-subscription.ts each used to hand-roll
+ * independently. Returns `{ handled: true }` once it has already written
+ * a response (caller should just `return`), or the verified user on
+ * success — including the raw Supabase user object, since callers read
+ * different fields off it (email, app_metadata.provider for OAuth
+ * detection, etc.).
+ *
+ * The 5s abort timeout on the auth fetch mirrors delete-account.ts /
+ * export-user-data.ts's existing fix for a hung Supabase call otherwise
+ * stalling the whole request — applied uniformly here rather than only
+ * on the two handlers that had already been patched for it.
+ */
+export async function withNodeAuthAndRateLimit(
+  req: VercelRequest,
+  res: VercelResponse,
+  opts: { endpoint: string; ipLimit: number; maxBytes?: number; allowGet?: boolean },
+): Promise<
+  | { handled: true }
+  | { handled: false; userId: string; userEmail?: string; userData: Record<string, unknown> }
+> {
+  const origin = applyCorsHeaders(req, res);
+  if (handlePreflightAndMethod(req, res, { allowGet: opts.allowGet })) return { handled: true };
+
+  const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
+  if (bodyContentLength > (opts.maxBytes ?? 1048576)) {
+    res.status(413).json({ error: "Request too large" });
+    return { handled: true };
+  }
+
+  if (!origin) {
+    res.status(403).json({ error: "Forbidden" });
+    return { handled: true };
+  }
+
+  const ip = getVercelClientIp(req);
+  if (await isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000)) {
+    res.setHeader("Retry-After", "60");
+    res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
+    return { handled: true };
+  }
+
+  const SUPABASE_URL_STR = supabaseUrl();
+  const SUPABASE_ANON_KEY_STR = supabaseAnonKey();
+  if (!SUPABASE_URL_STR || !SUPABASE_ANON_KEY_STR) {
+    res.status(503).json({ error: "Not configured" });
+    return { handled: true };
+  }
+
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    res.status(401).json({ error: "Unauthorized" });
+    return { handled: true };
+  }
+  const token = authHeader.slice(7);
+
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), 5000);
+  try {
+    const userRes = await fetch(`${SUPABASE_URL_STR}/auth/v1/user`, {
+      headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_ANON_KEY_STR },
+      signal: ac.signal,
+    });
+    clearTimeout(timer);
+    if (!userRes.ok) {
+      res.status(401).json({ error: "Invalid auth token" });
+      return { handled: true };
+    }
+    const userData = await userRes.json();
+    if (!userData || typeof userData.id !== "string") {
+      res.status(401).json({ error: "Auth verification failed" });
+      return { handled: true };
+    }
+    return {
+      handled: false,
+      userId: userData.id,
+      userEmail: typeof userData.email === "string" ? userData.email : undefined,
+      userData,
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    if (err instanceof Error && err.name === "AbortError") {
+      res.status(504).json({ error: "Auth verification timed out" });
+    } else {
+      res.status(401).json({ error: "Auth verification failed" });
+    }
+    return { handled: true };
+  }
 }
 
 /* ─── Shared HTML Utilities ─── */
@@ -1020,15 +1242,16 @@ export async function withAuthAndRateLimit(
     maxBytes?: number;
     skipOriginCheck?: boolean;
     allowGet?: boolean;
+    allowPatch?: boolean;
   },
 ): Promise<Response | {
   headers: Record<string, string>;
   auth: { authenticated: boolean; userId?: string };
   quota?: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string };
 }> {
-  const early = handleCorsPreflightOrMethod(req, { allowGet: opts.allowGet });
+  const early = handleCorsPreflightOrMethod(req, { allowGet: opts.allowGet, allowPatch: opts.allowPatch });
   if (early) return early;
-  const headers = withRequestId(corsHeaders(req));
+  const headers = withRequestId(corsHeaders(req, { allowGet: opts.allowGet, allowPatch: opts.allowPatch }));
 
   // checkBodySize returns true when the body EXCEEDS the limit, so we 413
   // on the truthy branch — the previous `!checkBodySize` inverted the check
@@ -1036,18 +1259,24 @@ export async function withAuthAndRateLimit(
   if (checkBodySize(req, opts.maxBytes ?? 1048576)) return tooLargeResponse(headers);
   if (!opts.skipOriginCheck && !validateOrigin(req)) return forbiddenResponse(headers);
 
+  const t0 = Date.now();
   const ip = getClientIp(req);
-  if (opts.ipLimit && await isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000)) {
-    return rateLimitResponse(headers);
-  }
-
-  const auth = await verifyAuth(req);
+  // The IP limit and auth don't depend on each other — run them concurrently
+  // so the Redis round trip hides behind (or alongside) token verification.
+  // A limited IP still answers 429 before any 401, as before.
+  const [ipLimited, auth] = await Promise.all([
+    opts.ipLimit ? isRateLimited(ip, opts.endpoint, opts.ipLimit, 60_000) : Promise.resolve(false),
+    verifyAuth(req),
+  ]);
+  if (ipLimited) return rateLimitResponse(headers);
   if (!auth.authenticated) return unauthorizedResponse(headers);
 
   if (opts.userLimit && auth.userId
       && await isRateLimited(`user:${auth.userId}`, opts.endpoint, opts.userLimit, 60_000)) {
     return rateLimitResponse(headers);
   }
+  // Surfaces in DevTools → Network → Timing; region reveals function/DB distance.
+  headers["Server-Timing"] = `pre;dur=${Date.now() - t0}, region;desc="${process.env.VERCEL_REGION || "local"}"`;
 
   let quota: { allowed: boolean; reason?: string; count?: number; limit?: number; warning?: boolean; tier?: string } | undefined;
   if (opts.checkQuota && auth.userId) {
@@ -1108,7 +1337,7 @@ export function logServiceUsage(entry: {
   meta?: Record<string, unknown>;
 }): void {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) return;
-  fetch(`${SUPABASE_URL}/rest/v1/service_usage`, {
+  const write = () => fetch(`${SUPABASE_URL}/rest/v1/service_usage`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1128,4 +1357,7 @@ export function logServiceUsage(entry: {
       meta: entry.meta || null,
     }),
   }).catch(() => {}); // swallow — never block the response
+  // Edge functions freeze when the Response returns and cancel a bare fire-and-forget
+  // fetch, so short handlers (stt-token) lost nearly every usage row. after() keeps it alive.
+  try { after(write); } catch { void write(); } // after() throws outside a request (cron, tests)
 }

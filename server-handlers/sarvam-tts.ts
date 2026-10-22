@@ -14,6 +14,7 @@
 export const config = { runtime: "edge" };
 
 import { handleCorsPreflightOrMethod, corsHeaders, isRateLimited, getClientIp, rateLimitResponse, verifyAuth, unauthorizedResponse, validateOrigin, withRequestId, logServiceUsage, redisIncrByWithExpiry, redisGet, redisSetEx, hashStable, getSubscriptionTier } from "./_shared";
+import { recordTtsSpendAndCheckCap } from "./_sarvam-credit-guard";
 
 /* TTS cost circuit breaker — Sarvam Bulbul is billed per character.
  *
@@ -32,10 +33,18 @@ const SECONDS_PER_DAY = 86_400;
 
 /* Audio cache — repeated questions ("Tell me about a time…", canned greetings,
  * panelist intros) dominate the prompt distribution. Caching the WAV body
- * keyed by (model, speaker, text) collapses these to a single Sarvam call.
- * 24h TTL keeps Redis tidy; cap the cacheable payload at 1500 chars so we
- * don't blow Upstash memory on multi-paragraph monologues. */
-const TTS_CACHE_TTL_SEC = 86_400;
+ * keyed by (model, speaker, text) collapses these to a single Sarvam call —
+ * shared across every user, so a hit-rate improvement here is a direct
+ * multiplier on real spend, more so now that bulbul:v3 costs 2x per char.
+ *
+ * 7-day TTL (was 24h): the cache key already includes SARVAM_TTS_MODEL, so
+ * a future model bump auto-invalidates every entry — holding entries longer
+ * has no staleness risk, only upside, since the question bank
+ * (data/interview-question-bank.ts) and panelist intros are static and
+ * would otherwise recompute from scratch every day. Cap the cacheable
+ * payload at 1500 chars so we don't blow Upstash memory on multi-paragraph
+ * monologues. */
+const TTS_CACHE_TTL_SEC = 7 * 86_400;
 const TTS_CACHE_MAX_BYTES = 256 * 1024; // 256 KB — covers ~10s of 22 kHz WAV
 const TTS_CACHE_VERSION = "v1";
 
@@ -54,39 +63,40 @@ const SARVAM_TTS_ENDPOINT = "https://api.sarvam.ai/text-to-speech";
  * Free users fail over to the zero-cost browser TTS chain (Cartesia → Azure →
  * Web Speech). This makes the expensive path opt-in instead of opt-out, so a
  * traffic spike on free users can never run up a Sarvam bill.
- *   - VOICE_FREE_TIER=1        → let free users use paid Sarvam TTS too.
+ *   - FUNDED_VOICE_FREE_TIER=1  → let free users use paid Sarvam TTS too.
+ *     Separate from VOICE_FREE_TIER (which also covers Cartesia/Azure, which
+ *     we don't have a prepaid credit grant for) — see stt-token.ts
+ *     for the other provider this flag currently covers.
  *   - SARVAM_TTS_FREE_DISABLED=1 → legacy hard kill switch (still honoured).
  * Either guard active ⇒ free tier is pushed to the browser fallback. */
-const VOICE_FREE_TIER = process.env.VOICE_FREE_TIER === "1";
+const VOICE_FREE_TIER = process.env.FUNDED_VOICE_FREE_TIER === "1";
 const SARVAM_TTS_FREE_DISABLED = process.env.SARVAM_TTS_FREE_DISABLED === "1";
 
-/* COST GUARDRAIL — pin to bulbul:v2.
- *
- * DO NOT change this to bulbul:v3 (or any newer tier) without a
- * pricing review. v3 is materially more expensive per character and
- * the v2 audio quality is already production-acceptable for our
- * Indian-English mock-interview use case. If a future Sarvam model
- * ships at v2 price parity, update this constant in one place rather
- * than threading the model string through the request body literal.
- *
- * Sentinel: the request payload below uses `SARVAM_TTS_MODEL` instead
- * of an inline string so a grep for "bulbul:v3" stays clean and PR
- * review catches any drift. */
-const SARVAM_TTS_MODEL = "bulbul:v2" as const;
+/* Model pin — bulbul:v2 was deprecated by Sarvam on 15 Aug 2026 (requests
+ * are rejected after that date), forcing this migration to bulbul:v3.
+ * v3 costs ₹30/10K chars vs v2's ₹15/10K — a real 2x line-item increase,
+ * not optional. Kept as a named constant (not an inline string in the
+ * request body) so the next migration is a one-line change again. */
+const SARVAM_TTS_MODEL = "bulbul:v3" as const;
 
-/* Sarvam Bulbul voice roster (en-IN). Names map 1:1 to the API's
- * `speaker` field. Picked from Sarvam's published v2 speaker list. */
+/* Sarvam Bulbul v3 voice roster (en-IN). v3 replaced the entire v2 speaker
+ * set (manisha/anushka/vidya/arya, abhilash/karun/hitesh — all removed) with
+ * a new 30+ voice roster. Sarvam's API doesn't tag speakers by gender, so
+ * this split is inferred from the (unambiguous) Hindi/Indian given names —
+ * confirm with a quick listen on the staging preview before this ships. */
 const VOICES = {
-  female: ["anushka", "manisha", "vidya", "arya"],
-  male: ["abhilash", "karun", "hitesh"],
+  female: ["priya", "ritu", "neha", "pooja", "simran", "kavya", "ishita", "shreya", "roopa", "tanya", "shruti", "suhani", "kavitha", "rupali"],
+  male: ["shubh", "aditya", "rahul", "rohan", "amit", "dev", "ratan", "varun", "manan", "sumit", "kabir", "aayan", "ashutosh", "advait", "anand", "tarun", "sunny", "mani", "gokul", "vijay", "mohit", "rehan", "soham"],
 } as const;
 
 function pickSpeaker(gender?: "male" | "female", voiceHint?: string): string {
-  // Allow client to pin a specific Sarvam speaker by passing its name in voiceId
+  // Allow client to pin a specific Sarvam speaker by passing its name in voiceId,
+  // but only if the speaker matches the requested gender. A Cartesia UUID passed
+  // as voiceHint won't match any Sarvam name and falls through safely.
   if (voiceHint) {
     const lower = voiceHint.toLowerCase();
-    if ((VOICES.female as readonly string[]).includes(lower)) return lower;
-    if ((VOICES.male as readonly string[]).includes(lower)) return lower;
+    if ((VOICES.female as readonly string[]).includes(lower) && gender !== "male") return lower;
+    if ((VOICES.male as readonly string[]).includes(lower) && gender !== "female") return lower;
   }
   const pool = VOICES[gender || "female"];
   if (voiceHint) {
@@ -150,7 +160,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Cartesia → Azure → browser TTS fallback chain (zero cost). We resolve the
     // tier from the profiles table; the client already handles 503 by failing
     // over, so we don't need to surface a special error code. Operators can
-    // open paid voice to free users with VOICE_FREE_TIER=1.
+    // open paid voice to free users with FUNDED_VOICE_FREE_TIER=1.
     if (!VOICE_FREE_TIER || SARVAM_TTS_FREE_DISABLED) {
       const tier = await getSubscriptionTier(auth.userId!);
       if (tier === "free") {
@@ -207,6 +217,17 @@ export default async function handler(req: Request): Promise<Response> {
       }), { status: 429, headers });
     }
 
+    // Program-wide credit guardrail — only real upstream calls spend credits
+    // (cache hits above don't), so check/record here, before the actual
+    // Sarvam fetch. Once the monthly startup-program grant is nearly spent,
+    // fail over the same way the free-tier gate does (503 → client falls
+    // back to Cartesia → Azure → browser TTS) rather than racing Sarvam's
+    // own account-level cutoff.
+    if (await recordTtsSpendAndCheckCap(trimmedText.length)) {
+      logServiceUsage({ service: "sarvam_tts", endpoint: "text-to-speech", userId: auth.userId, status: "error", requestChars: trimmedText.length, errorMessage: "Monthly Sarvam credit pool exhausted" });
+      return new Response(JSON.stringify({ error: "Sarvam voice credits exhausted for this month", code: "sarvam_credit_cap" }), { status: 503, headers });
+    }
+
     const speaker = speakerForCache;
 
     // Sarvam caps each input at 500 chars — split on sentence/word
@@ -238,9 +259,8 @@ export default async function handler(req: Request): Promise<Response> {
         inputs: chunks,
         target_language_code: "en-IN",
         speaker,
-        pitch: 0,
+        // pitch/loudness dropped — bulbul:v3 rejects requests carrying them.
         pace: 1.0,
-        loudness: 1.2,
         speech_sample_rate: 22050,
         enable_preprocessing: true,
         model: SARVAM_TTS_MODEL,

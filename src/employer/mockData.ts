@@ -1,0 +1,274 @@
+/* HireStepX — Employer console shared types.
+   Backed by real Supabase tables (employers, employer_requirements,
+   requirement_matches) — see server-handlers/employer-*.ts and the
+   "Employer talent-roster feature" block in supabase-schema.sql.
+
+   Candidate fields are limited to what the real schema backs: target
+   role, resume-derived city/skills, session count, last-active recency,
+   and a normalized resume detail block (see
+   server-handlers/_resume-detail-helpers.ts). There is no "exclusive"
+   flag on real candidate data, so that fixture-only field from the
+   original mocked pass is not part of this shape. `resume.noticePeriod`
+   / `resume.currentCtc` are exactly what the candidate's resume text
+   said, not a verified figure — always render them as self-reported. */
+
+export interface CandidateResumeDetail {
+  summary: string;
+  headline: string | null;
+  seniorityLevel: string | null;
+  yearsExperience: number | null;
+  keyAchievements: string[];
+  industries: string[];
+  experience: Array<{
+    title: string;
+    company: string;
+    period: string;
+    scope?: string;
+    teamSize?: number;
+    partners?: string[];
+    topProjects?: string[];
+    bullets?: string[];
+  }>;
+  education: Array<{ degree: string; school: string; year: string }>;
+  certifications: string[];
+  careerTrajectory: string | null;
+  promotionSignals: string[];
+  primaryDomain?: string | null;
+  domainYears?: Array<{ domain: string; years: number }>;
+  interviewStrengths?: string[];
+  skillsDetailed: Array<{ name: string; depth: "primary" | "secondary" | "exposure"; yearsUsed?: number; recent?: boolean }>;
+  linkedin: string | null;
+  phone: string | null;
+  noticePeriod: string | null;
+  currentCtc: string | null;
+  /** What the candidate chose to share; only present once unlocked. */
+  expectedCtc?: string | null;
+}
+
+export interface MatchBreakdown {
+  roleMatch: number;
+  skillMatch: number;
+  locationMatch: number;
+}
+
+/** Per-candidate hiring-pipeline status against ONE requirement — distinct
+ *  from RequirementStage, which tracks the posting as a whole. Mirrors
+ *  CANDIDATE_STATUSES in server-handlers/_employer-candidate-status-helpers.ts. */
+export type CandidateStatus =
+  | "shortlisted"
+  | "interview_invited"
+  | "interviewing"
+  | "hired"
+  | "rejected"
+  | "not_a_fit"
+  | "no_response";
+
+export interface Candidate {
+  id: string; // requirement_matches row id
+  name: string;
+  targetRole: string;
+  city: string;
+  matchScore: number; // fit against THIS requirement only
+  matchBreakdown?: MatchBreakdown; // why matchScore is what it is
+  /** How many of the job's listed skills the candidate covers. 0 means a reviewable
+      match that meets none of them (never Strong, never alerted); null when the job
+      lists no skills or the server did not say. */
+  requiredSkillsMet?: number | null;
+  requiredSkillsTotal?: number | null;
+  /** Which listed skills are covered; null when the profile could not be read. */
+  requiredSkillsMatched?: string[] | null;
+  rosterScore: number; // lifetime performance across all practice sessions
+  sessionsCompleted: number;
+  lastActiveDaysAgo: number;
+  skills: string[];
+  unlocked: boolean;
+  contact?: { email: string; phone?: string };
+  resume?: CandidateResumeDetail;
+  portfolioLinks?: Array<{ title: string; url: string }>;
+  hasResumeFile?: boolean;
+  candidateStatus: CandidateStatus;
+  candidateStatusNote: string | null;
+  /** The candidate's own answer to contact: null when the server did not say. */
+  candidateResponse?: "none" | "interested" | "declined" | null;
+  /** True once the candidate switched employer visibility off after the unlock. */
+  candidateWithdrew?: boolean;
+  /** True when the server held back email, phone and links because the candidate withdrew or declined after the unlock. */
+  contactWithheld?: boolean;
+  contactWithheldReason?: "withdrew" | "declined" | null;
+  /** True once this paid unlock was refunded as account credit. */
+  creditRefunded?: boolean;
+  interviewScheduledAt: string | null;
+  /** When the candidate last changed state for this job: the newest of the status change, the unlock and the match itself. */
+  waitingSince?: string | null;
+}
+
+export type RequirementStatus = "generating" | "ready" | "partial" | "zero" | "failed" | "closed";
+
+/** Manually-set hiring-pipeline stage — distinct from RequirementStatus,
+ *  which tracks AI matching/generation lifecycle. Mirrors RequirementStage
+ *  in server-handlers/_employer-requirements-helpers.ts. */
+export type RequirementStage = "ai_matching" | "ready_for_review" | "interviewing" | "hired";
+
+export type WorkMode = "remote" | "onsite" | "hybrid";
+
+export type EmploymentType = "full-time" | "part-time" | "contract" | "internship";
+
+export type SalaryType = "per-month" | "fixed" | "per-annum";
+
+/** One Strong Match candidate's real, non-fabricated detail — mirrors
+ *  StrongMatchCandidate in server-handlers/_employer-requirements-helpers.ts. */
+export interface StrongMatchCandidate {
+  id: string;
+  name: string;
+  initials: string;
+  yearsExperience: number | null;
+  skills: string[];
+  /** Server's own list of the job's skills this candidate covers. */
+  requiredSkillsMatched?: string[];
+  traits?: string[];
+}
+
+/** Jobs-table "AI Screening" summary — mirrors AiScreeningSummary in
+ *  server-handlers/_employer-requirements-helpers.ts. */
+export interface AiScreeningSummary {
+  evaluated: number;
+  /** True size of the matched-candidate pool before the 20-candidate cap —
+   *  equal to `evaluated` unless the real pool exceeded the cap. */
+  totalMatched: number;
+  scoreLow: number | null;
+  scoreHigh: number | null;
+  topMatches: number;
+  strongAvgScore: number | null;
+  strongMatchInitials: string[];
+  strongMatchExtra: number;
+  strongMatches: StrongMatchCandidate[];
+}
+
+/** Disposition chosen when archiving a requirement — whether the
+ *  still-open candidate pipeline gets bulk-rejected or left untouched.
+ *  Mirrors the DB check constraint on employer_requirements.archive_disposition. */
+export type ArchiveDisposition = "keep_candidates" | "reject_remaining";
+
+export interface RequirementSummary {
+  id: string;
+  title: string;
+  location: string;
+  noticePeriodPref: string;
+  status: RequirementStatus;
+  stage: RequirementStage;
+  department: string | null;
+  experienceMin: number | null;
+  experienceMax: number | null;
+  dueDate: string | null;
+  budgetMin: number | null; // INR lakhs when salaryType is per-annum, else a raw INR amount
+  budgetMax: number | null;
+  salaryType: SalaryType | null;
+  locations: string[];
+  openPositions: number | null;
+  workMode: WorkMode | null;
+  skills: string[];
+  employmentType: EmploymentType | null;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
+  minReadinessBand: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness: number | null;
+  createdAt: string;
+  candidateCount: number;
+  aiScreening: AiScreeningSummary;
+}
+
+export interface Requirement {
+  id: string;
+  title: string;
+  location: string;
+  noticePeriodPref: string;
+  description: string;
+  status: RequirementStatus;
+  stage: RequirementStage;
+  department: string | null;
+  archiveReason: string | null;
+  archiveDisposition: ArchiveDisposition | null;
+  experienceMin: number | null;
+  experienceMax: number | null;
+  dueDate: string | null;
+  budgetMin: number | null; // INR lakhs when salaryType is per-annum, else a raw INR amount
+  budgetMax: number | null;
+  salaryType: SalaryType | null;
+  locations: string[];
+  openPositions: number | null;
+  workMode: WorkMode | null;
+  skills: string[];
+  customSkillSets: string[];
+  responsibilities: string;
+  niceToHave: string;
+  preferredIndustry: string;
+  preferredDomain: string;
+  workSchedule: string;
+  availability: string;
+  relevantExperience: string;
+  portfolioRequired: boolean;
+  preferredColleges: string[];
+  targetCompanies: string[];
+  perksAndBenefits: string[];
+  employmentType: EmploymentType | null;
+  durationWeeks: number | null;
+  hoursPerWeek: number | null;
+  minReadinessBand: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness: number | null;
+  createdAt: string;
+  /** Timestamp of the most recent runMatching() pass for this requirement —
+   *  null if it has never been matched. Drives the "Updated X ago" freshness
+   *  indicator on the detail page. */
+  lastMatchedAt: string | null;
+  candidates: Candidate[];
+  /** Server pagination of `candidates`: `total` is the whole shortlist, `nextPage` is non-null while more remain unloaded. */
+  total?: number;
+  nextPage?: number | null;
+  /** Server-computed next unlock batch (rank window, locked count, exact price). */
+  nextUnlockBatch?: { start: number; end: number; count: number; amountPaise: number; lockedRemaining: number } | null;
+  /** True size of the matched-candidate pool before the 20-candidate cap —
+   *  equal to candidates.length unless the real pool exceeded the cap. */
+  totalMatched: number;
+}
+
+/** Shape the create/edit requirement form submits — mirrors what
+    employer-requirements.ts (POST) and employer-requirement-detail.ts
+    (PATCH) accept. Single source of truth for RequirementForm and
+    EmployerDataContext.addRequirement/updateRequirement so the two never
+    drift apart. */
+/** Wire contract for create/update. On update, `undefined` (key omitted) means
+ *  "leave unchanged" while `null` means "clear" — JSON drops `undefined`, so an
+ *  editor that must clear a field has to send `null` explicitly. */
+export interface RequirementFormValues {
+  title: string;
+  locations: string[];
+  department?: string | null;
+  noticePeriodPref?: string;
+  description?: string;
+  experienceMin?: number | null;
+  experienceMax?: number | null;
+  dueDate?: string | null;
+  budgetMin?: number | null;
+  budgetMax?: number | null;
+  openPositions?: number | null;
+  workMode?: WorkMode;
+  employmentType?: EmploymentType;
+  skills?: string[];
+  responsibilities?: string | null;
+  niceToHave?: string | null;
+  preferredIndustry?: string | null;
+  preferredColleges?: string[];
+  targetCompanies?: string[];
+  perksAndBenefits?: string[];
+  salaryType?: SalaryType;
+  preferredDomain?: string | null;
+  workSchedule?: string | null;
+  availability?: string | null;
+  relevantExperience?: string | null;
+  portfolioRequired?: boolean;
+  customSkillSets?: string[];
+  durationWeeks?: number | null;
+  hoursPerWeek?: number | null;
+  minReadinessBand?: "strongHire" | "hire" | "leanHire" | null;
+  minStarCompleteness?: number | null;
+}

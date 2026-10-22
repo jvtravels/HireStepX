@@ -188,6 +188,76 @@ describe("I-13 — Per-Question Review shows every recorded exchange", () => {
     // No exchanges to recover → keep the single aggregate item, don't invent.
     expect(result.questions).toHaveLength(1);
   });
+
+  /* PRI-96 (2026-07-12, live staging — session 734493c9): the degraded heuristic
+   * path stored an aggregate perQuestion score of 0, and the reconstructed
+   * per-turn items HARDCODED band "partial", so every row rendered "Partial ·
+   * 0/100" — a middling label beside a zero score. The band must never contradict
+   * the number it sits next to: derive it from the carried score. */
+  const twoTurns = [
+    { speaker: "ai", text: "We can offer ₹40 LPA." },
+    { speaker: "user", text: "I'm targeting ₹48 LPA." },
+    { speaker: "ai", text: "That's a stretch." },
+    { speaker: "user", text: "My market data supports it." },
+  ];
+  const reportWithScore = (score: number) =>
+    ({ ...aggregateReport, perQuestion: [{ ...(aggregateReport.perQuestion as unknown[])[0] as object, score }] }) as unknown as SessionReport;
+
+  it("derives a zero-score reconstructed row's band from the score (weak, not partial)", () => {
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(0),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(2);
+    // The exact live bug: 0/100 must NOT read as "Partial".
+    for (const q of result.questions) {
+      expect(q.score).toBe(0);
+      expect(q.band).toBe("weak");
+    }
+  });
+
+  it("band tracks the score band across the reconstructed rows", () => {
+    // partial range (40–69) → "partial"; strong range (≥70) → "strong".
+    const mid = sessionReportToInterviewResult({
+      report: reportWithScore(68),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    for (const q of mid.questions) expect(q.band).toBe("partial");
+    const high = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    for (const q of high.questions) expect(q.band).toBe("strong");
+  });
+
+  /* S6-B4 (2026-07-18): a reconstructed negotiation exchange has NO genuine
+   * per-turn score — the evaluator scored the whole call. The row must flag
+   * itself score-unavailable so the card renders a neutral "—", never the
+   * aggregate as this turn's own grade. `score` still carries the aggregate
+   * solely to derive a coherent band label (locked above). */
+  it("flags reconstructed rows score-unavailable so no per-turn number is shown (S6-B4)", () => {
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: twoTurns, negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(2);
+    for (const q of result.questions) {
+      // The row never displays its own per-turn grade.
+      expect(q.scoreUnavailable).toBe(true);
+    }
+  });
+
+  it("a genuine aggregate row (no transcript to reconstruct) is NOT score-unavailable", () => {
+    // Legacy row: no reconstruction, the single aggregate item keeps its real
+    // score and stays displayable — the "—" is strictly for invented per-turn
+    // rows, not for the one real aggregate figure.
+    const result = sessionReportToInterviewResult({
+      report: reportWithScore(82),
+      session: baseSession({ transcript: [], negotiationMetrics: kernel({}) }),
+    });
+    expect(result.questions).toHaveLength(1);
+    expect(result.questions[0].scoreUnavailable).toBeFalsy();
+  });
 });
 
 describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor", () => {
@@ -270,6 +340,40 @@ describe("REPORT-3b — 'Numbers stated' never contradicts the kernel's anchor",
    * rendering "Numbers stated 0% · On Target" beside "Asked for ₹50 LPA". The
    * VALUE and BAND must never tell different stories: an anchored candidate
    * reads a non-zero value AND an on-target band even with no answerText. */
+  /* REPORT-3d (2026-07-13, live staging — session 686b5699, Senior Product
+   * Designer @ Flipkart): the symmetric case the 3b/3c floor left open. The
+   * kernel recorded NO counter (candidateAsk null), yet a candidate answer
+   * carried a unit-adjacent figure that was NOT a counter — a disclosed current
+   * CTC — so anchorRe matched and "Numbers stated" read 100% · Good beside the
+   * report's own "never naming a number / no counter on the table". The kernel's
+   * ask is the superset detector; when it is null the anchorRe hit is a false
+   * positive, so the ceiling is bound to the kernel too. */
+  it("does not credit an anchor the kernel never recorded, even when answerText has a unit figure", () => {
+    const disclosureReport = {
+      ...unitlessReport,
+      perQuestion: [
+        // A disclosed current CTC — a figure with a unit, but NOT a counter.
+        "My current CTC is ₹30 LPA.",
+        "I'm at ₹30 LPA right now.",
+      ].map((answerText, idx) => ({
+        idx,
+        question: "q",
+        answerText,
+        score: 40,
+        verdict: "partial",
+        starPresence: { S: false, T: false, A: false, R: false },
+      })),
+    } as unknown as SessionReport;
+    const result = sessionReportToInterviewResult({
+      report: disclosureReport,
+      session: negSession({ negotiationMetrics: kernel({ candidateAskLpa: null }) }),
+    });
+    const m = result.metrics.find((x) => x.label === "Numbers stated")!;
+    // anchorRe would score this 100%; the kernel says no counter → 0% · Needs Work.
+    expect(m.value).toBe(0);
+    expect(m.band).toBe("needsWork");
+  });
+
   it("value and band agree for an anchored candidate even with no answerText (denom 0)", () => {
     const empty = {
       ...unitlessReport,

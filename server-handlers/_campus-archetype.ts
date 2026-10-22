@@ -57,6 +57,11 @@ const COMPANY_COGNIZANT = ["cognizant", "capgemini"];
 const COMPANY_WIPRO_NLTH = ["wipro", "hcl", "tech mahindra"];
 const COMPANY_INFOSYS = ["infosys", "infy"];
 
+// I5: intentionally simpler than normalizeCompanyName() in campus-placement.ts —
+// suffix-stripping ("technologies", "pvt", "ltd") would break the keyword
+// look-up below (e.g. stripping "technologies" from "HCL Technologies" would
+// leave "hcl", which is already in the list, but stripping from "Mindtree
+// Ltd" leaves "mindtree" which might not match). Keep them separate.
 function normalize(s: string): string {
   return s.toLowerCase().replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -69,7 +74,20 @@ export function classifyCampusArchetype(
   company: string | null | undefined,
   transcriptText: string = "",
 ): CampusArchetype {
-  /* 1. Transcript hints override company-name buckets. */
+  /* 1. Transcript hints override company-name buckets.
+   *
+   * A3/D6: Precedence within this block is intentional:
+   *  - tcs-digital wins over tcs-ninja because "TCS Digital" is an
+   *    explicit upward variant of TCS and the more specific name wins.
+   *  - top-tier-campus checked before cognizant-genc to prevent Google
+   *    Step / Amazon Future Engineer hints from being shadowed by a
+   *    general-purpose cognizant pattern in the same transcript.
+   *  - wipro-nlth before tcs-ninja because "nlth" / "turbo" are Wipro-
+   *    specific; if both appear the transcript is ambiguous but Wipro-
+   *    specific terminology is the stronger signal.
+   *  - tcs-ninja last among hints — it fires on broad phrases like
+   *    "Infosys Systems Engineer" that could appear in any context.
+   */
   if (HINT_TCS_DIGITAL.test(transcriptText)) return "tcs-digital";
   if (HINT_TOP_TIER.test(transcriptText)) return "top-tier-campus";
   if (HINT_COGNIZANT_GENC.test(transcriptText)) return "cognizant-genc";

@@ -1,4 +1,4 @@
-/* Negotiation-eval scenarios — recorded candidate transcripts that
+/* Negotiation-eval scenarios, recorded candidate transcripts that
  * exercise the recruiter on the negotiation shapes we care about most.
  *
  * Each scenario is:
@@ -32,7 +32,7 @@ export interface EvalScenarioTurn {
 }
 
 export interface EvalScenario {
-  /** Stable id — used as the row key in scorecards. Don't rename. */
+  /** Stable id, used as the row key in scorecards. Don't rename. */
   id: string;
   /** Short label shown in CI output. */
   label: string;
@@ -79,7 +79,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "exploding-offer-from-competitor",
     label: "Candidate has a 48h exploding offer from a competitor",
     goal:
-      "Recruiter should acknowledge urgency, confirm the deadline, and move to anchor — without panic-anchoring above the candidate's stated target.",
+      "Recruiter should acknowledge urgency, confirm the deadline, and move to anchor, without panic-anchoring above the candidate's stated target.",
     init: {
       sessionId: "eval-exploding-offer-from-competitor",
       role: "Software Engineer",
@@ -88,10 +88,10 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       { candidate: "I'm at Razorpay currently.", aiText: "Got it." },
-      { candidate: "Current CTC is 18 LPA — 14 fixed, 4 variable.", aiText: "Noted." },
+      { candidate: "Current CTC is 18 LPA: 14 fixed, 4 variable.", aiText: "Noted." },
       {
         candidate: "I have a competing offer from PhonePe at 28 LPA, but it expires in 48 hours.",
-        aiText: "Understood — that's a real deadline.",
+        aiText: "Understood, that's a real deadline.",
       },
       { candidate: "I'm targeting at least 30 LPA to make this move.", aiText: "OK." },
       {
@@ -127,7 +127,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Notice is 60 days.", aiText: "OK." },
       {
         candidate:
-          "Actually — my current manager just offered me a retention counter at 34 LPA fixed if I stay.",
+          "Actually, my current manager just offered me a retention counter at 34 LPA fixed if I stay.",
         aiText: "That changes the picture.",
       },
       {
@@ -199,8 +199,8 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     turns: [
       { candidate: "I'm at Swiggy.", aiText: "Got it." },
       {
-        candidate: "Cash is 24 LPA — 20 fixed, 4 variable. ESOPs vest to about 12 LPA/yr.",
-        aiText: "Noted — captured all three.",
+        candidate: "Cash is 24 LPA: 20 fixed, 4 variable. ESOPs vest to about 12 LPA/yr.",
+        aiText: "Noted, captured all three.",
       },
       {
         candidate: "Targeting 36 cash + meaningful equity for a senior IC role.",
@@ -273,7 +273,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Notice is 60 days.", aiText: "OK." },
       {
         candidate: "If you can get me close I'd be flexible on structure.",
-        aiText: "Understood — let me see what we can do.",
+        aiText: "Understood, let me see what we can do.",
       },
     ],
     undisclosed: [
@@ -304,7 +304,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     turns: [
       { candidate: "Current CTC 21 LPA.", aiText: "Noted." },
       {
-        candidate: "Notice period is 90 days — does your offer support buyback?",
+        candidate: "Notice period is 90 days: does your offer support buyback?",
         aiText: "Yes, up to 30 days typically.",
       },
       { candidate: "Targeting 28 LPA.", aiText: "Got it." },
@@ -370,8 +370,8 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       { candidate: "Current CTC is 15 LPA.", aiText: "Noted." },
-      { candidate: "Target is 35 LPA.", aiText: "Got it — that's ambitious." },
-      { candidate: "I have strong reasons — recent IPO equity vesting.", aiText: "OK." },
+      { candidate: "Target is 35 LPA.", aiText: "Got it, that's ambitious." },
+      { candidate: "I have strong reasons: recent IPO equity vesting.", aiText: "OK." },
       { candidate: "Notice 45 days.", aiText: "Understood." },
     ],
     undisclosed: [
@@ -403,7 +403,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     turns: [
       { candidate: "Current CTC is 19 LPA.", aiText: "Noted." },
       {
-        candidate: "I won't move for anything below 26 LPA — that's a hard floor.",
+        candidate: "I won't move for anything below 26 LPA, that's a hard floor.",
         aiText: "Understood.",
       },
       { candidate: "Notice 60 days.", aiText: "Got it." },
@@ -469,7 +469,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "I'd prefer not to share current CTC at this stage.", aiText: "Understood." },
       { candidate: "And I'd rather not discuss notice period yet.", aiText: "OK." },
       {
-        candidate: "Competing offers — I'd prefer to keep that confidential.",
+        candidate: "Competing offers: I'd prefer to keep that confidential.",
         aiText: "Got it.",
       },
       { candidate: "Target is 30 LPA.", aiText: "Noted." },
@@ -538,7 +538,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "I'm a SE3 at Myntra, 24 LPA.", aiText: "Got it." },
       {
         candidate: "Actually I'm hoping to take on a team-lead scope here.",
-        aiText: "Noted — let me check what's open.",
+        aiText: "Noted, let me check what's open.",
       },
       { candidate: "Targeting 32 LPA either way.", aiText: "OK." },
       { candidate: "Notice is 45 days.", aiText: "Got it." },
@@ -562,7 +562,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "recap-and-close",
     label: "Long discovery leads to a recap turn then candidate accepts",
     goal:
-      "Recruiter should emit a recap-summary family action before close. Recap-summary itself is non-coercive — must NOT fire any guardrail flag.",
+      "Recruiter should emit a recap-summary family action before close. Recap-summary itself is non-coercive: it must NOT fire any guardrail flag.",
     init: {
       sessionId: "eval-recap-and-close",
       role: "Software Engineer",
@@ -577,7 +577,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "No competing offers.", aiText: "Understood." },
       {
         candidate: "Can you summarize where we've landed?",
-        aiText: "Sure — current 19, target 27, notice 60, no competing.",
+        aiText: "Sure: current 19, target 27, notice 60, no competing.",
       },
       { candidate: "Looks right. I accept.", aiText: "Welcome aboard." },
     ],
@@ -600,7 +600,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "competing-offer-revealed-mid-session",
     label: "Candidate reveals competing offer at turn 5 after earlier 'no'",
     goal:
-      "Recruiter should capture the late competing-offer cleanly; first-wins on the EARLIER 'no competing offer' is the intended behavior — the planner must NOT overwrite the original null with a number.",
+      "Recruiter should capture the late competing-offer cleanly; first-wins on the EARLIER 'no competing offer' is the intended behavior: the planner must NOT overwrite the original null with a number.",
     init: {
       sessionId: "eval-competing-offer-revealed-mid-session",
       role: "Software Engineer",
@@ -613,8 +613,8 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Notice 60 days.", aiText: "OK." },
       { candidate: "No competing offers at the moment.", aiText: "Understood." },
       {
-        candidate: "Actually — I do have a competing offer from Cred at 30 LPA.",
-        aiText: "Got it — appreciate the update.",
+        candidate: "Actually, I do have a competing offer from Cred at 30 LPA.",
+        aiText: "Got it, appreciate the update.",
       },
     ],
     undisclosed: [
@@ -647,7 +647,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Notice 30 days.", aiText: "Noted." },
       {
         candidate: "I'd rather hear what your range is before sharing a target.",
-        aiText: "Understood — let me share that.",
+        aiText: "Understood, let me share that.",
       },
       { candidate: "No competing offers.", aiText: "OK." },
     ],
@@ -659,7 +659,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       "component-equity",
     ],
     expectedDisclosures: {
-      /* AUDIT-2 deferred: "Razorpay, 18 LPA." — bare company name then
+      /* AUDIT-2 deferred: "Razorpay, 18 LPA.", bare company name then
        * number, no "I'm at" / "current" / "total" cue. The "X LPA total"
        * cue handles the comma+total variant; the no-total variant has
        * no signal. Deferred. */
@@ -670,7 +670,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 18: terminal walk-away ---------------- */
   {
     id: "terminal-walkaway-respected",
-    label: "Candidate walks away in turn 4 — recruiter must close gracefully",
+    label: "Candidate walks away in turn 4, recruiter must close gracefully",
     goal:
       "Recruiter should respect the walk-away with a terminal-close action and NOT fire pressure-leverage or stall-cascade to recover the candidate.",
     init: {
@@ -687,7 +687,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
         aiText: "Understood.",
       },
       {
-        candidate: "Thanks for your time — I'll pass on this one.",
+        candidate: "Thanks for your time, I'll pass on this one.",
         aiText: "Appreciate the conversation, best of luck.",
       },
     ],
@@ -743,9 +743,9 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 20: long naturalistic capstone ---------------- */
   {
     id: "naturalistic-capstone-eval",
-    label: "10-turn realistic session — capstone covering every rubric line",
+    label: "10-turn realistic session, capstone covering every rubric line",
     goal:
-      "All structural criteria pass simultaneously across a long naturalistic exchange — proves the rubric isn't dependent on artificially-short transcripts.",
+      "All structural criteria pass simultaneously across a long naturalistic exchange, proving the rubric isn't dependent on artificially-short transcripts.",
     init: {
       sessionId: "eval-naturalistic-capstone-eval",
       role: "Software Engineer",
@@ -754,14 +754,14 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       { candidate: "I'm at Razorpay.", aiText: "Got it." },
-      { candidate: "Current CTC is 20 LPA — 17 fixed, 3 variable.", aiText: "Noted." },
+      { candidate: "Current CTC is 20 LPA: 17 fixed, 3 variable.", aiText: "Noted." },
       { candidate: "Targeting 28 LPA for this move.", aiText: "OK." },
       { candidate: "Notice is 45 days.", aiText: "Got it." },
       { candidate: "I have a competing offer from PhonePe at 26 LPA.", aiText: "Understood." },
       { candidate: "Tell me about the team structure.", aiText: "Two pods of 6 engineers." },
       { candidate: "And the on-call expectations?", aiText: "1 week per quarter." },
       { candidate: "How's growth into senior IC tracks?", aiText: "Typically 18-24 months." },
-      { candidate: "Sounds aligned — what's your number?", aiText: "Let me come back with a formal offer." },
+      { candidate: "Sounds aligned, what's your number?", aiText: "Let me come back with a formal offer." },
       { candidate: "Sure, I'll wait for the email.", aiText: "Sending today." },
     ],
     undisclosed: ["joining-date", "component-equity"],
@@ -789,7 +789,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 21: 'anchored at' verb form ---------------- */
   {
     id: "anchored-at-verb-form",
-    label: "Candidate uses 'anchored at' — past-participle of anchor cue",
+    label: "Candidate uses 'anchored at', past-participle of anchor cue",
     goal:
       "Same class as QUALITY-1: TARGET_CUES has /anchor(?:ing)?…/ but not /anchored/. The parser must bind 'anchored at 30 LPA' as target=30; if it silently drops, the planner re-probes and the discovery-before-anchor rubric line stays unfired (which still scores OK), but probe-once-per-topic will flip if target gets re-probed >2x.",
     init: {
@@ -825,7 +825,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "compound-one-breath-disclosure",
     label: "Candidate discloses CTC + split + target + notice + competing in turn 1",
     goal:
-      "Parser must fan out a single utterance into multiple ledger writes correctly — not collapse to one fact, not double-write any. Probe-once-per-topic shouldn't fire any discovery probes since everything is already disclosed by turn 2.",
+      "Parser must fan out a single utterance into multiple ledger writes correctly, not collapse to one fact, not double-write any. Probe-once-per-topic shouldn't fire any discovery probes since everything is already disclosed by turn 2.",
     init: {
       sessionId: "eval-compound-one-breath-disclosure",
       role: "Software Engineer",
@@ -855,7 +855,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "first-wins-self-corrected-ctc",
     label: "Candidate states CTC then 'corrects' it upward two turns later",
     goal:
-      "Read-layer first-wins must hold under audit-trail re-appends: the ledger correctly appends the 22 LPA disclosure as part of the audit trail (that's the contract), but getFact(\"current-ctc\") must still return 18 (the earliest). Planner reads from getFact, so the 'correction' is effectively ignored as far as anchoring decisions go — exactly the anti-gaming guarantee. The first-wins-honored rubric line tests the read layer directly.",
+      "Read-layer first-wins must hold under audit-trail re-appends: the ledger correctly appends the 22 LPA disclosure as part of the audit trail (that's the contract), but getFact(\"current-ctc\") must still return 18 (the earliest). Planner reads from getFact, so the 'correction' is effectively ignored as far as anchoring decisions go, exactly the anti-gaming guarantee. The first-wins-honored rubric line tests the read layer directly.",
     init: {
       sessionId: "eval-first-wins-self-corrected-ctc",
       role: "Software Engineer",
@@ -866,7 +866,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Current CTC is 18 LPA.", aiText: "Noted." },
       { candidate: "Target 28 LPA.", aiText: "Got it." },
       {
-        candidate: "Actually wait — current is 22 LPA, I forgot the variable.",
+        candidate: "Actually wait, current is 22 LPA, I forgot the variable.",
         aiText: "Understood.",
       },
       { candidate: "Notice 45 days.", aiText: "OK." },
@@ -893,7 +893,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "target-stated-as-range",
     label: "Candidate states target as a range '25-28 LPA' instead of a single number",
     goal:
-      "Range cues exist in TARGET_CUES (/\\bbetween\\b/) — parser should bind ONE value (typically the upper of the range, or skip cleanly) and NOT cycle back to re-probe target. probe-once-per-topic is the gate.",
+      "Range cues exist in TARGET_CUES (/\\bbetween\\b/), parser should bind ONE value (typically the upper of the range, or skip cleanly) and NOT cycle back to re-probe target. probe-once-per-topic is the gate.",
     init: {
       sessionId: "eval-target-stated-as-range",
       role: "Software Engineer",
@@ -934,7 +934,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       {
-        candidate: "Sir, currently 18 LPA hai — Razorpay mein.",
+        candidate: "Sir, currently 18 LPA hai, Razorpay mein.",
         aiText: "Got it.",
       },
       {
@@ -1013,7 +1013,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "typoed-disclosure",
     label: "Candidate disclosure has plausible typos in cue words",
     goal:
-      "Real candidates typo. 'currnt' / 'tarrget' / 'expecitng' are common autocomplete misfires; the parser should NOT silently drop a number because the cue word is one letter off. If it does, planner re-probes and probe-once-per-topic flips on a long-enough chain. Mostly informational for now — if this fails we want to know the typo-tolerance bound.",
+      "Real candidates typo. 'currnt' / 'tarrget' / 'expecitng' are common autocomplete misfires; the parser should NOT silently drop a number because the cue word is one letter off. If it does, planner re-probes and probe-once-per-topic flips on a long-enough chain. Mostly informational for now, if this fails we want to know the typo-tolerance bound.",
     init: {
       sessionId: "eval-typoed-disclosure",
       role: "Software Engineer",
@@ -1038,9 +1038,9 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 28: downward correction ---------------- */
   {
     id: "first-wins-self-corrected-downward",
-    label: "Candidate inflates CTC then 'corrects' downward — first-wins still holds",
+    label: "Candidate inflates CTC then 'corrects' downward, first-wins still holds",
     goal:
-      "Symmetric to scenario 23 but downward. Candidate states 25 LPA, two turns later says 'actually 20 LPA' (still meeting band but stripped variable). getFact must return 25 (the earliest) — the read layer doesn't care about direction of the correction. Prevents post-hoc deflation gaming as much as inflation gaming.",
+      "Symmetric to scenario 23 but downward. Candidate states 25 LPA, two turns later says 'actually 20 LPA' (still meeting band but stripped variable). getFact must return 25 (the earliest), the read layer doesn't care about direction of the correction. Prevents post-hoc deflation gaming as much as inflation gaming.",
     init: {
       sessionId: "eval-first-wins-self-corrected-downward",
       role: "Software Engineer",
@@ -1051,7 +1051,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Current CTC is 25 LPA.", aiText: "Noted." },
       { candidate: "Target 32 LPA.", aiText: "Got it." },
       {
-        candidate: "Actually wait — current is 20 LPA without the variable component.",
+        candidate: "Actually wait, current is 20 LPA without the variable component.",
         aiText: "OK.",
       },
       { candidate: "Notice 60 days.", aiText: "Understood." },
@@ -1107,9 +1107,9 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 30: negated cue ---------------- */
   {
     id: "negated-cue-bare-number",
-    label: "Candidate says 'not 30 LPA, that's too high' — negation must NOT bind 30 as target",
+    label: "Candidate says 'not 30 LPA, that's too high', negation must NOT bind 30 as target",
     goal:
-      "If parser binds bare-numbered negation as a target, planner anchors high based on a number the candidate explicitly rejected. Test: after this utterance, getFact(\"target-ctc\") should be null (or the legitimately-stated target if one follows). no-fabricated-facts gates this — target-ctc is listed undisclosed for the all-negation case.",
+      "If parser binds bare-numbered negation as a target, planner anchors high based on a number the candidate explicitly rejected. Test: after this utterance, getFact(\"target-ctc\") should be null (or the legitimately-stated target if one follows). no-fabricated-facts gates this, target-ctc is listed undisclosed for the all-negation case.",
     init: {
       sessionId: "eval-negated-cue-bare-number",
       role: "Software Engineer",
@@ -1120,7 +1120,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Current CTC 22 LPA.", aiText: "Noted." },
       {
         candidate: "Not 30 LPA, that's too high. I wouldn't ask for that.",
-        aiText: "Understood — what were you thinking?",
+        aiText: "Understood, what were you thinking?",
       },
       {
         candidate: "Honestly I'd like to hear your range before sharing a number.",
@@ -1147,7 +1147,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "joining-date-as-prose",
     label: "Candidate gives joining date in natural prose ('next month', 'by March')",
     goal:
-      "Joining-date in real transcripts is rarely ISO — it's 'next month', 'after Holi', 'by March 15th'. Whether the parser binds it OR cleanly leaves it null both pass no-fabricated-facts; the failure mode is FABRICATING a date that wasn't said. Listed as undisclosed to gate the fabrication path.",
+      "Joining-date in real transcripts is rarely ISO, it's 'next month', 'after Holi', 'by March 15th'. Whether the parser binds it OR cleanly leaves it null both pass no-fabricated-facts; the failure mode is FABRICATING a date that wasn't said. Listed as undisclosed to gate the fabrication path.",
     init: {
       sessionId: "eval-joining-date-as-prose",
       role: "Software Engineer",
@@ -1182,7 +1182,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "recruiter-question-echoed",
     label: "Candidate echoes the recruiter's question back instead of answering",
     goal:
-      "Test the planner doesn't treat its own question, parroted back by the candidate, as a candidate disclosure. If '\"What's your current CTC?\" — that's a good question' got parsed as currentCtc=null-but-numbered, we'd silently fabricate. Probe-once-per-topic catches the downstream loop if it happens.",
+      "Test the planner doesn't treat its own question, parroted back by the candidate, as a candidate disclosure. If '\"What's your current CTC?\", that's a good question' got parsed as currentCtc=null-but-numbered, we'd silently fabricate. Probe-once-per-topic catches the downstream loop if it happens.",
     init: {
       sessionId: "eval-recruiter-question-echoed",
       role: "Software Engineer",
@@ -1191,7 +1191,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       {
-        candidate: "\"What's your current CTC?\" — interesting question, let me think.",
+        candidate: "\"What's your current CTC?\", interesting question, let me think.",
         aiText: "Take your time.",
       },
       { candidate: "OK, current is 21 LPA.", aiText: "Got it." },
@@ -1259,7 +1259,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "intra-utterance-contradiction",
     label: "Candidate self-contradicts within ONE utterance",
     goal:
-      "Edge of first-wins: 'Current is 18 — actually 22 LPA' as one breath. The parser sees two spans; the FIRST should bind (audit + read both first-wins). Listed as undisclosed for the second value's drift — no-fabricated-facts gates the ledger landing 22 as current-ctc by mistake.",
+      "Edge of first-wins: 'Current is 18, actually 22 LPA' as one breath. The parser sees two spans; the FIRST should bind (audit + read both first-wins). Listed as undisclosed for the second value's drift, no-fabricated-facts gates the ledger landing 22 as current-ctc by mistake.",
     init: {
       sessionId: "eval-intra-utterance-contradiction",
       role: "Software Engineer",
@@ -1268,7 +1268,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       {
-        candidate: "Current is 18 LPA — actually 22 LPA with the variable, sorry.",
+        candidate: "Current is 18 LPA, actually 22 LPA with the variable, sorry.",
         aiText: "Captured the headline.",
       },
       { candidate: "Target 28 LPA.", aiText: "Got it." },
@@ -1291,7 +1291,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
   /* ---------------- Scenario 35: 15-turn long horizon ---------------- */
   {
     id: "long-horizon-trajectory",
-    label: "15-turn session — frustration recovery + re-anchor + close",
+    label: "15-turn session, frustration recovery + re-anchor + close",
     goal:
       "Long sessions stress every guardrail simultaneously: probe-once-per-topic, no-coercion (no pressure-repeat on a stretched conversation), first-wins (no late overwrite by drift). If any criterion silently breaks past turn 10, this surfaces it.",
     init: {
@@ -1302,20 +1302,20 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     },
     turns: [
       { candidate: "Currently at Razorpay.", aiText: "Got it." },
-      { candidate: "Total CTC is 28 LPA — 24 fixed, 4 variable.", aiText: "Noted." },
+      { candidate: "Total CTC is 28 LPA, 24 fixed, 4 variable.", aiText: "Noted." },
       { candidate: "Target is 38 LPA for this move.", aiText: "OK." },
       { candidate: "Notice is 60 days.", aiText: "Got it." },
       { candidate: "No competing offers right now.", aiText: "Understood." },
-      { candidate: "Honestly the interview process felt rushed.", aiText: "Sorry to hear that — let me address that." },
+      { candidate: "Honestly the interview process felt rushed.", aiText: "Sorry to hear that, let me address that." },
       { candidate: "I'm not sure this team is the right fit.", aiText: "What concern is strongest?" },
-      { candidate: "Mainly the on-call rotation — I'd want clarity there.", aiText: "1 week per 6 weeks, with comp." },
+      { candidate: "Mainly the on-call rotation, I'd want clarity there.", aiText: "1 week per 6 weeks, with comp." },
       { candidate: "OK that's reasonable. Walk me through the package.", aiText: "Let me share the structure." },
       { candidate: "What's the equity component?", aiText: "RSUs vest over 4 years, 25% per year." },
       { candidate: "And growth into staff?", aiText: "Typically 24 months at strong perf." },
-      { candidate: "Alright — what's your number on fixed?", aiText: "Working that for you." },
+      { candidate: "Alright, what's your number on fixed?", aiText: "Working that for you." },
       { candidate: "I need at least 34 fixed to make this work.", aiText: "Captured." },
       { candidate: "If you can land 34 fixed + the rest, I'm in.", aiText: "Let me confirm with comp." },
-      { candidate: "Sounds good — I'll wait for the formal.", aiText: "Sending today." },
+      { candidate: "Sounds good, I'll wait for the formal.", aiText: "Sending today." },
     ],
     undisclosed: ["joining-date"],
     expectedDisclosures: {
@@ -1343,7 +1343,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
       { candidate: "Target 30 LPA.", aiText: "Noted." },
       {
         candidate: "I do have a competing offer but I'd rather not share the number at this stage.",
-        aiText: "Understood — won't push.",
+        aiText: "Understood, won't push.",
       },
       { candidate: "Notice 45 days.", aiText: "OK." },
     ],
@@ -1402,7 +1402,7 @@ export const EVAL_SCENARIOS: readonly EvalScenario[] = [
     id: "variable-as-percentage",
     label: "Candidate states variable as % of base, not LPA",
     goal:
-      "'20 LPA base plus 20% variable' is a common Indian-tech disclosure shape. component-base should bind to 20; component-variable should EITHER bind to a derived number (4 LPA) OR stay null cleanly — both pass. The fabrication failure mode would be binding 20 as variable (the percentage value) or polluting current-ctc with the percentage.",
+      "'20 LPA base plus 20% variable' is a common Indian-tech disclosure shape. component-base should bind to 20; component-variable should EITHER bind to a derived number (4 LPA) OR stay null cleanly, both pass. The fabrication failure mode would be binding 20 as variable (the percentage value) or polluting current-ctc with the percentage.",
     init: {
       sessionId: "eval-variable-as-percentage",
       role: "Software Engineer",

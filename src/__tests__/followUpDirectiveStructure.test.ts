@@ -110,8 +110,14 @@ describe("discipline fence + focus tilt wiring (W1 + W2)", () => {
     expect(src).not.toMatch(/An SEO Content Writer is NOT graded on user-research metrics/);
   });
 
-  it("suppresses the craft fence on salary-negotiation turns (hiring-manager persona owns its own)", () => {
-    expect(src).toMatch(/followUpDisciplineFence = type === "salary-negotiation"\s*\n?\s*\?\s*""/);
+  it("suppresses the craft fence on salary-negotiation and hr-round turns (each owns its own rules)", () => {
+    expect(src).toMatch(/followUpDisciplineFence = \(type === "salary-negotiation" \|\| type === "hr-round"\)\s*\n?\s*\?\s*""/);
+  });
+
+  it("hr-round gets recruiter-screen rules and no hiring-manager offer persona", () => {
+    expect(src).toMatch(/const salaryFollowUpCtx = type === "salary-negotiation"/);
+    expect(src).toMatch(/const hrFollowUpCtx = hrFollowUpContext\(type, question/);
+    expect(src).toMatch(/\$\{salaryFollowUpCtx\}\$\{hrFollowUpCtx\}/);
   });
 
   it("W2: threads a focus tilt that fires only for a narrower, non-generic focus", () => {
@@ -123,5 +129,23 @@ describe("discipline fence + focus tilt wiring (W1 + W2)", () => {
 
   it("destructures focus from the request body", () => {
     expect(src).toMatch(/const \{ question, answer, type, focus,/);
+  });
+});
+
+describe("HR-round engine and evaluator guards", () => {
+  const engineSrc = readFileSync(join(__dirname, "../useInterviewEngine.ts"), "utf8");
+  const evaluateSrc = readFileSync(join(__dirname, "../../server-handlers/evaluate.ts"), "utf8");
+
+  it("limits hr-round to a single follow-up per question (no chains)", () => {
+    expect(engineSrc).toMatch(/if \(depth <= \(interviewType === "hr-round" \? 0 : 2\)\)/);
+  });
+
+  it("keeps the resume-aware client script when the server only returned its static HR bank", () => {
+    expect(engineSrc).toMatch(/_fallback === "static" && interviewType === "hr-round"/);
+  });
+
+  it("evaluate keeps late-transcript answers and forbids invented facts", () => {
+    expect(evaluateSrc).toMatch(/const maxTurns = 40;/);
+    expect(evaluateSrc).toMatch(/FACT DISCIPLINE/);
   });
 });

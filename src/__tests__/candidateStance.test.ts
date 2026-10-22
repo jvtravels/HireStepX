@@ -14,6 +14,13 @@ describe("extractCandidateStance — flexibility posture", () => {
     expect(extractCandidateStance("take it or leave it").flexibilityPosture).toBe("rigid");
   });
 
+  it("OA-B33: detects rigid via 'all or nothing' multi-component demand", () => {
+    expect(
+      extractCandidateStance("₹65L base plus 15% variable plus ₹2L joining bonus — all or nothing").flexibilityPosture,
+    ).toBe("rigid");
+    expect(extractCandidateStance("it's all-or-nothing for me").flexibilityPosture).toBe("rigid");
+  });
+
   it("detects flexible via 'I'm flexible'", () => {
     expect(extractCandidateStance("I'm flexible on the number").flexibilityPosture).toBe("flexible");
   });

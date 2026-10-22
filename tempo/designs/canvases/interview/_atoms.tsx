@@ -147,27 +147,14 @@ export interface VoiceVisualizerProps {
  * inside a circle. Color + animation behavior changes per state.
  *
  * Visual language:
- *   idle           → faded coal dots, no animation
- *   ai-speaking    → coal dots, gentle outward pulse (2.4s)
+ *   idle           → copper dots, no animation
+ *   ai-speaking    → copper dots, gentle outward pulse (2.4s)
  *   ai-thinking    → copper dots, slow ripple (3.6s)
- *   user-speaking  → indigo dots, faster pulse (1.4s)
- *   warning        → amber dots, no animation
+ *   user-speaking  → copper dots, faster pulse (1.4s)
+ *   warning        → copper dots, no animation
  */
 export function VoiceVisualizer({ state, size = 180 }: VoiceVisualizerProps) {
-  const dotColor = (() => {
-    switch (state) {
-      case "idle":
-        return t.inkFaint;
-      case "ai-speaking":
-        return t.coal;
-      case "ai-thinking":
-        return t.copper;
-      case "user-speaking":
-        return t.indigo;
-      case "warning":
-        return t.warning;
-    }
-  })();
+  const dotColor = t.copper;
 
   // Generate a hex-grid of dots inside a circle.
   // Step is the hex spacing; smaller = denser sphere.

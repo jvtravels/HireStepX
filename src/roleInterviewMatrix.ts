@@ -103,8 +103,10 @@ const FAMILY_PATTERNS: Array<{ family: RoleFamily; re: RegExp }> = [
   // Government / PSU
   { family: "psu",       re: /\b(ias|ips|ifs|upsc|ssc|psu|public\s+sector|civil\s+services|bank\s+po|sbi\s+po|ibps|government|govt|ministry|railway|defence|defense|drdo|isro|bhel|ongc|ntpc|gail|hal|coal\s+india|nabard|rbi)\b/i },
 
-  // Fresher / Student / Campus
-  { family: "student",   re: /\b(student|fresher|intern\b|campus|undergrad|graduate\s+trainee|management\s+trainee|gtt|gmt|trainee\s+(engineer|associate)|fresh\s+grad)\b/i },
+  // Fresher / Student / Campus — includes common Indian campus-hire job titles
+  // that don't carry an explicit seniority marker (Programmer Analyst at Cognizant,
+  // Systems Engineer at Infosys, GET / GEP at any IT services firm, etc.).
+  { family: "student",   re: /\b(student|fresher|intern\b|campus|undergrad|graduate\s+trainee|management\s+trainee|gtt|gmt|gep\b|get\b|trainee\s+(engineer|associate)|fresh\s+grad|programmer\s+analyst|systems?\s+engineer\s+(trainee|fresher|campus|i\b|1\b)|graduate\s+engineer|engineer\s+trainee|associate\s+(software|systems?)\s+engineer)\b/i },
 
   // Sales
   { family: "sales",     re: /\b(account\s+executive|account\s+manager|business\s+development|bd\s+(rep|manager)|sales\s+(rep|manager|lead|director|exec)|sdr|bdr|key\s+account|enterprise\s+sales|inside\s+sales)\b/i },
@@ -222,8 +224,21 @@ export function getRelevantFocuses(
     out.push("Salary Negotiation");
   }
 
-  // Campus Placement: freshers + students only.
-  if (seniority === "fresher" || family === "student") {
+  // Campus Placement: freshers, students, juniors, and unqualified-mid tech
+  // roles. In India's IT services market, "Software Engineer" without an
+  // explicit seniority prefix (no "Senior", no "Junior") maps to seniority=mid
+  // but is the canonical campus-hire title at TCS/Infosys/Wipro/Cognizant.
+  // Extending to mid ensures "Software Engineer" surfaces Campus Placement.
+  // Senior+ are excluded because the block below flips to Technical Leadership
+  // which is the appropriate prep for experienced hires.
+  if (
+    seniority === "fresher" ||
+    family === "student" ||
+    (
+      (seniority === "junior" || seniority === "mid") &&
+      ["swe", "data", "qa", "devops"].includes(family)
+    )
+  ) {
     out.push("Campus Placement");
   }
 

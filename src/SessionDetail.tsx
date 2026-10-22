@@ -12,14 +12,19 @@ import { useParams, useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { track } from "@vercel/analytics";
 import { useAuth } from "./AuthContext";
+import { useDashboardBreadcrumb } from "./DashboardLayout";
 import { getSessionById } from "./supabase";
 import { loadLocalSession, type LocalSession } from "./sessionDetailHelpers";
 import type { DashboardSession } from "./dashboardTypes";
+import { Button } from "@/components/ui/button";
+import { SessionReportSkeleton } from "./sessionReport/SessionReportSkeleton";
+import { tokens as T, fonts as F } from "./auth/_tokens";
 
-// Lazy-load the report so the dashboard route stays slim.
+// Lazy-load the report so the dashboard route stays slim. The fallback is the
+// same skeleton shown while the session loads, so there is one loading state.
 const SessionReport = dynamic(
   () => import("./sessionReport/SessionReport").then((m) => ({ default: m.SessionReport })),
-  { ssr: false }
+  { ssr: false, loading: () => <SessionReportSkeleton /> }
 );
 
 /* ─── Loading + not-found shells (cream surface) ─────────────────── */
@@ -28,11 +33,13 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
       style={{
-        background: "#FAF7F0",
-        minHeight: "100vh",
-        fontFamily: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-        color: "#0E0C08",
-        padding: "20px 32px",
+        display: "flex",
+        flexDirection: "column",
+        flex: 1,
+        minHeight: 0,
+        width: "100%",
+        fontFamily: F.sans,
+        color: T.coal,
       }}
     >
       {children}
@@ -40,98 +47,50 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LoadingScreen() {
+export function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
   return (
     <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            border: "2px solid #EBE5D2",
-            borderTopColor: "#312E81",
-            margin: "0 auto 24px",
-            animation: "ir-spin 800ms linear infinite",
-          }}
-        />
-        <p style={{ fontFamily: "'Instrument Serif', serif", fontSize: 22, color: "#0E0C08", margin: 0, fontWeight: 400 }}>
-          Loading your session…
-        </p>
-      </div>
-      <style>{`@keyframes ir-spin { to { transform: rotate(360deg); } }`}</style>
-    </Shell>
-  );
-}
-
-function LoadErrorScreen({ message, onRetry, onBack }: { message: string; onRetry: () => void; onBack: () => void }) {
-  return (
-    <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 400 }}>
+      <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center" }}>
+        <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Couldn&apos;t load this session
         </h1>
-        <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 8px", lineHeight: 1.55 }}>
+        <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 0 8px", lineHeight: 1.55 }}>
           Something went wrong fetching your report. This is usually temporary.
         </p>
-        <p style={{ fontSize: 12, color: "#988E7E", margin: "0 0 24px", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}>
+        <p style={{ fontSize: 12, color: T.inkFaint, margin: "0 0 24px", fontFamily: F.mono }}>
           {message}
         </p>
         <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-          <button
-            type="button"
-            onClick={onRetry}
-            style={{
-              background: "#312E81", color: "#FAF7F0", border: "none",
-              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
-              fontSize: 13, cursor: "pointer",
-            }}
-          >
+          <Button type="button" size="lg" onClick={onRetry}>
             Try again
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="outline"
             onClick={onBack}
-            style={{
-              background: "transparent", color: "#312E81", border: "1px solid #312E81",
-              padding: "10px 20px", borderRadius: 10, fontWeight: 600,
-              fontSize: 13, cursor: "pointer",
-            }}
+            style={{ color: T.indigo, borderColor: T.indigo }}
           >
             Back to Sessions
-          </button>
+          </Button>
         </div>
       </div>
     </Shell>
   );
 }
 
-function NotFoundScreen({ onBack }: { onBack: () => void }) {
+export function NotFoundScreen({ onBack }: { onBack: () => void }) {
   return (
     <Shell>
-      <div style={{ maxWidth: 560, margin: "120px auto 0", textAlign: "center" }}>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 28, color: "#0E0C08", margin: "0 0 12px", fontWeight: 400 }}>
+      <div style={{ maxWidth: 560, margin: "80px auto 0", textAlign: "center" }}>
+        <h1 style={{ fontFamily: F.sans, fontSize: 28, color: T.coal, margin: "0 0 12px", fontWeight: 600 }}>
           Session not found
         </h1>
-        <p style={{ fontSize: 14, color: "#6E6759", margin: "0 0 24px", lineHeight: 1.55 }}>
+        <p style={{ fontSize: 14, color: T.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           We couldn&apos;t locate this session. It may have been deleted or hasn&apos;t synced yet.
         </p>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            background: "#312E81",
-            color: "#FAF7F0",
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: 10,
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
+        <Button type="button" size="lg" onClick={onBack}>
           Back to Sessions
-        </button>
+        </Button>
       </div>
     </Shell>
   );
@@ -214,6 +173,10 @@ export default function SessionDetail() {
   const [session, setSession] = useState<LocalSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  // Bumped by the retry button to force the load effect to re-run — `id`
+  // and `user?.id` don't change on retry, so without this the effect never
+  // fires again and setLoading(true) leaves the user stuck on the skeleton.
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!id) {
@@ -276,7 +239,7 @@ export default function SessionDetail() {
     } else {
       setLoading(false);
     }
-  }, [id, user?.id]);
+  }, [id, user?.id, reloadToken]);
 
   const dashboardSession = useMemo(
     () => (session ? localSessionToDashboardSession(session) : null),
@@ -291,8 +254,17 @@ export default function SessionDetail() {
   });
   const onBack = () => router.push(backTarget.href);
 
-  if (loading) return <LoadingScreen />;
-  if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); /* trigger effect */ }} onBack={onBack} />;
+  // Extends the shell's static "Sessions" breadcrumb with the actual
+  // interview this report is for, mirroring the employer console's
+  // requirement/candidate-detail breadcrumbs (useEmployerBreadcrumb).
+  useDashboardBreadcrumb(
+    dashboardSession
+      ? [{ label: dashboardSession.company ? `${dashboardSession.role} — ${dashboardSession.company}` : dashboardSession.role }]
+      : null
+  );
+
+  if (loading) return <SessionReportSkeleton />;
+  if (loadError) return <LoadErrorScreen message={loadError} onRetry={() => { setLoadError(null); setLoading(true); setReloadToken((n) => n + 1); }} onBack={onBack} />;
   if (!dashboardSession) return <NotFoundScreen onBack={onBack} />;
 
   return <SessionReport session={dashboardSession} onBack={onBack} backLabel={backTarget.label} />;

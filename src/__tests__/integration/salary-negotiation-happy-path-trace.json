@@ -10,7 +10,7 @@
     "variableMax": 8
   },
   "finalPhase": "accepted",
-  "highestOfferMade": 28,
+  "highestOfferMade": 29.4,
   "monotonicFlagsSeen": [
     "fixedVariableSplitDisclosed",
     "hasAny",
@@ -87,30 +87,30 @@
       "candidate": "Yes, that sounds good. The structure works for me overall — fixed at the level we discussed and the variable on top.",
       "phaseBefore": "counter-offer",
       "phaseAfter": "counter-offer",
-      "recruiterProse": "We're in the same range, then — let's lock it at ₹28L. Let me run this past finance for fitment approval once and revert with the formal offer letter.",
-      "actionKind": "close",
+      "recruiterProse": "Happy to break it down — the ₹28L is ₹26L fixed, which is your guaranteed monthly cash, plus a ₹2L variable target paid on the annual performance rating. The fixed is contractual; the variable typically pays out 80-100% on a meets-expectations rating.",
+      "actionKind": "offer-breakdown",
       "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 28
     },
     {
       "label": "T8 ALIGNMENT — candidate awaits formal close",
       "candidate": "I'm aligned. Let's wrap this up.",
-      "phaseBefore": "accepted",
-      "phaseAfter": "accepted",
-      "recruiterProse": "Happy to break it down — the ₹28L is ₹26L fixed, which is your guaranteed monthly cash, plus a ₹2L variable target paid on the annual performance rating. The fixed is contractual; the variable typically pays out 80-100% on a meets-expectations rating.",
-      "actionKind": "offer-breakdown",
-      "archetype": null,
+      "phaseBefore": "counter-offer",
+      "phaseAfter": "counter-offer",
+      "recruiterProse": "Hearing you out — let me see what I can structure. On cash we can revise the fitment to ₹29.4L total, with a stronger ESOP grant on top. How does that look from your side?",
+      "actionKind": "counter-offer",
+      "archetype": "P18_BREAKUP_PUSHBACK",
       "highestOfferMade": 28
     },
     {
       "label": "T9 EXPLICIT-ACCEPT — terminal accept",
       "candidate": "Confirmed — I accept the offer. Please send the letter across; I'll align with my current employer on the LWD.",
-      "phaseBefore": "accepted",
+      "phaseBefore": "counter-offer",
       "phaseAfter": "accepted",
-      "recruiterProse": "Let's not go round in circles. ₹28L is the number I can commit to today — shall I go ahead and start rolling out the offer letter?",
-      "actionKind": "offer-breakdown",
-      "archetype": null,
-      "highestOfferMade": 28
+      "recruiterProse": "Let me recap the fitment before I revert internally — Fixed ₹26L, variable target ₹3.4L, notice 9 weeks, offer letter in 2-3 business days. I'll get the offer letter prepared and circulate by EOD.",
+      "actionKind": "close-recap-formal",
+      "archetype": "P18_BREAKUP_PUSHBACK",
+      "highestOfferMade": 29.4
     }
   ]
 }

@@ -5,7 +5,7 @@
  * evaluate-session's report assembly — coreMetrics, advancedDelivery, redFlags,
  * fairnessSignals, calibration, bands, the client-side Deal Summary — is built
  * deterministically from the transcript and analyzers. So when the entire LLM
- * provider chain is down/quota'd (70b → gemini → cerebras → 8b all throw), the
+ * provider chain is down/quota'd (70b → gemini → cloudflare → 8b all throw), the
  * robust answer is NOT another 503 dead-end on a 25-minute interview: it is to
  * synthesize JUST that `parsed` slice from transcript signals and fall through
  * to the existing, tested assembly. The candidate gets a real, honest report
@@ -21,6 +21,20 @@
 export interface NegReportTurn {
   role: string; // "interviewer" | "candidate" | ...
   text: string;
+}
+
+/* Authoritative session-exit read, mirrors the kernel/metrics enum
+   (_negotiation-metrics.ts: "accepted" | "walked-away" | "stalemate" |
+   "in-progress"). Threaded in from the caller — NOT re-derived from the
+   transcript — because a stalemate is a kernel-state fact (ran out of turns
+   without resolution), not something a keyword scan can honestly infer. */
+export type NegOutcome = "accepted" | "walked-away" | "stalemate" | "in-progress";
+
+/* A no-agreement deadlock: the session ended without either side yielding.
+   On these, the candidate's problem is the impasse itself, not a failure to
+   state a walk-away floor — so floor-coaching would be false advice. */
+function isDeadlockOutcome(outcome: NegOutcome | undefined): boolean {
+  return outcome === "stalemate" || outcome === "walked-away";
 }
 
 /* Matches NEGOTIATION_SKILL_AXES in _evaluate-session-helpers.ts. Duplicated
@@ -73,6 +87,7 @@ function axisScore(base: number, points: number): number {
  */
 export function buildDeterministicNegotiationReport(
   transcript: ReadonlyArray<NegReportTurn>,
+  outcome?: NegOutcome,
 ): DeterministicNegReport {
   const candidateTurns = transcript.filter(
     (t) => t.role === "candidate" && typeof t.text === "string" && t.text.trim().length > 0,
@@ -94,6 +109,19 @@ export function buildDeterministicNegotiationReport(
     lc,
     /\b(?:esop|equity|rsu|variable|joining bonus|sign[- ]?on|sign(?:ing)? bonus|in lieu|instead of|trade|flexible on|relocation|wfh|remote|notice period|stock)\b/gi,
   );
+  /* A candidate-INITIATED trade, not a bare mention. tradeoffSignals fires on
+     any lever term anywhere in the corpus — so "what's the notice period?" or
+     "you offer variable pay" over-matches and would falsely credit a structural
+     lever the candidate never actually put on the table as a trade. The
+     structural-levers WIN requires a lever term co-occurring with explicit
+     trade framing (instead of / in lieu of / in exchange for / swap / rather
+     than / trade X for Y / if cash|base is capped …). A discovery question or
+     acknowledgement satisfies neither clause. */
+  const LEVER_TERM = String.raw`esop|equity|rsu|variable|joining bonus|sign[- ]?on|sign(?:ing)? bonus|relocation|wfh|remote|notice period|stock`;
+  const TRADE_FRAME = String.raw`instead of|in lieu of|in exchange for|rather than|\btrade\b|\bswap\b|move (?:it|that|the \w+) (?:to|into)|if (?:the )?(?:cash|base|fixed|salary) (?:is |are )?capped`;
+  const leverTradeInitiated =
+    new RegExp(String.raw`(?:${LEVER_TERM})[^.?!]{0,80}(?:${TRADE_FRAME})`, "i").test(lc) ||
+    new RegExp(String.raw`(?:${TRADE_FRAME})[^.?!]{0,80}(?:${LEVER_TERM})`, "i").test(lc);
   const structuralSignals = countMatches(
     lc,
     /\b(?:fixed|variable|ctc|base|total comp|in[- ]?hand|breakdown|split|gross|net|per annum|annum|component)\b/gi,
@@ -109,6 +137,10 @@ export function buildDeterministicNegotiationReport(
     "i get that",
     "respect",
   );
+  /* S6-B7 — extend walk-away pattern set to cover "I won't sign for anything
+     less than X" and similar phrasings that the original list missed. The fix
+     also catches "won't go below", "not going below", "minimum is", "bottom
+     line", "anything less" — all transcript-grounded signals a floor was set. */
   const walkAwaySignals = has(
     lc,
     "walk away",
@@ -118,7 +150,18 @@ export function buildDeterministicNegotiationReport(
     "deadline",
     "can't go below",
     "cannot go below",
+    "won't go below",
+    "will not go below",
+    "not going below",
+    "won't sign for anything less",
+    "won't accept less",
+    "not sign for less",
+    "won't settle for less",
+    "anything less than",
     "my minimum",
+    "minimum is",
+    "my floor",
+    "bottom line",
     "deal-breaker",
     "deal breaker",
     "floor",
@@ -175,12 +218,12 @@ export function buildDeterministicNegotiationReport(
   const wins: DeterministicNegReport["wins"] = [];
   const fixes: DeterministicNegReport["fixes"] = [];
   if (anchoredTarget) {
-    wins.push({ text: "You anchored with a specific target rather than waiting to be offered a number.", questionIdx: -1, quote: "" });
+    wins.push({ text: "You anchored with a specific target — rather than waiting to be offered a number.", questionIdx: -1, quote: "" });
   } else if (counterSignals > 0) {
-    wins.push({ text: "You pushed back on the first offer instead of accepting it outright.", questionIdx: -1, quote: "" });
+    wins.push({ text: "You pushed back on the opening offer — rather than accepting it outright.", questionIdx: -1, quote: "" });
   }
-  if (tradeoffSignals > 0) {
-    wins.push({ text: "You brought structural levers (equity / variable / joining bonus) into the conversation.", questionIdx: -1, quote: "" });
+  if (leverTradeInitiated) {
+    wins.push({ text: "You brought structural levers — equity, variable, and joining bonus — into the conversation.", questionIdx: -1, quote: "" });
   }
   if (!anchoredTarget) {
     fixes.push({ text: "Open with a concrete target number early — anchoring first sets the negotiation range.", questionIdx: -1, quote: "" });
@@ -188,8 +231,11 @@ export function buildDeterministicNegotiationReport(
   if (tradeoffSignals === 0) {
     fixes.push({ text: "Trade across components: if cash is capped, ask for ESOP, joining bonus, or variable instead.", questionIdx: -1, quote: "" });
   }
-  if (!walkAwaySignals) {
-    fixes.push({ text: "State a walk-away floor or a competing option to give your counter real leverage.", questionIdx: -1, quote: "" });
+  if (!walkAwaySignals && !isDeadlockOutcome(outcome)) {
+    // Suppress on a no-agreement/stalemate deadlock: the candidate's problem
+    // there is the impasse, not a missing floor — floor-coaching would be false
+    // advice. Only surfaces on settled/accepted sessions where no floor was set.
+    fixes.push({ text: "State a walk-away floor — or a competing option, to give your counter real leverage.", questionIdx: -1, quote: "" });
   }
 
   return {

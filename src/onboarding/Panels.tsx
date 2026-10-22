@@ -13,6 +13,14 @@ import type { ResumeProfile } from "../dashboardData";
 import type { ParsedResume } from "../resumeParser";
 import { OnboardingStepper, type OnboardingStep } from "./_shared";
 import { ONBOARDING_STYLES } from "./_styles";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 
 /* ─── TopBar ──────────────────────────────────────────────────────────── */
 
@@ -77,67 +85,64 @@ export function TopBar({
         marginTop: emailUnverified ? 44 : 0,
       }}
     >
-      <div style={{ justifySelf: "start" }}>
-        <button
+      <div className="justify-self-start">
+        <Button
           type="button"
+          variant="ghost"
           onClick={onNavigateHome}
           aria-label="HireStepX home"
-          style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0, color: "inherit" }}
+          className="h-auto p-0"
+          style={{ color: "inherit" }}
         >
           <Wordmark />
-        </button>
+        </Button>
       </div>
-      <div style={{ justifySelf: "center" }}>
+      <div className="justify-self-center">
         <OnboardingStepper current={stepperCurrent} />
       </div>
       <div ref={menuRef} style={{ justifySelf: "end", position: "relative" }}>
         {display && (
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            aria-haspopup="menu"
-            aria-expanded={menuOpen}
-            aria-label={`Account: ${display}`}
-            title={display}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              fontFamily: f.sans,
-              fontSize: 14,
-              fontWeight: 500,
-              color: t.coal,
-              background: "transparent",
-              border: `1px solid ${menuOpen ? t.lineStrong : "transparent"}`,
-              borderRadius: 999,
-              padding: "4px 10px 4px 4px",
-              cursor: "pointer",
-            }}
-          >
-            <span
-              aria-hidden="true"
-              style={{
-                width: 30,
-                height: 30,
-                borderRadius: 999,
-                background: t.indigo100,
-                color: t.indigo,
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontFamily: f.serif,
-                fontSize: 13,
-              }}
-            >
-              {initials}
-            </span>
-            <span className="hsx-onb-account-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
-              {display}
-            </span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={menuOpen ? "outline" : "ghost"}
+                  onClick={() => setMenuOpen((v) => !v)}
+                  aria-haspopup="menu"
+                  aria-expanded={menuOpen}
+                  aria-label={`Account: ${display}`}
+                  className="h-auto rounded-full py-1 pl-1 pr-2.5"
+                  style={{ color: t.coal }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 30,
+                      height: 30,
+                      borderRadius: 999,
+                      background: t.indigo100,
+                      color: t.indigo,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: f.sans,
+                      fontSize: 13,
+                    }}
+                  >
+                    {initials}
+                  </span>
+                  <span className="hsx-onb-account-name" style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+                    {display}
+                  </span>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{display}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         {menuOpen && display && (
           <div
@@ -161,27 +166,17 @@ export function TopBar({
               <span style={{ color: t.coal, fontWeight: 500 }}>{userEmail || display}</span>
             </div>
             {onLogout && (
-              <button
+              <Button
                 type="button"
                 role="menuitem"
+                variant="ghost"
                 onClick={() => { setMenuOpen(false); onLogout(); }}
                 style={{
                   width: "100%",
-                  textAlign: "left",
-                  padding: "8px 10px",
-                  borderRadius: 6,
-                  background: "transparent",
-                  border: "none",
-                  cursor: "pointer",
+                  justifyContent: "flex-start",
                   fontFamily: f.sans,
-                  fontSize: 14,
                   color: t.coal,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = t.creamSoft; }}
-                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -189,7 +184,7 @@ export function TopBar({
                   <line x1="21" y1="12" x2="9" y2="12" />
                 </svg>
                 Sign out
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -238,10 +233,10 @@ export function ResumeEmptyState({
             the drop zone — supplements the stack's 16px gap. */}
         <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center", marginBottom: 12 }}>
           <h1
-            style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal, textWrap: "balance" }}
+            style={{ fontFamily: f.sans, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 700, letterSpacing: "-0.03em", margin: 0, color: t.coal, textWrap: "balance" }}
           >
             Drop your{" "}
-            <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>
+            <em style={{ fontStyle: "normal", fontWeight: 700, color: t.indigo }}>
               resume
             </em>
           </h1>
@@ -260,13 +255,14 @@ export function ResumeEmptyState({
           >
             {resumeError}
             {showUndo && (
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={onUndo}
-                style={{ marginLeft: 12, background: "transparent", border: "none", color: t.indigo, cursor: "pointer", fontWeight: 600, fontSize: 13, padding: 0 }}
+                style={{ marginLeft: 12, color: t.indigo }}
               >
                 Undo
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -302,9 +298,9 @@ export function ResumeEmptyState({
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
             <div
               aria-hidden="true"
-              style={{ width: 56, height: 56, borderRadius: 14, background: t.copperSoft, display: "flex", alignItems: "center", justifyContent: "center" }}
+              style={{ width: 56, height: 56, borderRadius: 14, background: t.indigo100, display: "flex", alignItems: "center", justifyContent: "center" }}
             >
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 <polyline points="17 8 12 3 7 8" />
                 <line x1="12" y1="3" x2="12" y2="15" />
@@ -367,7 +363,7 @@ export function ResumeEmptyState({
                 borderRadius: 999,
               }}
             >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {p.icon === "lock" && (
                   <>
                     <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
@@ -405,18 +401,15 @@ export function ResumeEmptyState({
               <div style={{ flex: 1, height: 1, background: t.line }} />
             </div>
             <div style={{ textAlign: "center" }}>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={onSkip}
-                style={{
-                  fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.indigo,
-                  background: "transparent", border: `1px solid ${t.lineStrong}`,
-                  borderRadius: 10, cursor: "pointer", padding: "12px 20px",
-                  minHeight: 44, // mobile tap target
-                }}
+                style={{ color: t.indigo }}
               >
                 Continue without resume
-              </button>
+              </Button>
               <div style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, marginTop: 8 }}>
                 You can add one later from Settings.
               </div>
@@ -494,10 +487,10 @@ export function ResumeLoadingState({
       <div className="hsx-onb-stack hsx-onb-state-enter" style={{ width: "100%", maxWidth: 540, margin: "0 auto" }}>
         <div className="hsx-login-hero hsx-onb-hero" style={{ width: "100%", textAlign: "center" }}>
           <h1
-            style={{ fontFamily: f.serif, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 400, letterSpacing: "-0.02em", margin: 0, color: t.coal }}
+            style={{ fontFamily: f.sans, fontSize: "clamp(2rem, 5vw, 3.5rem)", lineHeight: 1.05, fontWeight: 700, letterSpacing: "-0.03em", margin: 0, color: t.coal }}
           >
             Reading your{" "}
-            <em style={{ fontStyle: "italic", fontWeight: 400, color: t.copper }}>
+            <em style={{ fontStyle: "normal", fontWeight: 700, color: t.indigo }}>
               resume
             </em>
           </h1>
@@ -523,14 +516,14 @@ export function ResumeLoadingState({
               marginTop: 12,
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
               <polyline points="14 2 14 8 20 8" />
             </svg>
             <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.coal, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {fileName}
             </span>
-            <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
+            <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase", color: t.indigo }}>
               Analysing
             </span>
           </div>
@@ -549,7 +542,7 @@ export function ResumeLoadingState({
               position: "relative",
               width: `${Math.min(100, Math.max(0, progress))}%`,
               height: "100%",
-              background: `linear-gradient(90deg, ${t.indigo} 0%, ${t.copper} 100%)`,
+              background: `${t.indigo}`,
               borderRadius: 999,
               transition: "width 220ms cubic-bezier(0.16, 1, 0.3, 1)",
               overflow: "hidden",
@@ -586,7 +579,7 @@ export function ResumeLoadingState({
             {onTargetRoleChange && (
               <div onBlur={onTargetRoleBlur}>
                 <Field
-                  label="Target role (optional)"
+                  label="Target role"
                   type="text"
                   name="target-role"
                   value={targetRole || ""}
@@ -612,7 +605,7 @@ export function ResumeLoadingState({
         <div
           style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
@@ -621,14 +614,15 @@ export function ResumeLoadingState({
 
         {onCancel && (
           <div style={{ textAlign: "center" }}>
-            <button
+            <Button
               type="button"
+              variant="link"
               onClick={onCancel}
               className="hsx-link-indigo"
-              style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+              style={{ color: t.indigo }}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -658,6 +652,8 @@ export interface ProfileReadyStateProps {
       render a "Dashboard" outline button next to the primary. */
   onGoToDashboard?: () => void;
   starting?: boolean;
+  /** True when the resume was long enough that only a shortened version was analysed. */
+  truncated?: boolean;
 }
 
 export function ProfileReadyState({
@@ -672,6 +668,7 @@ export function ProfileReadyState({
   onStartInterview,
   onGoToDashboard,
   starting,
+  truncated,
 }: ProfileReadyStateProps) {
   void resumeParsed; // kept for parity with the production interface
   // Inline editable target-role — drafts locally so the user can revise before
@@ -681,6 +678,21 @@ export function ProfileReadyState({
   useEffect(() => {
     setRoleDraft(targetRole || "");
   }, [targetRole]);
+  // Target role drives 55% of the employer-matching fit score — an empty
+  // one guarantees this candidate can never surface in a job's Top Matches
+  // no matter how strong the resume is. Required before either CTA
+  // proceeds; a blocked click opens the inline editor instead of silently
+  // doing nothing.
+  const [roleMissingHint, setRoleMissingHint] = useState(false);
+  const roleRequired = !targetRole || !targetRole.trim();
+  const requireRoleThen = (fn?: () => void) => () => {
+    if (roleRequired) {
+      setRoleEditing(true);
+      setRoleMissingHint(true);
+      return;
+    }
+    fn?.();
+  };
 
   // Score count-up (rAF, reduced-motion respected).
   const targetScore = aiProfile.resumeScore;
@@ -734,6 +746,13 @@ export function ProfileReadyState({
   // name and use email-initials downstream.
   const trimmedName = (userName && userName.trim()) || "";
 
+  // resumeScore is only ever populated on the real LLM analysis path
+  // (server-handlers/analyze-resume.ts computes it from the rubric
+  // breakdown); the client-side regex fallback profile never sets it.
+  // Use that as the signal for whether this card is showing AI output
+  // or a degraded fallback — the badge must not claim success it didn't have.
+  const isRealAiProfile = aiProfile.resumeScore != null;
+
   return (
     <>
       <style>{AUTH_STYLES}{ONBOARDING_STYLES}</style>
@@ -749,19 +768,37 @@ export function ProfileReadyState({
           <section
             style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 14, padding: "18px 20px", boxShadow: shadows.card, display: "flex", flexDirection: "column" }}
           >
-            <div
-              role="status"
-              style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 999, background: t.success100, border: `1px solid rgba(21, 128, 61, 0.25)`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.success, fontWeight: 500, marginBottom: 14 }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
-              AI analysis complete
-            </div>
+            {isRealAiProfile ? (
+              <div
+                role="status"
+                style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 11px", borderRadius: 999, background: t.success100, border: `1px solid rgba(21, 128, 61, 0.25)`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.success, fontWeight: 500, marginBottom: 14 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                AI analysis complete
+              </div>
+            ) : (
+              <div
+                role="status"
+                style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "5px 11px", borderRadius: 999, background: t.warning100, border: `1px solid ${t.warningLine}`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.warningInk, fontWeight: 500, marginBottom: 14 }}
+              >
+                Quick profile — AI analysis didn't finish
+                <Button type="button" variant="link" onClick={onReanalyze} className="hsx-link-indigo">
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {truncated && (
+              <p className="mb-3 text-[13px] leading-5" style={{ color: t.warningInk }}>
+                Your resume is long, so we analysed a shortened version that keeps the start of every section. Content past that point was not scored.
+              </p>
+            )}
 
             <h1
               className="hsx-onb-profile-headline"
-              style={{ fontFamily: f.serif, fontSize: "clamp(1.75rem, 3.2vw, 2.25rem)", lineHeight: 1.15, fontWeight: 400, color: t.coal, letterSpacing: "-0.01em", margin: 0, marginBottom: 12 }}
+              style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 3.2vw, 2.25rem)", lineHeight: 1.15, fontWeight: 700, color: t.coal, letterSpacing: "-0.02em", margin: 0, marginBottom: 12 }}
             >
               {aiProfile.headline || "Your profile"}
             </h1>
@@ -770,8 +807,8 @@ export function ProfileReadyState({
                 blur commits. Lets users override the AI's role guess
                 without re-analyzing. */}
             {onTargetRoleChange && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: roleMissingHint && roleRequired ? 4 : 14, flexWrap: "wrap" }}>
+                <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
                   Target role
                 </span>
                 {roleEditing ? (
@@ -785,6 +822,7 @@ export function ProfileReadyState({
                     onBlur={() => {
                       setRoleEditing(false);
                       if (roleDraft !== (targetRole || "")) onTargetRoleChange(roleDraft);
+                      if (roleDraft.trim()) setRoleMissingHint(false);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
@@ -803,29 +841,18 @@ export function ProfileReadyState({
                       borderRadius: 999,
                       background: t.indigo100,
                       color: t.indigo,
-                      outline: "none",
                       minWidth: 180,
                     }}
                   />
                 ) : (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setRoleEditing(true)}
                     title="Edit target role"
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 6,
-                      fontFamily: f.sans,
-                      fontSize: 13,
-                      fontWeight: 500,
-                      color: t.indigo,
-                      background: t.indigo100,
-                      border: `1px solid ${t.indigo}`,
-                      borderRadius: 999,
-                      padding: "4px 10px",
-                      cursor: "pointer",
-                    }}
+                    className="rounded-full"
+                    style={{ color: t.indigo, background: t.indigo100, borderColor: t.indigo }}
                   >
                     {targetRole && targetRole.trim()
                       ? targetRole
@@ -834,13 +861,22 @@ export function ProfileReadyState({
                       <path d="M12 20h9" />
                       <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                     </svg>
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
+            {roleMissingHint && roleRequired && (
+              <p
+                role="status"
+                aria-live="polite"
+                style={{ marginTop: 0, marginBottom: 14, fontFamily: f.sans, fontSize: 12, color: t.copper, lineHeight: 1.4 }}
+              >
+                Add a target role to continue — it's how we match you to the right interview questions and job openings.
+              </p>
+            )}
 
             {aiProfile.summary && (
-              <p style={{ fontFamily: f.sans, fontSize: 14.5, lineHeight: 1.6, color: t.inkSoft, margin: 0, marginBottom: 16, flex: 1 }}>
+              <p style={{ fontFamily: f.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0, marginBottom: 16, flex: 1, whiteSpace: "pre-wrap" }}>
                 {aiProfile.summary}
               </p>
             )}
@@ -849,19 +885,20 @@ export function ProfileReadyState({
               className="hsx-onb-source-row"
               style={{ display: "flex", alignItems: "center", gap: 10, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: f.sans, fontSize: 13, color: t.inkSoft, flexWrap: "wrap" }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
               </svg>
               <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 Source: {fileName || "resume"}
               </span>
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={onReanalyze}
                 className="hsx-link-indigo"
                 title="Re-run the AI parse on this file"
-                style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.indigo, background: "transparent", border: "none", cursor: "pointer", textDecoration: "none", padding: 0, display: "inline-flex", alignItems: "center", gap: 4 }}
+                style={{ color: t.indigo }}
               >
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <polyline points="23 4 23 10 17 10" />
@@ -869,16 +906,17 @@ export function ProfileReadyState({
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                 </svg>
                 Re-analyze
-              </button>
+              </Button>
               <span style={{ width: 1, height: 12, background: t.line }} aria-hidden="true" />
-              <button
+              <Button
                 type="button"
+                variant="link"
                 onClick={onRemove}
                 className="hsx-link-indigo"
-                style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 500, color: t.inkSoft, background: "transparent", border: "none", cursor: "pointer", textDecoration: "none", padding: 0 }}
+                style={{ color: t.inkSoft }}
               >
                 Remove
-              </button>
+              </Button>
             </div>
           </section>
 
@@ -891,8 +929,8 @@ export function ProfileReadyState({
             tone={scoreTone as "success" | "warning" | "error" | "muted"}
             yearsExperience={aiProfile.yearsExperience}
             industries={aiProfile.industries}
-            onStartInterview={onStartInterview}
-            onGoToDashboard={onGoToDashboard}
+            onStartInterview={onStartInterview && requireRoleThen(onStartInterview)}
+            onGoToDashboard={onGoToDashboard && requireRoleThen(onGoToDashboard)}
             starting={starting}
           />
         </div>
@@ -911,7 +949,7 @@ export function ProfileReadyState({
           {aiProfile.careerTrajectory && (
             <div className="hsx-onb-cell" style={{ gridColumn: "span 7" }}>
               <SectionCard label="Career trajectory">
-                <p style={{ fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.6, color: t.coal, margin: 0 }}>
+                <p style={{ fontFamily: f.sans, fontSize: 14, lineHeight: 1.6, color: t.coal, margin: 0 }}>
                   {aiProfile.careerTrajectory}
                 </p>
               </SectionCard>
@@ -926,13 +964,16 @@ export function ProfileReadyState({
                     <Pill key={s} tone="muted" label={s} />
                   ))}
                   {hiddenSkills > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setSkillsExpanded((v) => !v)}
-                      style={{ display: "inline-flex", alignItems: "center", fontFamily: f.sans, fontSize: 12, fontWeight: 500, color: t.indigo, background: "transparent", border: `1px dashed ${t.indigo}`, borderRadius: 999, padding: "3px 10px", cursor: "pointer", whiteSpace: "nowrap" }}
+                    <Toggle
+                      pressed={skillsExpanded}
+                      onPressedChange={setSkillsExpanded}
+                      variant="outline"
+                      size="sm"
+                      aria-label={skillsExpanded ? "Show fewer skills" : `Show ${hiddenSkills} more skills`}
+                      style={{ fontFamily: f.sans, fontWeight: 500, color: t.indigo, borderStyle: "dashed", borderColor: t.indigo, borderRadius: 999, whiteSpace: "nowrap" }}
                     >
                       {skillsExpanded ? "Show fewer" : `+ ${hiddenSkills} more`}
-                    </button>
+                    </Toggle>
                   )}
                 </div>
               </SectionCard>
@@ -947,8 +988,8 @@ export function ProfileReadyState({
               <SectionCard label="Key achievements">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.keyAchievements.map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
-                      <span style={{ flexShrink: 0, marginTop: 6, width: 4, height: 4, borderRadius: 999, background: t.copper }} aria-hidden="true" />
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
+                      <span style={{ flexShrink: 0, marginTop: 6, width: 4, height: 4, borderRadius: 999, background: t.indigo }} aria-hidden="true" />
                       {line}
                     </li>
                   ))}
@@ -977,8 +1018,8 @@ export function ProfileReadyState({
               <SectionCard label="Improve your resume">
                 <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
                   {aiProfile.improvements.map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
                         <line x1="12" y1="20" x2="12" y2="10" />
                         <polyline points="7 14 12 9 17 14" />
                       </svg>
@@ -1009,7 +1050,7 @@ export function ProfileReadyState({
                     items.push("Personalised question mix based on your profile");
                   }
                   return items.slice(0, 3).map((line, i) => (
-                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+                    <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 4 }}>
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
@@ -1038,7 +1079,7 @@ export function ProfileReadyState({
                   "Quantified achievements",
                   "Industry & role benchmarking",
                 ].map((line) => (
-                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.5, color: t.coal }}>
+                  <li key={line} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 14, lineHeight: 1.5, color: t.coal }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.success} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -1139,7 +1180,7 @@ function ScoreGauge({
             style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 4 }}
           >
             <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-              <span style={{ fontFamily: f.serif, fontSize: 40, fontWeight: 400, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
+              <span style={{ fontFamily: f.sans, fontSize: 40, fontWeight: 700, color, lineHeight: 1, letterSpacing: "-0.02em" }}>
                 {score == null ? "—" : score}
               </span>
               {score != null && (
@@ -1147,7 +1188,7 @@ function ScoreGauge({
               )}
             </div>
             {score != null && (
-              <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color, marginTop: 4, fontWeight: 500 }}>
+              <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color, marginTop: 4, fontWeight: 500 }}>
                 {label}
               </span>
             )}
@@ -1185,34 +1226,13 @@ function ScoreGauge({
           them vertically so neither truncates. */}
       {onStartInterview && (
         <div className="hsx-onb-cta-pair" style={{ marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${t.line}`, display: "flex", gap: 8 }}>
-          <button
+          <Button
             type="button"
+            size="lg"
             onClick={onStartInterview}
             disabled={!!starting}
             className="hsx-onb-cta-primary"
-            style={{
-              flex: "1 1 auto",
-              minWidth: 0,
-              height: 44,
-              background: t.indigo,
-              color: t.white,
-              border: 0,
-              borderRadius: 10,
-              fontFamily: f.sans,
-              fontSize: 14,
-              fontWeight: 600,
-              letterSpacing: "-0.005em",
-              cursor: starting ? "wait" : "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 8,
-              transition: "background 0.15s ease, transform 0.1s ease",
-              opacity: starting ? 0.85 : 1,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis",
-            }}
+            style={{ flex: "1 1 auto", minWidth: 0, background: t.indigo, color: t.white, cursor: starting ? "wait" : "pointer", opacity: starting ? 0.85 : 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
           >
             {starting ? "Starting…" : "Start mock interview"}
             {!starting && (
@@ -1220,42 +1240,18 @@ function ScoreGauge({
                 <path d="M2 7h10m-4-4 4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
-          </button>
+          </Button>
           {onGoToDashboard && (
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="lg"
               onClick={onGoToDashboard}
               disabled={!!starting}
-              style={{
-                flexShrink: 0,
-                height: 44,
-                padding: "0 16px",
-                background: "transparent",
-                color: t.inkSoft,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                fontFamily: f.sans,
-                fontSize: 14,
-                fontWeight: 500,
-                cursor: starting ? "not-allowed" : "pointer",
-                transition: "background 0.15s ease, border-color 0.15s ease, color 0.15s ease",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => {
-                if (!starting) {
-                  e.currentTarget.style.background = t.creamSoft;
-                  e.currentTarget.style.borderColor = t.inkSoft;
-                  e.currentTarget.style.color = t.coal;
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.borderColor = t.line;
-                e.currentTarget.style.color = t.inkSoft;
-              }}
+              style={{ flexShrink: 0, color: t.inkSoft, whiteSpace: "nowrap" }}
             >
               Dashboard
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -1276,7 +1272,7 @@ function StatRow({
 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-      <span style={{ fontFamily: f.mono, fontSize: 10, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
+      <span style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint, flexShrink: 0 }}>
         {label}
       </span>
       <span
@@ -1345,7 +1341,7 @@ function StrengthGapCard({ label, tone, items }: { label: string; tone: "success
       </div>
       <ul style={{ margin: 0, paddingLeft: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 8 }}>
         {items.map((line, i) => (
-          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: f.sans, fontSize: 13.5, lineHeight: 1.55, color: t.coal }}>
+          <li key={i} style={{ display: "flex", alignItems: "flex-start", gap: 8, fontFamily: f.sans, fontSize: 14, lineHeight: 1.55, color: t.coal }}>
             <span aria-hidden="true" style={{ flexShrink: 0, marginTop: 7, width: 4, height: 4, borderRadius: 999, background: accent }} />
             {line}
           </li>
@@ -1364,6 +1360,7 @@ export interface NavigationFooterProps {
   onStart?: () => void;
   onStartInterview?: () => void;
   onGoToDashboard?: () => void;
+  onSkip?: () => void;
   resumeScore?: number | null;
   hasResume?: boolean;
   quotaHint?: string | null;
@@ -1387,33 +1384,30 @@ export function NavigationFooter({
     const isGhost = primaryDisabled;
     const primaryStyle: React.CSSProperties = {
       fontFamily: f.sans,
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: 600,
       color: isGhost ? t.inkFaint : t.cream,
       background: isGhost ? t.creamSoft : t.indigo,
-      border: isGhost ? `1px solid ${t.line}` : "1px solid transparent",
-      borderRadius: 10,
+      borderRadius: 8,
       padding: "14px 24px",
-      cursor: primaryDisabled ? "not-allowed" : "pointer",
-      boxShadow: isGhost ? "none" : shadows.cta,
+      boxShadow: isGhost ? "none" : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
       letterSpacing: 0.1,
-      display: "inline-flex",
-      alignItems: "center",
-      justifyContent: "center",
       gap: 10,
       minWidth: 220,
+      height: "auto",
     };
     return (
       <div style={{ marginTop: 24, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-        <button
+        <Button
           type="button"
+          variant={isGhost ? "outline" : "default"}
           onClick={onStart}
           disabled={primaryDisabled}
           aria-busy={starting || undefined}
           style={primaryStyle}
         >
           {starting ? "Starting…" : "Continue"}
-        </button>
+        </Button>
         {quotaHint && (
           <div style={{ fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkFaint }}>
             {quotaHint}

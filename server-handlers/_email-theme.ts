@@ -19,7 +19,8 @@ export const C = {
   coal: "#0E0C08",
   indigoGray: "#3E3A6E",
   inkSoft: "#6E6759",
-  inkFaint: "#A39C8B",
+  // Was #A39C8B (~2.4:1 on white). #736B5D is the design-system inkFaint: 5.26:1 on white.
+  inkFaint: "#736B5D",
   indigo: "#312E81",
   indigoDeep: "#1E1B4B",
   indigo100: "#E5E2F2",
@@ -176,18 +177,40 @@ export function orderedList(items: string[]): string {
   return `<ol style="margin:0 0 26px;padding-left:20px;">${lis}</ol>`;
 }
 
-/** Standard footer — compliance + unsubscribe. `manageUrl` defaults to the
-    settings page; pass an absolute URL. */
-export function footer(opts: { manageUrl?: string; unsubUrl?: string } = {}): string {
-  const manage = opts.manageUrl
-    ? link("Manage notifications", opts.manageUrl)
-    : "Manage notifications";
-  const unsub = opts.unsubUrl ? link("Unsubscribe", opts.unsubUrl) : "Unsubscribe";
+/** Footer options. `marketing: true` marks a promotional/notification email
+    that must carry a working unsubscribe link (CAN-SPAM, Gmail/Yahoo bulk
+    rules); without it the footer is the transactional one and never offers
+    an unsubscribe, because account/payment/security mail can't be opted out of. */
+export interface EmailFooterOptions {
+  marketing?: boolean;
+  manageUrl?: string;
+  /** Per-recipient signed one-click link (see _unsubscribe.ts). When a
+      marketing email has none (no signing secret configured) the footer
+      degrades to the login-gated settings page rather than a dead link. */
+  unsubUrl?: string;
+}
+
+function postalAddress(): string {
+  return (process.env.LEGAL_POSTAL_ADDRESS || process.env.NEXT_PUBLIC_LEGAL_POSTAL_ADDRESS || "").trim();
+}
+
+/** Standard footer. Every email names the sender; the postal address renders
+    only when LEGAL_POSTAL_ADDRESS is configured (never invented). */
+function footer(opts: EmailFooterOptions = {}): string {
+  const manageUrl = opts.manageUrl ?? "https://hirestepx.com/settings";
+  const links = opts.marketing
+    ? `${link("Unsubscribe", opts.unsubUrl ?? manageUrl)} &middot; ${link("Email preferences", manageUrl)}`
+    : link("Manage notifications", manageUrl);
+  const reason = opts.marketing
+    ? "You're receiving this because you have an account at hirestepx.com."
+    : "You're receiving this because you have an account at hirestepx.com. This is a service email about your account or activity.";
+  const address = postalAddress();
+  const sender = `Sent by HireStepX (hirestepx.com)${address ? `<br>${escapeHtml(address)}` : ""}`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:44px;border-top:1px solid ${C.line};">
     <tr><td style="padding-top:22px;font-family:${SANS};font-size:12px;line-height:1.7;color:${C.inkSoft};">
-      You're receiving this because you have an account at hirestepx.com.<br>
-      ${manage} &middot; ${unsub}
-      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">HireStepX</div>
+      ${reason}<br>
+      ${links}
+      <div style="margin-top:12px;font-size:11px;color:${C.inkFaint};">${sender}</div>
     </td></tr>
   </table>`;
 }
@@ -202,6 +225,10 @@ function preheader(text: string): string {
 export function emailShell(opts: {
   preview: string;
   body: string;
+  /** Overrides for the compliance footer. The shell is the footer's only
+      owner (the builder is module-private), so a body can never render a
+      second copy. */
+  footer?: EmailFooterOptions;
 }): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -222,9 +249,12 @@ ${preheader(escapeHtml(opts.preview))}
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:${C.white};border:1px solid ${C.line};border-radius:14px;overflow:hidden;">
       <tr><td style="padding:40px 44px;">
-        <div style="font-family:${SERIF};font-size:18px;font-weight:500;color:${C.coal};letter-spacing:-0.01em;padding-bottom:22px;margin-bottom:28px;border-bottom:1px solid ${C.line};">HireStepX</div>
+        <div style="padding-bottom:22px;margin-bottom:28px;border-bottom:1px solid ${C.line};display:flex;align-items:center;gap:10px;">
+          <img src="https://hirestepx.com/favicon.svg" alt="HireStepX" width="36" height="36" style="display:inline-block;border-radius:50%;border:0;outline:none;vertical-align:middle;" />
+          <span style="font-family:${SERIF};font-size:18px;font-weight:500;color:${C.coal};letter-spacing:-0.01em;vertical-align:middle;">HireStepX</span>
+        </div>
         ${opts.body}
-        ${footer()}
+        ${footer(opts.footer)}
       </td></tr>
     </table>
   </td></tr>

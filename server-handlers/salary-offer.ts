@@ -95,7 +95,7 @@ export default async function handler(req: Request): Promise<Response> {
       headers,
     });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: msg.slice(0, 200) }), { status: 500, headers });
+    console.error("[salary-offer] error:", err instanceof Error ? err.message : String(err));
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers });
   }
 }

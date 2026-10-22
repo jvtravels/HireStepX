@@ -1,11 +1,13 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { font } from "./tokens";
 import { useAuth } from "./AuthContext";
 import type { ParsedResume } from "./resumeParser";
 import type { ResumeProfile } from "./dashboardData";
 import { FREE_SESSION_LIMIT } from "./dashboardData";
+import { archiveResumeFile } from "./resumeArchive";
 import { track } from "@vercel/analytics";
 import { EmailVerificationBanner } from "./onboarding/EmailVerificationBanner";
 import {
@@ -17,6 +19,7 @@ import {
 } from "./onboarding/Panels";
 import { tokens as ot } from "./auth/_tokens";
 import { detectResumeRoleMismatch } from "../server-handlers/_resume-role-match";
+import LoadingScreen from "./_LoadingScreen";
 
 const OB_STEP_KEY = "hirestepx_ob_step";
 const OB_FORM_KEY = "hirestepx_ob_form";
@@ -154,6 +157,7 @@ export default function Onboarding() {
   const [resumeText, setResumeText] = useState("");
   const [resumeParsed, setResumeParsed] = useState<ParsedResume | null>(null);
   const [resumeParsing, setResumeParsing] = useState(false);
+  const [resumeTruncated, setResumeTruncated] = useState(false);
   const [resumeError, setResumeError] = useState("");
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [isDragging, setIsDragging] = useState(false);
@@ -169,8 +173,14 @@ export default function Onboarding() {
   const [userName, setUserName] = useState(
     looksLikePersonName(user?.name) ? (user?.name || "") : ""
   );
-  const undoRef = useRef<{ fileName: string; resumeText: string; resumeParsed: ParsedResume | null; aiProfile: ResumeProfile | null; aiPhase: "idle" | "analyzing" | "done"; targetRole: string; userName: string } | null>(null);
+  const undoRef = useRef<{ fileName: string; resumeText: string; resumeParsed: ParsedResume | null; aiProfile: ResumeProfile | null; aiPhase: "idle" | "analyzing" | "done"; targetRole: string; userName: string; aiSuccess: boolean } | null>(null);
   const analysisAbortRef = useRef<AbortController | null>(null);
+  // Tracks whether `aiProfile` actually came from a successful AI analysis
+  // (vs. the "Analyzing..."/"Your Profile" placeholder seeded before/on
+  // failure) — finalizeOnboarding reads this to decide the StoredResume
+  // _type tag, mirroring the aiSuccess local var handleFileUpload already
+  // uses for its own save.
+  const aiSuccessRef = useRef(false);
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<number>(0);
   const [targetRole, setTargetRole] = useState(user?.targetRole || "");
@@ -333,8 +343,19 @@ export default function Onboarding() {
         const autoRole = extractRoleFromExperience(data.experience);
         const { analyzeResumeWithAI } = await import("./dashboardData");
         analysisAbortRef.current?.abort();
-        analysisAbortRef.current = new AbortController();
-        analyzeResumeWithAI(rText, targetRole || autoRole, analysisAbortRef.current.signal)
+        const ac = new AbortController();
+        analysisAbortRef.current = ac;
+        // A hung connection (dropped network, an interfering browser
+        // extension) left this call never settling, which left aiPhase
+        // stuck on "analyzing" forever — isBusy derives from it, so
+        // Continue never re-enabled and onboarding couldn't be finished.
+        // This restore-on-mount path fires on every refresh until a real
+        // AI profile lands, making it the most-triggered of the three
+        // analyze-resume call sites; the other two already carry this same
+        // ceiling (see the re-analyze effect below and handleFileChange's
+        // Promise.race) — this one was missed.
+        const timer = setTimeout(() => ac.abort(), 20000);
+        analyzeResumeWithAI(rText, targetRole || autoRole, ac.signal)
           .then(result => {
             if (result && "profile" in result) {
               setAiProfile(result.profile);
@@ -348,7 +369,7 @@ export default function Onboarding() {
             }
           })
           .catch(err => { console.error("[onboarding] AI analysis error:", err instanceof Error ? err.message : err); })
-          .finally(() => setAiPhase("done"));
+          .finally(() => { clearTimeout(timer); setAiPhase("done"); });
       }
       if (!targetRole) {
         const aiRole = savedAiProfile?.headline && savedAiProfile.headline !== "Analyzing..." ? savedAiProfile.headline.split(/\s+with\s+/i)[0] : "";
@@ -425,7 +446,7 @@ export default function Onboarding() {
     const handler = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "BUTTON") return;
-      if (e.key === "Enter" && resumeParsed && aiPhase === "done" && userName.trim()) {
+      if (e.key === "Enter" && resumeParsed && aiPhase === "done" && userName.trim() && targetRole.trim()) {
         e.preventDefault();
         handleStart();
       }
@@ -465,7 +486,7 @@ export default function Onboarding() {
     setResumeError("");
     setResumeParsing(true);
     try {
-      const { extractResumeText, parseResumeDataAsync } = await import("./resumeParser");
+      const { extractResumeTextWithMeta, parseResumeDataAsync } = await import("./resumeParser");
       const { analyzeResumeWithAI } = await import("./dashboardData");
       // Compute file-byte hash in parallel with text extraction. Used
       // by the server-side resume cache as a stable file-identity key
@@ -473,7 +494,9 @@ export default function Onboarding() {
       // on the same cached analysis even when pdf.js versions tweak
       // whitespace. Best-effort — null on browsers without SubtleCrypto.
       const fileHashPromise = computeFileHash(file);
-      let text = await extractResumeText(file);
+      const extracted = await extractResumeTextWithMeta(file);
+      let text = extracted.text;
+      setResumeTruncated(extracted.truncated);
       if (!text || text.trim().length < 30) {
         const fileExt = file.name.split(".").pop()?.toLowerCase();
         if (fileExt && ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(fileExt)) {
@@ -526,6 +549,7 @@ export default function Onboarding() {
       setAiPhase("analyzing");
       let finalProfile: ResumeProfile = fallback;
       let aiSuccess = false;
+      aiSuccessRef.current = false;
       // Captured from analyze-resume's response so we can pin the user's
       // profile to the canonical resume_versions row immediately. If the
       // tab closes between LLM completion and the updateUser PATCH, the
@@ -547,12 +571,16 @@ export default function Onboarding() {
             fileName: file.name,
             fileHash: fileHash ?? undefined,
           }),
-          // 25s budget — aligned to the server's worst-case Groq→Gemini
-          // fallback (~10s + 10s + ~3s pre-checks = ~23s). The previous
-          // 40s ceiling let the client surface a "timeout" on requests
-          // the server had actually completed; users saw "timed out"
-          // for analyses that landed successfully in the DB. 25s leaves
-          // a 2s buffer for network jitter on the response path.
+          // 25s budget — the server now hard-caps its whole gemini→groq→
+          // cloudflare chain (incl. retries/failover) at an 18s totalBudgetMs
+          // (see analyze-resume.ts), plus ~1-2s of auth/cache pre-checks,
+          // so its real worst case is ~19-20s. 25s leaves 5s+ of margin for
+          // network jitter on the response path. Previously this raced
+          // against a per-provider timeout that undercounted retries, so
+          // the server's real worst case could exceed both this budget
+          // and Vercel's edge execution ceiling — the client would show
+          // "timed out" (or a raw failure) for analyses that were actually
+          // about to succeed server-side.
           new Promise<null>((_, reject) => setTimeout(() => reject(new Error("timeout")), 25000)),
           new Promise<null>((_, reject) => {
             currentAbort.signal.addEventListener("abort", () => reject(new Error("aborted")));
@@ -562,7 +590,9 @@ export default function Onboarding() {
           finalProfile = result.profile;
           setAiProfile(finalProfile);
           analyzedVersionId = result.resumeVersionId ?? null;
+          void archiveResumeFile(file, analyzedVersionId);
           aiSuccess = true;
+          aiSuccessRef.current = true;
           if (finalProfile.headline && finalProfile.headline !== "Analyzing...") {
             // AI headlines look like "Senior Product Designer with 5+ years…"
             // — slice off everything from " with " onwards to get just the role.
@@ -582,7 +612,10 @@ export default function Onboarding() {
           !/^(and|or|the|with|for|from|working|worked|used|using|also|various)\b/i.test(s)
         );
         if (cleanSkills.length > 0) {
-          finalProfile = { ...fallback, topSkills: cleanSkills.slice(0, 8), headline: data.name || "Your Profile" };
+          // headline stays generic here — it must never be the candidate's own
+          // name (data.name), which the UI renders both as the profile title
+          // and, absent a separately-set targetRole, as the "Target role" pill.
+          finalProfile = { ...fallback, topSkills: cleanSkills.slice(0, 8), headline: "Your Profile" };
           setAiProfile(finalProfile);
         }
       }
@@ -651,7 +684,7 @@ export default function Onboarding() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to parse resume";
       setResumeError(msg);
-      setResumeText(""); setResumeParsed(null);
+      setResumeText(""); setResumeTruncated(false); setResumeParsed(null);
       track("resume_upload_failed", { reason: "parse_error", message: msg.slice(0, 100) });
     } finally {
       setResumeParsing(false);
@@ -675,7 +708,7 @@ export default function Onboarding() {
     if (fileName) {
       saveData.resumeFileName = fileName;
       saveData.resumeText = resumeText;
-      if (aiProfile) {
+      if (aiSuccessRef.current && aiProfile) {
         saveData.resumeData = { _type: "ai", ...aiProfile };
       } else if (resumeParsed) {
         saveData.resumeData = { _type: "fallback", ...resumeParsed };
@@ -734,7 +767,7 @@ export default function Onboarding() {
       if (e.key === "u" || e.key === "U") {
         if (!resumeParsing) { e.preventDefault(); fileInputRef.current?.click(); }
       } else if (e.key === "Enter") {
-        if (resumeParsed && aiPhase === "done" && userName.trim() && !starting) {
+        if (resumeParsed && aiPhase === "done" && userName.trim() && targetRole.trim() && !starting) {
           e.preventDefault();
           handleStartInterview();
         }
@@ -749,7 +782,11 @@ export default function Onboarding() {
   const isBusy = resumeParsing || aiPhase === "analyzing";
   const noResume = !resumeParsed && !resumeParsing && aiPhase !== "analyzing";
   const nameEmpty = aiPhase === "done" && !userName.trim();
-  const isContinueDisabled = isBusy || noResume || nameEmpty;
+  // Required (not just suggested) once a resume is in — roleOverlap drives 55%
+  // of the employer-matching fit score, and an empty target_role guarantees a
+  // candidate can never clear it regardless of resume quality.
+  const roleEmpty = aiPhase === "done" && !targetRole.trim();
+  const isContinueDisabled = isBusy || noResume || nameEmpty || roleEmpty;
 
   const handleReanalyze = () => {
     setAiPhase("analyzing");
@@ -788,11 +825,13 @@ export default function Onboarding() {
     setResumeText("");
     setResumeParsed(null);
     setAiProfile(null);
+    aiSuccessRef.current = false;
   };
 
   const handleRemoveResume = () => {
-    undoRef.current = { fileName, resumeText, resumeParsed, aiProfile, aiPhase, targetRole, userName };
-    setFileName(""); setResumeText(""); setResumeParsed(null); setResumeError(""); setAiProfile(null); setAiPhase("idle"); setTargetRole(""); setUserName("");
+    undoRef.current = { fileName, resumeText, resumeParsed, aiProfile, aiPhase, targetRole, userName, aiSuccess: aiSuccessRef.current };
+    setFileName(""); setResumeText(""); setResumeTruncated(false); setResumeParsed(null); setResumeError(""); setAiProfile(null); setAiPhase("idle"); setTargetRole(""); setUserName("");
+    aiSuccessRef.current = false;
     try { localStorage.removeItem("hirestepx_resume"); } catch { /* noop */ }
     setShowUndo(true); clearTimeout(undoTimerRef.current);
     undoTimerRef.current = window.setTimeout(() => { setShowUndo(false); undoRef.current = null; }, 12000);
@@ -802,6 +841,7 @@ export default function Onboarding() {
     if (!undoRef.current) return;
     const s = undoRef.current;
     setFileName(s.fileName); setResumeText(s.resumeText); setResumeParsed(s.resumeParsed); setAiProfile(s.aiProfile); setAiPhase(s.aiPhase); setTargetRole(s.targetRole); setUserName(s.userName);
+    aiSuccessRef.current = s.aiSuccess;
     setShowUndo(false); clearTimeout(undoTimerRef.current); undoRef.current = null;
   };
 
@@ -811,25 +851,7 @@ export default function Onboarding() {
   // section means returning users no longer see a 1-2s flash of
   // onboarding before the redirect fires. Matches /loading.tsx style.
   if (authLoading || shouldRedirectAway) {
-    return (
-      <div
-        role="status"
-        aria-live="polite"
-        aria-busy="true"
-        style={{ minHeight: "100vh", background: ot.cream, display: "flex", alignItems: "center", justifyContent: "center" }}
-      >
-        <div
-          style={{
-            width: 36, height: 36,
-            border: "2px solid rgba(180,83,9,0.15)",
-            borderTopColor: "#312E81",
-            borderRadius: "50%",
-            animation: "ob-spin 800ms linear infinite",
-          }}
-        />
-        <style>{`@keyframes ob-spin { to { transform: rotate(360deg); } }`}</style>
-      </div>
-    );
+    return <LoadingScreen message={shouldRedirectAway ? "You're already set up. Taking you to your dashboard…" : undefined} />;
   }
 
   // Inline warning when the entered target role doesn't match the resume's
@@ -921,7 +943,7 @@ export default function Onboarding() {
           )}
           {resumeParsed && !resumeParsing && aiPhase === "done" && (
             <ProfileReadyState
-              aiProfile={aiProfile || { headline: resumeParsed.name || "Your Profile", summary: "", yearsExperience: null, seniorityLevel: "", topSkills: resumeParsed.skills?.slice(0, 8) || [], keyAchievements: [], industries: [], interviewStrengths: [], interviewGaps: [], careerTrajectory: "" }}
+              aiProfile={aiProfile || { headline: "Your Profile", summary: "", yearsExperience: null, seniorityLevel: "", topSkills: resumeParsed.skills?.slice(0, 8) || [], keyAchievements: [], industries: [], interviewStrengths: [], interviewGaps: [], careerTrajectory: "" }}
               resumeParsed={resumeParsed} userName={userName}
               fileName={fileName} resumeText={resumeText} targetRole={targetRole}
               fileInputRef={fileInputRef} onUserNameChange={setUserName}
@@ -930,6 +952,7 @@ export default function Onboarding() {
               onStartInterview={handleStartInterview}
               onGoToDashboard={handleGoToDashboard}
               starting={starting}
+              truncated={resumeTruncated}
             />
           )}
 
@@ -939,6 +962,7 @@ export default function Onboarding() {
             onStart={handleStart}
             onStartInterview={handleStartInterview}
             onGoToDashboard={handleGoToDashboard}
+            onSkip={noResume && !isBusy ? () => finalizeOnboarding("skip") : undefined}
             resumeScore={aiProfile?.resumeScore ?? null}
             hasResume={!!resumeParsed && aiPhase === "done"}
             // #14 — surface free-tier quota near the primary CTA so users
@@ -972,31 +996,19 @@ export default function Onboarding() {
         >
           <svg aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={ot.success} strokeWidth="2" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
           <span>{draftToast}</span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-xs"
             onClick={() => setDraftToast(null)}
             aria-label="Dismiss"
-            style={{
-              marginLeft: 4,
-              width: 22, height: 22,
-              border: "none",
-              background: "transparent",
-              color: ot.inkSoft,
-              cursor: "pointer",
-              borderRadius: 6,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = ot.creamSoft; e.currentTarget.style.color = ot.coal; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = ot.inkSoft; }}
+            style={{ marginLeft: 4, color: ot.inkSoft }}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
               <line x1="6" y1="6" x2="18" y2="18" />
               <line x1="6" y1="18" x2="18" y2="6" />
             </svg>
-          </button>
+          </Button>
         </div>
       )}
 

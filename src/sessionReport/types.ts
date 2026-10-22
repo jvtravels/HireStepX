@@ -56,6 +56,13 @@ export interface Question {
   index: number;
   text: string;
   score: number;
+  /** S6-B4 — true when NO genuine per-turn score exists for this row (e.g. a
+   *  reconstructed negotiation exchange: the evaluator scored the call as a
+   *  whole, never per-turn). The per-question card then renders a neutral "—"
+   *  instead of a misleading numeric score. `score` still carries a value for
+   *  band derivation, but it is NOT the row's own graded score, so it must not
+   *  be shown as one. */
+  scoreUnavailable?: boolean;
   band: "weak" | "partial" | "strong" | "complete";
   answer: AnswerSpan[];
   restructured?: AnswerSpan[];
@@ -200,9 +207,8 @@ export interface InterviewResultData {
   overallScore: number;
   verdict: Verdict;
   scoreDelta: number;
-  percentile?: number;
   recentScores?: number[];
-  readiness?: { pct: number; etaWeeks: number };
+  readiness?: { pct: number; etaWeeks: number; confirmed?: boolean };
   daysUntilInterview?: number;
   company: string;
   role: string;
@@ -228,7 +234,9 @@ export interface InterviewResultData {
   storyReuseFindings?: StoryReuseFinding[];
   blindSpots?: BlindSpot[];
   thoughtBubble?: ThoughtBubbleSegment[];
-  readinessSentence?: string;
+  /** Structured practice plan from the readiness model: sessions to reach
+   *  the target band. Drives the Next session card. */
+  readinessPlan?: { sessions: number; weeks: number; targetBand: string };
   /** Perception-optimizer findings — bias-pattern aggregates across the
    *  whole session. Empty / undefined = panel doesn't render. */
   biasFindings?: BiasFinding[];
@@ -246,6 +254,13 @@ export interface InterviewResultData {
    *  Sourced from `aiProfile.improvements` (computed once at resume-upload).
    *  Undefined when no AI-parsed resume is available. */
   resumeImprovements?: string[];
+  /** S65-B1: plain-language coaching pair from evaluate-session (mvp-8+).
+   *  Renders in CoachNotesSection as a "What went well / For next time" card.
+   *  Undefined for pre-mvp-8 rows — section hides when all its content is absent. */
+  coaching?: {
+    strength: { headline: string; meaning: string };
+    gap: { headline: string; meaning: string; example: string };
+  };
   /** Focus-aware banner for the top of the report. See `FocusBannerData`.
    *  Undefined for behavioral sessions (BehavioralFullReport has its own
    *  hero) or when focus type isn't recognized. */
@@ -289,6 +304,16 @@ export interface InterviewResultData {
     leverDiversity?: number;
     tacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /** S13-B9 — subset of `infoAsked` the candidate raised on their OWN
+     *  initiative (recruiter did not elicit it). `derivePhases` stage-2 ("You
+     *  justified your number") keys on this so a recruiter-elicited disclosure
+     *  is not miscredited as candidate-initiated justification. */
+    infoAskedInitiated?: ReadonlyArray<string>;
+    /** S3-B2 — hike-justification rationale the candidate used (Phase-11
+     *  `_hike-rationale.ts`). Absent when no grounded reason was detected.
+     *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+     *  "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
     /** Structured pushbacks the AI made during the call. Each entry pairs
      *  an AI line with how the candidate responded (held / deflected /
      *  conceded). Drives the "When they pushed back, did you fold?" panel.
@@ -326,6 +351,11 @@ export interface InterviewResultData {
       context: string;
       healthy: boolean;
     }>;
+    /** S4S5-B3 — one-time joining bonus the recruiter offered (LPA).
+     *  Null/absent when no joining bonus was part of the deal.
+     *  Distinct from `finalTotal` (annual CTC) — used by
+     *  CounterOfferLetterPanel and OfferEconomicsPanel. */
+    joiningBonusLpa?: number | null;
     /** Levers the candidate didn't ask about that strong negotiators
      *  always probe — each tagged with what it's worth. Optional —
      *  backend derives from transcript-question-classifier. */
@@ -408,6 +438,9 @@ export interface InterviewResultData {
        before this ship landed will not have them. */
     vossTacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /** S13-B9 — candidate-INITIATED subset of infoAsked (recruiter did not
+     *  elicit it). Optional: absent on rows persisted before it shipped. */
+    infoAskedInitiated?: ReadonlyArray<string>;
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";
@@ -418,6 +451,14 @@ export interface InterviewResultData {
      *  taxonomy + guardrail layer landed. Drives CoachingSignalsPanel
      *  in NegotiationFullReport. */
     guardrailFlagSummary?: Record<string, number>;
+    /** OA-B58 — candidate's current CTC the kernel parsed (LPA).
+     *  Null when never disclosed. When null, the simulated band used
+     *  role defaults — reported to the user as a context note. */
+    candidateCurrentCtcLpa?: number | null;
+    /** The highest total CTC the recruiter put on the table (LPA).
+     *  For an accepted deal this is the agreed number. Optional: absent
+     *  on rows persisted before authoritative offer numbers were added. */
+    finalOfferLpa?: number;
   };
 }
 
@@ -501,7 +542,6 @@ export interface BehavioralAccountability {
   depthProbes: number;
   vagueAccepted: number;
   ownershipProbes: number;
-  deflected: number;
 }
 
 export interface BehavioralTranscriptRow {
@@ -518,7 +558,6 @@ export interface BehavioralPersona {
 }
 
 export interface BehavioralSessionMeta {
-  number: number;       // session 04 → 4
   dateISO: string;      // "2026-06-02"
   durationMin: number;  // 28
   substantiveAnswers: number;

@@ -1,1239 +1,61 @@
 /* Admin Dashboard API — returns aggregated metrics for the admin panel.
- * Security: timing-safe password comparison, rate limiting, session tokens with expiry. */
+ * Security: every call needs a signed, expiring session token minted by /api/admin-login (password + TOTP). */
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { createHmac, timingSafeEqual } from "crypto";
-import { categorizeLlmError, emptyBreakdown } from "./_admin-llm-categorizer";
-import { createAdminToken, verifyAdminToken } from "./_admin-auth";
-import { costBreakdown, kFactor, DEFAULT_COST_RATES } from "./_cost-helpers";
+import { verifyAuth, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ValidationError, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET, RESEND_API_KEY, fetchJSON } from "./_admin-shared";
+import { getOverview, getUsers, getUserDetail, getSessionDetail, getSessions, getFeedback, getCalendar, getOutcomes } from "./_admin-activity";
+import { getFinancials, getLLMUsage, getCostData, saveCostReconciliation } from "./_admin-financials";
+import { getSupportMessages, getMessaging, reviewMessageFlag, getReferrals, getEmployers, getPromoCodes, updateSupportStatus } from "./_admin-community";
+import { getHealthAlerts } from "./_health-alerts";
+import { getEmployerFinancials } from "./_admin-employer-financials";
+import { listEmployers, setEmployerTier, suspendEmployer, unsuspendEmployer, listEmployerReports, resolveEmployerReport } from "./_admin-employers";
+import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
+import { razorpayBasicAuth } from "./_razorpay-auth";
+import { createAdminToken } from "./_admin-auth";
+import { describeAdminAction, toWebHeaders, ADMIN_ACTOR } from "./_admin-session-helpers";
+import { recordAdminAudit, revokeAllSessions, revokeSession } from "./_admin-session-store";
+import { slog, getClientIp } from "./_shared";
+import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
 
-/* ─── Config ─── */
-
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-/* Session-token mint/verify live in ./_admin-auth so this issuer and the
- * admin-quality-* verifiers share one signing key (see that module). */
-
-/* Query limits — reasonable caps to prevent huge payloads */
-const LIMIT_PROFILES = 2000;
-const LIMIT_SESSIONS = 2000;
-const LIMIT_PAYMENTS = 1000;
-const LIMIT_LLM = 2000;
-const LIMIT_RECENT = 30;
-
-/* ─── Rate Limiting (in-memory, per serverless instance) ─── */
-
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) return false;
-  return entry.count >= MAX_ATTEMPTS;
-}
-
-function recordAttempt(ip: string): void {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-  } else {
-    entry.count++;
-  }
-}
-
-function clearAttempts(ip: string): void {
-  loginAttempts.delete(ip);
-}
-
-function getClientIp(req: VercelRequest): string {
-  const forwarded = req.headers["x-forwarded-for"];
-  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
-  return "unknown";
-}
-
-/* ─── Auth ─── */
-
-function verifyPassword(input: string): boolean {
-  if (!ADMIN_PASSWORD || !input) return false;
-  // HMAC both sides to a fixed-length 32-byte digest. This eliminates
-  // length-based timing leaks (the comparison itself sees only equal-
-  // length buffers) and we use the comparison result directly so static
-  // analyzers don't flag a discarded timingSafeEqual return.
-  const a = createHmac("sha256", "hsx-admin-pw-v1").update(input).digest();
-  const b = createHmac("sha256", "hsx-admin-pw-v1").update(ADMIN_PASSWORD).digest();
-  return timingSafeEqual(a, b);
-}
-
-/** Check auth: either password (for login) or token (for subsequent requests) */
-function verifyAuth(req: VercelRequest): { ok: boolean; isLogin?: boolean } {
-  // Check for session token first
-  const token = req.headers["x-admin-token"];
-  if (token && typeof token === "string" && verifyAdminToken(token)) {
-    return { ok: true };
-  }
-  // Check for password (login attempt)
-  const key = req.headers["x-admin-key"];
-  if (key && typeof key === "string" && verifyPassword(key)) {
-    return { ok: true, isLogin: true };
-  }
-  return { ok: false };
-}
-
-/* ─── Supabase Helpers ─── */
-
-function supa(path: string, opts?: RequestInit) {
-  return fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    ...opts,
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-      ...(opts?.headers || {}),
-    },
-  });
-}
-
-async function fetchJSON<T = unknown>(path: string): Promise<T[]> {
-  const res = await supa(path);
-  if (!res.ok) {
-    const body = await res.text().catch(() => "");
-    console.error(`[admin-data] supabase query failed: ${path.slice(0, 120)} → HTTP ${res.status}: ${body.slice(0, 200)}`);
-    return [];
-  }
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
-}
-
-async function fetchCount(table: string, filter = ""): Promise<number> {
-  const path = `${table}?select=id${filter}&limit=0`;
-  const res = await supa(path, { headers: { Prefer: "count=exact" } });
-  const range = res.headers.get("content-range");
-  if (range) {
-    const match = range.match(/\/(\d+)/);
-    if (match) return parseInt(match[1], 10);
-  }
-  return 0;
-}
-
-function daysAgo(n: number): string {
-  return new Date(Date.now() - n * 86400000).toISOString();
-}
-
-/* ─── Section Handlers ─── */
-
-async function getOverview() {
-  const weekAgo = daysAgo(7);
-  const monthAgo = daysAgo(30);
-  const today = daysAgo(0).slice(0, 10);
-
-  // Use counts + targeted queries instead of loading everything
-  const [
-    totalUserCount,
-    weekUserCount,
-    totalSessionCount,
-    weekSessionCount,
-    monthSessionCount,
-    profiles,
-    recentSessions,
-    payments,
-    llmRecent,
-    serviceRecent,
-  ] = await Promise.all([
-    fetchCount("profiles"),
-    fetchCount("profiles", `&created_at=gte.${weekAgo}`),
-    fetchCount("sessions"),
-    fetchCount("sessions", `&created_at=gte.${weekAgo}`),
-    fetchCount("sessions", `&created_at=gte.${monthAgo}`),
-    fetchJSON<{ id: string; subscription_tier: string; practice_timestamps: string[] | null }>(
-      `profiles?select=id,subscription_tier,practice_timestamps&limit=${LIMIT_PROFILES}`
-    ),
-    fetchJSON<{ score: number; created_at: string }>(
-      `sessions?select=score,created_at&order=created_at.desc&limit=${LIMIT_SESSIONS}`
-    ),
-    fetchJSON<{ amount: number; status: string; created_at: string }>(
-      `payments?select=amount,status,created_at&order=created_at.desc&limit=${LIMIT_PAYMENTS}`
-    ),
-    fetchJSON<{ total_tokens: number; is_fallback: boolean; status: string; created_at: string }>(
-      `llm_usage?select=total_tokens,is_fallback,status,created_at&order=created_at.desc&limit=${LIMIT_LLM}`
-    ),
-    // Voice cost lives in service_usage: TTS request_chars (precise) + STT
-    // token-issuance calls (count only — STT minutes aren't logged). Scoped to
-    // the 30-day window to match the per-session divisor.
-    fetchJSON<{ service: string; request_chars: number | null; status: string; created_at: string }>(
-      `service_usage?select=service,request_chars,status,created_at&created_at=gte.${monthAgo}&limit=5000`
-    ),
-  ]);
-
-  const now = Date.now();
-
-  // Tier breakdown + active users
-  const tierBreakdown: Record<string, number> = { free: 0, starter: 0, pro: 0, team: 0 };
-  let activeLastWeek = 0;
-  for (const p of profiles) {
-    tierBreakdown[p.subscription_tier || "free"] = (tierBreakdown[p.subscription_tier || "free"] || 0) + 1;
-    if (p.practice_timestamps?.length) {
-      const last = new Date(p.practice_timestamps[p.practice_timestamps.length - 1]).getTime();
-      if (now - last < 7 * 86400000) activeLastWeek++;
-    }
-  }
-
-  // Avg score
-  const scoredSessions = recentSessions.filter(s => s.score != null && s.score > 0);
-  const avgScore = scoredSessions.length > 0
-    ? Math.round(scoredSessions.reduce((sum, s) => sum + s.score, 0) / scoredSessions.length)
-    : 0;
-
-  // Sessions per day (last 30 days)
-  const sessionsPerDay: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) {
-    sessionsPerDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0;
-  }
-  for (const s of recentSessions) {
-    const d = s.created_at?.slice(0, 10);
-    if (d && d in sessionsPerDay) sessionsPerDay[d]++;
-  }
-
-  // Revenue
-  const successPayments = payments.filter(p => p.status === "captured" || p.status === "paid" || p.status === "success");
-  const totalRevenue = successPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
-  const revenueThisMonth = successPayments.filter(p => p.created_at >= monthAgo).reduce((sum, p) => sum + (p.amount || 0), 0);
-
-  // LLM
-  const todayLlm = llmRecent.filter(u => u.created_at?.startsWith(today));
-  const tokensToday = todayLlm.reduce((sum, u) => sum + (u.total_tokens || 0), 0);
-  const fallbackRate = llmRecent.length > 0
-    ? Math.round((llmRecent.filter(u => u.is_fallback).length / llmRecent.length) * 100) : 0;
-  const errorRate = llmRecent.length > 0
-    ? Math.round((llmRecent.filter(u => u.status === "error" || u.status === "timeout").length / llmRecent.length) * 100) : 0;
-
-  // ── Marginal cost (estimate, rate-card based — see _cost-helpers.ts) ──
-  // 30-day window so the per-session number isn't whipsawed by a quiet day.
-  // llmRecent is capped at LIMIT_LLM; on high volume this undercounts and the
-  // estimate reads low — acceptable for a dashboard signal, flagged in the UI.
-  const TTS_SERVICES = new Set(["azure_tts", "cartesia_tts", "sarvam_tts"]);
-  const STT_SERVICES = new Set(["deepgram_stt", "sarvam_stt"]);
-  let llmTokens30dPrimary = 0, llmTokens30dFallback = 0;
-  for (const u of llmRecent) {
-    if (!u.created_at || u.created_at < monthAgo) continue;
-    if (u.is_fallback) llmTokens30dFallback += u.total_tokens || 0;
-    else llmTokens30dPrimary += u.total_tokens || 0;
-  }
-  let ttsChars30d = 0, sttCalls30d = 0;
-  let llmTokensTodayPrimary = 0, llmTokensTodayFallback = 0, ttsCharsToday = 0, sttCallsToday = 0;
-  for (const u of llmRecent) {
-    if (!u.created_at?.startsWith(today)) continue;
-    if (u.is_fallback) llmTokensTodayFallback += u.total_tokens || 0;
-    else llmTokensTodayPrimary += u.total_tokens || 0;
-  }
-  for (const r of serviceRecent) {
-    const isToday = r.created_at?.startsWith(today);
-    if (TTS_SERVICES.has(r.service)) {
-      ttsChars30d += r.request_chars || 0;
-      if (isToday) ttsCharsToday += r.request_chars || 0;
-    } else if (STT_SERVICES.has(r.service) && r.status === "success") {
-      sttCalls30d += 1;
-      if (isToday) sttCallsToday += 1;
-    }
-  }
-  const cost30d = costBreakdown({
-    llmTokensPrimary: llmTokens30dPrimary,
-    llmTokensFallback: llmTokens30dFallback,
-    ttsChars: ttsChars30d,
-    sttCalls: sttCalls30d,
-    sessions: monthSessionCount,
-  });
-  const costToday = costBreakdown({
-    llmTokensPrimary: llmTokensTodayPrimary,
-    llmTokensFallback: llmTokensTodayFallback,
-    ttsChars: ttsCharsToday,
-    sttCalls: sttCallsToday,
-    sessions: recentSessions.filter(s => s.created_at?.startsWith(today)).length,
-  });
-
-  const anomalies = await getAnomalies();
-
-  return {
-    users: { total: totalUserCount, today: profiles.filter(() => false).length, thisWeek: weekUserCount, activeLastWeek, tierBreakdown },
-    sessions: { total: totalSessionCount, today: recentSessions.filter(s => s.created_at?.startsWith(today)).length, thisWeek: weekSessionCount, avgScore, perDay: sessionsPerDay },
-    revenue: { totalPaise: totalRevenue, thisMonthPaise: revenueThisMonth, paymentCount: successPayments.length },
-    llm: { tokensToday, fallbackRate, errorRate, totalCalls: llmRecent.length },
-    cost: {
-      perSessionInr: cost30d.perSessionInr,
-      todayInr: costToday.totalInr,
-      month: { totalInr: cost30d.totalInr, llmInr: cost30d.llmInr, ttsInr: cost30d.ttsInr, sttInr: cost30d.sttInr, sessions: cost30d.sessions },
-      estimate: true,
-    },
-    anomalies,
-  };
-}
-
-async function getUsers(search?: string, offset = 0, limit = 50) {
-  let profilePath = `profiles?select=id,name,email,subscription_tier,created_at,practice_timestamps,has_completed_onboarding,subscription_end&order=created_at.desc&offset=${offset}&limit=${limit}`;
-  if (search) {
-    profilePath += `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)`;
-  }
-
-  // Get total count and profiles in parallel — use Supabase count header instead of fetching all sessions
-  const [profilesRes, totalCount] = await Promise.all([
-    supa(profilePath),
-    fetchCount("profiles", search ? `&or=(name.ilike.*${encodeURIComponent(search)}*,email.ilike.*${encodeURIComponent(search)}*)` : ""),
-  ]);
-
-  const profiles = profilesRes.ok ? await profilesRes.json() : [];
-
-  // Get session counts only for the users on this page (not ALL users)
-  const userIds = (profiles as Array<{ id: string }>).map(p => p.id);
-  const countMap: Record<string, number> = {};
-  if (userIds.length > 0) {
-    // Batch query: get sessions for these specific users
-    const sessionData = await fetchJSON<{ user_id: string }>(
-      `sessions?select=user_id&user_id=in.(${userIds.map(id => encodeURIComponent(id)).join(",")})&limit=10000`
-    );
-    for (const s of sessionData) {
-      countMap[s.user_id] = (countMap[s.user_id] || 0) + 1;
-    }
-  }
-
-  const users = (profiles as Array<{
-    id: string; name: string | null; email: string; subscription_tier: string;
-    created_at: string; practice_timestamps: string[] | null;
-    has_completed_onboarding: boolean; subscription_end: string | null;
-  }>).map(p => ({
-    id: p.id,
-    name: p.name || "—",
-    email: p.email,
-    tier: p.subscription_tier || "free",
-    sessionsCount: countMap[p.id] || 0,
-    lastActive: p.practice_timestamps?.length
-      ? p.practice_timestamps[p.practice_timestamps.length - 1]
-      : null,
-    onboarded: !!p.has_completed_onboarding,
-    joined: p.created_at,
-    subscriptionEnd: p.subscription_end,
-  }));
-
-  return { users, total: totalCount };
-}
-
-async function getUserDetail(userId: string) {
-  const encoded = encodeURIComponent(userId);
-  const [profile, sessions, payments, llmUsage, feedback] = await Promise.all([
-    fetchJSON(`profiles?id=eq.${encoded}&select=id,name,email,subscription_tier,target_role,target_company,experience_level,industry,subscription_start,subscription_end,cancel_at_period_end,has_completed_onboarding,created_at&limit=1`),
-    fetchJSON<{ id: string; date: string; type: string; difficulty: string; duration: number; score: number; skill_scores: Record<string, unknown> | null; created_at: string; llm_cost_inr: number | null; prompt_tokens: number | null; completion_tokens: number | null }>(`sessions?user_id=eq.${encoded}&select=id,date,type,difficulty,duration,score,skill_scores,created_at,llm_cost_inr,prompt_tokens,completion_tokens&order=created_at.desc&limit=50`),
-    fetchJSON(`payments?user_id=eq.${encoded}&select=id,amount,currency,status,plan,tier,created_at&order=created_at.desc&limit=30`),
-    fetchJSON(`llm_usage?user_id=eq.${encoded}&select=endpoint,model,total_tokens,latency_ms,status,created_at&order=created_at.desc&limit=100`),
-    fetchJSON(`feedback?user_id=eq.${encoded}&select=id,rating,comment,session_score,session_type,created_at&order=created_at.desc&limit=20`),
-  ]);
-
-  // Compute total LLM cost across this user's sessions
-  const totalLlmCostInr = sessions.reduce((sum, s) => sum + (s.llm_cost_inr || 0), 0);
-  const totalPromptTokens = sessions.reduce((sum, s) => sum + (s.prompt_tokens || 0), 0);
-  const totalCompletionTokens = sessions.reduce((sum, s) => sum + (s.completion_tokens || 0), 0);
-
-  // Top 3 most expensive sessions
-  const top3ExpensiveSessions = [...sessions]
-    .filter(s => s.llm_cost_inr != null && s.llm_cost_inr > 0)
-    .sort((a, b) => (b.llm_cost_inr || 0) - (a.llm_cost_inr || 0))
-    .slice(0, 3)
-    .map(s => ({ id: s.id, type: s.type, date: s.created_at, llmCostInr: s.llm_cost_inr, promptTokens: s.prompt_tokens, completionTokens: s.completion_tokens }));
-
-  return {
-    profile: profile[0] || null,
-    sessions,
-    payments,
-    llmUsage,
-    feedback,
-    costSummary: {
-      totalLlmCostInr: Math.round(totalLlmCostInr * 100) / 100,
-      totalPromptTokens,
-      totalCompletionTokens,
-      top3ExpensiveSessions,
-    },
-  };
-}
-
-/**
- * Full session payload for admin drill-down: metadata + transcript + skill
- * scores + cached report (if generated). Q&A pairing is done client-side
- * from the transcript array since the engine writes interleaved
- * { speaker: "ai"|"user", text } turns.
- */
-async function getSessionDetail(sessionId: string) {
-  const encoded = encodeURIComponent(sessionId);
-  const [sessionRows, llmUsage] = await Promise.all([
-    fetchJSON<{
-      id: string; user_id: string; date: string; type: string; difficulty: string;
-      focus: string; duration: number; score: number; questions: number;
-      transcript: Array<{ speaker: string; text: string; time?: string }>;
-      ai_feedback: string;
-      skill_scores: Record<string, unknown> | null;
-      job_description?: string;
-      jd_analysis?: Record<string, unknown> | null;
-      report_json?: Record<string, unknown> | null;
-      report_version?: string | null;
-      report_generated_at?: string | null;
-      created_at: string;
-    }>(
-      `sessions?id=eq.${encoded}&select=*&limit=1`,
-    ),
-    fetchJSON<{ endpoint: string; model: string; total_tokens: number; prompt_tokens: number; completion_tokens: number; is_fallback: boolean; latency_ms: number; status: string; created_at: string }>(
-      `llm_usage?session_id=eq.${encoded}&select=endpoint,model,total_tokens,prompt_tokens,completion_tokens,is_fallback,latency_ms,status,created_at&order=created_at.desc&limit=20`,
-    ),
-  ]);
-  const session = sessionRows[0];
-  if (!session) return { session: null, profile: null, qaPairs: [], llmCalls: [], costInr: 0 };
-
-  // Fetch the user's profile so admins can see who this session belongs to.
-  const profileRows = await fetchJSON<{ id: string; name: string | null; email: string }>(
-    `profiles?id=eq.${encodeURIComponent(session.user_id)}&select=id,name,email&limit=1`,
-  );
-  const profile = profileRows[0] || null;
-
-  // Pair AI questions with the candidate answers that follow them.
-  const transcript = Array.isArray(session.transcript) ? session.transcript : [];
-  const qaPairs: Array<{ question: string; answer: string; questionTime?: string; answerTime?: string }> = [];
-  let pendingQuestion: { text: string; time?: string } | null = null;
-  for (const turn of transcript) {
-    const speaker = String(turn?.speaker ?? "").toLowerCase();
-    const text = String(turn?.text ?? "").trim();
-    if (!text) continue;
-    const isAI = speaker === "ai" || speaker === "interviewer" || speaker === "assistant";
-    const isUser = speaker === "user" || speaker === "candidate";
-    if (isAI) {
-      // Flush any orphaned question (interviewer asked twice, candidate didn't answer).
-      if (pendingQuestion) {
-        qaPairs.push({ question: pendingQuestion.text, answer: "(no answer)", questionTime: pendingQuestion.time });
-      }
-      pendingQuestion = { text, time: turn.time };
-    } else if (isUser && pendingQuestion) {
-      qaPairs.push({
-        question: pendingQuestion.text,
-        answer: text,
-        questionTime: pendingQuestion.time,
-        answerTime: turn.time,
-      });
-      pendingQuestion = null;
-    } else if (isUser) {
-      // Candidate spoke without a paired question (initial monologue, etc.)
-      qaPairs.push({ question: "(no question recorded)", answer: text, answerTime: turn.time });
-    }
-  }
-  if (pendingQuestion) {
-    qaPairs.push({ question: pendingQuestion.text, answer: "(no answer)", questionTime: pendingQuestion.time });
-  }
-
-  // Compute cost from session-scoped llm_usage rows
-  let primaryTok = 0, fallbackTok = 0, promptTok = 0, completionTok = 0;
-  for (const u of llmUsage) {
-    promptTok += u.prompt_tokens || 0;
-    completionTok += u.completion_tokens || 0;
-    if (u.is_fallback) fallbackTok += u.total_tokens || 0;
-    else primaryTok += u.total_tokens || 0;
-  }
-  const sessionCost = costBreakdown(
-    { llmTokensPrimary: primaryTok, llmTokensFallback: fallbackTok, ttsChars: 0, sttCalls: 0, sessions: 1 },
-    DEFAULT_COST_RATES,
-  );
-
-  return { session, profile, qaPairs, llmCalls: llmUsage, costInr: sessionCost.llmInr, promptTokens: promptTok, completionTokens: completionTok };
-}
-
-async function getFinancials() {
-  const payments = await fetchJSON<{
-    id: string; user_id: string; amount: number; currency: string; status: string; tier: string; plan: string; created_at: string;
-  }>(`payments?select=id,user_id,amount,currency,status,tier,plan,created_at&order=created_at.desc&limit=${LIMIT_PAYMENTS}`);
-
-  const now = Date.now();
-  const monthAgo = daysAgo(30);
-  const success = payments.filter(p => p.status === "captured" || p.status === "paid" || p.status === "success");
-
-  const totalRevenue = success.reduce((s, p) => s + (p.amount || 0), 0);
-  const revenueThisMonth = success.filter(p => p.created_at >= monthAgo).reduce((s, p) => s + (p.amount || 0), 0);
-
-  const byPlan: Record<string, number> = {};
-  for (const p of success) { const k = p.plan || p.tier || "unknown"; byPlan[k] = (byPlan[k] || 0) + p.amount; }
-
-  const perDay: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) { perDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0; }
-  for (const p of success) { const d = p.created_at?.slice(0, 10); if (d && d in perDay) perDay[d] += p.amount || 0; }
-
-  return {
-    totalRevenuePaise: totalRevenue,
-    revenueThisMonthPaise: revenueThisMonth,
-    totalPayments: success.length,
-    byPlan,
-    perDay,
-    recent: payments.slice(0, LIMIT_RECENT).map(p => ({
-      id: p.id, amount: p.amount, currency: p.currency, status: p.status, plan: p.plan || p.tier, date: p.created_at,
-    })),
-  };
-}
-
-interface AnomalyHighSpendUser {
-  userId: string;
-  tokens: number;
-  zScore: number;
-}
-
-interface AnomaliesResult {
-  highSpendUsers: AnomalyHighSpendUser[];
-  runawayCallsToday: number;
-}
-
-async function getAnomalies(): Promise<AnomaliesResult> {
-  const since = daysAgo(1);
-  const [recentRows, runawayRows] = await Promise.all([
-    fetchJSON<{ user_id: string; total_tokens: number; created_at: string }>(
-      `llm_usage?select=user_id,total_tokens,created_at&created_at=gte.${since}&limit=5000`,
-    ),
-    fetchJSON<{ id: string }>(
-      `llm_usage?select=id&total_tokens=gt.8000&created_at=gte.${since}&limit=1000`,
-    ),
-  ]);
-
-  // Sum tokens per user_id
-  const perUser = new Map<string, number>();
-  for (const row of recentRows) {
-    if (!row.user_id) continue;
-    perUser.set(row.user_id, (perUser.get(row.user_id) || 0) + (row.total_tokens || 0));
-  }
-
-  const values = Array.from(perUser.values()).filter(v => v > 0);
-  const highSpendUsers: AnomalyHighSpendUser[] = [];
-
-  if (values.length === 1) {
-    // Only one user — flag if over 10,000 tokens
-    const [userId, tokens] = Array.from(perUser.entries())[0];
-    if (tokens > 10000) {
-      highSpendUsers.push({ userId, tokens, zScore: 0 });
-    }
-  } else if (values.length > 1) {
-    const mean = values.reduce((s, v) => s + v, 0) / values.length;
-    const variance = values.reduce((s, v) => s + (v - mean) ** 2, 0) / values.length;
-    const stddev = Math.sqrt(variance);
-    const threshold = stddev > 0 ? mean + 2.5 * stddev : mean * 3;
-
-    for (const [userId, tokens] of perUser.entries()) {
-      if (tokens > threshold) {
-        const zScore = stddev > 0 ? Math.round(((tokens - mean) / stddev) * 100) / 100 : 0;
-        highSpendUsers.push({ userId, tokens, zScore });
-      }
-    }
-    highSpendUsers.sort((a, b) => b.tokens - a.tokens);
-  }
-
-  return {
-    highSpendUsers,
-    runawayCallsToday: runawayRows.length,
-  };
-}
-
-async function getLLMUsage() {
-  const usage = await fetchJSON<{
-    id: string; user_id: string; endpoint: string; model: string; is_fallback: boolean;
-    prompt_tokens: number; completion_tokens: number; total_tokens: number;
-    latency_ms: number; status: string; error_message: string | null; created_at: string;
-  }>(`llm_usage?select=id,user_id,endpoint,model,is_fallback,prompt_tokens,completion_tokens,total_tokens,latency_ms,status,error_message,created_at&order=created_at.desc&limit=${LIMIT_LLM}`);
-
-  const now = Date.now();
-  const today = daysAgo(0).slice(0, 10);
-
-  const byEndpoint: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number; _latencySum: number }> = {};
-  const byModel: Record<string, { calls: number; tokens: number }> = {};
-  const tokensPerDay: Record<string, number> = {};
-  for (let i = 29; i >= 0; i--) { tokensPerDay[new Date(now - i * 86400000).toISOString().slice(0, 10)] = 0; }
-
-  for (const u of usage) {
-    // By endpoint
-    const ep = u.endpoint || "unknown";
-    if (!byEndpoint[ep]) byEndpoint[ep] = { calls: 0, tokens: 0, avgLatency: 0, errors: 0, _latencySum: 0 };
-    byEndpoint[ep].calls++;
-    byEndpoint[ep].tokens += u.total_tokens || 0;
-    byEndpoint[ep]._latencySum += u.latency_ms || 0;
-    if (u.status === "error" || u.status === "timeout") byEndpoint[ep].errors++;
-
-    // By model
-    const m = u.model || "unknown";
-    if (!byModel[m]) byModel[m] = { calls: 0, tokens: 0 };
-    byModel[m].calls++;
-    byModel[m].tokens += u.total_tokens || 0;
-
-    // Per day
-    const d = u.created_at?.slice(0, 10);
-    if (d && d in tokensPerDay) tokensPerDay[d] += u.total_tokens || 0;
-  }
-
-  // Compute avg latency
-  const cleanEndpoints: Record<string, { calls: number; tokens: number; avgLatency: number; errors: number }> = {};
-  for (const [ep, d] of Object.entries(byEndpoint)) {
-    cleanEndpoints[ep] = { calls: d.calls, tokens: d.tokens, avgLatency: d.calls > 0 ? Math.round(d._latencySum / d.calls) : 0, errors: d.errors };
-  }
-
-  const totalTokens = usage.reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const todayTokens = usage.filter(u => u.created_at?.startsWith(today)).reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const fallbackCount = usage.filter(u => u.is_fallback).length;
-  const errored = usage.filter(u => u.status === "error" || u.status === "timeout");
-
-  // Categorize each error so the dashboard surfaces *why* calls fail. Token
-  // quota is one of many failure modes; per-minute rate limits, context-length
-  // overflow, and provider 5xxs are far more common in practice.
-  // Pure regex logic lives in _admin-llm-categorizer.ts so it can be unit-tested.
-  const errorBreakdown = emptyBreakdown();
-  for (const u of errored) {
-    errorBreakdown[categorizeLlmError(u.status, u.error_message)]++;
-  }
-
-  return {
-    totalCalls: usage.length,
-    totalTokens,
-    todayTokens,
-    fallbackRate: usage.length > 0 ? Math.round((fallbackCount / usage.length) * 100) : 0,
-    errorRate: usage.length > 0 ? Math.round((errored.length / usage.length) * 100) : 0,
-    errorBreakdown,
-    byEndpoint: cleanEndpoints,
-    byModel,
-    tokensPerDay,
-    recentErrors: errored.slice(0, 20).map(u => ({
-      endpoint: u.endpoint, model: u.model, error: u.error_message, status: u.status, date: u.created_at,
-    })),
-    // Service details for the enhanced Services view
-    services: await buildServiceDetails(usage),
-    anomalies: await getAnomalies(),
-  };
-}
-
-/** Build detailed per-service breakdown with real usage from service_usage table + llm_usage */
-async function buildServiceDetails(
-  llmUsage: Array<{ model: string; is_fallback: boolean; total_tokens: number; latency_ms: number; status: string; created_at: string }>,
-) {
-  const today = daysAgo(0).slice(0, 10);
-  const monthAgo = daysAgo(30).slice(0, 10);
-  const todayUsage = llmUsage.filter(u => u.created_at?.startsWith(today));
-
-  // Classify by `is_fallback` only — that column is the canonical signal for which
-  // provider served the call. Sniffing the model string double-counts rows when
-  // both predicates match and drops rows whose model field doesn't contain a
-  // known substring.
-  const groqCalls = llmUsage.filter(u => !u.is_fallback);
-  const groqToday = todayUsage.filter(u => !u.is_fallback);
-  const groqTokensToday = groqToday.reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const groqWindowErrors = groqCalls.filter(u => u.status === "error" || u.status === "timeout").length;
-  const groqAvgLatency = groqCalls.length > 0 ? Math.round(groqCalls.reduce((s, u) => s + (u.latency_ms || 0), 0) / groqCalls.length) : 0;
-
-  const geminiCalls = llmUsage.filter(u => u.is_fallback);
-  const geminiToday = todayUsage.filter(u => u.is_fallback);
-  const geminiTokensToday = geminiToday.reduce((s, u) => s + (u.total_tokens || 0), 0);
-  const geminiWindowErrors = geminiCalls.filter(u => u.status === "error" || u.status === "timeout").length;
-  const geminiAvgLatency = geminiCalls.length > 0 ? Math.round(geminiCalls.reduce((s, u) => s + (u.latency_ms || 0), 0) / geminiCalls.length) : 0;
-
-  // True all-time totals — `llmUsage` is capped at LIMIT_LLM rows so summing it
-  // would silently undercount once the table grows past that window.
-  const [groqCallsTotal, groqErrorsTotal, geminiCallsTotal, geminiErrorsTotal] = await Promise.all([
-    fetchCount("llm_usage", "&is_fallback=eq.false"),
-    fetchCount("llm_usage", "&is_fallback=eq.false&status=in.(error,timeout)"),
-    fetchCount("llm_usage", "&is_fallback=eq.true"),
-    fetchCount("llm_usage", "&is_fallback=eq.true&status=in.(error,timeout)"),
-  ]);
-
-  // Fetch service_usage for all non-LLM services
-  const serviceRows = await fetchJSON<{
-    service: string; status: string; latency_ms: number | null;
-    request_chars: number | null; response_bytes: number | null; created_at: string;
-  }>(`service_usage?select=service,status,latency_ms,request_chars,response_bytes,created_at&created_at=gte.${monthAgo}&order=created_at.desc&limit=5000`);
-
-  // Aggregate per service
-  type Agg = { callsTotal: number; callsToday: number; errorsTotal: number; errorsToday: number; latencySum: number; latencyCount: number; charsTotal: number; charsToday: number; bytesTotal: number };
-  const agg: Record<string, Agg> = {};
-  for (const r of serviceRows) {
-    if (!agg[r.service]) agg[r.service] = { callsTotal: 0, callsToday: 0, errorsTotal: 0, errorsToday: 0, latencySum: 0, latencyCount: 0, charsTotal: 0, charsToday: 0, bytesTotal: 0 };
-    const a = agg[r.service];
-    const isToday = r.created_at?.startsWith(today);
-    a.callsTotal++;
-    if (isToday) a.callsToday++;
-    if (r.status === "error" || r.status === "timeout") {
-      a.errorsTotal++;
-      if (isToday) a.errorsToday++;
-    }
-    if (r.latency_ms) { a.latencySum += r.latency_ms; a.latencyCount++; }
-    if (r.request_chars) { a.charsTotal += r.request_chars; if (isToday) a.charsToday += r.request_chars; }
-    if (r.response_bytes) a.bytesTotal += r.response_bytes;
-  }
-
-  const svc = (name: string): Agg => agg[name] || { callsTotal: 0, callsToday: 0, errorsTotal: 0, errorsToday: 0, latencySum: 0, latencyCount: 0, charsTotal: 0, charsToday: 0, bytesTotal: 0 };
-  const avgLat = (a: Agg) => a.latencyCount > 0 ? Math.round(a.latencySum / a.latencyCount) : 0;
-  const svcStatus = (a: Agg) => a.callsTotal > 0 && a.errorsTotal > a.callsTotal * 0.1 ? "degraded" : "healthy";
-
-  const az = svc("azure_tts");
-  const ca = svc("cartesia_tts");
-  const dg = svc("deepgram_stt");
-  const sv = svc("sarvam_stt");
-  const re = svc("resend_email");
-
-  // Upstash: estimate commands from total service calls (each rate-limited req = ~2 Redis commands)
-  const totalServiceCalls = serviceRows.length + llmUsage.length;
-  const todayServiceCalls = serviceRows.filter(r => r.created_at?.startsWith(today)).length + todayUsage.length;
-  const upstashEstCmdsTotal = totalServiceCalls * 2;
-  const upstashEstCmdsToday = todayServiceCalls * 2;
-
-  return [
-    {
-      name: "Groq",
-      type: "LLM",
-      role: "Primary",
-      model: "llama-3.3-70b-versatile",
-      status: groqWindowErrors > groqCalls.length * 0.1 ? "degraded" : "healthy",
-      usage: {
-        callsTotal: groqCallsTotal,
-        callsToday: groqToday.length,
-        tokensToday: groqTokensToday,
-        tokensTotal: groqCalls.reduce((s, u) => s + (u.total_tokens || 0), 0),
-        errorsTotal: groqErrorsTotal,
-        errorsToday: groqToday.filter(u => u.status === "error" || u.status === "timeout").length,
-        avgLatencyMs: groqAvgLatency,
-      },
-      limits: { requestsPerDay: 1000, requestsPerMinute: 30, tokensPerMinute: 12000 },
-      notes: "Free tier: 30 RPM, 1,000 RPD, 12,000 TPM (verified via x-ratelimit headers). Per-minute token cap is the bottleneck during interviews — upgrade at console.groq.com to lift TPM.",
-    },
-    {
-      name: "Google Gemini",
-      type: "LLM",
-      role: "Fallback",
-      model: "gemini-2.5-flash",
-      status: geminiWindowErrors > geminiCalls.length * 0.2 ? "degraded" : "healthy",
-      usage: {
-        callsTotal: geminiCallsTotal,
-        callsToday: geminiToday.length,
-        tokensToday: geminiTokensToday,
-        tokensTotal: geminiCalls.reduce((s, u) => s + (u.total_tokens || 0), 0),
-        errorsTotal: geminiErrorsTotal,
-        errorsToday: geminiToday.filter(u => u.status === "error" || u.status === "timeout").length,
-        avgLatencyMs: geminiAvgLatency,
-      },
-      limits: { requestsPerDay: 250, requestsPerMinute: 10, tokensPerMinute: 250_000 },
-      notes: "Free tier (gemini-2.5-flash): 10 RPM, 250 RPD, 250K TPM. Lower RPM than the -lite variant but ~10× higher TPM, which is what large eval prompts need on the fallback path. Upgrade at aistudio.google.com to lift RPD.",
-    },
-    {
-      name: "Azure TTS",
-      type: "TTS",
-      role: "Primary",
-      model: "Neural voices (Indian English)",
-      status: svcStatus(az),
-      usage: {
-        callsTotal: az.callsTotal,
-        callsToday: az.callsToday,
-        charsToday: az.charsToday,
-        charsTotal: az.charsTotal,
-        errorsTotal: az.errorsTotal,
-        errorsToday: az.errorsToday,
-        avgLatencyMs: avgLat(az),
-      },
-      limits: { freeCharsPerMonth: 500_000 },
-      notes: "Free tier: 0.5M chars/month (F0). Standard: $16/1M chars. Check portal.azure.com for usage.",
-    },
-    {
-      name: "Cartesia",
-      type: "TTS",
-      role: "Fallback",
-      model: "sonic-3",
-      status: svcStatus(ca),
-      usage: {
-        callsTotal: ca.callsTotal,
-        callsToday: ca.callsToday,
-        charsToday: ca.charsToday,
-        charsTotal: ca.charsTotal,
-        errorsTotal: ca.errorsTotal,
-        errorsToday: ca.errorsToday,
-        avgLatencyMs: avgLat(ca),
-      },
-      limits: { freeSecondsPerMonth: 600 },
-      notes: "Free: 10 min/month. Only used when Azure TTS fails. Check play.cartesia.ai for usage.",
-    },
-    {
-      name: "Deepgram",
-      type: "STT",
-      role: "Primary",
-      model: "Nova-3",
-      status: svcStatus(dg),
-      usage: {
-        callsTotal: dg.callsTotal,
-        callsToday: dg.callsToday,
-        errorsTotal: dg.errorsTotal,
-        errorsToday: dg.errorsToday,
-        avgLatencyMs: avgLat(dg),
-      },
-      limits: { freeCredits: 200 },
-      notes: "Pay-as-you-go with $200 free credit. Each token request = 1 STT session. Check console.deepgram.com.",
-    },
-    {
-      name: "Sarvam AI",
-      type: "STT",
-      role: "Fallback (Indian English)",
-      model: "saaras:v2",
-      status: svcStatus(sv),
-      usage: {
-        callsTotal: sv.callsTotal,
-        callsToday: sv.callsToday,
-        errorsTotal: sv.errorsTotal,
-        errorsToday: sv.errorsToday,
-        avgLatencyMs: avgLat(sv),
-      },
-      limits: { freeRequestsPerDay: 50 },
-      notes: "Used for Indian-English STT after Deepgram. Check dashboard.sarvam.ai for usage.",
-    },
-    {
-      name: "Resend",
-      type: "Email",
-      role: "Transactional",
-      model: "—",
-      status: svcStatus(re),
-      usage: {
-        callsTotal: re.callsTotal,
-        callsToday: re.callsToday,
-        errorsTotal: re.errorsTotal,
-        errorsToday: re.errorsToday,
-        avgLatencyMs: avgLat(re),
-      },
-      limits: { freeEmailsPerDay: 100, freeEmailsPerMonth: 3000 },
-      notes: "Free: 100/day, 3K/month. Sends: welcome, payment, renewal, re-engagement. Check resend.com/overview.",
-    },
-    {
-      name: "Upstash Redis",
-      type: "Cache / Rate Limiting",
-      role: "Rate limiter",
-      model: "—",
-      status: "healthy",
-      usage: {
-        callsTotal: upstashEstCmdsTotal,
-        callsToday: upstashEstCmdsToday,
-        errorsTotal: 0,
-        errorsToday: 0,
-        avgLatencyMs: null,
-      },
-      limits: { freeCommandsPerDay: 10_000, freeStorageMb: 256 },
-      notes: "Free: 10K commands/day, 256MB. ~2 cmds per rate-limited request. Check console.upstash.com.",
-    },
-  ];
-}
-
-async function getSessions() {
-  const [sessions, totalCount] = await Promise.all([
-    fetchJSON<{
-      id: string; user_id: string; date: string; type: string; difficulty: string;
-      duration: number; score: number; skill_scores: Record<string, number> | null; created_at: string;
-    }>(`sessions?select=id,user_id,date,type,difficulty,duration,score,skill_scores,created_at&order=created_at.desc&limit=${LIMIT_SESSIONS}`),
-    fetchCount("sessions"),
-  ]);
-
-  const scoreDistribution: Record<string, number> = {};
-  for (let i = 0; i <= 90; i += 10) { scoreDistribution[`${i}-${i + 9}`] = 0; }
-  const byType: Record<string, number> = {};
-  const byDifficulty: Record<string, number> = {};
-  const skillTotals: Record<string, { sum: number; count: number }> = {};
-  let durationSum = 0; let durationCount = 0;
-
-  for (const s of sessions) {
-    if (s.score != null) { const b = Math.min(90, Math.floor(s.score / 10) * 10); scoreDistribution[`${b}-${b + 9}`]++; }
-    byType[s.type || "unknown"] = (byType[s.type || "unknown"] || 0) + 1;
-    byDifficulty[s.difficulty || "unknown"] = (byDifficulty[s.difficulty || "unknown"] || 0) + 1;
-    if (s.duration > 0) { durationSum += s.duration; durationCount++; }
-    if (s.skill_scores) {
-      for (const [skill, score] of Object.entries(s.skill_scores)) {
-        if (!skillTotals[skill]) skillTotals[skill] = { sum: 0, count: 0 };
-        skillTotals[skill].sum += score as number;
-        skillTotals[skill].count++;
-      }
-    }
-  }
-
-  const avgSkillScores: Record<string, number> = {};
-  for (const [skill, { sum, count }] of Object.entries(skillTotals)) { avgSkillScores[skill] = Math.round(sum / count); }
-
-  return {
-    total: totalCount,
-    avgScore: sessions.length > 0 ? Math.round(sessions.reduce((s, x) => s + (x.score || 0), 0) / sessions.length) : 0,
-    avgDuration: durationCount > 0 ? Math.round(durationSum / durationCount) : 0,
-    scoreDistribution, byType, byDifficulty, avgSkillScores,
-    recent: sessions.slice(0, LIMIT_RECENT).map(s => ({
-      id: s.id, userId: s.user_id, type: s.type, difficulty: s.difficulty, score: s.score, duration: s.duration, date: s.created_at,
-    })),
-  };
-}
-
-async function getFeedback() {
-  const [feedback, totalCount] = await Promise.all([
-    fetchJSON<{
-      id: string; user_id: string; session_id: string; rating: string; comment: string;
-      session_score: number; session_type: string; created_at: string;
-    }>("feedback?select=id,user_id,session_id,rating,comment,session_score,session_type,created_at&order=created_at.desc&limit=200"),
-    fetchCount("feedback"),
-  ]);
-
-  const byRating: Record<string, number> = {};
-  for (const f of feedback) { byRating[f.rating] = (byRating[f.rating] || 0) + 1; }
-
-  return { total: totalCount, byRating, recent: feedback.slice(0, LIMIT_RECENT) };
-}
-
-export async function updateSupportStatus(
-  id: string,
-  status: "new" | "seen" | "resolved",
-): Promise<{ ok: boolean; error?: string }> {
-  const now = new Date().toISOString();
-  // Set SLA timestamps: first_response_at on first acknowledgement, resolved_at on close.
-  // We use ?id=eq.X&first_response_at=is.null so the timestamp only stamps once.
-  const patch: Record<string, string | null> = { status };
-  if (status === "seen") {
-    // Stamp first_response_at only if not already set — done via a conditional filter below
-    patch["first_response_at"] = now;
-  } else if (status === "resolved") {
-    patch["resolved_at"] = now;
-  }
-
-  try {
-    // For seen: only set first_response_at when it is currently null (first touch)
-    const filterSuffix = status === "seen" ? "&first_response_at=is.null" : "";
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}${filterSuffix}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
-        },
-        body: JSON.stringify(patch),
-      },
-    );
-    if (!res.ok) {
-      const body = await res.text().catch(() => "");
-      return { ok: false, error: `HTTP ${res.status}: ${body.slice(0, 200)}` };
-    }
-    // If the conditional filter matched 0 rows (first_response_at already set),
-    // still update status without overwriting the timestamp
-    if (status === "seen") {
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/support_messages?id=eq.${encodeURIComponent(id)}&first_response_at=not.is.null`,
-        {
-          method: "PATCH",
-          headers: {
-            apikey: SUPABASE_SERVICE_ROLE_KEY,
-            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-            "Content-Type": "application/json",
-            Prefer: "return=minimal",
-          },
-          body: JSON.stringify({ status }),
-        },
-      ).catch(() => { /* best-effort */ });
-    }
-    return { ok: true };
-  } catch (err) {
-    return { ok: false, error: err instanceof Error ? err.message : String(err) };
-  }
-}
-
-async function getSupportMessages() {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const [messages, totalCount] = await Promise.all([
-    fetchJSON<{
-      id: string; user_id: string | null; email: string | null; message: string;
-      page: string | null; user_agent: string | null; status: string; created_at: string;
-      type: string | null; plan_tier: string | null; session_count_30d: number | null;
-      first_response_at: string | null; resolved_at: string | null;
-    }>("support_messages?select=id,user_id,email,message,page,user_agent,status,created_at,type,plan_tier,session_count_30d,first_response_at,resolved_at&order=created_at.desc&limit=200"),
-    fetchCount("support_messages"),
-  ]);
-
-  const byStatus: Record<string, number> = {};
-  const byType: Record<string, number> = {};
-  let totalResponseMs = 0;
-  let respondedCount = 0;
-  let resolvedCount = 0;
-  let totalResolutionMs = 0;
-
-  // Volume by day (last 30 days)
-  const volumeByDay: Record<string, number> = {};
-  const cutoff = new Date(thirtyDaysAgo);
-
-  for (const m of messages) {
-    byStatus[m.status || "new"] = (byStatus[m.status || "new"] || 0) + 1;
-    const t = m.type || "other";
-    byType[t] = (byType[t] || 0) + 1;
-
-    const createdAt = new Date(m.created_at);
-    if (createdAt >= cutoff) {
-      const day = m.created_at.slice(0, 10);
-      volumeByDay[day] = (volumeByDay[day] || 0) + 1;
-    }
-
-    if (m.first_response_at) {
-      const responseMs = new Date(m.first_response_at).getTime() - new Date(m.created_at).getTime();
-      if (responseMs > 0) { totalResponseMs += responseMs; respondedCount++; }
-    }
-    if (m.resolved_at) {
-      const resMs = new Date(m.resolved_at).getTime() - new Date(m.created_at).getTime();
-      if (resMs > 0) { totalResolutionMs += resMs; resolvedCount++; }
-    }
-  }
-
-  const avgResponseHours = respondedCount > 0 ? Math.round((totalResponseMs / respondedCount) / 3_600_000 * 10) / 10 : null;
-  const avgResolutionHours = resolvedCount > 0 ? Math.round((totalResolutionMs / resolvedCount) / 3_600_000 * 10) / 10 : null;
-
-  return {
-    total: totalCount,
-    byStatus,
-    byType,
-    avgResponseHours,
-    avgResolutionHours,
-    volumeByDay,
-    recent: messages.slice(0, 100),
-  };
-}
-
-/* ─── New section handlers (referrals, promo codes, calendar) ─── */
-
-interface ReferralRow {
-  id: string;
-  referrer_id: string;
-  referred_id?: string;
-  referred_email?: string;
-  status: string;
-  reward_granted_at?: string | null;
-  created_at: string;
-}
-
-// A referral counts as "converted" once the reward has been paid out — i.e.
-// status 'rewarded' or a non-null reward_granted_at (the CAS stamp). The legacy
-// 'converted' status string never existed in this schema; the canonical values
-// are pending | redeemed | rewarded.
-function isReferralConverted(r: ReferralRow): boolean {
-  return r.status === "rewarded" || !!r.reward_granted_at;
-}
-
-async function getReferrals() {
-  const monthAgo = daysAgo(30);
-  const [allReferrals, recentProfiles] = await Promise.all([
-    fetchJSON<ReferralRow>("referrals?select=id,referrer_id,referred_id,referred_email,status,reward_granted_at,created_at&order=created_at.desc&limit=500"),
-    fetchJSON<{ id: string; name: string | null; email: string; practice_timestamps: string[] | null }>("profiles?select=id,name,email,practice_timestamps&limit=2000"),
-  ]);
-  const profileMap = new Map(recentProfiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
-
-  const total = allReferrals.length;
-  const last30d = allReferrals.filter((r) => r.created_at >= monthAgo).length;
-  const converted = allReferrals.filter(isReferralConverted).length;
-  const conversionRate = total > 0 ? Math.round((converted / total) * 100) : 0;
-
-  // K-factor = referred signups in the last 30d / users active in the last 30d.
-  // The doc's go/no-go metric for the referral loop (target > 0.3). Active =
-  // practiced at least once in the window. Reads 0 cleanly when there's no
-  // traffic yet (vs. a misleading Infinity).
-  const now = Date.now();
-  let activeLast30d = 0;
-  for (const p of recentProfiles) {
-    const ts = p.practice_timestamps;
-    if (ts?.length && now - new Date(ts[ts.length - 1]).getTime() < 30 * 86400000) activeLast30d++;
-  }
-  const k = kFactor(last30d, activeLast30d);
-
-  // Top referrers by total referrals brought in
-  const referrerCounts = new Map<string, { count: number; converted: number }>();
-  for (const r of allReferrals) {
-    const cur = referrerCounts.get(r.referrer_id) || { count: 0, converted: 0 };
-    cur.count++;
-    if (isReferralConverted(r)) cur.converted++;
-    referrerCounts.set(r.referrer_id, cur);
-  }
-  const topReferrers = Array.from(referrerCounts.entries())
-    .map(([id, stats]) => ({
-      id,
-      name: profileMap.get(id)?.name || "(deleted user)",
-      email: profileMap.get(id)?.email || "—",
-      total: stats.count,
-      converted: stats.converted,
-    }))
-    .sort((a, b) => b.total - a.total)
-    .slice(0, 20);
-
-  const recent = allReferrals.slice(0, 50).map((r) => ({
-    id: r.id,
-    referrerName: profileMap.get(r.referrer_id)?.name || "(deleted)",
-    refereeEmail: r.referred_email || (r.referred_id ? (profileMap.get(r.referred_id)?.email || "—") : "—"),
-    status: r.status,
-    rewardGranted: !!r.reward_granted_at,
-    createdAt: r.created_at,
-  }));
-
-  return { total, last30d, converted, conversionRate, kFactor: k, activeLast30d, topReferrers, recent };
-}
-
-interface PromoRow {
-  id: string;
-  code: string;
-  discount_pct?: number;
-  discount_amount?: number;
-  max_uses: number | null;
-  uses: number;
-  active: boolean;
-  applies_to: string;
-  expires_at: string | null;
-  created_at: string;
-}
-
-async function getPromoCodes() {
-  const codes = await fetchJSON<PromoRow>("promo_codes?select=*&order=created_at.desc&limit=200");
-  const active = codes.filter((c) => c.active && (!c.expires_at || c.expires_at > new Date().toISOString())).length;
-  const expired = codes.filter((c) => c.expires_at && c.expires_at <= new Date().toISOString()).length;
-  const totalUses = codes.reduce((sum, c) => sum + (c.uses || 0), 0);
-  return {
-    total: codes.length,
-    active,
-    expired,
-    totalUses,
-    codes: codes.map((c) => ({
-      id: c.id,
-      code: c.code,
-      discountPct: c.discount_pct ?? null,
-      discountAmount: c.discount_amount ?? null,
-      maxUses: c.max_uses,
-      uses: c.uses || 0,
-      active: c.active,
-      appliesTo: c.applies_to,
-      expiresAt: c.expires_at,
-      createdAt: c.created_at,
-    })),
-  };
-}
-
-interface CalendarEvent {
-  id: string;
-  user_id: string;
-  type: string;
-  date: string;
-  time?: string;
-  company?: string;
-  reminded?: boolean;
-  created_at: string;
-}
-
-async function getCalendar() {
-  const weekAgo = daysAgo(7);
-  const today = new Date().toISOString();
-  const [allEvents, profiles] = await Promise.all([
-    fetchJSON<CalendarEvent>("calendar_events?select=id,user_id,type,date,time,company,reminded,created_at&order=date.desc&limit=500"),
-    fetchJSON<{ id: string; name: string | null; email: string }>("profiles?select=id,name,email&limit=2000"),
-  ]);
-  const profileMap = new Map(profiles.map((p) => [p.id, { name: p.name || "(no name)", email: p.email }]));
-
-  const upcoming = allEvents.filter((e) => e.date >= today).length;
-  const pastWeek = allEvents.filter((e) => e.date >= weekAgo && e.date < today).length;
-
-  // Events grouped by type
-  const byType: Record<string, number> = {};
-  for (const e of allEvents) {
-    byType[e.type] = (byType[e.type] || 0) + 1;
-  }
-
-  const recent = allEvents.slice(0, 50).map((e) => ({
-    id: e.id,
-    userName: profileMap.get(e.user_id)?.name || "(deleted user)",
-    userEmail: profileMap.get(e.user_id)?.email || "—",
-    type: e.type,
-    company: e.company || "—",
-    date: e.date,
-    time: e.time || "",
-    reminded: !!e.reminded,
-  }));
-
-  return {
-    total: allEvents.length,
-    upcoming,
-    pastWeek,
-    byType,
-    recent,
-  };
-}
-
-/**
- * User outcomes — voluntary self-reports of post-HireStepX job-search
- * results. The data unlock for fundraising case studies. Returns counts
- * + the share-permitted testimonials (anonymized: only first name).
- */
-async function getOutcomes() {
-  const [outcomes, profiles] = await Promise.all([
-    fetchJSON<{
-      user_id: string; applied: boolean | null; interviewed: boolean | null;
-      offer: boolean | null; accepted: boolean | null;
-      company: string | null; role_landed: string | null;
-      testimonial: string | null; may_share_publicly: boolean;
-      reported_at: string;
-    }>("user_outcomes?select=*&order=reported_at.desc&limit=500"),
-    fetchJSON<{ id: string; name: string | null }>("profiles?select=id,name&limit=2000"),
-  ]);
-  const profileMap = new Map(profiles.map((p) => [p.id, p.name || ""]));
-  const total = outcomes.length;
-  const applied = outcomes.filter((o) => o.applied === true).length;
-  const interviewed = outcomes.filter((o) => o.interviewed === true).length;
-  const offer = outcomes.filter((o) => o.offer === true).length;
-  const accepted = outcomes.filter((o) => o.accepted === true).length;
-  const offerRate = total > 0 ? Math.round((offer / total) * 100) : 0;
-
-  const shareableTestimonials = outcomes
-    .filter((o) => o.may_share_publicly && o.testimonial)
-    .slice(0, 30)
-    .map((o) => ({
-      firstName: (profileMap.get(o.user_id) || "Anonymous").split(" ")[0],
-      company: o.company || "—",
-      roleLanded: o.role_landed || "—",
-      testimonial: o.testimonial || "",
-      reportedAt: o.reported_at,
-    }));
-
-  const recent = outcomes.slice(0, 50).map((o) => ({
-    name: profileMap.get(o.user_id) || "(deleted user)",
-    applied: o.applied,
-    interviewed: o.interviewed,
-    offer: o.offer,
-    accepted: o.accepted,
-    company: o.company || "—",
-    roleLanded: o.role_landed || "—",
-    reportedAt: o.reported_at,
-  }));
-
-  return { total, applied, interviewed, offer, accepted, offerRate, shareableTestimonials, recent };
-}
 
 /* ─── Handler ─── */
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Scoped to the admin dashboard's own origin — mirrors admin-login.ts,
+  // which is the only other place this endpoint's credentials are usable from.
+  res.setHeader("Access-Control-Allow-Origin", "https://admin.hirestepx.com");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-admin-token");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+
   if (req.method === "OPTIONS") return res.status(204).end();
 
-  const ip = getClientIp(req);
-
-  // Rate limit check
-  if (isRateLimited(ip)) {
-    return res.status(429).json({ error: "Too many attempts. Try again in 15 minutes." });
-  }
-
-  const auth = verifyAuth(req);
+  const ip = getClientIp(new Request("http://localhost", { headers: toWebHeaders(req.headers) }));
+  const auth = await verifyAuth(req);
   if (!auth.ok) {
-    recordAttempt(ip);
-    return res.status(401).json({ error: "Unauthorized" });
+    // Only requests carrying a validly signed token are worth a row: unsigned garbage
+    // would let anyone fill the table.
+    if (auth.claims) {
+      await recordAdminAudit({
+        admin_user_id: ADMIN_ACTOR, session_id: auth.claims.sid, action: "auth_denied",
+        resource_type: null, resource_id: null, outcome: auth.code, ip, meta: {},
+      });
+    }
+    return res.status(auth.status).json({ error: auth.error, code: auth.code });
   }
-
-  // Successful auth — clear rate limit and issue token if this was a password login
-  clearAttempts(ip);
+  const { claims } = auth;
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    return res.status(503).json({ error: "Not configured" });
+    return res.status(503).json({ error: "Not configured", code: "not_configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string; scope?: string } | undefined;
   const section = body?.section || body?.action || "overview";
+
+  const audit = (outcome: string) => recordAdminAudit({
+    admin_user_id: ADMIN_ACTOR, session_id: claims.sid, ip, outcome,
+    ...describeAdminAction(String(section), body as Record<string, unknown> | undefined),
+  });
 
   try {
     const data = await (async () => {
@@ -1241,35 +63,243 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "overview": return getOverview();
         case "users": return getUsers(body?.search, body?.offset);
         case "user-detail":
-          if (!body?.userId) throw new Error("userId required");
+          if (!body?.userId) throw new ValidationError("userId required");
           return getUserDetail(body.userId);
         case "session-detail":
-          if (!body?.sessionId) throw new Error("sessionId required");
+          if (!body?.sessionId) throw new ValidationError("sessionId required");
           return getSessionDetail(body.sessionId);
         case "financials": return getFinancials();
+        case "employer-financials": return getEmployerFinancials();
         case "llm": return getLLMUsage();
         case "sessions": return getSessions();
         case "feedback": return getFeedback();
         case "support-messages": return getSupportMessages();
+        case "messaging": return getMessaging();
+        case "review-message-flag": {
+          if (!body?.flagId) throw new ValidationError("flagId required");
+          const s = body.flagStatus;
+          if (s !== "reviewed" && s !== "dismissed") throw new ValidationError("flagStatus must be reviewed | dismissed");
+          return reviewMessageFlag(body.flagId, s);
+        }
         case "referrals": return getReferrals();
+        case "employers": return getEmployers();
+        case "employers_list": return listEmployers();
+        case "employer_set_tier": return setEmployerTier(body?.employerId, body?.tier);
+        case "employer_suspend": return suspendEmployer(body?.employerId, body?.reason);
+        case "employer_unsuspend": return unsuspendEmployer(body?.employerId);
+        case "employer_reports_list": return listEmployerReports(body?.status, body?.employerId);
+        case "employer_report_resolve": return resolveEmployerReport(body?.reportId, body?.status);
+        case "unlock-requirements": return listUnlockRequirements(body?.search);
+        case "unlock-matches": return getUnlockMatches(String(body?.requirementId ?? ""));
+        case "admin-unlock-candidates": return adminUnlockCandidates({ requirementId: body?.requirementId, matchIds: body?.matchIds, note: body?.note });
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
         case "outcomes": return getOutcomes();
+        case "costs": return getCostData();
+        case "health": return getHealthAlerts();
+        case "save-cost-reconciliation": {
+          if (!body?.month || !/^\d{4}-\d{2}$/.test(body.month)) throw new ValidationError("month required, format YYYY-MM");
+          const actualInvoiceInr = Number(body.actualInvoiceInr);
+          if (!Number.isFinite(actualInvoiceInr) || actualInvoiceInr < 0) throw new ValidationError("actualInvoiceInr must be a non-negative number");
+          const row = await saveCostReconciliation(body.month, actualInvoiceInr, body.note);
+          return { ok: true, reconciliation: row };
+        }
         case "update-support-status": {
-          if (!body?.id) throw new Error("id required");
+          if (!body?.id) throw new ValidationError("id required");
           const s = body.status;
-          if (s !== "new" && s !== "seen" && s !== "resolved") throw new Error("status must be new | seen | resolved");
+          if (s !== "new" && s !== "seen" && s !== "resolved") throw new ValidationError("status must be new | seen | resolved");
           return updateSupportStatus(body.id, s);
         }
-        default: throw new Error(`Unknown section: ${section}`);
+        case "extend-subscription": {
+          if (!body?.userId) throw new ValidationError("userId required");
+          const tier = body.tier as string | undefined;
+          const days = Number(body.days ?? 30);
+          if (!tier || !["free", "starter"].includes(tier)) throw new ValidationError("tier must be free | starter");
+          if (!Number.isInteger(days) || days < 1 || days > 366) throw new ValidationError("days must be 1–366");
+          const now = new Date();
+          const newEnd = new Date(now.getTime() + days * 86400000).toISOString();
+          // For starter (Sprint Pack): the session limit counts sessions since subscription_start,
+          // NOT since subscription_end. If the user has exhausted their 5 sessions, only resetting
+          // subscription_start opens a fresh window — pushing subscription_end alone does nothing.
+          const patchPayload: Record<string, string> = {
+            subscription_tier: tier,
+            subscription_end: newEnd,
+          };
+          if (tier === "starter") {
+            patchPayload.subscription_start = now.toISOString();
+          }
+          const patchRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(body.userId)}`,
+            {
+              method: "PATCH",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+                Prefer: "return=minimal",
+              },
+              body: JSON.stringify(patchPayload),
+            },
+          );
+          if (!patchRes.ok) {
+            const body2 = await patchRes.text().catch(() => "");
+            return { ok: false, error: `Supabase PATCH failed: HTTP ${patchRes.status}: ${body2.slice(0, 200)}` };
+          }
+          return { ok: true, tier, days, newEnd };
+        }
+        case "grant-credits": {
+          if (!body?.userId) throw new ValidationError("userId required");
+          const qty = Number(body.qty ?? 0);
+          if (!Number.isInteger(qty) || qty < 1 || qty > 100) throw new ValidationError("qty must be 1–100");
+          const note = typeof body.note === "string" ? body.note.slice(0, 200) : "admin grant";
+          const rpcRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/rpc/grant_session_credits`,
+            {
+              method: "POST",
+              headers: {
+                apikey: SUPABASE_SERVICE_ROLE_KEY,
+                Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ p_user_id: body.userId, p_qty: qty, p_note: note }),
+            },
+          );
+          if (!rpcRes.ok) {
+            const body2 = await rpcRes.text().catch(() => "");
+            return { ok: false, error: `RPC failed: HTTP ${rpcRes.status}: ${body2.slice(0, 200)}` };
+          }
+          const newBalance = await rpcRes.json().catch(() => null);
+          return { ok: true, qty, note, newBalance: typeof newBalance === "number" ? newBalance : null };
+        }
+        case "ban-user": {
+          if (!body?.userId) throw new ValidationError("userId required");
+          const banRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
+            {
+              method: "PUT",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ ban_duration: "876000h" }),
+            },
+          );
+          if (!banRes.ok) return { ok: false, error: `Auth ban failed: HTTP ${banRes.status}` };
+          return { ok: true };
+        }
+        case "unban-user": {
+          if (!body?.userId) throw new ValidationError("userId required");
+          const unbanRes = await fetch(
+            `${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(body.userId)}`,
+            {
+              method: "PUT",
+              headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ ban_duration: "none" }),
+            },
+          );
+          if (!unbanRes.ok) return { ok: false, error: `Auth unban failed: HTTP ${unbanRes.status}` };
+          return { ok: true };
+        }
+        case "delete-user": {
+          if (!body?.userId) throw new ValidationError("userId required");
+          // Same routine as the account-deletion cron: retains GST payment records
+          // (anonymised), erases storage / processors, writes account_erasure_log, and
+          // bans instead of deleting an employer whose ledger must be kept. A raw auth
+          // delete would cascade away the financial rows and leave no audit trail.
+          const result = await eraseUserData(
+            {
+              fetchImpl: fetch,
+              supabaseUrl: SUPABASE_URL,
+              serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+              trigger: "admin",
+              posthog: posthogConfigFromEnv(process.env),
+              log: (msg, fields) => slog.info(msg, fields),
+            },
+            body.userId,
+          );
+          if (!result.ok) {
+            return { ok: false, error: `Erasure incomplete (failed steps: ${result.failedSteps.join(", ")}). Safe to retry.` };
+          }
+          return result.retainedFinancialRecords ? { ok: true, retainedFinancialRecords: true } : { ok: true };
+        }
+        case "refund-payment": {
+          if (!body?.paymentId) throw new ValidationError("paymentId required");
+          if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) return { ok: false, error: "Razorpay keys not configured" };
+          const amountPaise = body.amountPaise ? Number(body.amountPaise) : undefined;
+          if (amountPaise !== undefined && (!Number.isInteger(amountPaise) || amountPaise < 100)) {
+            throw new ValidationError("amountPaise must be an integer ≥ 100");
+          }
+          const rzpAuth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
+          const refundBody: Record<string, unknown> = {};
+          if (amountPaise) refundBody.amount = amountPaise;
+          const rzpRes = await fetch(
+            `https://api.razorpay.com/v1/payments/${encodeURIComponent(String(body.paymentId))}/refund`,
+            {
+              method: "POST",
+              headers: { Authorization: `Basic ${rzpAuth}`, "Content-Type": "application/json" },
+              body: JSON.stringify(refundBody),
+            },
+          );
+          if (!rzpRes.ok) {
+            const txt = await rzpRes.text().catch(() => "");
+            return { ok: false, error: `Razorpay refund failed: HTTP ${rzpRes.status}: ${txt.slice(0, 300)}` };
+          }
+          const refundData = await rzpRes.json() as { id?: string; amount?: number; status?: string };
+          return { ok: true, refundId: refundData.id, amount: refundData.amount, status: refundData.status };
+        }
+        case "send-email": {
+          if (!body?.userId || !body?.subject || !body?.htmlBody) throw new ValidationError("userId, subject, and htmlBody required");
+          if (!RESEND_API_KEY) return { ok: false, error: "RESEND_API_KEY not configured" };
+          const subjectStr = String(body.subject).slice(0, 200);
+          const htmlStr = String(body.htmlBody).slice(0, 20000);
+          // Fetch user email from profiles
+          const prof = await fetchJSON<{ email: string }>(`profiles?id=eq.${encodeURIComponent(body.userId)}&select=email&limit=1`);
+          const toEmail = prof[0]?.email;
+          if (!toEmail) return { ok: false, error: "User email not found" };
+          const emailRes = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: "HireStepX <noreply@hirestepx.com>",
+              to: [toEmail],
+              subject: subjectStr,
+              html: htmlStr,
+            }),
+          });
+          if (!emailRes.ok) {
+            const txt = await emailRes.text().catch(() => "");
+            return { ok: false, error: `Resend failed: HTTP ${emailRes.status}: ${txt.slice(0, 200)}` };
+          }
+          const emailData = await emailRes.json() as { id?: string };
+          return { ok: true, emailId: emailData.id, to: toEmail };
+        }
+        case "revoke-admin-sessions": {
+          const scope = body?.scope === "all" ? "all" : "current";
+          const done = scope === "all" ? await revokeAllSessions(Date.now()) : await revokeSession(claims.sid!);
+          return done ? { ok: true, scope, revoked: true } : { ok: false, error: "Session store unavailable" };
+        }
+        case "live": {
+          const since = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+          const liveSessions = await fetchJSON<{ id: string; user_id: string; type: string; difficulty: string; score: number | null; created_at: string }>(
+            `sessions?created_at=gte.${encodeURIComponent(since)}&select=id,user_id,type,difficulty,score,created_at&order=created_at.desc&limit=50`,
+          );
+          return { sessions: liveSessions, since };
+        }
+        default: throw new ValidationError(`Unknown section: ${section}`);
       }
     })();
 
-    // Include a fresh token in every response so the client stays authenticated
-    return res.status(200).json({ ...data as object, _token: createAdminToken() });
+    await audit((data as { ok?: boolean } | null)?.ok === false ? "failed" : "ok");
+    // A revoked session must not be handed a fresh token.
+    if (section === "revoke-admin-sessions" && (data as { ok?: boolean }).ok) return res.status(200).json(data);
+    // Include a fresh token in every response so the client stays authenticated. It inherits
+    // the original sign-in time, so activity never extends the 8h session cap.
+    return res.status(200).json({ ...data as object, _token: createAdminToken(Date.now(), { sid: claims.sid!, authTime: claims.ast, mfa: claims.mfa }) });
   } catch (err) {
-    console.error("Admin data error:", err);
     const msg = err instanceof Error ? err.message : "Failed to fetch admin data";
-    return res.status(msg.includes("required") || msg.includes("Unknown") ? 400 : 500).json({ error: msg });
+    if (err instanceof ValidationError) {
+      await audit("rejected");
+      return res.status(400).json({ error: "Bad request", code: "bad_request", detail: msg });
+    }
+    await audit("error");
+    slog.error("admin-data: unexpected error", { code: "admin_data_failed", error: msg });
+    return res.status(500).json({ error: "Internal server error", code: "internal_error" });
   }
 }

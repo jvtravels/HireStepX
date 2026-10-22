@@ -3,19 +3,10 @@
 
 export const config = { runtime: "edge" };
 
-import { corsHeaders, withRequestId, getClientIp } from "./_shared";
+import { corsHeaders, withRequestId, getClientIp, isRateLimited, rateLimitResponse } from "./_shared";
 
 declare const process: { env: Record<string, string | undefined> };
 
-const _rateLimit = new Map<string, number[]>();
-function checkRate(ip: string, max: number, windowMs: number): boolean {
-  const now = Date.now();
-  const hits = (_rateLimit.get(ip) || []).filter(t => now - t < windowMs);
-  if (hits.length >= max) return false;
-  hits.push(now);
-  _rateLimit.set(ip, hits);
-  return true;
-}
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
@@ -30,8 +21,8 @@ export default async function handler(req: Request): Promise<Response> {
   const headers = withRequestId(corsHeaders(req));
 
   const ip = getClientIp(req);
-  if (!checkRate(ip, 30, 60_000)) {
-    return new Response(JSON.stringify({ error: "Too many requests" }), { status: 429, headers });
+  if (await isRateLimited(ip, "public-profile", 30, 60_000)) {
+    return rateLimitResponse(headers);
   }
 
   const url = new URL(req.url);

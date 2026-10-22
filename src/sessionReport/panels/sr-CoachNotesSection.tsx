@@ -2,57 +2,107 @@
  * Cross-session insights + story-reuse + blind-spots aggregation card.
  * Pure presentation. */
 
+import type { ReactNode } from "react";
+import { t, f, size } from "../tokens";
 import type { BlindSpot, CrossSessionInsight, StoryReuseFinding } from "../types";
 import { SrSectionShell } from "./_primitives";
+
+type NoteKind = "strength" | "gap" | "regression" | "improvement" | "persistent" | "story-reuse" | "blind-spot";
+
+const NOTE_META: Record<NoteKind, { eyebrow: string; dot: string }> = {
+  strength:     { eyebrow: "What went well",  dot: t.inkFaint },
+  gap:          { eyebrow: "For next time",   dot: t.inkFaint },
+  regression:   { eyebrow: "Regression",      dot: t.error },
+  improvement:  { eyebrow: "Improvement",     dot: t.inkFaint },
+  persistent:   { eyebrow: "Persistent gap",  dot: t.inkFaint },
+  "story-reuse": { eyebrow: "Story reuse",    dot: t.inkFaint },
+  "blind-spot": { eyebrow: "Blind spot",      dot: t.inkFaint },
+};
+
+function NoteCard({ kind, title, body, extra }: { kind: NoteKind; title: string; body: string; extra?: ReactNode }) {
+  const meta = NOTE_META[kind];
+  return (
+    <div style={{ borderTop: `1px solid ${t.line}`, padding: "16px 0 18px" }}>
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: meta.dot, flexShrink: 0 }} />
+          <span style={{ fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft }}>
+            {meta.eyebrow}
+          </span>
+        </div>
+        <h3 style={{ fontFamily: f.sans, fontSize: size.md, fontWeight: 600, color: t.coal, lineHeight: 1.35, margin: "0 0 6px" }}>{title}</h3>
+        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, margin: 0 }}>{body}</p>
+        {extra}
+      </div>
+    </div>
+  );
+}
 
 export function CoachNotesSection({
   insights,
   storyReuse,
   blindSpots,
+  coaching,
 }: {
   insights?: CrossSessionInsight[];
   storyReuse?: StoryReuseFinding[];
   blindSpots?: BlindSpot[];
+  coaching?: {
+    strength: { headline: string; meaning: string };
+    gap: { headline: string; meaning: string; example: string };
+  };
 }) {
   const hasInsights = insights && insights.length > 0;
   const hasStoryReuse = storyReuse && storyReuse.length > 0;
   const hasBlindSpots = blindSpots && blindSpots.length > 0;
-  if (!hasInsights && !hasStoryReuse && !hasBlindSpots) return null;
+  const hasCoaching = !!coaching;
+  if (!hasInsights && !hasStoryReuse && !hasBlindSpots && !hasCoaching) return null;
   return (
     <SrSectionShell
       anchorId="ir-section-coach-notes"
       headingId="ir-coach-notes-heading"
-      num="05"
+      num="07"
       label="What your coach would say"
-      title={<>Coach&apos;s Notes</>}
-      subtitle={<>Patterns we&apos;ve noticed across your last few sessions — the perspective a human coach would bring.</>}
+      title={<>Coach&apos;s notes</>}
+      subtitle={<>Patterns we noticed across your recent sessions, the way a human coach would put them.</>}
     >
       <div className="ir-coach-notes-grid">
+        {hasCoaching && (
+          <>
+            <NoteCard
+              key="coaching-strength"
+              kind="strength"
+              title={coaching!.strength.headline}
+              body={coaching!.strength.meaning}
+            />
+            <NoteCard
+              key="coaching-gap"
+              kind="gap"
+              title={coaching!.gap.headline}
+              body={coaching!.gap.meaning}
+              extra={
+                coaching!.gap.example ? (
+                  <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, lineHeight: 1.55, fontStyle: "italic", margin: "6px 0 0" }}>
+                    {coaching!.gap.example}
+                  </p>
+                ) : undefined
+              }
+            />
+          </>
+        )}
         {hasInsights && insights!.map((it) => (
-          <article
+          <NoteCard
             key={it.title}
-            className={`ir-coach-note-card ${it.kind === "regression" ? "regression" : "persistent"}`}
-          >
-            <div className="ir-coach-note-eyebrow">
-              {it.kind === "regression" ? "↓ Regression" : it.kind === "improvement" ? "↑ Improvement" : "Persistent gap"}
-            </div>
-            <h3 className="ir-coach-note-title">{it.title}</h3>
-            <p className="ir-coach-note-body">{it.body}</p>
-          </article>
+            kind={it.kind === "regression" ? "regression" : it.kind === "improvement" ? "improvement" : "persistent"}
+            title={it.title}
+            body={it.body}
+          />
         ))}
         {hasStoryReuse && storyReuse!.map((s) => (
-          <article key={s.storyLabel} className="ir-coach-note-card story-reuse">
-            <div className="ir-coach-note-eyebrow">↻ Story reuse</div>
-            <h3 className="ir-coach-note-title">{s.storyLabel}</h3>
-            <p className="ir-coach-note-body">{s.body}</p>
-          </article>
+          <NoteCard key={s.storyLabel} kind="story-reuse" title={s.storyLabel} body={s.body} />
         ))}
         {hasBlindSpots && blindSpots!.map((b) => (
-          <article key={b.title} className="ir-coach-note-card blind-spot">
-            <div className="ir-coach-note-eyebrow">◌ Blind spot</div>
-            <h3 className="ir-coach-note-title">{b.title}</h3>
-            <p className="ir-coach-note-body">{b.body}</p>
-          </article>
+          <NoteCard key={b.title} kind="blind-spot" title={b.title} body={b.body} />
         ))}
       </div>
     </SrSectionShell>

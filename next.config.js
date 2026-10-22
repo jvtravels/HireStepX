@@ -1,4 +1,28 @@
-/* global process */
+/* global process, URL */
+import { readFileSync } from "node:fs";
+import tempoNextjsPlugin from "tempo-sdk/nextjs";
+
+// Bare company slugs (e.g. /companies/flipkart) redirect to that company's
+// first SEO page. Regenerate via scripts/generate-company-redirect-map.mjs
+// whenever data/seo-pages.ts gains/reorders a company.
+const companyRedirectMap = JSON.parse(
+  readFileSync(new URL("./data/company-redirect-map.json", import.meta.url), "utf8"),
+);
+
+// /questions/<slug> pages whose company has zero company-specific questions
+// in the bank (generic fallback content) 301 to the company's blog or salary
+// page. Guarded by src/__tests__/thinQuestionsRedirects.test.ts.
+const thinQuestionsRedirects = JSON.parse(
+  readFileSync(new URL("./data/thin-questions-redirects.json", import.meta.url), "utf8"),
+);
+
+// Blog posts that target the same query as a stronger, already-indexed post.
+// 301 to the keeper and drop from the sitemap so they stop competing with it.
+// Guarded by src/__tests__/blogQuality.test.ts.
+const blogDuplicateRedirects = JSON.parse(
+  readFileSync(new URL("./data/blog-duplicate-redirects.json", import.meta.url), "utf8"),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable the behavioral v2 diagnostic-first report. The env-flag gate in
@@ -9,6 +33,7 @@ const nextConfig = {
   // requiring a separate env-var configuration step.
   env: {
     NEXT_PUBLIC_BEHAVIORAL_REPORT_V2: "true",
+    NEXT_PUBLIC_RELEASE: (process.env.VERCEL_GIT_COMMIT_SHA || "dev").slice(0, 7),
   },
 
   turbopack: {
@@ -44,6 +69,173 @@ const nextConfig = {
     ],
   },
 
+  async rewrites() {
+    return [
+      // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
+      // root app/opengraph-image.tsx on the "opengraph-image" metadata
+      // convention name, so Next assigns the nested route a hash-suffixed
+      // internal name (opengraph-image-15i2cs) to avoid an output collision.
+      // Vercel's Next.js builder never registers a route for the pretty URL
+      // GSC/social crawlers actually request — only the hashed one shows up
+      // in .vercel/output/config.json — so every /questions/{slug}/opengraph-image
+      // request 404s in production despite working fine under `next start`.
+      // This rewrite covers the gap. The hash is derived from the file's
+      // path, not its content (verified stable across content-only edits);
+      // it only needs updating if this file moves or gains a filename sibling.
+      {
+        source: "/questions/:slug/opengraph-image",
+        destination: "/questions/:slug/opengraph-image-15i2cs",
+      },
+    ];
+  },
+
+  async redirects() {
+    return [
+      // www → non-www 301. Vercel serves both by default; without this redirect
+      // Google indexes www.hirestepx.com pages separately from hirestepx.com,
+      // splitting PageRank across duplicate URLs even when canonical tags are correct.
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.hirestepx.com" }],
+        destination: "https://hirestepx.com/:path*",
+        permanent: true,
+      },
+      // Old URL with wrong year that users bookmarked or linked; 2 GA4 hits/day.
+      {
+        source: "/blog/tcs-interview-questions-freshers-2025",
+        destination: "/blog/tcs-interview-questions-freshers-2026",
+        permanent: true,
+      },
+      // 10 blog post pairs were generated with byte-identical <title> values across
+      // two content batches (2026-07-21 and 2026-07-26), splitting Google ranking
+      // signal for the same query. The later/weaker-linked post in each pair was
+      // removed from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
+      // stronger post that keeps the content.
+      { source: "/blog/product-manager-interview-complete-guide-india-2026", destination: "/blog/product-manager-interview-guide-pm-india-2026", permanent: true },
+      { source: "/blog/oracle-india-software-engineer-bengaluru-hyderabad-2026", destination: "/blog/oracle-india-interview-questions-2026", permanent: true },
+      { source: "/blog/cisco-india-software-engineer-guide-bengaluru-2026", destination: "/blog/cisco-india-interview-questions-2026", permanent: true },
+      { source: "/blog/machine-learning-engineer-interview-mle-guide-india-2026", destination: "/blog/machine-learning-engineer-interview-questions-india-2026", permanent: true },
+      { source: "/blog/adobe-india-software-engineer-guide-noida-bengaluru-2026", destination: "/blog/adobe-india-interview-questions-2026", permanent: true },
+      { source: "/blog/atlassian-india-interview-questions-guide-bengaluru-2026", destination: "/blog/atlassian-india-software-engineer-guide-bengaluru-2026", permanent: true },
+      { source: "/blog/linkedin-india-software-engineer-guide-bengaluru-2026", destination: "/blog/linkedin-india-interview-questions-2026", permanent: true },
+      { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
+      { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
+      { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      ...Object.entries(blogDuplicateRedirects).map(([slug, keeper]) => ({
+        source: `/blog/${slug}`,
+        destination: `/blog/${keeper}`,
+        permanent: true,
+      })),
+      // 7 more blog post pairs found in a 2026-09-26 audit with byte-identical
+      // <title> values (same pattern as the 10 pairs above, generated across the
+      // 2026-06 through 2026-07 content batches). The weaker-linked/thinner post
+      // in each pair was removed from data/blog-posts.ts and src/blog-meta.ts;
+      // redirect it to the stronger surviving post.
+      { source: "/blog/tell-me-about-yourself-answer-fresher-india-2026", destination: "/blog/tell-me-about-yourself-freshers-india-2026", permanent: true },
+      { source: "/blog/data-engineer-interview-spark-kafka-dbt-india-2026", destination: "/blog/data-engineer-interview-questions-india-2026-advanced", permanent: true },
+      { source: "/blog/walmart-global-tech-india-software-engineer-bengaluru-chennai-2026", destination: "/blog/walmart-global-tech-india-interview-questions-2026", permanent: true },
+      { source: "/blog/resume-writing-tips-india-2026", destination: "/blog/resume-tips-software-engineer-india-2026", permanent: true },
+      { source: "/blog/why-should-we-hire-you-examples-freshers-india-2026", destination: "/blog/why-should-we-hire-you-answer-india-2026", permanent: true },
+      { source: "/blog/strengths-and-weaknesses-interview-india-2026", destination: "/blog/strengths-weaknesses-interview-answer-india-2026", permanent: true },
+      { source: "/blog/data-structures-algorithms-interview-dsa-guide-india-2026", destination: "/blog/data-structures-algorithms-interview-india-2026", permanent: true },
+      // /salary/sarvam and /salary/sarvam-ai were two separate pages for the
+      // same company (SWE-only vs SWE+AI-Engineer roles), splitting rankings
+      // across near-identical "sarvam ai salary" queries in GSC. Merged all
+      // role data into sarvam-ai (already covers both); redirect the subset page.
+      { source: "/salary/sarvam", destination: "/salary/sarvam-ai", permanent: true },
+      // kubernetes-docker-devops-interview-questions-india-2026 (2026-01-01) and
+      // kubernetes-docker-interview-india-2026 (2026-04-06) covered the identical
+      // Docker/Kubernetes/Helm/CI-CD topic for the same query, and GSC "Crawled -
+      // not indexed" flagged one as a duplicate. Removed the older, weaker-linked
+      // post from data/blog-posts.ts and src/blog-meta.ts; redirect it to the
+      // more heavily cross-linked survivor.
+      { source: "/blog/kubernetes-docker-devops-interview-questions-india-2026", destination: "/blog/kubernetes-docker-interview-india-2026", permanent: true },
+      // A 2026-09-26 SEO audit flagged 4 /questions/ page pairs sharing the
+      // same company+roleFamily+focus tags, competing for the same query
+      // instead of owning distinct search intent (see the "one primary
+      // intent per URL" rule). Removed the weaker/thinner page in each pair
+      // from data/seo-pages.ts, folding any unique content into the survivor
+      // first; redirect the removed pages here.
+      // ibm-freshers-interview-questions and ibm-campus-placement-interview-questions
+      // both covered IBM fresher/campus hiring for the same query; merged into
+      // the campus-placement page (more complete: covers the GBS/GTS track split).
+      { source: "/questions/ibm-freshers-interview-questions", destination: "/questions/ibm-campus-placement-interview-questions", permanent: true },
+      // nykaa-swe-interview-questions and nykaa-swe-interview-prep-guide-2026
+      // both targeted "nykaa swe interview" queries; merged into the
+      // interview-questions page (more specific to Nykaa's actual dark-store/
+      // inventory-concurrency LLD rounds vs. the prep guide's generic content).
+      { source: "/questions/nykaa-swe-interview-prep-guide-2026", destination: "/questions/nykaa-swe-interview-questions", permanent: true },
+      // myntra-swe-interview-questions and myntra-swe-interview-prep-guide-2026
+      // both targeted "myntra swe interview" queries; merged into the
+      // interview-questions page (more specific to Myntra's flash-sale/Big
+      // Billion Days design rounds vs. the prep guide's generic content).
+      { source: "/questions/myntra-swe-interview-prep-guide-2026", destination: "/questions/myntra-swe-interview-questions", permanent: true },
+      // bharatpe-swe-interview-questions and bharatpe-swe-interview-prep-guide-2026
+      // both targeted "bharatpe swe interview" queries with near-identical
+      // round structure; merged into the interview-questions page (matches
+      // the natural search phrasing used across the rest of the /questions/ tree).
+      { source: "/questions/bharatpe-swe-interview-prep-guide-2026", destination: "/questions/bharatpe-swe-interview-questions", permanent: true },
+      // razorpay-engineering-interview-questions and
+      // razorpay-system-design-interview-questions shared the same
+      // company+roleFamily+focus tags; the engineering page's Technical
+      // Round 2 already covers UPI idempotency/settlement reconciliation
+      // in similar depth. Merged the acquirer-routing content into the
+      // engineering page and redirect the system-design page there.
+      { source: "/questions/razorpay-system-design-interview-questions", destination: "/questions/razorpay-engineering-interview-questions", permanent: true },
+      // swiggy-engineering-interview-questions and
+      // swiggy-system-design-interview-questions both centered their
+      // design content on the same geospatial delivery-assignment/
+      // notification problem with near-identical framing. Merged the
+      // restaurant-discovery-feed content into the engineering page and
+      // redirect the system-design page there.
+      { source: "/questions/swiggy-system-design-interview-questions", destination: "/questions/swiggy-engineering-interview-questions", permanent: true },
+      // uber-swe-interview-questions and uber-system-design-interview-questions
+      // described ride-matching/geospatial/surge-pricing almost verbatim.
+      // Merged the write/read location-path detail into the swe page and
+      // redirect the system-design page there.
+      { source: "/questions/uber-system-design-interview-questions", destination: "/questions/uber-swe-interview-questions", permanent: true },
+      // dream11-swe-interview-questions duplicated dream11-swe-system-design-
+      // interview-questions' intent without its product-specific depth
+      // (team-creation credit cap, live leaderboard recompute). Merged the
+      // backend-stack FAQ into the system-design page and redirect here.
+      { source: "/questions/dream11-swe-interview-questions", destination: "/questions/dream11-swe-system-design-interview-questions", permanent: true },
+      // Legacy /page/<slug> URLs, retired in favour of the new-design marketing
+      // routes. Moved here from app/(marketing)/page/[slug]/page.tsx: every page
+      // under (marketing) inherits loading.tsx, which wraps it in a Suspense
+      // boundary — Next starts streaming a 200 shell before a redirect() call
+      // inside the page resolves, so crawlers only ever saw a client-side
+      // meta-refresh, never a real 30x. A config-level redirect runs before
+      // React rendering and always emits a genuine 308 + Location header.
+      { source: "/page/about", destination: "/about", permanent: true },
+      { source: "/page/contact", destination: "/contact", permanent: true },
+      { source: "/page/help", destination: "/contact", permanent: true },
+      { source: "/page/careers", destination: "/about", permanent: true },
+      { source: "/page/privacy", destination: "/privacy", permanent: true },
+      { source: "/page/terms", destination: "/terms", permanent: true },
+      { source: "/page/refund", destination: "/refund", permanent: true },
+      { source: "/page/pricing", destination: "/pricing", permanent: true },
+      { source: "/page/:slug*", destination: "/", permanent: true },
+      // Bare /companies/<company> URLs (e.g. /companies/flipkart), same
+      // Suspense-streaming issue as /page/* above — moved to config so the
+      // redirect is a real 308 instead of a client-side meta-refresh. Points
+      // straight at /questions/<slug> (the canonical tree) rather than
+      // /companies/<slug> — that route itself now redirects to /questions,
+      // so going through it would cost crawlers and users an extra hop. The
+      // in-page permanentRedirect() in companies/[slug]/page.tsx stays as a
+      // fallback for any company added since this map was last generated.
+      ...Object.entries(thinQuestionsRedirects).map(([slug, destination]) => ({
+        source: `/questions/${slug}`,
+        destination,
+        permanent: true,
+      })),
+      ...Object.entries(companyRedirectMap).map(([company, slug]) => ({
+        source: `/companies/${company}`,
+        destination: thinQuestionsRedirects[slug] ?? `/questions/${slug}`,
+        permanent: true,
+      })),
+    ];
+  },
+
   async headers() {
     // Content-Security-Policy is intentionally absent here.
     // It is generated per-request with a unique nonce in middleware.ts, which
@@ -51,19 +243,32 @@ const nextConfig = {
     // conflict — the middleware-set response header always wins, making a
     // build-time CSP string dead weight. All other security headers are static
     // and safe to keep here.
+    const headers = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
+      { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+    ];
+    // Tempo's canvas devserver embeds route storyboards in an iframe to
+    // preview the real app — X-Frame-Options: DENY would block that. Only
+    // skip it when running under Tempo's own supervised dev process;
+    // production and any other traffic keep the anti-clickjacking header.
+    if (process.env.TEMPO !== "true") {
+      headers.unshift({ key: "X-Frame-Options", value: "DENY" });
+    }
     return [
       {
         source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
-          { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
-        ],
+        headers,
+      },
+      {
+        // Unhashed public/ assets: cache a day at the edge and browser, serve stale
+        // for a week while revalidating. /_next/static is already immutable.
+        source: "/:path*.(png|jpg|jpeg|webp|avif|svg|ico|woff2)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       },
     ];
   },
 };
 
-export default nextConfig;
+export default tempoNextjsPlugin()(nextConfig);

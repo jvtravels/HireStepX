@@ -11,8 +11,11 @@ import {
   escapeHtml,
   supabaseUrl,
   supabaseAnonKey,
+  slog,
 } from "./_shared";
 import { grantSessionCredits } from "./_session-credits";
+import { notify } from "./_notify";
+import { razorpayBasicAuth } from "./_razorpay-auth";
 import {
   PLAN_TIER,
   PLAN_AMOUNT,
@@ -35,17 +38,16 @@ const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 // Razorpay plan IDs — used to validate that the subscription_id returned by the
 // client actually belongs to the plan they claim. An attacker could otherwise
-// submit a weekly subscription_id with plan:"monthly" and get Pro for free.
+// submit a weekly subscription_id and claim a higher-tier plan.
 const RAZORPAY_PLAN_WEEKLY  = (process.env.RAZORPAY_PLAN_WEEKLY  || "").trim();
-const RAZORPAY_PLAN_MONTHLY = (process.env.RAZORPAY_PLAN_MONTHLY || "").trim();
 // Map internal plan keys → Razorpay plan IDs for cross-validation
 const RAZORPAY_PLAN_ID_MAP: Record<string, string> = Object.fromEntries(
-  Object.entries({ weekly: RAZORPAY_PLAN_WEEKLY, monthly: RAZORPAY_PLAN_MONTHLY })
+  Object.entries({ weekly: RAZORPAY_PLAN_WEEKLY })
     .filter(([, v]) => v !== ""),
 );
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -54,7 +56,8 @@ const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 // analytics hashing rather than shipping a known weak key in source (C-2 fix).
 const PAYMENT_ID_HASH_SECRET = (process.env.PAYMENT_ID_HASH_SECRET || "").trim();
 
-import { captureServerEvent } from "./_posthog";
+import { captureServerEvent, captureServerException } from "./_posthog";
+import { recordSlo } from "./_slo";
 import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
 
 /** Hash a Razorpay payment id before sending it to analytics. The full id
@@ -79,6 +82,24 @@ async function clearPaymentIntent(orderId: string): Promise<void> {
   } catch { /* best effort */ }
 }
 
+/** Release the Upstash idempotency lock set at step 1b (pay_dedup:<id>).
+ * The lock is acquired BEFORE order/subscription verification and the
+ * Supabase-side dedup record, so every non-success return after it was
+ * acquired must release it — otherwise a legitimate client retry (network
+ * blip, slow Razorpay response, transient Supabase error) hits the
+ * "duplicate call" branch on its next attempt and gets back a false
+ * success response built from the user's unchanged pre-payment profile,
+ * even though the payment was never actually processed. Best-effort: a
+ * failed DEL just means the lock expires naturally after its 24h TTL. */
+async function releasePaymentLock(paymentId: string): Promise<void> {
+  if (!UPSTASH_URL || !UPSTASH_TOKEN || !paymentId) return;
+  try {
+    await fetch(`${UPSTASH_URL}/DEL/${encodeURIComponent(`pay_dedup:${paymentId}`)}`, {
+      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    });
+  } catch { /* best effort */ }
+}
+
 // Plan catalog, signature check, and end-date math live in
 // _payment-verification.ts so the money path is tested against real code.
 // "single" stays on the free tier — it grants session credits, not a tier.
@@ -96,13 +117,13 @@ async function sendPaymentEmail(
   if (!RESEND_API_KEY) return;
   // Basic email format validation
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-    console.error("Invalid email format, skipping payment email");
+    slog.error("verify-payment: invalid email format, skipping payment email", {});
     return;
   }
   const planLabel = PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
-  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39", monthly: "₹149" };
+  const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39" };
   const amount = amountOverride ?? amountMap[plan] ?? "₹49";
 
   try {
@@ -126,7 +147,7 @@ async function sendPaymentEmail(
           preview: `${planLabel} starts now. Valid until ${end}.`,
           body:
             title("You're", { accentWord: "in." }) +
-            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${tier === "pro" ? "Unlimited interview sessions, full AI coaching feedback, salary negotiation mode and performance analytics, all unlocked." : plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "7 interview sessions per week, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
+            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "5 interview sessions, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
             dataCard("Receipt", [
               ["Plan", planLabel],
               ["Amount paid", mono(amount)],
@@ -136,7 +157,7 @@ async function sendPaymentEmail(
             ]) +
             button("Start practising", `${APP_URL}/dashboard`) +
             para(
-              `This is your payment confirmation. Need a GST invoice for your company? Reply to this email and we'll send a tax-compliant version. If you didn't make this purchase, contact us immediately.`,
+              `This is your payment confirmation. If you didn't make this purchase, contact us immediately.`,
               { small: true, muted: true },
             ),
         }),
@@ -145,14 +166,14 @@ async function sendPaymentEmail(
     clearTimeout(emailTimer);
     if (!emailRes.ok) {
       const errBody = await emailRes.text().catch(() => "");
-      console.error("Resend API error:", emailRes.status, errBody);
+      slog.error("verify-payment: resend API error", { status: emailRes.status, body: errBody.slice(0, 200) });
       logPaymentResendUsage("error", `HTTP ${emailRes.status}`);
       throw new Error(`Resend error ${emailRes.status}: ${errBody}`);
     }
     logPaymentResendUsage("success");
   } catch (err) {
     // Non-blocking — don't fail the payment if email fails
-    console.error("Failed to send payment email:", err);
+    slog.error("verify-payment: failed to send payment email", { error: err instanceof Error ? err.message : String(err) });
     logPaymentResendUsage("error", err instanceof Error ? err.message : "Unknown");
     throw err; // re-throw so Promise.allSettled captures it
   }
@@ -174,9 +195,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const origin = applyCorsHeaders(req, res);
   if (handlePreflightAndMethod(req, res)) return;
 
-  // Body size check
+  // Body size check — also inspect the parsed body since chunked transfer
+  // encoding can omit Content-Length, making the header-only check bypassable.
   const bodyContentLength = parseInt((req.headers["content-length"] as string) || "0", 10);
-  if (bodyContentLength > 1048576) {
+  const bodyBytes = req.body != null ? Buffer.byteLength(JSON.stringify(req.body), "utf8") : 0;
+  if (bodyContentLength > 1048576 || bodyBytes > 1048576) {
     return res.status(413).json({ error: "Request too large" });
   }
 
@@ -263,7 +286,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       paymentId: razorpay_payment_id,
     });
     if (!verifyRazorpaySignature(signPayload, razorpay_signature, RAZORPAY_KEY_SECRET)) {
-      console.error("Payment signature mismatch for", (razorpay_order_id || razorpay_subscription_id || "").slice(0, 8) + "...");
+      slog.error("verify-payment: signature mismatch", { ref: (razorpay_order_id || razorpay_subscription_id || "").slice(0, 8) });
       return res.status(400).json({ error: "Payment signature verification failed", code: "SIGNATURE_MISMATCH" });
     }
 
@@ -319,7 +342,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 2. Verify plan matches the actual order/subscription amount with Razorpay
-    const rzpAuth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64");
+    const rzpAuth = razorpayBasicAuth(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
     const rzpAc = new AbortController();
     const rzpTimer = setTimeout(() => rzpAc.abort(), 8000);
     let sessionQuantity = 1; // For single session multi-buy
@@ -331,6 +354,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { Authorization: `Basic ${rzpAuth}` }, signal: rzpAc.signal,
       });
       if (!orderRes.ok) {
+        await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(400).json({ error: "Could not verify order details", code: "ORDER_FETCH_FAILED" });
       }
       const orderData = await orderRes.json();
@@ -352,7 +377,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const baseAmount = plan === "single" ? PLAN_AMOUNT[plan] * sessionQuantity : PLAN_AMOUNT[plan];
       const expectedAmount = Math.max(0, baseAmount - promoDiscount);
       if (orderData.amount !== expectedAmount) {
-        console.error("Plan/amount mismatch for order", razorpay_order_id.slice(0, 8) + "...");
+        slog.error("verify-payment: plan/amount mismatch", { orderRef: razorpay_order_id.slice(0, 8) });
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Plan does not match payment amount", code: "AMOUNT_MISMATCH" });
       }
     } else if (razorpay_subscription_id) {
@@ -361,34 +387,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         headers: { Authorization: `Basic ${rzpAuth}` }, signal: rzpAc.signal,
       });
       if (!subRes.ok) {
+        await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(400).json({ error: "Could not verify subscription details", code: "SUBSCRIPTION_FETCH_FAILED" });
       }
       const subData = await subRes.json();
       if (!["active", "authenticated", "created"].includes(subData.status)) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Subscription is not active", code: "SUBSCRIPTION_INACTIVE" });
       }
       // C-3 (prior audit): Cross-validate that the subscription's Razorpay plan_id
-      // matches the plan key the client claims. Without this check, an attacker
-      // could submit a weekly (Sprint Pack ₹39) subscription_id with plan:"monthly"
-      // and get upgraded to Pro tier without paying for it.
-      // Only enforce when the env vars are configured — skip gracefully in envs
-      // that haven't set RAZORPAY_PLAN_WEEKLY/MONTHLY to avoid false 403s on
-      // existing deploys that aren't using subscription billing yet.
+      // matches the plan key the client claims, so a forged/reused subscription_id
+      // can't be used to claim a plan it wasn't purchased for.
+      // Only enforce when the env var is configured — skip gracefully in envs
+      // that haven't set RAZORPAY_PLAN_WEEKLY to avoid false 403s on existing
+      // deploys that aren't using subscription billing yet.
       const expectedRzpPlanId = RAZORPAY_PLAN_ID_MAP[plan];
       if (expectedRzpPlanId && subData.plan_id && subData.plan_id !== expectedRzpPlanId) {
-        console.error("[verify-payment] Subscription plan_id mismatch — possible forgery:", {
+        slog.error("verify-payment: subscription plan_id mismatch — possible forgery", {
           claimed_plan: plan,
           expected_plan_id: expectedRzpPlanId,
           actual_plan_id: subData.plan_id,
           subscription_id: razorpay_subscription_id.slice(0, 12),
         });
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: "Subscription plan mismatch", code: "PLAN_ID_MISMATCH" });
       }
     }
     } catch (rzpErr) {
       if (rzpErr instanceof DOMException && rzpErr.name === "AbortError") {
+        await releasePaymentLock(razorpay_payment_id);
+        await recordSlo("payment_verification", false);
         return res.status(504).json({ error: "Payment verification timed out. Please retry.", code: "RAZORPAY_TIMEOUT" });
       }
+      await releasePaymentLock(razorpay_payment_id);
       throw rzpErr;
     } finally { clearTimeout(rzpTimer); }
 
@@ -459,7 +491,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Non-201, non-409: Supabase error (500, timeout, etc.)
       // Fallback: check payments table (legacy check) to avoid blocking legitimate retries
       // of payments that were already fully processed before the dedup table existed
-      console.error("[verify-payment] Dedup INSERT returned unexpected status:", dedupRes.status);
+      slog.error("verify-payment: dedup INSERT returned unexpected status", { status: dedupRes.status });
       const dupCheck = await fetchWithTimeout(
         `${SUPABASE_URL}/rest/v1/payments?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}&select=id`,
         { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } },
@@ -504,6 +536,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Single-session credit top-ups are tier-neutral, so they're never a
       // "downgrade" even when the buyer holds an active paid plan.
       if (plan !== "single" && isActive && (TIER_RANK[current.subscription_tier] || 0) > (TIER_RANK[newTier] || 0)) {
+        await releasePaymentLock(razorpay_payment_id);
         return res.status(400).json({ error: `You already have an active ${current.subscription_tier} plan. Downgrading is not supported — wait for it to expire or contact support.` });
       }
     }
@@ -520,14 +553,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ id: crypto.randomUUID(), user_id: userId, razorpay_payment_id, razorpay_order_id, plan: "single", tier: "free", amount: purchaseAmount, currency: "INR", status: "completed", subscription_start: nowSingle.toISOString(), subscription_end: nowSingle.toISOString() }),
       });
       if (!paymentRecordRes.ok) {
-        console.error("[verify-payment] single payment record save failed:", paymentRecordRes.status);
+        slog.error("verify-payment: single payment record save failed", { status: paymentRecordRes.status });
+        await releasePaymentLock(razorpay_payment_id);
+        await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+          method: "DELETE",
+          headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+        }).catch(() => {});
+        await recordSlo("payment_verification", false);
         return res.status(500).json({ error: "Failed to save payment record" });
       }
       // Money-critical: the payment is already captured, so retry the grant
       // through transient Supabase failures before giving up.
-      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3);
+      const newBalance = await grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, userId, sessionQuantity, fetch, 3, { paymentId: razorpay_payment_id });
       if (newBalance === null) {
-        console.error("[verify-payment] credit grant failed after retries for", userId.slice(0, 8));
+        slog.error("verify-payment: credit grant failed after retries", { userHash: userId.slice(0, 8) });
         // The dedup row was inserted BEFORE this grant, so leaving it in place
         // would make a client retry short-circuit at the 409/idempotent path and
         // return "success" without ever granting the credit — a permanent loss.
@@ -536,9 +575,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           method: "DELETE",
           headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
         }).catch(() => {});
+        await releasePaymentLock(razorpay_payment_id);
         void captureServerEvent("verify_payment_credit_grant_failed", userId, {
           payment_id_hash: hashPaymentId(razorpay_payment_id), quantity: sessionQuantity,
         });
+        await recordSlo("payment_verification", false);
         return res.status(500).json({ error: "Could not add your session credit. Your payment was received — please retry in a moment or contact support@hirestepx.com." });
       }
       // Idempotency backstop: record this payment_id on the profile so a
@@ -552,11 +593,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString(), `₹${purchaseAmount / 100}`); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
       }
       if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
+      void notify({
+        userId,
+        type: "payment_success",
+        title: "Payment received",
+        body: `${sessionQuantity} session credit${sessionQuantity === 1 ? "" : "s"} added to your account.`,
+        link: "/dashboard",
+      });
       await captureServerEvent("payment_completed", userId, {
         // tier reflects the user's actual subscription at purchase time — credits
         // are a universal top-up available to all tiers, not just free users.
         plan: "single", tier: current?.subscription_tier || "free", amount: purchaseAmount, currency: "INR", payment_id: razorpay_payment_id, quantity: sessionQuantity, credits_after: newBalance,
       });
+      await recordSlo("payment_verification", true);
       return res.status(200).json({
         success: true,
         plan: "single",
@@ -582,6 +631,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       currentTier: current?.subscription_tier ?? null,
     });
     if (!dates) {
+      await releasePaymentLock(razorpay_payment_id);
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+      }).catch(() => {});
       return res.status(400).json({ error: "Invalid plan duration", code: "INVALID_PLAN" });
     }
     const { end, proratedDays } = dates;
@@ -602,9 +656,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         razorpay_order_id,
         plan,
         tier,
-        // M-3: store the actual charged amount, not the list price. promoDiscount
-        // is server-derived from Razorpay order notes (set by create-order.ts)
-        // so this matches what Razorpay captured and enables correct GST reconciliation.
+        // Store the actual charged amount (list price minus any promo discount).
+        // promoDiscount is server-derived from Razorpay order notes (set by create-order.ts).
         amount: Math.max(0, PLAN_AMOUNT[plan] - promoDiscount),
         currency: "INR",
         status: "completed",
@@ -615,37 +668,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!paymentRecordRes.ok) {
       const errText = await paymentRecordRes.text().catch(() => "");
-      console.error("Payment record save failed:", paymentRecordRes.status, errText);
+      slog.error("verify-payment: payment record save failed", { status: paymentRecordRes.status, body: errText.slice(0, 200) });
+      // The dedup row from step 3 was already inserted. Left in place, a
+      // client retry would short-circuit at the 409/idempotent path and
+      // report "success" against the user's stale pre-upgrade profile,
+      // permanently losing the upgrade despite the charge having cleared.
+      // Roll it back (best-effort) so a genuine retry can re-process cleanly.
+      await fetchWithTimeout(`${SUPABASE_URL}/rest/v1/payment_dedup?razorpay_payment_id=eq.${encodeURIComponent(razorpay_payment_id)}`, {
+        method: "DELETE",
+        headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`, Prefer: "return=minimal" },
+      }).catch(() => {});
+      await releasePaymentLock(razorpay_payment_id);
+      await recordSlo("payment_verification", false);
       return res.status(500).json({ error: "Failed to save payment record" });
     }
 
-    // 6. Update profile (service role key bypasses RLS)
-    const updateRes = await fetchWithTimeout(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
-      {
-        method: "PATCH",
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-          "Content-Type": "application/json",
-          Prefer: "return=minimal",
+    // 6. Update profile (service role key bypasses RLS).
+    // Money-critical and the payments row above is already durable (and
+    // uniquely keyed on razorpay_payment_id) — unlike the paymentRecordRes
+    // failure above, rolling back the dedup row here would make a client
+    // retry re-attempt the payments INSERT and fail on that unique
+    // constraint forever, never reaching this PATCH. Retry the PATCH
+    // itself instead, same shape as the single-plan credit-grant retry,
+    // so a transient Supabase blip doesn't leave the user charged but
+    // stuck on their pre-upgrade tier.
+    let updateRes: Response | null = null;
+    let updateErrText = "";
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise(r => setTimeout(r, 300 * attempt));
+      updateRes = await fetchWithTimeout(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "return=minimal",
+          },
+          body: JSON.stringify({
+            subscription_tier: tier,
+            subscription_start: now.toISOString(),
+            subscription_end: end.toISOString(),
+            razorpay_payment_id,
+            ...(razorpay_subscription_id ? { razorpay_subscription_id } : {}),
+            cancel_at_period_end: false,
+          }),
         },
-        body: JSON.stringify({
-          subscription_tier: tier,
-          subscription_start: now.toISOString(),
-          subscription_end: end.toISOString(),
-          razorpay_payment_id,
-          ...(razorpay_subscription_id ? { razorpay_subscription_id } : {}),
-          cancel_at_period_end: false,
-        }),
-      },
-    );
-
-    if (!updateRes.ok) {
-      const errText = await updateRes.text().catch(() => "");
-      console.error("Supabase update error:", updateRes.status, errText);
-      return res.status(500).json({ error: "Failed to activate subscription" });
+      );
+      if (updateRes.ok) break;
+      updateErrText = await updateRes.text().catch(() => "");
     }
+
+    if (!updateRes || !updateRes.ok) {
+      slog.error("verify-payment: supabase update error after retries", { status: updateRes?.status, body: (updateErrText || "").slice(0, 200) });
+      void captureServerEvent("verify_payment_activation_failed", userId, {
+        payment_id_hash: hashPaymentId(razorpay_payment_id), plan, tier,
+      });
+      await recordSlo("payment_verification", false);
+      return res.status(500).json({ error: "Payment received but activation failed — please contact support@hirestepx.com with your payment ID so we can activate your plan manually." });
+    }
+
+    void notify({
+      userId,
+      type: "payment_success",
+      title: `${PLAN_LABEL[plan] || tier} is live`,
+      body: `Your payment went through — your plan is active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}.`,
+      link: "/dashboard",
+    });
 
     // 6a. Consume exactly one promo use — only now, after the charge cleared and
     // the subscription is live. A single RPC call (consume_promo_code) does the
@@ -687,12 +777,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           emailSent = true;
           break;
         } catch (emailErr) {
-          console.error(`Confirmation email attempt ${attempt + 1} failed:`, emailErr);
+          slog.error("verify-payment: confirmation email attempt failed", { attempt: attempt + 1, error: emailErr instanceof Error ? emailErr.message : String(emailErr) });
           if (attempt === 0) await new Promise(r => setTimeout(r, 1000));
         }
       }
       if (!emailSent) {
-        console.error(`[verify-payment] Email permanently failed for user ${userId.slice(0, 8)}, payment ${razorpay_payment_id.slice(0, 8)}`);
+        slog.error("verify-payment: confirmation email permanently failed", { userHash: userId.slice(0, 8), paymentRef: razorpay_payment_id.slice(0, 8) });
       }
     }
 
@@ -746,6 +836,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       subscription_end: end.toISOString(),
       prorated_days: proratedDays,
     });
+    await recordSlo("payment_verification", true);
     return res.status(200).json({
       success: true,
       subscriptionTier: tier,
@@ -757,7 +848,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ...(proratedDays > 0 ? { proratedBonusDays: proratedDays } : {}),
     });
   } catch (err) {
-    console.error("Payment verification error:", err);
+    slog.error("verify-payment: unexpected error", { error: err instanceof Error ? err.message : String(err) });
+    // Awaited: an unawaited capture here races the response and can be
+    // silently dropped if the invocation tears down first (see the
+    // evaluate-session.ts fix for the confirmed 2026-10-03 incident this
+    // same pattern caused) — worst possible endpoint to lose crash visibility on.
+    await captureServerException(err, undefined, { endpoint: "verify-payment" });
+    await recordSlo("payment_verification", false);
     return res.status(500).json({ error: "Internal error" });
   }
 }

@@ -1,21 +1,45 @@
 import type { Metadata } from "next";
+import ConsentGatedAdSense from "../../ConsentGatedAdSense";
 import { AboutV2 } from "@/marketing-v2/MarketingPagesV2";
-import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
+import { buildAboutJsonLd } from "./_jsonld";
 
 export const metadata: Metadata = {
-  title: "About | HireStepX",
+  title: "About HireStepX | AI Mock Interview Platform",
   description:
-    "HireStepX is an India-first AI mock interview platform. Our mission, our values, and the team building career infrastructure for the next million job seekers.",
+    "India's AI mock interview platform. Voice interviews for TCS, Google, Flipkart, and 200+ companies. STAR scoring and skill-decay tracking. 2 sessions free.",
+  keywords: [
+    "about HireStepX",
+    "AI mock interview platform India",
+    "interview preparation company India",
+    "HireStepX mission",
+  ].join(", "),
   alternates: { canonical: "/about" },
+  openGraph: {
+    title: "About HireStepX: India's AI Mock Interview Platform",
+    description: "HireStepX helps Indian job seekers practice for TCS, Google, Flipkart, Amazon, and 200+ companies with AI voice interviews and scored feedback.",
+    url: "https://hirestepx.com/about",
+    type: "website",
+    siteName: "HireStepX",
+    locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "About HireStepX: India's AI Mock Interview Platform" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "About HireStepX: India's AI Mock Interview Platform 2026",
+    description: "AI mock interviews for 200+ Indian companies. Voice interviews, STAR scoring, skill-decay tracking. Built for India.",
+    images: ["https://hirestepx.com/opengraph-image"],
+  },
 };
 
-export const dynamic = "force-static";
 export const revalidate = 3600;
 
-export default function Page() {
+export default async function Page() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "About", path: "/about" }]))} />
+      {buildAboutJsonLd().map((html, i) => (
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={html} />
+      ))}
+      <ConsentGatedAdSense />
       <AboutV2 />
     </>
   );

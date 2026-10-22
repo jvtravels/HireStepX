@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import DashboardAnalytics from "@/DashboardAnalytics";
-import ReadinessIndex from "@/readinessIndex/ReadinessIndex";
+import dynamic from "next/dynamic";
+import { AnalyticsRouteSkeleton } from "@/routeSkeletons";
 
 export const metadata: Metadata = {
   title: "Analytics | HireStepX",
@@ -12,6 +12,21 @@ export const metadata: Metadata = {
 // on by default; set NEXT_PUBLIC_READINESS_INDEX_V2=0 to fall back to the
 // legacy DashboardAnalytics for one release without a code change.
 const READINESS_V2 = process.env.NEXT_PUBLIC_READINESS_INDEX_V2 !== "0";
+
+// Mirror the /dashboard pattern: both analytics surfaces are heavy client
+// components, so load them dynamically. This fallback (not the route's
+// loading.tsx) is what renders on a hard reload / direct navigation, so
+// it's shaped like the stat-row + chart-row analytics layout both surfaces
+// share instead of a generic blob. Keeps the chunk off the auth-gated
+// critical path and lets each component's own client boundary mount
+// predictably. Both already have "use client", so the server renders a
+// lightweight fallback and the real component hydrates client-side.
+const ReadinessIndex = dynamic(() => import("@/readinessIndex/ReadinessIndex"), {
+  loading: () => <AnalyticsRouteSkeleton />,
+});
+const DashboardAnalytics = dynamic(() => import("@/DashboardAnalytics"), {
+  loading: () => <AnalyticsRouteSkeleton />,
+});
 
 export default function Page() {
   return READINESS_V2 ? <ReadinessIndex /> : <DashboardAnalytics />;

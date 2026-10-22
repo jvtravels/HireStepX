@@ -88,6 +88,17 @@ describe("detectStarPresence", () => {
     expect(detectStarPresence("the platform gained adoption across the company").result).toBe(true);
   });
 
+  it("Action — verbs outside the old hand-enumerated whitelist (regression, prod incident 2026-08-14)", () => {
+    // Live production test found a clean, complete ownership answer scored
+    // action:false because the verbs it used ("ran", "volunteered",
+    // "worked") weren't literally on the old ACTION_RE whitelist, even
+    // though "redesigned the flow from 7 steps to 3" is unambiguous action.
+    expect(detectStarPresence("I personally ran 12 user interviews and redesigned the flow").action).toBe(true);
+    expect(detectStarPresence("I volunteered to lead the redesign").action).toBe(true);
+    expect(detectStarPresence("I worked with an engineer to ship the A/B test").action).toBe(true);
+    expect(detectStarPresence("I organized the migration plan").action).toBe(true);
+  });
+
   it("Action — senior-level verbs (championed, spearheaded, steered)", () => {
     expect(detectStarPresence("I championed the migration end-to-end").action).toBe(true);
     expect(detectStarPresence("I spearheaded the cross-team rollout").action).toBe(true);

@@ -18,7 +18,7 @@
  * To re-enable: flip TTS_DISABLED to false. No other change needed —
  * the provider chain (Sarvam → Cartesia → Azure → browser) is intact.
  * ───────────────────────────────────────────────────────────────────── */
-const TTS_DISABLED = true;
+const TTS_DISABLED = false;
 
 /* Whether spoken AI output is currently off. The interview engine reads this
  * to default the answer composer to text mode — otherwise the UI shows a live
@@ -35,8 +35,8 @@ function syntheticReadDurationMs(text: string): number {
   return Math.max(1800, Math.round((words / 160) * 60_000));
 }
 
+import { applySpeaker, applySpeakerToContext } from "./audioDevices";
 import { safeUUID } from "./utils";
-
 /* Module-level Window augmentation — exposes the Cartesia AudioContext so
  * useMobileAudioResilience in Interview.tsx can resume it after iOS Safari
  * suspends the page. Was previously read/written via `as unknown as` casts;
@@ -145,8 +145,8 @@ export function getCachedVoices(language = "en_IN"): CartesiaVoice[] {
 
 const DEFAULT_SETTINGS: TTSSettings = {
   provider: "sarvam",
-  voiceId: "anushka",
-  voiceName: "Anushka (Sarvam Indian English)",
+  voiceId: "priya",
+  voiceName: "Priya (Sarvam Indian English)",
   language: "en_IN",
 };
 
@@ -448,7 +448,7 @@ async function _speakWithWebSocketInner(
       return speakWithProxy(text, voiceId, onEnd, onError, gender, onDurationKnown, onAudioStarted);
     }
 
-    audioCtx = new AudioContext({ sampleRate: WS_SAMPLE_RATE });
+    audioCtx = new AudioContext({ sampleRate: WS_SAMPLE_RATE }); applySpeakerToContext(audioCtx);
     nextStartTime = audioCtx.currentTime;
     // Expose on window so Interview.tsx's useMobileAudioResilience hook can
     // resume it after backgrounding / rotation on iOS Safari, which otherwise
@@ -462,6 +462,7 @@ async function _speakWithWebSocketInner(
       if (chunksReceived === 0 && !cancelled) {
         console.warn("[TTS-WS] timeout — no data received, falling back to REST");
         closeCtx();
+        markDone(); // release _utteranceQueue before proxy; prevents deadlock if proxy throws
         settle(() => {});
         speakWithProxy(text, voiceId, onEnd, onError, gender, onDurationKnown, onAudioStarted);
       }
@@ -694,7 +695,7 @@ async function speakWithProxy(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
 
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
@@ -813,7 +814,7 @@ async function speakWithSarvam(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
         onDurationKnown(audio.duration * 1000);
@@ -925,7 +926,7 @@ async function speakWithAzure(
     }
 
     const url = URL.createObjectURL(blob);
-    audio = new Audio(url);
+    audio = new Audio(url); applySpeaker(audio);
     audio.onloadedmetadata = () => {
       if (audio && isFinite(audio.duration) && audio.duration > 0 && onDurationKnown) {
         onDurationKnown(audio.duration * 1000);
@@ -971,12 +972,27 @@ async function speakWithAzure(
   };
 }
 
+// The Web Speech API exposes no gender field on SpeechSynthesisVoice, only
+// a name/lang string. Match common vendor naming conventions so the final
+// fallback tier doesn't hand back a voice of the wrong (or just different)
+// gender from whatever Sarvam/Cartesia/Azure used earlier in the session —
+// see B-EMP4 in speakWithBrowser below.
+const BROWSER_FEMALE_VOICE_HINTS = ["female", "samantha", "veena", "zira", "karen", "victoria", "moira", "tessa", "fiona"];
+const BROWSER_MALE_VOICE_HINTS = ["male", "daniel", "rishi", "david", "alex", "fred", "aaron", "arthur"];
+export function browserVoiceGender(name: string): "male" | "female" | undefined {
+  const lower = name.toLowerCase();
+  if (BROWSER_FEMALE_VOICE_HINTS.some((h) => lower.includes(h))) return "female";
+  if (BROWSER_MALE_VOICE_HINTS.some((h) => lower.includes(h))) return "male";
+  return undefined;
+}
+
 /* ─── Browser TTS (fallback) ─── */
 function speakWithBrowser(
   text: string,
   onEnd: () => void,
   onError: () => void,
   onAudioStarted?: () => void,
+  gender?: "male" | "female",
 ): { cancel: () => void } {
   // If autoplay is blocked, skip — browser TTS also requires user gesture
   if (_autoplayBlocked) {
@@ -998,11 +1014,16 @@ function speakWithBrowser(
   // Prefer Indian English voices, fall back to US English. MVP is
   // English-only; Hindi voice fallback removed (was hinting Hindi
   // pronunciation when no Indian-English voice was available).
-  const preferred = voices.find(
+  // B-EMP4 (2026-08-20): rank by gender match first so this last-resort
+  // tier doesn't audibly swap the interviewer's voice identity when Sarvam/
+  // Cartesia/Azure have already spoken in a specific gender this session.
+  const genderMatches = gender ? voices.filter((v) => browserVoiceGender(v.name) === gender) : voices;
+  const pool = genderMatches.length > 0 ? genderMatches : voices;
+  const preferred = pool.find(
     (v) =>
       v.lang === "en-IN" ||
       v.name.includes("Indian"),
-  ) || voices.find(
+  ) || pool.find(
     (v) =>
       v.name.includes("Samantha") ||
       v.name.includes("Google US English") ||
@@ -1041,6 +1062,8 @@ function speakWithBrowser(
 let _activeCancel: (() => void) | null = null;
 /** Version counter — prevents stale fallback chains from overwriting the current cancel handle */
 let _ttsGeneration = 0;
+/** Bumped by cleanupTTS/hardMuteTTS. speak()/speakAs() resolve only after audio.play() has started, so a cancel issued while one is still fetching finds no handle; setCancel uses this to stop it the moment it starts. */
+let _muteEpoch = 0;
 
 // Auto-cleanup on page unload to prevent WebSocket/AudioContext leaks
 if (typeof window !== "undefined") {
@@ -1050,6 +1073,7 @@ if (typeof window !== "undefined") {
 }
 
 export function cleanupTTS() {
+  _muteEpoch++;
   _activeCancel?.();
   _activeCancel = null;
   clearPrefetchCache();
@@ -1080,6 +1104,7 @@ export function cleanupTTS() {
  * playing — Azure speakWithBrowser path uses HTMLAudioElement.
  */
 export function hardMuteTTS() {
+  _muteEpoch++;
   // 1. Cancel the current handle (idempotent w/ cleanupTTS)
   _activeCancel?.();
   _activeCancel = null;
@@ -1161,7 +1186,9 @@ export async function speakAs(
   // Versioned cancel: each new speakAs/speak call gets a generation ID.
   // Stale fallback chains won't overwrite the current cancel handle.
   const gen = ++_ttsGeneration;
+  const epoch = _muteEpoch;
   const setCancel = (fn: () => void) => {
+    if (epoch !== _muteEpoch) { fn(); return; }
     if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
   };
 
@@ -1174,7 +1201,7 @@ export async function speakAs(
     handle = await speakWithAzure(text, wrapEnd, () => {
       console.warn("Azure TTS also failed (speakAs), falling back to browser TTS");
       recordTtsAttempt(attempt, "browser");
-      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
+      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"), gender);
       handle = browserHandle;
       setCancel(browserHandle.cancel);
     }, gender, voiceId, onDurationKnown, wrapStart("azure"));
@@ -1447,6 +1474,12 @@ function addBreathCues(text: string): string {
   return out;
 }
 
+/** All available Sarvam female voices — exported so the interview engine
+ *  can pick one at session-start for consistent within-session variety. */
+// Kept in lockstep with VOICES.female in server-handlers/sarvam-tts.ts
+// (bulbul:v3 roster — v2's manisha/anushka/vidya/arya no longer exist).
+export const SARVAM_FEMALE_VOICES = ["priya", "ritu", "neha", "pooja", "simran", "kavya", "ishita", "shreya", "roopa", "tanya", "shruti", "suhani", "kavitha", "rupali"] as const;
+
 export async function speak(
   text: string,
   onEnd: () => void,
@@ -1454,6 +1487,7 @@ export async function speak(
   gender?: "male" | "female",
   onDurationKnown?: (ms: number) => void,
   onAudioStarted?: () => void,
+  voiceId?: string,
 ): Promise<{ cancel: () => void }> {
   // Kill-switch: resolve as silent success so the interview state
   // machine advances without waiting for audio. See top-of-file
@@ -1487,21 +1521,26 @@ export async function speak(
 
   // Versioned cancel to prevent stale fallback chains from overwriting current handle
   const gen = ++_ttsGeneration;
+  const epoch = _muteEpoch;
   const setCancel = (fn: () => void) => {
+    if (epoch !== _muteEpoch) { fn(); return; }
     if (gen === _ttsGeneration) _activeCancel = () => { finalizeTtsAttempt(attempt, "cancelled"); fn(); };
   };
 
   // Azure (3rd-tier) → Browser final fallback.
+  // Pass voiceId through so Azure's pickVoice() hashes the same interviewer
+  // identity, keeping the voice consistent across a session even when the
+  // provider tier changes mid-session.
   const azureFallback = async () => {
     console.warn("Trying Azure TTS fallback");
     recordTtsAttempt(attempt, "azure");
     handle = await speakWithAzure(text, wrapEnd, () => {
       console.warn("Azure TTS also failed, falling back to browser TTS");
       recordTtsAttempt(attempt, "browser");
-      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
+      const browserHandle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"), gender);
       handle = browserHandle;
       setCancel(browserHandle.cancel);
-    }, gender, undefined, onDurationKnown, wrapStart("azure"));
+    }, gender, voiceId, onDurationKnown, wrapStart("azure"));
     setCancel(handle.cancel);
   };
 
@@ -1511,12 +1550,38 @@ export async function speak(
     console.warn("Trying Cartesia TTS fallback");
     // Pin an Indian-English Cartesia voice so the accent doesn't shift
     // jarringly when Sarvam fails over.
-    let cartesiaVoice = DEFAULT_VOICE_ID;
+    // DEFAULT_VOICE_ID is female — only override it when we find an exact
+    // gender match from the dynamic list. Falling back to enInVoices[0]
+    // without a gender check caused jarring female→male voice switches
+    // when Sarvam failed and Cartesia's first en_IN voice happened to be male.
+    // Find a gender-matched Cartesia voice. If none exists for the requested
+    // gender, skip Cartesia entirely so Azure (which selects by gender) handles
+    // it — playing a known-wrong-gender voice is worse than the next fallback.
+    let cartesiaVoice: string | null = null;
     try {
       const enInVoices = await fetchCartesiaVoices("en_IN");
-      const preferred = (gender && enInVoices.find(v => v.gender === gender)) || enInVoices[0];
-      if (preferred?.id) cartesiaVoice = preferred.id;
-    } catch { /* keep default voice on fetch failure */ }
+      const genderMatches = gender ? enInVoices.filter(v => v.gender === gender) : enInVoices;
+      if (genderMatches.length > 0) {
+        // Hash voiceId (the session's seeded Sarvam voice name) to a stable
+        // index into the gender-matched pool, so the same interviewer keeps
+        // the same Cartesia voice across the whole session instead of
+        // everyone landing on genderMatches[0].
+        if (voiceId) {
+          const hash = voiceId.split("").reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0);
+          cartesiaVoice = genderMatches[Math.abs(hash) % genderMatches.length].id;
+        } else {
+          cartesiaVoice = genderMatches[0].id;
+        }
+      } else if (!gender) {
+        cartesiaVoice = enInVoices[0]?.id || DEFAULT_VOICE_ID;
+      }
+      // gender specified but no match → cartesiaVoice stays null → skip to Azure
+    } catch { cartesiaVoice = DEFAULT_VOICE_ID; /* network error: try with default */ }
+    if (cartesiaVoice === null) {
+      console.warn("Cartesia TTS fallback: no gender-matched voice, skipping to Azure");
+      await azureFallback();
+      return;
+    }
     const prefetchEntry = _prefetchCache.get(text);
     const hasPrefetch = !!prefetchEntry && Date.now() - prefetchEntry.createdAt < PREFETCH_TTL;
     if (hasPrefetch) {
@@ -1542,7 +1607,7 @@ export async function speak(
 
   if (settings.provider === "browser") {
     recordTtsAttempt(attempt, "browser");
-    handle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"));
+    handle = speakWithBrowser(text, wrapEnd, wrapError, wrapStart("browser"), gender);
   } else {
     // Sarvam primary → Cartesia → Azure → Browser. Each layer escalates
     // on `onError`; `onEnd` short-circuits the chain on success or on
@@ -1551,7 +1616,7 @@ export async function speak(
     handle = await speakWithSarvam(text, wrapEnd, async () => {
       console.warn("Sarvam TTS failed, trying Cartesia fallback");
       await cartesiaFallback();
-    }, gender, undefined, onDurationKnown, wrapStart("sarvam"));
+    }, gender, voiceId, onDurationKnown, wrapStart("sarvam"));
   }
 
   setCancel(handle.cancel);

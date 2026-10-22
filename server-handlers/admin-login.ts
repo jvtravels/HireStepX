@@ -3,55 +3,36 @@
  *
  * This is the only place the raw password is accepted. On success:
  *   1. A signed HMAC session token is minted via _admin-auth.ts.
- *   2. The token is set in a Secure; HttpOnly; SameSite=Strict cookie so
- *      middleware can read it without JS exposure.
- *   3. The token is also returned in the JSON body so the client can store
- *      it in localStorage for subsequent x-admin-token API calls (existing
- *      flow is preserved).
+ *   2. The token is set in a Secure; HttpOnly; SameSite=Strict cookie —
+ *      the sole delivery mechanism. The token is NOT returned in the JSON
+ *      body to prevent client-side JavaScript from ever touching it.
+ *   3. The client reads the token from the subsequent /api/admin-data
+ *      response (_token field) and caches it in memory (React ref) for
+ *      x-admin-token header use. No localStorage involved.
  *
- * POST /api/admin-login  { password: string }
- *   200  { ok: true, token: string }          — success, cookie set
+ * When ADMIN_TOTP_SECRET is set, a TOTP second factor is also required. With
+ * ADMIN_REQUIRE_MFA=1 a sign-in without one is refused (403 mfa_required), and every
+ * token records whether a TOTP was verified so /api/admin-data can enforce it too.
+ * Sign-ins, failures and sign-outs are written to admin_audit_log (best effort).
+ *
+ * POST /api/admin-login  { password: string, totp?: string }
+ *   200  { ok: true }                         — success, cookie set
  *   401  { error: "Unauthorized" }            — wrong password
+ *   401  { error: "Invalid 2FA code" }        — TOTP mismatch (when enabled)
+ *   401  { error: "2FA code required" }       — totp field missing (when enabled)
+ *   403  { code: "mfa_required" }             — ADMIN_REQUIRE_MFA=1 but no TOTP secret configured
  *   429  { error: "Too many attempts…" }      — rate limited
  *   503  { error: "Not configured" }          — ADMIN_PASSWORD not set
  */
 
 import { createHmac, timingSafeEqual } from "crypto";
-import { adminAuthConfigured, createAdminToken } from "./_admin-auth";
+import { adminAuthConfigured, createAdminToken, readAdminTokenClaims } from "./_admin-auth";
+import { isRateLimited, getClientIp } from "./_shared";
+import { isTotpRequired, verifyAdminTotp } from "./_admin-totp";
+import { ADMIN_ACTOR, isMfaRequired, readCookie, type AdminAuditRow } from "./_admin-session-helpers";
+import { recordAdminAudit, revokeSession } from "./_admin-session-store";
 
 const ADMIN_PASSWORD = (process.env.ADMIN_PASSWORD || "").trim();
-
-/* Rate limiting — in-memory per serverless instance, same params as admin-data.ts */
-const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const MAX_ATTEMPTS = 5;
-const RATE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) return false;
-  return entry.count >= MAX_ATTEMPTS;
-}
-
-function recordAttempt(ip: string): void {
-  const now = Date.now();
-  const entry = loginAttempts.get(ip);
-  if (!entry || now > entry.resetAt) {
-    loginAttempts.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
-  } else {
-    entry.count++;
-  }
-}
-
-function clearAttempts(ip: string): void {
-  loginAttempts.delete(ip);
-}
-
-function getClientIp(req: Request): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return "unknown";
-}
 
 function verifyPassword(input: string): boolean {
   if (!ADMIN_PASSWORD || !input) return false;
@@ -82,6 +63,13 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Credentials": "true",
 };
 
+function audit(ip: string, action: string, outcome: string, sid: string | null = null) {
+  const row: AdminAuditRow = {
+    admin_user_id: ADMIN_ACTOR, session_id: sid, action, resource_type: null, resource_id: null, outcome, ip, meta: {},
+  };
+  return recordAdminAudit(row);
+}
+
 export default async function adminLoginHandler(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: CORS_HEADERS });
@@ -103,7 +91,7 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
 
   const ip = getClientIp(req);
 
-  if (isRateLimited(ip)) {
+  if (await isRateLimited(ip, "admin-login", 5, 900_000)) {
     return new Response(
       JSON.stringify({ error: "Too many attempts. Try again in 15 minutes." }),
       { status: 429, headers: CORS_HEADERS }
@@ -111,9 +99,11 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
   }
 
   let password: string;
+  let totp: string;
   try {
-    const body = await req.json() as { password?: unknown };
+    const body = await req.json() as { password?: unknown; totp?: unknown };
     password = typeof body.password === "string" ? body.password : "";
+    totp = typeof body.totp === "string" ? body.totp.replace(/\s/g, "") : "";
   } catch {
     return new Response(JSON.stringify({ error: "Invalid request body" }), {
       status: 400,
@@ -122,18 +112,44 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
   }
 
   if (!verifyPassword(password)) {
-    recordAttempt(ip);
+    await audit(ip, "login", "bad_password");
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: CORS_HEADERS,
     });
   }
 
-  clearAttempts(ip);
+  // Second factor: TOTP required when ADMIN_TOTP_SECRET is configured.
+  // Checked AFTER password to avoid leaking whether TOTP is enabled before
+  // the password gate — both factors always look like a plain 401 to attackers.
+  if (isMfaRequired(process.env.ADMIN_REQUIRE_MFA) && !isTotpRequired()) {
+    await audit(ip, "login", "mfa_not_configured");
+    return new Response(
+      JSON.stringify({ error: "Two-factor authentication is required but not configured (ADMIN_TOTP_SECRET).", code: "mfa_required" }),
+      { status: 403, headers: CORS_HEADERS },
+    );
+  }
 
-  const token = createAdminToken();
+  if (isTotpRequired()) {
+    if (!totp) {
+      return new Response(JSON.stringify({ error: "2FA code required", totp_required: true }), {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+    if (!(await verifyAdminTotp(totp))) {
+      await audit(ip, "login", "bad_totp");
+      return new Response(JSON.stringify({ error: "Invalid 2FA code" }), {
+        status: 401,
+        headers: CORS_HEADERS,
+      });
+    }
+  }
 
-  return new Response(JSON.stringify({ ok: true, token }), {
+  const token = createAdminToken(Date.now(), { mfa: isTotpRequired() });
+  await audit(ip, "login", "ok", readAdminTokenClaims(token)?.sid ?? null);
+
+  return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: {
       ...CORS_HEADERS,
@@ -143,7 +159,16 @@ export default async function adminLoginHandler(req: Request): Promise<Response>
 }
 
 /* Logout handler — clears the admin_token cookie. */
-export function adminLogoutHandler(_req: Request): Response {
+export async function adminLogoutHandler(req: Request): Promise<Response> {
+  // Revoke server-side so a copied token stops working too; clearing the cookie alone
+  // would leave the in-memory copy valid until it expires.
+  // The cookie (4h) can lapse before the rolling header token does, so honour either.
+  const presented = [req.headers.get("x-admin-token"), readCookie(req.headers.get("cookie") || "", "admin_token")];
+  const claims = presented.map((t) => (t ? readAdminTokenClaims(t) : null)).find((c) => c?.sid) ?? null;
+  if (claims?.sid) {
+    await revokeSession(claims.sid);
+    await audit(getClientIp(req), "logout", "ok", claims.sid);
+  }
   return new Response(JSON.stringify({ ok: true }), {
     status: 200,
     headers: {

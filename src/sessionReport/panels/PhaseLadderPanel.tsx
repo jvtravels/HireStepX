@@ -21,7 +21,7 @@ export function PhaseLadderPanel({ outcome }: { outcome: NegotiationOutcome }) {
     <PanelShell
       index="01"
       title="Negotiation skills you showed"
-      subtitle={`Five independent skills a strong negotiation demonstrates — not steps in order. You can close a deal without ever handling a pushback if the recruiter never pushed, so a skill can be checked even when one above it isn't.`}
+      subtitle="Five separate skills. Each can be shown without the one before it."
       aside={
         <StatTile
           variant="aside"

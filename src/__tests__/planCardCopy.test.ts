@@ -9,17 +9,17 @@ describe("starterPackFootnote", () => {
     }
   });
 
-  it("states the pack is spent when no sessions remain", () => {
-    expect(starterPackFootnote(0)).toBe("Sprint Pack used up");
+  it("renders no footnote when the pack is spent — the red usage row + buy CTA already say it", () => {
+    expect(starterPackFootnote(0)).toBe("");
   });
 
-  it("treats a negative balance as spent (defensive)", () => {
-    expect(starterPackFootnote(-1)).toBe("Sprint Pack used up");
+  it("treats a negative balance as spent (defensive) — still no footnote", () => {
+    expect(starterPackFootnote(-1)).toBe("");
   });
 
-  it("communicates the one-off, non-resetting nature while sessions remain", () => {
-    expect(starterPackFootnote(3)).toBe("One-off pack · doesn’t reset");
-    expect(starterPackFootnote(5)).toBe("One-off pack · doesn’t reset");
+  it("always returns empty — the card header and usage row tell the full story", () => {
+    expect(starterPackFootnote(3)).toBe("");
+    expect(starterPackFootnote(5)).toBe("");
   });
 });
 
@@ -34,9 +34,9 @@ describe("planCtaLabel", () => {
   });
 
   it("keeps existing Free behaviour intact", () => {
-    // Active free → upsell.
+    // Active free → see plans (modal shows Per Session + Sprint Pack, not Pro).
     expect(planCtaLabel({ starterExhausted: false, freeExhausted: false, creditBalance: 0 }))
-      .toBe("Upgrade to Pro");
+      .toBe("See plans");
     // Exhausted free, no credits → unlock prompt.
     expect(planCtaLabel({ starterExhausted: false, freeExhausted: true, creditBalance: 0 }))
       .toBe("Unlock sessions now");
@@ -54,8 +54,8 @@ describe("planCtaLabel", () => {
 });
 
 describe("planCtaTitle", () => {
-  it("pitches Pro only for the upgrade CTA", () => {
-    expect(planCtaTitle("Upgrade to Pro")).toMatch(/Pro/);
+  it("surfaces pricing in the tooltip for the see-plans CTA", () => {
+    expect(planCtaTitle("See plans")).toMatch(/₹9/);
   });
 
   it("describes buying sessions for every buy CTA", () => {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Interview from "@/Interview";
+import InterviewLoader from "./InterviewLoader";
 
 export const metadata: Metadata = {
   title: "Interview | HireStepX",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <Interview />;
+  return <InterviewLoader />;
 }

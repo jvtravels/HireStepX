@@ -1,22 +1,19 @@
 /* Session Report — production entry component.
    Owns the LLM evaluation pipeline (loading / error / abort / retry),
-   recent-score + cohort fetches, share-link wiring, PDF print hook,
-   and analytics. Delegates all rendering to `SessionReportView` —
+   recent-score + cohort fetches, share-link wiring, and analytics. Delegates all rendering to `SessionReportView` —
    the pure presentation port of the canvas design.
 
    Contract:
      props: { session, onBack }
      side-effects: evaluateSessionWithAI(), fetchRecentSessionScores(),
-                   fetchLiveCohort(), POST /api/share-report, window.print()
+                   fetchLiveCohort(), POST /api/share-report
 
    Loaded via `next/dynamic` from `dashboardComponents.tsx`. */
 
 "use client";
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { track } from "@vercel/analytics";
 import { captureClientEvent } from "../posthogClient";
-import { useToast } from "../Toast";
 import {
   evaluateSessionWithAI,
   EvaluateSessionError,
@@ -36,10 +33,18 @@ import {
 import { CLIENT_REPORT_VERSION, type DashboardSession } from "../dashboardTypes";
 import { useAuth } from "../AuthContext";
 import SessionReportView from "./SessionReportView";
+import { practiceHref } from "./practiceHref";
+import { buildRoundProgress } from "./roundProgress";
 import { sessionReportToInterviewResult, toBehavioralFullReportData, negotiationOutcomeDerivation } from "./adapter";
 import type { AnalyzerMeta } from "../../server-handlers/analyzers/_types";
+import { clawbackForCompany } from "../../server-handlers/_joining-bonus-clawback";
+import type { OfferNetValueInput } from "./derivations/offerNetValue";
 import { getInterviewerName } from "../InterviewComponents";
 import { t, f } from "./tokens";
+import { Button } from "@/components/ui/button";
+import { CopyEmailLink } from "../_CopyEmailLink";
+import { SessionReportEvaluating } from "./SessionReportEvaluating";
+import { useEvalStage } from "../useEvalStage";
 
 /* ─── Helpers — small pure functions for transcript shaping + role-
    family inference + duration parsing. Kept local so the entry stays
@@ -96,82 +101,9 @@ function parseDurationSec(s: string | undefined): number {
 
 /* ─── Loading + error UIs — cream surface to match the report ──────── */
 
-function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: string }) {
-  // Phase-walking copy mirrors the legacy ProgressiveLoadingState — gives
-  // the user something to read while the LLM crunches. Plain rotation;
-  // we don't need state-machine choreography here.
-  const phases = [
-    "Reading your transcript…",
-    "Scoring your delivery…",
-    "Looking for patterns worth practising…",
-    "Drafting coach notes…",
-  ];
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const id = window.setInterval(() => setIdx((i) => (i + 1) % phases.length), 2400);
-    return () => window.clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return (
-    <div
-      style={{
-        background: t.cream,
-        minHeight: "100vh",
-        fontFamily: f.sans,
-        color: t.coal,
-        padding: "20px 32px",
-      }}
-    >
-      <button
-        type="button"
-        onClick={onBack}
-        style={{
-          background: "transparent",
-          border: "none",
-          fontFamily: f.sans,
-          fontSize: 14,
-          color: t.coal,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
-          gap: 8,
-          padding: 0,
-          marginBottom: 32,
-        }}
-      >
-        ← {backLabel}
-      </button>
-      <div
-        style={{
-          maxWidth: 560,
-          margin: "120px auto 0",
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 56,
-            height: 56,
-            borderRadius: "50%",
-            border: `2px solid ${t.line}`,
-            borderTopColor: t.indigo,
-            margin: "0 auto 24px",
-            animation: "ir-spin 800ms linear infinite",
-          }}
-        />
-        <h1 style={{ fontFamily: f.serif, fontSize: 32, color: t.coal, margin: "0 0 12px", fontWeight: 400, letterSpacing: "-0.02em" }}>
-          Coaching your report
-        </h1>
-        <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.55 }}>
-          {phases[idx]}
-        </p>
-        <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkFaint, margin: "24px 0 0" }}>
-          Usually takes 15–30 seconds.
-        </p>
-      </div>
-      <style>{`@keyframes ir-spin { to { transform: rotate(360deg); } }`}</style>
-    </div>
-  );
+export function LoadingShell({ onBack, backLabel, sessionId }: { onBack: () => void; backLabel: string; sessionId?: string }) {
+  const stage = useEvalStage(sessionId);
+  return <SessionReportEvaluating stage={stage} onBack={onBack} backLabel={backLabel} />;
 }
 
 /* Preliminary scores the interview engine computed and persisted on the
@@ -180,7 +112,7 @@ function LoadingShell({ onBack, backLabel }: { onBack: () => void; backLabel: st
    were produced live during the interview and stored, so we can always show
    them even when /api/evaluate-session is unavailable. Shown clearly labeled
    as preliminary, never passed off as the full report. */
-type PreliminarySummary = {
+export type PreliminarySummary = {
   score: number;
   topStrength: string;
   topWeakness: string;
@@ -196,7 +128,7 @@ type PreliminarySummary = {
    would teach the user a false readiness signal right before a real interview.
    We surface the qualitative notes the engine captured (if any) and route hard
    to the retry CTA for the real AI report instead. */
-function PreliminaryCard({ p }: { p: PreliminarySummary }) {
+export function PreliminaryCard({ p }: { p: PreliminarySummary }) {
   return (
     <div
       style={{
@@ -250,7 +182,9 @@ function PreliminaryCard({ p }: { p: PreliminarySummary }) {
   );
 }
 
-function ErrorShell({
+const SUPPORT_NOTE_STYLE: CSSProperties = { fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "20px 0 0", lineHeight: 1.55 };
+
+export function ErrorShell({
   message,
   onRetry,
   onBack,
@@ -282,59 +216,45 @@ function ErrorShell({
   return (
     <div
       style={{
-        background: t.cream,
-        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
         fontFamily: f.sans,
         color: t.coal,
-        padding: "20px 32px",
       }}
     >
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={onBack}
         style={{
-          background: "transparent",
-          border: "none",
           fontFamily: f.sans,
           fontSize: 14,
           color: t.coal,
-          cursor: "pointer",
-          display: "inline-flex",
-          alignItems: "center",
           gap: 8,
-          padding: 0,
-          marginBottom: 32,
+          marginBottom: 16,
+          alignSelf: "flex-start",
         }}
       >
         ← {backLabel}
-      </button>
-      <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "120px auto 0", textAlign: "center" }}>
+      </Button>
+      <div style={{ maxWidth: 560, margin: hasPreliminary ? "40px auto 0" : "80px auto 0", textAlign: "center" }}>
         <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>
-          {hasPreliminary ? "Your session is saved" : "Couldn’t generate your report"}
+          {hasPreliminary ? "Your session is saved" : "Your report is almost ready"}
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           {hasPreliminary
-            ? "We captured your full interview — but it isn’t scored yet. The coached report (model answers, STAR breakdowns and skill tracking) needs our AI scoring service, which is busy right now. Your transcript is safe; generate it in a moment for your real evaluation."
+            ? "We captured your full interview — but it isn’t scored yet. Your coached report (model answers, STAR breakdowns and skill tracking) just needs one more try. Tap the button below to build it now. Your transcript is safe."
             : message}
         </p>
         {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
-        <button
-          type="button"
-          onClick={onRetry}
-          style={{
-            background: t.indigo,
-            color: t.cream,
-            border: "none",
-            padding: "10px 20px",
-            borderRadius: 10,
-            fontFamily: f.sans,
-            fontWeight: 600,
-            fontSize: 13,
-            cursor: "pointer",
-          }}
-        >
-          {hasPreliminary ? "Generate full report" : "Try again"}
-        </button>
+        <Button type="button" size="lg" onClick={onRetry}>
+          {hasPreliminary ? "Generate full report" : "Build my report"}
+        </Button>
+        <p style={SUPPORT_NOTE_STYLE}>
+          Still stuck? Email <CopyEmailLink email="support@hirestepx.com">support@hirestepx.com</CopyEmailLink> and we will build it for you.
+          Your session does not count against you.
+        </p>
       </div>
     </div>
   );
@@ -351,27 +271,11 @@ export const SessionReport = memo(function SessionReport({
   onBack: () => void;
   backLabel?: string;
 }) {
-  const router = useRouter();
   const { user } = useAuth();
-  const { toast } = useToast();
-  const isFreeUser = (user?.subscriptionTier ?? "free") === "free";
-  /* Upgrade CTA on the report page navigates back to dashboard and opens
-     the upgrade modal. The ?upgrade=1 param is picked up by DashboardLayout
-     to auto-open UpgradeModal on mount — keeps the user in the product
-     rather than shipping them to a cold pricing page. */
-  const onUpgrade = useCallback(() => {
-    track("report_upgrade_nudge_clicked", { sessionId: session.id });
-    router.push("/dashboard?upgrade=1");
-  }, [router, session.id]);
   const [report, setReport] = useState<SessionReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
-  /* Public share URL — set when the user clicks "Share Report" and the
-     API returns a URL. Passed to SessionReportView so the LinkedIn share
-     button and ReferralInviteSection can surface the report link rather
-     than just the referral signup URL. */
-  const [shareUrl, setShareUrl] = useState<string | undefined>(undefined);
   const [trend, setTrend] = useState<SessionTrendPoint[]>([]);
   /* Cross-session skill-progress trends for the Skill Progress panel.
      Derived from the skill_scores already on the user's session rows
@@ -393,6 +297,10 @@ export const SessionReport = memo(function SessionReport({
     adjustedCgpaCutoff: number;
     statedCgpa: number | null;
     targetCompany?: string | null;
+    archetype?: string;
+    archetypeLabel?: string;
+    bondProbeCount?: number;
+    aptitudeProbeExpectedType?: string;
   } | undefined>(undefined);
   /* Salary-negotiation: tier-aware compensation bucket the analyzer
    * scored against + CTC take-home breakdown for the closing offer.
@@ -442,8 +350,10 @@ export const SessionReport = memo(function SessionReport({
   const cachedReport = session.cachedReport as SessionReportData | undefined;
   const cachedVersion = session.cachedReportVersion;
   const hasAnyCachedReport = Boolean(cachedReport);
+  /* The server stores a composite "<schema>:<identity hash>" (see
+     buildReportCacheVersion), so compare the schema part only. */
   const hasCurrentCachedReport = Boolean(
-    cachedReport && cachedVersion === CLIENT_REPORT_VERSION
+    cachedReport && cachedVersion?.split(":")[0] === CLIENT_REPORT_VERSION
   );
   /* Stale-while-revalidate: if we have ANY cached report (even an older
      version) hydrate it immediately so the user sees their report rather
@@ -544,6 +454,7 @@ export const SessionReport = memo(function SessionReport({
         role: session.role,
         roleFamily,
         type: session.type,
+        focus: session.focus,
         // Prefer the company captured for THIS session over the profile-level
         // target. The profile field is usually empty, which dropped the
         // session's real target company (e.g. "Razorpay") from the evaluator.
@@ -573,7 +484,16 @@ export const SessionReport = memo(function SessionReport({
             ac.signal
           );
           if (!cancelled && res) {
-            setReport(res);
+            /* S67-B1 (2026-07-25): deterministic fallback returns coaching: null
+             * (no LLM to write the pair). When the stale cached report already
+             * had a valid coaching pair from the original LLM evaluation, preserve
+             * it rather than letting null overwrite it — the LLM-written pair is
+             * more valuable than nothing and silently disappearing it is confusing. */
+            const merged =
+              (res.coaching == null && cachedReport?.coaching != null)
+                ? { ...res, coaching: cachedReport.coaching }
+                : res;
+            setReport(merged);
             track("report_llm_completed", {
               sessionId: session.id,
               latencyMs: Date.now() - t0,
@@ -606,15 +526,22 @@ export const SessionReport = memo(function SessionReport({
 
       // All retries exhausted (or non-transient failure)
       const raw = lastErr instanceof Error ? lastErr.message : "Failed to generate report";
-      const looksTransient = isTransient(raw);
-      const msg = looksTransient
-        ? "Our scoring service is taking longer than usual. Please try again in a moment — your transcript is safe and nothing was lost."
-        : raw;
+      // Dead session: no answers were recorded (mic/STT failure). Show a
+      // targeted message instead of the generic report-error UI.
+      if (raw === "no_candidate_answers") {
+        if (!cancelled && !silentRefresh) {
+          setErrorMsg("no_candidate_answers");
+          setLoading(false);
+        }
+        return;
+      }
+      // Never surface raw/technical errors: always a next step + reassurance.
+      const msg = "Your report is taking a little longer to build. Tap the button below to try again. Your transcript is safe and nothing was lost.";
       if (!cancelled) {
         track("report_llm_failed", {
           sessionId: session.id,
           latencyMs: Date.now() - t0,
-          error: msg.slice(0, 120),
+          error: raw.slice(0, 120),
           view: "main",
           retries: MAX_ATTEMPTS,
           silent: silentRefresh ? "yes" : "no",
@@ -634,8 +561,10 @@ export const SessionReport = memo(function SessionReport({
   }, [session.id, reloadTick, user?.targetCompany, hasCurrentCachedReport]);
 
   /* ── Single fire on first successful view ── */
+  const viewedSessionRef = useRef<string | null>(null);
   useEffect(() => {
-    if (report) {
+    if (report && viewedSessionRef.current !== session.id) {
+      viewedSessionRef.current = session.id;
       track("report_viewed", {
         sessionId: session.id,
         score: report.overallScore,
@@ -660,10 +589,54 @@ export const SessionReport = memo(function SessionReport({
     }
   }, [report, session.id, user?.practiceTimestamps?.length]);
 
+  /* ── Which sections do users actually scroll to? One event per section per report. ── */
+  const hasReport = !!report;
+  useEffect(() => {
+    if (!hasReport || typeof IntersectionObserver === "undefined") return;
+    const seen = new Set<string>();
+    const watched = new WeakSet<Element>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (!e.isIntersecting || seen.has(e.target.id)) continue;
+          seen.add(e.target.id);
+          observer.unobserve(e.target);
+          captureClientEvent("report_section_viewed", {
+            session_id: session.id,
+            section: e.target.id.replace("ir-section-", ""),
+          });
+        }
+      },
+      { threshold: 0.4 },
+    );
+    // Some sections (trend, campus calibration) mount after async data
+    // loads, so keep scanning for new ones instead of a single pass.
+    const scan = () => {
+      document.querySelectorAll<HTMLElement>('[id^="ir-section-"]').forEach((el) => {
+        if (watched.has(el) || seen.has(el.id)) return;
+        watched.add(el);
+        observer.observe(el);
+      });
+    };
+    let raf = requestAnimationFrame(scan);
+    const mutations = new MutationObserver(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(scan);
+    });
+    mutations.observe(document.body, { childList: true, subtree: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      mutations.disconnect();
+      observer.disconnect();
+    };
+  }, [hasReport, session.id]);
+
   /* ── Fetch trend + live cohort (best-effort) ── */
   useEffect(() => {
     let cancelled = false;
-    fetchRecentSessionScores(10)
+    // Pass the session's focus so the trend only shows sessions of the
+    // same type — campus vs behavioral vs negotiation are not comparable.
+    fetchRecentSessionScores(10, session.focus || undefined)
       .then((points) => {
         if (!cancelled) setTrend(points);
       })
@@ -724,6 +697,10 @@ export const SessionReport = memo(function SessionReport({
                 adjustedCgpaCutoff: adjN,
                 statedCgpa: typeof c.statedCgpa === "number" ? c.statedCgpa : null,
                 targetCompany: typeof c.targetCompany === "string" ? c.targetCompany : null,
+                archetype: typeof c.archetype === "string" ? c.archetype : undefined,
+                archetypeLabel: typeof c.archetypeLabel === "string" ? c.archetypeLabel : undefined,
+                bondProbeCount: typeof c.bondProbeCount === "number" ? c.bondProbeCount : undefined,
+                aptitudeProbeExpectedType: typeof c.aptitudeProbeExpectedType === "string" ? c.aptitudeProbeExpectedType : undefined,
               });
             }
           }
@@ -758,13 +735,15 @@ export const SessionReport = memo(function SessionReport({
     };
   }, [session.id]);
 
-  /* ── Derived percentile (used by adapter) ──
+  /* ── Derived percentile (behavioral-v2 report only) ──
      Production cohort data is per-skill (`bucketPercentile(skill, …)`),
-     not per-overall-score. Until a server-side aggregate lands, the
-     percentile sub-stat in the hero stays unrendered (the canvas
-     gracefully omits it when undefined). Keeping the liveCohort fetch
-     in flight so SkillBar can opt-in later without re-plumbing. */
-  const percentile: number | undefined = undefined;
+     not per-overall-score. The default report doesn't fabricate one (see
+     adapter/types — no `percentile` field there). The behavioral-v2
+     report still threads this through as an explicit `| null`, so the
+     dead value is kept narrowly for that call only. Keeping the
+     liveCohort fetch in flight so SkillBar can opt-in later without
+     re-plumbing. */
+  const behavioralPercentile: number | undefined = undefined;
   void liveCohort;
 
   /* ── Days-until-interview from auth context ── */
@@ -778,9 +757,15 @@ export const SessionReport = memo(function SessionReport({
 
   /* ── Recent-scores series for the sparkline ── */
   const recentScores = useMemo(
-    () => (trend.length >= 2 ? trend.slice(-6).map((p) => p.score) : undefined),
-    [trend]
+    () => {
+      const viewedIdx = trend.findIndex((p) => p.id === session.id);
+      const upToViewed = viewedIdx >= 0 ? trend.slice(0, viewedIdx + 1) : trend;
+      return upToViewed.length >= 2 ? upToViewed.slice(-6).map((p) => p.score) : undefined;
+    },
+    [trend, session.id]
   );
+
+  const roundProgress = useMemo(() => buildRoundProgress(session, trend), [session, trend]);
 
   /* ── Action handlers ── */
   const onRetry = useCallback(() => {
@@ -790,54 +775,6 @@ export const SessionReport = memo(function SessionReport({
     setReloadTick((tk) => tk + 1);
   }, [session.id]);
 
-  const onDownloadPdf = useCallback(() => {
-    track("report_pdf_downloaded", { sessionId: session.id, view: "main" });
-    if (typeof window !== "undefined") window.print();
-  }, [session.id]);
-
-  const onShare = useCallback(async () => {
-    track("report_action_clicked", {
-      action: "share",
-      sessionId: session.id,
-      view: "main",
-    });
-    try {
-      const { apiFetch } = await import("../apiClient");
-      const res = await apiFetch<{ url?: string; expiresAt?: string; error?: string }>(
-        "/api/share-report?action=create",
-        { sessionId: session.id, ttlDays: 14 }
-      );
-      if (!res.ok || !res.data?.url) {
-        const msg = res.error || res.data?.error || "Could not create share link";
-        toast(msg, "error");
-        return;
-      }
-      const url = res.data.url;
-      /* Persist the URL so SessionReportView can pass it to the LinkedIn
-         share button and ReferralInviteSection. This is set once and never
-         cleared — the URL is valid for 14 days, so keeping it in state
-         for the lifetime of this view is correct. */
-      setShareUrl(url);
-      const ttl = res.data.expiresAt
-        ? new Date(res.data.expiresAt).toLocaleDateString()
-        : "in 14 days";
-      try {
-        await navigator.clipboard.writeText(url);
-        toast(`Share link copied! Valid until ${ttl}.`, "success");
-      } catch {
-        // Clipboard denied — show the URL truncated so the user can copy manually
-        const truncated = url.length > 40 ? url.slice(0, 40) + "…" : url;
-        toast(`Link: ${truncated}`, "info");
-      }
-    } catch (err) {
-      console.error(
-        "[sessionReport] share failed:",
-        err instanceof Error ? err.message : err
-      );
-      toast("Could not create share link. Please try again.", "error");
-    }
-  }, [session.id]);
-
   /* ── Adapter: SessionReport → InterviewResultData ── */
   const viewData = useMemo(() => {
     if (!report) return null;
@@ -845,7 +782,6 @@ export const SessionReport = memo(function SessionReport({
       report,
       session,
       recentScores,
-      percentile,
       daysUntilInterview,
       /* finding #113 (2026-06-20) — a session report describes THAT
        * session. The session's own role/company must win; the profile
@@ -877,26 +813,38 @@ export const SessionReport = memo(function SessionReport({
     report,
     session,
     recentScores,
-    percentile,
     daysUntilInterview,
     user,
   ]);
 
-  /* ── Cross-session skill-progress trends (negotiation reports) ──
-     Reuses the skill_scores persisted on prior negotiation sessions to
-     show whether the user is improving on anchoring / concession strategy
-     / closing technique / etc. Keyed off the engine's persisted skill
-     keys (not the LLM report's display skills, which use a different
-     taxonomy that wouldn't match across sessions). Best-effort: any
-     failure leaves the panel hidden. Gated on negotiationOutcome to match
-     the panel's copy. */
+  /* ── Cross-session skill-progress trends (all session types) ──
+     Reuses the skill_scores persisted on prior sessions of the SAME type
+     as the one being viewed to show whether the user is improving on its
+     skill set (anchoring / concession strategy for negotiation, STAR /
+     structure for behavioral, etc). Scoped by session.type rather than a
+     negotiation-only filter so every session type gets comparable
+     cross-session trends without mixing incompatible skill taxonomies.
+     Keyed off the engine's persisted skill keys (not the LLM report's
+     display skills, which use a different taxonomy that wouldn't match
+     across sessions). Best-effort: any failure leaves the panel hidden. */
   useEffect(() => {
-    if (!viewData || !viewData.negotiationOutcome) {
+    if (!viewData) {
       setProgressTrends(undefined);
       return;
     }
     let cancelled = false;
-    fetchSkillProgressTrends({ negotiationOnly: true })
+    fetchSkillProgressTrends({
+      sessionType: session.type,
+      focus: session.focus || undefined,
+      /* Ground THIS session's own point to its authoritative counter truth so
+         the Skill Progress panel can't show "Anchoring 70" beside the same
+         report's grounded Skills Breakdown "Anchor strength 35" (rows saved
+         before the write-seam fix carry raw values). Only meaningful for
+         negotiation sessions — candidateAsk has no equivalent elsewhere. */
+      currentSession: viewData.negotiationOutcome
+        ? { id: session.id, candidateAsk: viewData.negotiationOutcome.candidateAsk }
+        : { id: session.id, candidateAsk: null },
+    })
       .then((trends) => {
         if (!cancelled) setProgressTrends(trends.length > 0 ? trends : undefined);
       })
@@ -906,7 +854,7 @@ export const SessionReport = memo(function SessionReport({
     return () => {
       cancelled = true;
     };
-  }, [viewData]);
+  }, [viewData, session.id, session.type, session.focus]);
 
   /* ── Report-derivation canary (telemetry) ──
      Fires once per rendered negotiation report with which path produced the
@@ -960,7 +908,7 @@ export const SessionReport = memo(function SessionReport({
         report,
         session,
         recentScores,
-        percentile,
+        percentile: behavioralPercentile,
         flags: behavioralFlags,
       },
       behavioralMeta ?? null,
@@ -970,46 +918,35 @@ export const SessionReport = memo(function SessionReport({
     report,
     session,
     recentScores,
-    percentile,
+    behavioralPercentile,
     behavioralMeta,
     behavioralFlags,
   ]);
 
+  /* ── S4S5-B3 — offer economics (clawback-honest net value) ──
+     Derives the OfferEconomicsPanel input from persisted kernel metrics.
+     Only fires when a joining bonus was offered in the session — null
+     (no panel) for every session without one. */
+  const offerNetValue = useMemo((): OfferNetValueInput | undefined => {
+    const km = session.negotiationMetrics as Record<string, unknown> | null | undefined;
+    if (!km || typeof km !== "object") return undefined;
+    const jb = typeof km.lastJoiningBonusOffered === "number" && km.lastJoiningBonusOffered > 0
+      ? km.lastJoiningBonusOffered
+      : null;
+    if (!jb) return undefined;
+    const finalCtc = typeof km.finalOfferLpa === "number" ? km.finalOfferLpa : null;
+    if (!finalCtc) return undefined;
+    const clawback = clawbackForCompany(jb, session.company ?? null);
+    return {
+      baseLpa: finalCtc,
+      variableAtTargetLpa: 0,
+      joiningBonusLpa: jb,
+      clawbackWindowMonths: clawback.months,
+      company: session.company ?? null,
+    };
+  }, [session.negotiationMetrics, session.company]);
+
   /* ── Routing for action callbacks owned by the view ── */
-  const onTryQuestionAgain = useCallback(
-    (questionIdx: number) => {
-      track("report_action_clicked", {
-        action: "try_again",
-        sessionId: session.id,
-        questionIdx,
-        view: "main",
-      });
-      // Find the source question on the report (idx in view-model is
-      // 1-based; report is 0-based). Best-effort focus payload — falls
-      // through to the generic /session/new when missing.
-      const q = report?.perQuestion[questionIdx - 1];
-      const focus = q?.question
-        ? `&focus=${encodeURIComponent(q.question.slice(0, 80))}`
-        : "";
-      router.push(`/session/new?type=${encodeURIComponent(session.type)}${focus}`);
-    },
-    [router, session.id, session.type, report]
-  );
-
-  const onDrillSkill = useCallback(
-    (skillName: string) => {
-      track("report_action_clicked", {
-        action: "drill_skill",
-        sessionId: session.id,
-        skill: skillName,
-        view: "main",
-      });
-      const slug = skillName.toLowerCase().replace(/\s+/g, "-");
-      router.push(`/session/new?type=behavioral&focus=${encodeURIComponent(slug)}`);
-    },
-    [router, session.id]
-  );
-
   const onTrustAnswer = useCallback(
     (value: "yes" | "no") => {
       track("report_trust_poll_submitted", {
@@ -1023,7 +960,7 @@ export const SessionReport = memo(function SessionReport({
 
   const onUsefulAnswer = useCallback(
     (value: "yes" | "no") => {
-      track("report_usefulness_poll_submitted", {
+      captureClientEvent("report_usefulness_poll_submitted", {
         sessionId: session.id,
         useful: value === "yes",
         view: "main",
@@ -1061,8 +998,31 @@ export const SessionReport = memo(function SessionReport({
 
 
   /* ── Render gates ── */
-  if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} />;
+  if (loading) return <LoadingShell onBack={onBack} backLabel={backLabel} sessionId={session.id} />;
   if (errorMsg && !report) {
+    // Dead session: no answers were recorded — mic/STT never captured anything.
+    // Show a focused "check your mic" prompt instead of the generic error UI.
+    // Retrying would produce the same 422, so we skip the retry CTA.
+    if (errorMsg === "no_candidate_answers") {
+      return (
+        <div style={{ display: "flex", flexDirection: "column", width: "100%", fontFamily: f.sans, color: t.coal }}>
+          <Button type="button" variant="ghost" onClick={onBack} style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, gap: 6, marginBottom: 8, alignSelf: "flex-start" }}>
+            ← {backLabel}
+          </Button>
+          <div style={{ maxWidth: 480, margin: "80px auto 0", textAlign: "center" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🎙️</div>
+            <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
+            <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.6 }}>
+              It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
+              Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.
+            </p>
+            <Button type="button" size="lg" onClick={onBack}>
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      );
+    }
     /* Degrade gracefully: when the rich LLM report can't be generated,
        fall back to the preliminary scores the interview engine already
        computed and persisted on the session, rather than a dead-end error.
@@ -1087,19 +1047,15 @@ export const SessionReport = memo(function SessionReport({
   }
   if (!viewData) {
     // Defensive — should be unreachable since loading covers null reports.
-    return <ErrorShell message="No report available." onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
+    return <ErrorShell message="Your report is not ready yet. Tap the button below to build it." onRetry={onRetry} onBack={onBack} backLabel={backLabel} />;
   }
 
   return (
     <SessionReportView
       data={viewData}
+      sessionId={session.id}
       onBack={onBack}
       backLabel={backLabel}
-      onDownloadPdf={onDownloadPdf}
-      onShare={onShare}
-      shareUrl={shareUrl}
-      onTryQuestionAgain={onTryQuestionAgain}
-      onDrillSkill={onDrillSkill}
       onTrustAnswer={onTrustAnswer}
       onUsefulAnswer={onUsefulAnswer}
       credibility={credibility}
@@ -1107,10 +1063,11 @@ export const SessionReport = memo(function SessionReport({
       campusPlacementMeta={campusPlacementMeta}
       salaryNegotiationMeta={salaryNegotiationMeta}
       progressTrends={progressTrends}
+      practiceHref={practiceHref(session)}
+      roundProgress={roundProgress}
       behavioralFullReportData={behavioralFullReportData}
       hrReportData={viewData?.hrReport}
-      isFreeUser={isFreeUser}
-      onUpgrade={onUpgrade}
+      offerNetValue={offerNetValue}
     />
   );
 });

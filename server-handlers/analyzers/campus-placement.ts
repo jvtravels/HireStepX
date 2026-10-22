@@ -124,6 +124,17 @@
  */
 
 import { AnalyzerInput, AnalyzerResult, FocusAnalyzer, RubricGap, TranscriptTurn, emptyResult } from "./_types";
+
+// D2: exhaustive union of dimension keys used by this analyzer. Narrows the
+// gaps array so a mistyped dimension string is a compile-time error.
+type CampusDimension =
+  | "credibility"
+  | "preparation"
+  | "specificity"
+  | "framing"
+  | "professionalism"
+  | "communication clarity"
+  | "fresher_relevance";
 import { classifyCompanyTier } from "../_company-tier";
 import { classifyCollegeTier, cgpaCutoffAdjustment } from "../_college-tier";
 import { classifyCampusArchetype, archetypeCgpaCutoff, archetypeLabel } from "../_campus-archetype";
@@ -145,7 +156,7 @@ import {
   COMPANY_SPECIFIC_SIGNAL, COMPANY_SERVICE_TIER_NARRATIVE, COGNIZANT_CLIENT_ROTATION_NARRATIVE, LOCATION_AGNOSTIC_SIGNAL,
   SHIPPED_TO_PROD_CONTEXT, VOLUNTEERED_DEFICIT, DEFICIT_PROBE, FILLER,
   FILLER_PER_100_WORDS_THRESHOLD, INTERNSHIP_CLAIM, INTERNSHIP_DETAIL, MTI_PATTERNS,
-  CGPA_STATED, COLLEGE_CGPA_POLICY, CGPA_FRAMING_CONTEXT, REVERSE_QUESTION_PROBE,
+  CGPA_STATED, CGPA_STATED_WORD_FORM, COLLEGE_CGPA_POLICY, CGPA_FRAMING_CONTEXT, REVERSE_QUESTION_PROBE,
   REVERSE_QUESTION_SPECIFIC, REVERSE_QUESTION_GENERIC, REVERSE_QUESTION_DECLINED, BOND_PROBE,
   BOND_HEALTHY_RESPONSE, BOND_REFUSAL, BOND_IGNORANCE, ATTRITION_HIGHER_STUDIES,
   RELOCATION_REFUSAL, RELOCATION_PROBE, SHIFT_REFUSAL, SHIFT_PROBE,
@@ -161,6 +172,39 @@ import {
   NEPOTISM_MENTION, INHAND_CTC_CONFUSION, CODE_WRITE_PROBE, CODE_WRITE_REFUSAL,
   MONTH_YEAR_RANGE, BRANCH_NAME, DUAL_DEGREE_CONNECTOR,
 } from "./_campus-regex";
+
+/* ── Session-length gate constants (D3) ──────────────────────────────
+ * Three numeric thresholds appear throughout the analyzer. Using named
+ * constants eliminates the "which 3 is which?" confusion and makes a
+ * threshold change a one-line diff.
+ *
+ *  MIN_TURNS — fewest user turns before most flags can fire (avoids
+ *              flagging a 2-turn warm-up exchange).
+ *  MIN_TURNS_STRICT — higher bar for flags that require substantial
+ *              engagement (PPT recall, tech depth, branch-jump narrative).
+ *  MAX_TURNS_SHORT_SCREEN — transcript turn count below which we treat
+ *              the session as an HR screening call and suppress bond /
+ *              closing-slot flags that only appear in full panel loops.
+ */
+const MIN_TURNS = 3;
+const MIN_TURNS_STRICT = 4;
+const MAX_TURNS_SHORT_SCREEN = 10;
+
+/* ── C1: word-form CGPA parser ────────────────────────────────────── */
+const WORD_TO_DIGIT: Record<string, number> = {
+  zero: 0, one: 1, two: 2, three: 3, four: 4,
+  five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10,
+};
+
+function parseWordFormCgpa(wordForm: string): number {
+  const parts = wordForm.toLowerCase().split(/\s+point\s+/);
+  const whole = WORD_TO_DIGIT[parts[0]?.trim() ?? ""];
+  if (whole === undefined) return NaN;
+  if (parts.length === 1) return whole;
+  const fracDigits = (parts[1]?.trim().split(/\s+/) ?? []).map((w) => WORD_TO_DIGIT[w] ?? NaN);
+  if (fracDigits.some(Number.isNaN)) return whole;
+  return parseFloat(`${whole}.${fracDigits.join("")}`);
+}
 
 /* ── Resume-aware helpers (Wave-6) ────────────────────────────────── */
 
@@ -187,7 +231,13 @@ function canonicalizeBranch(raw: string | undefined): string | undefined {
 }
 
 /** Normalize a company string for cross-check comparison. Drops
- *  Pvt Ltd / Inc / Technologies suffixes, lowercases, strips punctuation. */
+ *  Pvt Ltd / Inc / Technologies suffixes, lowercases, strips punctuation.
+ *
+ *  I5: there is a second, simpler `normalize()` in `_campus-archetype.ts`
+ *  that only lowercases + strips non-alphanumeric — it's scoped to archetype
+ *  look-up where suffix-stripping would break exact keyword matching (e.g.
+ *  "tcs" must match "TCS" not "TCS Technologies Services"). These two
+ *  functions serve different purposes and are NOT consolidation candidates. */
 function normalizeCompanyName(raw: string | undefined): string {
   if (!raw) return "";
   return raw
@@ -227,15 +277,29 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (transcript.length === 0) { result.flags.push("empty_transcript"); return result; }
 
     const flags = new Set<string>();
-    const gaps: RubricGap[] = [];
+    // D1 (architectural): positive flags (bond_prepared, college_cgpa_policy_acknowledged,
+    // shipped_to_prod_context, …) co-exist with their negative counterparts rather than
+    // suppressing them. This is intentional: the report shows both, letting the
+    // candidate see they did ONE thing right alongside what still needs work. The
+    // exceptions — positive flag suppresses the negative — are narrow and explicit in
+    // the code (e.g. portfolio_satisfied_by_resume suppresses portfolio_absent_for_claim,
+    // COMPANY_SPECIFIC_SIGNAL presence suppresses no_company_specific_research). Adding
+    // general suppression logic would silently hide real coaching feedback.
+    const gaps: Array<Omit<RubricGap, "dimension"> & { dimension: CampusDimension }> = [];
 
     const aiText = transcript.filter(isAi).map((t) => t.text || "").join(" ");
     const userText = transcript.filter(isUser).map((t) => t.text || "").join(" ");
     const fullText = `${aiText} ${userText}`;
     const userTurnCount = transcript.filter(isUser).filter((t) => (t.text || "").length > 50).length;
 
+    // A6 fix: hoist archetype classification here — single source of truth for
+    // the whole analyzer. Previously classifyCampusArchetype was called twice
+    // (once as `whyArchetype` at the "why company" block and again as `archetype`
+    // in Phase-3). Hoisting eliminates the duplicate call and the desync risk.
+    const archetype = classifyCampusArchetype(session.target_company, fullText);
+
     // No academic project / coursework / CGPA discussed at all
-    if (userTurnCount >= 3 && !ACADEMIC_PROJECT.test(fullText)) {
+    if (userTurnCount >= MIN_TURNS && !ACADEMIC_PROJECT.test(fullText)) {
       flags.add("no_academic_project_discussed");
       gaps.push({
         dimension: "fresher_relevance",
@@ -267,8 +331,13 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // Identifies as fresher AND never mentioned availability
-    if (FRESHER_LEXICON.test(userText) && !AVAILABILITY.test(`${aiText} ${userText}`) && userTurnCount >= 3) {
+    if (FRESHER_LEXICON.test(userText) && !AVAILABILITY.test(`${aiText} ${userText}`) && userTurnCount >= MIN_TURNS) {
       flags.add("availability_never_discussed");
+    }
+    // A2/D7: positive counterpart — emit when availability IS discussed so the
+    // report can show a green chip instead of silence.
+    if (FRESHER_LEXICON.test(userText) && AVAILABILITY.test(`${aiText} ${userText}`) && userTurnCount >= MIN_TURNS) {
+      flags.add("availability_discussed");
     }
 
     // Badmouthing college
@@ -307,7 +376,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       distinctTech.size >= 2 &&
       PROJECT_NARRATION.test(userText) &&
       !TECH_APPLIED.test(userText) &&
-      userTurnCount >= 3
+      userTurnCount >= MIN_TURNS
     ) {
       flags.add("tech_named_but_not_applied");
       gaps.push({
@@ -368,16 +437,18 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // (stability/training/scale); product-tier candidates still need
     // SPECIFIC_SIGNAL.
     const aiAskedWhyCompany = transcript.some((t) => isAi(t) && WHY_COMPANY_PROBE.test(t.text || ""));
-    if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText)) {
-      const whyArchetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
-      const serviceTier = whyArchetype === "tcs-ninja" || whyArchetype === "wipro-nlth" || whyArchetype === "cognizant-genc";
+    // B4: PPT_REFERENCE is a prep signal — "the great culture the speaker described
+    // in the PPT" is context-specific answer, not generic filler. Suppress the
+    // filler flag whenever the candidate actually referenced the PPT/presentation.
+    if (aiAskedWhyCompany && COMPANY_GENERIC_FILLER.test(userText) && !COMPANY_SPECIFIC_SIGNAL.test(userText) && !PPT_REFERENCE.test(userText)) {
+      const serviceTier = archetype === "tcs-ninja" || archetype === "wipro-nlth" || archetype === "cognizant-genc";
       // v6.7 — Cognizant GenC / Capgemini Exceller specifically reward
       // a client-rotation / domain-breadth narrative. Either the
       // generic service-tier narrative OR the Cognizant-specific one
       // counts as a context-appropriate answer for that archetype.
       const serviceTierNarrativePresent = serviceTier && (
         COMPANY_SERVICE_TIER_NARRATIVE.test(userText) ||
-        (whyArchetype === "cognizant-genc" && COGNIZANT_CLIENT_ROTATION_NARRATIVE.test(userText))
+        (archetype === "cognizant-genc" && COGNIZANT_CLIENT_ROTATION_NARRATIVE.test(userText))
       );
 
       if (serviceTierNarrativePresent) {
@@ -426,7 +497,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       }
     }
 
-    // Mother-Tongue-Influence (MTI) deviations — count distinct pattern hits
+    // Mother-Tongue-Influence (MTI) deviations — count distinct pattern hits.
+    // H4: all 10 MTI_PATTERNS are equally weighted (each counts as 1 hit).
+    // Severity scales at the call-site: mtiHits >= 3 → "medium", else "low".
+    // Finer per-pattern weighting (e.g. "myself Rahul" > "kindly note") is
+    // left as a future refinement — the current corpus doesn't have enough
+    // MTI-flagged transcripts to reliably calibrate per-phrase severity.
     const mtiHits = MTI_PATTERNS.filter((rx) => rx.test(userText)).length;
     if (mtiHits >= 1) {
       flags.add("mti_pattern_detected");
@@ -442,7 +518,11 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // Tier-1 global firms (Google/MS/Amazon India) typically gate at 7.5;
     // most others gate at 7.0; service-tier (TCS/Infosys/Wipro) at 6.5.
     const companyTier = classifyCompanyTier(session.target_company);
-    const collegeTier = classifyCollegeTier(userText);
+    /* Prefer resume.school for tier classification — it's structured data.
+     * Fall back to transcript text for candidates who name their college
+     * verbally but didn't upload a resume or whose resume has no school. */
+    const collegeTierFromResume = resume?.school ? classifyCollegeTier(resume.school) : "unknown";
+    const collegeTier = collegeTierFromResume !== "unknown" ? collegeTierFromResume : classifyCollegeTier(userText);
     /* Phase-3 — Persona archetype.
      *
      * companyTier is coarse (TCS == service). The archetype layer is
@@ -450,8 +530,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
      * interview from TCS Digital (CGPA 7.5, deep DSA, 3x comp) even
      * though both classify as "service". The archetype overrides the
      * tier-derived CGPA cutoff when known and surfaces a label the
-     * report can render ("TCS NQT (Ninja) / Infosys SE"). */
-    const archetype = classifyCampusArchetype(session.target_company, `${aiText} ${userText}`);
+     * report can render ("TCS NQT (Ninja) / Infosys SE").
+     * A6 fix: `archetype` is now hoisted to the top of the analyzer — see
+     * the declaration near `userText`. No second call here. */
     const archetypeCutoff = archetypeCgpaCutoff(archetype);
     const baseCgpaCutoff = archetypeCutoff !== null
       ? archetypeCutoff
@@ -460,13 +541,26 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
         : 7.0);
     // Tier-1 colleges (IIT/NIT/BITS/IIIT/IISc) get -0.5 leniency due to
     // harder grading curves. Tier-2 + unknown apply the baseline.
+    // E4: cognizant-genc archetype sets its own CGPA cutoff via
+    // archetypeCgpaCutoff() (currently 6.0 for GenC, 6.5 for GenC Next).
+    // cgpaCutoffAdjustment() is then composed on top — so a tier-1 candidate
+    // targeting Cognizant GenC pays 6.0 - 0.5 = 5.5 as their effective floor.
+    // This compound is intentional: Cognizant's GenC program is volume-hire
+    // and their real CGPA bar is lower than Infosys/TCS at similar tiers.
     const cgpaCutoff = baseCgpaCutoff + cgpaCutoffAdjustment(collegeTier);
     const cgpaMatch = userText.match(CGPA_STATED);
+    // C1: also check word-form CGPA ("eight point five") when no digit form found.
+    const cgpaWordMatch = !cgpaMatch ? userText.match(CGPA_STATED_WORD_FORM) : null;
+    const resolvedCgpa: number = cgpaMatch
+      ? Number(cgpaMatch[1])
+      : cgpaWordMatch
+        ? parseWordFormCgpa(cgpaWordMatch[1])
+        : NaN;
     /* Stash CGPA calibration on `result.meta` so the candidate sees the
      * exact cutoff they were graded against in the report — surfaces
      * the otherwise-invisible tier-adjustment math (TCS NQT base 6.0 →
      * tier-2 adjusted 5.5, etc.) instead of leaving them to guess. */
-    const statedCgpaForMeta = cgpaMatch ? Number(cgpaMatch[1]) : NaN;
+    const statedCgpaForMeta = resolvedCgpa;
     // v6.6 — hoist bond probe count so it can be surfaced on meta
     // alongside archetype + cgpa info. The downstream bond block
     // (line ~770) re-uses the same value for its multi-probe gate.
@@ -508,8 +602,8 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (collegeCgpaPolicyCited) {
       flags.add("college_cgpa_policy_acknowledged");
     }
-    if (cgpaMatch) {
-      const cgpa = Number(cgpaMatch[1]);
+    if (Number.isFinite(resolvedCgpa) && resolvedCgpa > 0) {
+      const cgpa = resolvedCgpa;
       if (cgpa > 0 && cgpa < cgpaCutoff && !CGPA_FRAMING_CONTEXT.test(userText) && !collegeCgpaPolicyCited) {
         flags.add("cgpa_low_no_framing");
         const tierNote = collegeTier === "tier-1"
@@ -567,7 +661,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // ding the candidate for a missing closing slot or a single bond
     // probe in that format. Emit a positive informational flag so the
     // report can render the calibration explicitly.
-    const isShortScreeningSession = transcript.length < 10;
+    const isShortScreeningSession = transcript.length < MAX_TURNS_SHORT_SCREEN;
     if (isShortScreeningSession) {
       flags.add("short_screening_session_acknowledged");
     }
@@ -653,7 +747,13 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           observed: "User refused the service agreement outright — at service-tier firms this ends the interview",
           severity: "high",
         });
-      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !BOND_HEALTHY_RESPONSE.test(userBondText) && !isShortScreeningSession) {
+      } else if (BOND_HEALTHY_RESPONSE.test(userBondText)) {
+        // A4: positive counterpart to bond_unprepared — candidate showed
+        // awareness of the bond terms. A single probe + good response already
+        // deserves credit (the ≥2 threshold for bond_unprepared is intentionally
+        // lenient for ignorance; awareness earns a green signal at any count).
+        flags.add("bond_prepared");
+      } else if (bondProbeCount >= 2 && BOND_IGNORANCE.test(userBondText) && !isShortScreeningSession) {
         // v6.7 — Short-screening sessions are excluded; a sub-10-turn
         // HR skim doesn't always reach a second bond probe meaningfully.
         flags.add("bond_unprepared");
@@ -661,13 +761,29 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           dimension: "preparation",
           expected: "Know the bond duration for your target company before the interview: TCS 2yr, Infosys 1yr, Wipro 15mo + ₹2L, Cognizant 1yr, HCL 1.5yr",
           observed: "User showed unfamiliarity with service-bond concept when asked — reads as unresearched",
-          severity: "medium",
+          // H1: service-tier bond ignorance is a near-DQ; match the severity to attrition_risk_higher_studies.
+          severity: companyTier === "service" ? "high" : "medium",
         });
       }
     }
 
+    // G2: Combined compliance-refusal escalation — when a candidate refuses BOTH
+    // the bond AND shift/on-call in the same session, the compounded signal is
+    // stronger than either alone (it reads as "won't adapt to any service-tier
+    // expectation"). Emit a synthetic "high" flag so the report surfaces this
+    // pattern explicitly rather than leaving two separate "medium" findings.
+    if (flags.has("bond_refusal") && flags.has("shift_oncall_refusal")) {
+      flags.add("combined_compliance_refusal");
+      gaps.push({
+        dimension: "preparation",
+        expected: "Service-tier firms (TCS/Infosys/Wipro) require both bond agreement and shift flexibility. Refusing both in the same session signals unwillingness to meet the core conditions of the role — the recruiter will close the loop here.",
+        observed: "Candidate refused both the service bond AND shift/on-call obligations — combined signal of role incompatibility at service-tier.",
+        severity: "high",
+      });
+    }
+
     // Internship claimed but no detail given (resume padding signal)
-    if (INTERNSHIP_CLAIM.test(userText) && !INTERNSHIP_DETAIL.test(userText) && userTurnCount >= 3) {
+    if (INTERNSHIP_CLAIM.test(userText) && !INTERNSHIP_DETAIL.test(userText) && userTurnCount >= MIN_TURNS) {
       flags.add("internship_unsubstantiated");
       gaps.push({
         dimension: "credibility",
@@ -785,7 +901,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // Hackathon claim without detail.
-    if (HACKATHON_CLAIM.test(userText) && !HACKATHON_DETAIL.test(userText) && userTurnCount >= 3) {
+    if (HACKATHON_CLAIM.test(userText) && !HACKATHON_DETAIL.test(userText) && userTurnCount >= MIN_TURNS) {
       flags.add("hackathon_unsubstantiated");
       gaps.push({
         dimension: "credibility",
@@ -848,7 +964,11 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
             dimension: "preparation",
             expected: `Campus fresher band for this tier sits well below ${salaryInflatedCutoff} LPA. Either anchor to glassdoor/levels.fyi data, or defer politely: 'I'm flexible and trust the standard fresher band — I'd like to learn more about the role'`,
             observed: `User quoted ${lpa} LPA — well above typical fresher campus offer for ${companyTier === "service" ? "service-tier" : companyTier === "product-india" ? "Indian product" : companyTier === "product-global" ? "global product India" : "this"} firms`,
-            severity: "medium",
+            // H3: at service-tier the inflated-salary signal is stronger — a ₹20L ask
+            // at a TCS NQT interview (band ₹3.5-4.5L) is more disqualifying than
+            // a ₹40L ask at an Amazon campus drive (band ₹12-25L). Mirror the
+            // severity pattern used by attrition_risk_higher_studies.
+            severity: companyTier === "service" ? "high" : "medium",
           });
         }
       }
@@ -895,7 +1015,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     if (
       CLAIMED_BUILT.test(userText) &&
       !PORTFOLIO_LINK.test(userText) &&
-      userTurnCount >= 3 &&
+      userTurnCount >= MIN_TURNS &&
       (PROJECT_NARRATION.test(userText) || INTERNSHIP_CLAIM.test(userText)) &&
       !(productGradeArchetype && shippedToProdPresent)
     ) {
@@ -917,7 +1037,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (!isAi(t) || !BACKLOG_PROBE.test(t.text || "")) continue;
-      const reply = transcript.slice(i + 1, i + 3).find(isUser);
+      const reply = transcript.slice(i + 1, i + 5).find(isUser);
       if (!reply || !reply.text) continue;
 
       // Single decision tree — evasive and clean are mutually exclusive
@@ -944,7 +1064,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // Branch-jump narrative — non-CS branch + SDE role + no learning story.
-    if (NONCS_BRANCH.test(userText) && /\b(?:sde|software\s+(?:dev|engineer)|backend|frontend|full[- ]?stack|developer|swe\b|programmer)\b/i.test(`${userText} ${aiText}`) && !BRANCH_LEARNING_NARRATIVE.test(userText) && userTurnCount >= 3) {
+    if (NONCS_BRANCH.test(userText) && /\b(?:sde|software\s+(?:dev|engineer)|backend|frontend|full[- ]?stack|developer|swe\b|programmer)\b/i.test(`${userText} ${aiText}`) && !BRANCH_LEARNING_NARRATIVE.test(userText) && userTurnCount >= MIN_TURNS) {
       flags.add("branch_jump_thin_narrative");
       gaps.push({
         dimension: "credibility",
@@ -955,7 +1075,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // PPT recall absent — substantial transcript with no PPT/launch reference.
-    if (userTurnCount >= 4 && !PPT_REFERENCE.test(userText) && (companyTier === "service" || companyTier === "product-india" || companyTier === "product-global")) {
+    // A5: short-screening sessions don't always reach a PPT recall probe —
+    // suppress consistently with the reverse_questions_declined gate above.
+    if (userTurnCount >= MIN_TURNS_STRICT && !isShortScreeningSession && !PPT_REFERENCE.test(userText) && (companyTier === "service" || companyTier === "product-india" || companyTier === "product-global")) {
       flags.add("ppt_recall_absent");
       gaps.push({
         dimension: "preparation",
@@ -969,7 +1091,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && CODING_SCORE_PROBE.test(t.text || "")) {
-        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        const reply = transcript.slice(i + 1, i + 5).find(isUser);
         if (reply && reply.text && reply.text.length < 280 && !CODING_SCORE_RATIONALE.test(reply.text)) {
           flags.add("coding_round_score_undefended");
           gaps.push({
@@ -1020,7 +1142,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && STIPEND_PROBE.test(t.text || "")) {
-        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        const reply = transcript.slice(i + 1, i + 5).find(isUser);
         if (reply && reply.text && STIPEND_DODGE.test(reply.text) && !STIPEND_CONCRETE.test(reply.text)) {
           flags.add("stipend_dodge");
           gaps.push({
@@ -1039,7 +1161,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     // Memorized self-intro — multiple template phrases in the TMAY reply.
     if (TMAY_PROBE.test(aiText)) {
       const tmayIdx = transcript.findIndex((t) => isAi(t) && TMAY_PROBE.test(t.text || ""));
-      const r = tmayIdx >= 0 ? transcript.slice(tmayIdx + 1, tmayIdx + 3).find(isUser) : undefined;
+      const r = tmayIdx >= 0 ? transcript.slice(tmayIdx + 1, tmayIdx + 5).find(isUser) : undefined;
       if (r && r.text) {
         const reText = new RegExp(MEMORIZED_TEMPLATE.source, "gi");
         const matches = r.text.match(reText) || [];
@@ -1065,9 +1187,12 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && APTITUDE_LIVE_PROBE.test(t.text || "")) {
-        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        const reply = transcript.slice(i + 1, i + 5).find(isUser);
         if (reply && reply.text && APTITUDE_REFUSAL.test(reply.text)) {
           aptitudeRefusedAt = i;
+          // H2: the flag name is always "aptitude_puzzle_refusal" regardless of
+          // severity; the archetype-aware severity lives on the gap object below.
+          // Consumers that need the severity must read gaps[], not the flag name.
           flags.add("aptitude_puzzle_refusal");
           // v6.7 — tcs-digital is offline-coding-format (the live loop
           // doesn't dwell on classical puzzles); downgrade severity so
@@ -1152,7 +1277,7 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     for (let i = 0; i < transcript.length; i++) {
       const t = transcript[i];
       if (isAi(t) && CODE_WRITE_PROBE.test(t.text || "")) {
-        const reply = transcript.slice(i + 1, i + 3).find(isUser);
+        const reply = transcript.slice(i + 1, i + 5).find(isUser);
         if (reply && reply.text && CODE_WRITE_REFUSAL.test(reply.text)) {
           flags.add("code_on_paper_freeze");
           gaps.push({
@@ -1200,27 +1325,15 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
     }
 
     // Degree / branch inconsistency — two different branch names in user text.
+    // I4: removed the inline canonicalization block (duplicate of canonicalizeBranch()
+    // at the top of this file). Reuse the shared function so fixes apply once.
     {
       const seen = new Set<string>();
       const reBranch = new RegExp(BRANCH_NAME.source, "gi");
       let bm: RegExpExecArray | null;
       while ((bm = reBranch.exec(userText)) !== null) {
-        const key = bm[0].toLowerCase().replace(/\s+/g, "").replace(/[^a-z]/g, "");
-        // Canonicalize close-matches so cse / computerscience / computerscienceandengineering all map together.
-        let canon = key;
-        if (/^c(omputer)?s(cience)?(?:andengineering)?$/.test(key) || key === "cse") canon = "cse";
-        else if (/^i(nformation)?t(echnology)?$/.test(key) || key === "it") canon = "it";
-        else if (/^i(nformation)?s(cience)?$/.test(key) || key === "is") canon = "is";
-        else if (/^e(lectronics)?c(ommunication)?e?$/.test(key) || key === "ece") canon = "ece";
-        else if (/^e(lectrical)?e(lectronics)?e?$/.test(key) || key === "eee") canon = "eee";
-        else if (/^mech(anical)?(engineering)?$/.test(key)) canon = "mech";
-        else if (/^civil(engineering)?$/.test(key)) canon = "civil";
-        else if (/^chem(ical|engg)?(engineering)?$/.test(key)) canon = "chem";
-        else if (/^biotech(nology)?$/.test(key)) canon = "biotech";
-        else if (/^aiml$|^a(rtificial)?i(ntelligence)?m(achine)?l(earning)?$/.test(key)) canon = "aiml";
-        else if (/^aids$|^a(rtificial)?i(ntelligence)?d(ata)?s(cience)?$/.test(key)) canon = "aids";
-        else if (/^datascience(engineering|branch)?$/.test(key)) canon = "datascience";
-        seen.add(canon);
+        const canon = canonicalizeBranch(bm[0]);
+        if (canon) seen.add(canon);
       }
       if (seen.size >= 2 && !DUAL_DEGREE_CONNECTOR.test(userText)) {
         flags.add("degree_branch_inconsistency");
@@ -1274,7 +1387,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       // but the candidate consistently says "I'm in CSE", that's a
       // bigger tell than the transcript-only branch-drift check —
       // the resume is the authoritative source.
-      const resumeBranch = canonicalizeBranch(resume.degree);
+      // F2: explicit null-guard — resume.degree may be undefined when the
+      // parser didn't find a degree field. canonicalizeBranch("") returns ""
+      // which the `if (resumeBranch)` below handles safely.
+      const resumeBranch = canonicalizeBranch(resume.degree ?? "");
       if (resumeBranch) {
         // Reuse the BRANCH_NAME regex collected earlier in the Wave-5
         // block by scanning userText. Canonicalize each hit with the
@@ -1317,6 +1433,10 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
           const y = parseInt(ym[1] || ym[2], 10);
           if (y >= 2015 && y <= 2030) spokenYears.add(y);
         }
+        // F3: ±1 tolerance is intentional — extended / supplementary semesters
+        // commonly shift passout by one year relative to the original expected
+        // year printed on the degree certificate.  Flagging ±1 would produce
+        // noise for this large cohort without meaningful credibility signal.
         const driftedYears = Array.from(spokenYears).filter((y) => Math.abs(y - resumeYear) > 1);
         if (driftedYears.length > 0) {
           flags.add("grad_year_mismatch_with_resume");
@@ -1390,7 +1510,11 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       if (resume.cgpa) {
         const resumeCgpa = parseFloat(resume.cgpa);
         if (!Number.isNaN(resumeCgpa) && resumeCgpa > 0) {
-          const isPercentScale = resumeCgpa > 10;
+          // E2: use 12 as the cutoff, not 10. A CGPA of 10.5 on a 10-point
+          // scale (data-entry rounding) would be incorrectly treated as 10.5%
+          // (which makes no sense). No legitimate 10-point scale CGPA exceeds
+          // 10, and no percentage CGPA sits below ~12 in Indian fresher context.
+          const isPercentScale = resumeCgpa > 12;
           const tolerance = isPercentScale ? 5 : 0.5;
           // Patterns: "my CGPA is 8.2", "I have 7.4 CGPA", "8.7 out of 10",
           // "scored 84%". Plausibility-filter to the resume's own scale.
@@ -1482,6 +1606,9 @@ export const campusPlacementAnalyzer: FocusAnalyzer = {
       // can already see it.
       if (flags.has("portfolio_absent_for_claim") && Array.isArray(resume.links) && resume.links.filter((u): u is string => typeof u === "string" && u.length > 0).some((u) => /github|gitlab|bitbucket|vercel|netlify|herokuapp|render\.com|huggingface|kaggle/i.test(u))) {
         flags.delete("portfolio_absent_for_claim");
+        // D5: emit the positive counterpart so the report can render a green chip
+        // ("Portfolio on resume") instead of simply omitting the negative flag.
+        flags.add("portfolio_satisfied_by_resume");
         // Also drop the corresponding rubric gap, if any.
         for (let i = gaps.length - 1; i >= 0; i--) {
           if (gaps[i].dimension === "credibility" && /portfolio|github|live demo/i.test(gaps[i].expected)) {

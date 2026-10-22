@@ -3,7 +3,7 @@
  * the reason + verdict label tables.
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { InterviewResultData } from "../types";
 import { SrSectionShell } from "./_primitives";
 
@@ -38,7 +38,7 @@ const REVERSE_VERDICT_COPY: Record<"strong" | "neutral" | "weak" | "red_flag", {
 }> = {
   strong: {
     title: "Strong close",
-    oneLiner: "You asked at least one substantive role / team question — that's the senior-judgement signal Indian hiring managers look for here.",
+    oneLiner: "You asked at least one substantive role / team question. That's the senior-judgement signal Indian hiring managers look for here.",
     tone: "good",
   },
   neutral: {
@@ -53,7 +53,7 @@ const REVERSE_VERDICT_COPY: Record<"strong" | "neutral" | "weak" | "red_flag", {
   },
   red_flag: {
     title: "Closing-turn red flag",
-    oneLiner: "One of your questions is a documented offer-killer in Indian loops at this stage. Reshape it for round 2 — these belong with HR after the offer, not with the panel before.",
+    oneLiner: "One of your questions is a documented offer-killer in Indian loops at this stage. Reshape it for round 2: these belong with HR after the offer, not with the panel before.",
     tone: "bad",
   },
 };
@@ -66,26 +66,26 @@ export function ReverseInterviewSection({
   const copy = REVERSE_VERDICT_COPY[reverse.verdict];
   const accent =
     copy.tone === "good" ? t.success
-    : copy.tone === "ok" ? t.indigo
+    : copy.tone === "ok" ? t.coal
     : copy.tone === "warn" ? t.warning
     : t.error;
   return (
     <SrSectionShell
       anchorId="ir-section-reverse"
       headingId="ir-reverse-heading"
-      num="07"
+      num="08"
       label="Reverse interview"
       title={copy.title}
       subtitle={copy.oneLiner}
     >
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 14 }}>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.successTint, color: t.success, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.successTint, color: t.success, fontWeight: 600 }}>
           {reverse.counts.green} strong
         </span>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.warningTint, color: t.warning, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.warningTint, color: t.warning, fontWeight: 600 }}>
           {reverse.counts.yellow} neutral
         </span>
-        <span style={{ fontFamily: f.sans, fontSize: 12, padding: "4px 10px", borderRadius: radius.pill, background: t.errorTint, color: t.error, fontWeight: 600 }}>
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, padding: "4px 10px", borderRadius: radius.pill, background: t.errorTint, color: t.error, fontWeight: 600 }}>
           {reverse.counts.red} risky
         </span>
       </div>
@@ -98,7 +98,7 @@ export function ReverseInterviewSection({
                 key={i}
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 13,
+                  fontSize: size.base,
                   color: t.coal,
                   display: "flex",
                   alignItems: "center",
@@ -119,7 +119,7 @@ export function ReverseInterviewSection({
       <p
         style={{
           fontFamily: f.sans,
-          fontSize: 12,
+          fontSize: size.sm,
           color: accent,
           margin: "14px 0 0",
           fontStyle: "italic",

@@ -1,120 +1,81 @@
 import type React from "react";
 import { memo, useEffect, useState } from "react";
 import { track } from "@vercel/analytics";
-import { authHeaders, type PaymentRecord } from "./supabase";
-import { useAuth, referralSignupUrl } from "./AuthContext";
-import { captureClientEvent } from "./posthogClient";
+import { type PaymentRecord } from "./supabase";
 import { useDashboardSubscription } from "./DashboardContext";
+import { tokens as t, fonts, shadows } from "./auth/_tokens";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useUiSoundsEnabled, setUiSoundsEnabled } from "./uiSounds";
+import { apiFetch } from "./apiClient";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { PlusIcon, XIcon } from "lucide-react";
+import { PortfolioLinkIcon, formatPortfolioUrl } from "./portfolioLinkIcons";
+import { clearAppOwnedStorage } from "./_appStorage";
+import EmployerDeletionNotice, { type EmployerDeletionFacts } from "./employer/EmployerDeletionNotice";
 
 
-/* Cream-mode local tokens — mirror tempo/designs/canvases/design-system/_tokens.ts
-   and DashboardLayout. Same keys as the old dark `c` so JSX style values
-   keep compiling; values are now cream / coal / copper / indigo. */
+/* Local token aliases — same shape as the shared `T` object so JSX
+   style values keep compiling. Semantic values reference the shared
+   design tokens (src/auth/_tokens.ts) so the hex-gate has a single
+   source of truth; only the faint tint fills below (no exact token)
+   stay raw. `reward`/`rewardDark` are copper by design: this file
+   only uses them for credit-balance/reward visuals, never general
+   interactive accents (those use `indigo`). */
 const c = {
-  obsidian: "#FAF7F0",
-  graphite: "#FDFCF7",
-  border: "#EBE5D2",
-  borderStrong: "#D6CDB5",
-  gilt: "#B45309",
-  giltDark: "#923F07",
-  ivory: "#0E0C08",
-  chalk: "#0E0C08",
-  stone: "#6E6759",
-  sage: "#15803D",
-  ember: "#B91C1C",
-  slate: "#6E6759",
-  indigo: "#312E81",
-  indigoDeep: "#1E1B4B",
-  indigo100: "#E5E2F2",
-  copper100: "#F4E5D8",
-  success100: "#DCFCE7",
-  error100: "#FEE2E2",
-  warning100: "#FEF3C7",
-  cream: "#FAF7F0",
-  creamSoft: "#F4EFE3",
+  surface: t.cream,
+  graphite: t.creamRaised,
+  border: t.line,
+  borderStrong: t.lineStrong,
+  reward: t.copper,
+  rewardDark: t.copperDark,
+  ink: t.coal,
+  inkSoft: t.inkSoft,
+  sage: t.success,
+  ember: t.error,
+  indigo: t.indigo,
+  indigoDeep: t.indigoDeep,
+  indigo100: t.indigo100,
+  copper100: t.copper100,
+  success100: t.success100,
+  error100: t.error100,
+  warning100: t.warning100,
+  warningInk: t.warningInk,
+  cream: t.cream,
+  creamSoft: t.creamSoft,
+  rowTint: t.rowTint,
 };
 const font = {
-  display: "'Instrument Serif', Georgia, serif",
-  ui: "'Satoshi', -apple-system, system-ui, sans-serif",
-  mono: "'JetBrains Mono', monospace",
+  display: fonts.serif,
+  ui: fonts.sans,
+  mono: fonts.mono,
 };
 const shadow = {
-  sm: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
-  glow: "0 1px 2px rgba(49,46,129,.18), 0 4px 12px -4px rgba(49,46,129,.24)",
-  glowStrong: "0 2px 4px rgba(49,46,129,.22), 0 10px 24px -6px rgba(49,46,129,.30)",
+  sm: shadows.card,
 };
 
 /* ─── Section Icons (shared) ─── */
+const paymentHeadStyle = { padding: "0 20px", fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft } as const;
+
 export const icons = {
   account: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   interview: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>,
   plan: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>,
-  referral: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>,
+  download: <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
 };
-
-export const focusOutBase = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = c.border;
-  e.currentTarget.style.boxShadow = "none";
-};
-
-export const focusIn = (e: React.FocusEvent<HTMLInputElement>) => {
-  e.currentTarget.style.borderColor = "rgba(180,83,9,0.5)";
-  e.currentTarget.style.boxShadow = `0 0 0 3px ${c.copper100}`;
-};
-
-/** Render a Unix-ms timestamp as a relative phrase ("3h ago"). */
-function formatRelative(ts: number): string {
-  const diff = Date.now() - ts;
-  if (diff < 60_000) return "Just now";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  if (diff < 7 * 86_400_000) return `${Math.floor(diff / 86_400_000)}d ago`;
-  return new Date(ts).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
-}
-
-/** Best-effort UA → "Browser on OS" label. Matches major browsers + OS
-    so the audit list reads as something the user recognizes. */
-function parseUserAgent(ua: string): string {
-  if (!ua) return "Unknown device";
-  let browser = "Browser";
-  if (/Edg\//i.test(ua)) browser = "Edge";
-  else if (/OPR\//i.test(ua)) browser = "Opera";
-  else if (/Chrome\//i.test(ua)) browser = "Chrome";
-  else if (/Firefox\//i.test(ua)) browser = "Firefox";
-  else if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) browser = "Safari";
-  let os = "Unknown";
-  if (/Windows NT/i.test(ua)) os = "Windows";
-  else if (/Mac OS X/i.test(ua)) os = "Mac";
-  else if (/Android/i.test(ua)) os = "Android";
-  else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
-  else if (/Linux/i.test(ua)) os = "Linux";
-  return `${browser} on ${os}`;
-}
 
 export function Divider() {
   return (
     <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${c.border}, transparent)`, margin: "28px 0" }} />
-  );
-}
-
-export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
-  return (
-    <button onClick={onToggle} aria-pressed={on} style={{
-      width: 44, height: 24, borderRadius: 12, border: "none", cursor: "pointer",
-      background: on ? c.indigo : "#EBE5D2",
-      padding: 3, transition: "background 0.25s ease", position: "relative",
-    }}>
-      <div style={{
-        width: 18, height: 18, borderRadius: "50%",
-        background: on ? c.obsidian : c.stone,
-        transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
-        transform: on ? "translateX(20px)" : "translateX(0)",
-        boxShadow: on ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
-      }} />
-    </button>
   );
 }
 
@@ -123,22 +84,6 @@ export function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) 
    ═══════════════════════════════════════════════════════════════ */
 
 export interface AccountSectionProps {
-  // Profile state
-  editName: string;
-  setEditName: (v: string) => void;
-  editRole: string;
-  setEditRole: (v: string) => void;
-  editCompany: string;
-  setEditCompany: (v: string) => void;
-  editIndustry: string;
-  setEditIndustry: (v: string) => void;
-  editCity: string;
-  setEditCity: (v: string) => void;
-  editExperience: string;
-  setEditExperience: (v: string) => void;
-  // Derived
-  userName: string;
-  email: string;
   // Password
   resetLoading: boolean;
   resetSent: boolean;
@@ -148,102 +93,48 @@ export interface AccountSectionProps {
    *  reset, so the section hides. Resetting via email link only
    *  changes a password they don't use, which confused users. */
   isOAuthOnly: boolean;
-  // Sessions — sign out every device except the current one
-  signOutOthersLoading: boolean;
-  signOutOthersDone: boolean;
-  signOutOthersError: string | null;
-  handleSignOutOtherDevices: () => void;
-  // Recent devices history (last 5 logins). Read-only audit list.
-  recentDevices: Array<{
-    id: string;
-    ua?: string;
-    at?: number;
-    isCurrent: boolean;
-  }>;
-  // Blur handler (auto-save)
-  focusOut: (e: React.FocusEvent<HTMLInputElement>) => void;
-  // Auto-save the experience select on change (no blur event)
-  authUpdateUser: (updates: { experienceLevel?: string }) => void | Promise<void>;
 }
-
-const EXPERIENCE_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: "", label: "Select range" },
-  { value: "fresher", label: "Fresher" },
-  { value: "entry", label: "0 to 2 years" },
-  { value: "mid", label: "3 to 5 years" },
-  { value: "senior", label: "6 to 8 years" },
-  { value: "lead", label: "9 to 12 years" },
-  { value: "executive", label: "12+ years" },
-];
-
-function ExperienceLabel(value: string): string {
-  return EXPERIENCE_OPTIONS.find((o) => o.value === value)?.label || "Select range";
-}
-
-function FieldShell({ label, htmlFor, children }: { label: string; htmlFor: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label
-        htmlFor={htmlFor}
-        style={{
-          fontFamily: font.mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em",
-          color: c.stone, textTransform: "uppercase", display: "block", marginBottom: 8,
-        }}
-      >
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}
-
-const editorialInput: React.CSSProperties = {
-  width: "100%", fontFamily: font.ui, fontSize: 14, color: c.ivory,
-  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
-  padding: "12px 14px", outline: "none", boxSizing: "border-box", minHeight: 44,
-  transition: "border-color 0.18s ease, box-shadow 0.18s ease",
-};
 
 export const accSubtleBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
-  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 9,
-  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
+  background: c.graphite, border: `1px solid ${c.borderStrong}`, borderRadius: 8,
+  padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const accSubtleBtnGhost: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.stone,
-  background: "transparent", border: "none", borderRadius: 9,
-  padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.inkSoft,
+  background: "transparent", border: "none", borderRadius: 8,
+  padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const dangerSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ember,
-  background: "transparent", border: `1px solid rgba(185,28,28,0.3)`,
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  background: "transparent", border: `1px solid ${t.errorLine}`,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const dangerSolidBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.ember, border: "none",
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const successSubtleBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.sage, border: `1px solid ${c.sage}`,
-  borderRadius: 9, padding: "10px 14px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 14px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const indigoPrimaryBtn: React.CSSProperties = {
   fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.cream,
   background: c.indigo, border: `1px solid ${c.indigo}`,
-  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export const indigoGhostBtn: React.CSSProperties = {
-  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
   background: c.graphite, border: `1px solid ${c.borderStrong}`,
-  borderRadius: 9, padding: "10px 16px", cursor: "pointer", minHeight: 40,
+  borderRadius: 8, padding: "10px 16px", cursor: "pointer", minHeight: "max(40px, var(--coarse-min, 0px))",
 };
 
 export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string; title: string; desc?: string; tone?: "danger" }) {
@@ -251,17 +142,17 @@ export function SectionHead({ kicker: k, title, desc, tone }: { kicker?: string;
     <div style={{ marginTop: 8, marginBottom: 16 }}>
       {k && (
         <div style={{
-          fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em",
-          color: tone === "danger" ? c.ember : c.gilt, textTransform: "uppercase",
+          fontFamily: font.mono, fontSize: 12, fontWeight: 700, letterSpacing: "0.18em",
+          color: tone === "danger" ? c.ember : c.indigo, textTransform: "uppercase",
         }}>{k}</div>
       )}
       <h2 style={{
-        fontFamily: font.display, fontSize: 28, letterSpacing: "-0.02em",
-        color: tone === "danger" ? c.ember : c.ivory, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
+        fontFamily: font.ui, fontSize: 28, letterSpacing: "-0.02em",
+        color: tone === "danger" ? c.ember : c.ink, margin: "6px 0", lineHeight: 1.15, fontWeight: 400,
       }}>{title}</h2>
       {desc && (
         <p style={{
-          fontFamily: font.ui, fontSize: 14, color: c.stone, margin: 0, lineHeight: 1.55, maxWidth: 620,
+          fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: 0, lineHeight: 1.55, maxWidth: 620,
         }}>{desc}</p>
       )}
     </div>
@@ -278,230 +169,430 @@ export function EditorialCard({ children, density = "default" }: { children: Rea
   );
 }
 
+/* ─── Flat, single-container page shell (Figma: one bordered card,
+   sections separated by hairlines rather than individually elevated). ─── */
+export function PageHeader({ title, desc }: { title: string; desc: string }) {
+  return (
+    <div style={{ padding: "20px 28px", borderBottom: `1px solid ${c.border}` }}>
+      <h1 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ink, margin: 0, letterSpacing: "-0.01em" }}>{title}</h1>
+      <p style={{ fontFamily: font.ui, fontSize: 14, color: c.inkSoft, margin: "4px 0 0" }}>{desc}</p>
+    </div>
+  );
+}
+
+export function FlatSection({ title, children, last, id, split }: { title: string; children: React.ReactNode; last?: boolean; id?: string; split?: boolean }) {
+  return (
+    <div id={id} className={split ? "lg:grid lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-x-10" : undefined} style={{ scrollMarginTop: 16, padding: "24px 28px", borderBottom: last ? "none" : `1px solid ${c.border}` }}>
+      <h2 className={split ? "mb-[18px] lg:mb-0" : undefined} style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink, margin: split ? 0 : "0 0 18px" }}>{title}</h2>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/* Icon-box + title/desc + trailing action row — the Figma "Account"
+   row shape, reused for Change Password / Active devices / Log out. */
+export function ActionRow({ icon, tone, title, desc, action, last }: {
+  icon: React.ReactNode; tone?: "danger"; title: string; desc: string; action: React.ReactNode; last?: boolean;
+}) {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap",
+      padding: "16px 0", borderBottom: last ? "none" : `1px solid ${c.border}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0, flex: "1 1 240px" }}>
+        <span aria-hidden="true" style={{
+          width: 40, height: 40, borderRadius: 10, flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: tone === "danger" ? t.error100 : c.creamSoft,
+          border: `1px solid ${tone === "danger" ? t.errorLine : c.border}`,
+          color: tone === "danger" ? c.ember : c.inkSoft,
+        }}>{icon}</span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: tone === "danger" ? c.ember : c.ink }}>{title}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2, lineHeight: 1.5 }}>{desc}</div>
+        </div>
+      </div>
+      <div style={{ flexShrink: 0 }}>{action}</div>
+    </div>
+  );
+}
+
+export const flatRowBtn: React.CSSProperties = {
+  fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink,
+  background: c.creamSoft, border: `1px solid ${c.border}`, borderRadius: 8,
+  padding: "9px 14px", cursor: "pointer", minHeight: "max(36px, var(--coarse-min, 0px))",
+};
+
 export function KeyValue({ label, value, right }: { label: string; value: string; right?: React.ReactNode }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 0", gap: 16, flexWrap: "wrap" }}>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>{value}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{label}</div>
+        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{value}</div>
       </div>
       <div>{right}</div>
     </div>
   );
 }
 
-function ThinDivider() {
-  return <div style={{ height: 1, background: c.border, margin: "12px 0" }} role="separator" />;
-}
-
 function TinyChip({ children, tone }: { children: React.ReactNode; tone?: "success" | "warn" }) {
   const palette =
     tone === "success" ? { bg: c.success100, fg: c.sage } :
-    tone === "warn" ? { bg: c.warning100, fg: c.giltDark } :
+    tone === "warn" ? { bg: c.warning100, fg: c.warningInk } :
     { bg: c.indigo100, fg: c.indigo };
   return (
     <span style={{
-      fontFamily: font.mono, fontSize: 10, letterSpacing: "0.08em", textTransform: "uppercase",
+      fontFamily: font.mono, fontSize: 12, letterSpacing: "0.08em", textTransform: "uppercase",
       padding: "4px 8px", borderRadius: 4, background: palette.bg, color: palette.fg, fontWeight: 700,
     }}>{children}</span>
   );
 }
 
-export const AccountSection = memo(function AccountSection(props: AccountSectionProps) {
-  const {
-    editName, setEditName,
-    editRole, setEditRole,
-    editCompany, setEditCompany,
-    editIndustry, setEditIndustry,
-    editCity, setEditCity,
-    editExperience, setEditExperience,
-    userName, email,
-    resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
-    signOutOthersLoading, signOutOthersDone, signOutOthersError,
-    handleSignOutOtherDevices,
-    recentDevices,
-    focusOut,
-    authUpdateUser,
-  } = props;
+type EmailPrefKey = "marketing_opt_out" | "employer_notifications_opt_out";
+type EmailPrefs = Record<EmailPrefKey, boolean>;
 
-  const initial = (userName || email || "?").trim().charAt(0).toUpperCase();
+/** Email opt-outs. Switch on = receive. Stored inverted (`*_opt_out`) so the
+ *  default for a user with no row is "receive", matching the server. */
+export function EmailPreferencesSection({ audience }: { audience: "candidate" | "employer" }) {
+  const [prefs, setPrefs] = useState<EmailPrefs | null>(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    apiFetch<{ prefs: EmailPrefs }>("/api/email-preferences", {}).then((res) => {
+      if (!live) return;
+      if (res.ok && res.data) setPrefs(res.data.prefs);
+      else setError("Couldn't load your email preferences.");
+    });
+    return () => { live = false; };
+  }, []);
+
+  async function toggle(key: EmailPrefKey, receive: boolean) {
+    if (!prefs) return;
+    const previous = prefs;
+    setPrefs({ ...prefs, [key]: !receive });
+    setError("");
+    const res = await apiFetch<{ prefs: EmailPrefs }>("/api/email-preferences", { [key]: !receive });
+    if (res.ok && res.data) setPrefs(res.data.prefs);
+    else {
+      setPrefs(previous);
+      setError("Couldn't save that change. Try again in a moment.");
+    }
+  }
+
+  const mailIcon = <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>;
+  const rows: Array<{ key: EmailPrefKey; title: string; desc: string }> = [];
+  if (audience === "candidate") {
+    rows.push({
+      key: "marketing_opt_out",
+      title: "Tips, reminders and offers",
+      desc: "Weekly summary, practice reminders and product updates. Account, payment and security emails always come through.",
+    });
+  }
+  rows.push({
+    key: "employer_notifications_opt_out",
+    title: audience === "employer" ? "New match alerts" : "Employer activity",
+    desc: audience === "employer"
+      ? "An email when one of your jobs gets a new strong match."
+      : "An email when an employer views your practice evidence.",
+  });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 40, maxWidth: 880 }}>
-      {/* ── Profile group ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead title="Profile" desc="The basics we use to personalise interview prompts and coaching." />
-      <EditorialCard>
-        <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 24, flexWrap: "wrap" }}>
-          <div aria-hidden="true" style={{
-            width: 64, height: 64, borderRadius: "50%",
-            background: c.indigoDeep, color: c.cream, fontFamily: font.display, fontSize: 28,
-            display: "flex", alignItems: "center", justifyContent: "center", letterSpacing: "0.02em", flexShrink: 0,
-          }}>{initial}</div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{userName || "Your name"}</div>
-            <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 4 }}>
-              {email}
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gap: 16 }} className="settings-form-grid">
-          <FieldShell label="Full name" htmlFor="acc-name">
-            <input id="acc-name" type="text" value={editName} maxLength={60}
-              onChange={(e) => setEditName(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Target role" htmlFor="acc-role">
-            <input id="acc-role" type="text" value={editRole} maxLength={80}
-              placeholder="e.g. Senior Product Manager"
-              onChange={(e) => setEditRole(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Target company" htmlFor="acc-company">
-            <input id="acc-company" type="text" value={editCompany} maxLength={60}
-              placeholder="e.g. Razorpay"
-              onChange={(e) => setEditCompany(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Industry" htmlFor="acc-industry">
-            <input id="acc-industry" type="text" value={editIndustry} maxLength={60}
-              placeholder="e.g. Fintech"
-              onChange={(e) => setEditIndustry(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="City" htmlFor="acc-city">
-            <input id="acc-city" type="text" value={editCity} maxLength={60}
-              placeholder="e.g. Bengaluru"
-              onChange={(e) => setEditCity(e.target.value)}
-              onFocus={focusIn} onBlur={focusOut} style={editorialInput} />
-          </FieldShell>
-          <FieldShell label="Years of experience" htmlFor="acc-experience">
-            <div style={{ position: "relative" }}>
-              <select id="acc-experience" value={editExperience}
-                onChange={(e) => { setEditExperience(e.target.value); void authUpdateUser({ experienceLevel: e.target.value }); }}
-                style={{ ...editorialInput, appearance: "none", WebkitAppearance: "none", MozAppearance: "none", paddingRight: 36, cursor: "pointer" }}
-                aria-label={`Years of experience, currently ${ExperienceLabel(editExperience)}`}
-              >
-                {EXPERIENCE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-              <span aria-hidden style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", color: c.stone, fontFamily: font.mono, fontSize: 11, pointerEvents: "none" }}>▾</span>
-            </div>
-          </FieldShell>
-        </div>
-
-        <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginTop: 20, gap: 10, fontFamily: font.ui, fontSize: 12, color: c.stone }}>
-          <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: c.sage }} />
-          Saved automatically when you leave a field
-        </div>
-      </EditorialCard>
+    <div>
+      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
+        {rows.map((row, i) => (
+          <ActionRow
+            key={row.key}
+            last={i === rows.length - 1}
+            icon={mailIcon}
+            title={row.title}
+            desc={row.desc}
+            action={
+              <Switch
+                checked={prefs ? !prefs[row.key] : true}
+                disabled={!prefs}
+                onCheckedChange={(on) => { void toggle(row.key, on); }}
+                aria-label={row.title}
+              />
+            }
+          />
+        ))}
       </div>
+      {error && (
+        <p role="alert" style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.ember }}>{error}</p>
+      )}
+    </div>
+  );
+}
 
-      {/* ── Security group ── */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead title="Security" desc="Sign-in and devices currently using your account." />
-      <EditorialCard density="tight">
-        <KeyValue label="Email" value={email} right={<TinyChip tone="success">Verified</TinyChip>} />
-        <ThinDivider />
+export function SoundsSection() {
+  const enabled = useUiSoundsEnabled();
+  return (
+    <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
+      <ActionRow
+        last
+        icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>}
+        title="Message & notification sounds"
+        desc="Play a short sound when you send or receive a message, or get a new notification."
+        action={
+          <Switch
+            checked={enabled}
+            onCheckedChange={setUiSoundsEnabled}
+            aria-label="Message and notification sounds"
+          />
+        }
+      />
+    </div>
+  );
+}
+
+export const AccountSection = memo(function AccountSection(props: AccountSectionProps) {
+  const {
+    resetLoading, resetSent, handlePasswordReset, isOAuthOnly,
+  } = props;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      {/* ── Security + devices + logout — Figma's "Account" row group ── */}
+      <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "0 20px" }}>
         {!isOAuthOnly ? (
-          <KeyValue
-            label="Password"
-            value="Send a reset link to your email when you need to change it."
-            right={
-              <button type="button" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
+          <ActionRow
+            last
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            title="Change Password"
+            desc="Send a reset link to your email when you need to change it."
+            action={
+              <Button type="button" variant="outline" size="sm" onClick={handlePasswordReset} disabled={resetLoading || resetSent}
                 style={{
-                  ...accSubtleBtn,
-                  color: resetSent ? c.sage : c.ivory,
-                  background: resetSent ? c.success100 : c.graphite,
-                  borderColor: resetSent ? "rgba(21,128,61,0.3)" : c.borderStrong,
+                  ...flatRowBtn,
+                  color: resetSent ? c.sage : c.ink,
+                  background: resetSent ? c.success100 : c.creamSoft,
                   cursor: (resetLoading || resetSent) ? "default" : "pointer",
                   opacity: resetLoading ? 0.6 : 1,
                 }}
               >
-                {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send reset link"}
-              </button>
+                {resetLoading ? "Sending..." : resetSent ? "Email sent" : "Send Reset Link"}
+              </Button>
             }
           />
         ) : (
-          <KeyValue
-            label="Password"
-            value="You signed in with Google: manage your password in your Google Account."
-            right={<TinyChip>Google</TinyChip>}
+          <ActionRow
+            last
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+            title="Password"
+            desc="You signed in with Google — manage your password in your Google Account."
+            action={<TinyChip>Google</TinyChip>}
           />
         )}
-        <ThinDivider />
-        <KeyValue
-          label="Sign-in method"
-          value={isOAuthOnly ? "Google" : "Email and password"}
-          right={<TinyChip tone="success">Active</TinyChip>}
-        />
-      </EditorialCard>
-
-      <EditorialCard density="tight">
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Active devices</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
-            One device at a time. Signing in elsewhere automatically signs out this device.
-          </div>
-        </div>
-        {recentDevices.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "12px 0" }}>
-            No recent sign-ins recorded yet.
-          </div>
-        ) : (
-          recentDevices.slice(0, 2).map((d, idx, arr) => {
-            const seen = d.at ? formatRelative(d.at) : "Unknown";
-            const label = parseUserAgent(d.ua || "");
-            return (
-              <div key={d.id} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "12px 0", gap: 16, flexWrap: "wrap",
-                borderBottom: idx < arr.length - 1 ? `1px solid ${c.border}` : "none",
-              }}>
-                <div style={{ display: "flex", gap: 12, alignItems: "center", minWidth: 0 }}>
-                  <span aria-hidden style={{
-                    width: 36, height: 36, borderRadius: 8,
-                    background: c.creamSoft, color: c.stone,
-                    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
-                  }}>
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
-                  </span>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-                    <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2 }}>
-                      {d.isCurrent ? "Active now, this device" : seen}
-                    </div>
-                  </div>
-                </div>
-                {d.isCurrent && <TinyChip tone="success">This device</TinyChip>}
-              </div>
-            );
-          })
-        )}
-
-        <div style={{ marginTop: 18, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: signOutOthersError ? c.ember : c.stone }}>
-            {signOutOthersError || "Sign out every device except this one."}
-          </div>
-          <button onClick={handleSignOutOtherDevices} disabled={signOutOthersLoading || signOutOthersDone}
-            style={{
-              ...accSubtleBtnGhost,
-              color: signOutOthersDone ? c.sage : c.indigo,
-              cursor: (signOutOthersLoading || signOutOthersDone) ? "default" : "pointer",
-              opacity: signOutOthersLoading ? 0.6 : 1,
-            }}
-          >
-            {signOutOthersLoading ? "Signing out..." : signOutOthersDone ? "Signed out" : "Sign out everywhere else"}
-          </button>
-        </div>
-      </EditorialCard>
       </div>
     </div>
   );
 });
 
+
+/* ═══════════════════════════════════════════════════════════════
+   PORTFOLIO LINKS SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+const MAX_PORTFOLIO_LINKS = 5;
+
+export interface PortfolioLinksSectionProps {
+  portfolioLinks: Array<{ title: string; url: string }> | undefined;
+  authUpdateUser: (updates: Record<string, unknown>) => void | Promise<void>;
+  showToast: (msg: string) => void;
+}
+
+/* What employers see as "proof of work" traces back only to what's saved
+ * here — never anything synthesized. One title + one URL per row, capped
+ * so the profile doesn't turn into a link farm (mirrors
+ * server-handlers/update-profile.ts's MAX_PORTFOLIO_LINKS). */
+export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: PortfolioLinksSectionProps) {
+  const { portfolioLinks, authUpdateUser, showToast } = props;
+
+  const [links, setLinks] = useState<Array<{ title: string; url: string }>>(() => portfolioLinks ?? []);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftUrl, setDraftUrl] = useState("");
+  const [formError, setFormError] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [removingIndex, setRemovingIndex] = useState<number | null>(null);
+
+  const atCap = links.length >= MAX_PORTFOLIO_LINKS;
+
+  async function handleAdd() {
+    const title = draftTitle.trim();
+    const url = draftUrl.trim();
+    if (!title) { setFormError("Add a title for this link."); return; }
+    if (!/^https?:\/\//i.test(url)) { setFormError("Enter a full URL starting with https://"); return; }
+
+    const next = [...links, { title, url }];
+    setAdding(true);
+    try {
+      await authUpdateUser({ portfolioLinks: next });
+      setLinks(next);
+      setDialogOpen(false);
+      showToast("Link added");
+    } catch {
+      setFormError("Failed to save — try again");
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function handleRemove(i: number) {
+    const next = links.filter((_, idx) => idx !== i);
+    setRemovingIndex(i);
+    try {
+      await authUpdateUser({ portfolioLinks: next });
+      setLinks(next);
+      showToast("Link removed");
+    } catch {
+      showToast("Failed to remove — try again");
+    } finally {
+      setRemovingIndex(null);
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <p style={subHeaderHint}>
+        Add links to work employers can review — GitHub, Behance, Notion, a personal site.
+        Only what you add here is ever shown; nothing is invented on your behalf.
+      </p>
+
+      {links.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {links.map((link, i) => (
+            <div key={`${link.url}-${i}`} style={{
+              display: "flex", alignItems: "center", gap: 12,
+              padding: "10px 12px", borderRadius: 10,
+              border: `1px solid ${c.border}`, background: c.graphite,
+            }}>
+              <span aria-hidden="true" style={{
+                width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                background: c.creamSoft, border: `1px solid ${c.border}`, color: c.ink,
+              }}>
+                <PortfolioLinkIcon url={link.url} size={16} />
+              </span>
+              <a href={link.url} target="_blank" rel="noopener noreferrer" style={{ minWidth: 0, flex: 1, textDecoration: "none" }}>
+                <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ink, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {link.title}
+                </div>
+                <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {formatPortfolioUrl(link.url)}
+                </div>
+              </a>
+              <button
+                type="button"
+                onClick={() => handleRemove(i)}
+                disabled={removingIndex === i}
+                aria-label={`Remove ${link.title}`}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  width: 28, height: 28, borderRadius: 8, flexShrink: 0,
+                  background: "transparent", border: "none", color: c.inkSoft, cursor: "pointer",
+                  opacity: removingIndex === i ? 0.5 : 1,
+                }}
+              >
+                <XIcon aria-hidden="true" width={15} height={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (open) { setDraftTitle(""); setDraftUrl(""); setFormError(""); }
+        }}
+      >
+        <DialogTrigger asChild>
+          {links.length === 0 ? (
+            <button type="button" style={{
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.inkSoft,
+              background: "transparent", border: `1.5px dashed ${c.borderStrong}`, borderRadius: 8,
+              padding: "18px 14px", cursor: "pointer", width: "100%",
+            }}>
+              <PlusIcon aria-hidden="true" width={15} height={15} /> Add your first link
+            </button>
+          ) : (
+            <button type="button" disabled={atCap} style={{
+              ...flatRowBtn, display: "inline-flex", alignItems: "center", gap: 6,
+              alignSelf: "flex-start", opacity: atCap ? 0.5 : 1,
+            }}>
+              <PlusIcon aria-hidden="true" width={14} height={14} /> Add link
+            </button>
+          )}
+        </DialogTrigger>
+        <DialogContent
+          style={{
+            display: "block", background: c.graphite, border: `1px solid ${c.border}`,
+            borderRadius: 16, padding: "24px 22px", maxWidth: 420, width: "100%",
+          }}
+        >
+          <DialogTitle style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink, margin: "0 0 4px" }}>
+            Add a portfolio link
+          </DialogTitle>
+          <DialogDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, margin: "0 0 18px" }}>
+            GitHub, Dribbble, LinkedIn, Behance, Notion, or any URL.
+          </DialogDescription>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <input
+              type="text"
+              value={draftTitle}
+              onChange={(e) => { setDraftTitle(e.target.value); setFormError(""); }}
+              placeholder="Title (e.g. GitHub)"
+              maxLength={120}
+              aria-label="Link title"
+              style={{
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
+                border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
+                minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
+              }}
+            />
+            <input
+              type="url"
+              value={draftUrl}
+              onChange={(e) => { setDraftUrl(e.target.value); setFormError(""); }}
+              placeholder="https://..."
+              maxLength={500}
+              aria-label="Link URL"
+              style={{
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.cream,
+                border: `1px solid ${c.borderStrong}`, borderRadius: 9, padding: "10px 14px",
+                minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
+              }}
+            />
+            {formError && (
+              <div style={{ fontFamily: font.ui, fontSize: 12, color: c.ember }}>{formError}</div>
+            )}
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 18 }}>
+            <DialogClose asChild>
+              <button type="button" style={accSubtleBtnGhost}>Cancel</button>
+            </DialogClose>
+            <Button type="button" variant="default" size="sm" onClick={handleAdd} disabled={adding}
+              style={{ ...indigoPrimaryBtn, opacity: adding ? 0.6 : 1 }}>
+              {adding ? "Adding..." : "Add link"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {links.length > 0 && (
+        <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+          {links.length} / {MAX_PORTFOLIO_LINKS} links{atCap ? " · limit reached" : ""}
+        </span>
+      )}
+    </div>
+  );
+});
 
 
 /* ─── Usage this month ─── */
@@ -516,85 +607,22 @@ interface UsageResponse {
   coach_insights: null;
 }
 
-function UsageBar({ label, row }: { label: string; row: UsageRow }) {
-  const cap = row.cap;
-  const pct = cap && cap > 0 ? Math.min(100, Math.round((row.count / cap) * 100)) : 0;
-  const display = cap == null ? `${row.count}` : `${row.count} of ${cap}`;
+/* Sentence-case pill with a leading dot — matches the plan-status card's
+   Figma spec, distinct from the uppercase-mono TinyChip used elsewhere. */
+function PlanStatusChip({ label, tone }: { label: string; tone: "success" | "warn" | "danger" }) {
+  const palette =
+    tone === "danger" ? { bg: c.error100, fg: c.ember } :
+    tone === "warn" ? { bg: c.warning100, fg: c.warningInk } :
+    { bg: c.success100, fg: c.sage };
   return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 10 }}>
-        <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>{label}</span>
-        <span style={{ fontFamily: font.mono, fontSize: 12, color: c.stone }}>{display}</span>
-      </div>
-      <div style={{ height: 6, borderRadius: 999, background: c.border, overflow: "hidden" }}>
-        <div style={{ width: cap == null ? "100%" : `${pct}%`, height: "100%", background: pct >= 90 ? c.ember : c.gilt, transition: "width 0.4s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-const UsageThisMonth = memo(function UsageThisMonth({
-  getAuthHeaders, planName,
-}: { getAuthHeaders: () => Promise<Record<string, string>>; planName?: string }) {
-  const [data, setData] = useState<UsageResponse | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const headers = await getAuthHeaders();
-        const res = await fetch("/api/usage-this-month", { headers });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = (await res.json()) as UsageResponse;
-        if (!cancelled) setData(json);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load usage");
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [getAuthHeaders]);
-
-  if (error) return null; // Fail quiet — usage is decorative, not gating.
-  if (!data) {
-    return <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>Loading usage…</span>;
-  }
-  // Label reflects the active plan so users see exactly what they're spending.
-  const mockLabel = planName ? `Sessions with ${planName}` : "Mock interviews completed";
-  return (
-    <div>
-      <UsageBar label={mockLabel} row={data.mock} />
-      <UsageBar label="Resume parses" row={data.resume_parses} />
-    </div>
-  );
-});
-
-/* Always-visible extra sessions row. Green when credits exist, muted when zero.
-   Gives users a persistent anchor to know purchased credits are a thing. */
-function ExtraSessionsInfoBox() {
-  const { creditBalance } = useDashboardSubscription();
-  const hasCredits = creditBalance > 0;
-  return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 14px", borderRadius: 8, marginTop: 4,
-      background: hasCredits ? c.success100 : "rgba(180,83,9,0.06)",
-      border: hasCredits ? `1px solid rgba(21,128,61,0.25)` : "1px solid rgba(180,83,9,0.18)",
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: palette.fg,
+      background: palette.bg, borderRadius: 999, padding: "4px 10px",
     }}>
-      <span style={{ fontFamily: font.ui, fontSize: 13, display: "flex", alignItems: "center", gap: 6,
-        color: hasCredits ? "#166534" : c.gilt }}>
-        {hasCredits ? (
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        ) : (
-          <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        )}
-        Extra sessions available
-      </span>
-      <span style={{ fontFamily: font.mono, fontSize: 14, fontWeight: 700,
-        color: hasCredits ? c.sage : c.gilt, opacity: hasCredits ? 1 : 0.55 }}>
-        {creditBalance}
-      </span>
-    </div>
+      <span aria-hidden="true" style={{ width: 6, height: 6, borderRadius: "50%", background: palette.fg }} />
+      {label}
+    </span>
   );
 }
 
@@ -602,26 +630,37 @@ function ExtraSessionsInfoBox() {
    PLAN & BILLING SECTION
    ═══════════════════════════════════════════════════════════════ */
 
-export interface PlanSectionProps {
-  authUser: {
-    email?: string;
-    subscriptionTier?: string;
-    subscriptionStart?: string;
-    subscriptionEnd?: string;
-    cancelAtPeriodEnd?: boolean;
-    subscriptionPaused?: boolean;
-    id?: string;
-    signedInVia?: "google" | "email";
-  } | null;
+interface PlanAuthUser {
+  email?: string;
+  subscriptionTier?: string;
+  subscriptionStart?: string;
+  subscriptionEnd?: string;
+  cancelAtPeriodEnd?: boolean;
+  subscriptionPaused?: boolean;
+  hasRecurringSubscription?: boolean;
+  id?: string;
+  signedInVia?: "google" | "email";
+}
+
+export interface PlanUsageSectionProps {
+  authUser: PlanAuthUser | null;
   tierLabel: string;
-  // Cancel / reactivate
   confirmCancel: boolean;
   setConfirmCancel: (v: boolean) => void;
   cancelLoading: boolean;
   setCancelLoading: (v: boolean) => void;
   cancelMsg: string;
   setCancelMsg: (v: string) => void;
-  // Delete account
+  authUpdateUser: (updates: Record<string, unknown>) => void;
+  showToast: (msg: string) => void;
+  setShowUpgradeModal: (v: boolean) => void;
+  authHeaders: () => Promise<Record<string, string>>;
+  payments: PaymentRecord[];
+  paymentsLoading: boolean;
+}
+
+export interface DangerZoneSectionProps {
+  authUser: PlanAuthUser | null;
   confirmDelete: boolean;
   setConfirmDelete: (v: boolean) => void;
   deleteEmailInput: string;
@@ -630,50 +669,49 @@ export interface PlanSectionProps {
   setDeleteLoading: (v: boolean) => void;
   deleteMsg: string;
   setDeleteMsg: (v: string) => void;
-  // Export
-  exporting: boolean;
-  setExporting: (v: boolean) => void;
-  onExportCSV: () => void;
-  // Credit reconciliation
-  onReconcileCredits?: () => Promise<void>;
-  // Billing
-  payments: PaymentRecord[];
-  paymentsLoading: boolean;
-  // Actions
-  authUpdateUser: (updates: Record<string, unknown>) => void;
-  showToast: (msg: string) => void;
-  setShowUpgradeModal: (v: boolean) => void;
   onLogout: () => void;
-  // API helpers
+  showToast: (msg: string) => void;
   authHeaders: () => Promise<Record<string, string>>;
+  /** Employer accounts only: swaps in the employer-specific erase/retain copy and warnings. */
+  employer?: EmployerDeletionFacts;
 }
 
-/* ─── Plan & Data — editorial layout (matches canvas) ─── */
-const planCardOuter: React.CSSProperties = {
-  background: c.graphite,
-  border: `1px solid ${c.border}`,
-  borderRadius: 14,
-  boxShadow: shadow.sm,
-  padding: "24px 28px",
-};
-const subHeaderTitle: React.CSSProperties = { fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory };
-const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 };
-const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory };
-const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5, marginTop: 2 };
+const subHeaderHint: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 4, lineHeight: 1.5 };
+const keyValueLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink };
+const keyValueValue: React.CSSProperties = { fontFamily: font.ui, fontSize: 12, color: c.inkSoft, lineHeight: 1.5, marginTop: 2 };
 
 
-function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boolean }) {
+/** Shared by every Plan/Danger-zone mutation: resolve auth headers with a
+ * 5s timeout, then run `fn` with an AbortSignal that aborts at 15s. */
+async function withAuthedAbort<T>(
+  getAuthHeaders: () => Promise<Record<string, string>>,
+  fn: (hdrs: Record<string, string>, signal: AbortSignal) => Promise<T>,
+): Promise<T> {
+  const hdrs = await Promise.race([
+    getAuthHeaders(),
+    new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000)),
+  ]);
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 15000);
+  try {
+    return await fn(hdrs, ctrl.signal);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function invoiceDetails(payment: PaymentRecord) {
   const d = new Date(payment.created_at);
   const dateLabel = d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   const amountDisplay = `₹${Math.round(payment.amount / 100)}`;
   const paid = payment.status === "completed";
   const tone = paid
-    ? { label: "Paid", bg: c.success100, fg: c.sage, border: "rgba(21,128,61,0.28)" }
-    : { label: payment.status, bg: c.error100, fg: c.ember, border: "rgba(185,28,28,0.28)" };
+    ? { label: "Paid", bg: c.success100, fg: c.sage, border: t.successLine }
+    : { label: payment.status, bg: c.error100, fg: c.ember, border: t.errorLine };
 
   // Derive a human-readable purchase title from plan + amount.
-  // payment.plan: "single" | "weekly" | "monthly"
-  // payment.tier: "free" | "starter" | "pro" (unreliable for single — always "free")
+  // payment.plan: "single" | "weekly" (older rows may still say "monthly" — plan discontinued)
+  // payment.tier: "free" | "starter" | "team" (unreliable for single — always "free")
   const isSingle = payment.plan === "single";
   const isWeekly = payment.plan === "weekly";
   // Single-session: ₹9 each (900 paise). Derive qty from total amount.
@@ -682,7 +720,6 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
   const purchaseTitle = isSingle
     ? `${sessionQty} extra session${sessionQty !== 1 ? "s" : ""}`
     : isWeekly ? "Interview Sprint Pack"
-    : payment.plan === "monthly" ? "Pro Plan — Monthly"
     : payment.tier
       ? payment.tier.charAt(0).toUpperCase() + payment.tier.slice(1) + " Plan"
       : payment.plan;
@@ -696,73 +733,56 @@ function InvoiceRow({ payment, divider }: { payment: PaymentRecord; divider: boo
     subLine = `${fmt(payment.subscription_start)} – ${fmt(payment.subscription_end)}`;
   }
 
-  return (
-    <div style={{
-      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
-      display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16,
-    }}>
-      {/* Left: date + purchase detail */}
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600, whiteSpace: "nowrap" }}>{dateLabel}</span>
-          <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 500 }}>{purchaseTitle}</span>
-        </div>
-        {subLine && (
-          <p style={{ margin: "3px 0 0", fontFamily: font.ui, fontSize: 11, color: c.stone, lineHeight: 1.4 }}>{subLine}</p>
-        )}
-      </div>
-
-      {/* Right: amount + badge + receipt */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <span style={{ fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ivory }}>{amountDisplay}</span>
-        <div style={{
-          fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-          color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
-          borderRadius: 6, padding: "4px 8px",
-        }}>{tone.label}</div>
-        {payment.receipt_url && (
-          <a href={payment.receipt_url} target="_blank" rel="noopener noreferrer"
-            style={{ fontFamily: font.ui, fontSize: 11, color: c.gilt, textDecoration: "none", whiteSpace: "nowrap" }}
-            onMouseEnter={e => { e.currentTarget.style.textDecoration = "underline"; }}
-            onMouseLeave={e => { e.currentTarget.style.textDecoration = "none"; }}
-          >Receipt →</a>
-        )}
-      </div>
-    </div>
-  );
+  return { dateLabel, amountDisplay, tone, purchaseTitle, subLine };
 }
 
-export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
+/* ═══════════════════════════════════════════════════════════════
+   PLAN & USAGE SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+export const PlanUsageSection = memo(function PlanUsageSection(props: PlanUsageSectionProps) {
   const {
     authUser, tierLabel,
     confirmCancel, setConfirmCancel, cancelLoading, setCancelLoading, cancelMsg, setCancelMsg,
-    confirmDelete, setConfirmDelete, deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
-    exporting, setExporting, onExportCSV,
-    payments, paymentsLoading,
-    authUpdateUser, showToast, onLogout,
+    authUpdateUser, showToast, setShowUpgradeModal,
     authHeaders: getAuthHeaders,
+    payments, paymentsLoading,
   } = props;
-
-  // Re-auth gate: password re-entry before destructive identity action.
-  // Local state — not hoisted into the parent because no other section
-  // reads it, and we want it cleared the moment confirmDelete flips off.
-  const [deletePasswordInput, setDeletePasswordInput] = useState("");
 
   const tier = authUser?.subscriptionTier || "free";
   const isPaid = tier !== "free";
-  // OAuth-only accounts have no password to verify against — server-side
-  // we'd be re-auth-gating against something that doesn't exist. Detect
-  // via the auth provider on the user; if it's google-only, skip the
-  // password field and rely on the email-confirm + bearer alone.
-  const isOAuthOnlyUser = authUser?.signedInVia === "google";
-  const headline = tier === "pro"
-    ? "Pro, invested in your offer"
-    : tier === "starter"
-      ? "Starter, building the habit"
-      : "Practice on the house";
-  const headlineDesc = isPaid
-    ? "Manage your subscription, see your invoices, and export your data."
-    : "Start free. Upgrade when you want unlimited reps and the negotiation coach.";
+  const { creditBalance } = useDashboardSubscription();
+
+  const [usage, setUsage] = useState<UsageResponse | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const headers = await getAuthHeaders();
+        const res = await fetch("/api/usage-this-month", { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = (await res.json()) as UsageResponse;
+        if (!cancelled) setUsage(json);
+      } catch {
+        // Fail quiet — usage is decorative, not gating.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [getAuthHeaders]);
+
+  const sessionsCap = usage?.mock.cap ?? null;
+  const sessionsUsed = usage?.mock.count ?? 0;
+  const sessionsPct = sessionsCap && sessionsCap > 0 ? Math.min(100, Math.round((sessionsUsed / sessionsCap) * 100)) : 0;
+  const capLine = sessionsCap == null
+    ? "Interview sessions"
+    : `${sessionsCap} Interview Session${sessionsCap === 1 ? "" : "s"}${authUser?.hasRecurringSubscription ? " / Month" : ""}`;
+  const sessionsUsedLabel = usage == null ? "Loading usage…" : sessionsCap == null ? `${sessionsUsed} sessions used` : `${Math.min(sessionsUsed, sessionsCap)} of ${sessionsCap} sessions used`;
+
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(payments.length / rowsPerPage));
+  const page_ = Math.min(page, totalPages);
+  const pageRows = payments.slice((page_ - 1) * rowsPerPage, page_ * rowsPerPage);
 
   let endDateLabel = "";
   let daysLeft = 0;
@@ -772,14 +792,21 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
     endDateLabel = new Date(authUser.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   }
 
+  const statusLabel = !isPaid ? "Free" : authUser?.cancelAtPeriodEnd ? "Cancelling" : authUser?.subscriptionPaused ? "Paused" : "Active";
+  const statusTone: "success" | "warn" | "danger" = authUser?.cancelAtPeriodEnd ? "danger" : authUser?.subscriptionPaused ? "warn" : "success";
+  const cycleLabel = isPaid && endDateLabel
+    ? (authUser?.cancelAtPeriodEnd
+        ? `Access remains until ${endDateLabel}`
+        : !authUser?.hasRecurringSubscription
+          ? `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack`
+          : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle`)
+    : "Free sessions are a one-time allowance and do not reset";
+
   async function handleReactivate() {
     setCancelLoading(true); setCancelMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 15000);
-      const res = await fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-      clearTimeout(timer);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/reactivate-subscription", { method: "POST", headers: hdrs, signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) { authUpdateUser({ cancelAtPeriodEnd: false }); showToast("Plan reactivated"); }
@@ -796,10 +823,10 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   async function handlePauseToggle() {
     setCancelLoading(true);
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
       const isPaused = !!authUser?.subscriptionPaused;
       const action = isPaused ? "resume" : "pause";
-      const res = await fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }) });
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/pause-subscription", { method: "POST", headers: hdrs, body: JSON.stringify({ action }), signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) { authUpdateUser({ subscriptionPaused: action === "pause" }); showToast(action === "pause" ? "Subscription paused" : "Subscription resumed"); }
@@ -807,17 +834,16 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
       } else {
         const d = await res.json().catch(() => ({})); showToast(d.error || "Failed");
       }
-    } catch { showToast("Network error"); } finally { setCancelLoading(false); }
+    } catch (err) {
+      showToast(err instanceof DOMException && err.name === "AbortError" ? "Request timed out." : "Network error.");
+    } finally { setCancelLoading(false); }
   }
 
   async function handleConfirmCancel() {
     setCancelLoading(true); setCancelMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 15000);
-      const res = await fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal: ctrl.signal });
-      clearTimeout(timer);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/cancel-subscription", { method: "POST", headers: hdrs, signal }));
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
@@ -836,24 +862,190 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   }
 
 
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+      {/* Plan status + usage, and extra-session credits — one card, two
+          panels, since both describe the same subscription. */}
+      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 24 }}>
+        <div style={{ flex: "1 1 320px", minWidth: 0, padding: "0 28px 0 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 700, color: c.ink }}>{tierLabel}</span>
+            {isPaid && <PlanStatusChip label={statusLabel} tone={statusTone} />}
+          </div>
+          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.inkSoft, marginBottom: 18 }}>{capLine}</div>
+          <div style={{ height: 8, borderRadius: 999, background: c.border, overflow: "hidden" }}>
+            <div style={{ width: usage == null ? "0%" : sessionsCap == null ? "100%" : `${sessionsPct}%`, height: "100%", background: sessionsPct >= 100 ? `color-mix(in oklch, ${c.inkSoft} 45%, transparent)` : c.ink, transition: "width 0.4s ease" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 12, flexWrap: "wrap", gap: 8 }}>
+            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>{cycleLabel}</span>
+            <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ink }}>{sessionsUsedLabel}</span>
+          </div>
+          {usage && (
+            <div style={{
+              display: "flex", justifyContent: "space-between", alignItems: "center",
+              marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.border}`,
+              fontFamily: font.ui, fontSize: 12, color: c.inkSoft,
+            }}>
+              <span>Resume parses this period</span>
+              <span style={{ fontWeight: 600, color: c.ink }}>
+                {usage.resume_parses.cap == null ? usage.resume_parses.count : `${Math.min(usage.resume_parses.count, usage.resume_parses.cap)} of ${usage.resume_parses.cap}`}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div className="max-[640px]:!flex-[1_1_100%] max-[640px]:!border-l-0 max-[640px]:!pl-0 max-[640px]:!pt-5 min-[641px]:!border-t-0" style={{
+          flex: "0 1 300px", minWidth: 240, borderLeft: `1px solid ${c.border}`, borderTop: `1px solid ${c.border}`,
+          padding: "0 0 0 28px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 10,
+        }}>
+          <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 700, color: c.ink }}>{creditBalance} Extra Session{creditBalance === 1 ? "" : "s"}</div>
+          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>Available anytime · Never expire</div>
+          <div style={{ marginTop: 8 }}>
+            {!isPaid ? (
+              <Button type="button" variant="default" size="sm" onClick={() => setShowUpgradeModal(true)} style={indigoPrimaryBtn}>
+                Upgrade plan
+              </Button>
+            ) : !authUser?.hasRecurringSubscription ? (
+              <Button type="button" variant="default" size="sm" onClick={() => setShowUpgradeModal(true)} style={indigoPrimaryBtn}>
+                Buy another Sprint Pack
+              </Button>
+            ) : authUser?.cancelAtPeriodEnd ? (
+              <Button type="button" variant="outline" size="sm" disabled={cancelLoading} onClick={handleReactivate}
+                style={{ ...successSubtleBtn, opacity: cancelLoading ? 0.6 : 1 }}>
+                {cancelLoading ? "Reactivating..." : "Reactivate"}
+              </Button>
+            ) : !confirmCancel ? (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Button type="button" variant="outline" size="sm" onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
+                  {authUser?.subscriptionPaused ? "Resume" : "Pause"}
+                </Button>
+                <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</Button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Button type="button" variant="outline" size="sm" onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</Button>
+                <Button type="button" variant="destructive" size="sm" disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
+                  {cancelLoading ? "Cancelling..." : "Yes, cancel"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
+
+      {/* Payment history — same plan the usage above belongs to, so it
+          lives in one section rather than a separate "Billing" block. */}
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ink }}>Payment history</div>
+        </div>
+        {paymentsLoading ? (
+          <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ display: "flex", gap: 24 }}>
+                <div className="skeleton" style={{ height: 12, width: "30%" }} />
+                <div className="skeleton" style={{ height: 12, width: "20%" }} />
+                <div className="skeleton" style={{ height: 12, width: "15%" }} />
+                <div className="skeleton" style={{ height: 12, width: "15%" }} />
+              </div>
+            ))}
+          </div>
+        ) : payments.length === 0 ? (
+          <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed border-hx-line px-5 py-8 text-center">
+            <p className="m-0 text-sm font-semibold text-hx-coal">No payments yet</p>
+            <p className="m-0 text-xs text-hx-ink-soft">Receipts for plan upgrades and session top-ups will appear here.</p>
+          </div>
+        ) : (
+          <div style={{ border: `1px solid ${c.border}`, borderRadius: 12, overflow: "hidden" }}>
+            <Table>
+              <TableHeader>
+                <TableRow style={{ background: c.rowTint }}>
+                  <TableHead style={paymentHeadStyle}>Description</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Transaction Date</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Amount</TableHead>
+                  <TableHead className="max-[640px]:hidden" style={paymentHeadStyle}>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="mx-stagger">
+                {pageRows.map((p) => {
+                  const { dateLabel, amountDisplay, tone, purchaseTitle, subLine } = invoiceDetails(p);
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell style={{ padding: "12px 20px" }}>
+                        <div style={{ fontFamily: font.ui, fontSize: 13, color: c.ink, fontWeight: 500 }}>{purchaseTitle}</div>
+                        {subLine && <div style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft, marginTop: 2 }}>{subLine}</div>}
+                        <div className="flex min-[641px]:hidden" style={{ flexWrap: "wrap", alignItems: "center", gap: 8, marginTop: 6, fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>
+                          <span>{dateLabel}</span>
+                          <span style={{ fontFamily: font.mono, fontWeight: 600, color: c.ink }}>{amountDisplay}</span>
+                          <span style={{
+                            fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                            color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+                            borderRadius: 6, padding: "2px 6px",
+                          }}>{tone.label}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px", fontFamily: font.ui, fontSize: 13, color: c.ink, whiteSpace: "nowrap" }}>{dateLabel}</TableCell>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px", fontFamily: font.mono, fontSize: 13, fontWeight: 600, color: c.ink }}>{amountDisplay}</TableCell>
+                      <TableCell className="max-[640px]:hidden" style={{ padding: "12px 20px" }}>
+                        <div style={{
+                          fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
+                          color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
+                          borderRadius: 6, padding: "4px 8px", display: "inline-block",
+                        }}>{tone.label}</div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+            <TablePaginationFooter
+              entityLabel="transaction"
+              totalCount={payments.length}
+              filteredCount={payments.length}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={(n) => { setRowsPerPage(n); setPage(1); }}
+              page={page_}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   DANGER ZONE SECTION
+   ═══════════════════════════════════════════════════════════════ */
+
+export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZoneSectionProps) {
+  const {
+    authUser, confirmDelete, setConfirmDelete,
+    deleteEmailInput, setDeleteEmailInput, deleteLoading, setDeleteLoading, deleteMsg, setDeleteMsg,
+    onLogout, showToast, authHeaders: getAuthHeaders, employer,
+  } = props;
+
+  const isOAuthOnlyUser = authUser?.signedInVia === "google";
+  const [deletePasswordInput, setDeletePasswordInput] = useState("");
+
   async function handleConfirmDelete() {
     setDeleteLoading(true); setDeleteMsg("");
     try {
-      const hdrs = await Promise.race([getAuthHeaders(), new Promise<never>((_, rej) => setTimeout(() => rej(new Error("Auth timeout")), 5000))]);
-      const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 15000);
       // Re-auth gate: send the user's password so the server can verify
       // possession-of-credentials, not just possession-of-bearer.
       // OAuth-only users have no app password — server skips the check
       // for them; sending an empty string is fine (server only verifies
       // when present and non-empty for non-OAuth users).
       const body = isOAuthOnlyUser ? {} : { password: deletePasswordInput };
-      const res = await fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal: ctrl.signal });
-      clearTimeout(t);
+      const res = await withAuthedAbort(getAuthHeaders, (hdrs, signal) =>
+        fetch("/api/delete-account", { method: "POST", headers: { ...hdrs, "Content-Type": "application/json" }, body: JSON.stringify(body), signal }));
       if (res.ok || res.status === 207) {
         const data = await res.json().catch(() => ({}));
         if (data.scheduled) showToast("Account scheduled for deletion. Log in within 7 days to cancel.");
-        localStorage.clear();
+        else if (employer && data.retainedFinancialRecords) showToast("Account deleted. Payment records are kept, anonymised, for tax.");
+        clearAppOwnedStorage(localStorage);
         onLogout();
       } else {
         const d = await res.json().catch(() => ({}));
@@ -869,422 +1061,74 @@ export const PlanSection = memo(function PlanSection(props: PlanSectionProps) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <SectionHead title={headline} desc={headlineDesc} />
-
-      {/* Status band for paid plans (inline, not a card) */}
-      {isPaid && endDateLabel && (
-        <div style={{
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          gap: 16, flexWrap: "wrap",
-          padding: "4px 0 18px", borderBottom: `1px solid ${c.border}`,
-          marginTop: -8,
-        }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={subHeaderTitle}>
-              {tierLabel}
-              {authUser?.cancelAtPeriodEnd && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.error100, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Cancelling</span>
-              )}
-              {!authUser?.cancelAtPeriodEnd && authUser?.subscriptionPaused && (
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 6, background: c.copper100, color: c.gilt, letterSpacing: "0.06em", textTransform: "uppercase", marginLeft: 10 }}>Paused</span>
-              )}
-            </div>
-            <div style={subHeaderHint}>
-              {authUser?.cancelAtPeriodEnd
-                ? `Access remains until ${endDateLabel}.`
-                : tier === "starter"
-                  ? `Valid till ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this pack.`
-                  : `Renews ${endDateLabel}. ${daysLeft} ${daysLeft === 1 ? "day" : "days"} left in this cycle.`}
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            {authUser?.cancelAtPeriodEnd ? (
-              <button disabled={cancelLoading} onClick={handleReactivate}
-                style={{ ...successSubtleBtn, opacity: cancelLoading ? 0.6 : 1 }}>
-                {cancelLoading ? "Reactivating..." : "Reactivate"}
-              </button>
-            ) : !confirmCancel ? (
-              <>
-                <button onClick={handlePauseToggle} style={accSubtleBtn} disabled={cancelLoading}>
-                  {authUser?.subscriptionPaused ? "Resume" : "Pause"}
-                </button>
-                <button onClick={() => setConfirmCancel(true)} style={dangerSubtleBtn}>Cancel</button>
-              </>
-            ) : (
-              <>
-                <button onClick={() => setConfirmCancel(false)} style={accSubtleBtn}>Keep plan</button>
-                <button disabled={cancelLoading} onClick={handleConfirmCancel} style={{ ...dangerSolidBtn, opacity: cancelLoading ? 0.6 : 1 }}>
-                  {cancelLoading ? "Cancelling..." : "Yes, cancel"}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-      {cancelMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, margin: 0 }}>{cancelMsg}</p>}
-
-      {/* This period — plan usage bars (no session-quota row; extra credits shown inline) */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={subHeaderTitle}>This period</div>
-          <div style={subHeaderHint}>Completed interviews and resource usage for your active billing period.</div>
-        </div>
-        <UsageThisMonth
-          getAuthHeaders={getAuthHeaders}
-          planName={tier.charAt(0).toUpperCase() + tier.slice(1)}
-        />
-        <ExtraSessionsInfoBox />
-      </div>
-
-      {/* Payment method — paid plans only */}
-      {isPaid && (
-        <div style={{ ...planCardOuter, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={keyValueLabel}>Payment method</div>
-            <div style={keyValueValue}>Razorpay handles every renewal. Update card or UPI from their dashboard.</div>
-          </div>
-          <a href="https://razorpay.com/support/#request/merchant" target="_blank" rel="noopener noreferrer"
-            style={{ ...accSubtleBtn, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 6 }}>
-            Manage on Razorpay
-            <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-          </a>
-        </div>
-      )}
-
-      {/* Payment history */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={subHeaderTitle}>Payment history</div>
-          <div style={subHeaderHint}>Every successful Razorpay charge on your account.</div>
-        </div>
-        {paymentsLoading ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>Loading payment history…</div>
-        ) : payments.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "16px 0" }}>No payments yet.</div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {payments.map((p, i) => (
-              <InvoiceRow key={p.id} payment={p} divider={i < payments.length - 1} />
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Data */}
-      <div style={{ ...planCardOuter }}>
-        <div style={{ marginBottom: 16 }}>
-          <div style={subHeaderTitle}>Data</div>
-          <div style={subHeaderHint}>Export your session history or sign out on this device.</div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", borderBottom: `1px solid ${c.border}`, flexWrap: "wrap" }}>
+    <div style={{
+      background: t.error100, border: `1px solid ${t.errorLine}`, borderRadius: 12, padding: "20px 24px",
+    }}>
+      {!confirmDelete ? (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={keyValueLabel}>Export sessions</div>
-            <div style={keyValueValue}>CSV of every completed session: questions, your answers, scores, and the resume snapshot used.</div>
+            <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
+            <div style={subHeaderHint}>{employer ? "Removes your company account, jobs and conversations. Payment records are kept for tax. A 7-day grace period lets you cancel by logging in." : "Removes your account and all data. A 7-day grace period lets you cancel by logging in."}</div>
           </div>
-          <button type="button" disabled={exporting}
-            onClick={async () => { setExporting(true); try { await onExportCSV(); } finally { setExporting(false); } }}
-            style={{ ...accSubtleBtn, opacity: exporting ? 0.6 : 1 }}>
-            {exporting ? "Exporting…" : "Export CSV"}
-          </button>
+          <Button type="button" variant="destructive" size="sm"
+            onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
+            style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
+            Begin deletion
+          </Button>
         </div>
-
-        {/* Sync credits button removed — balance now updates automatically via
-            Supabase Realtime subscription in DashboardContext. The /api/credit-reconcile
-            endpoint and onReconcileCredits prop are kept as a support escape-hatch
-            but no longer surfaced in the UI for normal users. */}
-
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, padding: "14px 0", flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={keyValueLabel}>Log out</div>
-            <div style={keyValueValue}>Sign out on this device. Other devices stay signed in.</div>
+      ) : (() => {
+        const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
+        // OAuth users skip the password gate (no app password exists).
+        // For everyone else, require a non-empty password before enabling submit.
+        const passwordOk = isOAuthOnlyUser || deletePasswordInput.length > 0;
+        const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
+        return (
+        <div>
+          <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
+          <div style={keyValueValue}>
+            Type your email ({authUser?.email})
+            {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
+            Reversible for 7 days after submit.
           </div>
-          <button type="button" onClick={onLogout} style={accSubtleBtn}>Log out</button>
-        </div>
-      </div>
-
-      {/* Danger zone */}
-      <div style={{ ...planCardOuter, borderColor: "rgba(185,28,28,0.28)" }}>
-        {!confirmDelete ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 700, letterSpacing: "0.18em", color: c.ember, textTransform: "uppercase", marginBottom: 4 }}>Danger zone</div>
-              <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
-              <div style={subHeaderHint}>Removes your account and all data. A 7-day grace period lets you cancel by logging in.</div>
-            </div>
-            <button type="button"
-              onClick={() => { setConfirmDelete(true); setDeleteEmailInput(""); setDeletePasswordInput(""); setDeleteMsg(""); }}
-              style={{ ...dangerSubtleBtn, flexShrink: 0 }}>
-              Begin deletion
-            </button>
-          </div>
-        ) : (() => {
-          const emailMatches = deleteEmailInput.toLowerCase() === (authUser?.email || "").toLowerCase();
-          // OAuth users skip the password gate (no app password exists).
-          // For everyone else, require a non-empty password before enabling submit.
-          const passwordOk = isOAuthOnlyUser || deletePasswordInput.length > 0;
-          const submitDisabled = deleteLoading || !emailMatches || !passwordOk;
-          return (
-          <div>
-            <div style={{ ...keyValueLabel, color: c.ember, marginBottom: 6 }}>Confirm deletion</div>
-            <div style={keyValueValue}>
-              Type your email ({authUser?.email})
-              {isOAuthOnlyUser ? " to confirm" : " and re-enter your password to confirm"}.
-              Reversible for 7 days after submit.
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
-              <input type="email" value={deleteEmailInput}
-                onChange={(e) => setDeleteEmailInput(e.target.value)}
-                aria-label="Confirm email for account deletion"
-                autoComplete="off"
+          {employer && <EmployerDeletionNotice facts={employer} />}
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12 }}>
+            <input type="email" value={deleteEmailInput}
+              onChange={(e) => setDeleteEmailInput(e.target.value)}
+              aria-label="Confirm email for account deletion"
+              autoComplete="off"
+              style={{
+                fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
+                border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
+                minWidth: 0, width: "100%", minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
+              }} />
+            {!isOAuthOnlyUser && (
+              <input type="password" value={deletePasswordInput}
+                onChange={(e) => setDeletePasswordInput(e.target.value)}
+                aria-label="Re-enter password to confirm account deletion"
+                placeholder="Re-enter your password"
+                autoComplete="current-password"
                 style={{
-                  fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
-                  border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                  outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
+                  fontFamily: font.ui, fontSize: "clamp(13px, calc(13px + (768px - 100vw) * 1000), 16px)", color: c.ink, background: c.graphite,
+                  border: `1px solid ${t.errorLine}`, borderRadius: 9, padding: "10px 14px",
+                  minWidth: 0, width: "100%", minHeight: "max(40px, var(--coarse-min, 0px))", boxSizing: "border-box",
                 }} />
-              {!isOAuthOnlyUser && (
-                <input type="password" value={deletePasswordInput}
-                  onChange={(e) => setDeletePasswordInput(e.target.value)}
-                  aria-label="Re-enter password to confirm account deletion"
-                  placeholder="Re-enter your password"
-                  autoComplete="current-password"
-                  style={{
-                    fontFamily: font.ui, fontSize: 13, color: c.ivory, background: c.graphite,
-                    border: `1px solid rgba(185,28,28,0.3)`, borderRadius: 9, padding: "10px 14px",
-                    outline: "none", minWidth: 0, width: "100%", minHeight: 40, boxSizing: "border-box",
-                  }} />
-              )}
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
-                <button type="button" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</button>
-                <button type="button"
-                  disabled={submitDisabled}
-                  onClick={handleConfirmDelete}
-                  style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
-                  {deleteLoading ? "Deleting…" : "Confirm delete"}
-                </button>
-              </div>
+            )}
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginTop: 4 }}>
+              <Button type="button" variant="outline" size="sm" onClick={() => { setConfirmDelete(false); setDeleteEmailInput(""); setDeletePasswordInput(""); }} style={accSubtleBtn}>Keep account</Button>
+              <Button type="button" variant="destructive" size="sm"
+                disabled={submitDisabled}
+                onClick={handleConfirmDelete}
+                style={{ ...dangerSolidBtn, opacity: submitDisabled ? 0.45 : 1 }}>
+                {deleteLoading ? "Deleting…" : "Confirm delete"}
+              </Button>
             </div>
-            {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
           </div>
-          );
-        })()}
-      </div>
+          {deleteMsg && <p style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, marginTop: 10, marginBottom: 0 }}>{deleteMsg}</p>}
+        </div>
+        );
+      })()}
     </div>
   );
 });
 
-/* ═══════════════════════════════════════════════════════════════
-   REFERRAL SECTION
-   ═══════════════════════════════════════════════════════════════ */
-
-interface ReferralInviteRow {
-  id: string;
-  name: string;
-  email: string;
-  status: "pending" | "redeemed" | "rewarded";
-  createdAt: string;
-}
-
-
-export function ReferralSection({ showToast }: { showToast: (msg: string) => void }) {
-  const { user } = useAuth();
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-  const [stats, setStats] = useState({ total: 0, redeemed: 0, rewarded: 0 });
-  const [invites, setInvites] = useState<ReferralInviteRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    (async () => {
-      try {
-        const headers = await authHeaders();
-        const [codeRes, invitesRes] = await Promise.all([
-          fetch("/api/referral", { headers }),
-          fetch("/api/referral-invites", { headers }),
-        ]);
-        if (codeRes.ok) {
-          const data = await codeRes.json();
-          setReferralCode(data.code);
-          setStats(data.stats);
-        }
-        if (invitesRes.ok) {
-          const data = await invitesRes.json();
-          if (Array.isArray(data.invites)) setInvites(data.invites as ReferralInviteRow[]);
-        }
-      } catch {
-        // silent
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [user?.id]);
-
-  const referralLink = referralCode ? referralSignupUrl(referralCode) : "";
-  // Display the real, working link (sans protocol) rather than a prettier
-  // hirestepx.com/r/<code> short link that has no redirect behind it — a link
-  // we show must be a link that actually resolves.
-  const displayLink = referralLink.replace(/^https?:\/\//, "");
-
-  const handleCopy = () => {
-    if (!referralLink) return;
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    showToast("Referral link copied!");
-    setTimeout(() => setCopied(false), 2000);
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "copy" });
-  };
-
-  const handleShareWhatsApp = () => {
-    if (!referralLink) return;
-    const text = `Hey! I've been practising interviews on HireStepX with an AI that scores your answers. Sign up with my link and we each get a free session: ${referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "whatsapp" });
-  };
-
-  const handleShareEmail = () => {
-    if (!referralLink) return;
-    const subject = "Try HireStepX - AI Mock Interviews";
-    const body = `Hey!\n\nI've been using HireStepX to practice for interviews with AI interviewers. It gives detailed feedback on STAR method, speech analytics, and more.\n\nSign up with my link and we each get a free practice session: ${referralLink}`;
-    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
-    captureClientEvent("referral_invite_sent", { surface: "settings", channel: "email" });
-  };
-
-  const sectionLabel: React.CSSProperties = { fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.stone, letterSpacing: "0.08em", textTransform: "uppercase" };
-
-  const linkBtn: React.CSSProperties = {
-    fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory,
-    background: "transparent", border: "none",
-    padding: "10px 8px", cursor: "pointer",
-  };
-
-  if (loading) {
-    return (
-      <EditorialCard>
-        <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>Loading referral info...</span>
-      </EditorialCard>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 28, maxWidth: 880 }}>
-      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <SectionHead
-        title="Bring a friend — you both get a free session"
-        desc={`When a friend signs up with your link, you each get a free practice session, credited instantly. ${stats.rewarded} earned so far.`}
-      />
-
-      <EditorialCard>
-        <div className="settings-referral-grid" style={{ display: "grid", gap: 28, alignItems: "start" }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={sectionLabel}>Your referral link</div>
-            <div style={{
-              marginTop: 12,
-              display: "inline-flex", alignItems: "center",
-              padding: "14px 18px", borderRadius: 12,
-              background: c.creamSoft, border: `1px solid ${c.border}`,
-              fontFamily: font.mono, fontSize: 15, color: c.ivory,
-              maxWidth: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-            }}>
-              {displayLink ? (
-                <span style={{ color: c.gilt }}>{displayLink}</span>
-              ) : "—"}
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
-              <button type="button" onClick={handleCopy} style={indigoPrimaryBtn}>
-                {copied ? "Copied!" : "Copy link"}
-              </button>
-              <button type="button" onClick={handleShareWhatsApp} style={indigoGhostBtn}>Share on WhatsApp</button>
-              <button type="button" onClick={handleShareEmail} style={linkBtn}>Email a friend</button>
-            </div>
-          </div>
-
-          <div style={{ padding: "20px 22px", borderRadius: 12, background: c.creamSoft, border: `1px solid ${c.border}` }} aria-label="Referral rewards">
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, fontWeight: 600 }}>Free sessions earned</span>
-              <span style={{ fontFamily: font.mono, fontSize: 18, fontWeight: 700, color: c.gilt }}>{stats.rewarded}</span>
-            </div>
-            <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 10, lineHeight: 1.5 }}>
-              {stats.redeemed} friend{stats.redeemed === 1 ? "" : "s"} joined with your link. You both get a free session the moment they sign up — no purchase needed.
-            </div>
-          </div>
-        </div>
-      </EditorialCard>
-      </div>
-
-      <EditorialCard>
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 700, color: c.ivory }}>Your invites</div>
-          <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 4, lineHeight: 1.5 }}>
-            We tell you the moment a friend joins with your link.
-          </div>
-        </div>
-        {invites.length === 0 ? (
-          <div style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, padding: "20px 0" }}>
-            No invites yet. Share your link to see them here.
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            {invites.map((inv, i) => (
-              <ReferRow key={inv.id} invite={inv} divider={i < invites.length - 1} />
-            ))}
-          </div>
-        )}
-      </EditorialCard>
-    </div>
-  );
-}
-
-function ReferRow({ invite, divider }: { invite: ReferralInviteRow; divider: boolean }) {
-  const initials = invite.name
-    .split(/\s+/)
-    .map(w => w[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase() || "?";
-  const ts = invite.createdAt ? relativeTime(invite.createdAt) : "";
-  const tone = invite.status === "rewarded"
-    ? { label: "Rewarded", bg: "#DCFCE7", fg: c.sage, border: "rgba(21,128,61,0.28)" }
-    : invite.status === "redeemed"
-      ? { label: "Joined", bg: "#E5E2F2", fg: c.indigo, border: "rgba(49,46,129,0.28)" }
-      : { label: "Pending", bg: "#FEF3C7", fg: "#A16207", border: "rgba(161,98,7,0.28)" };
-  return (
-    <div className="settings-refer-row" style={{
-      display: "grid", gap: 16, alignItems: "center",
-      padding: "14px 0", borderBottom: divider ? `1px solid ${c.border}` : "none",
-    }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: "50%",
-        background: c.indigo, color: c.cream,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: font.ui, fontSize: 12, fontWeight: 700, letterSpacing: "0.04em",
-      }}>{initials}</div>
-      <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.name}</div>
-        <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{invite.email}</div>
-      </div>
-      <div style={{ fontFamily: font.ui, fontSize: 12, color: c.stone }}>{ts}</div>
-      <div style={{
-        fontFamily: font.ui, fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase",
-        color: tone.fg, background: tone.bg, border: `1px solid ${tone.border}`,
-        borderRadius: 6, padding: "4px 8px",
-      }}>{tone.label}</div>
-    </div>
-  );
-}
-
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (!Number.isFinite(then)) return "";
-  const diff = Date.now() - then;
-  const day = 86_400_000;
-  const days = Math.floor(diff / day);
-  if (days < 1) return "today";
-  if (days < 7) return `${days}d ago`;
-  if (days < 30) return `${Math.floor(days / 7)}w ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
-}
 

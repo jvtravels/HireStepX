@@ -5,7 +5,10 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth, storePendingReferralCode } from "../AuthContext";
+import { Button } from "@/components/ui/button";
+import { useAuth, storePendingReferralCode, storePendingNextTarget, storePendingEmployerProfile, storePendingConsent, clearPendingConsent } from "../AuthContext";
+import { isPlausibleWebsite, WEBSITE_FORMAT_MESSAGE } from "../employer/_companyProfileHelpers";
+import { emailDomain, isFreeMailDomain } from "../../server-handlers/_employer-trust";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -28,6 +31,7 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { ResendStatus, resendButtonLabel, useResendVerification } from "./ResendVerification";
 import {
   buildAuthLink,
   computeAuthRedirect,
@@ -53,6 +57,22 @@ const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 const NAME_MAX_LENGTH = 40;
 const EMAIL_MAX_LENGTH = 254;
 const PASSWORD_MAX_LENGTH = 128;
+const COMPANY_NAME_MAX_LENGTH = 200;
+
+const RESEND_BUTTON_BASE_STYLE: React.CSSProperties = {
+  minWidth: 200,
+  height: "auto",
+  borderRadius: 8,
+  padding: "12px 20px",
+  fontFamily: f.sans,
+  fontSize: 16,
+  gap: 10,
+};
+const RESEND_BUTTON_SECONDARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 500, boxShadow: shadows.card };
+const RESEND_BUTTON_PRIMARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 600, boxShadow: shadows.cta };
+// Shown next to the affirmation; covered by the same consent version (data/legal-versions.ts).
+const EMPLOYER_DISCOVERY_NOTICE =
+  "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";
 
 export default function Signup() {
   const router = useRouter();
@@ -62,12 +82,15 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [website, setWebsite] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [termsAttempted, setTermsAttempted] = useState(false);
   const [nameTouched, setNameTouched] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [passwordTouched, setPasswordTouched] = useState(false);
+  const [companyNameTouched, setCompanyNameTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleInFlight, setGoogleInFlight] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,73 +108,54 @@ export default function Signup() {
   // Only computed when the user has touched the field and value is non-empty.
   const emailSuggestion = emailTouched ? suggestEmailCorrection(email) : null;
 
-  // Resend-verification state on the success screen.
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const [resending, setResending] = useState(false);
-  const [resendError, setResendError] = useState<string | null>(null);
+  // Resend-verification on the success screen (shared with Login's expired-link state).
+  const resend = useResendVerification(email);
 
-  // Cooldown timer
-  useEffect(() => {
-    if (resendCooldown <= 0) return;
-    const id = setInterval(
-      () => setResendCooldown((s) => Math.max(0, s - 1)),
-      1000,
-    );
-    return () => clearInterval(id);
-  }, [resendCooldown]);
-
-  const handleResendVerification = useCallback(async () => {
-    if (resendCooldown > 0 || resending) return;
-    setResending(true);
-    setResendError(null);
-    try {
-      const cleanEmail = sanitizeEmail(email);
-      const res = await fetch("/api/send-welcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, name: name.trim() }),
-      });
-      if (!isMounted.current) return;
-      if (res.status === 429) {
-        setResendError(
-          "Too many requests. Try again in a few minutes.",
-        );
-      } else if (!res.ok) {
-        setResendError("Couldn't send the email. Try again in a moment.");
-      } else {
-        setResendCooldown(60);
-      }
-    } catch {
-      if (!isMounted.current) return;
-      setResendError("Couldn't reach our servers. Check your connection.");
-    } finally {
-      if (isMounted.current) setResending(false);
-    }
-  }, [resendCooldown, resending, email, name, isMounted]);
+  // Plan + redirect param preservation
+  const planParam = searchParams?.get("plan") ?? null;
+  const nextParam = searchParams?.get("next") ?? null;
+  // An employer reaches /signup via /login?next=/employer → "Sign up", or the
+  // homepage nav's employer-context links — same signal Login.tsx uses for
+  // its own copy swap. Collecting the company name (+ website) right here
+  // means a new employer lands on an already-approved dashboard instead of
+  // the separate CompanyOnboarding step after signup.
+  const isEmployerFlow = !!nextParam?.startsWith("/employer");
 
   // Validation
+  // Employers don't give a personal name — the company name (below) doubles
+  // as the account's display name, so "Your name" is skipped entirely for
+  // that flow rather than just reordered.
   const nameV = validateName(name);
   const emailV = validateEmail(email);
   const passwordV = validateSignupPassword(password);
+  const companyNameValid = !isEmployerFlow || companyName.trim().length >= 2;
+  const websiteValid = !isEmployerFlow || !website.trim() || isPlausibleWebsite(website);
+  // Employers must register with a company-domain email; the sign-in email is
+  // what proves they belong to the company (server enforces it too).
+  const workEmailValid = !isEmployerFlow || !emailV.valid || !isFreeMailDomain(emailDomain(email));
   const canSubmit =
-    nameV.valid &&
+    (isEmployerFlow || nameV.valid) &&
     emailV.valid &&
     passwordV.valid &&
+    companyNameValid &&
+    websiteValid &&
+    workEmailValid &&
     termsAccepted &&
     !loading;
 
   const nameError = nameTouched ? nameV.message : null;
-  const emailError = emailTouched ? emailV.message : null;
+  const emailError = emailTouched
+    ? emailV.message ||
+      (workEmailValid ? null : "Use your work email (e.g. you@yourcompany.com) — personal email addresses can't register a company.")
+    : null;
   const passwordError = passwordTouched
     ? passwordV.message ||
       (passwordHasEdgeWhitespace(password)
         ? "Password has leading or trailing spaces — check your paste."
         : null)
     : null;
-
-  // Plan + redirect param preservation
-  const planParam = searchParams?.get("plan") ?? null;
-  const nextParam = searchParams?.get("next") ?? null;
+  const companyNameError =
+    companyNameTouched && !companyNameValid ? "Enter your company's name." : null;
 
   const computeRedirect = useCallback(
     () =>
@@ -172,7 +176,15 @@ export default function Signup() {
   }, [isLoggedIn, user, router, computeRedirect]);
 
   useEffect(() => {
-    trackAuth(loginViewedEvent("signup"));
+    trackAuth(
+      loginViewedEvent("signup", {
+        source: searchParams?.get("source") ?? undefined,
+        company: searchParams?.get("company") ?? undefined,
+        role: searchParams?.get("role") ?? undefined,
+        focus: searchParams?.get("focus") ?? undefined,
+      }),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Capture a referral code from the signup link (/signup?ref=HSX-XXXXXX) so it
@@ -180,7 +192,8 @@ export default function Signup() {
   // applied here — the user has no session yet.
   useEffect(() => {
     storePendingReferralCode(searchParams?.get("ref") ?? null);
-  }, [searchParams]);
+    storePendingNextTarget(nextParam);
+  }, [searchParams, nextParam]);
 
   useEffect(() => {
     if (!showPassword) return;
@@ -209,9 +222,13 @@ export default function Signup() {
 
     const start = Date.now();
     try {
+      // Continuing with Google on this page is the signup affirmation (see the
+      // footer text); the ledger row is written on the first session.
+      storePendingConsent();
       const result = await loginWithGoogle(computeRedirect());
       if (!isMounted.current) return;
       if (!result.success) {
+        clearPendingConsent();
         setError(mapAuthError(result.error));
         trackAuth({
           type: "login_failed",
@@ -239,9 +256,10 @@ export default function Signup() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      setNameTouched(true);
+      if (!isEmployerFlow) setNameTouched(true);
       setEmailTouched(true);
       setPasswordTouched(true);
+      setCompanyNameTouched(true);
       setTermsAttempted(true);
       // Honeypot trip — silently no-op + fake success so bots get nothing
       // useful back. Don't even fire analytics — these aren't real submits.
@@ -296,11 +314,20 @@ export default function Signup() {
       // disposable-email blocklist.
 
       const cleanEmail = sanitizeEmail(email);
+      if (isEmployerFlow) {
+        storePendingEmployerProfile(companyName, website);
+      }
       trackAuth({ type: "login_method_selected", method: "email" });
       trackAuth({ type: "login_submitted", method: "email" });
       const start = Date.now();
       try {
-        const result = await signup(cleanEmail, name.trim(), password);
+        const result = await signup(
+          cleanEmail,
+          isEmployerFlow ? companyName.trim() : name.trim(),
+          password,
+          isEmployerFlow ? "/employer" : undefined,
+          isEmployerFlow ? { companyName, website } : undefined,
+        );
         if (!isMounted.current) return;
         if (!result.success) {
           setError(mapAuthError(result.error));
@@ -329,7 +356,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, website],
   );
 
   const handlePasswordVisibility = () => {
@@ -341,6 +368,7 @@ export default function Signup() {
 
   // Post-signup state: "Check your email" instead of the form
   if (signupSent) {
+    const emailProvider = detectEmailProvider(email);
     return (
       <>
         <style>{AUTH_STYLES}</style>
@@ -389,18 +417,16 @@ export default function Signup() {
             <div style={{ maxWidth: 480 }}>
               <h1
                 style={{
-                  fontFamily: f.serif,
-                  fontSize: "clamp(2rem, 4.4vw, 3.5rem)",
-                  fontWeight: 400,
+                  fontFamily: f.sans,
+                  fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
+                  fontWeight: 600,
                   letterSpacing: "-0.02em",
                   margin: 0,
                   color: t.coal,
                 }}
               >
                 Check your{" "}
-                <em style={{ fontStyle: "italic", color: t.copper }}>
-                  email
-                </em>
+                email
                 .
               </h1>
               <p
@@ -428,14 +454,11 @@ export default function Signup() {
                   alignItems: "center",
                 }}
               >
-                {(() => {
-                  const provider = detectEmailProvider(email);
-                  if (!provider) return null;
-                  return (
+                {emailProvider && (
                     <a
-                      href={provider.url}
+                      href={emailProvider.url}
                       target="_blank"
-                      rel="noopener"
+                      rel="noopener noreferrer"
                       style={{
                         display: "inline-flex",
                         alignItems: "center",
@@ -447,14 +470,14 @@ export default function Signup() {
                         color: t.cream,
                         background: t.indigo,
                         border: "1px solid transparent",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         padding: "12px 20px",
                         textDecoration: "none",
                         boxShadow: shadows.cta,
                         minWidth: 200,
                       }}
                     >
-                      Open {provider.name}
+                      Open {emailProvider.name}
                       <svg
                         width="14"
                         height="14"
@@ -470,91 +493,44 @@ export default function Signup() {
                         <polyline points="7 7 17 7 17 17" />
                       </svg>
                     </a>
-                  );
-                })()}
-
-                {/* Resend verification email — styled to match the white
-                    "Resend link" button on /forgot-password (sent state)
-                    so the two transactional-email flows feel consistent.
-                    60s cooldown matches the server rate limit. */}
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  disabled={resendCooldown > 0 || resending}
-                  aria-busy={resending || undefined}
-                  style={{
-                    width: "100%",
-                    fontFamily: f.sans,
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: t.coal,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 10,
-                    padding: "14px 18px",
-                    cursor:
-                      resendCooldown > 0 || resending
-                        ? "not-allowed"
-                        : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 10,
-                    boxShadow: shadows.card,
-                    opacity: resendCooldown > 0 || resending ? 0.6 : 1,
-                  }}
-                >
-                  {resending ? (
-                    <>
-                      <Spinner />
-                      Resending…
-                    </>
-                  ) : resendCooldown > 0 ? (
-                    <span aria-live="polite">
-                      Resend in {resendCooldown}s
-                    </span>
-                  ) : (
-                    <span aria-live="polite">Resend verification email</span>
-                  )}
-                </button>
-                {resendError && (
-                  <p
-                    role="alert"
-                    style={{
-                      fontFamily: f.sans,
-                      fontSize: 12,
-                      color: t.error,
-                      margin: 0,
-                      textAlign: "center",
-                    }}
-                  >
-                    {resendError}
-                  </p>
                 )}
 
-                <button
+                {/* Resend verification email. When we can deep-link to the
+                    provider's webmail, that link is the primary action and
+                    this is a secondary fallback — styled to match the white
+                    "Resend link" button on /forgot-password (sent state).
+                    When there's no provider link, this is the only action
+                    on screen, so it takes the same solid-indigo primary
+                    styling used for every other primary CTA in the app.
+                    60s cooldown matches the server rate limit. */}
+                <Button
                   type="button"
+                  variant={emailProvider ? "outline" : "default"}
+                  size="lg"
+                  onClick={resend.send}
+                  disabled={resend.cooldown > 0 || resend.sending}
+                  aria-busy={resend.sending || undefined}
+                  style={emailProvider ? RESEND_BUTTON_SECONDARY_STYLE : RESEND_BUTTON_PRIMARY_STYLE}
+                >
+                  {resend.sending && <Spinner />}
+                  {resendButtonLabel(resend.sending, resend.cooldown)}
+                </Button>
+                <ResendStatus message={resend.message} />
+
+                <Button
+                  type="button"
+                  variant="link"
                   onClick={() => setSignupSent(false)}
-                  style={{
-                    fontFamily: f.sans,
-                    fontSize: 14,
-                    fontWeight: 500,
-                    color: t.indigo,
-                    background: "transparent",
-                    border: "none",
-                    textDecoration: "none",
-                    cursor: "pointer",
-                    padding: 0,
-                  }}
+                  style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 500, color: t.indigo }}
                 >
                   <span className="hsx-link-indigo">
                     Wrong email? Change it
                   </span>
-                </button>
+                </Button>
                 <p
                   style={{
                     fontFamily: f.mono,
-                    fontSize: 11,
+                    fontSize: 12,
                     textTransform: "uppercase",
                     letterSpacing: "0.12em",
                     color: t.inkFaint,
@@ -614,6 +590,9 @@ export default function Signup() {
               href={buildAuthLink("/login", searchParams)}
               className="hsx-link-indigo"
               style={{
+                display: "inline-flex",
+                alignItems: "center",
+                minHeight: "max(24px, var(--coarse-min, 0px))",
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -648,27 +627,29 @@ export default function Signup() {
             <h1
               id="signup-heading"
               style={{
-                fontFamily: f.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: f.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
                 color: t.coal,
               }}
             >
-              Practise like the{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                real thing
-              </em>
-              .
+              {isEmployerFlow ? (
+                <>
+                  Hire on{" "}
+                  proof
+                  , not promises.
+                </>
+              ) : (
+                <>
+                  Practise like the{" "}
+                  real thing
+                  .
+                </>
+              )}
             </h1>
             <p
               className="hsx-login-subtitle"
@@ -682,8 +663,9 @@ export default function Signup() {
                 textWrap: "balance",
               }}
             >
-              Start practising. Improve with every answer. One step closer to
-              your next interview.
+              {isEmployerFlow
+                ? "Post a role and meet AI-interviewed candidates — already scored and ranked."
+                : "Start practising. Improve with every answer. One step closer to your next interview."}
             </p>
           </div>
 
@@ -691,54 +673,51 @@ export default function Signup() {
             className="hsx-login-form"
             style={{ width: "100%", maxWidth: 540 }}
           >
-            <button
-              type="button"
-              className="hsx-login-google"
-              onClick={handleGoogle}
-              disabled={googleInFlight || loading}
-              aria-busy={googleInFlight ? "true" : "false"}
-              style={{
-                width: "100%",
-                fontFamily: f.sans,
-                fontSize: 15,
-                fontWeight: 500,
-                color: t.coal,
-                background: t.white,
-                border: `1px solid ${t.line}`,
-                borderRadius: 10,
-                padding: "14px 18px",
-                cursor:
-                  googleInFlight || loading ? "not-allowed" : "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 12,
-                boxShadow: shadows.card,
-                opacity: googleInFlight || loading ? 0.7 : 1,
-                whiteSpace: "nowrap",
-              }}
-            >
-              <GoogleIcon />
-              {googleInFlight ? "Opening Google…" : "Continue with Google"}
-            </button>
+            {!isEmployerFlow && (
+              <>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="lg"
+                  className="hsx-login-google"
+                  onClick={handleGoogle}
+                  disabled={googleInFlight || loading}
+                  aria-busy={googleInFlight ? "true" : "false"}
+                  style={{
+                    width: "100%",
+                    height: "auto",
+                    fontFamily: f.sans,
+                    fontSize: 16,
+                    fontWeight: 500,
+                    gap: 12,
+                    padding: "16px 18px",
+                    boxShadow: shadows.card,
+                    opacity: googleInFlight || loading ? 0.7 : 1,
+                  }}
+                >
+                  <GoogleIcon />
+                  {googleInFlight ? "Opening Google…" : "Continue with Google"}
+                </Button>
 
-            <div
-              className="hsx-login-divider"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                margin: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-              <span
-                style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
-              >
-                or
-              </span>
-              <div style={{ flex: 1, height: 1, background: t.line }} />
-            </div>
+                <div
+                  className="hsx-login-divider"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 14,
+                    margin: "20px 0",
+                  }}
+                >
+                  <div style={{ flex: 1, height: 1, background: t.line }} />
+                  <span
+                    style={{ fontFamily: f.sans, fontSize: 13, color: t.inkFaint }}
+                  >
+                    or
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: t.line }} />
+                </div>
+              </>
+            )}
 
             {error && (
               <div
@@ -768,28 +747,70 @@ export default function Signup() {
               className="hsx-login-form-fields"
               style={{ display: "flex", flexDirection: "column", gap: 18 }}
             >
+              {isEmployerFlow ? (
+                <Field
+                  label="Company name"
+                  type="text"
+                  name="company-name"
+                  value={companyName}
+                  onChange={(v) => {
+                    setCompanyName(v);
+                    if (error) setError(null);
+                  }}
+                  onFocus={() => setCompanyNameTouched(true)}
+                  onAutofill={() => setCompanyNameTouched(true)}
+                  autoComplete="organization"
+                  placeholder="Acme Pvt Ltd"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus={shouldAutoFocus}
+                  enterKeyHint="next"
+                  maxLength={COMPANY_NAME_MAX_LENGTH}
+                  invalid={!!error || (companyNameTouched && !companyNameValid)}
+                  errorMessage={companyNameError}
+                />
+              ) : (
+                <Field
+                  label="Your name"
+                  type="text"
+                  name="name"
+                  value={name}
+                  onChange={(v) => {
+                    setName(v);
+                    if (error) setError(null);
+                  }}
+                  onFocus={() => setNameTouched(true)}
+                  onAutofill={() => setNameTouched(true)}
+                  autoComplete="name"
+                  placeholder="Rahul Sharma"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus={shouldAutoFocus}
+                  enterKeyHint="next"
+                  maxLength={NAME_MAX_LENGTH}
+                  invalid={!!error || (nameTouched && !!nameV.message)}
+                  errorMessage={nameError}
+                />
+              )}
+              {isEmployerFlow && (
+                <Field
+                  label="Company website (optional)"
+                  type="text"
+                  name="company-website"
+                  value={website}
+                  onChange={(v) => {
+                    setWebsite(v);
+                    if (error) setError(null);
+                  }}
+                  autoComplete="url"
+                  placeholder="acme.com"
+                  inputMode="url"
+                  enterKeyHint="next"
+                  maxLength={300}
+                  invalid={!websiteValid}
+                  errorMessage={websiteValid ? null : WEBSITE_FORMAT_MESSAGE}
+                />
+              )}
               <Field
-                label="Your name"
-                type="text"
-                name="name"
-                value={name}
-                onChange={(v) => {
-                  setName(v);
-                  if (error) setError(null);
-                }}
-                onFocus={() => setNameTouched(true)}
-                onAutofill={() => setNameTouched(true)}
-                autoComplete="name"
-                placeholder="Rahul Sharma"
-                // eslint-disable-next-line jsx-a11y/no-autofocus
-                autoFocus={shouldAutoFocus}
-                enterKeyHint="next"
-                maxLength={NAME_MAX_LENGTH}
-                invalid={!!error || (nameTouched && !!nameV.message)}
-                errorMessage={nameError}
-              />
-              <Field
-                label="Email Address"
+                label={isEmployerFlow ? "Work email" : "Email Address"}
                 type="email"
                 name="email"
                 value={email}
@@ -800,11 +821,11 @@ export default function Signup() {
                 onFocus={() => setEmailTouched(true)}
                 onAutofill={() => setEmailTouched(true)}
                 autoComplete="email"
-                placeholder="rahul@example.com"
+                placeholder={isEmployerFlow ? "you@yourcompany.com" : "rahul@example.com"}
                 inputMode="email"
                 enterKeyHint="next"
                 maxLength={EMAIL_MAX_LENGTH}
-                invalid={!!error || (emailTouched && !!emailV.message)}
+                invalid={!!error || (emailTouched && (!!emailV.message || !workEmailValid))}
                 errorMessage={emailError}
               />
 
@@ -821,14 +842,17 @@ export default function Signup() {
                   }}
                 >
                   Did you mean{" "}
-                  <button
+                  <Button
                     type="button"
+                    variant="link"
+                    size="sm"
                     onClick={() => setEmail(emailSuggestion)}
                     className="hsx-link-indigo"
                     style={{
                       background: "transparent",
                       border: "none",
                       padding: 0,
+                      height: "auto",
                       cursor: "pointer",
                       color: t.indigo,
                       fontWeight: 600,
@@ -837,7 +861,7 @@ export default function Signup() {
                     }}
                   >
                     {emailSuggestion}
-                  </button>
+                  </Button>
                   ?
                 </p>
               )}
@@ -895,26 +919,20 @@ export default function Signup() {
                   }
                   errorMessage={passwordError}
                   rightSlot={
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon-xs"
                       className="hsx-eye-toggle"
                       onClick={handlePasswordVisibility}
                       aria-label={
                         showPassword ? "Hide password" : "Show password"
                       }
                       aria-pressed={showPassword}
-                      style={{
-                        background: "transparent",
-                        border: "none",
-                        color: t.inkSoft,
-                        cursor: "pointer",
-                        padding: 4,
-                        display: "flex",
-                        alignItems: "center",
-                      }}
+                      style={{ color: t.inkSoft }}
                     >
                       <EyeIcon open={showPassword} />
-                    </button>
+                    </Button>
                   }
                 />
                 {password.length > 0 && (
@@ -936,9 +954,14 @@ export default function Signup() {
                     setTermsAccepted(v);
                     if (v && termsAttempted) setTermsAttempted(false);
                   }}
-                  label="I agree to the Terms of Use and Privacy Policy"
+                  label="I am 18 or older and agree to the Terms of Use and Privacy Policy"
                   description="Required. You can review them in the footer."
                 />
+                {!isEmployerFlow && (
+                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
+                    {EMPLOYER_DISCOVERY_NOTICE}
+                  </p>
+                )}
                 {termsAttempted && !termsAccepted && (
                   <p
                     role="alert"
@@ -957,49 +980,44 @@ export default function Signup() {
 
 
               {(() => {
-                // Three states: enabled CTA, in-flight (loading), or
-                // ghost-disabled (something incomplete). The ghost treatment
-                // signals "no action available" without looking dimmed-active.
-                const isGhost = !canSubmit && !loading;
-                const tooltip = isGhost
-                  ? !nameV.valid
-                    ? "Enter your name to continue"
+                const primaryFieldInvalid = isEmployerFlow ? !companyNameValid : !nameV.valid;
+                const tooltip = canSubmit
+                  ? undefined
+                  : primaryFieldInvalid
+                    ? isEmployerFlow
+                      ? "Enter your company name to continue"
+                      : "Enter your name to continue"
                     : !emailV.valid
                       ? "Enter a valid email to continue"
                       : !passwordV.valid
                         ? "Choose a password that meets the requirements"
                         : !termsAccepted
                           ? "Accept the Terms to continue"
-                          : "Complete the form to continue"
-                  : undefined;
+                          : "Complete the form to continue";
                 return (
-                  <button
+                  <Button
                     type="submit"
+                    variant="default"
+                    size="lg"
                     disabled={!canSubmit}
                     aria-busy={loading ? "true" : "false"}
                     title={tooltip}
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
+                      height: "auto",
                       fontFamily: f.sans,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 600,
-                      color: isGhost ? t.inkFaint : t.cream,
-                      background: isGhost ? t.creamSoft : t.indigo,
-                      border: isGhost
-                        ? `1px solid ${t.line}`
-                        : "1px solid transparent",
-                      borderRadius: 10,
+                      borderRadius: 8,
                       padding: "16px 18px",
-                      cursor: canSubmit ? "pointer" : "not-allowed",
                       marginTop: 8,
-                      boxShadow: isGhost ? "none" : shadows.cta,
+                      boxShadow: `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
                       letterSpacing: 0.1,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 10,
-                      opacity: loading ? 0.95 : 1,
                     }}
                   >
                     {loading ? (
@@ -1009,7 +1027,7 @@ export default function Signup() {
                       </>
                     ) : (
                       <>
-                        Start practising free
+                        {isEmployerFlow ? "Create company account" : "Start practising free"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"
@@ -1027,21 +1045,22 @@ export default function Signup() {
                         </svg>
                       </>
                     )}
-                  </button>
+                  </Button>
                 );
               })()}
-              {/* Trust strip — mirrors homepage social proof, sets expectation before first session */}
-              <p
-                style={{
-                  margin: "12px 0 0",
-                  textAlign: "center",
-                  fontSize: 12,
-                  color: t.inkFaint,
-                  letterSpacing: "0.01em",
-                }}
-              >
-                2 sessions free · No card needed · ₹9 per session after
-              </p>
+              {!isEmployerFlow && (
+                <p
+                  style={{
+                    margin: "12px 0 0",
+                    textAlign: "center",
+                    fontSize: 12,
+                    color: t.inkFaint,
+                    letterSpacing: "0.01em",
+                  }}
+                >
+                  2 sessions free · No card needed
+                </p>
+              )}
             </form>
           </div>
         </main>
@@ -1059,16 +1078,19 @@ export default function Signup() {
             margin: "0 auto",
           }}
         >
-          By creating an account you agree to our{" "}
+          By creating an account you confirm you are 18 or older and agree to our{" "}
           <a
             href="/terms"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Terms of Use
@@ -1077,12 +1099,15 @@ export default function Signup() {
           <a
             href="/privacy"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
             className="hsx-link-muted"
             style={{
               color: t.inkSoft,
               textDecoration: "underline",
               fontWeight: 500,
+              display: "inline-block",
+              padding: "12px 4px",
+              margin: "-12px -4px",
             }}
           >
             Privacy Policy

@@ -13,6 +13,21 @@ import type { PanelMember } from "./InterviewComponents";
 import { PaceMeter } from "./InterviewRobustness";
 import { stripProsodyMarkup } from "./_prosody";
 import { computeCampusReadiness, type CpChipState } from "./_campus-readiness";
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Spinner } from "@/components/ui/spinner";
+import { ThinkingOrb } from "thinking-orbs";
+import { useModalDialog } from "./useModalDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 /* Bridge aliases removed — all inline-style call sites now reference
    `e.*` and `ef.*` directly from interviewTokens.ts. The rebrand is
@@ -35,9 +50,9 @@ export { NegotiationCoachingCard, DealSummaryCard, NegotiationLiveDashboard, Ann
    otherwise each render creates new style object references and memo is useless. */
 
 const stStackStyle: React.CSSProperties = { position: "fixed", top: "max(12px, env(safe-area-inset-top, 0px))", left: "50%", transform: "translateX(-50%)", zIndex: 100, display: "flex", flexDirection: "column", gap: 8, maxWidth: 500, width: "min(90%, calc(100vw - 32px))" };
-const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(180,83,9,0.14)", border: "1px solid rgba(180,83,9,0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
+const stTabToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "oklch(0.359 0.135 278.697 / 0.14)", border: "1px solid oklch(0.359 0.135 278.697 / 0.25)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
 const stOfflineToast: React.CSSProperties = { padding: "8px 16px", borderRadius: 10, background: "rgba(185,28,28,0.18)", border: "1px solid rgba(185,28,28,0.30)", display: "flex", alignItems: "center", gap: 8, backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" };
-const stGiltText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.copper };
+const stGiltText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.indigo };
 const stEmberText: React.CSSProperties = { fontFamily: ef.sans, fontSize: 12, color: e.error };
 /* Persistent TTS-failed banner — distinct from the auto-clearing ttsError
    toast. Non-dismissable because the failure is permanent until page reload. */
@@ -60,29 +75,29 @@ export const StatusToasts = memo(function StatusToasts({ tabConflict, isOffline,
   const showTts = !!(ttsError && ttsError.length > 0);
   if (!tabConflict && !isOffline && !showTts && !ttsFailed) return null;
   return (
-    <div style={stStackStyle}>
+    <div className="iv-status-stack" style={stStackStyle}>
       {tabConflict && (
         <div role="alert" style={stTabToast}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
           <span style={stGiltText}>Interview is open in another tab</span>
         </div>
       )}
       {isOffline && (
         <div role="alert" style={stOfflineToast}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          <span style={stEmberText}>Offline — session saved locally</span>
+          <span style={stEmberText}>Offline: session saved locally</span>
         </div>
       )}
       {showTts && (
         <div role="status" style={stTabToast}>
-          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
           <span style={stGiltText}>{ttsError}</span>
         </div>
       )}
       {ttsFailed && (
         <div role="alert" aria-live="assertive" style={stTtsFailedBanner}>
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2" strokeLinecap="round"><path d="M11 5L6 9H2v6h4l5 4V5z"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
-          <span style={stEmberText}>Audio unavailable — please read questions on screen and type your answers.</span>
+          <span style={stEmberText}>Audio unavailable. Please read questions on screen and type your answers.</span>
         </div>
       )}
     </div>
@@ -134,34 +149,23 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               role + focus drop out. Both still appear in the score report. */}
           <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal }}>{displayRole}</span>
           <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>·</span>
-          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.copper }}>{displayFocus}</span>
+          <span className="iv-hide-mobile" style={{ fontFamily: ef.sans, fontSize: 11, color: e.indigo }}>{displayFocus}</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <NetworkIndicator />
           {llmLoading && currentStep <= 1 && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <div style={{ width: 10, height: 10, border: "1.5px solid rgba(180,83,9,0.30)", borderTopColor: e.copper, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+              <Spinner aria-hidden="true" className="size-2.5" style={{ color: e.indigo }} />
               <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>Personalizing questions...</span>
             </div>
           )}
           {!llmLoading && saveWarning && saveWarning.includes("retry") && currentStep <= 1 && onRetry && (
-            <button
-              onClick={onRetry}
-              style={{
-                fontFamily: ef.sans, fontSize: 10, fontWeight: 600,
-                color: e.copper, background: "rgba(180,83,9,0.16)",
-                border: "1px solid rgba(180,83,9,0.25)", borderRadius: 6,
-                padding: "4px 10px", cursor: "pointer",
-                transition: "background 0.2s",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "rgba(180,83,9,0.24)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "rgba(180,83,9,0.16)")}
-            >
+            <Button variant="secondary" size="xs" onClick={onRetry}>
               Retry personalized
-            </button>
+            </Button>
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "done" ? e.inkSoft : e.success, animation: phase !== "done" ? "recordPulse 1.5s ease-in-out infinite" : "none" }} />
+            <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: phase === "done" ? e.inkSoft : e.success, animation: phase !== "done" ? "recordPulse 1.5s ease-in-out infinite" : "none" }} />
             <span style={{ fontFamily: ef.mono, fontSize: 12, fontWeight: 500, color: e.coal }}>{formatTime(elapsed)}</span>
           </div>
         </div>
@@ -172,7 +176,7 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
             {/* The numeric "X%" indicator that lived here was redundant with
                 the visible pip fill below — pure visual noise. The pips ARE
                 the percentage; reading both takes longer than reading either. */}
-            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 12, fontWeight: 600, color: isCurrentFollowUp ? e.copper : e.coal }}>
+            <span style={{ fontFamily: ef.sans, fontSize: isSalaryNegotiation ? 13 : 12, fontWeight: 600, color: isCurrentFollowUp ? e.indigo : e.coal }}>
               {isSalaryNegotiation
                 ? `${getNegPhaseLabel(currentQuestionNum)} · Round ${Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)} of ${baseQuestionCount || totalQuestions}`
                 : isCurrentFollowUp
@@ -185,9 +189,9 @@ export const InterviewHeader = memo(function InterviewHeader({ displayCompany, d
               <div key={i} style={{
                 flex: 1, borderRadius: 2, height: 3,
                 background: i < Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
-                  ? e.copper
+                  ? e.indigo
                   : i === Math.min(currentQuestionNum, baseQuestionCount || totalQuestions)
-                    ? "rgba(180,83,9,0.40)"
+                    ? "oklch(0.359 0.135 278.697 / 0.40)"
                     : "rgba(20,17,10,0.05)",
                 /* Animate just `background` — the only thing that actually changes
                    between fill states. `transition: all` would force the browser to
@@ -239,14 +243,14 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
           : phase === "listening"
           ? "radial-gradient(closest-side, rgba(229,226,242,0.6), rgba(255,255,255,0.3) 70%, transparent 100%)"
           : "radial-gradient(closest-side, rgba(255,255,255,0.7), rgba(244,239,227,0.3) 70%, transparent 100%)",
-        border: `1px solid ${phase === "speaking" ? "rgba(180,83,9,0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
+        border: `1px solid ${phase === "speaking" ? "oklch(0.359 0.135 278.697 / 0.20)" : phase === "listening" ? e.indigoRing : e.line}`,
         display: "flex", alignItems: "center", justifyContent: "center",
         /* Avatar halo cross-fades between phases — animate the visual properties
            that actually change (background, border, shadow) and let layout
            settle without `all`-induced re-interpolation. */
         transition: "background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease",
         boxShadow: phase === "speaking"
-          ? "0 0 32px -8px rgba(180,83,9,0.18)"
+          ? "0 0 32px -8px oklch(0.359 0.135 278.697 / 0.18)"
           : phase === "listening"
           ? "0 0 32px -8px rgba(49,46,129,0.18)"
           : "none",
@@ -254,10 +258,10 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
         <DotGridVisualizer active={phase === "speaking"} thinking={phase === "thinking"} />
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-        <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
+        <span style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em" }}>{interviewerName}</span>
         <span aria-live="polite" aria-atomic="true" role="status" style={{
           fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-          color: phase === "speaking" ? e.copper : phase === "listening" ? e.indigo : e.inkSoft,
+          color: phase === "speaking" ? e.indigo : phase === "listening" ? e.indigo : e.inkSoft,
         }}>
           {/* Active-voice labels with the interviewer's first name —
               "Priya is preparing…" reads as a person doing work, not
@@ -269,7 +273,7 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
             const firstName = interviewerName?.split(" ")[0] || "AI";
             if (phase === "thinking") return `${firstName} is preparing…`;
             if (phase === "speaking") return `${firstName} is speaking…`;
-            if (phase === "listening") return "Your turn — speak now";
+            if (phase === "listening") return "Your turn: speak now";
             return "Complete";
           })()}
         </span>
@@ -277,28 +281,19 @@ export const AvatarStage = memo(function AvatarStage({ phase, interviewerName, i
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
+          borderRadius: 100, background: e.success100, border: `1px solid ${e.successLine}`,
           animation: "fadeUp 0.3s ease",
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
       {phase === "speaking" && (
-        <button onClick={skipSpeaking} style={{
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-          background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-          // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
-          // before, too small for reliable tap on mobile.
-          borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
-        onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
+        // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch.
+        <Button variant="outline" size="lg" className="min-h-11" style={{ marginTop: 4 }} onClick={skipSpeaking}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Continue · Enter
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -363,7 +358,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                 ) : (
                   /* Initials for inactive panelists */
                   <span style={{
-                    fontFamily: ef.serif, fontSize: size * 0.28, fontWeight: 600,
+                    fontFamily: ef.sans, fontSize: size * 0.28, fontWeight: 600,
                     color: `${member.color}80`,
                     letterSpacing: "0.02em",
                   }}>
@@ -375,7 +370,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
                   <div style={{
                     position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)",
                     padding: "1px 8px", borderRadius: 10,
-                    background: member.color, fontSize: 8, fontFamily: ef.sans,
+                    background: member.color, fontSize: 11, fontFamily: ef.sans,
                     fontWeight: 700, color: e.white, letterSpacing: "0.04em",
                     textTransform: "uppercase", whiteSpace: "nowrap",
                   }}>
@@ -385,7 +380,7 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
               </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                 <span style={{
-                  fontFamily: isActive ? ef.serif : ef.sans,
+                  fontFamily: ef.sans,
                   fontSize: isActive ? (isMobile ? 13 : 15) : (isMobile ? 10 : 11),
                   fontWeight: isActive ? 500 : 500,
                   letterSpacing: isActive ? "-0.01em" : 0,
@@ -424,30 +419,20 @@ export const PanelAvatarStage = memo(function PanelAvatarStage({ phase, panelMem
       {phase === "listening" && !isMuted && !speechUnavailable && (
         <div style={{
           display: "flex", alignItems: "center", gap: 6, padding: "4px 12px",
-          borderRadius: 100, background: "rgba(21,128,61,0.13)", border: "1px solid rgba(21,128,61,0.18)",
+          borderRadius: 100, background: e.success100, border: `1px solid ${e.successLine}`,
           animation: "fadeUp 0.3s ease",
         }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
-          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: e.success, animation: "recordPulse 1s ease-in-out infinite" }} />
+          <span role="status" aria-live="polite" style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: e.success, letterSpacing: "0.05em", textTransform: "uppercase" }}>Listening</span>
         </div>
       )}
 
       {/* Skip button */}
       {phase === "speaking" && (
-        <button onClick={skipSpeaking} style={{
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-          background: "rgba(20,17,10,0.04)", border: `1px solid ${e.line}`,
-          // min-height enforces WCAG 2.5.5 Level AAA (44px) on touch; was 28px
-          // before, too small for reliable tap on mobile.
-          borderRadius: 8, padding: "10px 18px", cursor: "pointer", minHeight: 44,
-          display: "inline-flex", alignItems: "center", gap: 6,
-          transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease", marginTop: 4,
-        }}
-        onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,17,10,0.06)"; e.currentTarget.style.borderColor = "rgba(20,17,10,0.10)"; }}
-        onMouseLeave={ev => { ev.currentTarget.style.background = "rgba(20,17,10,0.04)"; ev.currentTarget.style.borderColor = e.line; }}>
+        <Button variant="outline" size="lg" className="min-h-11" style={{ marginTop: 4 }} onClick={skipSpeaking}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
           Continue · Enter
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -475,9 +460,9 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
        changes do. */
     <div aria-live="polite" aria-atomic="true" aria-relevant="text" style={{
       width: "100%", background: e.white, borderRadius: 16,
-      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "rgba(180,83,9,0.22)" : e.line}`,
-      /* The card cross-fades its border tint between phases (cream → copper
-         when AI speaks, copper → cream when listening). Animate only the
+      border: `1px solid ${phase === "speaking" && panelPersona ? `${panelPersona.color}25` : phase === "speaking" ? "oklch(0.359 0.135 278.697 / 0.22)" : e.line}`,
+      /* The card cross-fades its border tint between phases (cream → indigo
+         when AI speaks, indigo → cream when listening). Animate only the
          specific properties that change — `transition: all` would trigger
          repaints on every styled child too. */
       padding: "22px 26px", transition: "border-color 0.4s ease, opacity 0.4s ease",
@@ -490,7 +475,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           background: `${panelPersona.color}10`, border: `1px solid ${panelPersona.color}20`,
         }}>
           <div style={{ width: 5, height: 5, borderRadius: "50%", background: panelPersona.color }} />
-          <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 600, color: panelPersona.color }}>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 600, color: panelPersona.color }}>
             {panelPersona.name} · {panelPersona.title}
           </span>
         </div>
@@ -512,10 +497,10 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       {phase === "speaking" ? (
         <LiveCaptions text={step?.aiText || ""} isTyping={true} speakingDuration={step?.speakingDuration} actualDuration={actualDuration} speechEnded={speechEnded} />
       ) : phase === "thinking" ? (
-        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0, fontStyle: "italic" }}>Preparing next question…</p>
+        <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.6, margin: 0 }}>Preparing next question…</p>
       ) : step?.aiText ? (
         <p style={{
-          fontFamily: ef.serif, fontSize: 22, color: e.coal,
+          fontFamily: ef.sans, fontSize: 22, color: e.coal,
           lineHeight: 1.35, margin: 0, letterSpacing: "-0.01em", textWrap: "balance",
           opacity: phase === "listening" && !showCaptions ? 0.62 : 1,
           transition: "opacity 0.3s ease",
@@ -524,14 +509,14 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
       {phase !== "done" && !(isSalaryNegotiation && timeRemaining > 30) && (
         <div role="timer" aria-label={`${formatTime(timeRemaining)} remaining for this question`} style={{ marginTop: 16, opacity: isSalaryNegotiation ? 0.7 : 1, transition: "opacity 0.3s ease" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontFamily: ef.sans, fontSize: 11, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.inkSoft }}>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.indigo : e.inkSoft }}>
               {isSalaryNegotiation
                 ? timeRemaining <= 15 ? "Wrapping up..." : "Take your time"
                 : timeRemaining <= 15 ? "Wrapping up..." : timeRemaining <= 30 ? "30s remaining" : "Time remaining"}
             </span>
             <span style={{
               fontFamily: ef.mono, fontSize: 11, fontWeight: 600,
-              color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.copper : e.coal,
+              color: timeRemaining <= 15 ? e.error : timeRemaining <= 30 ? e.indigo : e.coal,
             }}>{formatTime(timeRemaining)}</span>
           </div>
           {/* transform:scaleX instead of width so the browser composites on the
@@ -540,7 +525,7 @@ export const QuestionCard = memo(function QuestionCard({ step, phase, showCaptio
           <div style={{ width: "100%", height: 3, borderRadius: 2, background: "rgba(20,17,10,0.04)", overflow: "hidden" }}>
             <div style={{
               height: "100%", width: "100%", borderRadius: 2,
-              background: timePercent >= 87.5 ? e.error : timePercent >= 75 ? e.copper : e.success,
+              background: timePercent >= 87.5 ? e.error : timePercent >= 75 ? e.indigo : e.success,
               transform: `scaleX(${(100 - timePercent) / 100})`,
               transformOrigin: "left center",
               transition: "transform 1s linear, background 0.5s ease",
@@ -592,13 +577,13 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
   return (
     <div style={{
       width: "100%", borderRadius: 16,
-      background: "rgba(21,128,61,0.07)",
-      border: "1px solid rgba(21,128,61,0.14)",
+      background: e.success100,
+      border: `1px solid ${e.successLine}`,
       padding: "18px 24px", animation: "fadeUp 0.3s ease",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: isMuted ? e.error : e.success, animation: isMuted ? "none" : "recordPulse 1s ease-in-out infinite" }} />
+          <div className="hsx-rec-pip" style={{ width: 6, height: 6, borderRadius: "50%", background: isMuted ? e.error : e.success, animation: isMuted ? "none" : "recordPulse 1s ease-in-out infinite" }} />
           <span style={{ fontFamily: ef.sans, fontSize: 12, fontWeight: 600, color: e.success }}>
             {speechUnavailable ? "Type your answer" : isMuted ? "Muted" : "Your answer"}
           </span>
@@ -611,17 +596,15 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           padding: "5px 10px", marginBottom: 8, borderRadius: 8,
           background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.13)",
         }}>
-          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, fontStyle: "italic" }}>
+          <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
             Tip: If speech recognition misses a word, tap &lsquo;Edit&rsquo; to correct it before moving on.
           </span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon-xs"
             onClick={() => { hintDismissed.current = true; setShowHint(false); }}
             aria-label="Dismiss tip"
-            style={{
-              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, background: "transparent",
-              border: "none", cursor: "pointer", padding: "0 4px", lineHeight: 1,
-            }}
-          >&times;</button>
+          >&times;</Button>
         </div>
       )}
       {/* role="log" already implies aria-live="polite" — explicitly
@@ -636,27 +619,27 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               value={currentTranscript}
               onChange={(e) => setCurrentTranscript(e.target.value)}
               placeholder="Type your answer here..."
+              aria-label="Type your answer"
               maxLength={3000}
               // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated: text input mode activated by user
               autoFocus
               style={{
                 width: "100%", minHeight: 70, fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                lineHeight: 1.7, background: "transparent", border: "none", outline: "none",
+                lineHeight: 1.7, background: "transparent", border: "none",
                 resize: "none", padding: 0, margin: 0,
               }}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleNextQuestion(); } }}
             />
-            <button onClick={() => { setSpeechUnavailable(false); setMicError(""); noSpeechCountRef.current = 0; }}
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ marginTop: 4 }}
+              onClick={() => { setSpeechUnavailable(false); setMicError(""); noSpeechCountRef.current = 0; }}
               aria-label="Switch to speaking"
-              style={{
-                fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
-                background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
-                borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}>
+            >
               <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
               Switch to speaking
-            </button>
+            </Button>
           </>
         ) : (
           <>
@@ -666,24 +649,23 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                   <textarea
                     value={currentTranscript}
                     onChange={(e) => setCurrentTranscript(e.target.value)}
+                    aria-label="Edit your transcribed answer"
                     // eslint-disable-next-line jsx-a11y/no-autofocus -- user-initiated: edit mode activated by user
                     autoFocus
                     style={{
                       width: "100%", minHeight: 70, fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                      lineHeight: 1.7, background: "transparent", border: "none", outline: "none",
+                      lineHeight: 1.7, background: "transparent", border: "none",
                       resize: "none", padding: 0, margin: 0,
                     }}
                   />
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    style={{ marginTop: 4 }}
                     onClick={() => setIsEditingTranscript(false)}
-                    style={{
-                      fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.success,
-                      background: "rgba(21,128,61,0.10)", border: "1px solid rgba(21,128,61,0.18)",
-                      borderRadius: 10, padding: "4px 12px", cursor: "pointer", marginTop: 4,
-                      display: "inline-flex", alignItems: "center", gap: 5, transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-                    }}>
+                  >
                     Done editing
-                  </button>
+                  </Button>
                 </>
               ) : (
                 <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.coal, lineHeight: 1.7, margin: 0, opacity: 0.9 }}>
@@ -692,37 +674,32 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
                 </p>
               )
             ) : (
-              <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.7, margin: 0, fontStyle: "italic" }}>
+              <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.7, margin: 0 }}>
                 Start speaking — your answer will appear here...
               </p>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
-              <button onClick={() => { setSpeechUnavailable(true); setMicError(""); }}
+              <Button
+                variant="link"
+                size="sm"
+                className="text-muted-foreground"
+                onClick={() => { setSpeechUnavailable(true); setMicError(""); }}
                 aria-label="Type instead"
-                style={{
-                  fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.inkSoft,
-                  background: "transparent", border: "none", padding: "4px 0", cursor: "pointer",
-                  display: "inline-flex", alignItems: "center", gap: 5, transition: "color 0.2s",
-                }}
-                onMouseEnter={(ev) => { ev.currentTarget.style.color = e.coal; }}
-                onMouseLeave={(ev) => { ev.currentTarget.style.color = e.inkSoft; }}>
+              >
                 <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M18 12h.01"/><path d="M8 16h8"/></svg>
                 Prefer typing? Switch to text
-              </button>
+              </Button>
               {currentTranscript && !isEditingTranscript && (
-                <button
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-muted-foreground"
                   onClick={() => setIsEditingTranscript(true)}
                   aria-label="Edit transcript"
-                  style={{
-                    fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.inkSoft,
-                    background: "transparent", border: "none", padding: "4px 0", cursor: "pointer",
-                    display: "inline-flex", alignItems: "center", gap: 5, transition: "color 0.2s",
-                  }}
-                  onMouseEnter={(ev) => { ev.currentTarget.style.color = e.coal; }}
-                  onMouseLeave={(ev) => { ev.currentTarget.style.color = e.inkSoft; }}>
+                >
                   <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   Edit
-                </button>
+                </Button>
               )}
             </div>
           </>
@@ -735,32 +712,32 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
           border: "1px solid rgba(20,17,10,0.04)", marginTop: 8,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? e.error : liveMetrics.wpm < 100 ? e.copper : e.success }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.wpm > 180 ? e.error : liveMetrics.wpm < 100 ? e.indigo : e.success }}>
               {liveMetrics.wpm}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>WPM</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>WPM</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.fillerCount > 5 ? e.error : liveMetrics.fillerCount > 2 ? e.copper : e.success }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: liveMetrics.fillerCount > 5 ? e.error : liveMetrics.fillerCount > 2 ? e.indigo : e.success }}>
               {liveMetrics.fillerCount}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>fillers</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>fillers</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
             <span style={{ fontFamily: ef.mono, fontSize: 11, fontWeight: 600, color: e.coal }}>
               {liveMetrics.wordCount}
             </span>
-            <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>words</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>words</span>
           </div>
           {liveMetrics.ownership && (
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <span style={{
                 fontFamily: ef.mono, fontSize: 11, fontWeight: 600,
-                color: liveMetrics.ownership === "we-heavy" ? e.error : liveMetrics.ownership === "i-led" ? e.success : e.copper,
+                color: liveMetrics.ownership === "we-heavy" ? e.error : liveMetrics.ownership === "i-led" ? e.success : e.indigo,
               }}>
                 {liveMetrics.ownership === "we-heavy" ? "we" : liveMetrics.ownership === "i-led" ? "I" : "I/we"}
               </span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>voice</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>voice</span>
             </div>
           )}
           {typeof liveMetrics.specificityHits === "number" && (
@@ -771,13 +748,13 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               }}>
                 {liveMetrics.specificityHits}
               </span>
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.inkSoft }}>metrics</span>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>metrics</span>
             </div>
           )}
           {liveMetrics.specificityHint && (
             <>
               <div style={{ width: 1, height: 12, background: "rgba(20,17,10,0.05)" }} />
-              <span style={{ fontFamily: ef.sans, fontSize: 10, color: e.error, fontStyle: "italic" }}>
+              <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.error }}>
                 {liveMetrics.specificityHint}
               </span>
             </>
@@ -796,24 +773,16 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
       <div style={{ marginTop: 10 }}>
         <PaceMeter seconds={answerSeconds} />
       </div>
-      <button
+      <Button
         ref={nextBtnRef}
+        size="lg"
+        className="w-full"
+        style={{ marginTop: 8 }}
         onClick={handleNextQuestion}
-        style={{
-          fontFamily: ef.sans, fontSize: 13, fontWeight: 600, width: "100%",
-          padding: "12px 24px", borderRadius: 10, marginTop: 8,
-          background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
-          border: "none", color: e.cream, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-          transition: "all 0.2s ease",
-          boxShadow: "0 4px 16px rgba(180,83,9,0.24)",
-        }}
-        onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 6px 20px rgba(180,83,9,0.30)"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 16px rgba(180,83,9,0.24)"; }}
       >
         {currentStep < interviewScriptLength - 1 ? "Next Question" : "Finish"}
         <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
+      </Button>
     </div>
   );
 });
@@ -843,7 +812,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
     }}>
       <div style={{
         width: 56, height: 56, borderRadius: 999,
-        background: e.success100, border: `1px solid rgba(21,128,61,0.22)`,
+        background: e.success100, border: `1px solid ${e.successLine}`,
         display: "inline-flex", alignItems: "center", justifyContent: "center",
         marginBottom: 4,
       }}>
@@ -853,10 +822,10 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
         </svg>
       </div>
       <h2 style={{
-        margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
+        margin: 0, fontFamily: ef.sans, fontSize: 28, fontWeight: 400,
         lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
       }}>
-        Session <em style={{ color: e.copper, fontStyle: "italic" }}>complete</em>.
+        Session <em style={{ color: e.indigo, fontWeight: 600 }}>complete</em>.
       </h2>
       <p style={{
         fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, margin: 0,
@@ -865,16 +834,16 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
       </p>
       {(usedFallbackScore || evalTimedOut) && (
         <p style={{
-          fontFamily: ef.sans, fontSize: 12, color: e.copper, margin: 0,
+          fontFamily: ef.sans, fontSize: 12, color: e.indigo, margin: 0,
           padding: "6px 12px", borderRadius: 999,
-          background: e.copperSoft, border: `1px solid rgba(180,83,9,0.20)`,
+          background: e.indigo100, border: `1px solid oklch(0.359 0.135 278.697 / 0.20)`,
         }}>
           {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"} — score is estimated from session metrics
         </p>
       )}
       {videoURL && (
         <div style={{ width: "100%", marginTop: 8 }}>
-          <p style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginBottom: 6 }}>Your recording</p>
+          <p style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginBottom: 6 }}>Your recording</p>
           <video
             src={videoURL}
             controls
@@ -885,65 +854,26 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
           </video>
         </div>
       )}
-      <button
+      <Button
+        size="lg"
+        className="w-full"
+        style={{ marginTop: 12 }}
         onClick={handleEnd}
         disabled={evaluating}
         aria-label={evaluating ? "Loading your feedback" : "View your interview feedback"}
-        style={{
-          // Use editorial indigo CTA so it reads unambiguously as the
-          // primary action — copper would clash with the editorial
-          // "copper-is-accent-not-CTA" rule.
-          fontFamily: ef.sans, fontSize: 14, fontWeight: 500, width: "100%",
-          padding: "13px 24px", borderRadius: 999, marginTop: 12,
-          background: evaluating ? e.lineStrong : e.indigo,
-          border: "none", color: e.cream,
-          cursor: evaluating ? "wait" : "pointer",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-          transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 180ms cubic-bezier(0.16, 1, 0.3, 1), background 180ms ease",
-          // Strong shadow so the button reads as elevated and clickable —
-          // QA bug 33 reported it looked flat / non-interactive.
-          boxShadow: evaluating
-            ? "none"
-            : "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)",
-        }}
-        onMouseEnter={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(-1px)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20), 0 12px 28px -4px rgba(49,46,129,.55)";
-        }}
-        onMouseLeave={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(0)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
-        }}
-        onMouseDown={(ev) => {
-          if (evaluating) return;
-          ev.currentTarget.style.transform = "translateY(0)";
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.20) inset";
-        }}
-        onFocus={(ev) => {
-          ev.currentTarget.style.boxShadow = `0 0 0 4px ${e.indigoRing}, 0 8px 20px -4px rgba(49,46,129,.42)`;
-        }}
-        onBlur={(ev) => {
-          if (evaluating) { ev.currentTarget.style.boxShadow = "none"; return; }
-          ev.currentTarget.style.boxShadow = "0 1px 2px rgba(20,17,10,.18), 0 8px 20px -4px rgba(49,46,129,.42)";
-        }}
       >
         {evaluating ? (
           <>
-            <span style={{ width: 14, height: 14, border: `2px solid rgba(250,247,240,0.30)`, borderTopColor: e.cream, borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+            <Spinner className="text-current" />
             Generating your report…
           </>
         ) : (
           <>
             View feedback
-            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transition: "transform 180ms cubic-bezier(0.16, 1, 0.3, 1)" }}>
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>
           </>
         )}
-      </button>
+      </Button>
     </div>
   );
 });
@@ -990,14 +920,14 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
   const isStrong = microFeedback?.includes("Strong") ?? false;
   return (
     <div style={{
-      width: "100%", borderRadius: 14, padding: "12px 16px",
+      width: "100%", borderRadius: 14, padding: "14px 16px",
       background: e.white, border: `1px solid ${e.line}`,
       boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
         <span style={{
-          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
-          letterSpacing: 1.4, color: e.copper,
+          fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
+          letterSpacing: 1.4, color: e.indigo,
         }}>
           Your last answer
         </span>
@@ -1006,11 +936,11 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         <div style={{
           display: "inline-flex", alignItems: "center", gap: 6,
           padding: "4px 10px", borderRadius: 999,
-          background: "rgba(180,83,9,0.10)",
-          border: `1px solid rgba(180,83,9,0.20)`,
-          fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.copper,
+          background: "oklch(0.359 0.135 278.697 / 0.10)",
+          border: `1px solid oklch(0.359 0.135 278.697 / 0.20)`,
+          fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: e.indigo,
         }}>
-          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="5 4 15 12 5 20 5 4" />
             <line x1="19" y1="5" x2="19" y2="19" />
           </svg>
@@ -1018,8 +948,8 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
         </div>
       ) : (
         <p style={{
-          fontFamily: ef.serif, fontSize: 13, color: e.indigoGray,
-          lineHeight: 1.55, margin: 0, fontStyle: "italic",
+          fontFamily: ef.sans, fontSize: 13, color: e.indigoGray,
+          lineHeight: 1.55, margin: 0,
           overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2,
           WebkitBoxOrient: "vertical" as const,
         }}>
@@ -1042,15 +972,15 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
           style={{
             marginTop: 8, padding: "5px 10px", borderRadius: 999,
             display: "inline-flex", alignItems: "center", gap: 6,
-            background: isStrong ? "rgba(21,128,61,0.10)" : "rgba(180,83,9,0.10)",
-            border: `1px solid ${isStrong ? "rgba(21,128,61,0.20)" : "rgba(180,83,9,0.20)"}`,
+            background: isStrong ? e.success100 : "oklch(0.359 0.135 278.697 / 0.10)",
+            border: `1px solid ${isStrong ? e.successLine : "oklch(0.359 0.135 278.697 / 0.20)"}`,
           }}>
-          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <svg aria-hidden="true" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={isStrong ? e.success : e.indigo} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
             {isStrong ? <polyline points="20 6 9 17 4 12" /> : <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>}
           </svg>
           <span style={{
             fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
-            color: isStrong ? e.success : e.copper,
+            color: isStrong ? e.success : e.indigo,
           }}>
             {microFeedback}
           </span>
@@ -1076,9 +1006,9 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
  * the alarm. Surfacing them in a distinct red strip below the row makes
  * them noticeable without screaming at every candidate. */
 function chipColors(state: CpChipState) {
-  if (state === "pass") return { bg: "rgba(21,128,61,0.10)", border: "rgba(21,128,61,0.20)", fg: e.success };
-  if (state === "warn") return { bg: "rgba(180,83,9,0.10)", border: "rgba(180,83,9,0.20)", fg: e.copper };
-  if (state === "alert") return { bg: "rgba(185,28,28,0.10)", border: "rgba(185,28,28,0.25)", fg: "#b91c1c" };
+  if (state === "pass") return { bg: e.success100, border: e.successLine, fg: e.success };
+  if (state === "warn") return { bg: e.copperTint, border: "rgba(180,83,9,0.20)", fg: e.copper };
+  if (state === "alert") return { bg: e.error100, border: e.errorLine, fg: e.error };
   return { bg: e.creamSoft, border: e.line, fg: e.inkFaint };
 }
 
@@ -1134,20 +1064,20 @@ export const CampusReadinessChips = memo(function CampusReadinessChips({ transcr
 
   return (
     <div style={{
-      width: "100%", borderRadius: 14, padding: "12px 16px",
+      width: "100%", borderRadius: 14, padding: "14px 16px",
       background: e.white, border: `1px solid ${e.line}`,
       boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
     }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
         <span style={{
-          fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+          fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
           letterSpacing: 1.4, color: e.copper,
         }}>
           Campus readiness
         </span>
         {wordCount >= 50 && (
           <span style={{
-            fontFamily: ef.mono, fontSize: 10, color: fillerWarn ? e.copper : e.inkFaint,
+            fontFamily: ef.mono, fontSize: 11, color: fillerWarn ? e.copper : e.inkFaint,
           }}>
             fillers {count}{wordCount >= 100 ? ` (${per100.toFixed(1)}/100w)` : ""}
           </span>
@@ -1276,24 +1206,19 @@ const TranscriptFilters = memo(function TranscriptFilters({ panelMembers, active
 }) {
   const filters = [{ label: "All", value: "all", color: e.coal }, ...panelMembers.map(m => ({ label: m.name.split(" ")[0], value: m.title, color: m.color }))];
   return (
-    <div style={{ display: "flex", gap: 6, padding: "10px 20px", borderBottom: `1px solid ${e.line}`, overflow: "auto" }}>
-      {filters.map(f => {
-        const isActive = activeFilter === f.value;
-        return (
-          <button key={f.value} onClick={() => setActiveFilter(f.value)} style={{
-            fontFamily: ef.sans, fontSize: 11, fontWeight: 500,
-            padding: "4px 12px", borderRadius: 999,
-            border: `1px solid ${isActive ? `${f.color}55` : e.line}`,
-            background: isActive ? `${f.color}14` : e.white,
-            color: isActive ? f.color : e.inkSoft,
-            cursor: "pointer", whiteSpace: "nowrap",
-            transition: "all 160ms ease",
-          }}>
-            {f.label}
-          </button>
-        );
-      })}
-    </div>
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={activeFilter}
+      onValueChange={(v) => { if (v) setActiveFilter(v); }}
+      style={{ padding: "10px 20px", borderBottom: `1px solid ${e.line}`, overflow: "auto" }}
+    >
+      {filters.map(f => (
+        <ToggleGroupItem key={f.value} value={f.value} aria-label={f.label}>
+          {f.label}
+        </ToggleGroupItem>
+      ))}
+    </ToggleGroup>
   );
 });
 
@@ -1314,6 +1239,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
     return () => mql.removeEventListener("change", handler);
   }, []);
 
+  const panelRef = useModalDialog<HTMLDivElement>(() => setShowTranscript(false));
   // Panel transcript filter
   const [transcriptFilter, setTranscriptFilter] = useState("all");
   const filteredTranscript = transcriptFilter === "all" ? transcript : transcript.filter(msg => {
@@ -1335,7 +1261,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
           animation: "fadeUp 0.15s ease",
         }}
       />
-      <div className="iv-transcript-panel" style={isMobile ? {
+      <div ref={panelRef} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="iv-transcript-title" className="iv-transcript-panel outline-none" style={isMobile ? {
         position: "fixed", bottom: 0, left: 0, right: 0,
         maxHeight: "60vh",
         background: e.cream,
@@ -1359,33 +1285,18 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             <div style={{ width: 36, height: 4, borderRadius: 2, background: e.lineStrong }} />
           </div>
         )}
-        <div style={{
-          padding: "16px 20px", borderBottom: `1px solid ${e.line}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-        }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${e.line}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <span style={{ fontFamily: ef.serif, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
+            <span id="iv-transcript-title" style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 500, color: e.coal, letterSpacing: "-0.01em", display: "block" }}>
               Transcript
             </span>
-            <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
+            <span style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.inkSoft, marginTop: 2, display: "block" }}>
               Live transcript · audio is never recorded
             </span>
           </div>
-          <button
-            onClick={() => setShowTranscript(false)}
-            aria-label="Close transcript"
-            style={{
-              background: e.white, border: `1px solid ${e.line}`,
-              borderRadius: 999, width: 32, height: 32,
-              color: e.inkSoft, cursor: "pointer",
-              display: "inline-flex", alignItems: "center", justifyContent: "center",
-              transition: "background 160ms ease, color 160ms ease",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; ev.currentTarget.style.color = e.coal; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = e.white; ev.currentTarget.style.color = e.inkSoft; }}
-          >
+          <Button variant="outline" size="icon-lg" className="rounded-full" onClick={() => setShowTranscript(false)} aria-label="Close transcript">
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
+          </Button>
         </div>
         {/* Panel filter buttons */}
         {panelMembers && panelMembers.length > 0 && (
@@ -1398,7 +1309,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             would force a re-read of the whole conversation. */}
         <div ref={transcriptRef} role="log" aria-relevant="additions" aria-label="Interview transcript" style={{ flex: 1, overflow: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
           {transcript.length === 0 && (
-            <p style={{ fontFamily: ef.serif, fontSize: 14, fontStyle: "italic", color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
+            <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft, textAlign: "center", padding: "40px 0" }}>
               The conversation will appear here as you talk.
             </p>
           )}
@@ -1409,7 +1320,7 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
             const panelMember = panelMatch
               ? panelMembers!.find(m => m.title.toLowerCase() === panelMatch[1].toLowerCase())
               : null;
-            const speakerColor = isAi ? (panelMember?.color ?? e.copper) : e.indigo;
+            const speakerColor = isAi ? (panelMember?.color ?? e.indigo) : e.indigo;
             const speakerName = isAi ? (panelMember?.name ?? interviewerName) : "You";
             // Strip the leading [Title] panel-tag for AI rows in panel mode
             // before rendering. Then strip prosody markup ([pause], _emph_)
@@ -1442,11 +1353,11 @@ export const TranscriptPanel = memo(function TranscriptPanel({ transcript, inter
                     }}>
                       {speakerName}
                     </span>
-                    <span style={{ fontFamily: ef.mono, fontSize: 10, color: e.inkFaint }}>{msg.time}</span>
+                    <span style={{ fontFamily: ef.mono, fontSize: 11, color: e.inkFaint }}>{msg.time}</span>
                   </div>
                   <p style={{
-                    fontFamily: isAi ? ef.serif : ef.sans,
-                    fontSize: 13.5, color: e.coal, lineHeight: 1.55,
+                    fontFamily: ef.sans,
+                    fontSize: 14, color: e.coal, lineHeight: 1.55,
                     margin: 0, wordBreak: "break-word", overflowWrap: "break-word",
                   }}>
                     {displayText}
@@ -1475,91 +1386,33 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
   // a fully-answered 5-question session read "5 of 8". Fall back to
   // totalQuestions only in the degenerate baseQuestionCount===0 case.
   const questionTotal = baseQuestionCount || totalQuestions;
-  const closeFocus = () => { setShowEndModal(false); endModalTriggerRef.current?.querySelector("button")?.focus(); };
+  // endModalTriggerRef is retained in the prop signature for call-site
+  // compatibility, but AlertDialog (Radix) restores focus to whatever
+  // element was focused when the dialog opened on its own, so the manual
+  // querySelector-based focus-return this used to need is no longer read.
   return (
-    // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- dialog needs click/keyboard handlers for dismissal and focus trap
-    <div
-      role="dialog" aria-modal="true" aria-labelledby="end-modal-title" tabIndex={-1}
-      onClick={(e) => { if (e.target === e.currentTarget) { e.stopPropagation(); closeFocus(); } }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeFocus(); return; }
-        if (e.key === "Tab") {
-          const modal = e.currentTarget.querySelector("[data-modal-content]") as HTMLElement;
-          if (!modal) return;
-          const focusable = modal.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
-          if (focusable.length === 0) return;
-          const first = focusable[0]; const last = focusable[focusable.length - 1];
-          if (e.shiftKey) { if (document.activeElement === first) { e.preventDefault(); last.focus(); } }
-          else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
-        }
-      }}
-      ref={(el) => { if (el) { const btn = el.querySelector("button"); if (btn) btn.focus(); } }}
-      style={{
-        position: "fixed", inset: 0, zIndex: 100,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        background: "rgba(14,12,8,0.70)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)",
-        animation: "fadeUp 0.15s ease",
-      }}>
-      <div data-modal-content className="hsx-end-modal" style={{
-        background: e.cream, borderRadius: 20, border: `1px solid ${e.line}`,
-        padding: "28px 28px 24px", maxWidth: 460, width: "92%",
-        boxShadow: "0 2px 4px rgba(20,17,10,.06), 0 32px 64px -16px rgba(20,17,10,.24)",
-      }}>
-        <style>{`
-          /* Narrow-viewport rescue: under 380px the two side-by-side modal
-             buttons overflow the cream card. Stack vertically and pull
-             padding in so the modal still breathes on a 320-360px phone. */
-          @media (max-width: 380px) {
-            .hsx-end-modal { padding: 16px !important; }
-            .hsx-end-modal .hsx-end-modal-actions { flex-direction: column-reverse !important; }
-            .hsx-end-modal .hsx-end-modal-actions button { width: 100% !important; }
-          }
-        `}</style>
-        <h3 id="end-modal-title" style={{
-          margin: 0, fontFamily: ef.serif, fontSize: 28, fontWeight: 400,
-          lineHeight: 1.2, color: e.coal, letterSpacing: "-0.015em",
-        }}>
-          End the interview <em style={{ color: e.copper, fontStyle: "italic" }}>now</em>?
-        </h3>
-        <p style={{
-          margin: "10px 0 22px", fontFamily: ef.sans, fontSize: 14,
-          lineHeight: 1.55, color: e.inkSoft,
-        }}>
-          You&rsquo;ve answered <strong style={{ color: e.coal, fontWeight: 600 }}>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
-        </p>
+    <AlertDialog open onOpenChange={(open) => { if (!open) setShowEndModal(false); }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>
+            End the interview <em style={{ color: e.indigo, fontWeight: 600 }}>now</em>?
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            You&rsquo;ve answered <strong>{Math.min(currentQuestionNum, questionTotal)} of {questionTotal}</strong> questions. We&rsquo;ll still score what you&rsquo;ve done so far &mdash; but a partial session won&rsquo;t reflect your full performance.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
         {isOffline && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: "rgba(185,28,28,0.08)", border: "1px solid rgba(185,28,28,0.20)", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: e.error100, border: `1px solid ${e.errorLine}` }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
             <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
         )}
-        <div className="hsx-end-modal-actions" style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
-          <button onClick={closeFocus}
-            style={{
-              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
-              background: "transparent", border: `1px solid ${e.line}`,
-              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.background = e.creamSoft; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; }}
-          >
-            Keep going
-          </button>
-          <button onClick={handleEnd}
-            style={{
-              fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.cream,
-              background: e.copper, border: "none",
-              borderRadius: 999, padding: "10px 18px", cursor: "pointer",
-              boxShadow: "0 4px 12px -4px rgba(180,83,9,0.45)",
-            }}
-            onMouseEnter={(ev) => { ev.currentTarget.style.filter = "brightness(1.10)"; }}
-            onMouseLeave={(ev) => { ev.currentTarget.style.filter = "brightness(1)"; }}
-          >
-            End and see report
-          </button>
-        </div>
-      </div>
-    </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => setShowEndModal(false)}>Keep going</AlertDialogCancel>
+          <AlertDialogAction onClick={handleEnd}>End and see report</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 });
 
@@ -1588,14 +1441,14 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
     }}>
       {!(usedFallbackScore || evalTimedOut) ? (
         <>
-          <div style={{ width: 48, height: 48, border: `3px solid ${e.line}`, borderTopColor: "#312E81", borderRadius: "50%", animation: "spin 0.8s linear infinite", marginBottom: 24 }} />
-          <h3 style={{ fontFamily: ef.serif, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
+          <ThinkingOrb state="searching" size={64} color="#312E81" style={{ width: 48, height: 48, marginBottom: 24 }} />
+          <h3 style={{ fontFamily: ef.sans, fontSize: 28, fontWeight: 400, color: e.coal, marginBottom: 8, letterSpacing: "-0.01em" }}>Coaching your report</h3>
           <p style={{ fontFamily: ef.sans, fontSize: 14, color: e.inkSoft }}>Reading your transcript and drafting per-question coach notes…</p>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.inkSoft, opacity: 0.7, marginTop: 4 }}>
             {evalElapsed < 10 ? "This usually takes 10\u201330 seconds." : evalElapsed < 25 ? `Almost there… (${evalElapsed}s)` : `Taking longer than usual… (${evalElapsed}s)`}
           </p>
           <div style={{ width: 200, height: 3, borderRadius: 2, background: e.line, marginTop: 16, overflow: "hidden" }}>
-            <div style={{ height: "100%", borderRadius: 2, background: e.copper, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
+            <div style={{ height: "100%", borderRadius: 2, background: e.indigo, transition: "width 1s ease", width: `${Math.min(95, (evalElapsed / 30) * 100)}%` }} />
           </div>
           {/* Escape hatch surfaced at 10s (was 20s) so users with a
               flaky LLM provider don't sit staring at an indeterminate
@@ -1605,20 +1458,14 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
               panel which lands them on results immediately. */}
           {evalElapsed >= 10 && (
             <div style={{ marginTop: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="sm"
                 onClick={() => { setUsedFallbackScore(true); }}
-                style={{
-                  fontFamily: ef.sans, fontSize: 12, fontWeight: 500, color: e.coal,
-                  background: "transparent", border: `1px solid ${e.line}`,
-                  borderRadius: 999, padding: "7px 16px", cursor: "pointer",
-                  transition: "background 160ms ease, border-color 160ms ease",
-                }}
-                onMouseEnter={(ev) => { ev.currentTarget.style.background = "rgba(14,12,8,0.06)"; ev.currentTarget.style.borderColor = e.lineStrong; }}
-                onMouseLeave={(ev) => { ev.currentTarget.style.background = "transparent"; ev.currentTarget.style.borderColor = e.line; }}
               >
                 Skip and use estimated score
-              </button>
+              </Button>
               <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft, opacity: 0.7 }}>
                 You&rsquo;ll get a basic score now. Detailed AI feedback can take longer on slow connections.
               </span>
@@ -1627,8 +1474,8 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
         </>
       ) : (
         <>
-          <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(180,83,9,0.10)", border: "1px solid rgba(180,83,9,0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={e.copper} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: "oklch(0.359 0.135 278.697 / 0.10)", border: "1px solid oklch(0.359 0.135 278.697 / 0.18)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
           </div>
           <h3 style={{ fontFamily: ef.sans, fontSize: 18, fontWeight: 600, color: e.coal, marginBottom: 8 }}>
             {evalTimedOut ? "Evaluation timed out" : "AI evaluation unavailable"}
@@ -1640,37 +1487,23 @@ export const EvaluatingOverlay = memo(function EvaluatingOverlay({ usedFallbackS
           </p>
           <div style={{ display: "flex", gap: 12 }}>
             {canRetry && (
-            <button
+            <Button
+              variant="outline"
               onClick={() => { retryCountRef.current++; setEvalTimedOut(false); setUsedFallbackScore(false); setEvaluating(false); interviewEndedRef.current = false; handleEnd(); }}
-              style={{
-                fontFamily: ef.sans, fontSize: 13, fontWeight: 500, color: e.coal,
-                background: "rgba(180,83,9,0.16)", border: "1px solid rgba(180,83,9,0.24)",
-                borderRadius: 10, padding: "10px 20px", cursor: "pointer", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.24)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(180,83,9,0.16)"; }}
             >
               Retry Evaluation{retryCountRef.current > 0 ? ` (${maxRetries - retryCountRef.current} left)` : ""}
-            </button>
+            </Button>
             )}
-            <button
+            <Button
               onClick={() => { setEvaluating(false); if (lastSessionId) navigate.push(`/session/${lastSessionId}`); else navigate.push("/dashboard"); }}
-              style={{
-                fontFamily: ef.sans, fontSize: 13, fontWeight: 600, color: e.cream,
-                background: `linear-gradient(135deg, ${e.copper}, ${"#92400E"})`,
-                border: "none", borderRadius: 10, padding: "10px 24px", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(180,83,9,0.24)", transition: "background 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
             >
               View Results
-            </button>
+            </Button>
           </div>
         </>
       )}
       {saveWarning && !(usedFallbackScore || evalTimedOut) && (
-        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: "rgba(185,28,28,0.16)", border: "1px solid rgba(185,28,28,0.24)", maxWidth: 400 }}>
+        <div role="alert" style={{ marginTop: 12, padding: "12px 20px", borderRadius: 10, background: e.error100, border: `1px solid ${e.errorLine}`, maxWidth: 400 }}>
           <p style={{ fontFamily: ef.sans, fontSize: 12, color: e.error, margin: 0 }}>{saveWarning}</p>
         </div>
       )}

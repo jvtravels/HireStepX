@@ -711,12 +711,29 @@ export function recommendWalkAway(state: NegotiationState): {
     }
   }
 
-  /* (4) at ceiling, conversation has dragged. */
+  /* (4) at ceiling, conversation has dragged.
+   *
+   * Guard: only walk if the candidate has had at least 2 turns to respond
+   * AFTER the first offer was placed. When a recruiter opens at the ceiling
+   * and the session hits turn 8 due to unrelated exchange (e.g. discovery
+   * questions before the offer), the candidate may have had only 0–1 response
+   * turns and a walk-away here is premature. firstOfferAtTurn tracks the
+   * exact turn on which highestOfferMade first became > 0; two or more
+   * subsequent candidate-turns must have elapsed before we call time.
+   * If firstOfferAtTurn is null (legacy state or offer not yet tracked),
+   * the guard is skipped — we defer to the plain turn-count gate (turn >= 8)
+   * as before, so old persisted sessions continue to work correctly. */
+  const candidateTurnsSinceFirstOffer =
+    state.firstOfferAtTurn != null ? turn - state.firstOfferAtTurn : null;
   if (
     band &&
     typeof band.maxStretch === "number" &&
     state.highestOfferMade >= band.maxStretch - 0.01 &&
     turn >= 8 &&
+    /* B3 guard: when firstOfferAtTurn is tracked, require ≥2 candidate turns
+     * since first offer before declaring deadlock. Null means untracked
+     * (legacy); in that case omit the guard so old behaviour is preserved. */
+    (candidateTurnsSinceFirstOffer === null || candidateTurnsSinceFirstOffer >= 2) &&
     !suppressDeadlockWalk
   ) {
     return {

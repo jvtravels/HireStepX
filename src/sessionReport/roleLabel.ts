@@ -25,3 +25,10 @@ export function formatRoleWithLevel(
   const levelAlreadyInRole = new RegExp(`\\b${escapeRegExp(l)}\\b`, "i").test(r);
   return levelAlreadyInRole ? r : `${l} ${r}`;
 }
+
+/* The adapter leaves `company` empty when the session has no target company,
+ * so copy must drop the clause instead of printing a placeholder noun. */
+export function atCompany(company: string | null | undefined): string {
+  const c = (company ?? "").trim();
+  return c ? ` at ${c}` : "";
+}

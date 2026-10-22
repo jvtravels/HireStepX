@@ -8,10 +8,11 @@ import { detectSalaryPhase as detectSalaryPhaseHelper, pickServerCounter, pickNe
 import { isWalkAway } from "./_walkaway-detection";
 import { deriveConvState, phaseForState, type ConvState } from "./_negotiation-state";
 import { detectAllFailures } from "./_negotiation-failures";
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii"; import { FOLLOW_UP_SCHEMA } from "./_llm-schemas";
 import { detectCandidateIntent, extractCandidateSalaryNumber, extractMirrorTokens, sanitizeBehaviouralRegister } from "./_follow-up-helpers";
 import { classifyCompanyTier, tierPromptSuffix } from "./_company-tier";
 import { buildFollowUpDisciplineFence } from "./_generate-questions-helpers";
+import { hrFollowUpContext } from "./_hr-follow-up";
 import { lookupSalaryContext, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, generateNegotiationBand, type NegotiationStyle } from "../data/salary-lookup";
 import { classifyBehavioralQuestion, frameworkDirective as frameworkDirectiveFor } from "../src/_question-category";
 import { detectCulturalRegister, hasAnyIndianRegister } from "../src/_cultural-register";
@@ -375,6 +376,35 @@ export default async function handler(req: Request): Promise<Response> {
           return `\nRESUME-LISTED EXPERIENCES (BGV source-of-truth):\n${lines.map(l => `- ${l}`).join("\n")}\nIf the candidate's current answer references a COMPANY or INTERNSHIP that is NOT in the list above, your follow-up MUST probe ("I don't see that role on your resume — when was it, and what shipped?"). Indian campus BGV uses the uploaded resume as ground truth; un-listed roles mid-interview are the #1 disqualifier. Do NOT accept the claim silently. If the mentioned company IS in the list, anchor your probe on the specific bullet ("you mentioned the OCR work at <company> — what trade-off forced that choice?").`;
         })()
       : "";
+
+    /* Campus-placement live probing — CGPA defense + bond awareness.
+     *
+     * The post-session analyzer tracks cgpa_low_no_framing and bond_unprepared
+     * as flags. This block gives the live AI the same signal in-session so it
+     * can probe mid-interview rather than leaving the candidate to read about
+     * it 30 min later. Triggers only when CGPA / bond keywords appear in the
+     * current answer; stays silent otherwise to avoid false probes. */
+    const campusLiveProbeCtx = (() => {
+      if (type !== "campus-placement") return "";
+      const ans = answer || "";
+      const lines: string[] = [];
+      // CGPA probe — detect stated value and flag if borderline
+      const cgpaMatch = ans.match(/\b(\d(?:\.\d{1,2})?)\s*(?:\/\s*10|cgpa|gpa|pointer)\b/i)
+        ?? ans.match(/\bcgpa\b.*?(\d(?:\.\d{1,2})?)/i);
+      if (cgpaMatch) {
+        const val = parseFloat(cgpaMatch[1]);
+        if (Number.isFinite(val) && val >= 1 && val <= 10 && val < 7.5) {
+          lines.push(`CGPA PROBE TRIGGERED — candidate stated ${val.toFixed(1)} CGPA. If not already asked, probe: "Your CGPA is ${val.toFixed(1)} — many ${company ? sanitizeForLLM(company, 40) + " " : ""}shortlists gate at 7.0–7.5. How do you frame that gap in your application?" Accept strong framing (ranking, upward trend, project depth, competitive branch). Challenge evasion.`);
+        }
+      }
+      // Bond / service-agreement probe — detect mention of bond without explicit acceptance
+      if (/\bbond\b|\bservice\s+agreement\b|\bbreakage\b|\b2\s*year\b|\b2yr\b/i.test(ans) &&
+          !/\b(?:ok(?:ay)?|fine|accept|agree|comfortable|no\s+problem|alright|sure)\b/i.test(ans)) {
+        lines.push(`BOND PROBE TRIGGERED — candidate mentioned bond/service-agreement without clear acceptance. Follow up: "TCS / service-tier companies enforce a ${company?.toLowerCase().includes("wipro") ? "15-month ₹2L" : "2-year"} bond in their standard offer. Are you comfortable with that condition?" Evasion or "I'll decide later" is a red flag — probe once more.`);
+      }
+      return lines.length > 0 ? `\n${lines.join("\n")}` : "";
+    })();
+
     const previousContext = previousFollowUps && previousFollowUps.length > 0
       ? `\nPrevious follow-up exchange:\n${previousFollowUps.map(s => sanitizeForLLM(s, 300)).join("\n")}\n\nDO NOT REPEAT phrasing, opening lines, or core content from your previous follow-ups above. The candidate has already heard those words. If your next message would start with the same opener (e.g. "I heard ₹X — that's the absolute top of what I can approve") that you already said, REPHRASE the entire turn or pivot to a different angle (benefits, levers, role scope, decision timeline). Repeating yourself signals you weren't listening.`
       : "";
@@ -864,7 +894,14 @@ Your response MUST directly address what they said above. Start by acknowledging
          cases land as new cases in deriveConvState / phaseForState,
          not as another override branch here. See _negotiation-state.ts
          for the reducer. */
-      const acceptInHistoryRe2 = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+      // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
+      // S88-B3 (2026-07-26) — added missing phrases: count me in, consider it done,
+      // acceptable, on board, fine with me, i'll accept, happy to proceed.
+      // S94-B2: synced deal-closing idioms (done deal, we/you got a deal, i'm game)
+      // S95-B1: bare "works for me"; S95-B2: "happy to accept"; S96-B1/B2: fully on board, fine by me
+      // S97-B1/B2: okay with this/that/it; happy to take/go with the offer
+      // S98-B1/B2/B3/B4: i will accept; willing to accept; X is acceptable; let us proceed/move forward; happy to move forward
+      const acceptInHistoryRe2 = /\b(i accept(?!\s+(?:nothing|no\s+less|anything\s+less|that\b|whatever\b))|i.?ll accept|i agree(?!\s+(?:on|the|that|this|it|your|with|to\s+(?:review|look|discuss|examine|reconsider|revisit|check|read|go|get|think|evaluate|consider))\b)|sounds\s+good|that works for me|works for me|\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr\b|crore)?\s+works(?:\s+for\s+me)?\b|happy\s+to\s+accept|(?:thrilled|delighted|excited|pleased)\s+to\s+accept|fine\s+by\s+me|fully\s+on\s+board|(?:it|that|this)(?:.?s|\s+is)\s+a\s+deal|happy with|let.?s go ahead|deal|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?take\s+(?:it(?!\s+(?:as\s+a\s+no|that\s+way|the\s+wrong\s+way))|(?:the\s+)?(?:offer|package|deal|position|role)|whatever\s+(?:you\s+)?offer)|count\s+me\s+in|consider\s+it\s+done|(?:that|this).?s?\s+(?:is\s+)?acceptable|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly)\s+)?on\s+board|fine\s+with\s+me|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely)\s+)?happy\s+to\s+proceed|happy\s+to\s+proceed|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|i.?m\s+game|okay\s+with\s+(?:this|that|it)|happy\s+to\s+(?:take|go\s+with)\s+(?:the\s+)?(?:offer|package|deal|this|that|it)|happy\s+to\s+move\s+forward(?:\s+with\s+(?:this|it|that))?|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?accept(?!\s+(?:nothing|no\s+less))|willing\s+to\s+accept|prepared\s+to\s+accept|glad\s+to\s+accept|i(?:.d|\s+would)\s+love\s+to\s+accept|i\s+(?:wholeheartedly|enthusiastically|unconditionally)\s+accept|i(?:.ll|.d|\s+will|\s+would)\s+go\s+for\s+it|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly|perfectly|quite)\s+)?fine\s+with\s+(?:this|that|it|the)|sounds\s+acceptable|let(?:'?s|\s+us)\s+(?:proceed|move\s+forward)|(?:offer|package|deal|ctc|salary|comp(?:ensation)?|terms?|arrangement|proposal|number)\s+is\s+acceptable|sounds\s+great(?:\s+to\s+me)?|fair\s+enough(?:\s+for\s+me)?|(?:let.?s|let\s+us)\s+make\s+this\s+happen|(?:i\s+)?can\s+live\s+with\s+(?:that|this|it)|in\s+agreement(?:\s+with\s+the\s+terms)?|i(?:.ll|.d|\s+will|\s+would)\s+go\s+with\s+(?:this|that|it)|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely|fully|completely)\s+)?satisfied\s+with\s+(?:this|that|it|the)|(?<!not\s)willing\s+to\s+(?:move\s+forward|proceed)|(?:let.?s|let\s+us)\s+do\s+(?:it|this)|i(?:.ll|.d|\s+will|\s+would)\s+go\s+ahead(?:\s+with)?|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|perfectly|quite|really|pretty)\s+)?good\s+with\s+(?:this|that|it|the)|consider\s+it\s+settled|happy\s+to\s+sign(?:\s+(?:on|up))?|sign\s+me\s+up|that.?s\s+settled(?:\s+then)?|let.?s\s+shake\s+(?:hands\s+)?on\s+it|(?:i.?m|i\s+am)\s+(?:(?:quite|very|really|truly|completely|absolutely)\s+)?content\s+with\s+(?:this|that|it|the)|(?:i.?m|i\s+am)\s+pleased\s+to\s+accept|(?:i.?ll|i.?d|i\s+will|i\s+would)\s+sign\s+on\s+the\s+dotted\s+line|(?<!not\s)comfortable\s+with\s+(?:this|that|it|the)|works\s+(?:\w+\s+)?for\s+me|that\s+works\b)\b/i;
       const acceptedEverInHistory = conversationHistory ? acceptInHistoryRe2.test(conversationHistory) : false;
       const convState: ConvState = deriveConvState({
         acceptedThisTurn: candidateAccepted,
@@ -966,11 +1003,13 @@ RULES:
 - DON'T REPEAT YOUR PREVIOUS QUESTION: Look at YOUR last message. If you're about to ask the same question again ("What's most important to you?" → "What's most important to you?"), STOP. The candidate already answered or signaled they don't want to keep being asked. Either move to a CONCRETE counter (a real ₹ number) or address a different angle (joining bonus, equity vesting, notice). Asking the same probe twice is the failure mode that makes users say "why are you asking again and again?"
 - ANSWER DIRECT ASKS WITH A NUMBER, NOT A QUESTION: When the candidate says "what exactly are you offering?", "can you clarify the offer?", "what's your counter?", or "give me your best" — your reply MUST contain a specific ₹ figure (or a recap of your existing offer with exact numbers). Do NOT respond with "what's most important to you?" or "what would move the needle?". Probing back when asked for a number reads as evasion and breaks trust.
 - EVERY SALARY SESSION NEEDS AT LEAST ONE COUNTER: After the candidate has stated their target, you owe them a numeric move within the next 1-2 turns — either "I can stretch to ₹X" (counter) or "₹Y is above my band; my best is ₹Z" (honest no). Going 3+ turns without producing a number after their ask is silent stonewalling. The candidate notices.
+- S44-B8: DEFLECTION LIMIT — you may deflect (ask about comp structure, lever, or clarifying question) AT MOST ONCE after a direct yes/no counter question ("can you go to ₹X?", "what's your best?", "is ₹X possible?"). On the SECOND time you receive the same direct counter question without a numeric move in between, you MUST produce a number. Two consecutive deflections ("let me check with HR" → "what's most important to you?") on the same question is a negotiation failure that destroys trust. If you've already deflected once, answer the number directly.
 - MIRROR THE CANDIDATE'S NUMBERS EXACTLY: When you reference what the candidate said, use the exact figure they used. If they said "22 lakhs as base", write "I heard ₹22 LPA base" — NOT "₹20.2 LPA base". Distorting their number even slightly destroys trust ("did they listen at all?").
 - STRETCH-AUTHORITY PACING: When you raise your offer beyond your initial number — especially if it's near maxStretch — DON'T raise instantly. Real hiring managers say "let me check with leadership / comp committee" before stretching. Use a beat: "That's near the top of what I can approve directly. Let me see if I can pull in another lever — give me a moment." Then in the SAME message, after the beat, give the new number. This pacing makes the stretch feel earned, not infinite. Skip the beat for small bumps within initial range.
 - INDIAN-CONTEXT SCRIPTS: Recognize and respond authentically to common Indian-context lines from the candidate without making them feel weird:
   • "Let me discuss with my family / parents / wife / husband." → respect it. "Of course — take the evening, talk to them, come back to me by tomorrow EOD." Don't push.
   • "My current company is making a counter-offer." → take it seriously, ask for the figure, position your offer's non-cash strengths (growth, scope, learning).
+  • S44-B4: "I have an international offer from [Company] at $X/month / £Y/year" or any international comp benchmark (Google Singapore, US, UK, Singapore, UAE, Dubai, etc.) → you MUST acknowledge it on the SAME turn. Do NOT ignore it and ask a different question. Acknowledge the figure, convert it to LPA equivalents if you can, and either: (a) position your offer's India-specific advantages (tax efficiency, cost of living, family proximity, career-track clarity) or (b) ask a clarifying question ("Is that a firm offer, or a benchmark you've seen?"). Ignoring an international benchmark destroys trust and makes the recruiter seem unprepared. Even if you can't match it, you MUST engage: "₹{international equivalent} does represent strong international comp. Let me be honest about what I can offer and why I'd compare favorably on [specific dimension]."
   • "I have a joining-date constraint" (wedding, parents' health, relocation logistics) → flexibility on start date is a cheap win for you. Offer to delay start or signing bonus to bridge.
   • "I need to consider relocation costs" → quote a real relocation allowance figure if applicable, mention HRA differences city-to-city.
   • "I've already declined another offer for this." → meaningful BATNA signal — don't squeeze further on base.
@@ -994,6 +1033,7 @@ The candidate has ALREADY been offered the role. The interview's only job now is
 - DO NOT ask about technical depth, design process, system design, or domain expertise
 - DO NOT ask "what would you bring to the role" / "build your X muscle" / "show me your impact" / "demonstrate your skills" — none of that is on the table at this stage
 - DO NOT pivot to "how would you approach problem Y" or "what's your experience with Z"
+- S44-B3: DO NOT ask the candidate to "justify" their ask through technical credentials, ownership, or past delivery. Phrases like "what justifies it?", "what's your impact in system design?", "tell me about your codebase ownership", "what does your performance / scale track record look like?" are BEHAVIORAL interview questions dressed as negotiation. The candidate has ALREADY been offered the role — their technical competence is settled. If you want to push back on their number, do it with the BAND ("that's above what we've approved for this level") not with a demand to re-prove their skills.
 
 ALLOWED topics ONLY: salary numbers (base / variable / ESOPs / joining bonus), expectations and reasoning behind them, current CTC, competing offers, market data, equity terms (vesting / cliff / strike), benefits (health / learning / flex / WFH), notice period and joining timeline, leadership-approval check-ins, deal close. If you find yourself drafting a question about something OTHER than these topics, rewrite — you are off-script.`;
     } else if (safeDepth === 0) {
@@ -1181,10 +1221,15 @@ ${safeStarGap === "action"
        weakness. Conservative regexes (see _cultural-register.ts) — false
        negatives are fine, false positives would over-license Hinglish on
        answers that don't warrant it. */
-    const culturalReg = type === "behavioral"
+    /* Campus-placement shares the Indian cultural-register markers with
+     * behavioral (deferential gratitude, pedigree recital, CGPA recital)
+     * and needs the same LLM hint so pedigree/CGPA recitation is not
+     * scored as padding or filler — it is the canonical services-hiring
+     * opener in India. */
+    const culturalReg = (type === "behavioral" || type === "campus-placement")
       ? detectCulturalRegister(answer)
       : { hedgedDisagreement: false, indirectFailureFraming: false, relationalFraming: false, calendarAnchored: false, deferentialGratitude: false, pedigreeRecital: false, careerLadderNarrative: false };
-    const culturalRegisterHint = (type === "behavioral" && hasAnyIndianRegister(culturalReg))
+    const culturalRegisterHint = ((type === "behavioral" || type === "campus-placement") && hasAnyIndianRegister(culturalReg))
       ? `\nINDIAN-REGISTER DETECTED — the candidate's answer contains: ${[
           culturalReg.hedgedDisagreement ? "hedged disagreement (conviction expressed politely)" : null,
           culturalReg.indirectFailureFraming ? "indirect failure framing (ownership expressed via 'some challenges')" : null,
@@ -1319,7 +1364,7 @@ ${safeStarGap === "action"
       : "";
 
     // Salary context for salary-negotiation follow-ups (prevents losing city-adjusted rates)
-    const salaryFollowUpCtx = (type === "salary-negotiation" || type === "hr-round")
+    const salaryFollowUpCtx = type === "salary-negotiation"
       ? `\n${lookupSalaryContext({ role, company, currentCity, jobCity })}\nUse ₹ and LPA. Follow-up offers/counters MUST stay within these ranges.
 CRITICAL: You are the HIRING MANAGER making a salary offer. Stay in character — do NOT switch to behavioral interview questions. Your follow-ups must be about compensation, benefits, joining timeline, notice buyout, or counter-offers.
 
@@ -1334,12 +1379,11 @@ NUMBER DISCIPLINE — non-negotiable rules for every salary follow-up:
   8. ABOVE-MARKET ASKS: When the candidate asks for a number above your maxStretch, you MUST explicitly tell them it's above your authorized range BEFORE making any counter. Use phrases like "₹{ask} is above what's approved for this role at our level — the band caps at ₹{maxStretch}". Do NOT skip this acknowledgement and just match their number — that's silent capitulation, the worst negotiator behavior. Only after the acknowledgement may you offer your real maxStretch as a counter.`
       : "";
 
-    /* Craft fence — shared with the question generator via
-     * buildFollowUpDisciplineFence so the initial-question fence and the
-     * follow-up fence can never drift apart. Suppressed for salary turns,
-     * which run the hiring-manager persona (its own fence lives in
-     * salaryFollowUpCtx). */
-    const followUpDisciplineFence = type === "salary-negotiation"
+    const hrFollowUpCtx = hrFollowUpContext(type, question, () => lookupSalaryContext({ role, company, currentCity, jobCity }));
+
+    /* Craft fence — shared with the question generator via buildFollowUpDisciplineFence.
+     * Suppressed for salary and HR turns, which carry their own rules. */
+    const followUpDisciplineFence = (type === "salary-negotiation" || type === "hr-round")
       ? ""
       : buildFollowUpDisciplineFence(sanitizeForLLM(role, 100) || "");
 
@@ -1364,7 +1408,7 @@ ${FOLLOW_UP_STATIC_RULES}
 ${panelContext}${behavioralModeGuard}${culturalRegisterHint}${reverseInterviewDirective}
 
 Interview type: ${sanitizeForLLM(type, 50) || "behavioral"}
-Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
+Role: ${sanitizeForLLM(role, 100) || "senior role"}${company ? `\nCompany: ${sanitizeForLLM(company, 100)}` : ""}${salaryFollowUpCtx}${hrFollowUpCtx}${jdContext ? `\n${jdContext}` : ""}
 
 ${followUpDisciplineFence}${focusTilt}
 NEVER ask a follow-up that would only make sense for a different role. If you're tempted to ask about "user metrics" or "scale" for a writing role, stop and reframe.
@@ -1381,7 +1425,7 @@ If the candidate's most recent answer ENDS WITH or PRIMARILY CONTAINS a question
 
 ${tierPromptSuffix(classifyCompanyTier(company))}
 
-${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${failureSpecificityDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
+${resumeSkillsContext ? `${resumeSkillsContext}\n` : ""}${resumeProjectsContext}${resumeExperiencesContext}${campusLiveProbeCtx}${regionalDirective}${starGapDirective}${answerShapeDirective}${conflictGapDirective}${failureSpecificityDirective}${tenureProbe}${behaviouralProbeContext}${historyContext}
 
 Question asked: "${sanitizeForLLM(question, 500)}"
 Candidate's answer: "${sanitizeForLLM(answer, 1000)}"${previousContext}
@@ -1416,7 +1460,7 @@ Respond JSON only:
       let fallbackText: string;
       if (numMatch) {
         fallbackText = `I hear you — ₹${numMatch[1]} LPA is what you're looking at. Let me see what flexibility I have in the package structure. Can you help me understand what's driving that number — is it based on market data, a competing offer, or your current package progression?`;
-      } else if (/\b(accept|sounds good|that works|deal|agreed|fine with me|okay|ok|sure|yes)\b/i.test(answer) && !/\b(but|however|only if|unless)\b/i.test(answer)) {
+      } else if (/\b(accept|sounds\s+good|that works|deal|agreed|fine with me|okay|ok|sure|yes)\b/i.test(answer) && !/\b(but|however|only if|unless)\b/i.test(answer)) {
         fallbackText = `That's great to hear! I'm glad we could find something that works. Let me put together the final numbers and have HR send you the formal offer letter. What's your notice period situation?`;
       } else if (/\b(too low|not enough|can.?t accept|not acceptable|walk away|not interested)\b/i.test(answer)) {
         fallbackText = `I hear your concern, and I appreciate you being direct. Help me understand — what range would work for you? I want to see if there's a way to bridge the gap.`;
@@ -1474,8 +1518,16 @@ Respond JSON only:
 
     let result: { text: string };
     let retriedDueToDuplicate = false;
+    // Dedup retries below can chain up to 2 sequential callLLM invocations
+    // (see "never spend more than two LLM calls per follow-up" below).
+    // totalBudgetMs caps EACH call's whole groq→gemini chain (incl. each
+    // provider's one-shot transient retry) so two of them back-to-back
+    // still fit inside Vercel's Edge ~25s ceiling — without it a single
+    // call's real worst case is (12000 + 800ms retry) × 2 providers ≈
+    // 25.6s on its own, before a second dedup-retry call even starts.
+    const FOLLOW_UP_LLM_BUDGET_MS = 10000;
     try {
-      result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up" });
+      result = await callLLM({ prompt, temperature: llmTemp, maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
 
       // Seed-question dedup: the LLM sometimes paraphrases the very
       // question the candidate just answered ("balance design and
@@ -1502,7 +1554,7 @@ ${question.slice(0, 400)}
 </original_question>
 
 Do NOT paraphrase that question. Your follow-up MUST probe a different dimension — a specific metric, a counterfactual, the candidate's individual role vs the team's, an obstacle they overcame, or a trade-off they didn't yet articulate. Repeating the same probe in different words is FORBIDDEN.`;
-          result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry" });
+          result = await callLLM({ prompt: seedRetryPrompt, temperature: Math.max(llmTemp + 0.15, 0.4), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-seed-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
         }
       }
       // Verbatim-duplicate dedup retry: if the LLM's output normalizes to
@@ -1550,7 +1602,7 @@ The candidate has now responded. Repeating the SAME reply is forbidden — it ma
 - ADVANCES the conversation — a concrete ₹ counter, a specific lever you can move (joining bonus / notice flexibility / equity), or an honest "I'm at the ceiling for this role" close
 - Acknowledges what the candidate just said in their most recent answer specifically
 Repeat-text is FORBIDDEN.`;
-            result = await callLLM({ prompt: verbatimRetryPrompt, temperature: Math.max(llmTemp + 0.2, 0.4), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-verbatim-dedup-retry" });
+            result = await callLLM({ prompt: verbatimRetryPrompt, temperature: Math.max(llmTemp + 0.2, 0.4), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-verbatim-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
           }
         }
       }
@@ -1580,7 +1632,7 @@ The candidate has now answered. Generate a COMPLETELY DIFFERENT response that:
 - ADVANCES the conversation (a new question, a concrete number, or an explicit recap of what's been said)
 - ${isSalaryNeg ? "If the candidate just shared their target, your reply MUST contain a specific ₹ counter number — not another question." : "Do not ask the same probe twice."}
 Repeat-text in followUpText is FORBIDDEN.`;
-          result = await callLLM({ prompt: antiRepeatPrompt, temperature: Math.max(llmTemp + 0.15, 0.35), maxTokens: 500, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-dedup-retry" });
+          result = await callLLM({ prompt: antiRepeatPrompt, temperature: Math.max(llmTemp + 0.15, 0.35), maxTokens: 500, jsonMode: true, jsonSchema: FOLLOW_UP_SCHEMA, fast: true }, 12000, { userId: auth.userId, endpoint: "follow-up-dedup-retry", totalBudgetMs: FOLLOW_UP_LLM_BUDGET_MS });
         }
       }
     } catch (llmErr) {
@@ -1670,7 +1722,12 @@ Repeat-text in followUpText is FORBIDDEN.`;
         const { detectCandidateIntent } = await import("./_follow-up-helpers");
         const { deriveConvState, phaseForState } = await import("./_negotiation-state");
         const intentLocal = detectCandidateIntent(typeof answer === "string" ? answer : "");
-        const acceptInHistoryReLocal = /\b(i accept|i agree|sounds good|that works for me|it.?s a deal|happy with|works for me|let.?s go ahead|deal|i.?ll take it|i.?ll take the offer)\b/i;
+        // S83-B2 guard: i agree — suppress agreeing-with-a-point forms
+        // S88-B3 (2026-07-26) — same sync as acceptInHistoryRe2 above.
+        // S94-B2: synced deal-closing idioms; S95-B1/B2: works for me, happy to accept; S96-B1/B2: fully on board, fine by me
+        // S97-B1/B2: okay with this/that/it; happy to take/go with the offer
+        // S98-B1/B2/B3/B4: i will accept; willing to accept; X is acceptable; let us proceed/move forward
+        const acceptInHistoryReLocal = /\b(i accept(?!\s+(?:nothing|no\s+less|anything\s+less|that\b|whatever\b))|i.?ll accept|i agree(?!\s+(?:on|the|that|this|it|your|with|to\s+(?:review|look|discuss|examine|reconsider|revisit|check|read|go|get|think|evaluate|consider))\b)|sounds\s+good|that works for me|works for me|\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr\b|crore)?\s+works(?:\s+for\s+me)?\b|happy\s+to\s+accept|(?:thrilled|delighted|excited|pleased)\s+to\s+accept|fine\s+by\s+me|fully\s+on\s+board|(?:it|that|this)(?:.?s|\s+is)\s+a\s+deal|happy with|let.?s go ahead|deal|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?take\s+(?:it(?!\s+(?:as\s+a\s+no|that\s+way|the\s+wrong\s+way))|(?:the\s+)?(?:offer|package|deal|position|role)|whatever\s+(?:you\s+)?offer)|count\s+me\s+in|consider\s+it\s+done|(?:that|this).?s?\s+(?:is\s+)?acceptable|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly)\s+)?on\s+board|fine\s+with\s+me|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely)\s+)?happy\s+to\s+proceed|happy\s+to\s+proceed|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|i.?m\s+game|okay\s+with\s+(?:this|that|it)|happy\s+to\s+(?:take|go\s+with)\s+(?:the\s+)?(?:offer|package|deal|this|that|it)|happy\s+to\s+move\s+forward(?:\s+with\s+(?:this|it|that))?|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?accept(?!\s+(?:nothing|no\s+less))|willing\s+to\s+accept|prepared\s+to\s+accept|glad\s+to\s+accept|i(?:.d|\s+would)\s+love\s+to\s+accept|i\s+(?:wholeheartedly|enthusiastically|unconditionally)\s+accept|i(?:.ll|.d|\s+will|\s+would)\s+go\s+for\s+it|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly|perfectly|quite)\s+)?fine\s+with\s+(?:this|that|it|the)|sounds\s+acceptable|let(?:'?s|\s+us)\s+(?:proceed|move\s+forward)|(?:offer|package|deal|ctc|salary|comp(?:ensation)?|terms?|arrangement|proposal|number)\s+is\s+acceptable|sounds\s+great(?:\s+to\s+me)?|fair\s+enough(?:\s+for\s+me)?|(?:let.?s|let\s+us)\s+make\s+this\s+happen|(?:i\s+)?can\s+live\s+with\s+(?:that|this|it)|in\s+agreement(?:\s+with\s+the\s+terms)?|i(?:.ll|.d|\s+will|\s+would)\s+go\s+with\s+(?:this|that|it)|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely|fully|completely)\s+)?satisfied\s+with\s+(?:this|that|it|the)|(?<!not\s)willing\s+to\s+(?:move\s+forward|proceed)|(?:let.?s|let\s+us)\s+do\s+(?:it|this)|i(?:.ll|.d|\s+will|\s+would)\s+go\s+ahead(?:\s+with)?|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|perfectly|quite|really|pretty)\s+)?good\s+with\s+(?:this|that|it|the)|consider\s+it\s+settled|happy\s+to\s+sign(?:\s+(?:on|up))?|sign\s+me\s+up|that.?s\s+settled(?:\s+then)?|let.?s\s+shake\s+(?:hands\s+)?on\s+it|(?:i.?m|i\s+am)\s+(?:(?:quite|very|really|truly|completely|absolutely)\s+)?content\s+with\s+(?:this|that|it|the)|(?:i.?m|i\s+am)\s+pleased\s+to\s+accept|(?:i.?ll|i.?d|i\s+will|i\s+would)\s+sign\s+on\s+the\s+dotted\s+line|(?<!not\s)comfortable\s+with\s+(?:this|that|it|the)|works\s+(?:\w+\s+)?for\s+me|that\s+works\b)\b/i;
         const acceptedEverInHistoryLocal = conversationHistory ? acceptInHistoryReLocal.test(conversationHistory) : false;
         const convStateLocal = deriveConvState({
           acceptedThisTurn: intentLocal.accepted,
@@ -2322,11 +2379,189 @@ Repeat-text in followUpText is FORBIDDEN.`;
       const text = parsed.followUpText.toLowerCase();
       const counterOfferPat = /how about|what if I offer|counter.*with|we could do|let me offer/i;
       // Re-detect intent here since the original detection is block-scoped
-      const acceptRe = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
-      const walkRe = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|move on|have to pass)\b/i;
-      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
-      const didAccept = acceptRe.test(answer) && !hedgeRe.test(answer.slice(answer.search(acceptRe)));
-      const didWalkAway = walkRe.test(answer) && !acceptRe.test(answer);
+      // S83-B1/B2: guarded `i agree` (point-agreement FP); restored `agreed` with lookbehind guard
+      // S84: added i'll take it, that's acceptable, count me in, consider it done, happy to proceed, on board
+      // S93-B1: added `i'm in` / `i am in`; S93-B2: let arm broadened to let(?:'?s|\s+us)
+      // S94-B2: deal-closing idioms: done deal, we/you have/got a deal, let's close/seal/finalize, i'm game
+      // S95-B1: bare "works for me"; S95-B2: "happy to accept"
+      // S96-B1: "fully on board" (adverb gap); S96-B2: "fine by me"
+      // S97-B1/B2: okay with this/that/it; happy to take/go with the offer
+      // S98-B1/B2/B3/B4: i will accept; willing to accept; X is acceptable; let us proceed/move forward; happy to move forward
+      // S132-B3 (wave 38): mirrors acceptWords in _follow-up-helpers.ts — "I'm/I am going to
+      // accept" had no modal-accept arm (only .ll/.d/will/would), so it never fired accept.
+      // S133-B1 (wave 39): "I do accept" (emphatic auxiliary) wasn't covered by the bare
+      // "i accept" arm — mirrors acceptWords's fix.
+      const acceptRe = /\b(i\s+(?:do\s+|did\s+)?accept(?!\s+(?:nothing|no\s+less|anything\s+less|that\b|whatever\b))|i.?ll accept|(?:i.?m|i\s+am)\s+(?:actually\s+|definitely\s+|really\s+)?going\s+to\s+accept|accept the offer|sounds\s+good|that works for me|works for me|\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr\b|crore)?\s+works(?:\s+for\s+me)?\b|happy\s+to\s+accept|(?:thrilled|delighted|excited|pleased)\s+to\s+accept|(?:it|that|this)(?:.?s|\s+is)\s+a\s+deal|i.?m happy with|fine with me|fine\s+by\s+me|fully\s+on\s+board|i agree(?!\s+(?:on|the|that|this|it|your|with|to\s+(?:review|look|discuss|examine|reconsider|revisit|check|read|go|get|think|evaluate|consider))\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?take\s+(?:it(?!\s+(?:as\s+a\s+no|that\s+way|the\s+wrong\s+way))|(?:the\s+)?(?:offer|package|deal|position|role)|whatever\s+(?:you\s+)?offer)|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely)\s+)?happy\s+to\s+proceed|happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly)\s+)?on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z])|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|let(?:'?s|\s+us)\s+(?:close|seal|finalize|proceed|move\s+forward)|i.?m\s+game|(?<!not\s)okay\s+with\s+(?:this|that|it)|happy\s+to\s+(?:take|go\s+with)\s+(?:the\s+)?(?:offer|package|deal|this|that|it)|happy\s+to\s+move\s+forward(?:\s+with\s+(?:this|it|that))?|i(?:.ll|.d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?accept(?!\s+(?:nothing|no\s+less))|willing\s+to\s+accept|prepared\s+to\s+accept|glad\s+to\s+accept|i(?:.d|\s+would)\s+love\s+to\s+accept|i\s+(?:wholeheartedly|enthusiastically|unconditionally)\s+accept|i(?:.ll|.d|\s+will|\s+would)\s+go\s+for\s+it|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly|perfectly|quite)\s+)?fine\s+with\s+(?:this|that|it|the)|sounds\s+acceptable|(?:offer|package|deal|ctc|salary|comp(?:ensation)?|terms?|arrangement|proposal|number)\s+is\s+acceptable(?:\s+to\s+me)?|sounds\s+great(?:\s+to\s+me)?|fair\s+enough(?:\s+for\s+me)?|(?:let.?s|let\s+us)\s+make\s+this\s+happen|(?:i\s+)?can\s+live\s+with\s+(?:that|this|it)|in\s+agreement(?:\s+with\s+the\s+terms)?|i(?:.ll|.d|\s+will|\s+would)\s+go\s+with\s+(?:this|that|it)|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely|fully|completely)\s+)?satisfied\s+with\s+(?:this|that|it|the)|(?<!not\s)willing\s+to\s+(?:move\s+forward|proceed)|(?:let.?s|let\s+us)\s+do\s+(?:it|this)|i(?:.ll|.d|\s+will|\s+would)\s+go\s+ahead(?:\s+with)?|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|perfectly|quite|really|pretty)\s+)?good\s+with\s+(?:this|that|it|the)|consider\s+it\s+settled|happy\s+to\s+sign(?:\s+(?:on|up))?|sign\s+me\s+up|that.?s\s+settled(?:\s+then)?|let.?s\s+shake\s+(?:hands\s+)?on\s+it|(?:i.?m|i\s+am)\s+(?:(?:quite|very|really|truly|completely|absolutely)\s+)?content\s+with\s+(?:this|that|it|the)|(?:i.?m|i\s+am)\s+pleased\s+to\s+accept|(?:i.?ll|i.?d|i\s+will|i\s+would)\s+sign\s+on\s+the\s+dotted\s+line|(?<!not\s)comfortable\s+with\s+(?:this|that|it|the)|works\s+(?:\w+\s+)?for\s+me|that\s+works\b)\b/i;
+      // S77-B3/S78-B1/S78-B2/S80-B1/S80-B3/S81-B1/S81-B2/S85 — all guards applied; synced with WALKAWAY_PATTERN
+      // S90-B2: departure-frame adverb restructured; S96-B6/B7/B8: explore/pursue other, no longer interested, part ways
+      // S97-B3: withdraw(?:ing)?; S97-B9: removing myself; take me off; take the/another offer
+      // S98-B12..B16: decline adverbs/modals; choosing to move on; be pursuing; accepted elsewhere; decided to go with
+      // S139-B2 (wave 45): mirrors Hindi/Hinglish walk-away arms added to walkAwayWords/WALKAWAY_PATTERN
+      // S140-B2 (wave 46): mirrors call(?:ing)?\s+it\s+quits gerund fix (walkAwayWords/WALKAWAY_PATTERN)
+      // S141-B2/B3 (wave 47): mirrors withdr(?:aw(?:ing)?|ew) widening + i declined/declined the
+      // offer/position/role/job + passed on the/this offer/position/role/job/opportunity
+      // (walkAwayWords/WALKAWAY_PATTERN)
+      const walkRe = /\b(hard\s+pass\b|walk(?:ing|in)?\s+away(?!\s+with\b)|peeche\s+hat(?:na|\s+raha|\s+rahi|\s+rahe)?(?:\s+(?:hoon|hu|hun|chahta\s+hoon|chahti\s+hoon))?|hat(?:na|\s+raha|\s+rahi|\s+rahe)\s+(?:hoon|hu|hun)|interested\s+nahi(?:n)?\s+(?:hoon|hu|hun)|i\s+(?:am\s+)?(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us|with)\b)(?:ing)?(?:\s+away|\s+out|(?=[.,!?;]|\s*$))|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here(?!\s+for\s+now\b)|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|not a chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing)|reject(?:ing)?(?:\s+(?:this|it|that|the\s+offer))?|say\s+no(?:\s+to\s+(?:this|it|that))?|turn(?:ing)?\s+(?:this|it|that|the\s+offer)\s+down)))|that won.?t work|let.?s\s+end\s+(?:this|the)\s+(?:conversation|discussion|call|negotiation)|i.?m out(?!\s+of\b(?!\s*here\b))|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no\s+longer\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|part\s+ways|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing)|reject(?:ing)?(?:\s+(?:this|it|that|the\s+offer))?|say\s+no(?:\s+to\s+(?:this|it|that))?|turn(?:ing)?\s+(?:this|it|that|the\s+offer)\s+down)))|i(?:.ll|.?m\s+going\s+to|\s+will|\s+would\s+rather|\s+think\s+i.ll|\s+guess\s+i.ll|\s+have\s+to|\s+need\s+to|\s+am\s+going\s+to)\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)|\s+on\s+(?:dessert|lunch|dinner|breakfast|coffee|tea|the\s+(?:food|meal|drinks?)))|no deal\b(?!\s*(?:[-\s]?breakers?|\s+on\s+the\s+table))|withdr(?:aw(?:ing)?|ew)(?!\s+(?:my|your|the|this)\s+(?:\w+\s+)?(?:counter|demand|ask|offer|request|proposal|requirement|expectation|complaint|concern|feedback|objection|comment|remark|statement|amendment)\b)|decline the offer|i\s+declined|declined\s+the\s+(?:offer|position|role|job)|passed\s+on\s+(?:the|this)\s+(?:offer|position|role|job|opportunity)|^declin(?:e|ing)\b|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|pull(?:ing)?\s+out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth(?!\s+(?:fight|argu|bicker|quarrel|quibbl|debat|nit.?pick|hassle))|won.?t work(?!\s+for\s+(?:more|longer|over|above|anything\s+less)\s+than)|is(?:n.?t|\s+not)\s+going\s+to\s+work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|guess\s+i.ll|want\s+to|have\s+to|need\s+to|am\s+going\s+to|am))\s+(?:(?:just|then|probably|simply|really|now|rather|likely|instead)\s+)?(?:going\s+to\s+(?:have\s+to\s+)?|gonna\s+(?:have\s+to\s+)?)?(?:have\s+to\s+)?(?:(?:move|moving)\s+on|(?:explore|pursue)\s+other\s+(?:options|opportunities))|(?:choosing|chosen|decided)\s+to\s+(?:move\s+on|pursue\s+other\s+(?:options|opportunities)|explore\s+other\s+(?:options|opportunities))|made\s+(?:my|a)\s+decision\s+to\s+(?:move\s+on|pursue\s+other|explore\s+other)|(?:will\s+)?be\s+pursuing\s+other\s+(?:options|opportunities)|(?:will\s+)?be\s+moving\s+on|(?:will\s+)?be\s+passing\s+on\s+(?:this|the\s+(?:offer|opportunity|role|position))|no\s+longer\s+pursuing\s+(?:this|the)\s+(?:role|position|opportunity|offer|job)|tak(?:e|ing)\s+(?:the\s+)?(?:other|another)\s+(?:offer|opportunity|position|role|job)|accepted\s+(?:a|an|another)\s+(?:position|offer|role|job)(?:\s+elsewhere|\s+(?:at|with)\s+another)?|(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)|(?:chosen|decided)\s+to\s+accept\s+(?:a|an|another)\s+(?:offer|position|role|job)|step(?:ping)?\s+back\s+from\s+(?:this|the)|opt(?:ing|ed)\s+out\s+of\s+(?:this|the)|prefer\s+to\s+(?:explore|pursue|consider)\s+other\s+(?:options?|opportunities?|avenues?|paths?|alternatives?)|remov(?:e|ing)\s+myself\s+from\s+(?:(?:this|the)\s+)?(?:process|consideration|pipeline)|take\s+me\s+off\s+(?:your|the)\s+list|thanks but no|not for me|(?<!kam\s)nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|jaa?ung[ai]|lung[ai])|(?:yeh|ye)\s+nahi\s+kar\s+sakta|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|i(?:.ll|.d|\s+will)\s+need\s+to\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|(?:reached|at)\s+an?\s+impasse|(?:don.?t|do\s+not)\s+think\s+(?:this|it|that)\s+is\s+going\s+to\s+work(?:\s+out)?|call(?:ing)?\s+it\s+quits|bow(?:ing)?\s+out(?:\s+of\s+(?:this|the))?|i(?:.ll|.d|\s+will|\s+would)\s+be\s+declin(?:ing)?|can(?:not|.t)\s+(?:come\s+to|reach)\s+(?:an?\s+agreement|terms)|(?:i(?:.ll|.d|\s+will)\s+|i\s+(?:have|need)\s+to\s+|i.?m\s+going\s+to\s+|going\s+to\s+(?:have\s+to\s+)?)look(?:ing)?\s+elsewhere|no\s+longer\s+(?:wish|want)\s+to\s+(?:proceed|continue|negotiate|participate|move\s+forward)|decided\s+not\s+to\s+(?:move\s+forward|proceed|continue|accept(?:\s+this)?)|step(?:ping)?\s+away(?:(?!\s+from\s+)|\s+from\s+(?:this|the\s+(?:negotiation|process|offer|role|position|opportunity|deal|table|conversation|discussion)))|made\s+up\s+my\s+mind\s+to\s+(?:decline|not\s+accept|walk\s+away)|end(?:ing)?\s+my\s+participation|(?:reached?\s+a|at\s+a)\s+dead\s+end|exit(?:ing)?\s+(?:this\s+|the\s+)?(?:negotiation|process|conversation|discussion)|this\s+role\s+(?:isn.?t|is\s+not)\s+for\s+me|won.?t\s+be\s+(?:accepting|moving\s+forward\s+with)\s+(?:this|the))\b/i;
+      // S84: `if` added so "I'll take it if X" / "Count me in if X" are conditionalAccept, not full accept
+      // S98-B8: as long as / so long as added (matches hedgeWords in _follow-up-helpers.ts)
+      // S121-B4 (wave 27): lekin added (matches hedgeWords in _follow-up-helpers.ts)
+      // S130-B2 (wave 36) — sync drift: canonical hedgeWords in _follow-up-helpers.ts
+      // has a `par\b` (Hindi "but") arm that this copy was missing since it was
+      // introduced in S121 (wave 27) — the comment above claimed both were ported but
+      // only `lekin` actually made it across. "Sounds good par salary thodi kam hai."
+      // computed didAccept=true here (hedge undetected) while the canonical helper
+      // correctly flagged it as conditional.
+      // S134-B1 (wave 40) — mirrors hedgeWords in _follow-up-helpers.ts: "although" was
+      // missing, and \b(...)\b's "though" arm doesn't match inside "although" (no word
+      // boundary between "al" and "though"), so hedges phrased with "although" were
+      // entirely invisible here too.
+      const hedgeRe = /\b(but|however|only if|unless|provided|on condition|contingent|except|although|though|if|as\s+long\s+as|so\s+long\s+as|par\b|lekin)\b/i;
+      // S130-B1 (wave 36) — mirrors acceptSarcasmRe in _follow-up-helpers.ts: sarcastic
+      // ("like I'd accept") and rhetorical-question ("do you think I'd accept") refusals,
+      // plus impossible-hypothetical idioms ("if hell froze over"/"if pigs could fly"),
+      // contain a literal acceptRe phrase and previously fired didAccept=true.
+      // S131-B1 (wave 37) — mirrors acceptSarcasmRe's fix-up: negated rhetorical-question
+      // form ("you DON'T think I'd accept") and punctuation-tolerant "like"/"as if"
+      // separator (handles "like...I'd accept", "like, I'd accept?!").
+      const acceptSarcasmReLocal =
+        /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:(?:don.?t|doesn.?t|didn.?t)\s+)?(?:really\s+|actually\s+)?think\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
+      // S124-B3 (wave 30): mirrors acceptNegationRe in _follow-up-helpers.ts — "I don't
+      // think this works for me" matched acceptRe's bare "works for me" arm and never got
+      // the wave-29 negation guard ported here, so didAccept stayed true on a rejection.
+      const acceptNegationReLocal = /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|won.?t|wouldn.?t)\s+think\s+(?:\w+\s+){0,3}works?\b/i;
+      // S127-B1 (wave 33): mirrors _follow-up-helpers.ts's accepted guard — a live
+      // number-lock ("sticking with 30 LPA") means the candidate hasn't actually agreed
+      // to terms, even if an unrelated accept phrase appears elsewhere in the reply.
+      // S128-B1 (wave 34): mirrors _follow-up-helpers.ts's numberLockWords Hindi anchor arm.
+      const numberLockWordsLocal = /\b(?:stick(?:ing)?\s+with|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
+      // S135-B1 (wave 41): mirrors numberLockAppliesToLocal in _follow-up-helpers.ts —
+      // numberLockWordsLocal.test(answer) scanned the WHOLE answer, so an unrelated
+      // number-lock in a later/earlier sentence blanket-suppressed didAccept/didWalkAway
+      // even when the accept/walk-away signal was in a totally different sentence
+      // ("I accept. Also, I'm sticking with 30 LPA." never fired didAccept=true). A naive
+      // same-sentence-only scoping broke the S127-B1 regression ("Sticking with 30 LPA is
+      // what I need. That works for me otherwise." must stay didAccept=false — the accept
+      // sentence anaphorically refers back to the number). Cross-sentence locks still
+      // apply by default; they only stop applying when the lock sentence carries a
+      // new-topic discourse marker ("Also," "Additionally," ...) flagging it as a distinct,
+      // separate remark. Same-sentence locks (incl. S128-B1's Hindi idiom) always apply.
+      const newTopicMarkerReLocal = /^\s*(?:also|additionally|besides|separately|by\s+the\s+way|aside\s+from\s+(?:that|this))\b/i;
+      const sentenceAroundLocalFU = (text: string, idx: number): string => {
+        const enders = /[.!?]/g;
+        let start = 0;
+        let end = text.length;
+        let m: RegExpExecArray | null;
+        while ((m = enders.exec(text))) {
+          if (m.index < idx) start = m.index + 1;
+          else {
+            end = m.index;
+            break;
+          }
+        }
+        return text.slice(start, end);
+      };
+      const numberLockAppliesToLocalFU = (text: string, match: RegExpExecArray | null): boolean => {
+        if (!match || !numberLockWordsLocal.test(text)) return false;
+        const matchSentence = sentenceAroundLocalFU(text, match.index);
+        if (numberLockWordsLocal.test(matchSentence)) return true;
+        const lockMatch = numberLockWordsLocal.exec(text);
+        if (lockMatch && newTopicMarkerReLocal.test(sentenceAroundLocalFU(text, lockMatch.index))) return false;
+        return true;
+      };
+      const acceptMatchForLockLocal = acceptRe.exec(answer);
+      // S136-B2 (wave 42) — the old `!hedgeRe.test(answer.slice(answer.search(acceptRe)))`
+      // suppressed didAccept on ANY hedge word anywhere after the accept match, with no
+      // distinction between a hedge that negates ("but I don't think this works out") and
+      // a hedge that's just a benign condition ("but only if you confirm the start date",
+      // "however I'd like it in writing") — the latter is exactly what conditionalAccept
+      // represents in _follow-up-helpers.ts, where `accepted` stays true. Mirrors the
+      // canonical hedgeIsRejection walk-away arm (walkRe is the local equivalent of
+      // walkAwayWords) — a full rejectWords port isn't available locally, so this covers
+      // the walk-away-flavored post-hedge case (S129-B1's "but I also do not think this is
+      // going to work out") while no longer blocking benign post-hedge conditions.
+      const postHedgeTextLocal = hedgeRe.test(answer) ? answer.slice(answer.search(hedgeRe)) : "";
+      const postHedgeIsConditionalThreatLocal = /\bif\b/i.test(postHedgeTextLocal);
+      const hedgeBlocksAcceptLocal =
+        postHedgeTextLocal !== "" && walkRe.test(postHedgeTextLocal) && !postHedgeIsConditionalThreatLocal;
+      const didAccept = acceptRe.test(answer) && !acceptNegationReLocal.test(answer) && !hedgeBlocksAcceptLocal && !numberLockAppliesToLocalFU(answer, acceptMatchForLockLocal) && !acceptSarcasmReLocal.test(answer);
+      // S121-B7 (wave 27): mirrors walkAwayNegationRe in _follow-up-helpers.ts — "was about
+      // to walk away but..." is a retraction, not an intent to depart.
+      // S122-B1 (wave 28): mirrors walkAwayNegationRe's bare-"not" branch (tight 0-1 word
+      // gap) + gerund verb forms — see _follow-up-helpers.ts for the full rationale.
+      const walkAwayNegationReLocal = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|won.?t|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to)\s+(?:\w+\s+){0,4}|not\s+(?:\w+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw|part\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+      // S123-B2 (wave 29): mirrors NOT_INTERESTED_DOUBLE_NEGATION in _walkaway-detection.ts
+      // — "It's not like I'm not interested." / "I can't say I'm not interested." matched
+      // walkRe's bare "not interested" arm, wrongly firing walk-away on a reassurance.
+      const notInterestedDoubleNegationReLocal = /\b(?:not\s+like|not\s+that|isn.?t\s+that|can(?:not|.t)\s+say|wouldn.?t\s+say)\s+(?:i.?m|i\s+am)\s+not\s+interested\b|(?:i.?m|i\s+am)\s+not\s+not\s+interested\b/i;
+      // S94-B1: also fire when walk-away appears in post-hedge segment (mirrors _follow-up-helpers.ts fix)
+      // S124-B2 (wave 30): the negation check used to gate BOTH clauses via early-return,
+      // so a negator anywhere earlier in the answer ("I don't want to walk away, but if
+      // you don't match this I will walk away.") suppressed even a genuine LATER walk-away
+      // in the post-hedge segment. Mirrors canonical's OR structure — negation only gates
+      // the base (non-hedge) clause, matching _follow-up-helpers.ts's `walkAway` computation.
+      // S125-B (wave 31) — the post-hedge fallback used to skip walkAwayNegationReLocal
+      // entirely, so "I will not accept this, but I will not walk away either" wrongly
+      // fired true. Naively re-adding the negation test broke "but if this does not
+      // improve I am walking away" — the wide 0-4 word gap on "does not" lets the negator
+      // jump across an unrelated subject-reset clause. Mirrors stripNegatedDepartures()'s
+      // fix in _walkaway-detection.ts: negation only covers the walk-phrase if there's no
+      // fresh "I will/I'm/I am" subject+modal reassertion in the 48 chars right before it.
+      // Locates the bare departure verb (not the full walkRe match, which for arms like the
+      // bare-verb "i am walking away" already swallows the subject+modal, hiding the "I am"
+      // reassertion inside the match instead of leaving it in the lookback window).
+      const RECLAIMED_INTENT_LOCAL =
+        /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+      const DEPARTURE_VERB_LOCAL =
+        /\bwalk(?:ing|in)?(?:\s+away|\s+out)?\b|declin(?:e|ing)\b|withdraw(?:ing)?\b|part\s+ways\b|pull(?:ing)?\s+out\b/i;
+      const walkAwayNegationCoversLocal = (text: string): boolean => {
+        if (!walkAwayNegationReLocal.test(text)) return false;
+        const verbMatch = DEPARTURE_VERB_LOCAL.exec(text);
+        if (!verbMatch) return true;
+        const lookback = text.slice(Math.max(0, verbMatch.index - 48), verbMatch.index);
+        return !RECLAIMED_INTENT_LOCAL.test(lookback);
+      };
+      // S132-B4 (wave 38): mirrors thirdPartyDepartureRe in _follow-up-helpers.ts — walkRe had
+      // no first-person subject guard for reported/third-party speech ("My friend said I
+      // should walk away."), so relayed advice was misread as the candidate's own walk-away.
+      const thirdPartyDepartureReLocal =
+        /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)\b(?:\s+\w+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+      // S133-B3 (wave 39): mirrors trailingRetractionRe in _follow-up-helpers.ts — a trailing
+      // elliptical negation ("I considered walking away, but I won't.") retracts an earlier
+      // departure verb without repeating it; walkAwayNegationReLocal only looks backward.
+      const trailingRetractionReLocal =
+        /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
+      // S136-B3 (wave 42): mirrors walkAwaySarcasmRe in _follow-up-helpers.ts — "like
+      // I would ever walk away" self-mockery contains a literal walkRe phrase and
+      // previously fired didWalkAway=true despite clearly positive sentiment.
+      const walkAwaySarcasmReLocal =
+        /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
+      const didWalkAway = (() => {
+        if (notInterestedDoubleNegationReLocal.test(answer)) return false;
+        if (thirdPartyDepartureReLocal.test(answer)) return false;
+        if (trailingRetractionReLocal.test(answer)) return false;
+        if (walkAwaySarcasmReLocal.test(answer)) return false;
+        // S135-B1 (wave 41): mirrors the canonical walkAway's numberLockAppliesToLocal
+        // guard — didWalkAway's base branch had NO number-lock guard at all, unlike
+        // didAccept, causing a live 3-way divergence with detectCandidateIntent()/
+        // isWalkAway() on inputs like "I'm out, sticking with 30 LPA or nothing."
+        const baseWalkMatchLocal = walkRe.exec(answer);
+        const base =
+          walkRe.test(answer) &&
+          !acceptRe.test(answer) &&
+          !walkAwayNegationReLocal.test(answer) &&
+          !numberLockAppliesToLocalFU(answer, baseWalkMatchLocal);
+        if (base) return true;
+        const hi = answer.search(hedgeRe);
+        if (hi < 0) return false;
+        const postHedge = answer.slice(hi);
+        if (walkRe.test(postHedge) && !walkAwayNegationCoversLocal(postHedge)) return true;
+        // S133-B2 (wave 39): mirrors preHedgeText fallback in _follow-up-helpers.ts —
+        // rescues a genuine walk-away statement that appears BEFORE the hedge word when the
+        // post-hedge clause is an unrelated accept ("I'm walking away from the equity
+        // discussion, but I accept the base salary.").
+        const preHedge = answer.slice(0, hi);
+        return walkRe.test(preHedge) && !walkAwayNegationCoversLocal(preHedge);
+      })();
       if (didAccept && counterOfferPat.test(parsed.followUpText)) {
         // LLM is counter-offering when candidate already accepted — reject and signal fallback
         console.warn("[follow-up] Intent mismatch: candidate accepted but LLM counter-offered — rejecting");
@@ -2410,7 +2645,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
         // Pattern A: named offer phrase ("our current best offer …
         // is ₹X LPA"). Replace X with the real ceiling.
         if (ceilingForRewrite != null) {
-          const phantomA = /((?:our|the|my|company[''’]?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
+          const phantomA = /((?:our|the|my|company[''']?s)\s+(?:current|latest|revised|updated|standing|new|best)\s+(?:best\s+)?offer\b[^.!?]{0,160}?₹?\s*)(\d+(?:\.\d+)?)(\s*(?:LPA|lpa|lakhs?|cr|crore))/gi;
           rewritten = rewritten.replace(phantomA, (full, pre, num, post) => {
             const isCr = /cr|crore/i.test(post);
             const v = parseFloat(num) * (isCr ? 100 : 1);
@@ -2442,7 +2677,7 @@ Repeat-text in followUpText is FORBIDDEN.`;
         // sentence containing the closing phrase. This preserves any
         // legitimate substance earlier in the reply.
         if (!negotiationFacts?.acceptedImmediately) {
-          const closingMarker = /(?:(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers|(?:I[''’]?ll|we[''’]?ll|going\s+to)\s+(?:work\s+with|loop\s+in|connect\s+with|sync\s+with)\s+HR|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details))/i;
+          const closingMarker = /(?:(?:let me\s+)?put\s+together\s+(?:the\s+)?final\s+numbers|(?:I[''']?ll|we[''']?ll|going\s+to)\s+(?:work\s+with|loop\s+in|connect\s+with|sync\s+with)\s+HR|HR\s+(?:will\s+)?send\s+you\s+(?:the|a)\s+(?:formal\s+)?offer\s+letter|put\s+together\s+the\s+(?:final[,\s]+)?(?:formal\s+)?offer\s+letter|finaliz(?:e|ing)\s+(?:the\s+)?(?:offer|package|paperwork|details))/i;
           const cm = rewritten.match(closingMarker);
           if (cm && typeof cm.index === "number") {
             // Find the start of the sentence containing the closing phrase.

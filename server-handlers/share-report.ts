@@ -88,6 +88,9 @@ interface SessionRow {
   skill_scores: Record<string, unknown> | null;
   report_json: Record<string, unknown> | null;
   created_at: string;
+  target_role: string | null;
+  target_company: string | null;
+  negotiation_metrics: Record<string, unknown> | null;
 }
 
 interface ProfileRow {
@@ -373,14 +376,15 @@ async function readShare(token: string, headers: Record<string, string>, req?: R
       report: sanitizedReport,
       meta: {
         candidateName: profile?.name || "Candidate",
-        targetRole: profile?.target_role || session.type,
-        targetCompany: profile?.target_company || "",
+        targetRole: session.target_role || profile?.target_role || session.type,
+        targetCompany: session.target_company || profile?.target_company || "",
         sessionType: session.type,
         difficulty: session.difficulty,
         score: session.score,
         durationSec: session.duration,
         date: session.created_at,
         skillScores: session.skill_scores,
+        negotiationMetrics: session.negotiation_metrics,
         referralCode: profile?.referral_code || null,
       },
       expiresAt: share.expires_at,

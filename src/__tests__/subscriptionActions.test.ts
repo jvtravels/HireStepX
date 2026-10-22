@@ -42,19 +42,19 @@ describe("isSubscriptionPauseable", () => {
   });
 
   it("rejects expired subscription", () => {
-    const r = isSubscriptionPauseable({ subscription_tier: "pro", subscription_end: PAST });
+    const r = isSubscriptionPauseable({ subscription_tier: "starter", subscription_end: PAST });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toContain("expired");
   });
 
   it("rejects already-paused subscription (prevents double-pause)", () => {
-    const r = isSubscriptionPauseable({ subscription_tier: "pro", subscription_end: FUTURE, subscription_paused: true });
+    const r = isSubscriptionPauseable({ subscription_tier: "starter", subscription_end: FUTURE, subscription_paused: true });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toContain("already paused");
   });
 
   it("accepts active paid subscription", () => {
-    expect(isSubscriptionPauseable({ subscription_tier: "pro", subscription_end: FUTURE }).ok).toBe(true);
+    expect(isSubscriptionPauseable({ subscription_tier: "starter", subscription_end: FUTURE }).ok).toBe(true);
     expect(isSubscriptionPauseable({ subscription_tier: "starter", subscription_end: FUTURE }).ok).toBe(true);
   });
 });
@@ -65,7 +65,7 @@ describe("isSubscriptionReactivatable", () => {
   });
 
   it("rejects profile not pending cancellation", () => {
-    const r = isSubscriptionReactivatable({ subscription_tier: "pro", cancel_at_period_end: false });
+    const r = isSubscriptionReactivatable({ subscription_tier: "starter", cancel_at_period_end: false });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toContain("not pending cancellation");
   });
@@ -78,7 +78,7 @@ describe("isSubscriptionReactivatable", () => {
 
   it("accepts active sub pending cancellation", () => {
     expect(isSubscriptionReactivatable({
-      subscription_tier: "pro",
+      subscription_tier: "starter",
       cancel_at_period_end: true,
       subscription_end: FUTURE,
     }).ok).toBe(true);

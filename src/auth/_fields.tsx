@@ -2,6 +2,7 @@
    Shared atoms for all auth screens (Login, Signup, ForgotPassword, etc).
    No business logic — pure presentation + local interaction state. */
 import React, { useState, useId, useEffect, useRef } from "react";
+import Image from "next/image";
 import { tokens as t, fonts as f } from "./_tokens";
 
 /* ─── Icons ─── */
@@ -191,7 +192,9 @@ export function Field({
           }`,
           borderRadius: 10,
           boxShadow: focused
-            ? `0 0 0 ${ringWidth}px ${invalid ? "rgba(185, 28, 28, 0.18)" : t.indigoRing}`
+            ? invalid
+              ? `0 0 0 2px ${t.white}, 0 0 0 4px ${t.error}` // border is already red, so focus needs its own >=3:1 ring
+              : `0 0 0 ${ringWidth}px ${t.indigoRing}`
             : "none",
           transition:
             "border-color 150ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -222,7 +225,7 @@ export function Field({
           style={{
             width: "100%",
             fontFamily: f.sans,
-            fontSize: 15,
+            fontSize: 16,
             color: t.coal,
             background: "transparent",
             border: "none",
@@ -284,6 +287,7 @@ export interface CheckboxProps {
 export function Checkbox({ checked, onChange, label, description }: CheckboxProps) {
   const [focused, setFocused] = useState(false);
   const descId = useId();
+  const inputId = useId();
   return (
     <label
       title={description}
@@ -303,6 +307,8 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
     >
       {/* Real checkbox — visually hidden but keyboard-focusable */}
       <input
+        id={inputId}
+        name={inputId}
         type="checkbox"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
@@ -334,7 +340,7 @@ export function Checkbox({ checked, onChange, label, description }: CheckboxProp
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          transition: "all 0.12s ease",
+          transition: "background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease, transform 0.12s ease",
           flexShrink: 0,
           boxShadow: focused ? `0 0 0 3px ${t.indigoRing}` : "none",
         }}
@@ -449,7 +455,7 @@ export function PasswordStrengthMeter({
           aria-hidden="true"
           style={{
             fontFamily: f.mono,
-            fontSize: 10,
+            fontSize: 12,
             textTransform: "uppercase",
             letterSpacing: "0.08em",
             color: filled <= 1 ? t.error : filled <= 2 ? t.inkSoft : t.success,
@@ -560,11 +566,13 @@ export function PasswordChecklist({ checks }: PasswordChecklistProps) {
 
 export function Wordmark() {
   return (
-    <img
+    <Image
       src="/wordmark.png"
       alt="HireStepX"
-      className="hsx-wordmark hsx-login-wordmark"
-      style={{ height: 32, width: "auto", display: "block" }}
+      width={387}
+      height={108}
+      priority
+      className="hsx-wordmark h-7 w-auto"
     />
   );
 }

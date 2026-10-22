@@ -79,9 +79,57 @@ const SITUATION_RE = /\bat\s+(?:my\s+last|my\s+previous|my\s+current)?\s*(?:comp
 
 const TASK_RE = /\b(?:the\s+(?:challenge|problem|goal|task|ask|brief)|needed\s+to|had\s+to|was\s+(?:asked|tasked)\s+to|the\s+target\s+was|our\s+goal\s+was|the\s+brief\s+was)\b/i;
 
-/* First-person action verbs. Listed exhaustively rather than \bi\s+\w+
-   to avoid matching "I think / I feel / I was" as Action. */
-const ACTION_RE = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|de[\s-]?risked|set\s+up|put\s+together|reached\s+out|owned|delivered|drafted|reviewed|analyzed|analysed|championed|spearheaded|pioneered|steered|stewarded|mobili[sz]ed|rolled\s+out|stood\s+up|cut\s+over|drove\s+alignment|drove\s+a)\b/i;
+/* First-person action verbs. v3 replaced an exhaustive positive whitelist
+   (every literal verb stem someone remembered to add — "designed" but not
+   "redesigned", "led" but not "ran"/"volunteered"/"worked") with a shape +
+   blacklist approach: match ANY verb-shaped word after "I" (regular -ed
+   past tense, or a common irregular past tense), then reject it only if
+   it's a mental-state/auxiliary verb ("I think / I was / I felt"). This
+   catches real action verbs by construction instead of requiring each one
+   to be individually enumerated — the whitelist approach silently missed
+   perfectly good STAR answers whose verb just wasn't on the list. */
+const NON_ACTION_VERBS = new Set([
+  "think", "thought", "feel", "felt", "believe", "believed", "want", "wanted",
+  "wonder", "wondered", "know", "knew", "realize", "realized", "realise", "realised",
+  "remember", "remembered", "hope", "hoped", "guess", "guessed", "worry", "worried",
+  "seem", "seemed", "appear", "appeared", "was", "were", "am", "is", "had", "have", "has",
+  "could", "would", "should", "will", "can", "may", "might", "see", "saw", "hear", "heard",
+  "understand", "understood", "agree", "agreed", "mean", "meant", "need", "needed",
+  "assume", "assumed", "expect", "expected", "fear", "feared", "doubt", "doubted",
+  "consider", "considered", "get", "got", "go", "went", "being", "do", "did",
+  "like", "liked", "notice", "noticed", "find", "found", "lose", "lost", "keep", "kept",
+]);
+
+/* Common irregular past-tense verbs that don't end in "-ed" (regular past
+   tense is already caught by the shape check below). Not meant to be an
+   exhaustive list of English irregulars — just the ones plausible in a
+   work-story context. */
+const IRREGULAR_PAST_VERBS = new Set([
+  "ran", "led", "drove", "wrote", "made", "spoke", "took", "gave", "sent", "met",
+  "grew", "chose", "held", "spent", "drew", "threw", "sat", "stood", "fell", "cut",
+  "put", "set", "bet", "hit", "read", "shut", "spread", "cost", "hurt", "let", "split",
+  "bought", "caught", "brought", "taught", "sought", "fought", "sold", "told", "wore",
+  "tore", "swore", "bore", "dealt", "built", "left", "slept", "bent", "lent", "rode",
+  "hid", "fed", "flew", "froze", "hung", "laid", "lit", "rang", "rose", "sang", "shook",
+  "slid", "spun", "stole", "stuck", "struck", "swept", "swung", "woke", "wound", "wove",
+]);
+
+function isActionVerb(verb: string): boolean {
+  const v = verb.toLowerCase();
+  if (NON_ACTION_VERBS.has(v)) return false;
+  return /ed$/.test(v) || IRREGULAR_PAST_VERBS.has(v);
+}
+
+/* Matches "I" (optionally with an adverb — "I personally / then / also
+   ran…") followed by the verb to classify via isActionVerb(). */
+const FIRST_PERSON_VERB_RE = /\bi\s+(?:personally|then|also|quickly|immediately|eventually|ultimately|actively|directly|independently)?\s*([a-z]+)\b/gi;
+
+function hasFirstPersonAction(text: string): boolean {
+  for (const m of text.matchAll(FIRST_PERSON_VERB_RE)) {
+    if (isActionVerb(m[1])) return true;
+  }
+  return false;
+}
 
 /* Outcome bridges + the metric pattern. A metric alone counts as a Result
    signal because "we saw 40% lift" is unambiguously an outcome marker. */
@@ -98,7 +146,15 @@ const ACTION_RE = /\bi\s+(?:built|designed|shipped|led|drove|created|wrote|made|
    personal slice. That's the pronoun-attribution edge case, not a STAR
    failure — handled by the weHeavy flag below, NOT by counting Action as
    present (which would silently approve hiding behind the team). */
-const WE_ACTION_RE = /\b(?:we|our\s+team|the\s+team)\s+(?:built|designed|shipped|led|drove|created|wrote|made|fixed|launched|coordinated|negotiated|trained|coached|presented|prototyped|tested|migrated|refactored|architected|implemented|defined|aligned|escalated|prioriti[sz]ed|delivered|drafted|reviewed|analy[sz]ed|championed|spearheaded|pioneered|steered|rolled\s+out|stood\s+up|cut\s+over)\b/gi;
+const WE_VERB_RE = /\b(?:we|our\s+team|the\s+team)\s+(?:then|also|quickly|eventually|ultimately)?\s*([a-z]+)\b/gi;
+
+function countWeActions(text: string): number {
+  let hits = 0;
+  for (const m of text.matchAll(WE_VERB_RE)) {
+    if (isActionVerb(m[1])) hits += 1;
+  }
+  return hits;
+}
 
 /* STAR+L: Learning bridges. Reflective markers that signal the candidate
    closed the loop on the experience — they didn't just describe what
@@ -116,7 +172,7 @@ export function detectStarPresence(text: string): StarPresence {
   const hasMetrics = METRIC_RE.test(t);
   const situation = SITUATION_RE.test(t);
   const task = TASK_RE.test(t);
-  const action = ACTION_RE.test(t);
+  const action = hasFirstPersonAction(t);
   const result = hasMetrics || RESULT_BRIDGE_RE.test(t);
   const count = [situation, task, action, result].filter(Boolean).length;
   /* Pronoun-attribution signal. Fires when the answer leans on collective
@@ -125,7 +181,7 @@ export function detectStarPresence(text: string): StarPresence {
      incidental "we shipped" as we-heavy when the rest of the answer is
      "I designed / I led". Threshold tuned to flag answers that are
      materially we-attributed, not ones with passing collective mentions. */
-  const weHits = (t.match(WE_ACTION_RE) || []).length;
+  const weHits = countWeActions(t);
   const weHeavy = weHits >= 2 && !action;
   const learning = LEARNING_RE.test(t);
   return { situation, task, action, result, count, hasMetrics, weHeavy, learning };

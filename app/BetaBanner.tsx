@@ -1,0 +1,77 @@
+"use client";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { CopyEmailLink } from "../src/_CopyEmailLink";
+
+const STORAGE_KEY = "hsx_beta_banner_dismissed";
+
+export function BetaBanner() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!localStorage.getItem(STORAGE_KEY)) {
+      setVisible(true);
+    }
+  }, []);
+
+  function dismiss() {
+    localStorage.setItem(STORAGE_KEY, "1");
+    setVisible(false);
+  }
+
+  if (!visible) return null;
+
+  return (
+    <div
+      role="banner"
+      style={{
+        position: "relative",
+        zIndex: 1,
+        background: "#B45309",
+        color: "#FFFFFF",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 6,
+        padding: "9px 48px 9px 16px",
+        fontSize: 13,
+        fontFamily: "var(--font-ui, system-ui, sans-serif)",
+        fontWeight: 500,
+        lineHeight: 1.4,
+        textAlign: "center",
+      }}
+    >
+      <span>
+        HireStepX is now in Beta! Be among the first to practice smarter and land your dream role.{" "}
+        <CopyEmailLink
+          email="hello@hirestepx.com"
+          style={{
+            color: "#FFFFFF",
+            textUnderlineOffset: "2px",
+            fontWeight: 700,
+          }}
+        >
+          Share your feedback
+        </CopyEmailLink>
+      </span>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        onClick={dismiss}
+        aria-label="Dismiss beta banner"
+        style={{
+          position: "absolute",
+          right: 14,
+          top: "50%",
+          transform: "translateY(-50%)",
+          color: "#FFFFFF",
+          fontSize: 16,
+          lineHeight: 1,
+          opacity: 0.8,
+        }}
+      >
+        ×
+      </Button>
+    </div>
+  );
+}

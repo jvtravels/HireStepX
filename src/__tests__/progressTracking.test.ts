@@ -7,10 +7,13 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  capHistoryToSession,
   computeAllTrends,
   computeTrend,
   computeTrendsForSkills,
   createInMemoryProgressStore,
+  groundGapClosureSkillScores,
+  groundNoCounterSkillScores,
   humanizeSkillKey,
   sessionRowsToProgressPoints,
   type SessionSkillRow,
@@ -273,5 +276,202 @@ describe("createInMemoryProgressStore", () => {
     expect(u1.length).toBe(2);
     expect(u2.length).toBe(1);
     expect(u2[0].scorePct).toBe(99);
+  });
+});
+
+/* The ONE no-counter grounding rule, shared by the write seam
+ * (save-session) and the cross-session read seam (fetchSkillProgressTrends).
+ * A no-counter session's anchor/counter/specificity persisted skill_scores
+ * must not render above the same report's grounded Skills Breakdown. */
+describe("groundNoCounterSkillScores", () => {
+  const inflated = () => ({
+    anchoring: 72,
+    specificity: 70,
+    closingTechnique: 66,
+    leverageUse: 80,
+    packageThinking: 88,
+    composure: 74,
+    concessionStrategy: 60,
+  });
+
+  it("caps anchor/specificity/counter axes into the weak band when no counter was named", () => {
+    const out = groundNoCounterSkillScores(
+      { ...inflated(), counterOfferJudgement: 90 },
+      null,
+    ) as Record<string, number>;
+    expect(out.anchoring).toBe(35);
+    expect(out.specificity).toBe(35);
+    expect(out.counterOfferJudgement).toBe(35);
+  });
+
+  it("leaves leverage / package / composure / concession / closing untouched", () => {
+    const out = groundNoCounterSkillScores(inflated(), null) as Record<string, number>;
+    expect(out.leverageUse).toBe(80);
+    expect(out.packageThinking).toBe(88);
+    expect(out.composure).toBe(74);
+    expect(out.concessionStrategy).toBe(60);
+    expect(out.closingTechnique).toBe(66);
+  });
+
+  it("does not raise a score already below the ceiling", () => {
+    const out = groundNoCounterSkillScores({ anchoring: 20 }, null) as Record<string, number>;
+    expect(out.anchoring).toBe(20);
+  });
+
+  it("caps the legacy { score } wrapper shape, preserving sibling fields", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: { score: 88, label: "Anchoring" } },
+      null,
+    ) as Record<string, { score: number; label: string }>;
+    expect(out.anchoring.score).toBe(35);
+    expect(out.anchoring.label).toBe("Anchoring");
+  });
+
+  it("is a no-op once a counter WAS named (numeric ask) — returns the same ref", () => {
+    const scores = inflated();
+    expect(groundNoCounterSkillScores(scores, 30)).toBe(scores);
+  });
+
+  it("is a no-op for null / undefined skillScores", () => {
+    expect(groundNoCounterSkillScores(null, null)).toBeNull();
+    expect(groundNoCounterSkillScores(undefined, null)).toBeUndefined();
+  });
+
+  it("leaves non-numeric anchor garbage untouched rather than coercing", () => {
+    const out = groundNoCounterSkillScores(
+      { anchoring: "n/a" as unknown as number, specificity: 90 },
+      null,
+    ) as Record<string, unknown>;
+    expect(out.anchoring).toBe("n/a");
+    expect(out.specificity).toBe(35);
+  });
+
+  it("flows through sessionRowsToProgressPoints so the current session's point is grounded", () => {
+    // Mirrors the read-seam usage: ground the viewed row's skill_scores with
+    // its authoritative (null) ask before flattening into progress points.
+    const grounded = groundNoCounterSkillScores(inflated(), null);
+    const points = sessionRowsToProgressPoints(
+      [{ sessionId: "cur", completedAt: t0, skillScores: grounded, sector: "Flipkart" }],
+      humanizeSkillKey,
+    );
+    const byLabel = (label: string) => points.find((p) => p.skill === label)?.scorePct;
+    expect(byLabel("Anchoring")).toBe(35);
+    expect(byLabel("Specificity")).toBe(35);
+    expect(byLabel("Leverage Use")).toBe(80);
+    expect(byLabel("Package Thinking")).toBe(88);
+  });
+});
+
+describe("capHistoryToSession — scope trend to the viewed session", () => {
+  // Three sessions of the SAME skill, ascending in time. Each session also
+  // carries a stable skill (Leverage) that only moved once, early on — the
+  // shape that produced the live bug where an OLD report showed the NEWEST
+  // session's Leverage number.
+  const history: SkillProgressPoint[] = [
+    pt("Anchoring", 35, 0, "s-old"),
+    pt("Leverage Use", 50, 0, "s-old"),
+    pt("Anchoring", 70, 1, "s-mid"),
+    pt("Leverage Use", 75, 1, "s-mid"),
+    pt("Anchoring", 40, 2, "s-new"),
+    pt("Leverage Use", 75, 2, "s-new"),
+  ];
+
+  it("ends the trend at the viewed session, not the globally-latest one", () => {
+    // Viewing the MIDDLE session: latest Anchoring must be 70 (that session's
+    // own value), NOT 40 (the newest session's). Pre-fix this returned 40.
+    const scoped = capHistoryToSession(history, "s-mid");
+    const anchor = computeAllTrends(scoped).find((t) => t.skill === "Anchoring")!;
+    expect(anchor.latestScore).toBe(70);
+    expect(anchor.deltaVsLast).toBe(35); // 70 vs the prior s-old 35
+  });
+
+  it("drops every point newer than the viewed session", () => {
+    const scoped = capHistoryToSession(history, "s-mid");
+    expect(scoped.every((p) => p.sessionId !== "s-new")).toBe(true);
+    expect(scoped.some((p) => p.sessionId === "s-old")).toBe(true);
+  });
+
+  it("is a no-op for the newest session (common case: viewing latest report)", () => {
+    const scoped = capHistoryToSession(history, "s-new");
+    expect(scoped).toHaveLength(history.length);
+  });
+
+  it("returns history unchanged when the viewed session isn't in the window", () => {
+    const scoped = capHistoryToSession(history, "s-absent");
+    expect(scoped).toBe(history);
+  });
+
+  it("keeps ties at the cutoff (points sharing the viewed session's timestamp)", () => {
+    // A second skill point at the same completedAt as the viewed session is
+    // kept — the cutoff is inclusive so the viewed session's full skill set
+    // survives.
+    const withTie = [...history, pt("Composure", 80, 1, "s-mid")];
+    const scoped = capHistoryToSession(withTie, "s-mid");
+    expect(scoped.some((p) => p.skill === "Composure")).toBe(true);
+  });
+});
+
+/* ── groundGapClosureSkillScores (S44-B13) ─────────────────────────────────
+   Write-seam gap-closure cap — persisted skill_scores must match the adapter's
+   render-time caps so the Skill Progress panel and Skills Breakdown show the
+   same value for the same session. */
+describe("groundGapClosureSkillScores", () => {
+  const scores = {
+    "Anchor strength": 95,
+    "Leverage Use": 92,
+    "Closing Technique": 88,
+    "Concession Strategy": 90,
+    "Tactical composure": 85,  // demeanour axis — should NOT be capped
+  };
+
+  it("caps outcome-dependent axes at 45 when gap closed <10%", () => {
+    // candidate asked 55L, recruiter opened 43L, closed at 43.6L → 5% gap closed
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 43.6);
+    expect(out!["Anchor strength"]).toBe(45);
+    expect(out!["Leverage Use"]).toBe(45);
+    expect(out!["Closing Technique"]).toBe(45);
+    expect(out!["Concession Strategy"]).toBe(45);
+    expect(out!["Tactical composure"]).toBe(85); // demeanour — untouched
+  });
+
+  it("caps at 60 when gap closed 10–29%", () => {
+    // candidate 55L, opened 43L, closed at 46L → (46-43)/(55-43)=25%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 46);
+    expect(out!["Anchor strength"]).toBe(60);
+    expect(out!["Tactical composure"]).toBe(85);
+  });
+
+  it("caps at 75 when gap closed 30–54%", () => {
+    // candidate 55L, opened 43L, closed at 48.6L → (48.6-43)/(55-43)≈46.7%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 48.6);
+    expect(out!["Anchor strength"]).toBe(75);
+  });
+
+  it("does NOT cap when gap closed ≥55%", () => {
+    // candidate 55L, opened 43L, closed at 50L → (50-43)/(55-43)≈58%
+    const out = groundGapClosureSkillScores(scores, "accepted", 55, 43, 50);
+    expect(out!["Anchor strength"]).toBe(95);
+    expect(out!["Leverage Use"]).toBe(92);
+  });
+
+  it("passes through on non-accepted outcome", () => {
+    const out = groundGapClosureSkillScores(scores, "walked-away", 55, 43, 50);
+    expect(out).toBe(scores); // identity — no copy
+  });
+
+  it("passes through when candidateAskLpa equals initialOfferLpa (no gap)", () => {
+    const out = groundGapClosureSkillScores(scores, "accepted", 43, 43, 45);
+    expect(out).toBe(scores);
+  });
+
+  it("returns null input unchanged", () => {
+    expect(groundGapClosureSkillScores(null, "accepted", 55, 43, 44)).toBeNull();
+  });
+
+  it("preserves legacy { score } wrapper shape on capped axes", () => {
+    const wrapped = { "Anchor strength": { score: 95, weight: 2 } };
+    // 43.6L close on 43→55 spread → 5% gap → ceiling 45
+    const out = groundGapClosureSkillScores(wrapped, "accepted", 55, 43, 43.6);
+    expect((out!["Anchor strength"] as { score: number }).score).toBe(45);
   });
 });

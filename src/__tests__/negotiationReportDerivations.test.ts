@@ -28,6 +28,7 @@ import {
   deriveConcessionsFromOffers,
   deriveAnchorBracket,
   computeNpvRows,
+  negotiationHeadlineVerdict,
   type NegotiationOutcome,
 } from "../sessionReport/derivations";
 
@@ -156,18 +157,108 @@ describe("derivePhases (grounded action-signal gating — REPORT-6)", () => {
     expect(phases[2].reached).toBe(true);
   });
 
-  it("leverDiversity >= 1 reaches phase 4 (levers explored)", () => {
-    const phases = derivePhases(makeOutcome({ candidateAsk: 30, leverDiversity: 2 }));
-    expect(phases[3].reached).toBe(true);
-    expect(phases[3].note).toBe("Raised 2 levers beyond base");
+  it("S16-B5: leverDiversity alone (a RECRUITER-side signal) does NOT reach phase 4", () => {
+    // `leverDiversity` counts the recruiter's move levers and is ≥1 once any
+    // turn occurs — it must not credit the candidate for exploring levers.
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, leverDiversity: 2, infoAsked: [] }));
+    expect(phases[3].reached).toBe(false);
+    expect(phases[3].note).toBeUndefined();
   });
 
   it("infoAsked reaches phases 2 (justified) + 4 (levers)", () => {
+    // S19-B6: stage 4 only reaches on expert-level lever intents (clawback-period,
+    // vest-schedule, strike-price, etc.) — not on generic routing intents.
     const phases = derivePhases(
-      makeOutcome({ candidateAsk: 30, infoAsked: ["band-range"] }),
+      makeOutcome({ candidateAsk: 30, infoAsked: ["vest-schedule"] }),
     );
     expect(phases[1].reached).toBe(true);
     expect(phases[3].reached).toBe(true);
+  });
+
+  /* S13-B9 — recruiter-ELICITED disclosure must NOT credit stage 2 ("You
+     justified your number"). Stage 2 now keys on the candidate-INITIATED
+     subset (infoAskedInitiated); stage 4 (explored levers) still keys on the
+     full infoAsked set (an elicited component ask is still a real component
+     ask). */
+  it("S13-B9: recruiter-elicited-only disclosure does NOT reach phase 2 (justified)", () => {
+    // The candidate disclosed comp structure, but ONLY because the recruiter
+    // asked — infoAskedInitiated is empty. Stage 2 must stay unreached.
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        infoAsked: ["fixed-vs-variable"],
+        infoAskedInitiated: [],
+      }),
+    );
+    expect(phases[1].reached).toBe(false);
+    expect(phases[1].note).toBeUndefined();
+  });
+
+  it("S13-B9: candidate-INITIATED justification DOES reach phase 2 (justified)", () => {
+    const phases = derivePhases(
+      makeOutcome({
+        candidateAsk: 30,
+        infoAsked: ["clawback-period"],
+        infoAskedInitiated: ["clawback-period"],
+      }),
+    );
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Asked about comp structure to support it");
+  });
+
+  it("S13-B9: legacy row without infoAskedInitiated falls back to infoAsked (behaviour unchanged)", () => {
+    // Rows persisted before the split have NO infoAskedInitiated key; the
+    // adapter back-fills from infoAsked so their stage-2 behaviour is preserved.
+    const phases = derivePhases(
+      makeOutcome({ candidateAsk: 30, infoAsked: ["vest-schedule"] }),
+    );
+    expect(phases[1].reached).toBe(true);
+  });
+
+  /* S3-B2 — Phase-11 hike-rationale (rationaleKind) must credit stage 2
+     ("You justified your number") when the candidate gave a grounded reason
+     for their ask. Without this, market-data / YOE / competing-offer
+     justifications were invisible to the stage tracker. */
+  it("S3-B2: rationaleKind 'market-data' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "market-data" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Backed it with market-rate data");
+  });
+
+  it("S3-B2: rationaleKind 'competing-offer' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "competing-offer" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Used a competing offer as the anchor");
+  });
+
+  it("S3-B2: rationaleKind 'tenure-yoe' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "tenure-yoe" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by experience and tenure");
+  });
+
+  it("S3-B2: rationaleKind 'scope-expansion' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "scope-expansion" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by expanded scope and responsibility");
+  });
+
+  it("S3-B2: rationaleKind 'specialization' reaches phase 2 with the right note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "specialization" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Justified by niche skill or specialization");
+  });
+
+  it("S3-B2: unknown rationaleKind reaches phase 2 with the fallback note", () => {
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30, rationaleKind: "col-relocation" }));
+    expect(phases[1].reached).toBe(true);
+    expect(phases[1].note).toBe("Gave a grounded reason for the number");
+  });
+
+  it("S3-B2: bare counter with NO rationaleKind does NOT reach phase 2 (anti-fabrication)", () => {
+    // Verifies rationaleKind=undefined does not credit stage 2 on its own.
+    const phases = derivePhases(makeOutcome({ candidateAsk: 30 }));
+    expect(phases[1].reached).toBe(false);
   });
 
   it("outcome accepted → phase 5 reached, named 'You closed the deal', 'Accepted' note", () => {
@@ -270,5 +361,86 @@ describe("computeNpvRows (pure function of NPV_MODEL)", () => {
     const rows = computeNpvRows(o);
     expect(rows[1].label).toContain(`${Math.round(NPV_MODEL.incomeTaxRate * 100)}%`);
     expect(rows[2].label).toContain(`${Math.round(NPV_MODEL.annualInflation * 100)}%`);
+  });
+});
+
+/* REPORT-3e (2026-07-13, live staging — session 686b5699, Senior Product
+ * Designer @ Flipkart): the hero headline verdict is now kernel-derived, not the
+ * raw LLM string. On a no-counter/no-deal session the LLM produced "You
+ * negotiated well but didn't quantify results" — a false claim beside the
+ * report's own "0 of 5 skills / never named a number", carrying leaked STAR
+ * phrasing. Pin the headline to the kernel outcome across every branch: it must
+ * never claim negotiation success the kernel denies, and never leak behavioural
+ * ("quantify results") wording. */
+describe("negotiationHeadlineVerdict — kernel-grounded, never a false success claim", () => {
+  const NEGOTIATED_WELL = /negotiated well|great job|strong negotiation|well done/i;
+  const BEHAVIOURAL_LEAK = /quantif|STAR|results|situation|task/i;
+
+  it("no-deal, no counter (the live bug) states the miss plainly", () => {
+    // Live REPORT-3e shape: the recruiter DID put a number on the table; the
+    // candidate never countered, so their opening stood. (S17-B2: the empty-
+    // offers variant now reads "before any number was on the table" — covered
+    // in negotiationReportSurfaceRegression.test.ts.)
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({
+        outcome: "no_agreement",
+        candidateAsk: null,
+        offers: [{ turn: 1, total: 50, question: "" }],
+        finalTotal: null,
+      }),
+    );
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v).not.toMatch(BEHAVIOURAL_LEAK);
+    expect(v.toLowerCase()).toContain("no counter");
+  });
+
+  it("no-deal after countering says the deal never closed", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "no_agreement", candidateAsk: 60, offers: [{ turn: 1, total: 50, question: "" }] }),
+    );
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v.toLowerCase()).toContain("never closed");
+  });
+
+  it("accepted with upward movement credits the close", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({
+        outcome: "accepted",
+        candidateAsk: 65,
+        offers: [{ turn: 1, total: 50, question: "" }],
+        finalTotal: 58,
+      }),
+    );
+    expect(v.toLowerCase()).toContain("closed the deal");
+    expect(v).not.toMatch(BEHAVIOURAL_LEAK);
+  });
+
+  it("accepted flat with a counter says they took the opening", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({
+        outcome: "accepted",
+        candidateAsk: 65,
+        offers: [{ turn: 1, total: 51, question: "" }],
+        finalTotal: 51,
+      }),
+    );
+    expect(v.toLowerCase()).toContain("closed the deal");
+    expect(v.toLowerCase()).toContain("opening");
+  });
+
+  it("accepted the first offer with no counter is honest about it", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "accepted", candidateAsk: null, offers: [{ turn: 1, total: 51, question: "" }], finalTotal: 51 }),
+    );
+    expect(v.toLowerCase()).toContain("accepted the first offer");
+  });
+
+  it("walked away is never phrased as an acceptance or success", () => {
+    const v = negotiationHeadlineVerdict(
+      makeOutcome({ outcome: "walked_away", candidateAsk: 70, offers: [{ turn: 1, total: 40, question: "" }], finalTotal: null }),
+    );
+    expect(v.toLowerCase()).toContain("walked away");
+    expect(v).not.toMatch(NEGOTIATED_WELL);
+    expect(v.toLowerCase()).not.toContain("accepted");
   });
 });

@@ -7,6 +7,7 @@ import {
 import { RepeatButton, MicQuietBanner, PaceMeter } from "../../InterviewPanels";
 import { detectNegotiationTactic } from "../../_negotiation-tactics";
 import { captureClientEvent } from "../../posthogClient";
+import { Button } from "../ui/button";
 
 /* ─── Interview Composer ───────────────────────────────────────────────
    Action zone for the listening phase: live transcript card → keycap CTA
@@ -71,24 +72,17 @@ function SkipWithReason({
   ];
   return (
     <div ref={containerRef} style={{ position: "relative", display: "inline-block" }}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="sm"
         onClick={() => { if (canSkip) setOpen((v) => !v); }}
         disabled={!canSkip}
         title={tooltip}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={canSkip ? `Skip this question (${remaining} left)` : "Skip not available"}
-        style={{
-          display: "inline-flex", alignItems: "center", gap: 6,
-          background: "transparent", border: "none", padding: "4px 6px",
-          cursor: canSkip ? "pointer" : "not-allowed",
-          fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-          color: canSkip ? e.copper : e.inkFaint,
-          opacity: canSkip ? 0.85 : 0.5, transition: "opacity 160ms ease",
-        }}
-        onMouseEnter={(ev) => { if (canSkip) ev.currentTarget.style.opacity = "1"; }}
-        onMouseLeave={(ev) => { ev.currentTarget.style.opacity = canSkip ? "0.85" : "0.5"; }}
+        style={{ color: canSkip ? e.copper : undefined }}
       >
         <span>Skip question{canSkip && skipBudget > 0 ? ` · ${remaining} left` : ""}</span>
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -96,7 +90,7 @@ function SkipWithReason({
           <polyline points="13 17 18 12 13 7" />
           <polyline points="6 17 11 12 6 7" />
         </svg>
-      </button>
+      </Button>
       {open && (
         <div
           role="menu"
@@ -110,47 +104,33 @@ function SkipWithReason({
           }}
         >
           <span style={{
-            fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+            fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
             letterSpacing: 1.4, color: e.inkSoft, padding: "6px 10px 4px",
           }}>
             Why are you skipping?
           </span>
           {reasons.map((r) => (
-            <button
+            <Button
               key={r.value}
               type="button"
+              variant="ghost"
               role="menuitem"
               onClick={() => { setOpen(false); onConfirm(r.value); }}
-              style={{
-                display: "block", textAlign: "left", width: "100%",
-                background: "transparent", border: "none",
-                padding: "8px 10px", borderRadius: 8, cursor: "pointer",
-                fontFamily: ef.sans, fontSize: 13, color: e.coal,
-                transition: "background 120ms ease",
-              }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
-              onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+              style={{ display: "block", textAlign: "left", width: "100%" }}
             >
               {r.label}
-            </button>
+            </Button>
           ))}
           <div style={{ height: 1, background: e.line, margin: "4px 8px" }} />
-          <button
+          <Button
             type="button"
+            variant="ghost"
             role="menuitem"
             onClick={() => { setOpen(false); onConfirm("no_reason"); }}
-            style={{
-              display: "block", textAlign: "left", width: "100%",
-              background: "transparent", border: "none",
-              padding: "8px 10px", borderRadius: 8, cursor: "pointer",
-              fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
-              fontStyle: "italic",
-            }}
-            onMouseEnter={(ev) => (ev.currentTarget.style.background = e.creamSoft)}
-            onMouseLeave={(ev) => (ev.currentTarget.style.background = "transparent")}
+            style={{ display: "block", textAlign: "left", width: "100%", fontStyle: "italic", color: e.inkSoft }}
           >
             Just skip — no reason
-          </button>
+          </Button>
         </div>
       )}
     </div>
@@ -262,7 +242,7 @@ function CanvasLiveMetricsRow({ metrics, typed }: {
        lets a SR user navigate to it on demand and read the current values. */
     <div role="status" aria-live="off" aria-label="Live answer metrics" style={{
       display: "inline-flex", alignItems: "center", gap: 14,
-      fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase",
+      fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
       letterSpacing: 1.2, color: e.inkSoft,
     }}>
       <span><strong style={{ color: e.coal, fontWeight: 600 }}>{metrics.wordCount}</strong> words</span>
@@ -309,6 +289,8 @@ export function Composer({
   awaitingSpeechStart,
   isLastStep, isClosingStep, onViewResult,
   currentQuestionText,
+  candidateCurrentCtcKnown,
+  micError,
 }: {
   currentTranscript: string;
   setCurrentTranscript: (v: string) => void;
@@ -351,6 +333,16 @@ export function Composer({
   /** The full text of the AI's current question — used to detect
    *  CTC-probes and surface a deflection coaching tip. */
   currentQuestionText: string;
+  /** S42-B2 / S43-B2 — suppress the "Current-CTC probe: Deflect"
+   *  tip once the candidate has already disclosed their CTC. */
+  candidateCurrentCtcKnown?: boolean;
+  /** Reason text for why speech input dropped to typing (permission denied,
+   *  unsupported browser). Deliberately NOT shown for the quiet "having
+   *  trouble hearing you" safety-timeout fallback — that one stays silent
+   *  per QA bug 21 (sudden element appearing mid-interview). A genuine
+   *  denial/unsupported-browser switch is a one-time, permanent state
+   *  change the candidate needs to understand, not a transient blip. */
+  micError?: string;
 }) {
   const [typing, setTyping] = useState(speechUnavailable);
   // Per-answer timer for the PaceMeter — local, resets when remounts
@@ -416,11 +408,11 @@ export function Composer({
         <div role="log" aria-live="polite" aria-relevant="additions" aria-label="Live transcript of your answer" style={{
           width: "100%", background: e.white, border: `1px solid ${e.line}`,
           borderRadius: 14, padding: "14px 16px",
-          fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+          fontFamily: ef.sans, fontSize: 16, lineHeight: 1.55, color: e.coal,
           minHeight: 72, maxHeight: 160, overflowY: "auto", textAlign: "left",
           boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04), 0 12px 32px -16px rgba(20,17,10,.10)",
         }}>
-          <span style={{ fontFamily: ef.mono, fontSize: 10, textTransform: "uppercase", letterSpacing: 1.4, color: e.copper, display: "block", marginBottom: 6 }}>
+          <span style={{ fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase", letterSpacing: 1.4, color: e.copper, display: "block", marginBottom: 6 }}>
             Live transcript
           </span>
           <span>{currentTranscript}</span>
@@ -430,6 +422,21 @@ export function Composer({
       {/* Type-mode textarea fallback */}
       {showTyping && (
         <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
+          {micError && micError !== "Having trouble hearing you? Type your answer instead." && (
+            <div role="status" style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "8px 12px",
+              background: "oklch(0.359 0.135 278.697 / 0.10)", border: "1px solid oklch(0.359 0.135 278.697 / 0.22)",
+              borderRadius: 10, fontFamily: ef.sans, fontSize: 12, color: e.inkSoft,
+            }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={e.indigo} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ flexShrink: 0 }}>
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="1" y1="1" x2="23" y2="23" />
+              </svg>
+              <span>{micError}</span>
+            </div>
+          )}
           <textarea
             ref={textareaRef}
             id="composer"
@@ -450,12 +457,12 @@ export function Composer({
             maxLength={3000}
             style={{
               width: "100%", minHeight: 120, padding: "14px 16px",
-              // Sans-serif (Satoshi/Inter) for the user's answer — typed
+              // Sans-serif (Geist Sans/Inter) for the user's answer — typed
               // text reads cleaner in sans, and it visually separates the
               // candidate's voice from the AI's serif question.
-              fontFamily: ef.sans, fontSize: 15, lineHeight: 1.55, color: e.coal,
+              fontFamily: ef.sans, fontSize: 16, lineHeight: 1.55, color: e.coal,
               background: e.white, border: `1px solid ${e.line}`, borderRadius: 14,
-              resize: "vertical", outline: "none",
+              resize: "vertical",
               boxShadow: "0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04)",
             }}
           />
@@ -532,7 +539,7 @@ export function Composer({
               fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
               color: e.cream, background: e.indigo,
               border: `1px solid ${e.indigo}`,
-              borderRadius: 999, padding: "12px 26px",
+              borderRadius: 8, padding: "12px 26px",
               cursor: "pointer",
               transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
               boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
@@ -557,7 +564,7 @@ export function Composer({
             fontFamily: ef.sans, fontSize: 14, fontWeight: 500,
             color: e.cream, background: e.indigo,
             border: `1px solid ${e.indigo}`,
-            borderRadius: 999, padding: "12px 26px",
+            borderRadius: 8, padding: "12px 26px",
             cursor: "pointer",
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
             boxShadow: "0 6px 20px -6px rgba(49,46,129,0.40)",
@@ -591,7 +598,7 @@ export function Composer({
             color: canSend ? e.cream : e.coal,
             background: canSend ? e.indigo : e.white,
             border: `1px solid ${canSend ? e.indigo : e.line}`,
-            borderRadius: 999, padding: "10px 18px 10px 12px",
+            borderRadius: 8, padding: "10px 18px 10px 12px",
             cursor: canSend ? "pointer" : "not-allowed",
             opacity: canSend ? 1 : 0.7,
             transition: "all 180ms cubic-bezier(0.16, 1, 0.3, 1)",
@@ -600,7 +607,7 @@ export function Composer({
               : "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
           }}
         >
-          <kbd aria-hidden style={{
+          <kbd aria-hidden className="iv-kbd-hint" style={{
             display: "inline-flex", alignItems: "center", justifyContent: "center",
             minWidth: 56, height: 24, padding: "0 8px",
             background: canSend ? "rgba(250,247,240,0.20)" : e.creamSoft,
@@ -613,7 +620,7 @@ export function Composer({
           <span>
             {showTyping
               ? (canSend ? "Press Enter to send" : "Type your answer…")
-              : "Press Space when done"}
+              : (<><span className="iv-kbd-hint">Press Space when done</span><span className="iv-touch-hint">Done answering</span></>)}
           </span>
         </button>
       )}
@@ -625,15 +632,15 @@ export function Composer({
         {!showTyping && (
           <>
             <CanvasTextLink onClick={() => { setTyping(true); textareaRef.current?.focus(); }}>
-              or type your answer (T)
+              or type your answer<span className="iv-kbd-hint"> (T)</span>
             </CanvasTextLink>
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         {hasQuestion && aiVoiceEnabled && (
           <>
             <RepeatButton onClick={replayQuestion} />
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         {/* Mid-answer start-over — only useful once the user has actually
@@ -641,23 +648,16 @@ export function Composer({
             question active so they can re-answer cleanly. */}
         {canSend && (
           <>
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setCurrentTranscript("");
                 captureClientEvent("interview_answer_restart", {});
                 if (showTyping) textareaRef.current?.focus();
               }}
               aria-label="Start this answer over"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: 6,
-                background: "transparent", border: "none",
-                padding: "4px 6px", cursor: "pointer",
-                fontFamily: ef.sans, fontSize: 12, fontWeight: 500,
-                color: e.inkSoft, transition: "color 160ms ease",
-              }}
-              onMouseEnter={(ev) => (ev.currentTarget.style.color = e.coal)}
-              onMouseLeave={(ev) => (ev.currentTarget.style.color = e.inkSoft)}
             >
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -665,8 +665,8 @@ export function Composer({
                 <polyline points="3 3 3 8 8 8" />
               </svg>
               Start over
-            </button>
-            <span aria-hidden style={{ color: e.inkFaint }}>·</span>
+            </Button>
+            <span aria-hidden className="iv-sep" style={{ color: e.inkFaint }}>·</span>
           </>
         )}
         <SkipWithReason
@@ -693,6 +693,9 @@ export function Composer({
       {interviewType === "salary-negotiation" && (() => {
         const tactic = detectNegotiationTactic(currentQuestionText);
         if (!tactic) return null;
+        /* S42-B2 / S43-B2 — once CTC is already disclosed, the
+         * "Current-CTC probe: Deflect" tip is actively wrong advice. */
+        if (tactic.id === "current_ctc_probe" && candidateCurrentCtcKnown) return null;
         return (
           <CanvasHintBubble>
             <div>
@@ -716,8 +719,8 @@ export function Composer({
       })()}
 
       {/* Subtle keyboard-shortcuts discoverability hint */}
-      <span aria-hidden style={{
-        fontFamily: ef.mono, fontSize: 9, textTransform: "uppercase",
+      <span aria-hidden className="iv-kbd-hint" style={{
+        fontFamily: ef.mono, fontSize: 11, textTransform: "uppercase",
         letterSpacing: 1, color: e.inkFaint, marginTop: 2,
       }}>
         Space · send  ·  R · repeat  ·  T · type  ·  Esc · unfocus

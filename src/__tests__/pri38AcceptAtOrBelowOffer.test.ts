@@ -92,6 +92,35 @@ describe("§11 classifyAcceptance — accept frame ≤ offer (unit layer)", () =
   });
 });
 
+/* Extension (2026-07-13, offline hostile probe) — three natural accept-at-offer
+ * phrasings that fell through to no-match because the §11 frame required verb↔
+ * number adjacency: a definite article, an adverbial "just" filler, and an
+ * interposed object ("this") in the close idiom. Each is a real concession the
+ * bot silently ignored and kept countering a done deal. The offer gate must
+ * still reject the identical phrasing when the number sits ABOVE the offer. */
+describe("§11 accept frame — determiner / filler / interposed-object phrasings", () => {
+  const at = (t: string) => classifyAcceptance(t, { offerLpa: 40, offerOnTable: true });
+
+  it("'I'll take the 40' (definite article) → accepted", () => {
+    expect(at("You know what, screw it, I'll take the 40.").reasons).toContain("accept-at-or-below-offer");
+  });
+  it("'I'll just take 40' (adverbial filler) → accepted", () => {
+    expect(at("I'll just take 40 then.").accepted).toBe(true);
+  });
+  it("'let's close this at 40' (interposed object) → accepted", () => {
+    expect(at("Let's close this at 40.").accepted).toBe(true);
+  });
+  it("'let's just close this at 40 and move on' (filler + object) → accepted", () => {
+    expect(at("Let's just close this at 40 and move on.").accepted).toBe(true);
+  });
+  it("GUARD 'I'll take the 45' (article, ABOVE offer) → NOT an at/below accept", () => {
+    expect(at("I'll take the 45.").reasons).not.toContain("accept-at-or-below-offer");
+  });
+  it("GUARD 'let's close this at 44 and move on' (object, ABOVE offer) → NOT an at/below accept", () => {
+    expect(at("Let's close this at 44 and move on.").reasons).not.toContain("accept-at-or-below-offer");
+  });
+});
+
 describe("§11 end-to-end — accept ≤ offer closes, does NOT counter up", () => {
   it("'I'll take 40' → CLOSES at 40 (not a counter to 43)", () => {
     const { kind, fig } = outcome("I'll take 40.");

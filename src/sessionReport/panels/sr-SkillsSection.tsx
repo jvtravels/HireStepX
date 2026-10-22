@@ -2,31 +2,33 @@
  * Horizontal skill bars + sticky weakest-skill callout.
  * Pure presentation. */
 
-import { t, f, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { Skill } from "../types";
-import { SrSectionShell } from "./_primitives";
+import { SrSectionShell, CalloutCard } from "./_primitives";
+import { band } from "./sr-ProgressTrendPanel";
 
 export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: { name: string; tip: string } }) {
   const max = 100;
-  const legend = (
-    <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+  const hasAvg = skills.some((s) => s.roleAvg);
+  const legend = hasAvg ? (
+    <div style={{ display: "flex", alignItems: "center", gap: 16, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 16, height: 4, background: t.indigo, borderRadius: radius.micro }} />
+        <span style={{ width: 16, height: 4, background: t.inkSoft, borderRadius: radius.micro }} />
         You
       </span>
       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
         <span style={{ width: 2, height: 12, background: t.inkSoft, borderRadius: radius.hairline }} />
-        Role Average
+        Role average
       </span>
     </div>
-  );
+  ) : undefined;
   return (
     <SrSectionShell
       anchorId="ir-section-skills"
       headingId="ir-skills-heading"
-      num="03"
-      label="Where you stand vs role bar"
-      title="Skills Breakdown"
+      label="This session"
+      title="Role skills"
+      subtitle="What this role is judged on, scored out of 100 for this session only. Your lowest is highlighted."
       aside={legend}
     >
       <div className="ir-skills-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 280px", gap: 28, alignItems: "start" }}>
@@ -36,8 +38,8 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
             const avgPct = s.roleAvg ? (s.roleAvg / max) * 100 : null;
             const delta = s.roleAvg ? s.score - s.roleAvg : null;
             return (
-              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: "180px 1fr 60px 50px", gap: 14, alignItems: "center" }}>
-                <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: 13, color: t.coal }}>{s.name}</span>
+              <div key={s.name} className="ir-skill-row" style={{ display: "grid", gridTemplateColumns: hasAvg ? "180px 1fr 72px 50px" : "180px 1fr 72px", gap: 14, alignItems: "center" }}>
+                <span className="ir-skill-name" style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal }}>{s.name}</span>
                 <div
                   className="ir-skill-bar-wrap"
                   style={{ background: t.line }}
@@ -53,65 +55,38 @@ export function SkillsSection({ skills, weakest }: { skills: Skill[]; weakest: {
                   }
                 >
                   <div className="ir-skill-bar-bg" style={{ background: t.line }} />
-                  <div
-                    className="ir-skill-bar-fg"
-                    style={{
-                      width: `${pct}%`,
-                      background: `linear-gradient(90deg, ${t.indigoDeep} 0%, ${t.indigo} 100%)`,
-                    }}
-                  />
+                  <div className="ir-skill-bar-fg" style={{ width: `${pct}%`, background: s.name === weakest.name ? t.warning : t.inkSoft }} />
                   {avgPct !== null && (
                     <div className="ir-skill-bar-marker" style={{ left: `calc(${avgPct}% - 1px)` }} aria-hidden="true" />
                   )}
                 </div>
-                <span className="ir-skill-score" style={{ fontFamily: f.mono, fontSize: 14, color: t.coal, textAlign: "right", fontWeight: 600 }}>
+                <span className="ir-skill-score" style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, textAlign: "right", fontWeight: 600, display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
                   {s.score}
+                  <span className="ir-trend-band" style={{ color: band(s.score).weak ? t.warning : t.inkSoft }}>{band(s.score).label}</span>
                 </span>
-                <span
-                  className="ir-skill-delta"
-                  style={{
-                    fontFamily: f.mono,
-                    fontSize: 12,
-                    color: delta === null ? t.inkFaint : delta >= 0 ? t.success : t.error,
-                    fontWeight: 600,
-                    textAlign: "right",
-                  }}
-                >
-                  {delta === null ? "—" : delta >= 0 ? `+${delta}` : delta}
-                </span>
+                {hasAvg && (
+                  <span
+                    className="ir-skill-delta"
+                    style={{
+                      fontFamily: f.sans,
+                      fontSize: size.sm,
+                      color: delta === null ? t.inkFaint : delta >= 0 ? t.success : t.error,
+                      fontWeight: 600,
+                      textAlign: "right",
+                    }}
+                  >
+                    {delta === null ? "" : delta >= 0 ? `+${delta}` : delta}
+                  </span>
+                )}
               </div>
             );
           })}
         </div>
-        <aside
-          style={{
-            background: t.copperSoft,
-            border: `1px solid ${t.copper100}`,
-            borderRadius: radius.bar,
-            padding: "18px 20px",
-          }}
+        <CalloutCard
+          eyebrow={`Focus on ${weakest.name}`}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="6" />
-              <circle cx="12" cy="12" r="2" />
-            </svg>
-            <span style={{ fontFamily: f.mono, fontSize: 11, color: t.copper, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
-              Focus on {weakest.name}
-            </span>
-          </div>
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, lineHeight: 1.5, margin: "0 0 14px" }}>
-            {weakest.tip}
-          </p>
-          <button type="button" className="ir-cta-primary" style={{ width: "100%", justifyContent: "center" }}>
-            Drill this skill
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </button>
-        </aside>
+          {weakest.tip}
+        </CalloutCard>
       </div>
     </SrSectionShell>
   );

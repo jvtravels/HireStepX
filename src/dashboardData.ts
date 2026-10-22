@@ -1,9 +1,10 @@
 import { c } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 import { loadEvents, daysUntilEvent, formatEventTime } from "./dashboardHelpers";
 import { supabaseConfigured } from "./supabase";
 import type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState, SessionCoaching, SessionFocusMetric } from "./dashboardTypes";
 import { scoreLabel } from "./dashboardTypes";
-import { strengthCopy, gapCopy } from "./skillCopy";
+import { strengthCopy, gapCopy, skillLabel } from "./skillCopy";
 import type { SkillTrend } from "./sessionReport/progressTracking";
 import type { HrCompanyNorms } from "../data/hr-company-norms";
 
@@ -24,6 +25,17 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 2, delayMs = 1000): 
 export { scoreLabel };
 export type { UserContext, DashboardSession, SkillData, TrendPoint, PersistedState };
 
+/* HireStepX's users are ~all IST (UTC+5:30). Every "which calendar day is this
+   session/streak bucket in" check must anchor to IST, not the browser's local
+   timezone or a raw UTC truncation of the stored ISO timestamp — either one
+   drifts a same-day evening session into "yesterday" for roughly 19 of 24
+   hours and produces an off-by-one streak. */
+const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+export function toISTDateString(when: Date | number = Date.now()): string {
+  const t = typeof when === "number" ? when : when.getTime();
+  return new Date(t + IST_OFFSET_MS).toISOString().split("T")[0];
+}
+
 /* ─── Skill score helper ─── */
 function extractScore(raw: unknown): number {
   if (typeof raw === "number") return raw;
@@ -38,7 +50,6 @@ export const FREE_SESSION_LIMIT = 2;
    Keep these constants aligned with the customer-facing promise —
    server-handlers/_shared.ts mirrors the limits for quota enforcement. */
 export const STARTER_WEEKLY_LIMIT = 5; // Sprint Pack: 5 sessions per 30-day pack
-export const PRO_MONTHLY_LIMIT = 40;
 export const SINGLE_SESSION_PRICE = 9; // ₹9 per session
 export const STORAGE_KEY = "hirestepx_dashboard";
 export const RESULTS_KEY = "hirestepx_sessions";
@@ -53,6 +64,11 @@ export interface RealSession {
   duration: number;
   score: number;
   questions: number;
+  /** Company the candidate targeted at session setup, from target_company column. */
+  company?: string;
+  /** Role the candidate set at session setup, from target_role column. When set,
+   *  used instead of the profile targetRole so the card shows the session role. */
+  target_role?: string | null;
   ai_feedback?: string;
   skill_scores?: Record<string, number> | null;
   /** Plain-language coaching pair from the evaluator (mvp-8+), read out of
@@ -61,6 +77,10 @@ export interface RealSession {
   /** Per-focus signature strip (mvp-9+), read out of report_json.focusMetrics.
    *  Empty/undefined for older sessions → the card shows no strip. */
   focusMetrics?: SessionFocusMetric[];
+  /** Real per-question scores from the evaluator's cached report
+   *  (report_json.perQuestion). Undefined until the session's report has
+   *  been generated at least once. */
+  perQuestion?: Array<{ question: string; score: number; explanation?: string }>;
   /** Kernel-aware negotiation metrics (salary-neg sessions). Loaded
    *  from either localStorage or Supabase column `negotiation_metrics`. */
   negotiationMetrics?: {
@@ -94,6 +114,20 @@ export interface RealSession {
       posture: "strong" | "neutral" | "hungry";
       candidateLeverage: "low" | "neutral" | "high";
     };
+    /** Voss tactics the candidate deployed (mirror, label, calibrated, …). */
+    vossTacticsUsed?: string[];
+    /** Comp-structure info the candidate asked about. */
+    infoAsked?: string[];
+    /** Candidate-INITIATED subset of infoAsked (S13-B9). */
+    infoAskedInitiated?: string[];
+    /** Last joining-bonus figure the recruiter offered (LPA). S4S5-B3. */
+    lastJoiningBonusOffered?: number | null;
+    /** Phase-11 hike-justification rationale the candidate gave. S3-B2.
+     *  Values: "market-data" | "tenure-yoe" | "competing-offer" |
+     *  "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
+    /** Candidate's current CTC parsed by the kernel (LPA). OA-B58. */
+    candidateCurrentCtcLpa?: number | null;
   };
 }
 
@@ -146,6 +180,10 @@ function normalizeType(type: string): string {
   const map: Record<string, string> = {
     behavioral: "Behavioral", strategic: "Strategic",
     "technical-leadership": "Technical Leadership", "case-study": "Case Study",
+    "campus-placement": "Campus Placement", "hr-round": "HR Round",
+    "salary-negotiation": "Salary Negotiation", technical: "Technical",
+    "system-design": "System Design", panel: "Panel",
+    management: "Management", "government-psu": "Government & PSU",
   };
   return map[type] || type;
 }
@@ -175,17 +213,25 @@ function pickByScore(arr: string[], score: number): string {
 
 function realSessionsToDashboard(realSessions: RealSession[], targetRole: string) {
   return realSessions.map((rs, i, all) => {
-    const type = normalizeType(rs.type);
+    /* Prefer focus when it maps to a known display name (e.g. focus=
+     * "campus-placement" on a type="behavioral" session → "Campus Placement").
+     * Falls back to type when focus is absent, "general", or unrecognised. */
+    const focusDisplay = rs.focus ? normalizeType(rs.focus) : "";
+    const type = (focusDisplay && focusDisplay !== rs.focus) ? focusDisplay : normalizeType(rs.type);
     const prevScore = i < all.length - 1 ? all[i + 1].score : rs.score;
     const dateObj = new Date(rs.date);
     const dateLabel = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
     const durationMin = Math.ceil(rs.duration / 60);
+    const weakestKey = rs.skill_scores
+      ? Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(a) - extractScore(b))[0]?.[0]
+      : undefined;
     return {
       id: rs.id,
-      date: rs.date.split("T")[0],
+      date: toISTDateString(new Date(rs.date)),
       dateLabel,
       type,
-      role: targetRole || "Target Role",
+      role: rs.target_role || targetRole || "Target Role",
+      company: rs.company,
       score: rs.score,
       change: rs.score - prevScore,
       duration: `${durationMin} min`,
@@ -196,23 +242,32 @@ function realSessionsToDashboard(realSessions: RealSession[], targetRole: string
          for legacy pre-mvp-8 rows that have skill_scores but no coaching. */
       topStrength: rs.skill_scores
         ? strengthCopy(
-            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (b as number) - (a as number))[0]?.[0]
+            Object.entries(rs.skill_scores).sort(([, a], [, b]) => extractScore(b) - extractScore(a))[0]?.[0]
           ) || pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score)
         : pickByScore(strengthsByType[type] || strengthsByType["Behavioral"], rs.score),
       topWeakness: rs.skill_scores
-        ? gapCopy(
-            Object.entries(rs.skill_scores).sort(([, a], [, b]) => (a as number) - (b as number))[0]?.[0]
-          ) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
+        ? gapCopy(weakestKey) || pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3)
         : pickByScore(weaknessesByType[type] || weaknessesByType["Behavioral"], rs.score + 3),
+      topWeaknessKey: weakestKey,
+      focus: rs.focus,
       coaching: rs.coaching,
       focusMetrics: rs.focusMetrics,
       feedback: generateFeedback(type, rs.score),
       transcript: [] as { speaker: string; text: string; scoreNote?: string }[],
-      questionScores: Array.from({ length: rs.questions || 3 }, (_, qi) => ({
-        question: `Question ${qi + 1}`,
-        score: Math.max(60, Math.min(100, rs.score + Math.floor((Math.random() - 0.5) * 16))),
-        notes: qi === 0 ? "Strong opening" : qi === rs.questions - 1 ? "Good closing" : "Solid answer",
-      })),
+      /* Real per-question scores from the cached report when available
+         (report_json.perQuestion). Falls back to the session's overall
+         score with no note — not a random guess — for sessions whose
+         report hasn't been generated yet. Length tracks the real
+         question count so SessionsV2's question-count column and
+         overallStats.questionsAnswered stay accurate either way. */
+      questionScores: Array.from({ length: rs.questions || 0 }, (_, qi) => {
+        const real = rs.perQuestion?.[qi];
+        return {
+          question: real?.question || `Question ${qi + 1}`,
+          score: typeof real?.score === "number" ? real.score : rs.score,
+          notes: real?.explanation || "",
+        };
+      }),
       negotiationMetrics: rs.negotiationMetrics,
     };
   });
@@ -229,13 +284,19 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
     real = loadRealSessionsLocal();
   }
   real.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  // Ghost sessions (0 questions answered) must not contaminate LAST SCORE or
+  // avg-score KPIs. The dead-session guard in evaluate-session.ts prevents new
+  // ghost evaluations, but historical ones may have score ~30 from an LLM that
+  // ran on an interviewer-only transcript. Filtering by questions > 0 targets
+  // exactly these sessions while keeping all real sessions regardless of score.
+  real = real.filter(s => (s.questions ?? 0) > 0);
   const realConverted = realSessionsToDashboard(real, targetRole);
   const recentSessions = realConverted;
 
   const scoreTrend = real.slice().reverse().map(rs => ({
     score: rs.score,
     date: new Date(rs.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    type: normalizeType(rs.type),
+    type: (() => { const fd = rs.focus ? normalizeType(rs.focus) : ""; return (fd && fd !== rs.focus) ? fd : normalizeType(rs.type); })(),
   }));
 
   const skills: SkillData[] = [];
@@ -251,7 +312,7 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
         });
       }
     });
-    const colors = [c.gilt, c.sage, c.ember, c.slate, c.gilt, c.sage];
+    const colors = [T.copper, c.sage, c.ember, c.slate, T.copper, c.sage];
     Object.entries(skillMap).forEach(([name, scores], i) => {
       const avg = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
       const first = scores[0];
@@ -265,11 +326,36 @@ export function getSessionData(targetRole: string, supabaseSessions: RealSession
     avgScore: allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 0,
     improvement: real.length >= 2 ? Math.max(0, real[0].score - real[real.length - 1].score) : 0,
     hoursLogged: Math.round((recentSessions.reduce((sum, s) => sum + parseInt(s.duration), 0) / 60) * 10) / 10,
+    questionsAnswered: recentSessions.reduce((sum, s) => sum + s.questionScores.length, 0),
   };
 
   const skillVelocity = computeSkillVelocity(real);
+  const readinessDelta = computeReadinessDelta(real, scoreTrend, skills);
 
-  return { recentSessions, scoreTrend, skills, overallStats, hasData: real.length > 0, skillVelocity };
+  return { recentSessions, scoreTrend, skills, overallStats, hasData: real.length > 0, skillVelocity, readinessDelta, realSessions: real };
+}
+
+/* How many readiness points the user has gained since their very first
+ * session, using the SAME computeReadiness formula for both ends so the
+ * comparison is apples-to-apples: "now" uses the full skill/trend history,
+ * "then" uses only the first session's own score + its own skill_scores
+ * snapshot. null when there isn't enough history to compare (fewer than 2
+ * sessions, or the first session predates skill_scores). */
+function computeReadinessDelta(
+  real: RealSession[],
+  scoreTrend: { score: number; date: string }[],
+  skills: SkillData[],
+): number | null {
+  if (real.length < 2 || skills.length === 0) return null;
+  const first = [...real].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
+  if (!first.skill_scores) return null;
+  const firstSkills: SkillData[] = Object.entries(first.skill_scores).map(([name, raw]) => ({
+    name, score: extractScore(raw), prev: extractScore(raw), color: "",
+  }));
+  if (firstSkills.length === 0) return null;
+  const baseline = computeReadiness([{ score: first.score, date: first.date }], firstSkills);
+  const current = computeReadiness(scoreTrend, skills);
+  return current - baseline;
 }
 
 /* ─── Personalized AI Insights ─── */
@@ -350,7 +436,7 @@ export function generateNotifications(user: UserContext, streak: number, weekAct
 
   if (sessionsCount === 1) notifs.push({ id: 10, type: "milestone", text: "You completed your first session! The hardest part is starting.", dismissible: true });
   if (sessionsCount === 5) notifs.push({ id: 11, type: "milestone", text: "5 sessions complete! You're building real interview muscle memory.", dismissible: true, action: "View Report" });
-  if (sessionsCount >= 10) notifs.push({ id: 12, type: "milestone", text: `${sessionsCount} sessions completed! You're in the top 10% of users.`, dismissible: true, action: "View Report" });
+  if (sessionsCount >= 10) notifs.push({ id: 12, type: "milestone", text: `You've completed ${sessionsCount} practice sessions. Keep the momentum going.`, dismissible: true, action: "View Report" });
 
   const latestScore = sessions[0]?.score;
   if (latestScore >= 90) notifs.push({ id: 20, type: "milestone", text: `You hit ${latestScore}! Your highest score yet. You're interview-ready.`, dismissible: true });
@@ -361,15 +447,14 @@ export function generateNotifications(user: UserContext, streak: number, weekAct
     else if (days > 0 && days <= 7) notifs.push({ id: 31, type: "streak", text: `${days} days until your interview — aim for daily practice this week.`, dismissible: true });
   }
 
-  // Subscription expiry warning
+  // Sprint Pack is a one-time 30-day purchase (no auto-renew), so these are
+  // informational and always dismissible — never a "renew" demand.
   if (user?.subscriptionEnd) {
     const daysLeft = Math.ceil((new Date(user.subscriptionEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    if (daysLeft > 0 && daysLeft <= 3) {
-      notifs.push({ id: 40, type: "streak", text: `Your subscription expires in ${daysLeft} day${daysLeft > 1 ? "s" : ""}. Renew to keep unlimited access.`, dismissible: false, action: "Renew" });
-    } else if (daysLeft > 0 && daysLeft <= 7) {
-      notifs.push({ id: 41, type: "streak", text: `Subscription renews in ${daysLeft} days. You're on the ${user.subscriptionTier || "free"} plan.`, dismissible: true });
+    if (daysLeft > 0 && daysLeft <= 7) {
+      notifs.push({ id: 40, type: "streak", text: `Your Sprint Pack ends in ${daysLeft} day${daysLeft > 1 ? "s" : ""} — buy another any time.`, dismissible: true, action: "Buy another" });
     } else if (daysLeft <= 0) {
-      notifs.push({ id: 42, type: "streak", text: "Your subscription has expired. You're now on the free plan.", dismissible: false, action: "Renew" });
+      notifs.push({ id: 42, type: "streak", text: "Your Sprint Pack has ended. You're on the free plan — buy another any time.", dismissible: true, action: "Buy another" });
     }
   }
 
@@ -528,7 +613,7 @@ export interface DailyChallenge {
 }
 
 export function getDailyChallenge(sessions: DashboardSession[], sk: SkillData[]): DailyChallenge {
-  const today = new Date().toISOString().split("T")[0];
+  const today = toISTDateString();
   const dayOfWeek = new Date().getDay();
   const weakest = sk.length > 0 ? [...sk].sort((a, b) => a.score - b.score)[0] : null;
 
@@ -558,7 +643,7 @@ export function getDailyChallenge(sessions: DashboardSession[], sk: SkillData[])
 /* ─── Practice Reminder ─── */
 export function getPracticeReminder(sessions: DashboardSession[], streak: number): string | null {
   if (sessions.length === 0) return "Start your first session today — the hardest part is beginning.";
-  const today = new Date().toISOString().split("T")[0];
+  const today = toISTDateString();
   const practicedToday = sessions.some(s => s.date === today);
   if (practicedToday) return null;
   if (streak >= 3) return `Don't break your ${streak}-day streak! Practice today to keep the momentum.`;
@@ -700,6 +785,67 @@ export function computeCompanyReadiness(
   return { readinessPercent, readySkills, atRiskSkills, projectedDaysToReady, companyName: company || "your target company", targetScore };
 }
 
+/* ─── Practice Coverage ───
+ * The 5 competency areas the evaluator tags sessions against — the same
+ * taxonomy COMPANY_SKILL_WEIGHTS/DEFAULT_SKILL_WEIGHTS already use above.
+ * "Practiced" means at least one session produced a skill_scores entry
+ * for that key; an area with zero data is a bigger blind spot than one
+ * that's merely scoring low, so an untouched area always outranks a
+ * weak-but-practiced one as the "biggest gap". */
+export const PRACTICE_COVERAGE_AREAS = ["communication", "structure", "technicalDepth", "leadership", "problemSolving"] as const;
+
+export interface PracticeCoverage {
+  practicedCount: number;
+  totalAreas: number;
+  biggestGapKey: string | null;
+  biggestGapLabel: string | null;
+}
+
+export function computePracticeCoverage(skills: SkillData[]): PracticeCoverage {
+  const practiced = new Set(skills.map(s => s.name));
+  const practicedAreas = PRACTICE_COVERAGE_AREAS.filter(a => practiced.has(a));
+  const untouched = PRACTICE_COVERAGE_AREAS.find(a => !practiced.has(a));
+  let biggestGapKey: string | null = untouched ?? null;
+  if (!biggestGapKey) {
+    const covered = skills.filter(s => (PRACTICE_COVERAGE_AREAS as readonly string[]).includes(s.name));
+    if (covered.length > 0) {
+      biggestGapKey = covered.reduce((lowest, s) => (s.score < lowest.score ? s : lowest), covered[0]).name;
+    }
+  }
+  return {
+    practicedCount: practicedAreas.length,
+    totalAreas: PRACTICE_COVERAGE_AREAS.length,
+    biggestGapKey,
+    biggestGapLabel: biggestGapKey ? skillLabel(biggestGapKey) : null,
+  };
+}
+
+/* ─── Evidence Capabilities ───
+ * Verification logic now lives in ./evidenceCapabilities (dependency-free,
+ * also imported by server-handlers/_employer-candidate-evidence-helpers.ts
+ * so the candidate dashboard and the employer-facing evidence panel can
+ * never apply a different bar for "verified"). Re-exported here so existing
+ * imports from dashboardData.ts keep working unchanged. */
+export { computeEvidenceCapabilities, type EvidenceCapability } from "./evidenceCapabilities";
+
+/* ─── Role readiness target ───
+ * The "N points away from your <role> readiness target" header line is
+ * shown even before a user's first session, so it can't depend purely on
+ * session history. Pre-first-session, it anchors to resume quality as a
+ * conservative starting estimate (a strong resume alone doesn't prove
+ * interview readiness, hence the 0.5 discount) instead of showing 0 or
+ * hiding the line entirely. */
+export const ROLE_READINESS_TARGET = 75;
+
+export function computeReadinessGap(
+  hasData: boolean,
+  readinessScore: number,
+  resumeScore?: number | null,
+): { current: number; target: number; gap: number } {
+  const current = hasData ? readinessScore : Math.round((resumeScore ?? 0) * 0.5);
+  return { current, target: ROLE_READINESS_TARGET, gap: Math.max(0, ROLE_READINESS_TARGET - current) };
+}
+
 /* ─── Structured Improvement Plan ─── */
 export interface ImprovementTask {
   label: string;
@@ -803,20 +949,25 @@ export function computeWeekActivity(sessions: DashboardSession[]): boolean[] {
 }
 
 export function computeStreak(sessions: DashboardSession[]): number {
-  const sorted = [...sessions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  let streak = 0;
-  const checkDate = new Date();
-  checkDate.setHours(0, 0, 0, 0);
+  const sessionDates = new Set(sessions.map(s => s.date));
+  const today = toISTDateString(Date.now());
+  const yesterday = toISTDateString(Date.now() - 24 * 60 * 60 * 1000);
+  // A streak only counts as "active" if the candidate practiced today or
+  // yesterday. Without this check, one isolated session from weeks ago
+  // (found while scanning back 30 days) reported a "streak" of 1 even
+  // though the candidate hasn't practiced in a month.
+  if (!sessionDates.has(today) && !sessionDates.has(yesterday)) return 0;
 
+  let streak = 0;
+  let checkTime = Date.now();
   for (let i = 0; i < 30; i++) {
-    const dateStr = checkDate.toISOString().split("T")[0];
-    const hasSession = sorted.some(s => s.date === dateStr);
-    if (hasSession) {
+    const dateStr = toISTDateString(checkTime);
+    if (sessionDates.has(dateStr)) {
       streak++;
     } else if (streak > 0) {
       break;
     }
-    checkDate.setDate(checkDate.getDate() - 1);
+    checkTime -= 24 * 60 * 60 * 1000;
   }
   return streak;
 }
@@ -914,7 +1065,7 @@ export interface ResumeProfile {
   industries: string[];
   interviewStrengths: string[];
   interviewGaps: string[];
-  careerTrajectory: string;
+  careerTrajectory: string; phone?: string; linkedin?: string;
   resumeScore?: number;
   /** Six-axis breakdown from the AI resume analyzer (computed once at
    *  upload time). Keys: quantifiedAchievements (0-20), relevantSkills
@@ -925,9 +1076,9 @@ export interface ResumeProfile {
   /** Notice period as stated on the resume (e.g. "30 days", "Immediate joiner").
    *  Null if not stated. Used for HR-round calibration. */
   noticePeriod?: string | null;
-  /** Current CTC as stated on the resume (e.g. "₹18 LPA"). Null if not stated.
-   *  Used for salary-negotiation pre-fill. */
+  /** Current CTC as stated on the resume (e.g. "₹18 LPA"); salary-negotiation pre-fill. */
   currentCtc?: string | null;
+  expectedCtc?: string | null;
   /** Explicit promotion signals extracted from the resume
    *  (e.g. "Promoted to Senior PM in 18 months at Flipkart").
    *  Prime STAR story material; used as behavioral probe anchors. */
@@ -992,8 +1143,9 @@ export async function analyzeResumeWithAI(
     );
     if (res.status === 401) throw new Error("Session expired — please refresh and sign in again.");
     if (res.status === 429) {
-      const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;
-      throw new Error(retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.");
+      const body = res.data as { retryAfter?: number; error?: string } | null;
+      const retryAfter = body?.retryAfter;
+      throw new Error(body?.error?.startsWith("Monthly") ? body.error : retryAfter ? `Too many requests. Please wait ${retryAfter} seconds.` : "Too many requests. Please wait a moment.");
     }
     if (!res.ok) {
       const msg = res.error || `HTTP ${res.status}`;
@@ -1187,6 +1339,11 @@ export interface SessionReport {
     bgvGaps: string[];
     companyNorms?: HrCompanyNorms | null;
   };
+  /** S65-B1 (2026-07-24): plain-language coaching pair persisted by
+   *  evaluate-session into report_json.coaching. Threaded here so the
+   *  full report's CoachNotesSection can render it. Optional — pre-mvp-8
+   *  rows have no coaching field; the section hides itself when absent. */
+  coaching?: SessionCoaching | null;
   model: string;
 }
 
@@ -1254,6 +1411,12 @@ export async function evaluateSessionWithAI(
     if (res.status === 401) {
       throw new EvaluateSessionError("Session expired — please refresh and sign in again.", { status: 401, retryable: false });
     }
+    if (res.status === 422) {
+      const body = res.data as { error?: string; message?: string } | null;
+      if (body?.error === "no_candidate_answers") {
+        throw new EvaluateSessionError("no_candidate_answers", { status: 422, retryable: false });
+      }
+    }
     if (res.status === 429) {
       const retryAfter = (res.data as { retryAfter?: number } | null)?.retryAfter;
       throw new EvaluateSessionError(
@@ -1284,17 +1447,31 @@ export interface SessionTrendPoint { id: string; date: string; score: number }
  * oldest-first. Read via the already-authenticated supabase client (RLS
  * scopes to the current user by session.id foreign key).
  */
-export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrendPoint[]> {
+export async function fetchRecentSessionScores(
+  limit = 10,
+  focus?: string,
+): Promise<SessionTrendPoint[]> {
   const { getSupabase } = await import("./supabase");
   const client = await getSupabase();
   const { data: sessionData } = await client.auth.getSession();
   const userId = sessionData.session?.user?.id;
   if (!userId) return [];
-  const { data, error } = await client
+  let query = client
     .from("sessions")
     .select("id, created_at, score")
     .eq("user_id", userId)
     .gt("score", 0)
+    /* S18-B3: exclude sub-60s bailout sessions (duration stored in seconds).
+     * A 1-turn bailout that scores 12/100 produces a ↓59 sparkline delta
+     * indistinguishable from a real skill regression. Sessions shorter than
+     * 60 s never contain meaningful practice content. */
+    .gte("duration", 60);
+  // Filter to the same focus type so the trend line is apples-to-apples.
+  // campus-placement sessions are stored as type="behavioral" — the focus
+  // column is what distinguishes them. Without this filter, a campus
+  // report's trend mixes in salary-negotiation, behavioral, etc.
+  if (focus) query = query.eq("focus", focus);
+  const { data, error } = await query
     .order("created_at", { ascending: false })
     .limit(limit);
   if (error) {
@@ -1321,29 +1498,43 @@ export async function fetchRecentSessionScores(limit = 10): Promise<SessionTrend
  * The trends are keyed off the engine's persisted skill_scores keys
  * (`anchoring`, `concessionStrategy`, …) — NOT the LLM report's display
  * skills, which use a different (generic) taxonomy and would not match
- * across sessions. Keys are humanized for display. When `negotiationOnly`
- * is set the rows are filtered to salary-negotiation sessions so the
- * panel shows one coherent skill set rather than mixing in behavioral /
- * HR-round skills. Best-effort: returns [] on any failure so the caller
- * simply omits the panel.
+ * across sessions. Keys are humanized for display. When `sessionType` is
+ * set, rows are filtered to sessions of that same type so the panel shows
+ * one coherent skill taxonomy rather than mixing e.g. negotiation skills
+ * with behavioral / HR-round skills. Best-effort: returns [] on any
+ * failure so the caller simply omits the panel.
  */
 export async function fetchSkillProgressTrends(
-  opts: { negotiationOnly?: boolean; limit?: number } = {},
+  opts: {
+    sessionType?: string;
+    focus?: string;
+    limit?: number;
+    /* Viewed session plus its authoritative candidate ask. A null ask grounds
+     * this row's anchor/counter/specificity scores into the weak band so the
+     * panel matches the report's Skills Breakdown; prior rows keep their values. */
+    currentSession?: { id: string; candidateAsk: number | null };
+  } = {},
 ): Promise<SkillTrend[]> {
-  const { negotiationOnly = false, limit = 30 } = opts;
+  const { sessionType, focus, limit = 30, currentSession } = opts;
   try {
     const { getSupabase } = await import("./supabase");
-    const { sessionRowsToProgressPoints, computeAllTrends, humanizeSkillKey } =
-      await import("./sessionReport/progressTracking");
+    const {
+      sessionRowsToProgressPoints,
+      computeAllTrends,
+      capHistoryToSession,
+      humanizeSkillKey,
+      groundNoCounterSkillScores,
+    } = await import("./sessionReport/progressTracking");
     const client = await getSupabase();
     const { data: sessionData } = await client.auth.getSession();
     const userId = sessionData.session?.user?.id;
     if (!userId) return [];
     let q = client
       .from("sessions")
-      .select("id, created_at, skill_scores, target_company, type, focus")
+      .select("id, created_at, skill_scores, target_company, type, focus, score, duration")
       .eq("user_id", userId);
-    if (negotiationOnly) q = q.eq("type", "salary-negotiation");
+    if (sessionType) q = q.eq("type", sessionType);
+    if (focus) q = q.eq("focus", focus);
     const { data, error } = await q
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -1356,17 +1547,31 @@ export async function fetchSkillProgressTrends(
       created_at: string;
       skill_scores: Record<string, number | { score: number }> | null;
       target_company: string | null;
+      score: number | null; duration: number | null;
     }>;
+    /* Same exclusions as fetchRecentSessionScores so rows and hero share a baseline. */
+    const countable = rows.filter(
+      (r) =>
+        r.id === currentSession?.id ||
+        ((r.score ?? 0) > 0 && (r.duration ?? 0) >= 60),
+    );
     const points = sessionRowsToProgressPoints(
-      rows.map((r) => ({
+      countable.map((r) => ({
         sessionId: r.id,
         completedAt: new Date(r.created_at).getTime(),
-        skillScores: r.skill_scores,
+        skillScores:
+          currentSession && r.id === currentSession.id
+            ? groundNoCounterSkillScores(r.skill_scores, currentSession.candidateAsk)
+            : r.skill_scores,
         sector: r.target_company ?? undefined,
       })),
       humanizeSkillKey,
     );
-    return computeAllTrends(points);
+    /* End the trend at the viewed session so an older report shows its own numbers. */
+    const scoped = currentSession
+      ? capHistoryToSession(points, currentSession.id)
+      : points;
+    return computeAllTrends(scoped);
   } catch (err) {
     console.warn(
       "[fetchSkillProgressTrends] unexpected error:",

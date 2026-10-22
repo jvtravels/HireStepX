@@ -31,6 +31,7 @@ import {
   coerceNoticeDays,
   NEGOTIATION_SKILL_AXES,
   HR_ROUND_SKILL_AXES,
+  CAMPUS_SKILL_AXES,
   ROLE_SKILLS,
   DEFAULT_BANDS,
   type TranscriptTurn,
@@ -87,6 +88,25 @@ describe("resolveSkillAxes (#99 negotiation taxonomy)", () => {
     axes.push("tampered");
     expect(NEGOTIATION_SKILL_AXES).not.toContain("tampered");
     expect(NEGOTIATION_SKILL_AXES).toHaveLength(6);
+  });
+
+  it("returns campus skill axes when focus is campus-placement, regardless of type or role family", () => {
+    expect(resolveSkillAxes("behavioral", "swe", "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes(undefined, "pm", "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes("behavioral", undefined, "campus-placement")).toEqual([...CAMPUS_SKILL_AXES]);
+    expect(resolveSkillAxes("behavioral", "behavioral", "campus-placement")).toContain("Technical Knowledge");
+    expect(resolveSkillAxes("behavioral", "swe", "campus-placement")).not.toContain("Trade-off Reasoning");
+  });
+
+  it("type wins over focus: hr-round beats campus-placement focus", () => {
+    expect(resolveSkillAxes("hr-round", "swe", "campus-placement")).toEqual([...HR_ROUND_SKILL_AXES]);
+  });
+
+  it("campus axes are a fresh array (mutation does not corrupt constant)", () => {
+    const axes = resolveSkillAxes("behavioral", "swe", "campus-placement");
+    axes.push("tampered");
+    expect(CAMPUS_SKILL_AXES).not.toContain("tampered");
+    expect(CAMPUS_SKILL_AXES).toHaveLength(5);
   });
 });
 
@@ -171,6 +191,13 @@ describe("resolveCalibrationLabel", () => {
     expect(r.companyLabel).toBe("Acme Corp");
     expect(r.companyNote).toMatch(/general senior bar/i);
     expect(r.companyNote).not.toMatch(/set a target company/i);
+  });
+
+  it("uses a fresher/campus bar (never 'senior bar') for campus-placement sessions", () => {
+    const r = resolveCalibrationLabel("TCS", null, "none", "campus-placement");
+    expect(r.companyLabel).toBe("TCS");
+    expect(r.companyNote).toMatch(/fresher|campus/i);
+    expect(r.companyNote).not.toMatch(/senior bar/i);
   });
 });
 
@@ -1043,6 +1070,29 @@ describe("normalizeCoaching", () => {
     expect(r?.gap.headline.length).toBeLessThanOrEqual(60);
     expect(r?.gap.meaning.length).toBeLessThanOrEqual(160);
     expect(r?.gap.example.length).toBeLessThanOrEqual(160);
+  });
+
+  it("S63-B2: returns null when gap headline contradicts strength (e.g. strength credits anchoring, gap asks for it)", () => {
+    // Exact reproduction: Apple iOS SE session where LLM violated its own coaching rule
+    expect(normalizeCoaching({
+      strength: { headline: "Anchored the number first", meaning: "Strong opener" },
+      gap: { headline: "Anchor your number first", meaning: "Start with a number", example: "Say ₹X LPA" },
+    })).toBeNull();
+    // Other anchor variants that should also be caught
+    expect(normalizeCoaching({
+      strength: { headline: "Named your opening anchor", meaning: "Good opener" },
+      gap: { headline: "Lead with an anchor number", meaning: "Name your number", example: "" },
+    })).toBeNull();
+    // Non-contradicting pairs must still pass through
+    expect(normalizeCoaching({
+      strength: { headline: "Anchored the number first", meaning: "Strong opener" },
+      gap: { headline: "Handle pushback with silence", meaning: "Pause after counter", example: "Just wait" },
+    })).not.toBeNull();
+    // Competing-offer contradiction
+    expect(normalizeCoaching({
+      strength: { headline: "Cited a competing offer", meaning: "Used leverage well" },
+      gap: { headline: "Reference a competing offer", meaning: "Use market data", example: "" },
+    })).toBeNull();
   });
 });
 

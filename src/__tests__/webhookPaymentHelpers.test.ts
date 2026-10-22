@@ -56,11 +56,6 @@ describe("resolveCapturedPayment", () => {
       expect(r).toEqual({ kind: "subscription", tier: "starter", planDays: 30 });
     });
 
-    it("activates monthly at list price", () => {
-      const r = resolveCapturedPayment({ plan: "monthly", amount: 14900, notes: {} });
-      expect(r).toEqual({ kind: "subscription", tier: "pro", planDays: 30 });
-    });
-
     it("rejects old ₹49 weekly amount — webhook does not activate with stale price", () => {
       const r = resolveCapturedPayment({ plan: "weekly", amount: 4900, notes: {} });
       expect(r).toEqual({ kind: "reject", reason: "amount_mismatch" });
@@ -74,8 +69,8 @@ describe("resolveCapturedPayment", () => {
     });
 
     it("accepts a fully-discounted (₹0) capture", () => {
-      const r = resolveCapturedPayment({ plan: "monthly", amount: 0, notes: { discount: "14900" } });
-      expect(r).toEqual({ kind: "subscription", tier: "pro", planDays: 30 });
+      const r = resolveCapturedPayment({ plan: "weekly", amount: 0, notes: { discount: "3900" } });
+      expect(r).toEqual({ kind: "subscription", tier: "starter", planDays: 30 });
     });
 
     it("never goes negative when discount exceeds price", () => {
@@ -84,7 +79,7 @@ describe("resolveCapturedPayment", () => {
     });
 
     it("rejects when the captured amount doesn't match price minus discount", () => {
-      const r = resolveCapturedPayment({ plan: "monthly", amount: 100, notes: { discount: "1000" } });
+      const r = resolveCapturedPayment({ plan: "weekly", amount: 100, notes: { discount: "1000" } });
       expect(r).toEqual({ kind: "reject", reason: "amount_mismatch" });
     });
 
@@ -116,14 +111,14 @@ describe("resolveCapturedPayment", () => {
   });
 
   describe("catalog constants stay in lockstep with create-order pricing", () => {
-    it("amounts are ₹9 / ₹39 (Sprint Pack) / ₹149 in paise", () => {
-      expect(WEBHOOK_PLAN_AMOUNT).toEqual({ single: 900, weekly: 3900, monthly: 14900 });
+    it("amounts are ₹9 / ₹39 (Sprint Pack) in paise", () => {
+      expect(WEBHOOK_PLAN_AMOUNT).toEqual({ single: 900, weekly: 3900 });
     });
-    it("tiers map single→free, weekly→starter, monthly→pro", () => {
-      expect(WEBHOOK_PLAN_TIER).toEqual({ single: "free", weekly: "starter", monthly: "pro" });
+    it("tiers map single→free, weekly→starter", () => {
+      expect(WEBHOOK_PLAN_TIER).toEqual({ single: "free", weekly: "starter" });
     });
-    it("durations are 30 days for both term plans (Sprint Pack = 30 days)", () => {
-      expect(WEBHOOK_PLAN_DURATION).toEqual({ weekly: 30, monthly: 30 });
+    it("duration is 30 days for the Sprint Pack", () => {
+      expect(WEBHOOK_PLAN_DURATION).toEqual({ weekly: 30 });
     });
   });
 });

@@ -1,4 +1,5 @@
-export const runtime = 'edge';
+export const runtime = 'nodejs';
+export const maxDuration = 60;
 import handler from "../../../server-handlers/generate-questions";
 
 export async function POST(req: Request) { return handler(req); }

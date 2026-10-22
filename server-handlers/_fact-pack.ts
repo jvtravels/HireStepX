@@ -240,6 +240,39 @@ export function buildFactPack(
   return pack;
 }
 
+/** Transform a FactPack to an LLM-safe representation with unambiguous
+ *  field names before serialising to JSON. Prevents the LLM from
+ *  confusing `budgetBand.low` (our opening offer) with the candidate's
+ *  `candidateCurrentCtc` (S55-B3/B4 2026-07-24). Pure. */
+export function toLlmFactPack(pack: FactPack): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    ...pack,
+    /* Rename CTC field to be unambiguous: this is what the candidate
+     * earns at their PRESENT employer, completely distinct from our offer. */
+    ...(pack.candidateCurrentCtc != null
+      ? { candidateCurrentEmployerCtc_lpa: pack.candidateCurrentCtc, candidateCurrentCtc: undefined }
+      : {}),
+    /* Rename budgetBand so each sub-field is self-documenting.
+     * "low" (our opening offer) must never be mistaken for a CTC figure. */
+    ...(pack.budgetBand != null
+      ? {
+          ourOfferBand: {
+            ourOpeningOffer_lpa: pack.budgetBand.low,
+            ourMaximumFlexibility_lpa: pack.budgetBand.high,
+            ourWalkaway_lpa: pack.budgetBand.walk,
+          },
+          budgetBand: undefined,
+        }
+      : {}),
+  };
+  /* Remove undefined placeholders — JSON.stringify omits them anyway
+   * but be explicit so the returned object is clean. */
+  for (const k of Object.keys(out)) {
+    if (out[k] === undefined) delete out[k];
+  }
+  return out;
+}
+
 /* ─── candidate-question detection ──────────────────────────────────
  *
  * Conservative heuristic. Triggers on:
@@ -278,6 +311,16 @@ export function detectCandidateAskedQuestion(reply: string): {
   if (RHETORICAL_BEFORE_RE.test(trimmed) && !/\?\s*$/.test(trimmed)) {
     return { asked: false };
   }
+
+  /* S55-B7 (2026-07-24) — "can you move the base to ₹65L?" is a counter-offer
+   * request, not a factual question. Q_LEAD_RE fires on "can you …" prefixes,
+   * routing these to generateAnswerToCandidate which then explains comp
+   * structure instead of making a concession move. Suppress question detection
+   * for negotiation-demand phrasings so they fall through to the canonical
+   * counter-offer prose (generateRestyledCanonical). */
+  const COUNTER_ASK_RE =
+    /\bcan\s+you\s+(?:move|go|come\s+(?:up|to)|raise|increase|bump|push|stretch|do|make\s+it)\b/i;
+  if (COUNTER_ASK_RE.test(trimmed)) return { asked: false };
 
   const trailingQ = /\?\s*$/.test(trimmed);
   const leadingQ = Q_LEAD_RE.test(trimmed);

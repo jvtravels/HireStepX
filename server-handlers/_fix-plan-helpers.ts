@@ -93,6 +93,22 @@ const KNOWN_PREFIXES: readonly string[] = ["server-handlers/analyzers/", "data/"
 
 /** Returns true if the LLM's target_file matches a known path or lives
  *  under a known prefix (so new analyzers added later still validate). */
+/** Stable identity for a recommendation, used to dedupe across cron runs.
+ *  Keyed on target_file + sorted affected_flags rather than the LLM's
+ *  freeform title: title is re-generated prose each run (temperature 0.2,
+ *  not 0), so the same underlying issue gets reworded run to run and never
+ *  collides — confirmed in production as 100 pending rows with the same
+ *  salary-negotiation fix suggested 12 separate times under 12 different
+ *  titles. target_file and affected_flags both come from closed
+ *  vocabularies (the KNOWN_FIX_TARGETS whitelist and the fixed flag names
+ *  already in session_insights), so they're stable across runs even when
+ *  the LLM's prose isn't. Only fall back to title when the LLM returns no
+ *  flags at all, since there's no better anchor then. */
+export function buildDedupKey(item: Pick<FixPlanItem, "target_file" | "affected_flags" | "title">): string {
+  const flagKey = (item.affected_flags || []).slice().sort().join(",");
+  return `${item.target_file || "_"}::${flagKey || item.title}`.slice(0, 400).toLowerCase();
+}
+
 export function isFileGrounded(target: string): boolean {
   if (!target) return false;
   if (KNOWN_SET.has(target)) return true;

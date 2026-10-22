@@ -196,6 +196,28 @@ describe("sampleBehavioralQuestions — role/yoe tilt", () => {
     }
   });
 
+  /* Regression: toBehavioralRole() in _generate-questions-helpers.ts used to
+     default unmapped role families (finance, legal, civil-services, etc.) to
+     `undefined`, which skipped this function's role-partition step entirely
+     — not just letting universal questions through, but letting OTHER
+     disciplines' role-locked questions (engineer/ops/data-tagged) compete on
+     equal footing. A Chartered Accountant candidate drew an engineer-tagged
+     "production incident" probe and an untagged-but-engineering-flavored
+     "caught a bug... before it shipped" probe (live QA, 2026-Q3). The fix
+     maps every unmapped family to the "general" sentinel instead — never a
+     valid roleAffinity tag, but truthy, so partitioning still activates. */
+  it("role='general' (unmapped role family) demotes other-discipline-locked questions", () => {
+    // "general" is never a valid roleAffinity tag (see BehavioralRole in
+    // data/behavioral-question-bank.ts), so unlike the engineer/marketing/
+    // sales cases above, NO role-locked question should ever survive here
+    // while universal alternatives exist for its competency.
+    const out = sampleBehavioralQuestions({ count: 12, seed: 9, role: "general" });
+    expect(out.every(q => !q.roleAffinity || q.roleAffinity.length === 0)).toBe(true);
+    // The two live-QA repro questions specifically must not surface.
+    expect(out.some(q => q.id === "prs-03")).toBe(false);
+    expect(out.some(q => q.id === "exr-01")).toBe(false);
+  });
+
   it("deterministic snapshot: count=5, seed=42, no role/yoe", () => {
     /* Pinned snapshot to catch unintended drift in the sampler logic.
        Adding/removing bank entries naturally changes the shuffle output,

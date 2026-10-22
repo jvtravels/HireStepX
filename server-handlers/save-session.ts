@@ -25,6 +25,15 @@ import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
 import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
+import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/sessionReport/progressTracking";
+import { computeStreakReward } from "./_streak-reward";
+import { grantSessionCredits } from "./_session-credits";
+import { computePracticeTimestamps } from "./_save-session-helpers";
+import { fetchSessionOwner, isServerGraded, withoutGradedFields } from "./_session-score-lock";
+import { notify } from "./_notify";
+import { payReferrerForReferral, REFERRAL_PAYOUT_MIN_QUESTIONS, REFERRAL_REWARD_WINDOW_MS } from "./_referral-reward-helpers";
+import { notifyReferrerPaid } from "./_referral-emails";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -150,13 +159,65 @@ export function sanitizeNegotiationMetrics(v: unknown): Record<string, unknown> 
        UnaskedLevers / lowball / power-dynamics panels. */
     ...(voss ? { vossTacticsUsed: voss } : {}),
     ...(info ? { infoAsked: info } : {}),
+    /* S13-B9 — candidate-INITIATED info subset; persist alongside the full
+       infoAsked so the adapter's stage-2 guard (no false credit for recruiter-
+       elicited disclosures) survives DB save/reload. Fall back is in the adapter
+       itself (undefined km.infoAskedInitiated → use infoAsked), so dropping it
+       here was silent but incorrect for new sessions. */
+    ...(strArray(o.infoAskedInitiated) ? { infoAskedInitiated: strArray(o.infoAskedInitiated) } : {}),
+    /* S6-B3 — grounded pushback events from the kernel's hold-firm moves.
+       Preserve the array so the report's "You handled their pushback" stage
+       fires correctly after a DB round-trip. */
+    ...(Array.isArray(o.pushbacks)
+      ? {
+          pushbacks: (o.pushbacks as unknown[])
+            .filter((p): p is Record<string, unknown> => p !== null && typeof p === "object")
+            .slice(0, 30)
+            .map(p => ({
+              pushback: typeof p.pushback === "string" ? p.pushback.slice(0, 100) : "hold-firm",
+              outcome: (["held", "deflected", "conceded"] as const).includes(p.outcome as "held" | "deflected" | "conceded")
+                ? (p.outcome as "held" | "deflected" | "conceded")
+                : "held" as const,
+              detail: typeof p.detail === "string" ? p.detail.slice(0, 200) : "",
+            })),
+        }
+      : {}),
     ...(typeof o.walkAwayReturned === "boolean" ? { walkAwayReturned: o.walkAwayReturned } : {}),
     ...(typeof o.hardBandCap === "boolean" ? { hardBandCap: o.hardBandCap } : {}),
     ...(["soft", "neutral", "hot"].includes(o.marketMode as string) ? { marketMode: o.marketMode } : {}),
     ...(lowballEvent ? { lowballEvent } : {}),
     ...(powerContext ? { powerContext } : {}),
+    /* S4S5-B3 — persist the one-time joining bonus so the report's
+       OfferEconomicsPanel and CounterOfferLetterPanel can surface it
+       after DB save/reload (previously lost because the sanitizer dropped it).
+       S71-B1 — also persist the candidate's stated ask and the clawback-
+       discussed flag so the adapter can show the candidate's ask (the number
+       they actually requested) rather than the planner's formula-computed
+       amount when the recruiter never verbally confirmed a specific figure. */
+    ...(num(o.lastJoiningBonusOffered, 0, 500) != null
+      ? { lastJoiningBonusOffered: num(o.lastJoiningBonusOffered, 0, 500) }
+      : {}),
+    ...(num((o.noticeJoining as Record<string, unknown>)?.joiningBonusAsk, 0, 500) != null
+      ? { joiningBonusAsk: num((o.noticeJoining as Record<string, unknown>)?.joiningBonusAsk, 0, 500) }
+      : {}),
+    ...((o.noticeJoining as Record<string, unknown>)?.joiningBonusClawbackDiscussed === true
+      ? { joiningBonusClawbackDiscussed: true }
+      : {}),
   };
 }
+
+/* REPORT-4b write-time grounding. The Skill Progress panel reads persisted
+ * skill_scores DIRECTLY (fetchSkillProgressTrends → sessionRowsToProgressPoints),
+ * bypassing the report adapter's render-time grounding — so a no-counter session
+ * that persists `anchoring: 70` renders "Anchoring 70 · +30 pts vs last" on this
+ * and every future report, contradicting the same session's "No counter named"
+ * headline, "Numbers stated 0%", and grounded Skills Breakdown. Grounding the
+ * anchor / counter / specificity axes at the write seam keeps the stored row
+ * coherent for every downstream reader. The rule itself is the ONE shared
+ * `groundNoCounterSkillScores` (also applied at the cross-session read seam),
+ * imported above and re-exported here so save-session's existing unit tests
+ * keep their import path. */
+export { groundNoCounterSkillScores, groundGapClosureSkillScores };
 
 function asString(v: unknown, max = 500): string {
   if (typeof v !== "string") return "";
@@ -185,6 +246,13 @@ function asNumber(v: unknown): number {
  *  (c) Caps text at 3000 chars per entry so a single turn can't balloon the row,
  *      and time at 16 chars (it's a "mm:ss" display stamp).
  *  Returns an empty array when the input is not an array. */
+/* S1-B5: silence-nudge / rambling-interject / soft-tracking interjections are
+ * added to the live transcript as "[I'm listening.]", "[Hmm, go on.]", etc.
+ * (see _listening-interjections.ts). They are TTS timing markers, not recruiter
+ * speech — strip any AI entry whose text is entirely bracket-wrapped so they
+ * never appear in the saved replay. */
+const TTS_MARKER_RE = /^\[.+\]$/;
+
 export function sanitizeTranscript(raw: unknown): Array<{ speaker: string; text: string; time?: string }> {
   if (!Array.isArray(raw)) return [];
   const VALID_SPEAKERS = new Set(["ai", "user"]);
@@ -196,7 +264,12 @@ export function sanitizeTranscript(raw: unknown): Array<{ speaker: string; text:
         typeof entry === "object" &&
         typeof (entry as Record<string, unknown>).speaker === "string" &&
         VALID_SPEAKERS.has((entry as Record<string, unknown>).speaker as string) &&
-        typeof (entry as Record<string, unknown>).text === "string",
+        typeof (entry as Record<string, unknown>).text === "string" &&
+        /* Strip TTS interjection markers from AI turns. */
+        !(
+          (entry as Record<string, unknown>).speaker === "ai" &&
+          TTS_MARKER_RE.test(((entry as Record<string, unknown>).text as string).trim())
+        ),
     )
     .map(entry => {
       const time = (entry as Record<string, unknown>).time;
@@ -282,6 +355,120 @@ async function sendSessionReportEmail(
   }
 }
 
+/* ── Milestone emails (free-tier conversion) ── */
+
+/** Fires after a user completes their first session (1 free session remaining).
+ *  Goal: anchor their momentum and warm them to upgrading before they hit the wall. */
+async function sendFirstSessionCompletedEmail(
+  userEmail: string,
+  userName: string,
+  sessionId: string,
+  userId: string,
+): Promise<void> {
+  if (!RESEND_API_KEY || !userEmail) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+  // Conversion nudge, not a transactional receipt: honour the marketing opt-out.
+  if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
+  const parts = await marketingEmailParts(userId, "marketing");
+
+  const greeting = escapeHtml(userName || "there");
+  const reportUrl = `${APP_URL}/session/${sessionId}`;
+  const nextUrl = `${APP_URL}/session/new`;
+
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `first-session-${sessionId}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [userEmail],
+        subject: `${userName ? userName.split(" ")[0] + ", you" : "You"}'ve completed your first HireStepX session`,
+        ...parts.resend,
+        html: emailShell({
+          footer: parts.footer,
+          preview: "First session done. One more free session left — make it count.",
+          body:
+            title("First session", { accentWord: "done." }) +
+            para(`Hi ${greeting}, your report is ready — scores, STAR breakdown, and the exact phrases that'll sharpen your next attempt.`) +
+            para(`You have <strong>1 free session left</strong>. Use it on your hardest target company or a round you've been avoiding.`) +
+            button("View report", reportUrl) +
+            button("Start session 2", nextUrl) +
+            para(
+              "After your second session you can upgrade to keep practicing — ₹9 per session or ₹39 for 5 sessions (Sprint Pack).",
+              { small: true, muted: true },
+            ),
+        }),
+      }),
+    });
+    clearTimeout(timer);
+  } catch (err) {
+    console.warn(`[save-session] first-session email threw: ${(err as Error).message}`);
+  }
+}
+
+/** Fires after a user completes their second (last) free session.
+ *  Goal: close the conversion while the practice feeling is hot. */
+async function sendFreeLimitReachedEmail(
+  userEmail: string,
+  userName: string,
+  sessionId: string,
+  userId: string,
+): Promise<void> {
+  if (!RESEND_API_KEY || !userEmail) return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
+  // Conversion nudge, not a transactional receipt: honour the marketing opt-out.
+  if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
+  const parts = await marketingEmailParts(userId, "marketing");
+
+  const greeting = escapeHtml(userName || "there");
+  const reportUrl = `${APP_URL}/session/${sessionId}`;
+  const upgradeUrl = `${APP_URL}/dashboard?upgrade=1`;
+
+  try {
+    const ac = new AbortController();
+    const timer = setTimeout(() => ac.abort(), 10_000);
+    await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      signal: ac.signal,
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": `free-limit-${sessionId}`,
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: [userEmail],
+        subject: "You've finished your 2 free sessions — keep the momentum going",
+        ...parts.resend,
+        html: emailShell({
+          footer: parts.footer,
+          preview: "Both free sessions used. Upgrade to keep practicing before your interview.",
+          body:
+            title("Both free sessions", { accentWord: "done." }) +
+            para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready — you've already built muscle memory that candidates who don't practice at all don't have.`) +
+            para(`To keep going, get the Sprint Pack (₹39 · 5 sessions) or grab a single session for ₹9. No subscription required.`) +
+            button("View report", reportUrl) +
+            button("Upgrade to keep practicing", upgradeUrl) +
+            para(
+              "Questions? Reply to this email and we'll help you choose the right plan.",
+              { small: true, muted: true },
+            ),
+        }),
+      }),
+    });
+    clearTimeout(timer);
+  } catch (err) {
+    console.warn(`[save-session] free-limit email threw: ${(err as Error).message}`);
+  }
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), {
@@ -324,6 +511,51 @@ export default async function handler(req: Request): Promise<Response> {
   const resolvedVersionId = clientVersionId
     || await resolveActiveResumeVersionId(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, asString(body.type, 64));
 
+  /* Sanitize once, reuse for both the negotiation_metrics column AND the
+     write-time skill-score grounding below (REPORT-4b). candidateAskLpa is the
+     kernel's authoritative ask; null ⇒ no counter was ever named. */
+  const negMetrics = sanitizeNegotiationMetrics(body.negotiation_metrics);
+  const rawSkillScores =
+    body.skill_scores && typeof body.skill_scores === "object"
+      ? (body.skill_scores as Record<string, unknown>)
+      : null;
+  const candidateAskLpa =
+    typeof negMetrics?.candidateAskLpa === "number" ? negMetrics.candidateAskLpa : null;
+  /* S18-B2: a near-empty / bailout session produces LLM-imputed skill_scores
+     that contradict the actual content (3-word response → "Communication 85").
+     The Skill Progress panel reads skill_scores directly, bypassing render-time
+     grounding, so inflated persisted scores contaminate every future trend.
+     Gate: the sanitized transcript is the authoritative measure of session
+     substance — fewer than 4 entries means at most 1 real exchange. */
+  const sanitizedTranscript = sanitizeTranscript(body.transcript);
+  if (sanitizedTranscript.length === 0) {
+    return new Response(JSON.stringify({ error: "Empty transcript — no session to save" }), { status: 400, headers });
+  }
+  const isBailoutSession = sanitizedTranscript.length < 4;
+  /* Ground only for negotiation rows (negMetrics present). Non-negotiation
+     sessions never carry a counter concept, so their skill_scores pass through
+     untouched even if a key happens to match the anchor regex. */
+  const skillScoresAfterNoCounter = isBailoutSession
+    ? null
+    : negMetrics
+    ? groundNoCounterSkillScores(rawSkillScores, candidateAskLpa)
+    : rawSkillScores;
+  /* S44-B13 (2026-07-23) — apply the same gap-closure ceiling the report
+     adapter uses at render time, so the persisted skill_scores row matches
+     what the Skills Breakdown panel shows. Without this, the Skill Progress
+     panel reads raw LLM scores (e.g., Anchor strength 95) while the same
+     report's Skills Breakdown shows the adapter-capped value (e.g., 45 for
+     a <10% gap-closure accept), creating a direct on-page contradiction. */
+  const skillScores = negMetrics
+    ? groundGapClosureSkillScores(
+        skillScoresAfterNoCounter,
+        typeof negMetrics.outcome === "string" ? negMetrics.outcome : null,
+        candidateAskLpa,
+        typeof negMetrics.initialOfferLpa === "number" ? negMetrics.initialOfferLpa : null,
+        typeof negMetrics.finalOfferLpa === "number" ? negMetrics.finalOfferLpa : null,
+      )
+    : skillScoresAfterNoCounter;
+
   const sessionRow = {
     id: asString(body.id, 64),
     user_id: auth.userId,
@@ -334,9 +566,9 @@ export default async function handler(req: Request): Promise<Response> {
     duration: asNumber(body.duration),
     score: asNumber(body.score),
     questions: asNumber(body.questions),
-    transcript: sanitizeTranscript(body.transcript),
+    transcript: sanitizedTranscript,
     ai_feedback: asString(body.ai_feedback, 20000),
-    skill_scores: (body.skill_scores && typeof body.skill_scores === "object") ? body.skill_scores : null,
+    skill_scores: skillScores,
     job_description: asString(body.job_description, 20000) || null,
     jd_analysis: (body.jd_analysis && typeof body.jd_analysis === "object") ? body.jd_analysis : null,
     resume_version_id: resolvedVersionId,
@@ -347,7 +579,7 @@ export default async function handler(req: Request): Promise<Response> {
        primitive fields so a tampered client can't dump arbitrary
        payload into the column. The column-stripping retry below
        handles environments where the migration hasn't run yet. */
-    negotiation_metrics: sanitizeNegotiationMetrics(body.negotiation_metrics),
+    negotiation_metrics: negMetrics,
   };
 
   if (!sessionRow.id) {
@@ -356,10 +588,23 @@ export default async function handler(req: Request): Promise<Response> {
 
   const t0 = Date.now();
 
+  // Ownership guard: sessions.id is text (caller-supplied), and the upsert uses
+  // service role which bypasses RLS. Check that any pre-existing row with this
+  // ID belongs to the authenticated user before merging. A crafted ID that matches
+  // another user's session would otherwise silently overwrite their data.
+  const owner = await fetchSessionOwner(sessionRow.id, SUPABASE_URL, SUPABASE_SERVICE_KEY);
+  if (!owner.ok) {
+    return new Response(JSON.stringify({ error: "Service unavailable" }), { status: 503, headers });
+  }
+  if (owner.row && owner.row.user_id !== auth.userId) {
+    return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers });
+  }
+  const alreadyGraded = isServerGraded(owner.row);
+
   // 1. Insert the session row. Column-stripping retry for environments where
   //    jd_analysis / job_description haven't been migrated yet.
   const strippedSession: string[] = [];
-  const row: Record<string, unknown> = { ...sessionRow };
+  const row: Record<string, unknown> = withoutGradedFields({ ...sessionRow }, alreadyGraded);
   let sessionOk = false;
   for (let attempt = 0; attempt < 6; attempt++) {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/sessions?on_conflict=id`, {
@@ -397,46 +642,48 @@ export default async function handler(req: Request): Promise<Response> {
     }), { status: 500, headers });
   }
 
-  // Fire-and-forget: attribute LLM cost to this session
-  // Queries llm_usage rows tagged with this session_id, computes INR cost,
-  // and patches the sessions row. Never delays the save-session response.
-  void (async () => {
-    try {
-      const { costBreakdown: computeCost, DEFAULT_COST_RATES } = await import("./_cost-helpers");
-      const usageRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/llm_usage?session_id=eq.${encodeURIComponent(sessionRow.id)}&select=total_tokens,prompt_tokens,completion_tokens,is_fallback`,
-        { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
-      );
-      if (!usageRes.ok) return;
-      const usageRows: Array<{ total_tokens: number; prompt_tokens: number; completion_tokens: number; is_fallback: boolean }> = await usageRes.json();
-      if (!Array.isArray(usageRows) || usageRows.length === 0) return;
-      let promptTok = 0, completionTok = 0, primaryTok = 0, fallbackTok = 0;
-      for (const r of usageRows) {
-        promptTok += r.prompt_tokens || 0;
-        completionTok += r.completion_tokens || 0;
-        if (r.is_fallback) fallbackTok += r.total_tokens || 0;
-        else primaryTok += r.total_tokens || 0;
+  // Attribute LLM cost to this session. Awaited: on the edge runtime a
+  // fire-and-forget fetch is killed when the response returns, which left
+  // sessions.llm_cost_inr null for every session.
+  try {
+    const { llmCallInr } = await import("./_cost-helpers");
+    const usageRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/llm_usage?session_id=eq.${encodeURIComponent(sessionRow.id)}&select=model,total_tokens,prompt_tokens,completion_tokens,is_fallback`,
+      { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` }, signal: AbortSignal.timeout(2500) },
+    );
+    if (usageRes.ok) {
+      const usageRows: Array<{ model: string | null; total_tokens: number; prompt_tokens: number; completion_tokens: number; is_fallback: boolean }> = await usageRes.json();
+      if (Array.isArray(usageRows) && usageRows.length > 0) {
+        let promptTok = 0, completionTok = 0, inr = 0;
+        for (const r of usageRows) {
+          promptTok += r.prompt_tokens || 0;
+          completionTok += r.completion_tokens || 0;
+          inr += llmCallInr({ model: r.model, promptTokens: r.prompt_tokens || 0, completionTokens: r.completion_tokens || 0, totalTokens: r.total_tokens || 0, isFallback: !!r.is_fallback });
+        }
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}`,
+          {
+            method: "PATCH",
+            headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+            body: JSON.stringify({ llm_cost_inr: Math.round(inr * 10000) / 10000, prompt_tokens: promptTok, completion_tokens: completionTok }),
+            signal: AbortSignal.timeout(2500),
+          },
+        );
       }
-      const cost = computeCost({ llmTokensPrimary: primaryTok, llmTokensFallback: fallbackTok, ttsChars: 0, sttCalls: 0, sessions: 1 }, DEFAULT_COST_RATES);
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/sessions?id=eq.${encodeURIComponent(sessionRow.id)}`,
-        {
-          method: "PATCH",
-          headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, "Content-Type": "application/json", Prefer: "return=minimal" },
-          body: JSON.stringify({ llm_cost_inr: cost.llmInr, prompt_tokens: promptTok, completion_tokens: completionTok }),
-        },
-      );
-    } catch { /* best effort — never block the user response */ }
-  })();
+    }
+  } catch { /* best effort: the admin cost view recomputes from llm_usage when this is null */ }
 
   // 2. Atomically append a timestamp to practice_timestamps. Read-modify-write
   //    with the service role — not ideal for high concurrency but a user only
   //    completes one session at a time, so races aren't real here.
   const nowIso = new Date().toISOString();
   let practiceAppended = false;
+  // Set when this session is the 1st or 2nd completed free session — used to
+  // decide which milestone email fires in the report-email block below.
+  let completedCountAfter = -1;
   try {
     const getRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids`,
+      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&select=practice_timestamps,started_session_ids,referred_by`,
       {
         headers: {
           apikey: SUPABASE_SERVICE_KEY,
@@ -450,27 +697,97 @@ export default async function handler(req: Request): Promise<Response> {
       const existing: string[] = Array.isArray(row.practice_timestamps) ? row.practice_timestamps : [];
       const startedIds: string[] = Array.isArray(row.started_session_ids) ? row.started_session_ids : [];
 
-      /* Sessions are now counted at START via /api/record-session-start.
-         If the engine already recorded this sessionId there, skip the
-         append here so the user doesn't double-count. */
-      const alreadyCounted = startedIds.includes(sessionRow.id);
-      const next = alreadyCounted ? existing : [...existing, nowIso].slice(-500);
+      const questionsAnswered = (sessionRow.questions ?? 0) >= 1;
+      const { next, refundedStartedIds, alreadyCounted, isGhostSession } = computePracticeTimestamps({
+        existing,
+        startedIds,
+        sessionId: sessionRow.id,
+        questionsAnswered,
+        nowIso,
+      });
 
+      const patchBody: Record<string, unknown> = { practice_timestamps: next, has_completed_onboarding: true };
+      if (refundedStartedIds !== null) patchBody.started_session_ids = refundedStartedIds;
+
+      // Compare-and-swap on the previously-read practice_timestamps value so
+      // two concurrent save-session calls (e.g. distinct session ids racing)
+      // can't both observe the same pre-grant streak length and both trigger
+      // computeStreakReward's milestone bonus — only the request that wins
+      // the race actually updates the row; the loser's PATCH matches zero
+      // rows and is treated as a no-op rather than double-granting credits.
       const patchRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}`,
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(auth.userId)}&practice_timestamps=eq.${encodeURIComponent(JSON.stringify(existing))}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             apikey: SUPABASE_SERVICE_KEY,
             Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`,
-            Prefer: "return=minimal",
+            Prefer: "return=representation",
           },
-          body: JSON.stringify({ practice_timestamps: next, has_completed_onboarding: true }),
+          body: JSON.stringify(patchBody),
         },
       );
       if (patchRes.ok) {
-        practiceAppended = true;
+        const updatedRows = await patchRes.json().catch(() => []);
+        const wonRace = Array.isArray(updatedRows) && updatedRows.length > 0;
+        if (wonRace) {
+          practiceAppended = !isGhostSession;
+          // Capture the user's new total for milestone email routing.
+          // Only set when this was a genuine new session (not a replay / ghost).
+          if (!alreadyCounted && !isGhostSession && questionsAnswered) {
+            completedCountAfter = existing.length + 1;
+          }
+          // Referral payout: the referred user just completed a real session, so
+          // the referrer's reward (held back at signup) is now due. Awaited — it
+          // is a payout, so it must not be cut off when the response returns.
+          if (row.referred_by && !alreadyCounted && !isGhostSession && (sessionRow.questions ?? 0) >= REFERRAL_PAYOUT_MIN_QUESTIONS) {
+            try {
+              const payout = await payReferrerForReferral({
+                baseUrl: SUPABASE_URL,
+                serviceKey: SUPABASE_SERVICE_KEY,
+                referredId: auth.userId,
+                nowIso,
+                sinceIso: new Date(Date.now() - REFERRAL_REWARD_WINDOW_MS).toISOString(),
+              });
+              if (payout.paid && payout.referrerId) {
+                const referrerId = payout.referrerId;
+                void captureServerEvent("referral_reward_granted", referrerId, { side: "referrer" });
+                void (async () => {
+                  const r = await fetch(
+                    `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(referrerId)}&select=email,name`,
+                    { headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` } },
+                  ).catch(() => null);
+                  const rows = r?.ok ? await r.json().catch(() => []) : [];
+                  const ref = Array.isArray(rows) ? rows[0] : null;
+                  await notifyReferrerPaid(referrerId, (ref?.email as string) ?? null, (ref?.name as string) ?? null);
+                })().catch((e: unknown) => console.warn("[save-session] referrer notify failed:", (e as Error).message));
+              } else if (payout.reason === "credit_failed" || payout.reason === "error") {
+                console.warn(`[save-session] referral payout ${payout.reason} for referred=${auth.userId.slice(0, 8)}`);
+              }
+            } catch (e) {
+              console.warn("[save-session] referral payout threw:", (e as Error).message);
+            }
+          }
+          if (!alreadyCounted && questionsAnswered) {
+            const bonus = computeStreakReward(existing, nowIso);
+            if (bonus > 0) {
+              const milestone = existing.length + 1;
+              void grantSessionCredits(SUPABASE_URL, SUPABASE_SERVICE_KEY, auth.userId, bonus, fetch, 2)
+                .then(() => captureServerEvent("streak_milestone_reward", auth.userId, { milestone, bonus }))
+                .catch((e: unknown) => console.warn("[save-session] streak reward grant failed:", (e as Error).message));
+              void notify({
+                userId: auth.userId,
+                type: "streak_milestone",
+                title: `${milestone}-day streak! 🔥`,
+                body: `You've practiced ${milestone} days in a row — we've added a bonus session to your account.`,
+                link: "/dashboard",
+              });
+            }
+          }
+        } else {
+          console.warn(`[save-session] practice_timestamps CAS lost for user=${auth.userId.slice(0, 8)} — concurrent write already applied, skipping`);
+        }
       } else {
         const t = await patchRes.text().catch(() => "");
         console.warn(`[save-session] practice_timestamps patch failed HTTP ${patchRes.status}: ${t.slice(0, 200)}`);
@@ -482,7 +799,7 @@ export default async function handler(req: Request): Promise<Response> {
     console.warn(`[save-session] practice_timestamps update threw: ${(err as Error).message}`);
   }
 
-  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
+  console.log(`[save-session] OK user=${auth.userId.slice(0, 8)} session=${sessionRow.id.slice(0, 8)} practiceAppended=${practiceAppended} questions=${sessionRow.questions ?? 0} stripped=${strippedSession.join(",") || "-"} latency=${Date.now() - t0}ms`);
 
   // ─── Eager grading kickoff ───
   // The session row is durable in the DB at this point. Kick off the
@@ -542,6 +859,13 @@ export default async function handler(req: Request): Promise<Response> {
         const userEmail = userData.email || "";
         const userName = userData.user_metadata?.name || userData.user_metadata?.full_name || "";
         await sendSessionReportEmail(userEmail, userName, sessionRow.id, sessionRow.type || "interview");
+        // Free-tier milestone emails — fire sequentially so they don't race
+        // each other. completedCountAfter is -1 for ghost/replay sessions.
+        if (completedCountAfter === 1) {
+          await sendFirstSessionCompletedEmail(userEmail, userName, sessionRow.id, auth.userId!);
+        } else if (completedCountAfter === 2) {
+          await sendFreeLimitReachedEmail(userEmail, userName, sessionRow.id, auth.userId!);
+        }
       } else {
         console.warn(`[save-session] auth user fetch failed HTTP ${userRes.status} — skipping report email`);
       }

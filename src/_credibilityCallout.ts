@@ -51,7 +51,7 @@ const FLAG_SET = new Set<string>(CREDIBILITY_FLAGS);
  *  enough to render as a single line under the headline. */
 const ACTION_FOR_FLAG: Record<CredibilityFlag, string> = {
   claimed_internship_not_in_resume:
-    "Add this company to your resume before the next interview — BGV will pull the resume, not the transcript.",
+    "Add this company to your resume before the next interview. BGV will pull the resume, not the transcript.",
   branch_mismatch_with_resume:
     "Use the exact branch on your degree certificate every time. If it's a dual-degree / minor, say so once.",
   grad_year_mismatch_with_resume:
@@ -59,17 +59,17 @@ const ACTION_FOR_FLAG: Record<CredibilityFlag, string> = {
   college_mismatch_with_resume:
     "Name the exact college on your resume. Tier-1 acronym swaps (IIT vs NIT) are an instant disqualifier in campus BGV.",
   cgpa_mismatch_with_resume:
-    "Quote the CGPA on your transcript. If a recent semester moved the average, say so explicitly — don't round up.",
+    "Quote the CGPA on your transcript. If a recent semester moved the average, say so explicitly. Don't round up.",
   internship_duration_mismatch_with_resume:
-    "Match the exact dates on your relieving / offer letter. If you extended, frame it cleanly — don't round 3 months up to 'six'.",
+    "Match the exact dates on your relieving / offer letter. If you extended, frame it cleanly. Don't round 3 months up to 'six'.",
   resume_transcript_mismatch:
-    "Every employer you name out loud must already be on the resume. Add the company before the next round — BGV pulls the resume, not the transcript.",
+    "Every employer you name out loud must already be on the resume. Add the company before the next round; BGV pulls the resume, not the transcript.",
   resume_gap_unaddressed:
-    "Prep a one-liner for the gap before the real round: dates + reason + what you did. Don't wait to be cornered — own it factually in 15 seconds.",
+    "Prep a one-liner for the gap before the real round: dates + reason + what you did. Don't wait to be cornered; own it factually in 15 seconds.",
   inflated_seniority_claim:
-    "Either retitle to a level you can defend with scope, or open with the years-vs-title gap and justify it: 'titled Senior because I own X end-to-end since month N — I know that's quick.'",
+    "Either retitle to a level you can defend with scope, or open with the years-vs-title gap and justify it: 'titled Senior because I own X end-to-end since month N. I know that's quick.'",
   under_titled_candidate:
-    "Retitle to match the scope you actually own (Senior / Lead) — HR anchors comp on title, not narrative. Under-titling at 5+ YoE costs lakhs at offer time.",
+    "Retitle to match the scope you actually own (Senior / Lead). HR anchors comp on title, not narrative, and under-titling at 5+ YoE costs lakhs at offer time.",
 };
 
 export interface CredibilityItem {

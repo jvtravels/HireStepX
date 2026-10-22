@@ -48,6 +48,19 @@ describe("validateOrigin", () => {
     else process.env.VERCEL_URL = prev;
   });
 
+  it("accepts this branch's stable VERCEL_BRANCH_URL alias (what preview links actually point to)", () => {
+    const prev = process.env.VERCEL_BRANCH_URL;
+    delete process.env.VERCEL_BRANCH_URL;
+    expect(validateOrigin(makeReq({ origin: "https://hirestepx-git-feature-x-team.vercel.app" }))).toBe(false);
+
+    process.env.VERCEL_BRANCH_URL = "hirestepx-git-feature-x-team.vercel.app";
+    expect(validateOrigin(makeReq({ origin: "https://hirestepx-git-feature-x-team.vercel.app" }))).toBe(true);
+    expect(validateOrigin(makeReq({ origin: "https://someone-else.vercel.app" }))).toBe(false);
+
+    if (prev === undefined) delete process.env.VERCEL_BRANCH_URL;
+    else process.env.VERCEL_BRANCH_URL = prev;
+  });
+
   it("accepts localhost dev origins", () => {
     expect(validateOrigin(makeReq({ origin: "http://localhost:3000" }))).toBe(true);
     expect(validateOrigin(makeReq({ origin: "http://localhost:5173" }))).toBe(true);
@@ -64,9 +77,11 @@ describe("validateOrigin", () => {
     expect(validateOrigin(makeReq({ origin: "https://attacker.example" }))).toBe(false);
   });
 
-  it("falls back to Referer when Origin is absent (same-origin GET case)", () => {
-    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }))).toBe(true);
-    expect(validateOrigin(makeReq({ referer: "https://attacker.com/foo" }))).toBe(false);
+  it("falls back to Referer when Origin is absent (GET only — POST must supply Origin)", () => {
+    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }, "GET"))).toBe(true);
+    expect(validateOrigin(makeReq({ referer: "https://attacker.com/foo" }, "GET"))).toBe(false);
+    // POST without Origin is rejected even with a valid Referer (CSRF hardening)
+    expect(validateOrigin(makeReq({ referer: "https://hirestepx.com/dashboard" }, "POST"))).toBe(false);
   });
 
   it("rejects when neither Origin nor Referer present", () => {

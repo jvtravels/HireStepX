@@ -111,7 +111,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
     return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    return new Response(JSON.stringify({ error: msg.slice(0, 200) }), { status: 500, headers });
+    console.error("[user-outcome] error:", err instanceof Error ? err.message : String(err));
+    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500, headers });
   }
 }

@@ -12,7 +12,9 @@
 
 export const config = { runtime: "edge" };
 
+import { after } from "next/server";
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { rematchOpenRequirementsForNewResume } from "./employer-requirements";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -22,6 +24,8 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
  * Columns the client is allowed to update via this endpoint. Anything not on
  * this list is silently dropped so a malicious client can't touch e.g.
  * subscription_tier, email_verified, deleted_at, etc.
+ * practice_timestamps is deliberately absent: only /api/sessions/save appends
+ * to it, because employers read it as an activity signal.
  */
 export const ALLOWED_COLUMNS = new Set<string>([
   "name",
@@ -34,7 +38,6 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "experience_level",
   "preferred_session_length",
   "interview_types",
-  "practice_timestamps",
   "resume_file_name",
   "resume_text",
   "resume_data",
@@ -44,7 +47,40 @@ export const ALLOWED_COLUMNS = new Set<string>([
   "interview_focus",
   "session_length",
   "feedback_style",
+  "is_profile_public",
+  "portfolio_links",
 ]);
+
+/** Max portfolio links a candidate can attach — enough for GitHub, Behance,
+ *  a personal site, etc. without turning the profile into a link farm. */
+const MAX_PORTFOLIO_LINKS = 5;
+
+/**
+ * Validates the shape of each portfolio link so only well-formed,
+ * candidate-entered { title, url } pairs ever reach the DB (and, from
+ * there, an employer's screen). Malformed items are dropped rather than
+ * rejecting the whole update — a typo in one link shouldn't block the
+ * other four from saving.
+ */
+export function sanitizePortfolioLinks(raw: unknown): Array<{ title: string; url: string }> {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{ title: string; url: string }> = [];
+  for (const item of raw) {
+    if (out.length >= MAX_PORTFOLIO_LINKS) break;
+    if (!item || typeof item !== "object") continue;
+    const title = typeof (item as Record<string, unknown>).title === "string"
+      ? (item as Record<string, unknown>).title as string
+      : "";
+    const url = typeof (item as Record<string, unknown>).url === "string"
+      ? (item as Record<string, unknown>).url as string
+      : "";
+    const trimmedTitle = title.trim().slice(0, 120);
+    const trimmedUrl = url.trim().slice(0, 500);
+    if (!trimmedTitle || !/^https?:\/\//i.test(trimmedUrl)) continue;
+    out.push({ title: trimmedTitle, url: trimmedUrl });
+  }
+  return out;
+}
 
 export interface ProfileUpdate {
   [key: string]: unknown;
@@ -55,6 +91,10 @@ export function sanitizeUpdate(raw: unknown): ProfileUpdate {
   const out: ProfileUpdate = {};
   for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
     if (!ALLOWED_COLUMNS.has(key)) continue;
+    if (key === "portfolio_links") {
+      out[key] = sanitizePortfolioLinks(value);
+      continue;
+    }
     // Cap string fields at reasonable sizes.
     if (typeof value === "string") {
       const max = key === "resume_text" ? 50000 : key === "resume_file_name" ? 255 : 500;
@@ -161,6 +201,18 @@ export default async function handler(req: Request): Promise<Response> {
         console.warn(`[update-profile] OK after stripping missing columns: ${stripped.join(",")}`);
       }
       console.log(`[update-profile] OK user=${auth.userId?.slice(0, 8)} fields=${Object.keys(updates).join(",")} stripped=${stripped.join(",") || "-"} latency=${Date.now() - t0}ms`);
+      // A fresh resume_data write is the signal that this candidate's profile
+      // just became more (or newly) matchable — nudge the open requirements
+      // pipeline rather than waiting for the nightly cron. Registered via
+      // `after()` (not `void ...()`) so the Edge isolate is kept alive until
+      // the rescoring pass settles instead of being torn down the instant
+      // this response is returned — a bare fire-and-forget promise has no
+      // guaranteed lifetime past the response on Vercel's Edge runtime, so
+      // the rescore could silently never run.
+      // target_role and industry feed the same score and the relevance gate, so
+      // changing either (a role switch with the resume untouched) must also
+      // re-score, and drop the candidate from jobs that no longer fit.
+      if ("resume_data" in updates || "target_role" in updates || "industry" in updates) after(() => rematchOpenRequirementsForNewResume(auth.userId));
       return new Response(JSON.stringify({ profile, strippedColumns: stripped }), { status: 200, headers });
     }
 

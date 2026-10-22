@@ -2,23 +2,19 @@
  *
  * GET:  returns the caller's referral code (generating one on first call) plus
  *       their referral stats.
- * POST: applies a referral code for the caller (the referred user) and
- *       IMMEDIATELY rewards BOTH sides with a session credit. This is what
- *       closes the loop — see _referral-reward-helpers.ts for the exactly-once
- *       compare-and-swap semantics and abuse cap.
+ * POST: applies a referral code for the caller (the referred user). Only NEW
+ *       accounts can redeem; the friend is credited immediately and the
+ *       referrer is paid when the friend completes a first real session
+ *       (save-session). See _referral-apply.ts / _referral-reward-helpers.ts.
  *
- * Auth/rate-limit go through the shared withAuthAndRateLimit preamble (same as
- * every other handler) rather than a hand-rolled origin+auth check, so code
- * generation and apply are both IP/user rate-limited. */
+ * Auth/rate-limit go through the shared withAuthAndRateLimit preamble. */
 
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, withRequestId } from "./_shared";
-import {
-  normalizeReferralCode,
-  grantReferralReward,
-  REFERRAL_REWARD_WINDOW_MS,
-} from "./_referral-reward-helpers";
+import { normalizeReferralCode } from "./_referral-reward-helpers";
+import { applyReferralCode } from "./_referral-apply";
+import { notifyReferredWelcome, notifyReferrerJoined } from "./_referral-emails";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -26,8 +22,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 
 function generateCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no I/O/0/1 for clarity
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
   let code = "HSX-";
-  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  for (const byte of bytes) code += chars[byte % chars.length];
   return code;
 }
 
@@ -65,26 +63,38 @@ export default async function handler(req: Request): Promise<Response> {
       let code = Array.isArray(profiles) && profiles[0]?.referral_code;
 
       if (!code) {
-        // Generate a unique code with collision check (retry up to 5 times)
-        for (let attempt = 0; attempt < 5; attempt++) {
-          code = generateCode();
-          const existsRes = await fetch(
-            `${SUPABASE_URL}/rest/v1/profiles?referral_code=eq.${encodeURIComponent(code)}&select=id`,
-            { headers: dbHeaders },
+        // Claim a fresh code only while the profile still has none (CAS), so two
+        // concurrent first-loads can't overwrite each other; a unique collision
+        // on the code itself just retries with a new one.
+        for (let attempt = 0; attempt < 5 && !code; attempt++) {
+          const candidate = generateCode();
+          const saveRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&referral_code=is.null`,
+            {
+              method: "PATCH",
+              headers: { ...dbHeaders, Prefer: "return=representation" },
+              body: JSON.stringify({ referral_code: candidate }),
+            },
           );
-          const existsRows = await existsRes.json();
-          if (Array.isArray(existsRows) && existsRows.length === 0) break; // unique
-          if (attempt === 4) {
-            return new Response(JSON.stringify({ error: "Could not generate unique code, please retry" }), { status: 500, headers });
+          if (saveRes.ok) {
+            const saved = await saveRes.json().catch(() => []);
+            if (Array.isArray(saved) && saved.length > 0) {
+              code = candidate;
+            } else {
+              const again = await fetch(
+                `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=referral_code`,
+                { headers: dbHeaders },
+              );
+              const rows = await again.json().catch(() => []);
+              code = Array.isArray(rows) && rows[0]?.referral_code;
+              if (!code) break;
+            }
+          } else if (saveRes.status !== 409) {
+            return new Response(JSON.stringify({ error: "Failed to save referral code" }), { status: 500, headers });
           }
         }
-        const saveRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
-          method: "PATCH",
-          headers: { ...dbHeaders, Prefer: "return=minimal" },
-          body: JSON.stringify({ referral_code: code }),
-        });
-        if (!saveRes.ok) {
-          return new Response(JSON.stringify({ error: "Failed to save referral code" }), { status: 500, headers });
+        if (!code) {
+          return new Response(JSON.stringify({ error: "Could not generate unique code, please retry" }), { status: 500, headers });
         }
       }
 
@@ -110,90 +120,28 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Invalid referral code format" }), { status: 400, headers });
     }
 
-    // Find the referrer
-    const referrerRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?referral_code=eq.${encodeURIComponent(referralCode)}&select=id`,
-      { headers: dbHeaders },
-    );
-    const referrers = await referrerRes.json();
-    if (!Array.isArray(referrers) || referrers.length === 0) {
-      return new Response(JSON.stringify({ error: "Invalid referral code" }), { status: 404, headers });
+    const result = await applyReferralCode({
+      baseUrl: SUPABASE_URL,
+      serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+      userId,
+      code: referralCode,
+      nowMs: Date.now(),
+    });
+    if (!result.ok) {
+      return new Response(JSON.stringify({ error: result.error }), { status: result.status, headers });
     }
-    const referrerId = referrers[0].id;
-
-    if (referrerId === userId) {
-      return new Response(JSON.stringify({ error: "Cannot use your own referral code" }), { status: 400, headers });
-    }
-
-    // Already referred? (idempotent: a re-POST of a still-cached ?ref returns
-    // cleanly instead of erroring — the reward was already granted on first apply.)
-    const selfRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}&select=referred_by,email`,
-      { headers: dbHeaders },
-    );
-    const selfRows = await selfRes.json();
-    const self = Array.isArray(selfRows) ? selfRows[0] : undefined;
-    if (self?.referred_by) {
+    if (result.alreadyReferred) {
       return new Response(JSON.stringify({ success: true, alreadyReferred: true }), { status: 200, headers });
     }
 
-    // Mark the referred user
-    const applyRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
-      method: "PATCH",
-      headers: { ...dbHeaders, Prefer: "return=minimal" },
-      body: JSON.stringify({ referred_by: referralCode }),
-    });
-    if (!applyRes.ok) {
-      console.error("[referral] Failed to apply referral:", applyRes.status);
-      return new Response(JSON.stringify({ error: "Failed to apply referral code" }), { status: 500, headers });
+    notifyReferrerJoined(result.referrerId);
+    if (result.rewarded) {
+      await notifyReferredWelcome(userId, result.referredEmail, result.referredName);
     }
-
-    // Create the referral row and read it back so we have its id for the
-    // reward claim. The unique index on referred_id makes this insert the
-    // race-safe dedup point: a concurrent double-apply 409s here, and we
-    // recover by looking up the existing row.
-    let referralId: string | undefined;
-    const recordRes = await fetch(`${SUPABASE_URL}/rest/v1/referrals`, {
-      method: "POST",
-      headers: { ...dbHeaders, Prefer: "return=representation" },
-      body: JSON.stringify({
-        referrer_id: referrerId,
-        referral_code: referralCode,
-        referred_id: userId,
-        referred_email: typeof self?.email === "string" ? self.email : null,
-        status: "redeemed",
-      }),
-    });
-    if (recordRes.ok) {
-      const rows = await recordRes.json().catch(() => []);
-      if (Array.isArray(rows) && rows[0]?.id) referralId = rows[0].id;
-    } else {
-      // Likely a unique-violation from a concurrent apply — fetch the existing row.
-      const existing = await fetch(
-        `${SUPABASE_URL}/rest/v1/referrals?referred_id=eq.${encodeURIComponent(userId)}&select=id&limit=1`,
-        { headers: dbHeaders },
-      );
-      const rows = await existing.json().catch(() => []);
-      if (Array.isArray(rows) && rows[0]?.id) referralId = rows[0].id;
-    }
-
-    // Close the loop — reward both sides immediately, exactly once.
-    let rewarded = false;
-    if (referralId) {
-      const now = new Date();
-      const result = await grantReferralReward({
-        baseUrl: SUPABASE_URL,
-        serviceKey: SUPABASE_SERVICE_ROLE_KEY,
-        referralId,
-        referrerId,
-        referredId: userId,
-        nowIso: now.toISOString(),
-        sinceIso: new Date(now.getTime() - REFERRAL_REWARD_WINDOW_MS).toISOString(),
-      });
-      rewarded = result.granted;
-    }
-
-    return new Response(JSON.stringify({ success: true, rewarded }), { status: 200, headers });
+    return new Response(
+      JSON.stringify({ success: true, rewarded: result.rewarded, ...(result.reason ? { reason: result.reason } : {}) }),
+      { status: 200, headers },
+    );
   } catch (err) {
     console.error("[referral] Error:", err);
     return new Response(JSON.stringify({ error: "Internal error" }), { status: 500, headers });

@@ -21,7 +21,7 @@ describe("pickNextMove", () => {
         currentStreak: 0,
       });
       expect(out.weakestSkillName).toBe("Communication");
-      expect(out.ctaLabel).toBe("Practice Communication");
+      expect(out.ctaLabel).toBe("Start New Session");
       expect(out.ctaHref).toBe("/session/new?focus=Communication");
     });
 
@@ -65,8 +65,9 @@ describe("pickNextMove", () => {
       expect(out.ctaHref).toBe("/session/new?focus=leverageUse");
       // humanized everywhere a human reads it
       expect(out.weakestSkillLabel).toBe("Leverage use");
-      expect(out.ctaLabel).toBe("Practice Leverage use");
-      expect(out.headline).toContain("Leverage use");
+      // a score dimension is not a session type, so it is never promised as one
+      expect(out.ctaLabel).toBe("Start New Session");
+      expect(out.headline).toBe("Start a new practice session");
       // and the raw token must NOT appear in any user-facing string
       expect(out.ctaLabel).not.toContain("leverageUse");
       expect(out.headline).not.toContain("leverageUse");
@@ -88,23 +89,24 @@ describe("pickNextMove", () => {
   });
 
   describe("CTA fallback when no weakness", () => {
-    it("active streak → 'Keep the streak going'", () => {
+    it("active streak → 'Start New Session'", () => {
       const out = pickNextMove({ skills: [], currentStreak: 5 });
-      expect(out.ctaLabel).toBe("Keep the streak going");
+      expect(out.ctaLabel).toBe("Start New Session");
       expect(out.ctaHref).toBe("/session/new");
     });
 
-    it("no streak, no weakness → 'Start a session'", () => {
+    it("no streak, no weakness → 'Start New Session'", () => {
       const out = pickNextMove({ skills: [], currentStreak: 0 });
-      expect(out.ctaLabel).toBe("Start a session");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
-    it("weakness wins over streak CTA (weakness is higher-leverage)", () => {
+    it("weakness still steers the session focus even though the label is generic", () => {
       const out = pickNextMove({
         skills: [{ name: "Communication", score: 40 }],
         currentStreak: 10,
       });
-      expect(out.ctaLabel).toBe("Practice Communication");
+      expect(out.ctaLabel).toBe("Start New Session");
+      expect(out.ctaHref).toBe("/session/new?focus=Communication");
     });
   });
 
@@ -179,13 +181,13 @@ describe("pickNextMove", () => {
   });
 
   describe("headline", () => {
-    it("weakness → weakness-specific headline", () => {
+    it("weakness → neutral headline, never a skill dressed up as a session", () => {
       const out = pickNextMove({
-        skills: [{ name: "Structure", score: 45 }],
+        skills: [{ name: "businessImpact", score: 45 }],
         currentStreak: 0,
       });
-      expect(out.headline).toContain("Structure");
-      expect(out.headline).toContain("highest-leverage");
+      expect(out.headline).toBe("Start a new practice session");
+      expect(out.headline).not.toMatch(/business impact/i);
     });
 
     it("no weakness, streak ≥ 3 → streak-specific headline", () => {
@@ -193,9 +195,14 @@ describe("pickNextMove", () => {
       expect(out.headline).toContain("5-day streak");
     });
 
-    it("no weakness, streak < 3 → generic welcome-back", () => {
-      const out = pickNextMove({ skills: [], currentStreak: 1 });
+    it("no weakness, streak < 3 → generic welcome-back for returning users", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 1, sessionCount: 1 });
       expect(out.headline).toBe("Pick up where you left off.");
+    });
+
+    it("no weakness, streak < 3, first-time user (sessionCount=0) → first-session headline", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 0, sessionCount: 0 });
+      expect(out.headline).toMatch(/first mock interview/i);
     });
   });
 
@@ -229,7 +236,7 @@ describe("pickNextMove", () => {
         topGaps: ["some_future_gap_we_dont_handle_yet"],
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Practice Structure");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
     it("first unknown then known → walks the list and picks the known one", () => {
@@ -247,7 +254,7 @@ describe("pickNextMove", () => {
         currentStreak: 0,
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Practice Structure");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
     it("topGaps empty array → also a no-op", () => {
@@ -257,15 +264,19 @@ describe("pickNextMove", () => {
         topGaps: [],
       });
       expect(out.coachingFocus).toBe(null);
-      expect(out.ctaLabel).toBe("Keep the streak going");
+      expect(out.ctaLabel).toBe("Start New Session");
     });
 
-    it("every gap in GAP_CTA_MAP produces a non-empty label + headline + drill key", () => {
+    it("every gap in GAP_CTA_MAP produces a non-empty label + headline; drill key must be valid when present", () => {
       // Regression guard: nobody adds a gap to the map without filling all fields.
+      // drill is optional — campus-placement entries omit it (they use a custom ctaHref
+      // that goes to the setup page, not a micro-drill session).
       for (const [code, cta] of Object.entries(GAP_CTA_MAP)) {
         expect(cta.label, `${code}.label`).toBeTruthy();
         expect(cta.headline, `${code}.headline`).toBeTruthy();
-        expect(cta.drill, `${code}.drill`).toMatch(/^[a-z_]+$/);
+        if (cta.drill !== undefined) {
+          expect(cta.drill, `${code}.drill`).toMatch(/^[a-z_]+$/);
+        }
       }
     });
 
@@ -274,6 +285,90 @@ describe("pickNextMove", () => {
       expect(GAP_CTA_MAP).toHaveProperty("resume_gap_unaddressed");
       expect(GAP_CTA_MAP).toHaveProperty("inflated_seniority_claim");
       expect(GAP_CTA_MAP).toHaveProperty("under_titled_candidate");
+    });
+  });
+
+  describe("campus-placement gap-aware CTA (v6.x analyzer flags)", () => {
+    it("cgpa_low_no_framing fires a campus-specific CTA pointing to the campus-placement flow", () => {
+      const out = pickNextMove({
+        skills: [{ name: "leverageUse", score: 30 }],
+        currentStreak: 0,
+        topGaps: ["cgpa_low_no_framing"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("cgpa_low_no_framing");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
+      expect(out.coachingSessionFocus).toBe("campus-placement");
+      // generic behavioral skill is still exposed but doesn't win the CTA
+      expect(out.weakestSkillName).toBe("leverageUse");
+    });
+
+    it("no_academic_project_discussed produces campus CTA and correct label", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["no_academic_project_discussed"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("no_academic_project_discussed");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
+      expect(out.ctaLabel).toContain("academic project");
+    });
+
+    it("bond_refusal fires campus-placement CTA", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["bond_refusal"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("bond_refusal");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
+      expect(out.coachingSessionFocus).toBe("campus-placement");
+    });
+
+    it("coachingSessionFocus is 'hr-round' for HR gap codes (backward compat)", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["resume_transcript_mismatch"],
+      });
+      expect(out.coachingSessionFocus).toBe("hr-round");
+    });
+
+    it("coachingSessionFocus is 'salary-negotiation' for salary gap codes", () => {
+      const out = pickNextMove({
+        skills: [],
+        currentStreak: 0,
+        topGaps: ["floor_collapse"],
+      });
+      expect(out.coachingSessionFocus).toBe("salary-negotiation");
+    });
+
+    it("coachingSessionFocus is null when no gap matched", () => {
+      const out = pickNextMove({ skills: [], currentStreak: 0 });
+      expect(out.coachingSessionFocus).toBe(null);
+    });
+
+    it("campus gap takes priority over a behavioral skill weakness", () => {
+      const out = pickNextMove({
+        skills: [{ name: "Communication", score: 20 }],
+        currentStreak: 5,
+        topGaps: ["generic_passion_no_substance"],
+      });
+      expect(out.coachingFocus?.gapCode).toBe("generic_passion_no_substance");
+      expect(out.ctaHref).toBe("/session/new?focus=campus-placement");
+    });
+
+    it("all six campus-placement gap codes are registered", () => {
+      const CAMPUS_CODES = [
+        "no_academic_project_discussed",
+        "generic_passion_no_substance",
+        "cgpa_low_no_framing",
+        "no_company_specific_research",
+        "bond_refusal",
+        "bond_unprepared",
+      ];
+      for (const code of CAMPUS_CODES) {
+        expect(GAP_CTA_MAP, `campus code missing: ${code}`).toHaveProperty(code);
+      }
     });
   });
 });

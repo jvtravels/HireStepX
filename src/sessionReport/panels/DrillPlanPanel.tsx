@@ -1,5 +1,6 @@
 import type { NegotiationOutcome } from "../derivations";
 import { PanelShell, EyebrowLabel, t, f } from "./_primitives";
+import { Button } from "@/components/ui/button";
 
 export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: NegotiationOutcome; onLaunchDrill?: (slug: string) => void }) {
   if (!outcome.drills || outcome.drills.length === 0) return null;
@@ -17,22 +18,22 @@ export function DrillPlanPanel({ outcome, onLaunchDrill }: { outcome: Negotiatio
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <EyebrowLabel color={t.indigo} marginBottom={0}>DRILL {i + 1}</EyebrowLabel>
-              <div style={{ fontSize: 10, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
+              <div style={{ fontSize: 11, color: t.inkFaint, fontFamily: f.mono, letterSpacing: 0.4 }}>
                 {d.effort}
               </div>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: t.coal, lineHeight: 1.3, fontFamily: f.serif }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: t.coal, lineHeight: 1.3, fontFamily: f.serif }}>
               {d.title}
             </div>
             <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, flex: 1 }}>{d.goal}</div>
             {onLaunchDrill && d.slug && (
-              <button
-                className="nfr-btn-primary"
+              <Button
+                type="button"
                 style={{ marginTop: 4, width: "100%" }}
                 onClick={() => onLaunchDrill(d.slug!)}
               >
                 Start drill →
-              </button>
+              </Button>
             )}
           </div>
         ))}

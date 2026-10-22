@@ -1445,9 +1445,20 @@ export const salaryNegotiationAnalyzer: FocusAnalyzer = {
        Wire computeNewRegimeTaxLpa + computeOldRegimeTaxLpa into a
        meta block so the report can render in-hand monthly under
        both regimes on the offer card. Computed off the closing AI
-       offer (most-recent AI claim); skipped when no offer exists. */
+       offer (most-recent AI claim); skipped when no offer exists.
+       S63-B1 (2026-07-24): exclude AI claims that echo the candidate's
+       stated CTC — recruiters frequently recap "you told me ₹X earlier"
+       in a late turn, and the claim extractor picks that up as the last
+       AI-side number, displacing the actual offer. Filter: exclude AI
+       claims within ₹1 LPA of the first user claim (the candidate's CTC
+       anchor). Fall back to the unfiltered list if filtering empties it. */
+    const candidateCtcAnchor = claims.find((c) => !isAiTurn(transcript[c.turn_idx]))?.lpa ?? null;
     const aiClaimsForMeta = claims.filter((c) => isAiTurn(transcript[c.turn_idx]));
-    const closingClaim = aiClaimsForMeta.length > 0 ? aiClaimsForMeta[aiClaimsForMeta.length - 1] : null;
+    const aiClaimsNoCTCEcho = candidateCtcAnchor !== null
+      ? aiClaimsForMeta.filter((c) => Math.abs(c.lpa - candidateCtcAnchor) >= 1)
+      : aiClaimsForMeta;
+    const aiClaimsFiltered = aiClaimsNoCTCEcho.length > 0 ? aiClaimsNoCTCEcho : aiClaimsForMeta;
+    const closingClaim = aiClaimsFiltered.length > 0 ? aiClaimsFiltered[aiClaimsFiltered.length - 1] : null;
     const tier = tierBucket(session.target_company || undefined);
     const tierLabel = tier ? TIER_BUCKET_LABEL[tier] : undefined;
 

@@ -3,7 +3,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { validateToken as validateTokenPure } from "./_email-verify-helpers";
-import { consumeToken } from "./_used-tokens";
+import { consumeToken, releaseToken } from "./_used-tokens";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -43,6 +43,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const email = (req.query.email as string || "").trim();
   const token = (req.query.token as string || "").trim();
+  // Forwarded from the verification link (see send-welcome.ts) so the
+  // browser that opens this email link — often a different one than the
+  // signup browser — can re-capture the referral code before login.
+  const rawRef = (req.query.ref as string || "").trim();
+  const refQuery = /^HSX-[A-Z0-9]{4,8}$/.test(rawRef) ? `&ref=${rawRef}` : "";
 
   if (!email || !token) {
     return res.redirect(302, `${APP_URL}/login?error=invalid-link`);
@@ -86,7 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // same (sign in, request a new link if needed). The legitimate
     // double-click case ends up here on the second click, which is
     // benign and produces a clean message.
-    console.warn(`[verify-email] replay attempt for already-used token (email=${email})`);
+    console.warn(`[verify-email] replay attempt for already-used token (email=${String(email).slice(0, 3)}***)`);
     return res.redirect(302, `${APP_URL}/login?verified=already`);
   }
   if (!consumption.ok) {
@@ -180,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // If already verified via our custom flow, redirect with success (idempotent)
     if (user.user_metadata?.custom_email_verified === true) {
-      return res.redirect(302, `${APP_URL}/login?verified=already`);
+      return res.redirect(302, `${APP_URL}/login?verified=already${refQuery}`);
     }
 
     // Set email_confirmed_at via admin API AND our custom flag
@@ -203,13 +208,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!updateRes.ok) {
       const errBody = await updateRes.text();
       console.error("Failed to confirm email:", updateRes.status, errBody);
+      await releaseToken(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, token);
       return res.redirect(302, `${APP_URL}/login?error=verification-failed`);
     }
 
     // Redirect to login page — user must log in manually after verification
-    return res.redirect(302, `${APP_URL}/login?verified=true`);
+    return res.redirect(302, `${APP_URL}/login?verified=true${refQuery}`);
   } catch (err) {
     console.error("Email verification error:", err);
+    await releaseToken(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, token);
     return res.redirect(302, `${APP_URL}/login?error=verification-failed`);
   }
 }

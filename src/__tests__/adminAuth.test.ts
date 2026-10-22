@@ -60,7 +60,7 @@ describe("_admin-auth", () => {
 
   it("issuer and verifier agree when ADMIN_SESSION_SECRET is set", async () => {
     // Same env → same derived key → interop. This is the property the
-    // admin-data issuer and admin-quality verifiers rely on.
+    // admin-data issuer relies on.
     const env = { ADMIN_PASSWORD: "pw", ADMIN_SESSION_SECRET: "dedicated-secret" };
     const issuer = await loadWith(env);
     const token = issuer.createAdminToken();

@@ -4,6 +4,7 @@
 export const config = { runtime: "edge" };
 
 import { corsHeaders, validateOrigin, withRequestId, getClientIp } from "./_shared";
+import { normalizeVoices, type VoiceEntry } from "./_voices-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -18,7 +19,6 @@ function checkRate(ip: string, max: number, windowMs: number): boolean {
 }
 const CARTESIA_API_KEY = process.env.CARTESIA_API_KEY || "";
 
-type VoiceEntry = { id: string; name: string; desc: string; gender: string; language: string };
 const cache: Record<string, { data: VoiceEntry[]; expiry: number }> = {};
 
 export default async function handler(req: Request): Promise<Response> {
@@ -81,14 +81,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Cartesia returns { data: [...], has_more } for paginated, or flat array
     const rawVoices = Array.isArray(body) ? body : (body.data || []);
-
-    const voices = rawVoices.map((v: { id?: string; name?: string; description?: string; gender?: string; language?: string }) => ({
-      id: v.id,
-      name: v.name,
-      desc: v.description || "",
-      gender: v.gender || "unknown",
-      language: v.language || language,
-    }));
+    const voices = normalizeVoices(rawVoices, language);
 
     cache[cacheKey] = { data: voices, expiry: Date.now() + 3600_000 };
 

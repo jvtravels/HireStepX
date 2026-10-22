@@ -68,16 +68,18 @@ describe("ITEM 3 — detectTrialCloseAsked wiring in applyCandidateAnswer", () =
 });
 
 describe("ITEM 3 — planNextAction: close-confirmation when candidateSignaledClose=true", () => {
-  it("pickAiMove picks a close-acceptance move when candidateSignaledClose=true and offer is on table", () => {
+  it("S73-B1: pickAiMove fires counter-base (NOT close-acceptance) when candidateSignaledClose=true", () => {
+    /* S73-B1 (2026-07-25) — candidateSignaledClose previously fired close-acceptance
+     * immediately, which stamped phase=accepted before the candidate could confirm.
+     * The fix: emit counter-base at the candidate's ask so the recruiter says
+     * "₹22L — confirmed?" and the candidate gets one more turn to explicitly say yes. */
     const state = baseState({
       phase: "counter-offer",
       highestOfferMade: 22,
       candidateTarget: 22,
       lastAiText: "If we land at ₹22 LPA, would you accept this offer today?",
-      /* candidateSignaledClose would be set by applyCandidateAnswer; simulate it here */
     } as Partial<NegotiationState> & { candidateSignaledClose?: boolean });
 
-    /* Simulate what applyCandidateAnswer does — wire the state with the flag */
     const stateWithSignal = {
       ...state,
       candidateSignaledClose: true,
@@ -85,8 +87,9 @@ describe("ITEM 3 — planNextAction: close-confirmation when candidateSignaledCl
     } as NegotiationState & { candidateSignaledClose?: boolean };
 
     const move = pickAiMove(stateWithSignal as NegotiationState);
-    /* Should be progressing toward close (accept or hold-firm on confirmed number) */
-    expect(["close-acceptance", "hold-firm", "counter-base"]).toContain(move.lever);
+    expect(move.lever).toBe("counter-base");
+    expect(move.lever).not.toBe("close-acceptance");
+    expect(move.newTotalLpa).toBeGreaterThanOrEqual(22);
   });
 });
 

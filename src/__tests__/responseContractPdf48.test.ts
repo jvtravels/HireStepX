@@ -35,6 +35,7 @@ function baseState(overrides: Partial<NegotiationState> = {}): NegotiationState 
     candidateTarget: 32,
     conversationLog: [],
     infoAsked: [],
+    infoAskedInitiated: [],
     vossTacticsUsed: [],
     /* The kernel state has many other fields; cast through unknown
      * because the validator only reads a small subset. */

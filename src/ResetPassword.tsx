@@ -16,6 +16,7 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import { tokens as t, fonts as ft, shadows } from "./auth/_tokens";
 import {
   Field,
@@ -487,7 +488,7 @@ export default function ResetPassword() {
           "This is taking longer than expected. Check your connection and try again.",
         );
       } else {
-        setError("Password update failed. If this keeps happening, contact support@hirestepx.com.");
+        setError("Password update failed. If this keeps happening, contact hello@hirestepx.com.");
       }
     } finally {
       setLoading(false);
@@ -568,10 +569,10 @@ export default function ResetPassword() {
             >
               <h1
                 style={{
-                  fontFamily: ft.serif,
-                  fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                  fontFamily: ft.sans,
+                  fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                   lineHeight: 1.05,
-                  fontWeight: 400,
+                  fontWeight: 600,
                   letterSpacing: "-0.02em",
                   whiteSpace: "nowrap",
                   margin: 0,
@@ -579,15 +580,7 @@ export default function ResetPassword() {
                 }}
               >
                 Password{" "}
-                <em
-                  style={{
-                    fontStyle: "italic",
-                    fontWeight: 400,
-                    color: t.copper,
-                  }}
-                >
-                  updated
-                </em>
+                updated
               </h1>
               <p
                 role="status"
@@ -622,12 +615,12 @@ export default function ResetPassword() {
                 style={{
                   width: "100%",
                   fontFamily: ft.sans,
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: 600,
                   color: t.cream,
                   background: t.indigo,
                   border: "1px solid transparent",
-                  borderRadius: 10,
+                  borderRadius: 8,
                   padding: "16px 18px",
                   cursor: "pointer",
                   boxShadow: shadows.cta,
@@ -799,10 +792,10 @@ export default function ResetPassword() {
             <h1
               id="reset-heading"
               style={{
-                fontFamily: ft.serif,
-                fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                fontFamily: ft.sans,
+                fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                 lineHeight: 1.05,
-                fontWeight: 400,
+                fontWeight: 600,
                 letterSpacing: "-0.02em",
                 whiteSpace: "nowrap",
                 margin: 0,
@@ -810,15 +803,7 @@ export default function ResetPassword() {
               }}
             >
               Set a new{" "}
-              <em
-                style={{
-                  fontStyle: "italic",
-                  fontWeight: 400,
-                  color: t.copper,
-                }}
-              >
-                password
-              </em>
+              password
             </h1>
             <p
               className="hsx-login-subtitle"
@@ -897,7 +882,7 @@ export default function ResetPassword() {
                         alignItems: "center",
                         justifyContent: "center",
                         padding: "12px 18px",
-                        borderRadius: 10,
+                        borderRadius: 8,
                         background: t.indigo,
                         color: t.cream,
                         fontWeight: 600,
@@ -963,26 +948,20 @@ export default function ResetPassword() {
                     }
                     errorMessage={passwordError}
                     rightSlot={
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon-xs"
                         className="hsx-eye-toggle"
                         onClick={() => setShowPassword((v) => !v)}
                         aria-label={
                           showPassword ? "Hide password" : "Show password"
                         }
                         aria-pressed={showPassword}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: t.inkSoft,
-                          cursor: "pointer",
-                          padding: 4,
-                          display: "flex",
-                          alignItems: "center",
-                        }}
+                        style={{ color: t.inkSoft }}
                       >
                         <EyeIcon open={showPassword} />
-                      </button>
+                      </Button>
                     }
                   />
 
@@ -1082,8 +1061,10 @@ export default function ResetPassword() {
                             : "Complete the form to continue"
                       : undefined;
                     return (
-                      <button
+                      <Button
                         type="submit"
+                        variant="default"
+                        size="lg"
                         disabled={!canSubmit}
                         aria-busy={loading || undefined}
                         title={tooltip}
@@ -1091,18 +1072,20 @@ export default function ResetPassword() {
                         style={{
                           width: "100%",
                           fontFamily: ft.sans,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: 600,
                           color: isGhost ? t.inkFaint : t.cream,
                           background: isGhost ? t.creamSoft : t.indigo,
                           border: isGhost
                             ? `1px solid ${t.line}`
                             : "1px solid transparent",
-                          borderRadius: 10,
+                          borderRadius: 8,
                           padding: "16px 18px",
                           cursor: canSubmit ? "pointer" : "not-allowed",
                           marginTop: 4,
-                          boxShadow: isGhost ? "none" : shadows.cta,
+                          boxShadow: isGhost
+                            ? "none"
+                            : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
                           letterSpacing: 0.1,
                           display: "flex",
                           alignItems: "center",
@@ -1136,7 +1119,7 @@ export default function ResetPassword() {
                             </svg>
                           </>
                         )}
-                      </button>
+                      </Button>
                     );
                   })()}
 

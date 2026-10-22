@@ -137,7 +137,6 @@ function makeCtx(overrides: Partial<BehavioralFullReportContext> = {}): Behavior
     session: makeSession(),
     recentScores: [64, 72],
     percentile: 62,
-    sessionNumber: 4,
     flags: ["one_sided_conflict_narrative"],
     ...overrides,
   };

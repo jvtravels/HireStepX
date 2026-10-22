@@ -21,6 +21,7 @@ import { experienceLevelFromYoe } from "./_candidate-profile";
 import type { CollegeTier } from "./_candidate-profile";
 import type { NegotiationBand } from "./_negotiation-kernel";
 import {
+  canonicalizeRoleTitle,
   classifyCompanyTier as classifyBandTier,
   getBandForRole as getBandTierRoleBand,
   liftPeopleManagerBand,
@@ -191,6 +192,12 @@ export function resolveServerBand(
   opts?: ResolveBandOptions,
 ): NegotiationBand {
   if (!role) return DEFAULT_BAND;
+  /* S172/S152/S164/S198/S206 (2026-07-31 band audit) — expand unambiguous role
+   * abbreviations ("EM" → "Engineering Manager", "APM", "SDM") up front so the
+   * legacy salary lookup, experience inference, PEOPLE_MANAGER_TITLE_RE lift, and
+   * tier-table path all see the spelled-out title. A bare "EM" @ Razorpay was
+   * resolving to a ₹16L junior-IC opener vs the ₹28-56L manager band. */
+  role = canonicalizeRoleTitle(role) || role;
   try {
     /* Phase 29 — when applicableYoe is known, derive the level from it
      * instead of trusting the onboarding-time experienceLevel. The
@@ -230,7 +237,14 @@ export function resolveServerBand(
     if (company && !isInternshipRole(role)) {
       const bandTier = classifyBandTier(company);
       const tierBand = getBandTierRoleBand(bandTier, role, applicableYoe ?? null);
-      if (band.initialOffer > tierBand.ceil * 1.2 || band.maxStretch > tierBand.ceil * 1.4) {
+      /* S54-B2 (2026-07-24) — tighter overshoot threshold for it-services:
+       * the tier ceiling is already YoE-only (roleModifier suppressed in
+       * getBandForRole), so any legacy lookup that exceeds the ceiling at
+       * all is miscalibrated; use a 1.0× multiplier rather than 1.2×.
+       * Other tiers retain the 1.2×/1.4× tolerance for natural variance. */
+      const overshootCeilMul = bandTier === "it-services" ? 1.0 : 1.2;
+      const overshootStretchMul = bandTier === "it-services" ? 1.1 : 1.4;
+      if (band.initialOffer > tierBand.ceil * overshootCeilMul || band.maxStretch > tierBand.ceil * overshootStretchMul) {
         band.initialOffer = tierBand.target;
         band.maxStretch = tierBand.ceil;
         band.walkAway = Math.max(1, Math.round(tierBand.floor * 0.95 * 10) / 10);

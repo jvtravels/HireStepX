@@ -2,12 +2,16 @@
 
 export const config = { runtime: "edge" };
 
-import { callLLM, extractJSON } from "./_llm";
+import { callLLM, extractJSON } from "./_llm-pii";
+import { singleFlight, CACHE_VERSION } from "./_single-flight";
 import {
   handleCorsPreflightOrMethod, corsHeaders, verifyAuth,
   unauthorizedResponse, isRateLimited, getClientIp, rateLimitResponse,
   checkBodySize, validateOrigin, withRequestId, getSubscriptionTier, checkLLMQuota,
+  redisGet, redisSetEx, hashStable,
 } from "./_shared";
+
+const INSIGHTS_CACHE_TTL_SEC = 6 * 3600;
 
 export default async function handler(req: Request) {
   const preflight = handleCorsPreflightOrMethod(req);
@@ -37,16 +41,9 @@ export default async function handler(req: Request) {
   // Only paid users get LLM insights
   const tier = await getSubscriptionTier(auth.userId);
   if (tier === "free") {
-    return new Response(JSON.stringify({ error: "Upgrade to Pro for AI-powered insights", requiresUpgrade: true }), {
+    return new Response(JSON.stringify({ error: "Upgrade to any paid plan for AI-powered insights", requiresUpgrade: true }), {
       status: 403, headers,
     });
-  }
-
-  // Daily LLM quota — paid users still have a per-day cap so a runaway
-  // client (or scripted reload) can't drain spend in a single afternoon.
-  const quota = await checkLLMQuota(auth.userId, "insights");
-  if (!quota.allowed) {
-    return new Response(JSON.stringify({ error: quota.reason || "Daily limit reached", quotaExceeded: true, count: quota.count, limit: quota.limit }), { status: 429, headers });
   }
 
   try {
@@ -60,6 +57,24 @@ export default async function handler(req: Request) {
 
     if (!skills || !Array.isArray(skills) || skills.length === 0) {
       return new Response(JSON.stringify({ insights: [] }), { status: 200, headers });
+    }
+
+    // Insights are a pure function of these inputs, so an unchanged profile
+    // (page reload, tab switch, second device) must not pay for another LLM
+    // call. Cache hits also skip the daily quota. Keyed per user.
+    const cacheKey = `ins:${CACHE_VERSION.ins}:${auth.userId}:${await hashStable(JSON.stringify({ role, company, industry, skills, recentSessions, sessionCount }))}`;
+    const cachedRaw = await redisGet(cacheKey).catch(() => null);
+    if (cachedRaw) {
+      try {
+        return new Response(JSON.stringify({ ...JSON.parse(cachedRaw), _cached: true }), { status: 200, headers });
+      } catch { /* corrupt entry: fall through and regenerate */ }
+    }
+
+    // Daily LLM quota — paid users still have a per-day cap so a runaway
+    // client (or scripted reload) can't drain spend in a single afternoon.
+    const quota = await checkLLMQuota(auth.userId, "insights");
+    if (!quota.allowed) {
+      return new Response(JSON.stringify({ error: quota.reason || "Daily limit reached", quotaExceeded: true, count: quota.count, limit: quota.limit }), { status: 429, headers });
     }
 
     const sessionsContext = Array.isArray(recentSessions)
@@ -93,7 +108,7 @@ Return a JSON array where each element has:
 
 Return ONLY the JSON array, no other text.`;
 
-    const result = await callLLM({ prompt, temperature: 0.7, maxTokens: 600, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "insights" });
+    const result = await singleFlight(cacheKey, () => callLLM({ prompt, temperature: 0.7, maxTokens: 600, jsonMode: true, fast: true }, 12000, { userId: auth.userId, endpoint: "insights" }));
     const parsed = extractJSON<{ type?: string; text?: string }[]>(result.text);
 
     if (!Array.isArray(parsed)) {
@@ -108,7 +123,11 @@ Return ONLY the JSON array, no other text.`;
       .slice(0, 4)
       .map(i => ({ type: i.type, text: i.text!.slice(0, 200) }));
 
-    return new Response(JSON.stringify({ insights, model: result.model }), { status: 200, headers });
+    const responseBody = { insights, model: result.model };
+    if (insights.length > 0) {
+      await redisSetEx(cacheKey, INSIGHTS_CACHE_TTL_SEC, JSON.stringify(responseBody)).catch(() => {});
+    }
+    return new Response(JSON.stringify(responseBody), { status: 200, headers });
   } catch (err) {
     console.error("[generate-insights] Error:", err);
     return new Response(JSON.stringify({ insights: [], error: "Failed to generate insights" }), { status: 500, headers });

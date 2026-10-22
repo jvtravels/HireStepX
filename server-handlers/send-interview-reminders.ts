@@ -7,6 +7,8 @@
  * src/interviewNotifications.ts; server-initiated web push is a future phase.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
@@ -15,8 +17,7 @@ import { dueReminders, leadLabel, type ReminderEvent } from "./_reminder-dispatc
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <onboarding@resend.dev>";
-const CRON_SECRET = (process.env.CRON_SECRET || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const HORIZON_DAYS = 8; // furthest out an in-window reminder can reference
@@ -42,9 +43,7 @@ function fmtWhen(startUtc: string, tz: string): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Fail closed: accept Vercel's cron header or an explicit bearer secret.
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasSecret = CRON_SECRET && req.headers.authorization === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !RESEND_API_KEY) {
@@ -69,6 +68,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const events: ReminderEvent[] = await eventsRes.json();
     if (!Array.isArray(events) || events.length === 0) {
+      await recordCronResult("send-interview-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No upcoming events with reminders" });
     }
 
@@ -89,6 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const due = dueReminders(events, { now: now.toISOString(), sentKeys });
     if (due.length === 0) {
+      await recordCronResult("send-interview-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No reminders due", scanned: events.length });
     }
 
@@ -185,6 +186,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // Only a run where every send failed counts as unhealthy; one bad address must not page.
+    await recordCronResult("send-interview-reminders", { errors: sent === 0 ? failed : 0 });
     return res.status(200).json({ sent, failed, skipped, due: due.length, scanned: events.length });
   } catch (err) {
     console.error("[cron:interview-reminders] fatal:", err);

@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+export const maxDuration = 120;
 import { adaptHandler } from "../../../lib/vercel-adapter";
 import handler from "../../../server-handlers/reset-expired-subscriptions";
 

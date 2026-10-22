@@ -37,6 +37,50 @@ const HOSTILE_MUST_VETO: string[] = [
   "Before I accept, the number has to move.",
   "Until I accept, nothing is final.",
   "Prior to accepting, I need the base revised.",
+  // LEAK 3 — conditional "revise the offer / match my counter, THEN I'll sign"
+  // (offline hostile battery, 2026-07-17). The settle verb ("sign"/"accept") is
+  // real, but a demand to REVISE THE OFFER UPWARD ("a better offer") or MATCH MY
+  // COUNTER precedes it — an unmet demand, not a close. Vetoed at the demand-
+  // intent source (_utterance-intent.ts: revise-offer-up core + beat-match's new
+  // "counter/ask/demand" objects), not with a new accept-side gate.
+  "Send me a better offer and I'll sign.",
+  "Get me a higher offer and I'll accept.",
+  "Come back with a revised number and I'm in.",
+  "Match my counter and I'll sign today.",
+  "Match my ask and we have a deal.",
+  // Negation counterparts of the 2026-07-17 recall additions must NOT close.
+  "I'm not ready to join at this number.",
+  "I'm not happy to move forward with this offer.",
+  // LEAK 4 — "<quantity> MORE <unit>" conditional bump (increase word leads the
+  // unit): word-quantity form slipped relative-more/word-more/another-more
+  // (offline hostile hunt, 2026-07-17). Vetoed at the demand-intent source
+  // (_utterance-intent.ts: quantity-more-unit core).
+  "One more lakh and I'm in.",
+  "Two more lakhs and I'll sign.",
+  "A couple more lakhs and we have a deal.",
+  // Expanded-contraction forms must still veto after the entry-seam fold.
+  "I am not going to sign.",
+  "I will walk away from this.",
+  "I will sign if you bump the base.",
+  // LEAK 5 — Hindi / code-switched increase imperative welded to an English
+  // close (2026-07-17). Vetoed at the demand source (hindi-increase core).
+  "Thoda aur badha do, phir I'll sign.",
+  "Salary badha dijiye, then I accept.",
+  // LEAK 6 (PRI-96) — future-event close frame with a MAGNITUDE-INCREASE arrival
+  // verb: the commit is deferred to an unrealized rise, so closing now is a
+  // FALSE-CLOSE. FUTURE_EVENT_CLOSE_PATTERN carried only arrival/settlement
+  // verbs; widened to cover doubles/increases/goes-up (2026-07-17).
+  "Sure, I'll sign the moment the ESOP doubles.",
+  "The day the base increases, deal.",
+  "The minute the equity goes up, I'm in.",
+  // LEAK 7 (PRI-97) — ARRIVAL / FULFILLMENT deferral: the accept idiom fires but
+  // the commit is deferred to an unrealized future event via the "lands/arrives"
+  // arrival class or the "covered" fulfillment verb. CONDITIONAL_DEFERRAL owned
+  // sign-off/clearance/vest but not these (2026-07-17 round-18 hostile sweep).
+  "Consider it accepted once the equity refresh lands.",
+  "Happy to join the day my relocation is fully covered.",
+  "I'll accept once the joining bonus lands.",
+  "Count me in the moment the revised letter arrives.",
 ];
 
 const GENUINE_MUST_ACCEPT: string[] = [
@@ -49,6 +93,37 @@ const GENUINE_MUST_ACCEPT: string[] = [
   // TRAILING "before I sign" adverbial on a consummated accept still closes —
   // the fronted-only anchor keeps this genuine long acceptance intact.
   "I'd like to accept this offer formally — please share the benefits package before I sign.",
+  // Hortative / readiness SIGN frame (offline hostile-recall sweep 2026-07-17).
+  // The bank owned first-person-singular "I'll sign" but missed the plural
+  // hortative and the readiness idiom — "let's sign the paperwork" is about as
+  // unambiguous a close as exists.
+  "Let's sign the paperwork.",
+  "Let's sign.",
+  "Ready to sign.",
+  "I'm ready to sign.",
+  // Recall sweep 2026-07-17 — e-sign idiom, positive-affect move-forward, and
+  // readiness-to-join, each negation-safe at its single source.
+  "Where do I e-sign?",
+  "I'm happy to move forward with this offer.",
+  "I'm ready to join.",
+  "I'm ready to join the team.",
+  // Recall sweep 2026-07-17 (batch 2) — mirror-extensions of existing arms.
+  "Sign me on.",
+  "You can consider this accepted.",
+  "That's a deal then.",
+  "I'm on board with this offer.",
+  // Expanded-contraction STT forms (2026-07-17) — the banks are written against
+  // i.?m / i.?ll; the entry seam now folds "i am"→"i'm", "i will"→"i'll" so
+  // these close instead of silently missing.
+  "I am in.",
+  "I will take the offer.",
+  "I would love to accept this offer.",
+  // PRI-97 (2026-07-17) — "finalize the paperwork" is as unambiguous a close as
+  // "sign the paperwork"; arm-15's finalize object now admits the execution-noun
+  // class (paperwork/contract/offer letter), while breakdown nouns stay excluded.
+  "Great, let's finalize the paperwork.",
+  "Let's finalize the offer letter.",
+  "Happy to finalize the contract.",
 ];
 
 describe("PRI-86 — negative-object & temporal-precondition leaks stay vetoed", () => {

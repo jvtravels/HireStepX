@@ -14,8 +14,15 @@
  *
  * No state, no side effects. Pure presentation. */
 
-import React from "react";
-import { t, f, radius, shadows } from "../tokens";
+import React, { createContext, useContext } from "react";
+import { t, f, radius, size } from "../tokens";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 
 export type Tone = "good" | "warn" | "bad" | "neutral";
 
@@ -31,6 +38,38 @@ export function toneToColor(tone: Tone): string {
   }
 }
 
+const PILL_TONE: Record<Tone, { bg: string; color: string }> = {
+  good: { bg: t.successTint, color: t.success },
+  warn: { bg: t.warningTint, color: t.warning },
+  bad: { bg: t.errorTint, color: t.error },
+  neutral: { bg: t.creamSoft, color: t.inkSoft },
+};
+
+/* The one status pill for the report: verdicts, bands, severities. */
+export function StatusPill({ tone, children, title }: { tone: Tone; children: React.ReactNode; title?: string }) {
+  const meta = PILL_TONE[tone];
+  return (
+    <span
+      title={title}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        padding: "2px 10px",
+        borderRadius: radius.pill,
+        background: meta.bg,
+        color: meta.color,
+        fontFamily: f.sans,
+        fontSize: size.sm,
+        fontWeight: 600,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   source: string; n?: number; asOf?: string; methodologyUrl?: string;
 }) {
@@ -41,7 +80,7 @@ export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   const baseStyle = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "4px 10px", background: t.cream, border: `1px solid ${t.line}`,
-    borderRadius: radius.pill, fontSize: 10, fontFamily: f.mono,
+    borderRadius: radius.pill, fontSize: size.xs, fontFamily: f.sans,
     color: t.inkSoft, letterSpacing: 0.3,
     textDecoration: "none",
   } as const;
@@ -65,15 +104,21 @@ export function FreshnessChip({ source, n, asOf, methodologyUrl }: {
   );
   if (methodologyUrl) {
     return (
-      <a
-        href={methodologyUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={baseStyle}
-        title="See how we computed this cohort"
-      >
-        {inner}
-      </a>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <a
+              href={methodologyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={baseStyle}
+            >
+              {inner}
+            </a>
+          </TooltipTrigger>
+          <TooltipContent>See how we computed this cohort</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
   return <span style={baseStyle}>{inner}</span>;
@@ -104,7 +149,7 @@ export function ToneCard({
   return (
     <div className={`nfr-tone-card nfr-tone-card-${tone}`}>
       <span className={`nfr-tone-dot nfr-tone-dot-${tone}`} aria-hidden />
-      <div style={{ minWidth: 0 }}>{children}</div>
+      <div className="min-w-0">{children}</div>
       {pill ?? <span aria-hidden />}
     </div>
   );
@@ -200,7 +245,7 @@ export function EventRow({
       <div style={{ minWidth: 0 }}>
         {primary}
         {secondary !== undefined && secondary !== null && (
-          <div style={{ fontSize: 12, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
+          <div style={{ fontSize: size.sm, color: t.inkSoft, marginTop: 2, lineHeight: 1.5 }}>
             {secondary}
           </div>
         )}
@@ -220,25 +265,33 @@ export function HeaderChip({
   children: React.ReactNode;
 }) {
   const isAccent = variant === "accent";
-  return (
-    <span
+  const chip = (
+    <Badge
       style={{
         display: "inline-block",
         padding: "3px 10px",
-        background: isAccent ? t.copperSoft : t.creamSoft,
-        color: isAccent ? t.copper : t.inkSoft,
-        fontSize: 10,
+        background: isAccent ? t.indigoWash : t.creamSoft,
+        color: isAccent ? t.indigo : t.inkSoft,
+        fontSize: size.xs,
         fontWeight: 700,
         letterSpacing: 0.8,
         borderRadius: radius.tile,
         textTransform: "uppercase",
-        fontFamily: f.mono,
+        fontFamily: f.sans,
         border: isAccent ? "none" : `1px solid ${t.line}`,
       }}
-      title={title}
     >
       {children}
-    </span>
+    </Badge>
+  );
+  if (!title) return chip;
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>{chip}</TooltipTrigger>
+        <TooltipContent>{title}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
@@ -247,23 +300,40 @@ export function PlayableTime({ at }: { at: string }) {
      until audio-playback wiring lands). */
   return (
     <span className="nfr-time-pill">
-      <span style={{ fontSize: 9 }} aria-hidden>▶</span>
+      <span style={{ fontSize: 11 }} aria-hidden>▶</span>
       <span className="sr-only">at </span>
       {at}
     </span>
   );
 }
 
+/* Set by the negotiation report so its legacy panels drop the numbered serif
+ * heading and render the flat employer-style heading instead. Other reports
+ * leave it false and are untouched. */
+export const FlatReportContext = createContext(false);
+
 export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside }: {
   index: string; title: string; subtitle?: string; accent?: string;
   aside?: React.ReactNode;
 }) {
+  const flat = useContext(FlatReportContext);
+  if (flat) {
+    return (
+      <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h4 className="m-0 text-[15px] font-semibold leading-snug tracking-[-0.01em] text-hx-coal">{title}</h4>
+          {subtitle && <p className="m-0 mt-1 max-w-[65ch] text-[13px] leading-normal text-hx-ink-soft">{subtitle}</p>}
+        </div>
+        {aside && <div className="shrink-0">{aside}</div>}
+      </div>
+    );
+  }
   const headBlock = (
     <div style={{ display: "flex", alignItems: "baseline", gap: 12 }}>
       <span
         style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: 0.8,
-          color: accent, fontFamily: f.mono,
+          fontSize: size.xs, fontWeight: 700, letterSpacing: 0.8,
+          color: accent, fontFamily: f.sans,
         }}
         aria-hidden
       >
@@ -272,14 +342,14 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
       <div>
         <h4
           style={{
-            fontSize: 18, fontWeight: 600, color: t.coal,
+            fontSize: size.xl, fontWeight: 600, color: t.coal,
             letterSpacing: -0.2, fontFamily: f.serif,
             margin: 0,
           }}
         >
           {title}
         </h4>
-        {subtitle && <div style={{ fontSize: 13, color: t.inkSoft, marginTop: 2 }}>{subtitle}</div>}
+        {subtitle && <div style={{ fontSize: size.base, color: t.inkSoft, marginTop: 2 }}>{subtitle}</div>}
       </div>
     </div>
   );
@@ -295,7 +365,7 @@ export function SectionHeader({ index, title, subtitle, accent = t.indigo, aside
       }}
     >
       {headBlock}
-      <div style={{ flexShrink: 0 }}>{aside}</div>
+      <div className="shrink-0">{aside}</div>
     </div>
   );
 }
@@ -311,9 +381,9 @@ export function SectionBand({
     >
       <div
         style={{
-          padding: "5px 11px", background: accent, color: "#FFFFFF",
-          fontSize: 10, fontWeight: 700, letterSpacing: 1.4,
-          borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.mono,
+          padding: "5px 11px", background: accent, color: t.white,
+          fontSize: size.xs, fontWeight: 700, letterSpacing: 1.4,
+          borderRadius: radius.sm, textTransform: "uppercase", fontFamily: f.sans,
           flexShrink: 0,
         }}
       >
@@ -322,14 +392,14 @@ export function SectionBand({
       <div style={{ flex: 1, minWidth: 0 }}>
         <h3
           style={{
-            fontSize: 18, fontWeight: 600, color: t.coal,
+            fontSize: size.xl, fontWeight: 600, color: t.coal,
             letterSpacing: -0.2, fontFamily: f.serif,
             margin: 0,
           }}
         >
           {title}
         </h3>
-        <div style={{ fontSize: 13, color: t.inkSoft, marginTop: 1 }}>{subtitle}</div>
+        <div style={{ fontSize: size.base, color: t.inkSoft, marginTop: 1 }}>{subtitle}</div>
       </div>
     </section>
   );
@@ -348,7 +418,7 @@ export function SectionBand({
 export function ReportCardShell({
   id,
   ariaLabelledBy,
-  padding = "28px clamp(16px, 4vw, 32px)",
+  padding = "28px 0",
   scrollMarginTop = 72,
   children,
   style,
@@ -363,13 +433,11 @@ export function ReportCardShell({
   return (
     <section
       id={id}
+      className="ir-flat-section"
       aria-labelledby={ariaLabelledBy}
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.shell,
+        borderTop: `1px solid ${t.line}`,
         padding,
-        boxShadow: shadows.card,
         scrollMarginTop,
         ...style,
       }}
@@ -473,7 +541,7 @@ export function StatTile(props: StatTileProps) {
     const color = props.valueColor ?? t.coal;
     return (
       <div style={{ textAlign: "right" }}>
-        <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.mono, color, lineHeight: 1 }}>
+        <div style={{ fontSize: 32, fontWeight: 800, fontFamily: f.sans, color, lineHeight: 1 }}>
           {props.value}
           {props.denominator !== undefined && (
             <span style={{ color: t.inkFaint, fontWeight: 500 }}> / {props.denominator}</span>
@@ -489,38 +557,38 @@ export function StatTile(props: StatTileProps) {
       <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 6, flexWrap: "wrap" }}>
         <div
           style={{
-            fontSize: 56, fontWeight: 700, fontFamily: f.mono,
+            fontSize: 56, fontWeight: 700, fontFamily: f.sans,
             color, letterSpacing: -2, lineHeight: 1,
           }}
         >
           {props.value}
         </div>
         {props.phrase && (
-          <div style={{ fontSize: 18, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
+          <div style={{ fontSize: size.xl, fontWeight: 600, color, lineHeight: 1.2 }}>{props.phrase}</div>
         )}
       </div>
     );
   }
   return (
     <div>
-      <div style={{ fontSize: 11, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
+      <div style={{ fontSize: size.xs, color: t.inkSoft, marginBottom: 4, fontFamily: f.sans }}>
         {props.label}
       </div>
       <div
         style={{
-          fontSize: 22, fontWeight: 700, fontFamily: f.mono,
+          fontSize: size["2xl"], fontWeight: 700, fontFamily: f.sans,
           color: t.coal, lineHeight: 1.1,
         }}
       >
         {props.value}
         {props.suffix && (
-          <span style={{ fontSize: 12, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>
+          <span style={{ fontSize: size.sm, fontWeight: 500, color: t.inkSoft, marginLeft: 6 }}>
             {props.suffix}
           </span>
         )}
       </div>
       {props.footnote && (
-        <div style={{ fontSize: 10, color: t.inkSoft, marginTop: 4, fontFamily: f.mono }}>
+        <div style={{ fontSize: size.xs, color: t.inkSoft, marginTop: 4, fontFamily: f.sans }}>
           {props.footnote}
         </div>
       )}
@@ -528,18 +596,15 @@ export function StatTile(props: StatTileProps) {
   );
 }
 
-/* SectionEyebrow — the "01 · OVERVIEW" header rule used by every
+/* SectionEyebrow — the "OVERVIEW" header rule used by every
  * sr-*Section card. Hoisted here from sr-JumpNav.tsx 2026-05-29 so
  * SrSectionShell can compose it without a cross-file import dance.
  * sr-JumpNav.tsx re-exports for back-compat with any existing
  * `import { SectionEyebrow } from "./sr-JumpNav"` call sites. */
-export function SectionEyebrow({ num, label }: { num: string; label: string }) {
-  return (
-    <div className="ir-section-eyebrow">
-      <span className="ir-section-num">{num} · {label.toUpperCase()}</span>
-      <span className="ir-section-rule" aria-hidden="true" />
-    </div>
-  );
+/* `num` is accepted but not rendered: sections are conditional, so fixed
+ * numbers left visible gaps (e.g. 07 → 09) in most reports. */
+export function SectionEyebrow(_props: { num?: string; label: string }) {
+  return null;
 }
 
 /* SrSectionShell — the section-card chrome shared by every sr-*Section
@@ -571,7 +636,10 @@ export function SrSectionShell({
 }: {
   anchorId?: string;
   headingId?: string;
-  num: string;
+  /* S34-B8 (2026-07-23) — num is optional so supplemental sections that
+   * are not in the jump-nav (e.g. BiasSection) can omit it without
+   * claiming a nav slot number. When absent the eyebrow row is hidden. */
+  num?: string;
   label: string;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -587,18 +655,18 @@ export function SrSectionShell({
       <h2
         id={headingId}
         style={{
-          fontFamily: f.serif,
-          fontSize: "clamp(18px, 4.5vw, 22px)",
-          fontWeight: 400,
+          fontFamily: f.sans,
+          fontSize: size.xl,
+          fontWeight: 600,
           color: t.coal,
-          margin: subtitle ? "0 0 6px" : 0,
+          margin: subtitle ? "0 0 4px" : "0 0 16px",
           letterSpacing: "-0.01em",
         }}
       >
         {title}
       </h2>
       {subtitle && (
-        <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.5 }}>
+        <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.inkSoft, margin: "0 0 16px", lineHeight: 1.5 }}>
           {subtitle}
         </p>
       )}
@@ -606,11 +674,11 @@ export function SrSectionShell({
   );
   return (
     <ReportCardShell id={anchorId} ariaLabelledBy={headingId}>
-      <SectionEyebrow num={num} label={label} />
+      {num != null && <SectionEyebrow num={num} label={label} />}
       {aside ? (
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
           <div style={{ minWidth: 0 }}>{titleBlock}</div>
-          <div style={{ flexShrink: 0 }}>{aside}</div>
+          <div className="shrink-0">{aside}</div>
         </div>
       ) : titleBlock}
       {children}
@@ -618,6 +686,46 @@ export function SrSectionShell({
   );
 }
 
+/* CalloutCard — the copper-tinted "heads up" note box used across panels
+ * (weakest-skill nudge, resume-fix tips, readiness callouts). Hoisted
+ * 2026-10-02 session-report redesign: SkillsSection and NextStepsSection
+ * each hand-rolled a near-identical copper box (icon + eyebrow + body),
+ * one of them with hardcoded hex (`#FFFBF0`, `rgba(180,83,9,0.20)`)
+ * bypassing tokens.ts entirely. One shape, one token source. */
+export function CalloutCard({
+  icon,
+  eyebrow,
+  children,
+  footer,
+}: {
+  icon?: React.ReactNode;
+  eyebrow: string;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
+        borderRadius: radius.bar,
+        padding: "16px 18px",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+        {icon}
+        <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.coal, fontWeight: 600 }}>
+          {eyebrow}
+        </span>
+      </div>
+      <div style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, lineHeight: 1.5 }}>
+        {children}
+      </div>
+      {footer}
+    </div>
+  );
+}
+
 /* Re-export tokens for panel files — they import everything from one
  * place so per-panel imports stay short. */
-export { t, f, radius, space } from "../tokens";
+export { t, f, radius, space, size } from "../tokens";

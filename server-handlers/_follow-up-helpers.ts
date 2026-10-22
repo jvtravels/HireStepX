@@ -26,7 +26,54 @@ export interface CandidateIntent {
   mentionedCompeting: boolean;
 }
 
-const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that works for me|it.?s a deal|i.?m happy with|fine with me|i agree|agreed|let.?s go ahead)\b/i;
+/* S83-B1 (2026-07-26) — `agreed` fired on past-tense references: "As agreed, I
+ * expect..." / "We agreed that the base would be 40L" — these are references to
+ * prior agreements, not new acceptances. Replaced bare `agreed` with a
+ * lookbehind-guarded form that suppresses "as/we/i/they/you/had/have agreed"
+ * while preserving bare-affirmative forms ("Agreed!", "Agreed, but I'd like...").
+ * S83-B2 (2026-07-26) — `i agree` fired on "I agree [the variable is tricky], but
+ * I need more fixed" — agreeing with a point, NOT accepting the offer. Added
+ * negative lookahead to suppress "I agree [the/that/this/it/your/with X]".
+ * S84 (2026-07-26) — common acceptance phrases missing from acceptWords: i'll take it,
+ * that's acceptable, count me in, consider it done, i'm happy to proceed, i'm on board.
+ * All added.
+ * S93-B1 (2026-07-26) — "I am in" / "I'm in" returned accepted=false (only trial-close
+ *   detector had `i'm in`; acceptWords was missing it).
+ * S93-B2 (2026-07-26) — "let us go ahead" returned accepted=false; `let.?s` doesn't match
+ *   "let us" because `.?` can't span " u" before "s". Changed let arm to `let(?:'?s|\s+us)`.
+ * S94-B2 (2026-07-26) — deal-closing idioms missing: "done deal", "we have a deal",
+ *   "you've got yourself a deal", "let's close/seal/finalize", "I'm game". All added.
+ * S95-B1 (2026-07-26) — "works for me" (without "that" prefix) returned accepted=false.
+ *   Added bare `works for me` alongside the existing `that works for me`.
+ * S95-B2 (2026-07-26) — "happy to accept that" returned accepted=false. Added
+ *   `happy\s+to\s+accept` (covers "happy to accept", "I'm happy to accept that").
+ * S96-B1 (2026-07-26) — "I am fully on board" not matched; adverb between "am" and
+ *   "on board" blocked the pattern. Added `fully\s+on\s+board` as a separate arm.
+ * S96-B2 (2026-07-26) — "fine by me" not matched (only "fine with me" was present).
+ *   Added `fine\s+by\s+me`.
+ * S97-B1 (2026-07-26) — "I am okay with the revised terms." returned NONE.
+ *   Added `(?<!not\s)okay\s+with\s+(?:this|that|it|the)` (negative lookbehind guards "not okay").
+ * S97-B2 (2026-07-26) — "Perfect, I am happy to take the offer." and "Happy to go with this."
+ *   returned NONE. Added `happy\s+to\s+(?:take|go\s+with)\s+(?:the\s+)?(?:offer|package|deal|this|that|it)`.
+ * S98-B1 (2026-07-26) — "I will accept the position." returned NONE (bare `i accept` requires
+ *   no word between "I" and "accept"). Added `i(?:.?ll|.?d|\s+will|\s+would)\s+accept`.
+ * S98-B2 (2026-07-26) — "I am willing to accept." returned NONE. Added `willing\s+to\s+accept`.
+ * S98-B3 (2026-07-26) — "That arrangement is acceptable." returned NONE. Existing pattern
+ *   `(?:that|this).?s?...` doesn't handle intervening words. Added specific
+ *   `(?:offer|package|deal|ctc|salary|comp|terms?|arrangement|proposal|number)\s+is\s+acceptable`.
+ * S98-B4 (2026-07-26) — "Let us proceed." returned NONE. Expanded let...close|seal|finalize
+ *   to also include `proceed|move\s+forward`. Added `happy\s+to\s+move\s+forward` separately.
+ * S137-B3 (wave 43) — acceptWords had zero Hindi/Hinglish arms at all, unlike
+ *   walkAwayWords/numberLockWords/thinkWords which each have several. "Main accept karta
+ *   hoon." (Hindi verb-conjugation wrapper around the English cue word) and "Mujhe ye
+ *   offer manzoor hai." ("manzoor" = accepted/approved, common Hindi/Urdu) both fell
+ *   through to NONE. Added `manzoor hai` and `accept kar(ta/ti/te) hoon`/`kar(unga/ungi/enge)`.
+ * S141-B5 (wave 47) — most `i'll`/`i'd` arms used `i(?:.ll|.d|...)` — a MANDATORY single
+ *   char before "ll"/"d", which matches the apostrophe substituted (curly quote) but not
+ *   apostrophe fully DROPPED ("Ill take it.", "Id accept that." — a common STT artifact,
+ *   distinct from wave 46's curly-quote substitution fix). Widened every `i.ll`/`i.d` to
+ *   `i.?ll`/`i.?d` (optional char) to match the pattern already used elsewhere in this file. */
+const acceptWords = /\b(i\s+(?:do\s+|did\s+)?accept(?!\s+(?:nothing|no\s+less|anything\s+less|that\b|whatever\b))|i.?ll accept|(?:i.?m|i\s+am)\s+(?:actually\s+|definitely\s+|really\s+)?going\s+to\s+accept|accept the offer|sounds\s+good|that works for me|works for me|\d+(?:\.\d+)?\s*(?:lpa|lakhs?|l|cr\b|crore)?\s+works(?:\s+for\s+me)?\b|happy\s+to\s+accept|(?:thrilled|delighted|excited|pleased)\s+to\s+accept|(?:it|that|this)(?:.?s|\s+is)\s+a\s+deal|i.?m happy with|fine with me|fine\s+by\s+me|fully\s+on\s+board|i agree(?!\s+(?:on|the|that|this|it|your|with|to\s+(?:review|look|discuss|examine|reconsider|revisit|check|read|go|get|think|evaluate|consider))\b)|(?<!as\s)(?<!we\s)(?<!i\s)(?<!they\s)(?<!you\s)(?<!had\s)(?<!have\s)agreed(?!\s+(?:on|that|earlier|previously|upon|by|already))|let(?:'?s|\s+us)\s+go\s+ahead|i(?:.?ll|.?d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?take\s+(?:it(?!\s+(?:as\s+a\s+no|that\s+way|the\s+wrong\s+way))|(?:the\s+)?(?:offer|package|deal|position|role)|whatever\s+(?:you\s+)?offer)|(?:that|this).?s?\s+(?:is\s+)?acceptable(?:\s+to\s+me)?|count\s+me\s+in|consider\s+it\s+done|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely)\s+)?happy\s+to\s+proceed|happy\s+to\s+proceed|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly)\s+)?on\s+board|(?:i.?m|i\s+am)\s+in(?!\s*[a-z])|done\s+deal|(?:we|you)(?:.ve\s+got|\s+have|\s+got)\s+(?:yourself\s+)?a\s+deal|let(?:'?s|\s+us)\s+(?:close|seal|finalize|proceed|move\s+forward)|i.?m\s+game|(?<!not\s)okay\s+with\s+(?:this|that|it)|happy\s+to\s+(?:take|go\s+with)\s+(?:the\s+)?(?:offer|package|deal|this|that|it)|happy\s+to\s+move\s+forward(?:\s+with\s+(?:this|it|that))?|i(?:.?ll|.?d|\s+will|\s+would)\s+(?:(?:happily|gladly|certainly|definitely|absolutely|willingly)\s+)?accept(?!\s+(?:nothing|no\s+less))|willing\s+to\s+accept|prepared\s+to\s+accept|glad\s+to\s+accept|sounds\s+acceptable|i(?:.d|\s+would)\s+love\s+to\s+accept|i\s+(?:wholeheartedly|enthusiastically|unconditionally)\s+accept|i(?:.?ll|.?d|\s+will|\s+would)\s+go\s+for\s+it|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|definitely|certainly|wholly|perfectly|quite)\s+)?fine\s+with\s+(?:this|that|it|the)|(?:offer|package|deal|ctc|salary|comp(?:ensation)?|terms?|arrangement|proposal|number)\s+is\s+acceptable(?:\s+to\s+me)?|sounds\s+great(?:\s+to\s+me)?|fair\s+enough(?:\s+for\s+me)?|(?:let.?s|let\s+us)\s+make\s+this\s+happen|(?:i\s+)?can\s+live\s+with\s+(?:that|this|it)|in\s+agreement(?:\s+with\s+the\s+terms)?|i(?:.?ll|.?d|\s+will|\s+would)\s+go\s+with\s+(?:this|that|it)|(?:i.?m|i\s+am)\s+(?:(?:very|quite|really|so|truly|absolutely|fully|completely)\s+)?satisfied\s+with\s+(?:this|that|it|the)|(?<!not\s)willing\s+to\s+(?:move\s+forward|proceed)|(?:let.?s|let\s+us)\s+do\s+(?:it|this)|i(?:.?ll|.?d|\s+will|\s+would)\s+go\s+ahead(?:\s+with)?|(?:i.?m|i\s+am)\s+(?:(?:totally|completely|absolutely|perfectly|quite|really|pretty)\s+)?good\s+with\s+(?:this|that|it|the)|consider\s+it\s+settled|happy\s+to\s+sign(?:\s+(?:on|up))?|sign\s+me\s+up|that.?s\s+settled(?:\s+then)?|let.?s\s+shake\s+(?:hands\s+)?on\s+it|(?:i.?m|i\s+am)\s+(?:(?:quite|very|really|truly|completely|absolutely)\s+)?content\s+with\s+(?:this|that|it|the)|(?:i.?m|i\s+am)\s+pleased\s+to\s+accept|(?:i.?ll|i.?d|i\s+will|i\s+would)\s+sign\s+on\s+the\s+dotted\s+line|(?<!not\s)comfortable\s+with\s+(?:this|that|it|the)|works\s+(?:\w+\s+)?for\s+me|that\s+works\b|manzoor\s+hai|accept\s+kar(?:ta|ti|te)?\s+(?:hoon|hu|hun)\b|accept\s+kar(?:unga|ungi|enge)\b)\b/i;
 /* Rejection signals — covers explicit rejection AND number-locking
    ("stick with 26 lakhs", "holding at 30 LPA", "won't go below"). The
    user-reported bug where "No, I would like to stick with 26 lakhs"
@@ -34,13 +81,286 @@ const acceptWords = /\b(i accept|i.?ll accept|accept the offer|sounds good|that 
    "stick/hold/stay at <number>" family. The lookahead for an LPA-style
    number after the lock verb prevents false positives like "I'll stick
    with the team I have." */
-const rejectWords = /\b(not acceptable|too low|can.?t accept|absolutely not|not enough|walk away|not interested|i reject|no deal|way too low|that.?s insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|need(?:s)?\s+at\s+least|expecting\s+(?:at\s+least\s+)?\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b))/i;
-const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|though)\b/i;
-const deflectWords = /\b(you first|your offer|what.*you.*offer|tell me.*first|don.?t want to share|prefer not|rather not|you tell me)\b/i;
-const thinkWords = /\b(need time|think about|sleep on|let me think|consider|talk to.*(?:family|partner|wife|husband)|get back to you|not ready)\b/i;
-const competingWords = /\b(other offer|competing|another company|counter.?offer|multiple offers|also talking|interviewing at|got an offer)\b/i;
-const walkAwayWords = /\b(walk away|walking away|i.?m out|not interested|i.?ll pass|no deal|withdraw|decline the offer|i decline|pull out|not worth|won.?t work|isn.?t going to work|move on|take the other|thanks but no|not for me|have to pass)\b/i;
-const shortAffirmativeStart = /^(yes|yeah|okay|ok|sure|deal|agreed|accept|sounds good|that works|fine)\b/i;
+/* S77-B3 (2026-07-25) — same component-noun lookahead applied here; bare
+ * "not interested in the variable/equity/bonus" must not set rejected:true */
+/* S83-B3 (2026-07-26) — `don't work` added alongside `won't work` so "the numbers
+ * don't work for me" triggers hedgeIsRejection when it appears in the post-hedge
+ * segment of "sounds good in theory, but the numbers don't work for me" — previously
+ * only `won.?t work` was listed and "don't work" fell through to accepted=true. */
+/* S84 (2026-07-26) — `need more/higher [comp-noun]` added to catch post-hedge rejections
+ * like "I'm on board but need more fixed" / "happy to proceed but need higher comp".
+ * Restricted to salary-component nouns to avoid false positives on "need more time/info".
+ * S86-B1 (2026-07-26) — `expecting\s+at\s+least` didn't match "I expect at least 45L"
+ *   (no -ing suffix). Broadened to `expect(?:ing)?\s+at\s+least`.
+ * S86-B2 (2026-07-26) — "That does not work for me" not classified as rejection.
+ *   Added `does\s+not\s+work` alongside existing `don.?t work`.
+ * S95-B3 (2026-07-26) — "I am not going to accept this" returned NONE (not rej).
+ *   Added `not\s+going\s+to\s+accept`, `won.?t\s+accept`, `refuse\s+to\s+accept`.
+ * S96-B3 (2026-07-26) — "I would not accept anything below 40 lakhs" returned NONE.
+ *   Added `would.?n.?t\s+accept|would\s+not\s+accept`.
+ * S97-B4 (2026-07-26) — "I find this offer insufficient." returned NONE. Added `insufficient`.
+ * S97-B5 (2026-07-26) — "This does not meet my expectations." returned NONE.
+ *   Added `(?:does?\s+not|doesn.?t)\s+meet\s+(?:my\s+)?expectations`.
+ * S97-B6-rej (2026-07-26) — "I have to say no." returned NONE. Added `have\s+to\s+say\s+no`.
+ * S97-B8 (2026-07-26) — "Works for me in theory but not at this number." returned acc (false
+ *   positive). Post-hedge text "not at this number" missed by hedgeIsRejection because the
+ *   pattern wasn't in rejectWords. Added `not\s+at\s+(?:this|that)\s+(?:number|price|rate|
+ *   figure|amount|salary)` and also `not\s+(?:okay|comfortable)\s+with\s+(?:this|that|the)`
+ *   to cover "I am not okay/comfortable with this number".
+ * S98-B5 (2026-07-26) — "I cannot accept this offer as is." returned NONE. `can.?t accept`
+ *   uses `.?` (1 optional char) so "cannot" (3 chars after "can") was not matched.
+ *   Changed to `can(?:not|.?t)\s+accept`.
+ * S98-B6 (2026-07-26) — "This is below my expectations." returned NONE.
+ *   Added `below\s+(?:my\s+)?expectations`.
+ * S98-B7 (2026-07-26) — "The salary is not competitive." returned NONE.
+ *   Added `not\s+competitive`. */
+/* S122-B2 (wave 28) — bare "too low" had no negation guard (unlike most other rejectWords
+ * arms), so "Not too low, actually it's pretty fair." fired rejected=true. Added a
+ * lookbehind, matching the guard style used elsewhere in this regex.
+ * S122-B4 (wave 28) — "that's insulting" required the exact "that's" subject; "this is
+ * insulting" (equally common) fell through to NONE, letting a trailing accept phrase win.
+ * S137-B2 (wave 43) — still too narrow: any noun-phrase subject ("the offer is
+ * insulting", "20 LPA is insulting", "your proposal is insulting") fell through to NONE,
+ * same failure mode. Dropped the subject restriction entirely — mirrors the existing
+ * bare "inadequate"/"unacceptable" arms already in this list, which never needed a
+ * subject guard because the word alone is unambiguous in a salary-negotiation reply. */
+/* S123-B1 (wave 29) — "I don't think this works for me." fired accepted=true via the bare
+ * "works (for me)" arm in acceptWords, with no negation guard covering "don't think X
+ * works" (the negated word is "think", not "work" itself, so the existing
+ * don't/doesn't-work arms didn't catch it). Added a dedicated positive arm here (paired
+ * with acceptNegationRe below, which suppresses the accept signal for the same phrase) so
+ * this natural rejection phrasing now correctly scores rejected=true.
+ * S123-B3 (wave 29) — bare "wouldn't accept" had no guard against the litotes/hedge frame
+ * "I can't say I wouldn't accept that" (implies likely acceptance, not rejection). Added a
+ * negative lookbehind for the enclosing "can't/couldn't say" frame.
+ * S139-B1 (wave 45) — rejectWords had near-zero Hindi/Hinglish coverage beyond the single
+ * "bilkul nahi(n)" arm, unlike acceptWords/numberLockWords which got full Hinglish arms in
+ * earlier waves. "Mujhe yeh salary manzoor nahi hai.", "Main is offer ko reject karta
+ * hoon.", "Ye offer theek nahi lag raha hai mujhe.", "Itni kam salary mein kaam nahi kar
+ * sakta." all returned NONE. Added manzoor-nahi/accept-nahi/reject-kar/theek-nahi-lag/
+ * kaam-nahi-kar-sakta idiom arms.
+ * S141-B1 (wave 47) — "i reject" only covered the bare present tense; there was no
+ * gerund arm ("I am rejecting this offer.") unlike other verb families in this file
+ * (e.g. decline has both decline/declining). Added i(?:'m| am)\s+reject(?:ing)? .
+ * S142-B2 (wave 48) - telegraphic subjectless replies ("Rejecting the offer.") had no
+ * arm at all: every reject arm above requires an explicit "i" subject. Added a bare
+ * sentence-start ^reject(?:ing)?\b anchor for the subjectless case (mirrored as
+ * ^declin(?:e|ing)\b in walkAwayWords/WALKAWAY_PATTERN/walkRe for "Declining.").
+ * S143-B4 (wave 49) — "Even if it's a lowball offer I wouldn't walk away." fired
+ * rejected=true via the bare "lowball" arm even after the wouldn't-negation fix (S143-B1)
+ * suppressed walkAway: "lowball" was the LEFTMOST reject match, not "walk away", so
+ * rejectMatchIsWalkAwayArm was false and the negation guard never applied. The candidate
+ * is describing a hypothetical concession ("even if it's a lowball offer"), not the
+ * actual offer on the table — added a negative lookbehind so bare "lowball" doesn't fire
+ * when directly preceded by that "even if it's a/an" concessive frame. */
+const rejectWords = /\b(not acceptable|(?<!not\s)(?<!n't\s)too low|can(?:not|\s+not|'?t)\s+accept|absolutely not|bilkul\s+nahi(?:n)?|manzoor\s+nahi(?:n)?|accept\s+nahi(?:n)?\s+kar(?:ta|ti|te|unga|ungi|enge|na)?\b|reject\s+kar(?:ta|ti|te|unga|ungi|enge)?\s*(?:hoon|hu|hun)?\b|theek\s+nahi(?:n)?\s+(?:hai|lag)|kaam\s+nahi(?:n)?\s+kar(?:ta|ti|te)?\s+sakta|not enough|walk away(?!\s+with\b)|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|i\s+(?:have|need|am\s+going)\s+to\s+reject|i(?:.?m|\s+am)\s+reject(?:ing)?|i reject|^reject(?:ing)?\b|no deal|way too low|insulting|stick(?:ing)?\s+with(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|hold(?:ing)?\s+(?:at|firm)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|stay(?:ing)?\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|firm\s+at(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d))|won.?t\s+(?:go\s+)?(?:below|under|lower)|won.?t\s+accept|(?<!can.?t\s+say\s+i\s)(?<!couldn.?t\s+say\s+i\s)(?<!not\s+that\s+i\s)would.?n.?t\s+accept|would\s+not\s+accept|not\s+going\s+to\s+accept|refuse\s+to\s+accept|can(?:not|.t)\s+justify\s+(?:leaving|taking|accepting|joining)|don.?t\s+work|doesn.?t\s+work|does\s+not\s+work|(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|won.?t|wouldn.?t)\s+think\s+(?:\w+\s+){0,3}works?\b|need(?:s)?\s+at\s+least|expect(?:ing)?\s+at\s+least\s*\d|^no\b[^.]*\b(?:lakh|lpa|crore|cr\b)|(?<!n't\s)(?<!not\s)(?:need|like|want)\s+(?:a\s+)?(?:more|higher|additional|extra|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash|number|figure|amount)|need\s+(?:much|significantly|considerably|a\s+lot)\s+more|insufficient|(?:does?\s+not|doesn.?t)\s+meet\s+(?:my\s+)?(?:expectations|requirements|needs|standards|criteria)|falls?\s+short\s+of\s+(?:my\s+)?(?:expectations|requirements|needs|standards)|have\s+to\s+say\s+no|won.?t\s+work\s+for\s+(?:me|us)|not\s+at\s+(?:this|that)\s+(?:number|price|rate|figure|amount|salary)|not\s+(?:okay|comfortable)\s+with\s+(?:this|that|the)|below\s+(?:my\s+)?expectations|way\s+(?:below|off)\s+(?:from\s+)?(?:my\s+)?(?:expectations?|target|ask|requirements?)?|below\s+(?:market|industry)\s+(?:rate|average|standard|benchmark|value)|(?:a\s+bit|slightly|somewhat|rather)\s+low(?![-\w])|(?:much|significantly|considerably|somewhat|slightly|a\s+bit|rather|quite|fairly)\s+lower\s+than\s+(?:(?:my\s+)?(?:current\s+)?(?:target|expectations?|ask|number|figure|estimate|package|salary|ctc|comp(?:ensation)?|offer)|what\s+(?:i|we)\s+(?:asked|expected|hoped|wanted|was\s+expecting|were\s+expecting)\s+for)|not\s+up\s+to\s+(?:my\s+)?expectations|(?:was|am|have\s+been|had\s+been)\s+expecting\s+(?:(?:much|a\s+bit|a\s+little|somewhat|slightly|a\s+lot)\s+)?more|expected\s+(?:much\s+)?more\s+(?:from|than|for)|not what\s+(?:i|we)\s+(?:was|were|am|are|had\s+been)\s+hoping\s+for|not\s+competitive|isn.?t\s+(?:competitive|sufficient|acceptable|satisfactory)|not\s+sufficient|not\s+satisfact(?:ory|ory)|isn.?t\s+satisfact(?:ory)|inadequate|unacceptable|not\s+satisfied\s+with\s+(?:(?:this|that)\b|(?:(?:this|that|the)\s+)?(?:offer|salary|package|ctc|comp(?:ensation)?|number|figure|amount|deal|proposal))|(?:does?\s+not|doesn.?t)\s+align\s+with\s+(?:(?:my|industry|market|current)\s+)?(?:expectations|requirements|needs|standards)|not\s+in\s+(?:the\s+)?ballpark|(?:i.?m|i\s+am)\s+worth\s+more\s+than|(?:doesn.?t|does\s+not)\s+reflect\s+(?:my\s+)?(?:market\s+value|worth|value)|expected\s+(?:a\s+)?(?:much\s+)?(?:higher|more|better(?!\s+(?:communication|service|support|response|feedback|handling|attitude|behavior|professionalism|transparency|clarity|outcome|explanation|experience|result|performance|effort|opportunity|treatment)))\s+(?:number|figure|amount|salary|ctc|package|offer|compensation\b)?|(?:a\s+)?(?:significant|major|substantial|huge|massive|big|severe)?\s*pay\s+cut|leaving\s+(?:a\s+lot\s+of\s+)?money\s+on\s+the\s+table|(?:ctc|salary|comp(?:ensation)?|package|fixed|base|variable|take.?home)\s+(?:to\s+be\s+)?at\s+least|hoping\s+for\s+at\s+least|not\s+what\s+(?:i|we)\s+(?:was|were|am|are|had\s+been|have\s+been)\s+expecting|disappoint(?:ed|ing)\s+with\s+(?:(?:this|that|the)\s+)?(?:offer|salary|package|ctc|comp(?:ensation)?|number|figure|amount)|doesn.?t\s+excite\s+(?:me|us)|underwhelm(?:ing|ed)|below\s+par|not\s+aligned\s+with\s+my\s+(?:worth|value|experience|expectations?|standards?)|not\s+happy\s+with\s+(?:this|that|the\s+(?:offer|salary|package|ctc|comp(?:ensation)?|number|figure|amount|deal|proposal))|(?:does?\s+not|doesn.?t)\s+meet(?:ing)?\s+(?:my\s+)?(?:expectations|requirements|needs|standards|criteria)|cannot\s+work\s+for\s+this\s+(?:salary|offer|number|ctc|package)|(?:a\s+)?letdown|too\s+far\s+from\s+(?:what\s+i.?m\s+looking\s+for|my\s+(?:expectations?|target|ask))|expected\s+(?:much\s+)?better(?!\s+(?:communication|service|support|response|feedback|handling|attitude|behavior|professionalism|transparency|clarity|outcome|explanation|experience|result|performance|effort|opportunity|treatment))(?:\s+than\s+(?:this|that))?|(?:a\s+bit|slightly|somewhat|rather|quite)\s+low(?![-\w])|(?:need|want|expect(?:ing)?)\s+more\s+than\s+(?:this|that|what(?:\s+(?:i|we)\s+(?:want|need|expected|hoped\s+for))?)|(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|money|cash|number|figure|amount)\s+(?:\w+\s+)?needs?\s+to\s+be\s+(?:higher|more|better|increased)|not\s+in\s+(?:practice|reality)|hoping\s+for\s+(?:a\s+)?(?:more|higher|better)\s+(?:fixed|base|variable|equity|ctc|salary|comp(?:ensation)?|package|bonus)|(?:slightly|a\s+bit|somewhat|rather)\s+below\s+(?:what\s+(?:i|we)\s+(?:was\s+expecting|were\s+expecting|expected|am\s+expecting|have\s+been\s+expecting)|my\s+expectations?)|not\s+(?:really\s+|fully\s+|truly\s+|quite\s+)?aligned\s+with\s+(?:(?:my|industry|market|current)\s+)?(?:expectations|requirements|needs|standards)|won.?t\s+(?:go|work|accept|take)\s+(?:for\s+)?anything\s+less\s+than|(?<!even\s+if\s+it.?s\s+an?\s+)lowball|not\s+(?:even\s+)?close|doesn.?t\s+come\s+close|seen\s+better(?:\s+offers?)?|losing\s+money|below\s+(?:my\s+)?walk.?away\s+(?:number|figure|point)|pasand\s+nahi(?:n)?|accha\s+nahi(?:n)?\s+laga|you\s+call\s+that\s+\w+(?:\s+\w+){0,2}\?|is\s+(?:that|this)\s+really\s+your\s+best(?:\s+(?:offer|number|figure|price|deal))?\??|you\s+expect\s+me\s+to\s+take\s+(?:this|that)\s+seriously\??)/i;
+/* S144-B4 (wave 50) — bare rhetorical-question soft rejections returned no signal at
+ * all: "You call that competitive?", "Is that really your best offer?", "You expect me
+ * to take this seriously?" — a clear negative-pushback reaction, distinct from the
+ * existing acceptSarcasmRe/walkAwaySarcasmRe frames (which only cover "like/as if I'd
+ * accept/walk away"). Added dedicated rhetorical-question arms. */
+/* S84 (2026-07-26) — `if` added to hedgeWords so "I'll take it if X" / "Count me in if X"
+ * are correctly marked conditionalAccept=true instead of full accepted=true.
+ * S98-B8 (2026-07-26) — "Yes, as long as the start date is flexible." returned NONE (not
+ *   cond acc). "as long as" / "so long as" are conditional conjunctions not in hedgeWords.
+ *   Added both. Also synced to hedgeRe in follow-up.ts. */
+/* S121-B4 (wave 27) — "lekin" (Hindi "but") was not recognized as a hedge conjunction,
+ * so Hindi-hedged conditional accepts fell through to full accepted=true. */
+/* S134-B1 (wave 40) — "although" was missing; \b(...)\b's "though" arm doesn't match
+ * inside "although" (no word boundary between "al" and "though"), so any hedge phrased
+ * with "although" was entirely invisible to hasAnyHedge, letting a top-priority
+ * accepted/rejected clause on either side of it win unconditionally instead of being
+ * arbitrated by the hedge logic. */
+const hedgeWords = /\b(but|however|only if|unless|provided|on condition|contingent|except|although|though|if|as\s+long\s+as|so\s+long\s+as|par\b|lekin)\b/i;
+/* S121-B6 (wave 27) — deflectWords only covered a handful of literal phrases; generic
+ * topic-redirect constructions ("can we talk about the bonus instead", "let's circle
+ * back to this") returned NONE instead of deflected=true. Added generic redirect arms. */
+/* S122-B5 (wave 28) — the `what.*you.*offer` arm used unbounded greedy wildcards with no
+ * topic restriction, so it fired on legitimate clarifying questions like "What can you
+ * offer me in terms of growth here?" / "What benefits do you offer besides the base
+ * salary?" (candidate asking about non-cash offerings, NOT deflecting the salary
+ * question). Bounded the wildcards (matching the style of the other arms in this regex)
+ * and excluded the common non-cash-topic followers.
+ * S122-B5-fix2 (wave 28) — the exclusion lookahead required the topic phrase to follow
+ * "offer" IMMEDIATELY, so "offer ME in terms of growth" (object pronoun between "offer"
+ * and "in terms of") still matched and deflected=true. Allowed up to 2 filler words
+ * (me/us/here/etc.) before the excluded topic phrase.
+ * S137-B4 (wave 43) — two gaps: (1) the `what...offer` arm's `what(?:\s+\w+){0,3}` filler
+ * group requires a SPACE before the next token, so it couldn't bridge the apostrophe-s
+ * in "What's your best offer?" (no space between "what" and "'s") — added an optional
+ * `(?:'s|\s+is)?` right after "what" to absorb the contraction/expanded form before the
+ * filler words. (2) reversed-question deflection with no "offer" word at all ("What do
+ * you think is a fair number?") returned NONE entirely — added a dedicated arm for
+ * "what...think...fair number/figure/amount/salary/ctc/price" phrasing.
+ * S139-B3 (wave 45) — two gaps: (1) the fair-number arm only covered "fair", missing the
+ * equally common "what's your best number?" phrasing — widened to also accept "best".
+ * (2) deflectWords had zero Hindi/Hinglish coverage ("Pehle aap bataiye...", "Aap hi
+ * bataiye ki kitna de sakte hain.") — added "pehle aap"/"aap bataiye"/"kitna de sakte
+ * hain" idiom arms.
+ * S140-B1 (wave 46) — both "what" alternations used a literal straight apostrophe only
+ * (`'s`), unlike most other arms in this file which use `.?` to tolerate any single
+ * character. Curly/smart-quote input ("What's your best number?" from iOS autocorrect)
+ * silently missed while the straight-quote form matched. Widened both to `.?s`. */
+const deflectWords = /\b(you first|you go first|your offer|what(?:.?s|\s+is)?(?:\s+\w+){0,3}\s+(?:you|your)(?:\s+\w+){0,2}\s+offer\b(?!(?:\s+\w+){0,2}\s*(?:in\s+terms\s+of|for\s+(?:growth|learning|benefits|development|training)|besides|other\s+than))|what(?:.?s|\s+is|\s+do\s+you\s+think(?:\s+is)?|\s+would\s+be)(?:\s+a|\s+your)?\s+(?:fair|best)\s+(?:number|figure|amount|salary|ctc|price|value)\b|pehle\s+aap\b|aap\s+(?:hi\s+)?bata(?:iye|o|yein|na)\b|kitna\s+de\s+sakte\s+(?:hain|ho)|tell me.*first|don.?t want to share|prefer not|rather not|you tell me|(?:talk|discuss)\s+about\s+\w+(?:\s+\w+){0,3}\s+instead|circle\s+back|come\s+back\s+to\s+this|discuss\s+\w+(?:\s+\w+){0,2}\s+first(?!\s+(?:offer|number|figure|salary|ctc))|first[\s,]+(?:let.?s\s+)?(?:talk|discuss)\s+about|first[\s,]+what(?:.?s|\s+is)\b|before\s+we\s+(?:finalize|proceed|continue|move\s+on))\b/i;
+/* S144-B3 (wave 50) — agree-then-pivot deflections ("Sure, but first let's talk about
+ * the joining bonus.", "Fine, but first, what's the joining bonus?", "OK, but before we
+ * finalize, can we discuss the notice period?") had no arm at all: the existing "talk/
+ * discuss about X instead" arm requires "instead", and the "discuss X first" arm
+ * requires "first" AFTER the topic, not before it as in these pivot phrasings. Added
+ * "first, let's talk/discuss about", "first, what's", and "before we finalize/proceed". */
+/* S95-B4 (2026-07-26) — thinkWords missing time-period phrases: "a day or two to think",
+ * "I need the weekend to decide", "a night to think" all returned needsTime=false.
+ * Added `a\s+(?:day|week|night)(?:\s+or\s+two)?\s+to\s+(?:think|decide|consider|review)`.
+ * S92-B1 (2026-07-26) — thinkWords gaps: "check with spouse" ("check with" not "talk to";
+ * "spouse" not in list); "think this through" (not the same as "think about"); "have time
+ * to think" / "need time to decide" — bare "time to think/decide" not covered. Added:
+ * check/consult/speak/discuss with family-synonym; time to think/decide; think through.
+ * NOTE: "talk to" arm retains `.*` (flexible preposition); new forms use explicit "with".
+ * S96-B4 (2026-07-26) — "Can you give me until tomorrow?" returned needsTime=false.
+ *   Added `give\s+me\s+(?:until|till)` and `until\s+tomorrow|till\s+tomorrow`.
+ * S96-B5 (2026-07-26) — "a couple of days before deciding" returned needsTime=false.
+ *   Added `couple\s+of\s+days`.
+ * S97-B7 (2026-07-26) — "Let me take some time to reflect." returned NONE. Added
+ *   `take\s+(?:some\s+)?(?:more\s+)?time\s+to\s+(?:think|reflect|consider|review|decide|evaluate|process)|(?:like|want|need)\s+(?:some\s+)?(?:more\s+)?time\s+to\s+(?:think|reflect|consider|review|decide|evaluate|process)`.
+ * S97-B7b (2026-07-26) — "I need to review this with my lawyer before deciding." returned
+ *   NONE. Added professional-advisor arm alongside the existing family-relative arm.
+ * S98-B9 (2026-07-26) — "I need a few days." returned NONE. Added `(?:a\s+)?few\s+days`.
+ * S98-B10 (2026-07-26) — "Let me mull it over." returned NONE. Added `mull\s+(?:it\s+)?over`.
+ * S98-B11 (2026-07-26) — "Can I have until end of week?" returned NONE.
+ *   Added `until\s+end\s+of\s+(?:the\s+)?(?:week|month|day)`.
+ * S139-B4 (wave 45) — the existing family-consultation arms only covered the "X se baat
+ * karni hai" noun-phrase idiom; the equally common verb-conjugation form "wife se baat
+ * karke batata hoon" ("I'll talk to my wife and let you know") wasn't covered. Added a
+ * bare "<family word> se baat kar" prefix arm (mirrors the style of thinkWords' other
+ * loose-prefix arms). Initial fix used a bare "kar" suffix which failed against "karke"
+ * — regex's trailing `\b` doesn't fire between two word chars ("r" then "k"), so
+ * "kar(?:ke|ta|ti|te|unga|ungi|enge)?" was used instead to actually reach a boundary.
+ * S143-B2 (wave 49) — "I need until Friday to decide." returned needsTime=false: only
+ * "give me until/till" was covered, not the equally natural first-person "need/want
+ * until/till". Also only "tomorrow"/"end of week/month/day" were covered after
+ * until/till — an arbitrary weekday name ("until Friday", "until next Wednesday") fell
+ * through entirely. Added (?:need|want) alongside give me, and weekday names alongside
+ * tomorrow/end-of-week/month/day. */
+const thinkWords = /\b(need time|think about|think this through|think it through|time to think|time to decide|sleep on|let me think(?!\s+out\s+loud)|(?:need\s+to|want\s+to|like\s+to|let\s+me|give\s+me\s+time\s+to|have\s+to|going\s+to|time\s+to|would\s+like\s+to)\s+consider|a\s+(?:day|week|night)(?:\s+or\s+two)?\s+to\s+(?:think|decide|consider|review)|(?:(?:the\s+)?weekend\s+to\s+(?:think|decide|consider|review)|(?:get|have)\s+(?:the\s+)?weekend(?:\s+to\s+(?:think|decide|consider|review))?)|couple\s+of\s+days|(?:a\s+)?few\s+(?:more\s+)?days|(?:give\s+me|need|want)\s+(?:until|till)|have\s+(?:until|till)\b|(?:until|till)\s+(?:tomorrow|next\s+week|monday|tuesday|wednesday|thursday|friday|saturday|sunday|end\s+of\s+(?:the\s+)?(?:week|month|day))|i\s+need\s+(?:this|it|that|to\s+decide)?\s*by\s+(?:eod|end\s+of\s+(?:the\s+)?day|tomorrow(?:\s+morning)?|tonight|noon)\b|i(?:.?ll|\s+will)?\s+(?:decide|let\s+you\s+know|get\s+back\s+to\s+you|revert)\s+by\s+(?:eod|end\s+of\s+(?:the\s+)?day|tomorrow(?:\s+morning)?|tonight|noon)\b|(?:a\s+)?(?:couple|few)\s+(?:of\s+)?hours?\s+to\s+think\b|mull\s+(?:(?:it|this|that)\s+)?over|\d+\s+(?:hours?|minutes?)\s+to\s+(?:think|decide|consider|review)|sochne\s+do|soch\s+lene\s+do|(?:mujhe\s+)?time\s+chahiye|talk to.*(?:spouse|family|partner|wife|husband|parents?|folks?)|(?:check|speak)\s+with\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?|ca\b|lawyer|attorney|advisor|accountant|mentor)|discuss(?:\s+(?:it|this|that))?\s+with\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?)|consult(?:\s+with)?\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?|lawyer|attorney|advisor|accountant|ca\b|mentor)|get back to you|not ready|let\s+me\s+review\s+(?:the\s+)?(?:offer|contract|terms|agreement|package|letter|document)|take\s+(?:some\s+)?(?:more\s+)?time\s+to\s+(?:think|reflect|consider|review|decide|evaluate|process)|(?:like|want|need|have)\s+(?:some\s+)?(?:more\s+)?time\s+to\s+(?:think|reflect|consider|review|decide|evaluate|process)|(?:review|consult|discuss)\s+(?:this\s+)?with\s+(?:my\s+)?(?:lawyer|attorney|advisor|accountant|ca\b|mentor)|run\s+(?:this|it|that)\s+by\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?|lawyer|attorney|advisor|accountant|ca\b|mentor|team|manager|boss|colleagues?|co.?founder)|sit\s+(?:with\s+(?:this|it|that)|on\s+(?:this|it|that))|ponder(?:ing)?(?:\s+(?:this|it|that|over))?|give\s+me\s+(?:a\s+|one\s+|\d+\s+)(?:hours?|days?|weeks?)|discuss\s+(?:this|it|that)\s+internally|couple\s+of\s+weeks|want\s+to\s+process\s+(?:this|the\s+(?:offer|information|news|details|proposal|package|number|figures?))|(?:need|want)\s+(?:some\s+)?space\s+to\s+(?:decide|think|consider|reflect|evaluate|process)|revisit\s+(?:this|it|that\s+)?tomorrow|chew\s+on\s+this|take\s+(?:some\s+)?time\s+before\s+(?:committing|deciding|answering)|a\s+moment\s+to\s+(?:think|reflect|consider|decide|evaluate|process)|(?:like|want|need|have|appreciate)\s+(?:some\s+)?(?:more\s+)?time\s+to\s+(?:think|reflect|consider|review|decide|evaluate|process)|weigh\s+my\s+options|deliberate|loop\s+in\s+(?:my\s+)?(?:spouse|family|partner|wife|husband|parents?|folks?|ca\b|advisor|lawyer|accountant)|before\s+(?:deciding|committing|finalizing|giving\s+(?:my|an)\s+(?:final\s+)?answer)|sochna\s+padega|soch(?:na|kar)\s+(?:bataunga|batati|bataenge)|sochna\s+hai|(?:thoda|kuch|zara)?\s*time\s+dijiye|(?:family|parivar|ghar|biwi|pati|wife|husband)\s+se\s+baat\s+karni\s+hai|(?:wife|husband|family|spouse|parents?|biwi|pati|parivar)\s+se\s+baat\s+kar(?:ke|ta|ti|te|unga|ungi|enge)?)\b/i;
+/* S144-B2 (wave 50) — "by EOD"/"by end of day"/"by tomorrow (morning)" returned
+ * needsTime=false even though the "until/till" equivalents already worked, and
+ * spelled-out "a couple/few hours to think" returned false even though the parallel
+ * "a few days"/"couple of days" arms already covered day granularity. Added a
+ * candidate-framed "I need/I'll decide/let you know/get back to you/revert by
+ * <deadline>" arm and a spelled-out-hours-to-think arm. Scoped to first-person framing
+ * deliberately: a bare "by EOD" (e.g. inside "if you can confirm by EOD" — the
+ * COUNTERPARTY's deadline, part of a stated accept condition, S89-B1) is NOT the
+ * candidate needing time and must not fire needsTime. */
+/* S91-B1 (2026-07-26) — "another offer" not matched (word boundary before "other" in
+ * "another" doesn't exist); "other companies" not matched (had "another company" but not
+ * plural). Added: another offer, another opportunity, other companies/options,
+ * interviewing with (had "at"), also interviewing/exploring, have an offer. */
+/* S139-B5 (wave 45) — competingWords missed vague/company-name-only competing-offer
+ * references without an explicit number: "Amazon has also made me an offer.", "I'm
+ * considering an offer from a startup too.", "Another firm has offered me 20% more.",
+ * "Flipkart is offering me more.", "I'm weighing this against an offer from Google.",
+ * and the Hinglish "Ek MNC ne bhi mujhe offer diya hai." all returned false. Added
+ * company-name-agnostic "also/too made/gave/offered me an offer", "offer from a/an",
+ * "weighing against an offer", "<firm> has offered me N% more", "is offering me more",
+ * a percentage-offer arm, and a Hinglish "bhi ... offer diya/mila" arm.
+ * S141-B6 (wave 47) — the plain declarative "<Company> gave/offered me an offer/a job/N
+ * LPA" — arguably the single most natural way to mention a competing offer — required an
+ * "also/too" prefix or a percentage figure from the S139-B5 fix, so it fell through to
+ * false. Added a bare (?:gave|offered) me an offer/job/position/role arm and a bare
+ * "offered me <number>" arm (no also/too or percentage needed). Initial fix used a bare
+ * \d (single digit) before the closing \b, which failed against "35" — the trailing \b
+ * doesn't fire between two word chars ("3" then "5"), same gotcha as S139-B4 — so \d+
+ * was used instead to actually reach a boundary.
+ * S143-B3 (wave 49) — "Google offered me more" (bare past-tense comparative, no noun and
+ * no number) fell through every arm above: the noun arm requires offer/job/position/role,
+ * the number arm requires digits, and the present-tense "is offering me more" arm doesn't
+ * match past tense. Added a bare "offered me more" arm. */
+const competingWords = /\b(other offer|another offer|another opportunity|competing|another company|other companies|other options|other opportunities|counter.?offer|multiple offers|also talking|also interviewing|also exploring|interviewing at|interviewing with|got an offer|have an offer|received an offer|better\s+offers?\s+elsewhere|(?:also|too)\s+(?:made|gave|offered)\s+me\s+an?\s+offer|(?:gave|offered)\s+me\s+(?:an?\s+)?(?:offer|job|position|role)\b|(?:has\s+)?offered\s+me\s+\d+|offered\s+me\s+more\b|offer\s+from\s+(?:a|an|another)\b|weigh(?:ing)?\s+(?:this\s+)?against\s+(?:an\s+)?offer|(?:firm|company|employer)\s+has\s+offered\s+me\s+\d+%\s+more|is\s+offering\s+me\s+more\b|\d+%\s+(?:more|better|higher)\s+offer|bhi\s+(?:mujhe\s+)?offer\s+(?:diya|mila)|have\s+offers\b|made\s+(?:me\s+)?offers\b|offered\s+me\s+positions\b|considering\s+offers\s+from)\b/i;
+/* S144-B1 (wave 50) — plain plural mentions of competing offers fell through entirely:
+ * "Amazon, Google, and Microsoft have all made offers.", "I have offers from TCS,
+ * Infosys, and Wipro.", "...have all offered me positions.", "considering offers from
+ * Amazon and Google." Every existing arm requires either a singular "an offer" framing
+ * or an explicit number/percentage. Added bare plural "have offers"/"made offers"/
+ * "offered me positions"/"considering offers from". */
+/* S78-B1 (2026-07-25) — bare `move on` fired on "Let's move on to equity"
+ * (topic-redirect). First-person departure frame required, mirroring WALKAWAY_PATTERN. */
+/* S78-B2 (2026-07-25) — `i.?m out` fired on "I'm out of ideas/options/moves"
+ * (candidate still negotiating). Added `(?!\s+of\b)` to suppress the "out of X" form. */
+/* S80-B1 (2026-07-26) — `i.?ll pass` and `have to pass` fired on hand-off phrases:
+ * "I'll pass your proposal to my partner" / "I have to pass this to my manager".
+ * Added along/to-recipient guard matching WALKAWAY_PATTERN (widened window to 25 chars).
+ * S80-B3 (2026-07-26) — `no chance` fired on hardball anchor "No chance I'm settling
+ * for less than 45L" — candidate asserting a floor, NOT walking. Added first-person
+ * floor-verb guard: suppresses when followed by go-below/settle/accept-less/etc.
+ * S81-B1 (2026-07-26) — `not worth` fired on "not worth fighting over 2L — can we split
+ * it?" (counter-proposal, not walk). Added dispute-gerund guard.
+ * S81-B2 (2026-07-26) — `i decline` fired on "I decline to answer that" (refusing to
+ * reveal salary info, NOT walking). Added `to [reveal/answer/disclose/share/...]` guard.
+ * S137-B1 (wave 43) — the S80-B3 floor-verb guard only excluded a narrow whitelist of
+ * follow-up verbs (settle/accept-less/etc). It missed the case where the verb after
+ * "no chance"/"not a chance" is ITSELF already negative ("No chance I'm rejecting this
+ * offer.", "No chance I'd say no to this.", "No chance I'd turn this down.") — negating
+ * a negative verb flips polarity back to acceptance, but the pattern read it as a
+ * literal walk-away signal. Widened the excluded-verb list with reject/say-no/turn-down.
+ * Mirrored identically into WALKAWAY_PATTERN (_walkaway-detection.ts) and walkRe
+ * (follow-up.ts), which share this exact exclusion list verbatim. Does NOT cover the
+ * standalone rhetorical-echo case ("You think I'd reject this? No chance!") where the
+ * negative verb sits in an earlier sentence, not immediately after "no chance" — that
+ * needs cross-sentence context this lookahead can't see; left as a known gap. */
+/* S85 (2026-07-26) — synced guards from canonical WALKAWAY_PATTERN:
+ * no deal -> no deal(?!\s+on\s+the\s+table); withdraw exclusion + complaint/concern/etc;
+ * isn.?t -> is(?:n.?t|\s+not); departure frame adds bare `am` for "I am moving on"
+ * S96-B6 (2026-07-26) — "I am going to explore other opportunities" returned walkAway=false
+ *   (only comp=true). "going to explore/pursue other options/opportunities" added.
+ * S96-B7 (2026-07-26) — "I am no longer interested in pursuing this" returned NONE.
+ *   Added `no\s+longer\s+interested` with same component-noun guard as `not interested`.
+ * S96-B8 (2026-07-26) — "I think it is best we part ways here" returned NONE.
+ *   Added `part\s+ways`. All three also synced to WALKAWAY_PATTERN + walkRe.
+ * S97-B3 (2026-07-26) — "I am withdrawing my application." returned NONE. `withdraw` with
+ *   word-boundary `\b` at end did not match `withdrawing` (next char `i` = no boundary).
+ *   Fixed: `withdraw` → `withdraw(?:ing)?`. WALKAWAY_PATTERN already had `(?:ing)?`; now synced.
+ * S97-B9 (2026-07-26) — "I am removing myself from this process." and "Please take me off
+ *   your list." returned NONE. Added `remov(?:e|ing)\s+myself\s+from` and `take\s+me\s+off`.
+ *   Also replaced bare `take the other` with `tak(?:e|ing)\s+(?:the\s+)?(?:other|another)\s+(?:offer|opportunity|position|role|job)`
+ *   so "take another offer" is covered. All three files synced.
+ * S98-B12 (2026-07-26) — "I respectfully decline." / "I must decline this offer." returned
+ *   NONE. walkAwayWords only had `i decline(?!\s+to...)` (no room for adverb/modal before
+ *   "decline"). Added `(?:respectfully|reluctantly|regretfully|sadly)\s+declin(?:e|ing)` and
+ *   `(?:must|have\s+to|going\s+to)\s+declin(?:e|ing)` arms (both with info-verb guard).
+ * S98-B13 (2026-07-26) — "I am choosing to move on." returned NONE. Departure frame only
+ *   covers `i am going to / i will` etc., not `i am choosing to`. Added
+ *   `choosing\s+to\s+(?:move\s+on|pursue\s+other|explore\s+other)`.
+ * S98-B14 (2026-07-26) — "I will be pursuing other opportunities." returned comp only.
+ *   Departure frame requires `going\s+to\s+|gonna\s+` before `pursue other` — "be pursuing"
+ *   uses gerund + no frame. Added `(?:will\s+)?be\s+pursuing\s+other\s+(?:options|opportunities)`.
+ * S98-B15 (2026-07-26) — "I have accepted a position elsewhere." returned NONE.
+ *   Added `accepted\s+(?:a|an)\s+(?:position|offer|role|job)(?:\s+elsewhere|\s+(?:at|with)\s+another)?`.
+ * S98-B16 (2026-07-26) — "I have decided to go with another company." returned comp only.
+ *   Added `(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)`.
+ *   All new patterns synced to walkRe (follow-up.ts) and WALKAWAY_PATTERN (_walkaway-detection.ts). */
+/* S139-B2 (wave 45) — walkAwayWords had zero Hindi/Hinglish coverage. "Main is deal se hat
+ * raha hoon.", "Main ab is negotiation mein interested nahi hoon.", "Main peeche hatna
+ * chahta hoon." (all common walk-away idioms) returned walkAway=false in both
+ * detectCandidateIntent() and isWalkAway(). Added "peeche hat.../hat... hoon" and
+ * "interested nahi hoon" arms. Mirrored into WALKAWAY_PATTERN (_walkaway-detection.ts). */
+/* S140-B2 (wave 46) — the "call it quits" arm required the bare imperative "call", with
+ * no gerund form, unlike almost every other verb in this family (declin(?:e|ing),
+ * withdraw(?:ing)?, walk(?:ing|in)?, etc). "I'm calling it quits on this negotiation."
+ * returned walkAway=false. Widened to call(?:ing)?\s+it\s+quits. Mirrored into walkRe
+ * (follow-up.ts) and WALKAWAY_PATTERN (_walkaway-detection.ts).
+ * S141-B2/B3 (wave 47) — same morphological-gap shape as S140-B2, on different verbs.
+ * "I declined the position/offer." (past tense, not just declin(?:e|ing)), "I withdrew
+ * from the process." (irregular past of withdraw), and "I passed on the offer." (simple
+ * past, no modal/future frame — unlike the existing pass arms which all require
+ * will/going-to/have-to before "pass") all returned walkAway=false. Added `i declined` /
+ * `declined the offer/position/role/job`, widened withdraw(?:ing)? to withdr(?:aw(?:ing)?|ew),
+ * and added `passed on the/this offer/position/role/job/opportunity`. Mirrored into
+ * walkRe (follow-up.ts) and WALKAWAY_PATTERN (_walkaway-detection.ts). */
+const walkAwayWords = /\b(hard\s+pass\b|walk(?:ing|in)?\s+away(?!\s+with\b)|peeche\s+hat(?:na|\s+raha|\s+rahi|\s+rahe)?(?:\s+(?:hoon|hu|hun|chahta\s+hoon|chahti\s+hoon))?|hat(?:na|\s+raha|\s+rahi|\s+rahe)\s+(?:hoon|hu|hun)|interested\s+nahi(?:n)?\s+(?:hoon|hu|hun)|i(?:\s+am|['’]m)?\s*(?:going\s+to\s+)?walk(?!\s+(?:you|me|through|us|with)\b)(?:ing)?(?:\s+away|\s+out|(?=[.,!?;]|\s*$))|i.?m\s+done\s+(?:negotiating(?!\s+(?:about|over|with|on)\s+)|here(?!\s+for\s+now\b)|with\s+this|talking|discussing|waiting)|i\s+refuse\s+to\s+(?:play|negotiate|continue|proceed)|not a chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing)|reject(?:ing)?(?:\s+(?:this|it|that|the\s+offer))?|say\s+no(?:\s+to\s+(?:this|it|that))?|turn(?:ing)?\s+(?:this|it|that|the\s+offer)\s+down)))|that won.?t work|let.?s\s+end\s+(?:this|the)\s+(?:conversation|discussion|call|negotiation)|i.?m out(?!\s+of\b(?!\s*here\b))|not interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|no\s+longer\s+interested(?!\s+in\s+(?:(?:a|the|an?|this|that|your|our|their|my)\s+)?(?:\w+\s+)?(?:variable|fixed|equity|stock|rsu|esop|bonus|perks?|benefits?|structure|arrangement|split|breakdown|ratio|format|scheme|component|option|allocation|composition|mix)\b)|part(?:ing)?\s+ways|no chance(?!\s+(?:I(?:'m|\s+am|\s+will|\s+would|\s+'ll|\s+'d|'ll|'d)\s+(?:\w+\s+){0,2}(?:go(?:ing)?\s+(?:below|under)|settl(?:e|ing)(?:\s+for\s+less)?|accept(?:ing)?\s+less|tak(?:e|ing)\s+less|drop(?:ping)?\s+(?:below|under)|lower(?:ing)?|com(?:e|ing)\s+down|reduc(?:e|ing)|budg(?:e|ing)|reject(?:ing)?(?:\s+(?:this|it|that|the\s+offer))?|say\s+no(?:\s+to\s+(?:this|it|that))?|turn(?:ing)?\s+(?:this|it|that|the\s+offer)\s+down)))|i(?:.ll|.?m\s+going\s+to|\s+will|\s+would\s+rather|\s+think\s+i.ll|\s+guess\s+i.ll|\s+have\s+to|\s+need\s+to|\s+am\s+going\s+to)\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b)|\s+on\s+(?:dessert|lunch|dinner|breakfast|coffee|tea|the\s+(?:food|meal|drinks?)))|no deal\b(?!\s*(?:[-\s]?breakers?|\s+on\s+the\s+table))|withdr(?:aw(?:ing)?|ew)(?!\s+(?:my|your|the|this)\s+(?:\w+\s+)?(?:counter|demand|ask|offer|request|proposal|requirement|expectation|complaint|concern|feedback|objection|comment|remark|statement|amendment)\b)|decline the offer|i\s+declined|declined\s+the\s+(?:offer|position|role|job)|passed\s+on\s+(?:the|this)\s+(?:offer|position|role|job|opportunity)|^declin(?:e|ing)\b|i\s+(?:hereby\s+|now\s+|regretfully\s+|respectfully\s+|reluctantly\s+|formally\s+|sadly\s+|must\s+|will\s+)?declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|i(?:'|’)?(?:ll|m|d)\s+(?:going\s+to\s+|gonna\s+|have\s+to\s+|respectfully\s+|reluctantly\s+|regretfully\s+|formally\s+|sadly\s+|probably\s+|just\s+|now\s+)*declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|(?:respectfully|reluctantly|regretfully|formally|sadly)\s+declin(?:e|ing)|(?:have|going)\s+to\s+declin(?:e|ing)(?!\s+to\s+(?:answer|reveal|disclose|share|tell|say|mention|discuss|comment|confirm|provide|give)\b)|pull(?:ing)?\s+out(?!\s+(?:all\b|my\b|your\b|our\b|their\b|his\b|her\b|its\b|some\b|any\b))|not worth(?!\s+(?:fight|argu|bicker|quarrel|quibbl|debat|nit.?pick|hassle))|won.?t work(?!\s+for\s+(?:more|longer|over|above|anything\s+less)\s+than)|is(?:n.?t|\s+not)\s+going\s+to\s+work|(?:i(?:.m|.ll|.d)|i\s+(?:will|would\s+rather|think\s+i.ll|guess\s+i.ll|want\s+to|have\s+to|need\s+to|am\s+going\s+to|am))\s+(?:(?:just|then|probably|simply|really|now|rather|likely|instead)\s+)?(?:going\s+to\s+(?:have\s+to\s+)?|gonna\s+(?:have\s+to\s+)?)?(?:have\s+to\s+)?(?:(?:move|moving)\s+on|explore\s+other\s+(?:options|opportunities)|pursue\s+other\s+(?:options|opportunities))|(?:choosing|chosen|decided)\s+to\s+(?:move\s+on|pursue\s+other\s+(?:options|opportunities)|explore\s+other\s+(?:options|opportunities))|made\s+(?:my|a)\s+decision\s+to\s+(?:move\s+on|pursue\s+other|explore\s+other)|(?:will\s+)?be\s+pursuing\s+other\s+(?:options|opportunities)|(?:will\s+)?be\s+moving\s+on|(?:will\s+)?be\s+passing\s+on\s+(?:this|the\s+(?:offer|opportunity|role|position))|no\s+longer\s+pursuing\s+(?:this|the)\s+(?:role|position|opportunity|offer|job)|tak(?:e|ing)\s+(?:the\s+)?(?:other|another)\s+(?:offer|opportunity|position|role|job)|accepted\s+(?:a|an|another)\s+(?:position|offer|role|job)(?:\s+elsewhere|\s+(?:at|with)\s+another)?|(?:decided|chosen)\s+to\s+go\s+with\s+(?:another|a\s+different|the\s+other)\s+(?:company|offer|organization|firm|employer)|(?:chosen|decided)\s+to\s+accept\s+(?:a|an|another)\s+(?:offer|position|role|job)|step(?:ping)?\s+back\s+from\s+(?:this|the)|opt(?:ing|ed)\s+out\s+of\s+(?:this|the)|prefer\s+to\s+(?:explore|pursue|consider)\s+other\s+(?:options?|opportunities?|avenues?|paths?|alternatives?)|thanks but no|not for me|(?<!kam\s)nahi\s+(?:chahiye|karna|banega|hoga|chalega|chal\s+payega|jamega|jaa?ung[ai]|lung[ai])|(?:yeh|ye)\s+nahi\s+kar\s+sakta|nahin\s+(?:chahiye|karna|chalega)|join\s+nahi(?:n)?\s+kar(?:unga|ungi|enge|na)?|mujhe\s+nahi(?:n)?\s+chahiye|remov(?:e|ing)\s+myself\s+from\s+(?:(?:this|the)\s+)?(?:process|consideration|pipeline)|take\s+me\s+off\s+(?:your|the)\s+list|have to pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|i(?:.?ll|.?d|\s+will)\s+need\s+to\s+pass(?![^.!?]{0,25}?\b(?:along\b|to\s+(?:my|your|our|their|his|her|the|a|an)\b))|(?:reached|at)\s+an?\s+impasse|(?:don.?t|do\s+not)\s+think\s+(?:this|it|that)\s+is\s+going\s+to\s+work(?:\s+out)?|call(?:ing)?\s+it\s+quits|bow(?:ing)?\s+out(?:\s+of\s+(?:this|the))?|i(?:.?ll|.?d|\s+will|\s+would)\s+be\s+declin(?:ing)?|can(?:not|.t)\s+(?:come\s+to|reach)\s+(?:an?\s+agreement|terms)|(?:i(?:.?ll|.?d|\s+will)\s+|i\s+(?:have|need)\s+to\s+|i.?m\s+going\s+to\s+|going\s+to\s+(?:have\s+to\s+)?)look(?:ing)?\s+elsewhere|no\s+longer\s+(?:wish|want)\s+to\s+(?:proceed|continue|negotiate|participate|move\s+forward)|decided\s+not\s+to\s+(?:move\s+forward|proceed|continue|accept(?:\s+this)?)|step(?:ping)?\s+away(?:(?!\s+from\s+)|\s+from\s+(?:this|the\s+(?:negotiation|process|offer|role|position|opportunity|deal|table|conversation|discussion)))|made\s+up\s+my\s+mind\s+to\s+(?:decline|not\s+accept|walk\s+away)|end(?:ing)?\s+my\s+participation|(?:reached?\s+a|at\s+a)\s+dead\s+end|exit(?:ing)?\s+(?:this\s+|the\s+)?(?:negotiation|process|conversation|discussion)|this\s+role\s+(?:isn.?t|is\s+not)\s+for\s+me|won.?t\s+be\s+(?:accepting|moving\s+forward\s+with)\s+(?:this|the))\b/i;
+/* S88-B1 (2026-07-26) — Added Hindi affirmatives (haan, hanji, ji haan, theek hai,
+ * bilkul, etc.) — Indian users commonly answer bare Hindi "yes" during negotiations;
+ * all previously returned accepted=false. */
+const shortAffirmativeStart = /^(yes|yeah|okay|ok|sure|deal|agreed|sounds\s+good|that works|fine|absolutely|perfect|haan(?!\s+nahi(?:n)?\b)|hanji|ji\s+haan|ha\s+ji|han\s+ji|theek\s+hai|thik\s+hai|bilkul(?!\s+nahi(?:n)?\b))\b/i;
 
 /** Classify the candidate's answer in a salary negotiation. */
 export function detectCandidateIntent(answer: string): CandidateIntent {
@@ -49,27 +369,679 @@ export function detectCandidateIntent(answer: string): CandidateIntent {
     return { accepted: false, conditionalAccept: false, rejected: false, walkAway: false, deflected: false, needsTime: false, mentionedCompeting: false };
   }
 
+  /* S136-B3 (wave 42) — acceptSarcasmRe only recognized the "like/as if...I'd accept"
+   * sarcasm frame; the mirror-image "like/as if...I'd walk away" self-mockery had no
+   * equivalent guard, so bare walkAwayWords/rejectWords arms read it literally and
+   * inverted clearly positive sentiment (e.g. "Oh sure, like I would ever walk away
+   * from a bird in hand — I accept!"). Mirrors acceptSarcasmRe's first arm verbatim.
+   * Declared early (before hedgeIsRejection) since the sarcasm frame's own "if" can
+   * itself become the detected hedge, embedding a literal "walk away" in postHedgeText. */
+  const walkAwaySarcasmRe =
+    /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?walk\s+away\b/i;
+
+  /* S145-B1 (wave 51) — "Sure, let's discuss the notice period first." fired
+   * accepted=true: no hedge word is present (so isShortAffirmativeHedged's
+   * hedgeIsDeflection guard never applies), and isShortAffirmative itself had no
+   * deflectWords exclusion even though it already excludes hedgeWords/rejectWords.
+   * S154-B... (wave 61) — "...okay actually, yes, walking away, confirmed." fired
+   * accepted=true (via the leading "yes,"), which then suppressed a genuine,
+   * unhedged, unnegated walk-away confirmation sitting right next to it in the same
+   * short reply — desyncing from isWalkAway() (which has no accept-vs-walkAway
+   * short-circuit at all and correctly returned true). A bare short-affirmative
+   * opener isn't a real accept when the same short reply also contains an
+   * un-negated walk-away phrase. */
   const isShortAffirmative = trimmed.split(/\s+/).length < 8
     && shortAffirmativeStart.test(trimmed)
-    && !hedgeWords.test(trimmed);
+    && !hedgeWords.test(trimmed)
+    && !rejectWords.test(trimmed)
+    && !deflectWords.test(trimmed)
+    && !walkAwayWords.test(trimmed);
+
+  /* S88-B2 (2026-07-26) — "Sure, if you can bump to 38L" / "Deal, though I want equity
+   * too" returned accepted=false, conditionalAccept=false. The old code had no path for
+   * short-affirmative + hedge because: (a) isShortAffirmative excluded hedges, and
+   * (b) short tokens (sure/deal/ok/fine) are not in acceptWords. Added a separate
+   * isShortAffirmativeConditional path computed before acceptIdx so hedgeIsRejection
+   * (derived from postHedgeText) guards it properly.
+   * S89-B1 (2026-07-26) — word limit raised 12→18 to cover longer conditional accepts
+   * ("Ok, if you can confirm by EOD and include joining bonus in writing" is 14 words).
+   * thinkWords guard added to prevent "Ok, I need to think about this if possible" from
+   * firing as a conditional accept. */
+  const hedgeMatch = hedgeWords.exec(trimmed);
+  const hedgeIdx = hedgeMatch ? hedgeMatch.index : -1;
+  const hasAnyHedge = hedgeIdx >= 0;
+  const postHedgeText = hasAnyHedge ? trimmed.slice(hedgeIdx) : "";
+  /* S133-B2 (wave 39) — the pre-hedge counterpart of postHedgeText, used to rescue a
+   * genuine walk-away statement that appears BEFORE the hedge word when the post-hedge
+   * clause is an unrelated accept ("I'm walking away from the equity discussion, but I
+   * accept the base salary."). S129-B1 (wave 35) already handles the reverse ordering
+   * (accept-then-walkaway suppresses accepted); this handles walkaway-then-accept, which
+   * was previously discarded entirely by the base walkAway clause's blanket !accepted
+   * gate. */
+  const preHedgeText = hasAnyHedge ? trimmed.slice(0, hedgeIdx) : "";
+  /* S129-B1 (wave 35) — "I am in, but I also do not think this is going to work out for
+   * me." fired accepted=true AND walkAway=true simultaneously: hedgeIsRejection only
+   * tested the post-hedge clause against rejectWords, never walkAwayWords, so genuine
+   * departure phrasing that lives only in walkAwayWords ("don't think this is going to
+   * work out", "withdrawing from this process") failed to suppress accepted. Since
+   * accepted outranks walkAway in follow-up.ts's intentBanner priority, this told the LLM
+   * to "take the yes" on a candidate walking away in the same breath. */
+  /* S129-B1 fix-up — a conditional walk-away THREAT ("...but I am walking away if you
+   * cannot match it") is an established exception (see S94-B1): the candidate hasn't
+   * actually left, they're negotiating with an ultimatum, so it must NOT suppress
+   * accepted the way a genuine unconditional departure statement does. Distinguish via
+   * an "if" anywhere in the post-hedge clause — present for conditional threats, absent
+   * for unconditional walk-away statements like "I don't think this is going to work
+   * out for me." */
+  const postHedgeWalkAwayIsConditionalThreat = /\bif\b/i.test(postHedgeText);
+  /* S134-B1 fix-up (wave 40) — "I reject this offer, although honestly it sounds good."
+   * fired accepted=true because hedgeIsRejection only ever looked at postHedgeText: the
+   * explicit "I reject" clause sits BEFORE the hedge here (reverse of the S129-B1/S133-B2
+   * ordering), and acceptWords' "sounds good" arm matched the whole string via hasAccept,
+   * so nothing suppressed it. Originally scoped to only the unambiguous "I reject"/"I have
+   * to reject" phrase (not the full rejectWords list) because testing the full list against
+   * preHedgeText regressed S132-B4 (third-party "my friend said I should walk away, but...")
+   * and S133-B2 ("I was going to walk away, but I accept" retraction) — both hit rejectWords'
+   * bare "walk away" arm.
+   * S135-B2 (wave 41) — that scoping was too narrow: "Not acceptable — although honestly
+   * the number itself sounds good." still fired accepted=true, since "not acceptable" isn't
+   * the literal "I reject" phrase. Widened to the full rejectWords list, but excluding a
+   * match on the walk-away arm specifically (mirrors rejectMatchIsWalkAwayArm below) — that
+   * arm is the one already covered by the dedicated third-party/retraction guards, and is
+   * the only arm that caused the S132-B4/S133-B2 regressions. */
+  const preHedgeRejectMatch = rejectWords.exec(preHedgeText);
+  const preHedgeRejectIsWalkAwayArm = !!preHedgeRejectMatch && /^walk\s+away/i.test(preHedgeRejectMatch[0]);
+  const preHedgeIsRejection = !!preHedgeRejectMatch && !preHedgeRejectIsWalkAwayArm;
+  /* S136-B3 (wave 42) — "As if I would walk away from this deal, I accept." hedges on
+   * the literal "if" inside the sarcasm frame itself, so postHedgeText contains the bare
+   * "walk away" phrase and rejectWords' unconditional arm fired hedgeIsRejection=true,
+   * blocking accepted despite the walk-away being sarcastic self-mockery, not a real
+   * hedge/condition. Guard with the same walkAwaySarcasmRe used for rejected/walkAway. */
+  const hedgeIsRejection =
+    !walkAwaySarcasmRe.test(trimmed) && (
+      rejectWords.test(postHedgeText) ||
+      preHedgeIsRejection ||
+      (walkAwayWords.test(postHedgeText) && !postHedgeWalkAwayIsConditionalThreat));
+  /* S144-B3 (wave 50) — "Sure, but first let's talk about the joining bonus." fired
+   * accepted=true and conditionalAccept=true: the short-affirmative-plus-hedge path had
+   * no guard against the hedge clause itself being a deflection redirect rather than a
+   * genuine stated condition. Mirrors hedgeIsRejection's postHedgeText check.
+   * S145-B2 (wave 51) — "Before that, what's your best number, but yes I'm on board."
+   * still fired accepted=true: the deflection phrase ("what's your best number") sits
+   * BEFORE the hedge word here, mirroring the pre-hedge/post-hedge ordering split already
+   * established for hedgeIsRejection (preHedgeIsRejection) and walkAway
+   * (preHedgeText/postHedgeText OR-branches). Added a preHedgeText check. */
+  const hedgeIsDeflection = hasAnyHedge
+    && (deflectWords.test(postHedgeText) || deflectWords.test(preHedgeText));
+  /* S128-B3 (wave 34) — a bare trailing hedge word with nothing after it ("I accept,
+   * though." / "Deal, though.") is a hesitation filler, not a stated condition — genuine
+   * conditional accepts have actual content following the hedge ("I accept, though I'd
+   * like to discuss equity"). Without this guard the LLM was told to address a "specific
+   * condition" that doesn't exist in the text. */
+  const hedgeTrailingContent = hasAnyHedge
+    ? trimmed.slice(hedgeIdx + hedgeMatch![0].length).replace(/^[\s,.:;!?]+|[\s.:;!?]+$/g, "")
+    : "";
+  const hedgeIsBareFiller = hasAnyHedge && hedgeTrailingContent.length === 0;
+  /* S130-B1 (wave 36) — sarcastic/rhetorical refusals contain a literal acceptWords
+   * phrase and had no guard against it: "Yeah right, like I'd accept that.", "Do you
+   * really think I'd accept 20 LPA?", "I would accept this if hell froze over." all
+   * fired accepted=true — the single highest-priority field in follow-up.ts's
+   * intentBanner — telling the LLM to "TAKE THE YES" on an explicit refusal. Covers
+   * the "like/as if I'd accept" sarcasm frame, the "do you (really) think I'd accept"
+   * rhetorical-question frame, and "if hell froze over"/"if pigs could fly"
+   * impossible-hypothetical idioms (which also otherwise slip through as a genuine
+   * hedge condition, since "if" is a hedgeWords arm).
+   * S131-B1 (wave 37) — two gaps in the frame above: (1) the far more natural NEGATED
+   * phrasing of the rhetorical-question frame ("you DON'T think I'd accept this, do
+   * you?") wasn't covered — only the bare "do you think" form was; (2) the "like"/"as
+   * if" separator was a rigid `\s+`, so trivial punctuation variation ("like...I'd
+   * accept", "like, I'd accept?!") broke the match entirely. Added an optional
+   * negation clause to the rhetorical-question arm and widened the separator to
+   * `[\s.,]+` (tolerates ellipses/commas, still requires at least one char). */
+  const acceptSarcasmRe =
+    /\b(?:like|as\s+if)[\s.,]+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\b(?:do(?:es|did)?\s+)?you\s+(?:(?:don.?t|doesn.?t|didn.?t)\s+)?(?:really\s+|actually\s+)?think\s+i(?:.?d|.?ll|\s+would|\s+will)?\s+(?:ever\s+)?accept\b|\bif\s+hell\s+froze\s+over\b|\bif\s+pigs\s+(?:could|can)?\s*fly\b/i;
+  /* A bare filler hedge ("Deal, though.") still makes this a short affirmative ACCEPT —
+   * only the "conditional" characterization is wrong (there's no stated condition), so
+   * isShortAffirmativeHedged (used for `accepted`) intentionally ignores hedgeIsBareFiller
+   * while isShortAffirmativeConditional (used for `conditionalAccept`) does not. */
+  const isShortAffirmativeHedged = trimmed.split(/\s+/).length < 18
+    && shortAffirmativeStart.test(trimmed)
+    && hasAnyHedge
+    && !hedgeIsRejection
+    && !hedgeIsDeflection
+    && !thinkWords.test(trimmed)
+    && !acceptSarcasmRe.test(trimmed);
+  const isShortAffirmativeConditional = isShortAffirmativeHedged && !hedgeIsBareFiller;
 
   const acceptIdx = trimmed.search(acceptWords);
-  const hedgeIdx = trimmed.search(hedgeWords);
   const hasAccept = acceptIdx >= 0;
-  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx;
-  const postHedgeText = hasHedgeAfterAccept ? trimmed.slice(hedgeIdx) : "";
-  const hedgeIsRejection = rejectWords.test(postHedgeText);
+  /* S138-B1 (wave 44) — hasHedgeAfterAccept only checked that the hedge word's index came
+   * after the accept match's index, with no clause/sentence boundary — so a hedge word
+   * (if/but/though/unless/...) in a wholly unrelated LATER sentence ("I accept. By the
+   * way, if it rains tomorrow I might be late.") wrongly fired conditionalAccept=true on
+   * an unconditional acceptance. If a sentence-terminator (./!/?) appears between the
+   * accept match and the hedge, the hedge belongs to a separate sentence, not a condition
+   * attached to the acceptance. */
+  const hedgeCrossesSentenceBoundary = hasAccept && hedgeIdx > acceptIdx &&
+    /[.!?]/.test(trimmed.slice(acceptIdx, hedgeIdx));
+  const hasHedgeAfterAccept = hasAccept && hedgeIdx > acceptIdx && !hedgeIsBareFiller && !hedgeCrossesSentenceBoundary;
 
-  const accepted = (hasAccept || isShortAffirmative) && !hedgeIsRejection;
-  const conditionalAccept = accepted && hasHedgeAfterAccept && !hedgeIsRejection;
-  const rejected = rejectWords.test(trimmed) && !accepted;
+  /* S123-B1 (wave 29) — pairs with the new rejectWords arm above: "I don't think this
+   * works for me" was matching acceptWords' bare "works (for me)" arm regardless of the
+   * preceding "don't think" negation. Suppresses accepted so the paired rejectWords arm
+   * (which now positively matches the same phrase) can set rejected=true instead. */
+  /* S153-B... (wave 59) — "Under no circumstances will I accept this — I'm walking
+   * away." fired accepted=true: acceptWords' bare "i accept" arm matched regardless of the
+   * preceding hard-denial modal, and accepted=true then suppressed the genuine trailing
+   * walkAway declaration via the base clause's `!accepted` gate, desyncing from
+   * isWalkAway() (already correct). Mirrors DEPARTURE_NEGATOR's "under no circumstances /
+   * no way / never" arms in _walkaway-detection.ts, applied here to the accept verb
+   * instead of the departure verb. */
+  const acceptNegationRe = /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|won.?t|wouldn.?t)\s+think\s+(?:\w+\s+){0,3}works?\b|\b(?:under\s+no\s+circumstances|no\s+way|never)\s+(?:will\s+i\s+|would\s+i\s+|am\s+i\s+(?:going\s+to\s+)?)?(?:\w+\s+){0,2}accept\b/i;
+  /* S127-B1 (wave 33) — "Sticking with 30 LPA is what I need. That works for me
+   * otherwise." fired accepted=true AND rejected=true simultaneously: the number-lock
+   * reject signal (added in S126-B1) is unambiguous and self-contained, but downstream
+   * callers (follow-up.ts's intentBanner) branch on `accepted` FIRST and would tell the
+   * LLM to "TAKE THE YES" while the candidate is still firmly holding their own number —
+   * a contradictory, dishonest signal. A live number-lock means the candidate hasn't
+   * actually agreed to terms, so it must suppress accepted too, not just co-fire reject. */
+  /* S128-B1 (wave 34) — Hindi anchor "<number> se kam nahi lunga/lungi" ("I won't take
+   * less than <number>") is semantically identical to the English number-lock arms but
+   * had no equivalent here, so it fell through to walkAwayWords' bare "nahi lung[ai]" arm
+   * instead — misfiring walkAway on a candidate who is still actively anchoring a number,
+   * not leaving. Added as its own arm (no lookahead needed: "kam" ("less") is inherently
+   * comparative, so it only ever follows a stated number). S129-B4 (wave 35) — the arm
+   * only covered "lena" (take) conjugations, so "X se kam nahi chalega" ("won't work for
+   * me below X") returned no signal at all; added "chalega" alongside.
+   * S141-B4 (wave 47) — "stick(?:ing)? with" covered bare + gerund but not the irregular
+   * past tense "stuck with" ("I stuck with my number of 30 lakhs."), unlike no signal at
+   * all being returned for that phrasing. Added stuck as its own alternative.
+   * S142-B3 (wave 48) - "stuck" only paired with "with"; its sibling verbs (hold/stay/
+   * firm) all support "at" too. Added "at" as a second preposition for stuck.
+   * S142-B4 (wave 48) - the lookahead only recognized a literal digit or a lakh/lpa/crore
+   * unit word, so a spelled-out number with no unit word ("Sticking with thirty.")
+   * returned no signal at all. Added a spelled-out cardinal-number word alternative. */
+  /* S145-B4 (wave 51) — "I'm sticking between 26 and 28 lakhs." returned no signal at all:
+   * the "stick(?:ing)?" arm required a literal "with" immediately after, so the bare
+   * "sticking between X and Y" range form (no "with") fell through entirely. */
+  const numberLockWords = /\b(?:stick(?:ing)?\s+(?:with|between)|stuck\s+(?:with|at)|hold(?:ing)?\s+(?:at|firm)|stay(?:ing)?\s+at|firm\s+at)(?=[^.]*\b(?:lakh|lpa|crore|cr\b|\d|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand))\b|\bse\s+kam\s+nahi\s+(?:lung[ai]|loong[ai]|chalega)\b/i;
+  /* S135-B1 (wave 41) — numberLockWords.test(trimmed) scanned the ENTIRE reply for a
+   * number-lock phrase ANYWHERE, so an unrelated number-lock in a later/earlier sentence
+   * blanket-suppressed an accept/walk-away signal in a totally different sentence
+   * ("I accept. Also, I'm sticking with 30 LPA." never fired accepted=true; "I'm out.
+   * Also, I'm sticking with 30 LPA." never fired walkAway=true even though isWalkAway()
+   * correctly did, a live divergence between the two functions).
+   * Naively scoping the guard to only the SAME sentence as the match broke the existing
+   * S127-B1 regression ("Sticking with 30 LPA is what I need. That works for me
+   * otherwise." → accepted must stay false) — there the accept sentence anaphorically
+   * refers back to the just-stated number ("that works for me" = the 30 LPA), so
+   * cross-sentence suppression is still correct by default. The distinguishing signal is
+   * whether the number-lock sentence is flagged as a distinct, separate remark via a
+   * new-topic discourse marker ("Also," "Additionally," "By the way," "Separately,") — only
+   * THEN does a cross-sentence lock stop applying; a same-sentence lock always applies
+   * (S128-B1's Hindi idiom keeps suppressing correctly, same sentence either way). */
+  const newTopicMarkerRe = /^\s*(?:also|additionally|besides|separately|by\s+the\s+way|aside\s+from\s+(?:that|this))\b/i;
+  function sentenceAroundLocal(text: string, idx: number): string {
+    const enders = /[.!?]/g;
+    let start = 0;
+    let end = text.length;
+    let m: RegExpExecArray | null;
+    while ((m = enders.exec(text))) {
+      if (m.index < idx) start = m.index + 1;
+      else { end = m.index; break; }
+    }
+    return text.slice(start, end);
+  }
+  function numberLockAppliesToLocal(text: string, match: RegExpExecArray | null): boolean {
+    if (!match || !numberLockWords.test(text)) return false;
+    const matchSentence = sentenceAroundLocal(text, match.index);
+    if (numberLockWords.test(matchSentence)) return true;
+    const lockMatch = numberLockWords.exec(text);
+    if (lockMatch && newTopicMarkerRe.test(sentenceAroundLocal(text, lockMatch.index))) return false;
+    return true;
+  }
+  const acceptMatchForLock = acceptWords.exec(trimmed);
+  /* S145-B3 (wave 51) — "I accept. Actually no, I'm walking away." fired accepted=true
+   * and walkAway=false: nothing suppressed the base accept clause when a later, un-hedged
+   * "Actually (no,) ..." retraction reverses it into a walk-away. The existing hedge-gated
+   * rescue OR-branches on walkAway (S133-B2/S129-B1) only cover hedge-word ("but") framed
+   * reversals, not this bare "Actually" retraction marker. The reverse ordering ("I'm
+   * walking away. Actually no, I accept.") already resolves correctly here because the
+   * base walkAway clause already gates on `!accepted`. */
+  /* S153-B... (wave 59) — "I accept — just kidding, obviously I'm walking away from this
+   * joke of an offer." fired walkAway=false: retractionMarkerRe only ever recognized the
+   * literal word "actually" as a retraction cue, not "just kidding" — a common, equally
+   * unambiguous retraction marker. Widened; mirrors the identical widening in
+   * RETRACTION_MARKER in _walkaway-detection.ts — keep in sync.
+   * S154-B... (wave 62) — "jk jk" (texting-slang "just kidding") mirrors the identical
+   * widening of RETRACTION_MARKER in _walkaway-detection.ts — keep in sync. */
+  const retractionMarkerRe = /\bactually\b[,]?\s*(?:no[,]?\s*)?|\bno\s+wait\b[,]?\s*(?:i\s+mean\b[,]?\s*)?|\bjust\s+kidding\b[!.,]?\s*|\bjk\s*jk\b[!.,]?\s*|\bjk\b[!.,]?\s*/i;
+  const retractionMatch = retractionMarkerRe.exec(trimmed);
+  const postRetractionText = retractionMatch
+    ? trimmed.slice(retractionMatch.index + retractionMatch[0].length)
+    : "";
+  /* S154-B... (wave 60) — "No wait, I'm not walking away, I mean I'm walking straight into
+   * this deal." fired walkAway=true: retractionNegatesWalkAway only recognized a leading
+   * "don't/won't" negator, missing the equally common "I'm not"/"I am not" subject+negator
+   * frame that a "no wait" retraction marker commonly precedes. Widened to accept an
+   * optional leading subject pronoun before the negator. */
+  const retractionNegatesWalkAway =
+    /^(?:i(?:['’]m|\s+am)\s+)?(?:don.?t|do\s+not|won.?t|will\s+not|not)\s+/i.test(postRetractionText);
+  /* S94-B1 exception (mirrors postHedgeWalkAwayIsConditionalThreat) — "Sounds good, but
+   * actually I am walking away if you cannot match it." is a conditional ultimatum, not a
+   * genuine retraction: the candidate hasn't actually left. An "if" in postRetractionText
+   * means it's a threat, not an unconditional walk-away statement. */
+  const retractionIsConditionalThreat = /\bif\b/i.test(postRetractionText);
+  /* S154-B... (wave 63) — "It's not like I'm not withdrawing — oh wait, I actually take that
+   * back, I'm not withdrawing after all." fired walkAway=true, diverging from isWalkAway()
+   * (correctly false): retractionNegatesWalkAway only ever checks whether postRetractionText
+   * STARTS with a negator (`^...`), so a negator that instead sits directly in front of the
+   * departure verb further into the same clause ("take that back, I'm not withdrawing after
+   * all") was invisible to it. Needs its own proximate check here rather than reusing
+   * walkAwayNegationCoversLocal() below — that helper depends on walkAwayNegationRe/
+   * DEPARTURE_VERB_LOCAL, both declared later in this function, so calling it this early
+   * hits a TDZ error. */
+  const postRetractionWalkAwayMatch = walkAwayWords.exec(postRetractionText);
+  const RETRACTION_NEGATOR_PROXIMATE_RE =
+    /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|won.?t|wouldn.?t|would\s+not|never|not)\s+(?:[\w']+\s+){0,3}$/i;
+  const retractionNegatesWalkAwayProximate =
+    !!postRetractionWalkAwayMatch &&
+    RETRACTION_NEGATOR_PROXIMATE_RE.test(postRetractionText.slice(0, postRetractionWalkAwayMatch.index));
+  const retractionToWalkAway =
+    !!retractionMatch &&
+    walkAwayWords.test(postRetractionText) &&
+    !retractionNegatesWalkAway &&
+    !retractionNegatesWalkAwayProximate &&
+    !retractionIsConditionalThreat;
+  /* S147-B2 (wave 53) — "I'm walking away, but give me a day to think, actually I accept."
+   * fired {accepted:true, walkAway:true} simultaneously: the S133-B2 pre-hedge OR-branch
+   * below has no guard for a LATER, un-hedged "Actually ..." retraction that reverses it
+   * into an accept — unlike the mirror direction (retractionToWalkAway above), which
+   * already guards the `accepted` formula. This also desynced from isWalkAway(), whose
+   * S145-B3 retractsToAccept() guard already handles this correctly. Mirrors
+   * retractsToAccept() in _walkaway-detection.ts — keep in sync. */
+  const RETRACTS_TO_ACCEPT_LOCAL = /^(?:i\s+)?(?:accept|agree|deal)\b|^(?:i\s+)?ok(?:ay)?\b|^yes\b/i;
+  /* S154-B... (wave 61) — "...okay actually, yes, walking away, confirmed." fired
+   * walkAway=false: a bare "yes" opening postRetractionText matched RETRACTS_TO_ACCEPT_LOCAL
+   * even though the very same postRetractionText goes on to state an unhedged, un-negated
+   * walk-away right after it — the "yes" there confirms the departure itself, not an accept
+   * of the deal. Don't let a leading short-affirmative override when the same text also
+   * contains a genuine, un-negated walk-away phrase (mirrors retractionToWalkAway's own
+   * negation-aware gate in the opposite direction). */
+  const retractionToAccept =
+    !!retractionMatch && RETRACTS_TO_ACCEPT_LOCAL.test(postRetractionText) && !walkAwayWords.test(postRetractionText);
+  /* S145-B2 (wave 51) — hedgeIsDeflection only gated isShortAffirmativeHedged, but
+   * "Before that, what's your best number, but yes I'm on board." reaches `accepted`
+   * via the hasAccept path ("on board" matches acceptWords directly), which had no
+   * deflection guard at all. Mirrors hedgeIsRejection's scope (gates the whole formula). */
+  const accepted = (hasAccept || isShortAffirmative || isShortAffirmativeHedged) && !hedgeIsRejection && !hedgeIsDeflection && !acceptNegationRe.test(trimmed) && !(hasAccept ? numberLockAppliesToLocal(trimmed, acceptMatchForLock) : numberLockWords.test(trimmed)) && !acceptSarcasmRe.test(trimmed) && !retractionToWalkAway;
+  const conditionalAccept = accepted && (hasHedgeAfterAccept || isShortAffirmativeConditional);
+  /* S117-B5 FP: "I don't think I need more equity" fires rejected because the
+   * lookbehind (?<!n't\s) only checks 4 chars before "need" — "think I" breaks
+   * the adjacency. Suppress when a long-range "don't think I need/want" pattern fires. */
+  const rejNegationRe = /\b(?:don.?t|doesn.?t|do\s+not|does\s+not)\s+think\s+(?:i\s+)?(?:need|want|like)\s+(?:a\s+)?(?:more|higher|additional|extra|better)\b/i;
+  /* S123-B2 (wave 29) — double-negative reassurance ("It's not like I'm not interested.",
+   * "I can't say I'm not interested.") matched the bare "not interested" arm in both
+   * rejectWords and walkAwayWords, terminating a live negotiation on what was actually a
+   * statement of continued engagement. Mirrors NOT_INTERESTED_DOUBLE_NEGATION in
+   * _walkaway-detection.ts — keep in sync. */
+  const notInterestedDoubleNegationRe = /\b(?:not\s+like|not\s+that|isn.?t\s+that|can(?:not|.t)\s+say|wouldn.?t\s+say)\s+(?:i.?m|i\s+am)\s+not\s+interested\b|(?:i.?m|i\s+am)\s+not\s+not\s+interested\b/i;
+  /* S94-B1 (2026-07-26) — "Sounds good, but actually I am walking away if you cannot
+   * match it." returned walkAway=false because the accept signal ("sounds good") in the
+   * pre-hedge clause suppressed the walk signal. Fix: also fire when walkAwayWords appears
+   * in the post-hedge segment, regardless of any pre-hedge accept. */
+  /* S121-B7 (wave 27, highest severity) — "I was about to walk away but let's talk more"
+   * fired walkAway=true (and rejected=true) even though the candidate is explicitly
+   * retracting the departure. "was about/going to X" is a retraction frame, not an
+   * intent-to-depart — add it as a negator prefix.
+   * S122-B1 (wave 28) — "I'm not walking away, just need a moment to think" fell through:
+   * a bare "not" directly modifying the departure gerund wasn't in the negator set (only
+   * multi-word negator phrases were), and "walking away" (gerund) wasn't matched by the
+   * "walk\s+away" verb group either — only "walk away"/"walking away" without a leading
+   * "not" was suppressed. This also desynced from DEPARTURE_NEGATOR in
+   * _walkaway-detection.ts, which already treats bare "not" as a negator. Fixed by adding
+   * a separate bare-"not" branch with a TIGHT 0-1 word gap (not the shared 0-4 word gap
+   * used by the longer negator phrases) — a wide gap on bare "not" would risk suppressing
+   * genuine future-conditional walk-aways like "I'm not sure, but I will walk away if you
+   * don't match." (4 words between "not" and "walk away" there). Also broadened the verb
+   * group to accept the gerund form ("walking away", "declining").
+   * S143-B1/B4 (wave 49) — "wouldn't"/"would not" was missing from the negator list, so
+   * "I wouldn't walk away even if you don't move on the number." fired rejected=true AND
+   * walkAway=true instead of a clean walk-away denial. This also desynced from
+   * DEPARTURE_NEGATOR in _walkaway-detection.ts, whose trailing generic n't catch-all
+   * already covered "wouldn't" — isWalkAway() got this right while detectCandidateIntent()
+   * didn't. Added wouldn.?t|would\s+not alongside won.?t. */
+  /* S148-B1 (wave 54) — "I can't say I'm not interested, but I also can't say I'm
+   * walking away." (a double-litotes reassurance — neither uninterested nor departing)
+   * fired walkAway=true, desyncing from isWalkAway() (already correct via
+   * DEPARTURE_NEGATOR's `can(?:not|.t)\s+say` arm in _walkaway-detection.ts). This
+   * negator list was missing the "can't/cannot say" litotes frame entirely. */
+  /* S148-B1's "can't say I'm walking away" gap-word requires the {0,4} filler group to
+   * span a contraction ("i'm") between "say" and the departure verb — \w+ alone doesn't
+   * match apostrophes, so it silently failed to bridge that specific gap. Widened to
+   * [\w']+ so contraction pronouns count as a single filler word like any other. */
+  /* S150-B2 (wave 56) — the negator alternation enumerated explicit forms
+   * (don't/won't/wouldn't/...) but had no "ain't" arm, unlike DEPARTURE_NEGATOR
+   * in _walkaway-detection.ts, which incidentally catches it via its generic
+   * bare `n['']t\b` catch-all. "I ain't walking away from this deal." (a
+   * reassurance, "ain't" = "am not") desynced: isWalkAway() correctly
+   * suppressed it, walkAway fired true here. Added "ain.?t" as an explicit arm. */
+  /* S152-B... (wave 58) — "No way am I walking away from this offer." / "There's no way
+   * I'll withdraw from this process." / "Under no circumstances will I walk away from this
+   * deal." all fired true: the negator alternation had no "no way" or "under no
+   * circumstances" arm, unlike DEPARTURE_NEGATOR in _walkaway-detection.ts (which already
+   * had "no way" but was also missing "under no circumstances" — added there too). Added
+   * both, mirrored — keep in sync. */
+  /* S153-B... (wave 59) — "I'm not saying no, and I'm not saying I'm walking away — I just
+   * need a day to think." fired walkAway=true: the bare "not" negator arm only spans a
+   * {0,1}-word gap (too narrow to bridge "not saying I'm walking away"'s two-word "saying
+   * I'm" gap), while the phrase-specific arms above it all use a wider {0,4} gap. "not
+   * saying" is itself a hedge/litotes frame (declining to assert, not asserting a denial)
+   * so it belongs with the wide-gap group, not the narrow bare-"not" one. Mirrors
+   * DEPARTURE_NEGATOR in _walkaway-detection.ts, whose lookback-based, 5-word-gap design
+   * already covers this shape without needing a dedicated arm. */
+  /* S154-B... (wave 61) — "I can't say I'm not withdrawing." (alone) fired walkAway=true:
+   * the departure-verb group's "withdraw" arm had no "(?:ing)?" suffix, so the trailing
+   * \b never matched inside "withdrawing" and the negator never covered it — unlike its
+   * sibling "walk(?:ing)?\s+away" arm, which already handles the gerund form. Desynced
+   * from isWalkAway(), whose NEGATABLE_DEPARTURE/DEPARTURE_NEGATOR pairing already covers
+   * "withdrawing" correctly. */
+  /* S154-B... (wave 62) — "I WOULD NEVER EVER WALK AWAY FROM THIS." fired walkAway=true:
+   * the negator group only had "never want to" (a specific phrase), never a bare "never"
+   * arm, unlike DEPARTURE_NEGATOR in _walkaway-detection.ts (which already has a bare
+   * "never" arm and correctly suppressed this). Added bare "never" alongside the other
+   * wide-gap negators — mirrors DEPARTURE_NEGATOR, keep in sync. */
+  const walkAwayNegationRe = /\b(?:(?:don.?t|do\s+not|doesn.?t|does\s+not|not\s+ready\s+to|not\s+going\s+to|never\s+want\s+to|never|won.?t|wouldn.?t|would\s+not|ain.?t|can(?:not|.?t)\s+say|couldn.?t\s+say|not\s+saying|not\s+think\s+(?:i|we)\s+need\s+to|was\s+(?:about|going)\s+to|no\s+way|under\s+no\s+circumstances)\s+(?:[\w']+\s+){0,4}|not\s+(?:[\w']+\s+){0,1})(?:walk(?:ing)?\s+away|withdraw(?:ing)?|part(?:ing)?\s+ways|declin(?:e|ing)|pass|exit)\b/i;
+  /* S120-B1 — "I don't want to walk away" was firing rejected=true via rejectWords'
+   * bare "walk away" arm even though walkAwayNegationRe correctly suppressed walkAway.
+   * The negation guard only ever protected the walkAway field; apply it to rejected too.
+   * S126-B2 (wave 32) — that guard originally applied to ANY rejectWords match, not just
+   * the walk-away arm, so "I won't accept this but I won't walk away either" lost its
+   * genuine, unrelated "won't accept" reject signal to an unrelated walk-away negation
+   * elsewhere in the same reply. Scope the guard to only the case where rejectWords'
+   * actual first match IS the walk-away arm. */
+  const rejectMatch = rejectWords.exec(trimmed);
+  const rejectMatchIsWalkAwayArm = !!rejectMatch && /^walk\s+away/i.test(rejectMatch[0]);
+  /* S126-B1 (wave 32) — "That works for me. Sticking with 30 LPA is what I need." lost its
+   * firm number-lock signal ("sticking with 30 LPA") to the `!accepted` guard, because an
+   * unrelated accept phrase ("works for me") appeared earlier in the same reply. The
+   * number-lock arms are an unambiguous, self-contained reject signal (a number lock only
+   * fires when a lakh/lpa/crore/digit is in the same sentence) — carve them out of the
+   * accept-guarded check so they aren't silently suppressed by an unrelated accept clause.
+   * (numberLockWords is defined above, alongside `accepted`, which now also excludes it —
+   * see S127-B1.) */
+  /* S132-B4 (wave 38) — walkAwayWords/rejectWords had no first-person subject guard for
+   * reported/third-party speech ("My friend said I should walk away."), so someone relaying
+   * advice or a recruiter's/employer's own stance was misread as the candidate's own
+   * walk-away or rejection. Mirrors thirdPartyOfferRe's guard on mentionedCompeting. */
+  /* S149-B1 (wave 55) — "My manager's told me I should just walk away." lost the
+   * third-party guard: the possessive contraction "manager's" glues directly onto the
+   * noun with no leading space, so the \w+ filler-word gap (which requires whitespace
+   * before each token) couldn't bridge from the noun to "told me". Widened to [\w']+
+   * so a possessive 's counts as part of the noun itself, same fix shape as wave 54's
+   * walkAwayNegationRe contraction gap. Mirrors THIRD_PARTY_DEPARTURE in
+   * _walkaway-detection.ts — keep in sync. */
+  const thirdPartyDepartureRe =
+    /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family|company|team|employer)['']?s?\b(?:\s+[\w']+){0,6}\s*(?:said|told\s+me|mentioned|suggested|advised|recommended|thinks?|feels?|believes?|says?)\b/i;
+  /* S152-B... (wave 58) — thirdPartyDepartureRe only recognizes REPORTED SPEECH ("my friend
+   * SAID I should walk away"), not a third party's own direct action ("My friend IS walking
+   * away from her offer"). That left two related, opposite-direction bugs from a flat
+   * whole-string veto with no clause scoping:
+   *   • "My manager told me to walk away, but I'm also walking away myself." — the reported-
+   *     speech clause about the manager wrongly suppressed the candidate's own, later,
+   *     genuine departure clause.
+   *   • "My friend is walking away from her offer, but I accept mine." — the friend's own
+   *     departure (no reporting verb, so thirdPartyDepartureRe didn't even match) was
+   *     misattributed to the candidate.
+   * Fix: add a pattern for a third party's own direct departure action, and scope both
+   * third-party patterns to the clause they appear in — a third-party clause no longer
+   * vetoes a genuine departure clause elsewhere in the same reply. Mirrors
+   * THIRD_PARTY_OWN_DEPARTURE / the identical fix in _walkaway-detection.ts — keep in sync. */
+  const thirdPartyOwnDepartureRe =
+    /\b(?:my|his|her|their|our|the)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner|recruiter|manager|lawyer|family)['']?s?\b(?:\s+[\w']+){0,4}\s+(?:is|are|was|were|['']s|['']re)\s+(?:[\w']+\s+){0,2}(?:walk(?:ing)?(?:\s+away)?|withdraw(?:ing)?|declin(?:e|ing)|pull(?:ing)?\s+out|part(?:ing)?\s+ways)\b/i;
+  const thirdPartyClauseSplitRe = /[.;]+|\b(?:but|yet|however|although|though)\b/i;
+  function hasOwnDepartureLocal(text: string): boolean {
+    return text
+      .split(thirdPartyClauseSplitRe)
+      .some(
+        (clause) =>
+          walkAwayWords.test(clause) &&
+          !thirdPartyDepartureRe.test(clause) &&
+          !thirdPartyOwnDepartureRe.test(clause),
+      );
+  }
+  const thirdPartyDepartureVetoes = (trimmedText: string) =>
+    (thirdPartyDepartureRe.test(trimmedText) || thirdPartyOwnDepartureRe.test(trimmedText)) &&
+    !hasOwnDepartureLocal(trimmedText);
+  /* S133-B3 (wave 39) — a trailing elliptical negation ("I considered walking away, but I
+   * won't.") retracts an earlier departure verb without repeating it. walkAwayNegationRe
+   * only looks for a negator BEFORE the departure verb within a bounded gap; this catches
+   * the trailing form referring back to it. Scoped to require the negator be the final
+   * clause (nothing meaningful after it) so it doesn't suppress "...but I won't accept
+   * less than X", where content follows the negator and introduces an unrelated point. */
+  const trailingRetractionRe =
+    /[,;]?\s*but\s+i\s+(?:won.?t|wouldn.?t|don.?t|didn.?t|will\s+not|would\s+not|do\s+not|did\s+not)\.?\s*$/i;
+  const rejected = !thirdPartyDepartureVetoes(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
+    (rejectWords.test(trimmed) && !accepted && !rejNegationRe.test(trimmed) && !(rejectMatchIsWalkAwayArm && walkAwayNegationRe.test(trimmed)) && !notInterestedDoubleNegationRe.test(trimmed))
+    || (numberLockWords.test(trimmed) && !rejNegationRe.test(trimmed) && !walkAwayNegationRe.test(trimmed) && !notInterestedDoubleNegationRe.test(trimmed)));
   const deflected = deflectWords.test(trimmed);
-  const walkAway = walkAwayWords.test(trimmed) && !acceptWords.test(trimmed);
+  /* S125-B (wave 31) — the post-hedge fallback used to skip walkAwayNegationRe entirely
+   * ("I will not accept this, but I will not walk away either" wrongly fired true). But
+   * naively re-adding `!walkAwayNegationRe.test(postHedgeText)` broke "but if this does
+   * not improve I am walking away" (S94-B1) — the wide 0-4 word gap on "does not" lets the
+   * negator jump across an unrelated subject-reset clause ("does not improve, I am ...").
+   * Mirrors stripNegatedDepartures()'s fix in _walkaway-detection.ts: only treat the
+   * negation as covering the walk-phrase if there's no fresh "I will/I'm/I am" subject+
+   * modal reassertion in the 48 chars immediately before the walk match. */
+  /* S148-B1 (wave 54) — a RECLAIMED_INTENT_LOCAL override used to assume a fresh "I'm/I
+   * will" right before the departure verb was always a reassertion AFTER an unrelated
+   * earlier negation (S124-B2's "if you don't match this, I will walk away"). But "I also
+   * can't say I'm walking away." has the subject pronoun as the DIRECT OBJECT CLAUSE of the
+   * "can't say" litotes itself — not a reassertion following it — so the override wrongly
+   * re-enabled walkAway. That was fixed by requiring the litotes frame (SAY_LITOTES_LOCAL)
+   * to win over the override in that case.
+   * S149-B2 (wave 55) — widened beyond the literal "can't/couldn't say" frame: "I never
+   * want to say I'm walking away." / "I don't want to say I'm walking away." are the same
+   * litotes shape with a different say-verb negator and hit the identical bug.
+   * S152-B... (wave 58) — REMOVED RECLAIMED_INTENT_LOCAL and its override entirely. Wave 57
+   * added clauseBoundedLookbackLocal(), which truncates the lookback at the nearest clause
+   * boundary before walkAwayNegationRe ever runs against it — so the original S124-B2 case
+   * already loses its negator before this point (the lookback becomes just " i will ", which
+   * walkAwayNegationRe doesn't match at all). The override was only still reachable when a
+   * negator's OWN phrasing happens to end in "I'll/I'm/I will" within the SAME clause as the
+   * verb (e.g. "There's no way I'll withdraw..."), where it wrongly treated the negator's own
+   * tail as a fresh reassertion. Removed rather than special-cased per negator phrase —
+   * clause-bounded lookback already covers the genuine cross-clause case. The "can't/don't
+   * want to say" litotes frame is still correctly handled: those phrases are negator arms
+   * inside walkAwayNegationRe itself, so negatorCoversThis alone now covers them without a
+   * separate SAY_LITOTES_LOCAL check. Mirrors the identical removal in
+   * _walkaway-detection.ts's stripNegatedDepartures() — keep in sync.
+   * S152-B... (wave 58, correction) — that removal broke "I don't want to walk away, but
+   * if you don't match this I will walk away." (existing permanent test): the postHedgeText
+   * "if you don't match this i will walk away." has no comma/but/yet/... between "this" and
+   * "i will", so clauseBoundedLookbackLocal does NOT truncate the negator away here — unlike
+   * the original S124-B2 text, which had a comma. Reintroduced RECLAIMED_INTENT_LOCAL, but
+   * scoped narrowly this time: it only overrides (un-negates) when the lookback ALSO
+   * contains a subject-shift word (you/it/this/that/he/she/they/we) between the negator and
+   * the reasserting "I will/I'm" — i.e. a genuine subject change ("you don't match THIS, I
+   * will...") rather than the negator's own phrasing simply ending in "I'll/I will" within
+   * the same clause about the same subject ("no way I'll...", "under no circumstances will
+   * I..." — no subject-shift word present, so the override correctly stays inert there). */
+  const RECLAIMED_INTENT_LOCAL =
+    /\b(?:i\s+will|i['']?ll|i\s+am\s+going\s+to|i['']?m\s+going\s+to|i\s+am|i['']?m)\s*$/i;
+  const SUBJECT_SHIFT_RE_LOCAL = /\b(?:you|it|this|that|he|she|they|we)\b/i;
+  /* Locates the bare departure verb (not the full walkAwayWords match, which for arms like
+   * the bare-verb "i am walking away" already swallows the subject+modal itself, hiding the
+   * "I am" reassertion inside the match instead of leaving it in the lookback window). */
+  const DEPARTURE_VERB_LOCAL =
+    /\bwalk(?:ing|in)?(?:\s+away|\s+out)\b|\bwalk(?:ing|in)?\b(?=[.,!?;]|\s*$)|declin(?:e|ing)\b|withdraw(?:ing)?\b|part(?:ing)?\s+ways\b|pull(?:ing)?\s+out\b/gi;
+  /* S150-B1 (wave 56) — this only ever inspected the FIRST DEPARTURE_VERB_LOCAL match in the
+   * text (a non-global .exec() always returns match #1), then applied that single verdict as a
+   * blanket gate over the whole string. "I can't say I'm walking away, I can't say I'm walking
+   * away, I am walking away." has its first two departure-verb instances genuinely covered by
+   * SAY_LITOTES_LOCAL, but a third, un-negated, unhedged "I am walking away" later in the same
+   * reply — that third instance was silently discarded, desyncing from isWalkAway() (whose
+   * stripNegatedDepartures() correctly evaluates every occurrence independently via a global
+   * replace). Loop over every departure-verb occurrence; only report "covered" (suppress) if
+   * ALL of them are covered — a single genuine, uncovered instance means the candidate really
+   * is walking away somewhere in the reply. */
+  /* S151-B... (wave 57) — the fixed 48-char lookback had no concept of a clause boundary,
+   * so a negator from an EARLIER, unrelated clause ("I won't decline, I won't decline, but
+   * I decline.") reached across a comma/"but" into a LATER clause and wrongly covered a
+   * genuinely fresh, un-negated departure there. A negator can only govern a departure verb
+   * in the same clause — truncate the lookback at the nearest preceding clause-boundary
+   * marker first. Mirrors the identical fix in _walkaway-detection.ts's
+   * stripNegatedDepartures() — keep in sync. */
+  const CLAUSE_BOUNDARY_RE_LOCAL = /[,;.]|\b(?:but|yet|however|although|though)\b/gi;
+  function clauseBoundedLookbackLocal(full: string, matchIndex: number, maxChars: number): string {
+    const windowStart = Math.max(0, matchIndex - maxChars);
+    const window = full.slice(windowStart, matchIndex);
+    CLAUSE_BOUNDARY_RE_LOCAL.lastIndex = 0;
+    let lastBoundaryEnd = 0;
+    let bm: RegExpExecArray | null;
+    while ((bm = CLAUSE_BOUNDARY_RE_LOCAL.exec(window))) {
+      lastBoundaryEnd = bm.index + bm[0].length;
+    }
+    return window.slice(lastBoundaryEnd);
+  }
+  /* S151-B... (wave 57) — "covered" used to default to true for ANY occurrence lacking a
+   * RECLAIMED_INTENT_LOCAL match, even when that occurrence has no negator adjacent to it
+   * at all — the outer `walkAwayNegationRe.test(text)` gate only confirms a negator exists
+   * SOMEWHERE in the whole string, not that it governs THIS occurrence. Require the negator
+   * to actually match within this occurrence's own clause-bounded window before treating it
+   * as negated at all. */
+  /* S154-B... (wave 61) — "Under no circumstances will I not walk away — I mean it, I'm
+   * out." desynced from isWalkAway() (walkAway=true, correct): a primary negator ("under no
+   * circumstances"/"no way"/"never") followed later in the SAME clause by a second bare
+   * negation is a double negative that cancels back to an affirmed departure, not a
+   * suppressed one. isWalkAway()'s stripNegatedDepartures() already guards this via
+   * DOUBLE_NEGATION_CANCELS_RE; walkAwayNegationCoversLocal() had no equivalent, so it
+   * wrongly treated the double-negated departure as covered. Mirrors that guard. */
+  const DOUBLE_NEGATION_CANCELS_RE_LOCAL =
+    /\b(?:under\s+no\s+circumstances|no\s+way|never)\b(?:\s+\S+){0,4}?\s+(?:not|n['']t)\b\s*$/i;
+  function walkAwayNegationCoversLocal(text: string): boolean {
+    if (!walkAwayNegationRe.test(text)) return false;
+    DEPARTURE_VERB_LOCAL.lastIndex = 0;
+    let verbMatch: RegExpExecArray | null;
+    let sawAnyVerb = false;
+    while ((verbMatch = DEPARTURE_VERB_LOCAL.exec(text))) {
+      sawAnyVerb = true;
+      const lookback = clauseBoundedLookbackLocal(text, verbMatch.index, 48);
+      const verbEnd = verbMatch.index + verbMatch[0].length;
+      const segment = lookback + text.slice(verbMatch.index, verbEnd);
+      const negatorCoversThis = walkAwayNegationRe.test(segment);
+      const reclaimed = RECLAIMED_INTENT_LOCAL.test(lookback) && SUBJECT_SHIFT_RE_LOCAL.test(lookback);
+      const doubleNegationCancels = DOUBLE_NEGATION_CANCELS_RE_LOCAL.test(lookback);
+      if (!negatorCoversThis || reclaimed || doubleNegationCancels) return false;
+    }
+    return sawAnyVerb;
+  }
+  /* S128-B1 (wave 34) — a live number-lock (see numberLockWords above) means the candidate
+   * is anchoring a number, not leaving; mirrors the same exclusion already applied to
+   * `accepted`/`rejected`.
+   * S146-B1 (wave 52) — "I'm sticking with 30 LPA, otherwise I'll walk away." desynced from
+   * isWalkAway() (which has no number-lock concept and correctly returned true): the number-
+   * lock suppression zeroed out an explicit, unconditional ultimatum just because it shares a
+   * sentence with the anchor. An "otherwise"/"else" between the lock and the departure verb
+   * marks it as a genuine standalone ultimatum, not part of the anchor statement itself. */
+  const baseWalkAwayMatch = walkAwayWords.exec(trimmed);
+  const walkAwaySentence = baseWalkAwayMatch ? sentenceAroundLocal(trimmed, baseWalkAwayMatch.index) : "";
+  const walkAwayIsExplicitUltimatum = /\b(?:otherwise|else)\b/i.test(walkAwaySentence);
+  /* S152-B... (wave 58) — "In your dreams if you think I'm walking away. I accept." fired
+   * walkAway=true: "if" is a hedge word, so this landed in the post-hedge OR-branch below
+   * (added by S94-B1 to deliberately fire "regardless of any PRE-hedge accept", e.g. "Sounds
+   * good, but actually I am walking away if you cannot match it."). But here the accept comes
+   * AFTER the walk-away phrase, inside postHedgeText itself ("...I'm walking away. I
+   * accept."), not before it — a genuine trailing retraction the post-hedge branch had no way
+   * to see. Mirrors RETRACTS_TO_ACCEPT_LOCAL's shape: if a bare accept clause immediately
+   * follows the walk-away match (after its own sentence boundary), the walk-away doesn't win. */
+  const walkAwayRetractedToAccept = (text: string): boolean => {
+    const match = walkAwayWords.exec(text);
+    if (!match) return false;
+    const tail = text.slice(match.index + match[0].length);
+    return /^[^.!?]*[.!?]\s*(?:i\s+)?(?:accept|agree|deal)\b|^[^.!?]*[.!?]\s*(?:i\s+)?ok(?:ay)?\b|^[^.!?]*[.!?]\s*yes\b/i.test(tail);
+  };
+  /* S153-B... (wave 59) — "Not gonna lie, I'm this close to walking away, but honestly...
+   * I accept." fired walkAway=true: the preHedgeText OR-branch's walkAwayRetractedToAccept()
+   * guard only looks for an accept clause immediately following the walk-away match WITHIN
+   * preHedgeText itself, so it's blind to a genuine accept sitting on the far side of the
+   * hedge boundary in postHedgeText. Unlike the postHedgeText branch (which already gates
+   * on the hedge, not on what precedes it), the preHedgeText branch had no way to see a
+   * later, un-hedged accept overriding it at all.
+   * Regression guard (existing S133-B2 test) — "I'm walking away from the equity
+   * discussion, but I accept the base salary." must stay walkAway=true: that pre-hedge
+   * departure is a firm, topic-scoped statement (walking away from ONE component) that
+   * coexists with an unrelated accept on a DIFFERENT component — not a retraction of the
+   * same departure. Only apply the override when the pre-hedge walk-away mention is itself
+   * tentative/hedged language ("this close to", "leaning towards", ...) — mirrors
+   * SOFT_DEPARTURE_RE in _walkaway-detection.ts's hasUnhedgedAcceptClause, which draws the
+   * identical firm-vs-tentative line for the same reason. */
+  const SOFT_DEPARTURE_RE_LOCAL =
+    /\b(?:leaning\s+(?:towards?|to)|considering|thinking\s+(?:about|of)|might|may|could|possibly|probably|likely|tempted\s+to|(?:this|so)\s+close\s+to)\b/i;
+  const postHedgeIsGenuineAcceptLocal = hasAnyHedge && SOFT_DEPARTURE_RE_LOCAL.test(preHedgeText) && acceptWords.test(postHedgeText) && !walkAwayWords.test(postHedgeText) && !acceptSarcasmRe.test(postHedgeText);
+  const walkAway = !thirdPartyDepartureVetoes(trimmed) && !trailingRetractionRe.test(trimmed) && !walkAwaySarcasmRe.test(trimmed) && (
+    (walkAwayWords.test(trimmed) && !accepted && (!numberLockAppliesToLocal(trimmed, baseWalkAwayMatch) || walkAwayIsExplicitUltimatum) && !walkAwayNegationCoversLocal(trimmed) && !notInterestedDoubleNegationRe.test(trimmed))
+    || (hasAnyHedge && walkAwayWords.test(postHedgeText) && !numberLockWords.test(postHedgeText) && !walkAwayNegationCoversLocal(postHedgeText) && !notInterestedDoubleNegationRe.test(postHedgeText) && !walkAwayRetractedToAccept(postHedgeText))
+    || (hasAnyHedge && walkAwayWords.test(preHedgeText) && !numberLockWords.test(preHedgeText) && !walkAwayNegationCoversLocal(preHedgeText) && !notInterestedDoubleNegationRe.test(preHedgeText) && !walkAwayRetractedToAccept(preHedgeText) && !postHedgeIsGenuineAcceptLocal)
+    // S145-B3 (wave 51) — a later un-hedged "Actually no, I'm walking away." retraction
+    // reverses an earlier accept clause; see retractionToWalkAway above.
+    || retractionToWalkAway) && !retractionToAccept;
 
-  const candidateNum = extractCandidateSalaryNumber(trimmed);
   // "consider" co-occurring with a number is a counter, not a time request
-  const needsTime = thinkWords.test(trimmed) && candidateNum === null;
-  const mentionedCompeting = competingWords.test(trimmed);
+  /* S117-B7/B8/B9/B10 FPs: negated think-time phrases ("I don't need time", "no need
+   * to think about it", "not time to think") incorrectly set needsTime=true. */
+  const thinkNegationRe = /\b(?:don.?t|doesn.?t|do\s+not|does\s+not)\s+(?:need|want)\s+(?:more\s+)?(?:time|to\s+think|to\s+consider|to\s+decide)|no\s+need\s+to\s+(?:think|consider|decide|deliberate)|not\s+time\s+to\s+(?:think|decide|consider)|not\s+going\s+to\s+(?:think|consider|deliberate)|won.?t\s+(?:even\s+)?(?:think|need\s+to\s+think)|no\s+time\s+to\s+(?:think|decide|consider)\b/i;
+  /* S126-B3 (wave 32) — "I need a few days to think about the 45 LPA offer." was losing
+   * needsTime because ANY salary-shaped number in the text nulls candidateNum out, even
+   * when the number is plainly the recruiter's own offer being referenced back ("the/your
+   * X offer"), not a fresh counter from the candidate. Only let a number suppress needsTime
+   * when it isn't wrapped in that offer-reference framing. */
+  /* S135-B3 (wave 41) — the "the/your/this ... offer" framing missed common alternate
+   * phrasings that reference the SAME already-stated number without the literal word
+   * "offer", e.g. "the 40 LPA number you mentioned" / "that figure you quoted" — those
+   * lost needsTime exactly like the original S126-B3 "the X offer" case did. */
+  const numberIsOfferReferenceRe =
+    /\b(?:the|your|this)\b(?:\s+\S+){0,3}\s+offer\b|\b(?:number|figure|amount)\b(?:\s+\S+){0,3}\s+(?:you\s+)?(?:mentioned|stated|said|proposed|quoted|offered)\b/i;
+  /* S127-B2 (wave 33) — thinkNegationRe was tested against the WHOLE string, so
+   * "I don't need time to think about the base, but I do need a couple of days to think
+   * about the equity component." lost its genuine, unnegated second-clause needsTime
+   * signal to an unrelated negation in the first clause. Split on clause-connecting
+   * conjunctions and require the positive thinkWords match and its negation check to be
+   * in the SAME clause. */
+  const needsTimeClauses = trimmed.split(/,?\s*\b(?:but|however|although|though|yet)\b\s*/i);
+  /* S128-B2 (wave 34) — "Give me a couple of days, my target is 40 LPA minimum." lost
+   * needsTime entirely: the whole-string candidateNum gate (added in S126-B3 for the
+   * "consider 30 LPA" counter-in-disguise case) nulled out the genuine, unambiguous
+   * time-request clause just because an UNRELATED clause elsewhere stated a target
+   * number. Scope the number check to the SAME clause as the thinkWords match (splitting
+   * on commas too, since target-number statements are often comma-joined rather than
+   * conjunction-joined) so a number in one clause no longer suppresses a genuine,
+   * separate time-request in another. */
+  const needsTimeNumberClauses = trimmed.split(/,?\s*\b(?:but|however|although|though|yet)\b\s*|,\s*/i);
+  const needsTime =
+    needsTimeClauses.some((clause) => thinkWords.test(clause) && !thinkNegationRe.test(clause)) &&
+    needsTimeNumberClauses.some((clause) => {
+      if (!thinkWords.test(clause)) return false;
+      const clauseNum = extractCandidateSalaryNumber(clause);
+      return clauseNum === null || numberIsOfferReferenceRe.test(clause);
+    });
+  /* S127-B3 (wave 33) — competingWords had no first-person subject guard, so
+   * third-party offers ("My friend got an offer of 40 LPA.") were misread as the
+   * candidate's own competing offer/BATNA. */
+  const thirdPartyOfferRe =
+    /\b(?:my|his|her|their|our)\s+(?:friend|brother|sister|colleague|cousin|classmate|batchmate|senior|junior|relative|husband|wife|partner)\b(?:\s+\w+){0,4}\s*(?:got|received|has|have|had)\s+(?:an\s+)?offer/i;
+  /* S129-B3 (wave 35) — competingWords had no negation guard, so "I don't have another
+   * offer, but I am exploring one." / "I haven't received any other offer yet." misfired
+   * mentionedCompeting=true off the bare phrase match, ignoring the negation right in
+   * front of it. Guard on negation immediately preceding the matched phrase within the
+   * same clause (splitting on conjunctions/commas so a negation in one clause doesn't
+   * suppress a genuine competing-offer mention in another). */
+  const competingNegationRe =
+    /\b(?:don.?t|do\s+not|doesn.?t|does\s+not|didn.?t|did\s+not|haven.?t|have\s+not|hasn.?t|has\s+not|no|not)\s+(?:\w+\s+){0,3}(?:other offer|another offer|another opportunity|competing|another company|other companies|other options|other opportunities|counter.?offer|multiple offers|any\s+other|an?\s+offer|offer)/i;
+  const competingClauses = trimmed.split(/,?\s*\b(?:but|however|although|though|yet)\b\s*|,\s*/i);
+  const mentionedCompeting =
+    !thirdPartyOfferRe.test(trimmed) &&
+    competingClauses.some((clause) => competingWords.test(clause) && !competingNegationRe.test(clause));
 
   return { accepted, conditionalAccept, rejected, walkAway, deflected, needsTime, mentionedCompeting };
 }
@@ -119,7 +1091,7 @@ export function extractCandidateSalaryNumber(answer: string): string | null {
 
   // Bare-number fallback when no LPA suffix was found
   if (allNums.length === 0) {
-    const bareNumMatch = answer.match(/(?:expecting|want|need|asking|target|hoping|looking for|around|about|at least|minimum)\s+(?:₹?\s*)?(\d+(?:\.\d+)?)\b/i);
+    const bareNumMatch = answer.match(/(?:expecting|want|need|asking|target|hoping|looking for|around|about|at least|minimum)\s+(?:₹?\s*)?(\d+(?:\.\d+)?)\b(?!\s*(?:hours?|days?|weeks?|months?|minutes?))/i);
     if (bareNumMatch) {
       const v = parseFloat(bareNumMatch[1]);
       if (v >= 3 && v <= 200) allNums.push(bareNumMatch[1]);

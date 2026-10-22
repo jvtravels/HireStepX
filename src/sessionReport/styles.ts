@@ -5,14 +5,14 @@
    `<style>{SESSION_REPORT_STYLES}</style>` at component-mount so the
    rest of the app (dark-luxury chrome) stays unaffected.
 
-   Print rules + scoped overrides are appended at the end of this
-   file so a single source of CSS truth ships with the report. */
+   Scoped overrides are appended at the end of this file so a single
+   source of CSS truth ships with the report. */
 
 export const SESSION_REPORT_STYLES = `
   .ir-row { display: flex; gap: 16px; flex-wrap: wrap; }
   .ir-tile-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(var(--ir-cols, 4), minmax(0, 1fr));
     gap: 14px;
   }
   @media (max-width: 880px) {
@@ -21,13 +21,39 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 480px) {
     .ir-tile-grid { grid-template-columns: 1fr; gap: 10px; }
   }
+  .ir-metric-tile { display: flex; flex-direction: column; gap: 8px; padding: 14px 16px; border: 1px solid oklch(0.955 0.004 265); border-radius: 12px; }
+  .ir-metric-label { font-size: 14px; color: oklch(0.55 0.02 213.5); }
+  .ir-metric-value { font-size: 28px; font-weight: 700; line-height: 1.1; letter-spacing: -0.02em; color: var(--foreground); }
+  .ir-metric-unit { font-size: 16px; font-weight: 500; color: oklch(0.55 0.02 213.5); margin-left: 3px; }
+  .ir-metric-target { font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-metric-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .ir-metric-hint { font-size: 12px; color: var(--foreground); }
+  .ir-meter { position: relative; height: 8px; margin: 4px 0; border-radius: 99px; background: oklch(0.955 0.004 265); }
+  .ir-meter-zone { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: rgba(21,128,61,0.18); }
+  .ir-meter-dot { position: absolute; top: -3px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; background: var(--foreground); border: 2px solid oklch(1 0 0); }
   .ir-skill-bar-wrap { position: relative; height: 8px; border-radius: 99px; overflow: visible; }
   .ir-skill-bar-bg { position: absolute; inset: 0; border-radius: 99px; }
   .ir-skill-bar-fg {
     position: absolute; left: 0; top: 0; bottom: 0;
     border-radius: 99px;
     transition: width 600ms cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: left center;
+    animation: ir-bar-grow 700ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
+  @keyframes ir-bar-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes ir-panel-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .ir-panel-in { animation: ir-panel-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+  .ir-more { border-top: 1px solid oklch(0.92 0.004 265); padding-top: 10px; }
+  .ir-more > summary {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; cursor: pointer; list-style: none;
+    font-size: 13px; color: oklch(0.55 0.02 213.5); border-radius: 6px;
+  }
+  .ir-more > summary::-webkit-details-marker { display: none; }
+  .ir-more > summary:focus-visible { outline: 2px solid #312E81; outline-offset: 2px; }
+  .ir-more-title { font-weight: 600; color: var(--foreground); }
+  .ir-more-chev { margin-left: auto; transition: transform 200ms ease; }
+  .ir-more[open] .ir-more-chev { transform: rotate(180deg); }
+  .ir-more-body { display: flex; flex-direction: column; gap: 12px; padding-top: 12px; }
   .ir-skill-bar-marker {
     position: absolute; top: -3px; height: 14px; width: 2px;
     background: rgba(110, 103, 89, 0.45); border-radius: 1px;
@@ -37,46 +63,66 @@ export const SESSION_REPORT_STYLES = `
     padding: 14px 18px; display: flex; align-items: center; gap: 12px;
     text-align: left; font-family: inherit; color: inherit;
   }
-  .ir-q-card-trigger:hover { background: rgba(180, 83, 9, 0.04); }
+  .ir-q-card-trigger:hover { background: oklch(0.985 0.001 286); }
   .ir-highlight-filler { background: rgba(212, 179, 127, 0.30); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-hedge  { background: rgba(110, 103, 89, 0.18); padding: 1px 3px; border-radius: 3px; }
   .ir-highlight-quant  { background: rgba(21, 128, 61, 0.18); padding: 1px 3px; border-radius: 3px; color: #15803D; font-weight: 600; }
   .ir-highlight-first  { background: rgba(49, 46, 129, 0.10); padding: 1px 3px; border-radius: 3px; color: #312E81; }
+  .ir-tab-panel > .ir-flat-section:first-child { border-top: 0 !important; }
+  .ir-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 12px; }
+  .ir-legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-legend-swatch { display: inline-block; width: 12px; height: 12px; padding: 0; border-radius: 4px; border: 1px solid oklch(0 0 0 / 0.22); filter: saturate(1.6); }
+  .ir-star-chip { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 99px; border: 1px dashed oklch(0.9 0.004 265); font-size: 13px; font-weight: 500; color: oklch(0.65 0.015 213.5); }
+  .ir-star-chip-on { border: 1px solid transparent; background: rgba(21,128,61,0.10); color: #15803D; }
+  .ir-trend-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 48px; margin-top: 8px; }
+  .ir-trend-row { display: flex; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid oklch(0.955 0.004 265); }
+  .ir-trend-name { flex: 1; min-width: 0; font-size: 14px; color: var(--foreground); display: flex; flex-direction: column; gap: 2px; }
+  .ir-trend-desc { font-size: 12px; line-height: 1.4; color: oklch(0.55 0.02 213.5); }
+  .ir-trend-band { display: block; font-size: 11px; font-weight: 500; color: oklch(0.55 0.02 213.5); white-space: nowrap; }
+  .ir-trend-legend { margin: 14px 0 0; font-size: 12px; color: oklch(0.55 0.02 213.5); }
+  .ir-trend-weakest { margin: 10px 0 0; padding: 12px 14px; border-radius: 10px; background: oklch(0.975 0.004 265); font-size: 13px; line-height: 1.5; color: var(--foreground); }
+  .ir-trend-spark { flex-shrink: 0; }
+  .ir-trend-score { width: 72px; text-align: right; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--foreground); }
+  .ir-trend-delta { min-width: 64px; text-align: right; font-size: 13px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .ir-trend-delta-up { color: #15803D; }
+  .ir-trend-delta-down { color: #B91C1C; }
+  .ir-trend-delta-flat { color: oklch(0.55 0.02 213.5); }
+  @media (max-width: 760px) { .ir-trend-grid { grid-template-columns: minmax(0, 1fr); } }
   .ir-cta-primary {
-    background: #312E81; color: #FAF7F0; border: 1px solid transparent;
+    background: #312E81; color: #FAFAFA; border: 1px solid transparent;
     padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 13px;
     cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: background 160ms ease, transform 160ms ease;
   }
   .ir-cta-primary:hover { background: #1E1B4B; transform: translateY(-1px); }
   .ir-cta-ghost {
-    background: transparent; color: #312E81; border: 1px solid #EBE5D2;
+    background: transparent; color: #312E81; border: 1px solid #ECECEF;
     padding: 10px 18px; border-radius: 10px; font-weight: 500; font-size: 13px;
     cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
     transition: border-color 160ms ease, background 160ms ease;
   }
-  .ir-cta-ghost:hover { border-color: #D6CDB5; background: rgba(255,255,255,0.6); }
+  .ir-cta-ghost:hover { border-color: #D4D4D8; background: rgba(255,255,255,0.6); }
   .ir-pill {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 6px 12px; border-radius: 999px;
-    background: #FFFFFF; border: 1px solid #EBE5D2;
+    background: #FFFFFF; border: 1px solid #ECECEF;
     font-size: 12px; font-weight: 500;
   }
   .ir-tab-btn {
     background: transparent; border: none; cursor: pointer;
     padding: 8px 0; margin-right: 18px;
-    font-family: inherit; font-size: 13px; font-weight: 500; color: #5A5448;
+    font-family: inherit; font-size: 13px; font-weight: 500; color: #63636B;
     border-bottom: 2px solid transparent;
     transition: color 160ms, border-color 160ms;
   }
-  .ir-tab-btn[aria-selected="true"] { color: #B45309; border-bottom-color: #B45309; }
+  .ir-tab-btn[aria-selected="true"] { color: #312E81; border-bottom-color: #312E81; }
   .ir-thumb-btn {
-    background: transparent; border: 1px solid #EBE5D2; border-radius: 8px;
-    padding: 6px 10px; cursor: pointer; color: #5A5448;
+    background: transparent; border: 1px solid #ECECEF; border-radius: 8px;
+    padding: 6px 10px; cursor: pointer; color: #63636B;
     transition: border-color 160ms, color 160ms, background 160ms;
   }
-  .ir-thumb-btn:hover { border-color: #B45309; color: #B45309; }
-  .ir-thumb-btn.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
+  .ir-thumb-btn:hover { border-color: #312E81; color: #312E81; }
+  .ir-thumb-btn.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; }
 
   /* ─── Salary Negotiation full-report panels ───
      The salary-negotiation interview focus has its own dedicated
@@ -86,7 +132,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-section-band {
     display: flex; align-items: center; gap: 16px;
     padding: 18px 24px; border-radius: 12px;
-    margin: 24px 0 18px; border: 1px solid #EBE5D2;
+    margin: 24px 0 18px; border: 1px solid #ECECEF;
   }
   .nfr-grid-2up {
     display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
@@ -95,9 +141,7 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
   }
   .nfr-panel {
-    background: #FFFFFF; border: 1px solid #EBE5D2;
-    border-radius: 14px; padding: 22px;
-    box-shadow: 0 1px 0 rgba(20,17,10,.03), 0 1px 2px rgba(20,17,10,.04);
+    border-top: 1px solid #ECECEF; padding: 22px 0 6px;
   }
   /* ─── TL;DR (2026-05-26 editorial rework) ───
      Prior implementation: dark gradient card with a 4-up grid of
@@ -113,18 +157,18 @@ export const SESSION_REPORT_STYLES = `
   .nfr-tldr {
     margin-bottom: 28px;
     border-top: 1px solid #B45309;
-    border-bottom: 1px solid #EBE5D2;
+    border-bottom: 1px solid #ECECEF;
     padding: 22px 0 26px;
   }
   .nfr-tldr-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-    text-transform: uppercase; font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
+    text-transform: uppercase; font-family: 'Geist Sans', sans-serif;
     color: #B45309;
     margin-bottom: 14px;
   }
   .nfr-tldr-verdict {
-    font-family: 'Instrument Serif', Georgia, serif;
-    font-size: 30px; line-height: 1.25; font-weight: 400;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 28px; line-height: 1.25; font-weight: 600;
     color: #0E0C08; letter-spacing: -0.4px;
     max-width: 760px;
     margin: 0 0 22px;
@@ -137,19 +181,19 @@ export const SESSION_REPORT_STYLES = `
     display: grid; grid-template-columns: minmax(140px, 1fr) auto;
     align-items: baseline; gap: 14px;
     padding: 12px 0;
-    border-top: 1px solid #EBE5D2;
+    border-top: 1px solid #ECECEF;
   }
   .nfr-tldr-evidence-label {
-    font-size: 12px; color: #5A5448; line-height: 1.4;
+    font-size: 12px; color: #63636B; line-height: 1.4;
   }
   .nfr-tldr-evidence-value {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 17px; font-weight: 700; letter-spacing: -0.2px;
     white-space: nowrap;
   }
   .nfr-tldr-evidence-hint {
     grid-column: 1 / -1;
-    font-size: 11px; color: #888070; line-height: 1.4;
+    font-size: 11px; color: #7C7C85; line-height: 1.4;
     margin-top: 2px;
   }
   .nfr-tldr-tone-good    { color: #15803D; }
@@ -159,7 +203,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-time-pill {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 2px 8px; background: #E5E2F2; color: #312E81;
-    border-radius: 5px; font-family: 'JetBrains Mono', monospace;
+    border-radius: 5px; font-family: 'Geist Sans', sans-serif;
     font-size: 11px; font-weight: 600;
     border: 1px solid #E5E2F2;
   }
@@ -185,14 +229,14 @@ export const SESSION_REPORT_STYLES = `
   }
   .nfr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .nfr-table th {
-    padding: 11px 14px; font-size: 10px; font-weight: 700;
+    padding: 11px 14px; font-size: 11px; font-weight: 700;
     letter-spacing: 0.8px; text-transform: uppercase;
-    color: #5A5448; text-align: left; background: #F4EFE3;
+    color: #63636B; text-align: left; background: #FAFAFA;
   }
   .nfr-table td { padding: 11px 14px; font-size: 13px; color: #0E0C08; }
-  .nfr-table tr { border-top: 1px solid #EBE5D2; }
+  .nfr-table tr { border-top: 1px solid #ECECEF; }
   .nfr-table tr:first-child { border-top: none; }
-  .nfr-mono { font-family: 'JetBrains Mono', monospace; }
+  .nfr-mono { font-family: 'Geist Sans', sans-serif; }
   .nfr-pill {
     display: inline-block; padding: 3px 10px;
     font-size: 11px; font-weight: 600; letter-spacing: 0.4px;
@@ -201,7 +245,7 @@ export const SESSION_REPORT_STYLES = `
   .nfr-pill-good { background: #DCFCE7; color: #15803D; }
   .nfr-pill-bad  { background: #FEE2E2; color: #B91C1C; }
   .nfr-pill-warn { background: rgba(180,83,9,0.12); color: #B45309; }
-  .nfr-pill-neutral { background: #F4EFE3; color: #0E0C08; }
+  .nfr-pill-neutral { background: #FAFAFA; color: #0E0C08; }
 
   /* ─── Shared NFR primitives (2026-05-26 audit) ───
      Three shapes carry most repeated chrome across the 15 panels:
@@ -214,11 +258,11 @@ export const SESSION_REPORT_STYLES = `
      tone-tinted backgrounds + a leading dot for tone cards. */
   .nfr-info-tile {
     padding: 14px 16px;
-    background: #F4EFE3;
-    border: 1px solid #EBE5D2;
+    background: #FAFAFA;
+    border: 1px solid #ECECEF;
     border-radius: 10px;
     font-size: 13px;
-    color: #5A5448;
+    color: #63636B;
     line-height: 1.55;
   }
   .nfr-info-tile-compact { padding: 10px 14px; font-size: 12px; }
@@ -244,15 +288,15 @@ export const SESSION_REPORT_STYLES = `
   .nfr-tone-dot-warn { background: #B45309; }
   .nfr-tone-dot-bad  { background: #B91C1C; }
   .nfr-eyebrow {
-    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
     text-transform: uppercase;
-    font-family: 'JetBrains Mono', monospace;
-    color: #5A5448;
+    font-family: 'Geist Sans', sans-serif;
+    color: #63636B;
   }
   .nfr-quote {
     padding: 12px 14px;
-    background: #F4EFE3;
-    border: 1px solid #EBE5D2;
+    background: #FAFAFA;
+    border: 1px solid #ECECEF;
     border-radius: 10px;
     font-size: 13px;
     color: #0E0C08;
@@ -275,7 +319,7 @@ export const SESSION_REPORT_STYLES = `
      prior implementation hand-rolled the cream wash + bold label +
      larger mono value inline. */
   .nfr-table-total td {
-    background: #F4EFE3;
+    background: #FAFAFA;
     font-weight: 700;
     color: #0E0C08;
   }
@@ -295,15 +339,77 @@ export const SESSION_REPORT_STYLES = `
   .nfr-btn-primary:hover { background: #1E1B4B; }
   .nfr-btn-secondary {
     padding: 10px 18px; background: transparent; color: #0E0C08;
-    border: 1px solid #D6CDB5; border-radius: 8px;
+    border: 1px solid #D4D4D8; border-radius: 8px;
     font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit;
   }
   .nfr-btn-secondary:hover { border-color: #312E81; color: #312E81; }
   .nfr-start-here {
     display: flex; align-items: center; gap: 12px;
     padding: 12px 18px; margin-bottom: 16px;
-    background: rgba(180,83,9,0.08); border: 1px solid rgba(180,83,9,0.20);
+    background: rgba(49,46,129,0.06); border: 1px solid rgba(49,46,129,0.16);
     border-radius: 10px; font-size: 13px; color: #0E0C08;
+  }
+
+  /* ─── Negotiation report, flat employer treatment ───
+     Scoped to .nfr-flat so the HR and behavioural reports keep their
+     chrome. Callouts lose their boxes, tone rows become hairline-divided
+     lists, and the verdict drops the copper rule and oversized type. */
+  .nfr-flat .nfr-panel { padding: 24px 0; border-top: 1px solid var(--color-hx-line); }
+  .nfr-flat .nfr-group > .nfr-panel:first-of-type,
+  .nfr-flat .nfr-group > .nfr-vstack-xl > .nfr-panel:first-child { border-top: 0; padding-top: 4px; }
+  .nfr-flat .nfr-vstack-xl { gap: 0; }
+  .nfr-flat .nfr-grid-2up { gap: 0 32px; }
+  .nfr-flat .nfr-info-tile {
+    background: var(--color-hx-soft); border: 0; border-radius: 8px;
+    padding: 12px 14px; color: var(--color-hx-ink-soft);
+  }
+  .nfr-flat .nfr-quote {
+    background: transparent; border: 0; border-radius: 0;
+    padding: 0 0 0 2px; color: var(--color-hx-coal);
+  }
+  .nfr-flat .nfr-tone-card {
+    border: 0; border-radius: 0; background: transparent;
+    border-top: 1px solid var(--color-hx-line); padding: 12px 0;
+  }
+  .nfr-flat .nfr-tone-card:first-child { border-top: 0; }
+  .nfr-flat .nfr-tldr {
+    margin-bottom: 8px; border-top: 0; border-bottom: 0; padding: 4px 0 8px;
+  }
+  .nfr-flat .nfr-tldr-eyebrow { color: var(--color-hx-ink-soft); letter-spacing: 0.08em; }
+  .nfr-flat .nfr-tldr-verdict { font-size: 22px; line-height: 1.35; letter-spacing: -0.015em; margin-bottom: 20px; }
+  .nfr-flat .nfr-tldr-evidence-value { font-size: 16px; font-variant-numeric: tabular-nums; }
+  .nfr-flat .nfr-start-here {
+    background: transparent; border: 0; border-top: 1px solid var(--color-hx-line);
+    border-bottom: 1px solid var(--color-hx-line); border-radius: 0;
+    padding: 12px 0; margin: 4px 0 20px;
+  }
+  .nfr-group { scroll-margin-top: 80px; padding-top: 32px; }
+  .nfr-group-label {
+    margin: 0 0 4px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--color-hx-copper);
+  }
+  .nfr-group-sub { margin: 0 0 12px; font-size: 13px; color: var(--color-hx-ink-soft); max-width: 65ch; }
+  .nfr-disclosure > summary {
+    display: flex; align-items: center; gap: 8px; cursor: pointer; list-style: none;
+    font-size: 14px; font-weight: 600; color: var(--color-hx-coal); padding: 14px 0;
+    transition: color 160ms cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .nfr-disclosure > summary::-webkit-details-marker { display: none; }
+  .nfr-disclosure > summary:hover { color: var(--color-hx-copper); }
+  .nfr-disclosure > summary:focus-visible { outline: 2px solid var(--color-hx-indigo); outline-offset: 2px; border-radius: 6px; }
+  .nfr-disclosure-chev { transition: transform 200ms cubic-bezier(0.25, 1, 0.5, 1); color: var(--color-hx-ink-soft); }
+  .nfr-disclosure[open] .nfr-disclosure-chev { transform: rotate(90deg); }
+  @keyframes nfr-rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: none; }
+  }
+  .nfr-flat .nfr-rise {
+    animation: nfr-rise 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nfr-flat .nfr-rise { animation: none; }
+    .nfr-disclosure-chev, .nfr-disclosure > summary { transition: none; }
   }
 
   /* Mobile reflow for the negotiation panels — single column at <=768px,
@@ -312,14 +418,16 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 768px) {
     .nfr-grid-2up { grid-template-columns: 1fr !important; gap: 14px !important; }
     .nfr-grid-3up { grid-template-columns: 1fr !important; gap: 12px !important; }
-    .nfr-panel { padding: 18px !important; border-radius: 12px !important; }
+    .nfr-panel { padding: 18px 0 4px !important; }
+    .nfr-flat .nfr-panel { padding: 20px 0 !important; }
+    .nfr-flat .nfr-tldr-verdict { font-size: 20px !important; }
     .nfr-tldr { padding: 18px 0 20px !important; }
     .nfr-tldr-verdict { font-size: 24px !important; line-height: 1.3 !important; }
     .nfr-tldr-evidence { grid-template-columns: 1fr !important; gap: 0 !important; }
     .nfr-tldr-evidence-value { font-size: 15px !important; }
-    .nfr-section-band { padding: 14px 16px !important; gap: 12px !important; }
+    .nfr-section-band { padding: 14px 16px !important; gap: 8px !important; flex-direction: column !important; align-items: flex-start !important; }
     .nfr-table th, .nfr-table td { padding: 8px 10px !important; font-size: 12px !important; }
-    .nfr-table th { font-size: 9px !important; }
+    .nfr-table th { font-size: 11px !important; }
     .nfr-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch; }
   }
   @media (max-width: 420px) {
@@ -338,8 +446,6 @@ export const SESSION_REPORT_STYLES = `
   @media (max-width: 768px) {
     .ir-hero-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
     .ir-hero-grid > * { min-width: 0 !important; }
-    .ir-jump-nav { margin-left: -16px !important; margin-right: -16px !important; }
-    .ir-jump-nav-inner { padding: 0 16px !important; }
     .ir-skill-name { min-width: 0 !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .ir-trend-strip { gap: 12px !important; padding: 12px 14px !important; }
     .ir-coach-notes-grid { grid-template-columns: 1fr !important; }
@@ -347,13 +453,14 @@ export const SESSION_REPORT_STYLES = `
     .ir-strengths-improvements { grid-template-columns: 1fr !important; gap: 18px !important; }
     .ir-skills-grid { grid-template-columns: 1fr !important; gap: 20px !important; }
     .ir-skill-row {
-      grid-template-columns: 1fr 50px 50px !important;
+      grid-template-columns: 1fr auto auto !important;
       grid-template-areas:
-        "name name name"
-        "bar bar bar"
-        ".  score delta" !important;
-      row-gap: 6px !important;
+        "name score delta"
+        "bar bar bar" !important;
+      row-gap: 8px !important;
+      column-gap: 10px !important;
     }
+    .ir-skill-row .ir-skill-score { flex-direction: row !important; align-items: baseline !important; gap: 8px; }
     .ir-skill-row .ir-skill-name { grid-area: name; }
     .ir-skill-row .ir-skill-bar-wrap { grid-area: bar; }
     .ir-skill-row .ir-skill-score { grid-area: score; }
@@ -366,34 +473,29 @@ export const SESSION_REPORT_STYLES = `
     .ir-pill-bar { gap: 6px !important; }
   }
   @media (max-width: 420px) {
-    .ir-skill-row {
-      grid-template-columns: 1fr 42px 42px !important;
-      column-gap: 6px !important;
-    }
     .ir-cta-primary, .ir-cta-ghost { padding: 9px 12px !important; font-size: 12px !important; }
     .ir-pill { padding: 5px 10px !important; font-size: 11px !important; }
     .ir-tab-btn { margin-right: 12px !important; font-size: 12px !important; }
     .ir-trend-strip { padding: 10px 12px !important; gap: 10px !important; }
-    .ir-thought-track { height: 22px !important; }
   }
 
   /* ─── Sparkline ─── */
   .ir-spark { vertical-align: middle; }
-  .ir-spark-line { stroke: #312E81; stroke-width: 1.5; fill: none; }
-  .ir-spark-area { fill: rgba(49, 46, 129, 0.10); }
-  .ir-spark-dot { fill: #312E81; }
-  .ir-spark-dot-current { fill: #B45309; r: 2.5; }
+  .ir-spark-line { stroke: var(--foreground); stroke-opacity: 0.55; stroke-width: 1.75; fill: none; stroke-linejoin: round; stroke-linecap: round; }
+  .ir-spark-area { display: none; }
+  .ir-spark-dot { fill: var(--foreground); fill-opacity: 0.4; }
+  .ir-spark-dot-current { fill: var(--foreground); r: 3.5; }
 
   /* ─── Feedback survey expansion ─── */
   .ir-feedback-row { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
   .ir-feedback-tag {
-    background: transparent; border: 1px solid #EBE5D2; border-radius: 999px;
-    padding: 5px 12px; cursor: pointer; color: #5A5448;
+    background: transparent; border: 1px solid #ECECEF; border-radius: 999px;
+    padding: 5px 12px; cursor: pointer; color: #63636B;
     font-family: inherit; font-size: 12px; font-weight: 500;
     transition: all 160ms ease;
   }
-  .ir-feedback-tag:hover { border-color: #B45309; color: #B45309; }
-  .ir-feedback-tag.active { background: #F4E5D8; border-color: #B45309; color: #B45309; }
+  .ir-feedback-tag:hover { border-color: #312E81; color: #312E81; }
+  .ir-feedback-tag.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; }
 
   /* ─── Accessibility — focus rings + skip link ───
      Every interactive element gets a visible focus ring so keyboard
@@ -417,7 +519,7 @@ export const SESSION_REPORT_STYLES = `
     top: 8px;
     padding: 8px 16px;
     background: #312E81;
-    color: #FAF7F0;
+    color: #FAFAFA;
     text-decoration: none;
     border-radius: 8px;
     font-family: inherit;
@@ -427,7 +529,7 @@ export const SESSION_REPORT_STYLES = `
   }
   .ir-skip-link:focus {
     left: 8px;
-    outline: 2px solid #B45309;
+    outline: 2px solid #312E81;
     outline-offset: 2px;
   }
 
@@ -447,6 +549,9 @@ export const SESSION_REPORT_STYLES = `
       transition: none !important;
     }
     .ir-cta-primary:hover { transform: none !important; }
+    .ir-skill-bar-fg,
+    .ir-panel-in,
+    .ir-more-chev { animation: none !important; }
   }
 
   /* ─── Section navigation ───
@@ -458,18 +563,16 @@ export const SESSION_REPORT_STYLES = `
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(250, 247, 240, 0.92);
-    backdrop-filter: saturate(140%) blur(8px);
-    -webkit-backdrop-filter: saturate(140%) blur(8px);
-    border-bottom: 1px solid #EBE5D2;
-    padding: 10px 0;
-    margin: 0 -32px 16px;
+    background: #FFFFFF;
+    border: 1px solid #ECECEF;
+    border-radius: 12px;
+    padding: 6px;
+    margin: 0 0 16px;
   }
   .ir-jump-nav-inner {
     display: flex;
     gap: 4px;
     overflow-x: auto;
-    padding: 0 32px;
     scrollbar-width: none;
   }
   .ir-jump-nav-inner::-webkit-scrollbar { display: none; }
@@ -482,24 +585,24 @@ export const SESSION_REPORT_STYLES = `
     font-family: inherit;
     font-size: 12px;
     font-weight: 500;
-    color: #5A5448;
+    color: #63636B;
     text-decoration: none;
     white-space: nowrap;
     transition: color 160ms, background 160ms;
   }
   .ir-jump-link:hover { color: #312E81; background: #E5E2F2; }
   .ir-jump-link-num {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: #888070;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
+    color: #7C7C85;
     font-weight: 700;
     letter-spacing: 0.06em;
   }
 
   /* ─── Section eyebrow numbers ───
      Each section card has a small "01" / "02" / "03" eyebrow so the
-     user has a sense of progression. Mono font, copper accent,
-     tightly tracked. */
+     user has a sense of progression. Sans, indigo accent, tightly
+     tracked. */
   .ir-section-eyebrow {
     display: flex;
     align-items: center;
@@ -507,16 +610,16 @@ export const SESSION_REPORT_STYLES = `
     margin-bottom: 16px;
   }
   .ir-section-num {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
     font-weight: 700;
-    color: #B45309;
+    color: #312E81;
     letter-spacing: 0.10em;
   }
   .ir-section-rule {
     flex: 1;
     height: 1px;
-    background: #EBE5D2;
+    background: #ECECEF;
   }
 
   /* ─── Calibration banner ───
@@ -528,17 +631,17 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     gap: 8px;
     padding: 6px 12px;
-    background: rgba(49,46,129,0.05);
-    border: 1px solid rgba(49,46,129,0.12);
+    background: oklch(0.985 0.001 286);
+    border: 1px solid oklch(0.92 0.004 286);
     border-radius: 8px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
-    color: #312E81;
+    color: oklch(0.35 0.02 213.5);
     line-height: 1.4;
   }
   .ir-calibration-bands {
-    color: #5A5448;
-    font-family: 'JetBrains Mono', monospace;
+    color: #63636B;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 11px;
   }
 
@@ -552,14 +655,13 @@ export const SESSION_REPORT_STYLES = `
     gap: 6px;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(180,83,9,0.08);
-    color: #B45309;
-    border: 1px dashed rgba(180,83,9,0.40);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+    background: oklch(0.97 0.002 286);
+    color: oklch(0.45 0.02 213.5);
+    border: 1px solid oklch(0.92 0.004 286);
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
   }
 
   /* ─── Trend strip ───
@@ -572,13 +674,13 @@ export const SESSION_REPORT_STYLES = `
     gap: 20px;
     padding: 14px 22px;
     background: linear-gradient(90deg, rgba(49,46,129,0.04), rgba(212,179,127,0.04));
-    border: 1px solid #EBE5D2;
+    border: 1px solid #ECECEF;
     border-radius: 12px;
     flex-wrap: wrap;
   }
   .ir-trend-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
     font-weight: 700;
     color: #B45309;
     letter-spacing: 0.10em;
@@ -588,14 +690,14 @@ export const SESSION_REPORT_STYLES = `
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
     color: #2A241B;
   }
-  .ir-trend-item-label { color: #5A5448; font-size: 12px; }
-  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-  .ir-trend-delta-flat { color: #888070; font-weight: 600; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .ir-trend-item-label { color: #63636B; font-size: 12px; }
+  .ir-trend-delta-up   { color: #15803D; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
+  .ir-trend-delta-down { color: #B91C1C; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
+  .ir-trend-delta-flat { color: #7C7C85; font-weight: 600; font-family: 'Geist Sans', sans-serif; font-size: 12px; }
 
   /* ─── Per-Q inline pills (frequency + length verdict) ─── */
   .ir-q-meta-pill {
@@ -603,13 +705,13 @@ export const SESSION_REPORT_STYLES = `
     align-items: center;
     padding: 2px 8px;
     border-radius: 999px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.04em;
     background: #FFFFFF;
-    border: 1px solid #EBE5D2;
-    color: #5A5448;
+    border: 1px solid #ECECEF;
+    color: #63636B;
   }
   .ir-q-meta-pill.too-short  { color: #B91C1C; border-color: rgba(196,112,90,0.30); background: rgba(196,112,90,0.06); }
   .ir-q-meta-pill.too-long   { color: #B45309; border-color: rgba(180,83,9,0.30);  background: rgba(180,83,9,0.06); }
@@ -625,8 +727,8 @@ export const SESSION_REPORT_STYLES = `
     border-radius: 999px;
     background: rgba(196,112,90,0.10);
     color: #B91C1C;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
   }
@@ -635,46 +737,44 @@ export const SESSION_REPORT_STYLES = `
   .ir-redflag-list { list-style: none; padding: 0; margin: 0 0 8px; display: flex; flex-direction: column; gap: 6px; }
   .ir-redflag-item {
     display: flex; gap: 8px; align-items: flex-start;
-    padding: 8px 10px;
-    background: rgba(196,112,90,0.05);
-    border-left: 2px solid #B91C1C;
-    border-radius: 4px;
-    font-family: 'Satoshi', sans-serif;
+    padding: 10px 12px;
+    background: #fff;
+    border: 1px solid rgba(185,28,28,0.25);
+    border-radius: 8px;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 12px;
     line-height: 1.45;
     color: #2A241B;
   }
   .ir-redflag-item-title { color: #B91C1C; font-weight: 600; }
-  .ir-redflag-item-quote { color: #5A5448; font-style: italic; display: block; margin-top: 2px; }
+  .ir-redflag-item-quote { color: #63636B; font-style: italic; display: block; margin-top: 2px; }
 
   /* Likely follow-up callout (coach column, weak/partial only) */
   .ir-likely-followup {
     margin-top: 8px;
     padding: 10px 12px;
-    background: rgba(49,46,129,0.05);
-    border: 1px solid rgba(49,46,129,0.15);
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.08);
     border-radius: 8px;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 12px;
-    color: #312E81;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 13px;
+    color: #2A241B;
     line-height: 1.5;
   }
   .ir-likely-followup-eyebrow {
     display: block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
     margin-bottom: 4px;
-    color: #312E81;
+    color: #63636B;
   }
 
   /* What-makes-it-strong list (under exemplar tab) */
   .ir-strong-list { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; }
   .ir-strong-list-item {
     display: flex; gap: 8px;
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
     color: #2A241B;
     line-height: 1.5;
@@ -690,19 +790,20 @@ export const SESSION_REPORT_STYLES = `
   /* ─── Coach's Notes section (cross-session aggregator) ─── */
   .ir-coach-notes-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 40px;
   }
+  .ir-coach-notes-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .ir-coach-note-card {
-    background: #FAF7F0;
-    border: 1px solid #EBE5D2;
+    background: #FAFAFA;
+    border: 1px solid #ECECEF;
     border-left: 3px solid #B45309;
     border-radius: 10px;
     padding: 14px 16px;
   }
   .ir-coach-note-eyebrow {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.10em;
     text-transform: uppercase;
@@ -710,16 +811,17 @@ export const SESSION_REPORT_STYLES = `
     margin-bottom: 6px;
   }
   .ir-coach-note-title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 16px;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
     color: #2A241B;
     line-height: 1.3;
     margin: 0 0 6px;
   }
   .ir-coach-note-body {
-    font-family: 'Satoshi', sans-serif;
+    font-family: 'Geist Sans', sans-serif;
     font-size: 13px;
-    color: #5A5448;
+    color: #63636B;
     line-height: 1.55;
     margin: 0;
   }
@@ -728,50 +830,8 @@ export const SESSION_REPORT_STYLES = `
   .ir-coach-note-card.persistent { border-left-color: #B45309; }
   .ir-coach-note-card.story-reuse { border-left-color: #312E81; }
   .ir-coach-note-card.story-reuse .ir-coach-note-eyebrow { color: #312E81; }
-  .ir-coach-note-card.blind-spot { border-left-color: #888070; }
-  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #5A5448; }
-
-  /* ─── Thought-bubble timeline (collapsed by default) ─── */
-  .ir-thought-toggle {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: transparent;
-    border: 1px dashed #D6CDB5;
-    border-radius: 8px;
-    padding: 8px 14px;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 12px;
-    color: #5A5448;
-    cursor: pointer;
-    transition: border-color 160ms, color 160ms;
-  }
-  .ir-thought-toggle:hover { border-color: #312E81; color: #312E81; }
-  .ir-thought-track {
-    display: flex;
-    height: 28px;
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid #EBE5D2;
-    margin-top: 12px;
-  }
-  .ir-thought-seg-engaged   { background: rgba(21,128,61,0.40); }
-  .ir-thought-seg-drifting  { background: rgba(212,179,127,0.55); }
-  .ir-thought-seg-concerned { background: rgba(196,112,90,0.50); }
-  .ir-thought-legend {
-    display: flex; gap: 18px; flex-wrap: wrap;
-    margin-top: 10px;
-    font-family: 'Satoshi', sans-serif;
-    font-size: 11px;
-    color: #5A5448;
-  }
-  .ir-thought-legend-swatch {
-    display: inline-block;
-    width: 12px; height: 12px;
-    border-radius: 3px;
-    margin-right: 6px;
-    vertical-align: -2px;
-  }
+  .ir-coach-note-card.blind-spot { border-left-color: #7C7C85; }
+  .ir-coach-note-card.blind-spot .ir-coach-note-eyebrow { color: #63636B; }
 
   /* ─── Anchor scroll spacing for inline jumps from wins/fixes ─── */
   .ir-q-anchor { scroll-margin-top: 80px; }
@@ -784,63 +844,55 @@ export const SESSION_REPORT_STYLES = `
     margin-top: 14px;
   }
   .ir-bias-card {
-    background: rgba(49,46,129,0.04);
-    border: 1px solid rgba(49,46,129,0.12);
+    background: oklch(0.985 0.001 286);
+    border: 1px solid oklch(0.92 0.004 286);
     border-radius: 10px;
     padding: 12px 14px;
   }
   .ir-bias-card-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
   .ir-bias-count {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 18px; font-weight: 700; color: #312E81; line-height: 1;
+    font-family: 'Geist Sans', sans-serif;
+    font-size: 18px; font-weight: 700; color: var(--foreground); line-height: 1;
   }
   .ir-bias-label {
-    font-family: 'Satoshi', system-ui, sans-serif;
+    font-family: 'Geist Sans', system-ui, sans-serif;
     font-size: 13px; color: #2A241B; font-weight: 600;
   }
   .ir-bias-example {
     display: block;
-    font-family: 'Satoshi', system-ui, sans-serif;
-    font-size: 11px; color: #5A5448; font-style: italic;
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 11px; color: #63636B; font-style: italic;
     margin: 4px 0 6px;
   }
   .ir-bias-tip {
-    font-family: 'Satoshi', system-ui, sans-serif;
-    font-size: 12px; color: #312E81; line-height: 1.4;
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: oklch(0.45 0.02 213.5); line-height: 1.4;
   }
 
   /* ─── Trust + useful dual polls (footer) ─── */
   .ir-poll-row {
     display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
-    font-family: 'Satoshi', system-ui, sans-serif;
-    font-size: 12px; color: #5A5448;
+    font-family: 'Geist Sans', system-ui, sans-serif;
+    font-size: 12px; color: #63636B;
   }
   .ir-poll-yes, .ir-poll-no {
     background: transparent;
-    border: 1px solid #EBE5D2;
+    border: 1px solid #ECECEF;
     border-radius: 999px;
     padding: 4px 12px;
     cursor: pointer;
-    font-family: inherit; font-size: 12px; color: #5A5448;
+    font-family: inherit; font-size: 12px; color: #63636B;
     transition: all 160ms;
   }
-  .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #B45309; color: #B45309; }
-  .ir-poll-yes.active, .ir-poll-no.active { background: #F4E5D8; border-color: #B45309; color: #B45309; font-weight: 600; }
+  .ir-poll-yes:hover, .ir-poll-no:hover { border-color: #312E81; color: #312E81; }
+  .ir-poll-yes.active, .ir-poll-no.active { background: rgba(49,46,129,0.08); border-color: #312E81; color: #312E81; font-weight: 600; }
 
-  /* ─── Print styles ───
-     PDF generation goes through window.print(). We hide chrome (jump
-     nav, header buttons, sticky CTAs, footer thumbs) and force every
-     expandable section open so the printed report is complete. */
-  @media print {
-    body { background: #FFFFFF !important; }
-    .ir-jump-nav, .ir-skip-link, .ir-print-hide, .ir-thought-toggle,
-    .ir-feedback-row, .ir-thumb-btn, .ir-cta-primary, .ir-cta-ghost,
-    .ir-q-card-trigger svg:last-child {
-      display: none !important;
-    }
-    .ir-q-card-trigger { pointer-events: none; }
-    [role="region"][hidden] { display: block !important; }
-    [hidden] { display: revert !important; }
-    section { break-inside: avoid; page-break-inside: avoid; }
-  }
+  .ir-more-detail { display: none; }
+  .ir-more-detail.is-open { display: flex; }
+  .ir-more-detail-toggle:hover { background: rgba(49,46,129,0.05); }
+  .ir-tab-panel > .ir-flat-section:first-child { border-top: 0; padding-top: 4px; }
+  .ir-frame-body > .ir-flat-section:first-child { border-top: 0; }
+  .ir-tab-panel { display: flex; flex-direction: column; outline: none; }
+  .ir-tab-bar { scrollbar-width: none; }
+  .ir-tab-bar::-webkit-scrollbar { display: none; }
 `;

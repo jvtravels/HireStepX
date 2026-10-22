@@ -514,8 +514,13 @@ function fixSentenceCaps(s: string): string {
  * wh-interrogatives are a CLOSED grammatical class — none is ever a proper
  * noun in recruiter comp-talk — so they extend the same proper-noun-safe
  * whitelist as When/Where (already present). */
+/* S13-B12 (2026-07-20, live staging) — "We" was absent from the whitelist.
+ * The LLM generates constructions like "Thank you for that, We can discuss
+ * the joining bonus" where "We" is the subject of a spliced clause — not a
+ * proper noun or sentence start — and must be lowercased. "We" is a pronoun
+ * and never a proper noun in recruiter comp-talk, so it belongs in this list. */
 const TIDY_MIDSENTENCE_DOWNCASE =
-  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where|What|Why|How|Which|Who)\b/g;
+  /(,\s+)(So|And|But|Okay|Right|Honestly|Basically|Well|Actually|Look|Then|Now|Fundamentally|Frankly|Let|Before|After|Since|While|Given|Once|Coming|Moving|Picking|Unless|Until|Although|Though|When|Where|What|Why|How|Which|Who|We)\b/g;
 
 export function tidyRealismArtifacts(s: string): string {
   if (!s) return s;
@@ -974,6 +979,13 @@ export function applyContextRefOverlay(
   for (const phrase of ALL_CONTEXT_REF_PHRASES) {
     if (textLower.includes(phrase.toLowerCase())) return text;
   }
+  /* S50-B2 (2026-07-24) — don't overlay onto apologetic or filler transitions.
+   * Prepending "In this slower hiring cycle, my apologies, let me..." produces
+   * a semantically incoherent sentence that leaks the market-simulation context
+   * into the dialogue in the worst possible way. Gate on substantive content. */
+  const APOLOGY_OR_FILLER_RE =
+    /\b(?:sorry|apolog|my\s+apolog|let\s+me\s+(?:move|get|go)|just\s+a\s+moment|one\s+sec|hang\s+on|thanks\s+for|thank\s+you\s+for|noted,?\s+let|noted\s+on)\b/i;
+  if (APOLOGY_OR_FILLER_RE.test(textLower)) return text;
   const ref = pickSectorContextRef(persona, sessionId);
   if (!ref) return text;
   const ti =

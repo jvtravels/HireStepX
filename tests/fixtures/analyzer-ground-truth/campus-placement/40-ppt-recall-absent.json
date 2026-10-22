@@ -11,7 +11,9 @@
       { "speaker": "ai", "text": "Why do you want to join us?", "time": "" },
       { "speaker": "user", "text": "Your company has a strong training program and global presence, and I want to build my foundation in a structured environment with mentorship.", "time": "" },
       { "speaker": "ai", "text": "Tell me about a teamwork example.", "time": "" },
-      { "speaker": "user", "text": "In our 4-person FYP, I owned the backend while teammates handled frontend and integrations; we coordinated through daily standups and a shared Notion board.", "time": "" }
+      { "speaker": "user", "text": "In our 4-person FYP, I owned the backend while teammates handled frontend and integrations; we coordinated through daily standups and a shared Notion board.", "time": "" },
+      { "speaker": "ai", "text": "Where do you see yourself in five years?", "time": "" },
+      { "speaker": "user", "text": "I plan to become a senior engineer with end-to-end ownership of at least one major module, and I want to mentor junior members the way I hope to be mentored now.", "time": "" }
     ]
   },
   "expected": { "must_include": ["ppt_recall_absent"], "must_not_include": ["empty_transcript"] }

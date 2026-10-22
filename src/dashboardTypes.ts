@@ -1,4 +1,6 @@
+import { SCORE_BAND_LABEL, scoreBandKey } from "./scoreBands";
 import { c } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
 
 export type UserContext = { targetRole?: string; targetCompany?: string; industry?: string; interviewDate?: string; practiceTimestamps?: string[]; subscriptionTier?: string; subscriptionEnd?: string } | null;
 
@@ -49,6 +51,12 @@ export interface DashboardSession {
   focus?: string;
   topStrength: string;
   topWeakness: string;
+  /** Raw skill_scores key behind `topWeakness`, preserved alongside the
+   *  humanized gapCopy() phrase so surfaces that need a short noun-phrase
+   *  label (e.g. the Recent Sessions table's "Focus" column via
+   *  focusTopicLabel()) don't have to reverse-engineer it out of the
+   *  phrase. Undefined when the session has no skill_scores. */
+  topWeaknessKey?: string;
   /** Structured plain-language coaching from the evaluator (mvp-8+).
    *  Undefined for older sessions → card falls back to topStrength/
    *  topWeakness one-liners. */
@@ -94,6 +102,11 @@ export interface DashboardSession {
        rows persisted without them deserialize cleanly. */
     vossTacticsUsed?: ReadonlyArray<string>;
     infoAsked?: ReadonlyArray<string>;
+    /* S13-B9 (2026-07-18) — candidate-INITIATED subset of infoAsked
+       (excludes recruiter-elicited questions). Optional so old rows
+       persisted without it deserialize cleanly; the adapter falls back to
+       the full infoAsked only when this key is truly absent. */
+    infoAskedInitiated?: ReadonlyArray<string>;
     walkAwayReturned?: boolean;
     hardBandCap?: boolean;
     marketMode?: "soft" | "neutral" | "hot";
@@ -121,6 +134,24 @@ export interface DashboardSession {
       posture: "strong" | "neutral" | "hungry";
       candidateLeverage: "low" | "neutral" | "high";
     };
+    /* S4S5-B3 (2026-07-18) — one-time joining bonus the recruiter offered (LPA).
+       Optional so rows persisted before this field shipped deserialize cleanly. */
+    lastJoiningBonusOffered?: number | null;
+    /* S3-B2 (2026-07-20) — Phase-11 hike-justification rationale the candidate
+       gave. Optional so rows persisted before this field shipped deserialize
+       cleanly. Values: "market-data" | "tenure-yoe" | "competing-offer" |
+       "scope-expansion" | "specialization" | "col-relocation". */
+    rationaleKind?: string;
+    /* OA-B58 (2026-07-20) — candidate's current CTC parsed by the kernel (LPA).
+       Null = never disclosed during the session; band fell back to role defaults.
+       Optional so rows persisted before this field shipped deserialize cleanly. */
+    candidateCurrentCtcLpa?: number | null;
+    /* S6-B3 (2026-07-22) — grounded pushback events derived from the kernel's
+       hold-firm moves. Each entry represents one recruiter hold-firm after the
+       candidate anchored; drives the "You handled their pushback" stage ladder
+       step in derivePhases. Optional so old rows without this field work correctly
+       (stage simply won't fire, matching pre-fix behaviour). */
+    pushbacks?: ReadonlyArray<{ pushback: string; outcome: "held" | "deflected" | "conceded"; detail: string }>;
   };
 }
 
@@ -167,13 +198,14 @@ export interface PersistedState {
 export const sessionTypes = ["All", "Behavioral", "Strategic", "Technical Leadership", "Case Study", "Campus Placement", "HR Round", "Management", "Government & PSU"];
 
 export function scoreLabel(score: number) {
-  if (score >= 85) return "Strong";
-  if (score >= 75) return "Good";
-  return "Needs work";
+  return SCORE_BAND_LABEL[scoreBandKey(score)];
 }
 
+// Score-band color: the middling band is gamification-domain (session
+// score), so it stays copper — re-sourced from T.copper rather than the
+// legacy c.gilt alias.
 export function scoreLabelColor(score: number) {
   if (score >= 85) return c.sage;
-  if (score >= 75) return c.gilt;
+  if (score >= 75) return T.copper;
   return c.ember;
 }

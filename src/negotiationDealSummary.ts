@@ -38,6 +38,29 @@ const ASK_NUM_SRC =
   "\\u20B9?\\s*(\\d+(?:[,.]\\d+)*)(?:\\s*[-\\u2013]\\s*(\\d+(?:[,.]\\d+)*))?" +
   "\\s*(lpa|lakhs?|[lL]\\b|crores?|cr\\b)?";
 
+/* ─── Single source of truth for the card's "Your Ask" tile ───
+ *
+ * The transient post-session Deal Summary and the durable SessionReport used
+ * to disagree on "YOUR ASK": the report reads the kernel's authoritative
+ * `candidateAskLpa` (the candidate's final tracked target — e.g. ₹42 after a
+ * 48→44→42 climb-down), while this card re-derived from transcript regex and
+ * surfaced the MAX stated ask (₹48). Same label, two numbers — the I-10
+ * cross-surface incoherence. The regex can't see un-cued counters ("meet me
+ * at 44", "bring it to 42"), so it can never match the kernel by tuning it.
+ * The fix: when the kernel value is available (passed down from the engine
+ * that already computed it for the save payload), the card DEFERS to it;
+ * the regex extraction remains only as a fallback for sessions where the
+ * kernel target was never captured (null / non-positive). */
+export function resolveCandidateAskLpa(
+  kernelAskLpa: number | null | undefined,
+  userTexts: string[],
+): number {
+  if (typeof kernelAskLpa === "number" && kernelAskLpa > 0) {
+    return Math.round(kernelAskLpa * 10) / 10;
+  }
+  return extractCandidateAskLpa(userTexts);
+}
+
 export function extractCandidateAskLpa(userTexts: string[]): number {
   const parse = (raw: string, suffix?: string): number => {
     const num = parseFloat(raw.replace(/,/g, ""));

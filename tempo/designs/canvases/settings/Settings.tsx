@@ -403,7 +403,6 @@ function ReferralSection() {
             <div style={referralLink}>hirestepx.com/r/<span style={{ color: t.copper }}>arjun-mh</span></div>
             <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
               <button type="button" style={primaryBtn}>Copy link</button>
-              <button type="button" style={subtleBtn}>Share on WhatsApp</button>
               <button type="button" style={subtleBtnGhost}>Email a friend</button>
             </div>
           </div>
@@ -432,7 +431,7 @@ function ReferralSection() {
 
       <Card>
         <SubHeader title="How it works" />
-        <Step n={1} title="Share your link" desc="WhatsApp, email, anywhere. We track conversions by signup, no codes to remember." />
+        <Step n={1} title="Share your link" desc="Email, link, anywhere. We track conversions by signup, no codes to remember." />
         <Step n={2} title="They get 20% off" desc="First Pro month at ₹479 instead of ₹599. The discount applies automatically." />
         <Step n={3} title="You earn a free month" desc="Credited the day they pay. Stacks up to six months before the cap pauses." />
       </Card>

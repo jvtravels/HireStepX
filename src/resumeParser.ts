@@ -2,6 +2,8 @@
 /* Extracts plain text from PDF, DOCX, and TXT files client-side */
 
 import { yieldToMainThread } from "./_browser-api-guards";
+import { INDIAN_CITIES } from "./_indian-cities";
+import { isUnreadableResumeText, truncateResumeText, UNREADABLE_RESUME_MESSAGE } from "../server-handlers/_resume-text-helpers";
 
 /** Read a .txt file directly */
 function readTxt(file: File): Promise<string> {
@@ -22,24 +24,20 @@ async function readDocx(file: File): Promise<string> {
   if (!docEntry) throw new Error("Invalid DOCX: no document.xml found");
 
   const xmlText = new TextDecoder().decode(docEntry.data);
-  // Extract text from <w:t> tags
-  const textParts: string[] = [];
-  const regex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
-  let match: RegExpExecArray | null;
-  while ((match = regex.exec(xmlText)) !== null) {
-    textParts.push(match[1]);
-  }
 
-  // Re-extract with paragraph awareness
+  // Split by paragraph, extract text from each <w:t> run within it.
+  // The tag-name boundary (\s|>|\/) is required so this doesn't also match
+  // other w:t*-prefixed elements like <w:tab/>, <w:tbl>, or <w:tr> — a bare
+  // "w:t" prefix match would swallow everything up to the next real </w:t>
+  // as bogus "text".
   const lines: string[] = [];
-  // Simpler approach: split by paragraph, extract text from each
   const paragraphs = xmlText.split(/<\/w:p>/);
   for (const para of paragraphs) {
     const paraTexts: string[] = [];
-    const tRegex = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+    const tRegex = /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>/g;
     let tMatch: RegExpExecArray | null;
     while ((tMatch = tRegex.exec(para)) !== null) {
-      paraTexts.push(tMatch[1]);
+      paraTexts.push(decodeXmlEntities(tMatch[1]));
     }
     if (paraTexts.length > 0) {
       lines.push(paraTexts.join(""));
@@ -47,6 +45,15 @@ async function readDocx(file: File): Promise<string> {
   }
 
   return lines.join("\n").trim();
+}
+
+function decodeXmlEntities(text: string): string {
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, "\"")
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
 }
 
 /** Minimal ZIP reader for DOCX extraction (no dependencies) */
@@ -110,20 +117,42 @@ async function unzip(data: Uint8Array): Promise<{ entries: { filename: string; d
   return { entries };
 }
 
+/* Word/Google Docs export bullet-list glyphs by remapping a symbol font
+ * (Wingdings, Symbol) onto the Private Use Area — pdf.js hands the raw PUA
+ * code point back in item.str, not "•". Left unmapped, every bullet line
+ * loses its marker entirely (extracted text starts with an invisible PUA
+ * char instead of "• "), which made resumeAts.ts's bullet-formatting check
+ * report zero bullets on resumes that were 100% bulleted. Map the common
+ * PUA bullet glyphs to their canonical ASCII/Unicode bullet chars so
+ * downstream text-based checks (and the LLM) see them as real bullets. */
+const BULLET_GLYPH_MAP: Record<string, string> = {
+  "": "•", // Wingdings solid round bullet — most common PDF export bullet
+  "": "▪", // Wingdings solid square bullet
+  "": "▪", // Wingdings alt square/diamond bullet
+  "": "▪", // Wingdings arrow-style list marker
+};
+
+function normalizeBulletGlyph(str: string): string {
+  return BULLET_GLYPH_MAP[str] ?? str;
+}
+
 /** Extract text from a PDF using locally bundled pdf.js */
 async function readPdf(file: File): Promise<string> {
   const arrayBuffer = await file.arrayBuffer();
 
-  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf");
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
   // Move PDF parsing off the main thread — FakeWorker path causes 200-800ms UI freeze
   // on mid-range Indian devices. workerSrc must be set before any getDocument() call.
   // GlobalWorkerOptions is a typed named export (GlobalWorkerOptionsType) whose
   // workerSrc field is mutable — set it directly, no cast needed.
-  pdfjsLib.GlobalWorkerOptions.workerSrc =
-    '/pdf.worker.min.js'; // served from public/ — copy pdfjs-dist/legacy/build/pdf.worker.min.js there
-  // Legacy worker entry kept as fallback for environments where workerSrc fails to load
-  // @ts-expect-error no type declarations for worker entry
-  await import("pdfjs-dist/legacy/build/pdf.worker.entry");
+  // pdfjs-dist v5+ ships ESM-only (.mjs) builds and dropped the old
+  // webpack-magic `pdf.worker.entry` import — `new URL(..., import.meta.url)`
+  // is the current bundler-agnostic way to point workerSrc at the shipped
+  // worker asset; webpack (Next.js) resolves and bundles it as its own chunk.
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/legacy/build/pdf.worker.min.mjs",
+    import.meta.url,
+  ).toString();
 
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
 
@@ -142,15 +171,16 @@ async function readPdf(file: File): Promise<string> {
     for (const item of items) {
       if (!("str" in item) || !item.str) continue;
       const y = item.transform ? item.transform[5] : null;
+      const str = normalizeBulletGlyph(item.str);
 
       if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
         // Y position changed significantly = new line
         if (currentLine.trim()) lines.push(currentLine.trim());
-        currentLine = item.str;
+        currentLine = str;
       } else {
         // Same line — add space between items if needed
-        const needsSpace = currentLine.length > 0 && !currentLine.endsWith(" ") && !item.str.startsWith(" ");
-        currentLine += (needsSpace ? " " : "") + item.str;
+        const needsSpace = currentLine.length > 0 && !currentLine.endsWith(" ") && !str.startsWith(" ");
+        currentLine += (needsSpace ? " " : "") + str;
       }
       lastY = y;
     }
@@ -231,12 +261,36 @@ export function isFallbackResume(r: StoredResume | null | undefined): r is Fallb
   return !!r && r._type === "fallback";
 }
 
+/** Project a regex-fallback resume into the ResumeProfile shape the UI
+ *  expects, so the AI and fallback branches can render through a single
+ *  ResumeProfile path. First experience entry's bullets feed
+ *  keyAchievements; anything missing falls back to a readable default.
+ *  Shared by DashboardResume.tsx and ResumeV2.tsx — both need to render
+ *  a fallback-parsed resume through the same ResumeProfile-shaped UI. */
+export function fallbackToProfile(r: FallbackStoredResume): ResumeProfile {
+  return {
+    headline: r.name || "Resume uploaded",
+    summary: r.summary || "Your resume has been uploaded and will be used to personalize your interview questions.",
+    yearsExperience: null,
+    seniorityLevel: "",
+    topSkills: (r.skills || []).slice(0, 8),
+    keyAchievements: (r.experience || []).flatMap(e => (e as { bullets?: string[] }).bullets || []).slice(0, 5),
+    industries: [],
+    interviewStrengths: [],
+    interviewGaps: [],
+    careerTrajectory: "",
+  };
+}
+
+/* OA-B49: section headers on Hindi/Devanagari resumes. `\b` word boundaries
+ * don't apply to Devanagari (no ASCII word chars), so the Devanagari aliases
+ * are appended as bare alternatives outside the `\b(...)\b` Latin group. */
 const SECTION_PATTERNS: Record<string, RegExp> = {
-  summary: /\b(summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|executive\s*summary)\b/i,
-  experience: /\b(experience|work\s*history|employment|professional\s*experience|work\s*experience|career\s*history)\b/i,
-  education: /\b(education|academic|qualifications|degrees?)\b/i,
-  skills: /\b(skills|technical\s*skills|core\s*competencies|competencies|technologies|tools|proficiencies|expertise)\b/i,
-  certifications: /\b(certifications?|licenses?|credentials|accreditations?|professional\s*development)\b/i,
+  summary: /\b(summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|executive\s*summary)\b|सारांश|प्रोफ़ाइल|प्रोफाइल|परिचय|उद्देश्य/i,
+  experience: /\b(experience|work\s*history|employment|professional\s*experience|work\s*experience|career\s*history)\b|कार्य\s*अनुभव|कार्य-अनुभव|अनुभव|नौकरी/i,
+  education: /\b(education|academic|qualifications|degrees?)\b|शिक्षा|शैक्षणिक|शैक्षिक\s*योग्यता|योग्यता/i,
+  skills: /\b(skills|technical\s*skills|core\s*competencies|competencies|technologies|tools|proficiencies|expertise)\b|तकनीकी\s*कौशल|कौशल|दक्षता|प्रवीणता/i,
+  certifications: /\b(certifications?|licenses?|credentials|accreditations?|professional\s*development)\b|प्रमाणपत्र|प्रमाणन|प्रमाण-पत्र/i,
 };
 
 function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "phone" | "location" | "linkedin"> {
@@ -248,37 +302,11 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   const linkedinMatch = text.match(/linkedin\.com\/in\/[\w-]+/i);
 
   // Location: look for City, ST or City, State patterns
-  const locationMatch = text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z]{2})\b/) ||
-    text.match(/([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z][a-z]+(?:\s[A-Z][a-z]+)*)/);
+  // [ \t] not \s: a newline must not let a job-title line merge into the location line.
+  const locationMatch = text.match(/([A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*,[ \t]*[A-Z]{2})\b/) ||
+    text.match(/([A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*,[ \t]*[A-Z][a-z]+(?:[ \t][A-Z][a-z]+)*)/);
 
   // Indian city detection fallback
-  const INDIAN_CITIES = new Set([
-    "bangalore", "bengaluru", "mumbai", "bombay", "delhi", "new delhi", "delhi ncr",
-    "gurgaon", "gurugram", "noida", "greater noida", "ghaziabad", "faridabad",
-    "hyderabad", "pune", "chennai", "madras", "kolkata", "calcutta",
-    "ahmedabad", "jaipur", "chandigarh", "mohali", "kochi", "cochin",
-    "thiruvananthapuram", "trivandrum", "lucknow", "indore", "coimbatore",
-    "nagpur", "visakhapatnam", "vizag", "bhubaneswar", "mysore", "mysuru",
-    "mangalore", "mangaluru", "vadodara", "baroda", "surat",
-    "bhopal", "patna", "ranchi", "dehradun", "raipur", "guwahati",
-    "agra", "varanasi", "amritsar", "jodhpur", "udaipur", "kanpur",
-    "allahabad", "prayagraj", "nashik", "aurangabad", "rajkot", "hubli",
-    "belgaum", "belagavi", "salem", "tiruchirappalli", "trichy", "madurai",
-    "vijayawada", "guntur", "warangal", "navi mumbai", "thane",
-    "pimpri-chinchwad", "gandhinagar", "shimla", "srinagar", "jammu",
-    "panaji", "imphal", "shillong", "aizawl", "kohima", "agartala",
-    "itanagar", "gangtok", "pondicherry", "puducherry",
-    "nellore", "tirupati", "kakinada", "rajahmundry",
-    "jalandhar", "ludhiana", "patiala", "bathinda",
-    "meerut", "aligarh", "bareilly", "moradabad",
-    "jamshedpur", "dhanbad", "bokaro",
-    "cuttack", "rourkela", "sambalpur",
-    "siliguri", "durgapur", "asansol",
-    "kozhikode", "calicut", "thrissur", "kollam",
-    "tiruvallur", "vellore", "erode", "tirunelveli",
-    "belgaum", "dharwad", "gulbarga", "kalaburagi",
-    "kolhapur", "solapur", "sangli", "satara",
-  ]);
 
   let resolvedLocation = locationMatch?.[1] || "";
 
@@ -312,7 +340,11 @@ function extractContact(text: string): Pick<ParsedResume, "name" | "email" | "ph
   // Each token must start with a capital letter followed by lowercase, OR
   // be fully uppercase (allows "JAY VYAS"). Allows hyphenated and
   // apostrophe names ("Anne-Marie", "O'Brien"). Between 2 and 4 tokens.
-  const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,})){1,3}$/;
+  /* OA-B49: accept Devanagari-script name tokens (U+0900–U+097F) alongside
+   * Latin so Hindi resumes ("राहुल शर्मा") aren't silently dropped. Devanagari
+   * has no letter case, so a token is simply 2+ consecutive Devanagari code
+   * points; the 2–4-token shape is unchanged. */
+  const namePattern = /^(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,}|[ऀ-ॿ]{2,})(?:\s+(?:[A-Z][a-zA-Z'-]+|[A-Z]{2,}|[ऀ-ॿ]{2,})){1,3}$/;
   // Organisational / institutional / academic-degree keywords. If any
   // token in the line matches one of these, reject the line as a name
   // candidate. These are companies, universities, degrees, subjects,
@@ -408,6 +440,15 @@ const STOPWORDS = new Set([
   "prepared","conducted","provided","delivered","achieved","established",
 ]);
 
+// Words that only ever appear as the start of a sentence/bullet fragment,
+// never as the first word of a genuine skill — catches mid-sentence remnants
+// left over when a bullet ("...growth across campaign management...") gets
+// comma/newline-split mid-phrase instead of at a real boundary.
+const FRAGMENT_STARTERS = new Set([
+  "across", "via", "through", "toward", "towards", "against", "over", "within",
+  "amongst", "among", "onto", "into", "upon", "per", "plus", "including",
+]);
+
 function isLikelySkill(s: string): boolean {
   const lower = s.toLowerCase();
   const words = lower.split(/\s+/);
@@ -416,6 +457,10 @@ function isLikelySkill(s: string): boolean {
   if (words.every(w => STOPWORDS.has(w))) return false;
   if (/^\d+$/.test(s)) return false;
   if (/^(19|20)\d{2}/.test(s)) return false;
+  // Metric/count fragments — e.g. "000+ Google Play downloads" left over
+  // after "10,000+ Google Play downloads" gets comma-split mid-number.
+  if (/^\d+[+%]?(\s|$)/.test(s)) return false;
+  if (words.length > 1 && FRAGMENT_STARTERS.has(words[0])) return false;
   if (s.length < 2 || s.length > 40) return false;
   if (/\b(university|college|school|institute|bachelor|master|b\.?tech|m\.?tech|b\.?e|m\.?e|b\.?sc|m\.?sc|ph\.?d)\b/i.test(s)) return false;
   return true;
@@ -436,12 +481,29 @@ function parseSkills(text: string): string[] {
   });
 }
 
+/* Resume company lines read "PayLedger Technologies (Fintech), Bengaluru": keep
+ * only the employer so the setup form's Company prefill isn't a whole line.
+ * A comma suffix survives when it is a legal-entity tail ("Acme, Inc."). */
+export function cleanCompanyName(raw: string): string {
+  const noParens = raw.replace(/\s*\([^)]*\)/g, "").trim();
+  const [head, ...tail] = noParens.split(",").map((p) => p.trim()).filter(Boolean);
+  if (!head) return noParens;
+  const legal = /^(inc|ltd|llc|llp|pvt|limited|corp|co)\b/i;
+  const kept = [head];
+  for (const part of tail) {
+    if (legal.test(part)) kept.push(part);
+    else break;
+  }
+  return kept.join(", ");
+}
+
 function parseExperience(text: string): ResumeExperience[] {
   const entries: ResumeExperience[] = [];
   const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
 
   // Heuristic: a new entry starts with a line containing a date-like pattern or a title/company pair
-  const datePattern = /\b(19|20)\d{2}\b|present|current/i;
+  // OA-B49: वर्तमान / अभी = "present"/"now" on Hindi resumes (years stay Latin).
+  const datePattern = /\b(19|20)\d{2}\b|present|current|वर्तमान|अभी/i;
   const bulletPattern = /^[•·●►▸▪■◆★\-–—]\s*/;
 
   let current: ResumeExperience | null = null;
@@ -463,7 +525,7 @@ function parseExperience(text: string): ResumeExperience[] {
       const splitMatch = rest.match(/^(.+?)\s*(?:at|@|\||,|–|—)\s*(.+)$/i);
       current = {
         title: splitMatch ? splitMatch[1].trim() : rest,
-        company: splitMatch ? splitMatch[2].trim() : "",
+        company: splitMatch ? cleanCompanyName(splitMatch[2]) : "",
         period,
         bullets: [],
       };
@@ -471,7 +533,7 @@ function parseExperience(text: string): ResumeExperience[] {
       current.bullets.push(line.replace(bulletPattern, "").trim());
     } else if (current && !isBullet && line.length < 80 && !current.company) {
       // Might be company on a separate line
-      current.company = line;
+      current.company = cleanCompanyName(line);
     } else if (current && line.length > 20) {
       // Long non-bullet line — treat as a bullet
       current.bullets.push(line);
@@ -521,6 +583,19 @@ function parseCertifications(text: string): string[] {
     .filter(l => l.length > 2 && l.length < 120);
 }
 
+// Collapsing every newline to a space turns a summary with real paragraph
+// breaks (blank lines) or bullet lines into one run-on wall of text.
+// Preserve blank-line paragraph breaks; only join single line-wraps with
+// a space, which is what PDF/DOCX text extraction actually produces for
+// a soft-wrapped sentence.
+function formatSummaryText(text: string): string {
+  return text
+    .split(/\n{2,}/)
+    .map(block => block.replace(/\n/g, " ").replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n\n");
+}
+
 /** Parse raw resume text into structured data */
 export function parseResumeData(rawText: string): ParsedResume {
   const contact = extractContact(rawText);
@@ -528,7 +603,7 @@ export function parseResumeData(rawText: string): ParsedResume {
 
   return {
     ...contact,
-    summary: sections.summary?.replace(/\n/g, " ").trim() || "",
+    summary: sections.summary ? formatSummaryText(sections.summary) : "",
     skills: sections.skills ? parseSkills(sections.skills) : [],
     experience: sections.experience ? parseExperience(sections.experience) : [],
     education: sections.education ? parseEducation(sections.education) : [],
@@ -560,7 +635,7 @@ export async function parseResumeDataAsync(rawText: string): Promise<ParsedResum
   const certifications = sections.certifications ? parseCertifications(sections.certifications) : [];
   return {
     ...contact,
-    summary: sections.summary?.replace(/\n/g, " ").trim() || "",
+    summary: sections.summary ? formatSummaryText(sections.summary) : "",
     skills, experience, education, certifications,
   };
 }
@@ -568,9 +643,10 @@ export async function parseResumeDataAsync(rawText: string): Promise<ParsedResum
 /**
  * Extract text from a resume file.
  * Supports: .pdf, .docx, .doc, .txt
- * Returns the extracted text, trimmed to max 5000 chars for LLM context.
+ * Returns the extracted text, trimmed to max 12,000 chars for LLM context,
+ * plus whether anything was cut so the UI can say so.
  */
-export async function extractResumeText(file: File): Promise<string> {
+export async function extractResumeTextWithMeta(file: File): Promise<{ text: string; truncated: boolean }> {
   const name = file.name.toLowerCase();
   let text = "";
 
@@ -602,13 +678,14 @@ export async function extractResumeText(file: File): Promise<string> {
   // Clean up whitespace
   text = text.replace(/\r\n/g, "\n").replace(/[ \t]+/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
-  // Cap at 12,000 chars — long enough for a 3-page resume, cheap enough for LLM context.
-  // Trim to the last newline so we don't cut in the middle of a sentence.
-  if (text.length > 12000) {
-    const truncated = text.slice(0, 12000);
-    const lastNl = truncated.lastIndexOf("\n");
-    text = lastNl > 8000 ? truncated.slice(0, lastNl) : truncated;
-  }
+  if (isUnreadableResumeText(text)) throw new Error(UNREADABLE_RESUME_MESSAGE);
 
-  return text;
+  // 12,000 chars: long enough for a 3-page resume, cheap enough for LLM context.
+  // Section-aware, so a long CV loses the tail of each section rather than
+  // whole trailing sections (education, certifications).
+  return truncateResumeText(text);
+}
+
+export async function extractResumeText(file: File): Promise<string> {
+  return (await extractResumeTextWithMeta(file)).text;
 }

@@ -1,19 +1,27 @@
-/* Vercel Cron — Hard-delete accounts soft-deleted 7+ days ago.
- * Runs daily. Invoked by Vercel Cron (authenticated via CRON_SECRET header).
+/* Vercel Cron — Erase accounts soft-deleted 7+ days ago.
+ * Runs daily. Invoked by Vercel Cron (Authorization: Bearer CRON_SECRET, fails closed).
+ * The erasure itself is the shared eraseUserData routine (same one delete-account
+ * uses for immediate deletes); accounts whose erasure fails keep their deleted_at
+ * and are retried by the next run.
  */
 
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { supabaseUrl } from "./_shared";
+import { supabaseUrl, slog } from "./_shared";
+import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
+import { sendErasureEmail } from "./_erase-user-email";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
+const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const BATCH_SIZE = 25;
+const TIME_BUDGET_MS = 45_000;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Only allow from Vercel Cron (x-vercel-cron or Authorization: Bearer CRON_SECRET)
-  const authHeader = req.headers.authorization || "";
-  const isVercelCron = req.headers["x-vercel-cron"] === "1";
-  const hasValidSecret = CRON_SECRET && authHeader === `Bearer ${CRON_SECRET}`;
-  if (!isVercelCron && !hasValidSecret) {
+  if (!verifyCronAuth(req)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
@@ -33,45 +41,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const encodedCutoff = encodeURIComponent(cutoff);
 
   try {
-    // Find accounts to hard-delete
-    const findRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id`,
-      { headers, signal: AbortSignal.timeout(10_000) },
-    );
+    // Never-attempted accounts first, then the least recently attempted, so accounts whose erasure
+    // keeps failing rotate to the back instead of starving the queue. Falls back to deleted_at
+    // ordering until migration 0056 adds the column.
+    const queueQuery = (order: string) =>
+      fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id&order=${order}&limit=${BATCH_SIZE}`,
+        { headers, signal: AbortSignal.timeout(10_000) },
+      );
+    let findRes = await queueQuery("erasure_attempted_at.asc.nullsfirst,deleted_at.asc");
+    if (findRes.status === 400) findRes = await queueQuery("deleted_at.asc");
     if (!findRes.ok) {
       console.error(`[cron:cleanup-deleted] CRITICAL: query failed (${findRes.status})`);
       return res.status(500).json({ error: "Failed to query profiles" });
     }
     const rows = (await findRes.json()) as { id: string }[];
-    if (rows.length === 0) return res.status(200).json({ deleted: 0 });
+    if (rows.length === 0) {
+      await recordCronResult("cleanup-deleted-accounts", { errors: 0 });
+      return res.status(200).json({ deleted: 0 });
+    }
 
-    const deleted: string[] = [];
-    const failed: string[] = [];
+    let deleted = 0;
+    let retained = 0;
+    let failed = 0;
+    let restored = 0;
+    const started = Date.now();
+
+    // The batch was read a while ago and each erasure takes seconds: an owner can restore the
+    // account in between, and erasing a restored account is unrecoverable.
+    const stillScheduled = async (id: string): Promise<boolean> => {
+      const r = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&deleted_at=not.is.null&deleted_at=lt.${encodedCutoff}&select=id`,
+        { headers, signal: AbortSignal.timeout(10_000) },
+      ).catch(() => null);
+      if (!r || !r.ok) return false;
+      const found = (await r.json().catch(() => [])) as { id?: string }[];
+      return Array.isArray(found) && found.some((row) => row.id === id);
+    };
+    // Best-effort; the column is optional until migration 0056 is applied.
+    const stampAttempt = (id: string) =>
+      fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&deleted_at=not.is.null`, {
+        method: "PATCH",
+        headers: { ...headers, Prefer: "return=minimal" },
+        body: JSON.stringify({ erasure_attempted_at: new Date().toISOString() }),
+        signal: AbortSignal.timeout(10_000),
+      }).catch(() => undefined);
 
     for (const { id } of rows) {
-      const encodedId = encodeURIComponent(id);
+      if (Date.now() - started > TIME_BUDGET_MS) break; // remaining accounts are picked up tomorrow
+      if (!(await stillScheduled(id))) { restored++; continue; }
+      await stampAttempt(id);
       try {
-        // Delete all user data in parallel
-        await Promise.allSettled([
-          fetch(`${SUPABASE_URL}/rest/v1/sessions?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/calendar_events?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/payments?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/feedback?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-          fetch(`${SUPABASE_URL}/rest/v1/interview_turns?user_id=eq.${encodedId}`, { method: "DELETE", headers }),
-        ]);
-        await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, { method: "DELETE", headers });
-        await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodedId}`, { method: "DELETE", headers });
-        deleted.push(id);
-      } catch (err) {
-        console.error(`[cleanup-deleted-accounts] Failed for ${id.slice(0, 8)}:`, err);
-        failed.push(id);
+        const result = await eraseUserData(
+          {
+            fetchImpl: fetch,
+            supabaseUrl: SUPABASE_URL,
+            serviceKey: SUPABASE_SERVICE_ROLE_KEY,
+            trigger: "scheduled",
+            posthog: posthogConfigFromEnv(process.env),
+            notify: (contact) => sendErasureEmail(fetch, { resendApiKey: RESEND_API_KEY, fromEmail: FROM_EMAIL, appUrl: APP_URL }, contact),
+            // Counts only; never an id or email.
+            log: (msg, fields) => slog.info(msg, fields),
+          },
+          id,
+        );
+        if (result.ok) {
+          deleted++;
+          if (result.retainedFinancialRecords) retained++;
+        } else {
+          failed++;
+          console.error(`[cleanup-deleted-accounts] erasure incomplete, will retry: ${result.failedSteps.join(", ")}`);
+        }
+      } catch {
+        failed++;
+        console.error("[cleanup-deleted-accounts] erasure threw, will retry");
       }
     }
 
-    console.log(`[cleanup-deleted-accounts] Deleted ${deleted.length}, failed ${failed.length}`);
-    return res.status(200).json({ deleted: deleted.length, failed: failed.length });
+    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed, skippedRestored: restored });
+    // A stuck erasure is a DPDP deadline risk, so any failure keeps the heartbeat stale.
+    await recordCronResult("cleanup-deleted-accounts", { errors: failed });
+    return res.status(200).json({ deleted, retained, failed });
   } catch (err) {
-    console.error("[cleanup-deleted-accounts] Error:", err);
+    console.error("[cleanup-deleted-accounts] Error:", err instanceof Error ? err.message : "unknown");
     return res.status(500).json({ error: "Cleanup failed" });
   }
 }

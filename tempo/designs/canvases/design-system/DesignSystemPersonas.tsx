@@ -2,8 +2,9 @@
    Three core personas. Their context, fears, language, and the moments
    where HireStepX becomes essential. Use to vet every product decision. */
 import React from "react";
-import { tokens as t, fonts as f, shadows } from "./_tokens";
-import { MonoLabel, SectionHead, Footer } from "./_atoms";
+import "../../../public/fonts/af-sobremesa.css";
+import { tokens as t, fonts as f, shadows, type, radius } from "./_tokens";
+import { MonoLabel, SectionHead, Footer, PageHeader } from "./_atoms";
 function PersonaCard({
   num,
   name,
@@ -40,7 +41,7 @@ function PersonaCard({
       style={{
         background: t.white,
         border: `1px solid ${t.line}`,
-        borderRadius: 14,
+        borderRadius: radius.lg,
         boxShadow: shadows.card,
         overflow: "hidden",
         marginBottom: 16,
@@ -53,24 +54,24 @@ function PersonaCard({
           color: t.cream,
           padding: "32px 40px",
           display: "grid",
-          gridTemplateColumns: "120px 1fr auto",
+          gridTemplateColumns: "100px 1fr auto",
           gap: 28,
           alignItems: "center",
         }}
       >
         <div
           style={{
-            width: 100,
-            height: 100,
+            width: 88,
+            height: 88,
             borderRadius: "50%",
             background: copperAvatar ? t.copper100 : t.indigo100,
             color: copperAvatar ? t.copper : t.indigo,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontFamily: f.serif,
-            fontSize: 36,
-            fontWeight: 500,
+            fontFamily: f.sans,
+            fontSize: 28,
+            fontWeight: 600,
             letterSpacing: "-0.01em",
           }}
         >
@@ -80,11 +81,11 @@ function PersonaCard({
           <MonoLabel color={t.copper}>Persona {num}</MonoLabel>
           <h3
             style={{
-              fontFamily: f.serif,
-              fontSize: 32,
-              fontWeight: 400,
-              letterSpacing: "-0.01em",
-              lineHeight: 1.1,
+              fontFamily: f.sans,
+              fontSize: type.h2.size,
+              fontWeight: type.h2.weight,
+              letterSpacing: type.h2.letterSpacing,
+              lineHeight: type.h2.lineHeight,
               margin: "10px 0 6px",
               color: t.cream,
             }}
@@ -93,10 +94,9 @@ function PersonaCard({
           </h3>
           <p
             style={{
-              fontFamily: f.serif,
-              fontSize: 18,
-              fontStyle: "italic",
-              color: t.copper,
+              fontFamily: f.sans,
+              fontSize: type.bodyLg.size,
+              color: "rgba(250, 247, 240, .75)",
               margin: 0,
               lineHeight: 1.4,
             }}
@@ -123,8 +123,8 @@ function PersonaCard({
       <div style={{ padding: "32px 40px" }}>
         <p
           style={{
-            fontSize: 15,
-            color: t.indigoGray,
+            fontSize: type.bodyLg.size,
+            color: t.inkMuted,
             margin: "0 0 32px",
             lineHeight: 1.7,
           }}
@@ -145,8 +145,8 @@ function PersonaCard({
                   <li
                     key={i}
                     style={{
-                      fontSize: 13,
-                      color: t.indigoGray,
+                      fontSize: type.small.size,
+                      color: t.inkMuted,
                       lineHeight: 1.55,
                       paddingLeft: 14,
                       position: "relative",
@@ -184,9 +184,9 @@ function PersonaCard({
             <MonoLabel>How they talk</MonoLabel>
             <p
               style={{
-                fontFamily: f.serif,
-                fontSize: 18,
-                fontStyle: "italic",
+                fontFamily: f.sans,
+                fontSize: type.h4.size,
+                fontWeight: 500,
                 color: t.coal,
                 margin: "12px 0 0",
                 lineHeight: 1.55,
@@ -199,8 +199,8 @@ function PersonaCard({
             <MonoLabel>The HireStepX moment</MonoLabel>
             <p
               style={{
-                fontSize: 14,
-                color: t.indigoGray,
+                fontSize: type.body.size,
+                color: t.inkMuted,
                 margin: "12px 0 0",
                 lineHeight: 1.7,
               }}
@@ -219,8 +219,7 @@ export default function DesignSystemPersonas() {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
-        @import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap');
       `}</style>
       <div
         style={{
@@ -232,36 +231,11 @@ export default function DesignSystemPersonas() {
           background: t.cream,
         }}
       >
-        {/* MASTHEAD */}
-        <header style={{ borderBottom: `1px solid ${t.line}`, paddingBottom: 40, marginBottom: 64 }}>
-          <MonoLabel>Design System · v1.0</MonoLabel>
-          <h1
-            style={{
-              fontFamily: f.serif,
-              fontSize: 56,
-              fontWeight: 400,
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-              margin: "12px 0 0",
-            }}
-          >
-            Personas, by{" "}
-            <em style={{ fontStyle: "italic", color: t.copper }}>specificity</em>.
-          </h1>
-          <p
-            style={{
-              color: t.indigoGray,
-              fontSize: 15,
-              margin: "16px 0 0",
-              maxWidth: 540,
-              lineHeight: 1.6,
-            }}
-          >
-            Three real people. Read them before every product decision. If
-            the answer doesn't help <em>at least one</em> of them in a
-            specific way, it's probably the wrong answer.
-          </p>
-        </header>
+        {/* HEADER */}
+        <PageHeader
+          title="Personas, by specificity."
+          description="Three real people. Read them before every product decision. If the answer doesn't help at least one of them in a specific way, it's probably the wrong answer."
+        />
 
         {/* PERSONA 1 */}
         <section style={{ marginBottom: 32 }}>
@@ -377,7 +351,7 @@ export default function DesignSystemPersonas() {
             style={{
               background: t.white,
               border: `1px solid ${t.line}`,
-              borderRadius: 14,
+              borderRadius: radius.lg,
               padding: "32px 40px",
               boxShadow: shadows.card,
             }}
@@ -422,7 +396,7 @@ export default function DesignSystemPersonas() {
                   >
                     {row.k}
                   </span>
-                  <span style={{ color: t.indigoGray }}>{row.v}</span>
+                  <span style={{ color: t.inkMuted }}>{row.v}</span>
                 </li>
               ))}
             </ul>

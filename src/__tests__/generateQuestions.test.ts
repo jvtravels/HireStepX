@@ -194,6 +194,12 @@ describe("computeStepCount", () => {
     expect(behavioral).toBe(5);
     expect(hr).toBeGreaterThan(behavioral);
   });
+
+  it("hr-round keeps its 7-question sizing even when mini: true (regression — hr-round's only real session length is the 10-minute mini tier, see FOCUS_MINUTES in SessionSetup.tsx, so the hr-round branch must be checked before the generic mini branch)", () => {
+    expect(computeStepCount({ mini: true, isSalaryType: false, interviewType: "hr-round" })).toBe(9);
+    // Non-hr-round types are unaffected: still collapse to the 3-question mini default.
+    expect(computeStepCount({ mini: true, isSalaryType: false, interviewType: "behavioral" })).toBe(5);
+  });
 });
 
 /* buildStaticFallback is what users get when both LLM providers fail. The

@@ -15,6 +15,8 @@
  */
 
 import { t } from "../tokens";
+import { fonts } from "../../auth/_tokens";
+import { Button } from "@/components/ui/button";
 
 /* ── Token values used for canvas drawing ─────────────────────────── */
 /* Canvas drawText uses raw hex strings — these come from the design
@@ -27,6 +29,7 @@ const C = {
   inkSoft:   t.inkSoft,
   line:      t.line,
   success:   t.success,
+  font:      fonts.sans,
 } as const;
 
 const W = 1200;
@@ -97,7 +100,7 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
 
   /* ── HireStepX wordmark (top-left) ─────────────────────────────── */
   ctx.fillStyle = C.indigo;
-  ctx.font = `700 28px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 28px ${C.font}`;
   ctx.fillText("HireStepX", PADDING, ACCENT_BAR_H + 54);
 
   /* ── Role + Company (top-right) ─────────────────────────────────── */
@@ -105,11 +108,11 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   const roleText = trunc(props.role, 40);
   const compText = trunc(props.company, 40);
   ctx.fillStyle = C.coal;
-  ctx.font = `600 22px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `600 22px ${C.font}`;
   ctx.fillText(roleText, W - PADDING, ACCENT_BAR_H + 48);
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 18px 'Satoshi', system-ui, -apple-system, sans-serif`;
-  ctx.fillText(compText, W - PADDING, ACCENT_BAR_H + 76);
+  ctx.font = `400 18px ${C.font}`;
+  if (compText) ctx.fillText(compText, W - PADDING, ACCENT_BAR_H + 76);
   ctx.textAlign = "left";
 
   /* ── Divider ────────────────────────────────────────────────────── */
@@ -123,18 +126,18 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   /* ── Large score (centre) ───────────────────────────────────────── */
   ctx.textAlign = "center";
   ctx.fillStyle = C.indigo;
-  ctx.font = `700 160px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 160px ${C.font}`;
   ctx.fillText(String(props.score), W / 2, 370);
 
   /* ── "/100" sub-label ────────────────────────────────────────────── */
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 28px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `400 28px ${C.font}`;
   ctx.fillText("/ 100", W / 2, 410);
 
   /* ── Score label ─────────────────────────────────────────────────── */
   const label = props.verdict || scoreLabel(props.score);
   ctx.fillStyle = labelColor(props.score);
-  ctx.font = `700 26px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `700 26px ${C.font}`;
   ctx.fillText(label.toUpperCase(), W / 2, 460);
 
   /* ── Divider ────────────────────────────────────────────────────── */
@@ -150,25 +153,25 @@ export async function downloadScoreCard(props: ScoreCardProps): Promise<void> {
   if (props.topStrength) {
     ctx.textAlign = "left";
     ctx.fillStyle = C.success;
-    ctx.font = `700 16px 'Satoshi', system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 16px ${C.font}`;
     ctx.fillText("✓", PADDING, 526);
     ctx.fillStyle = C.coal;
-    ctx.font = `400 16px 'Satoshi', system-ui, -apple-system, sans-serif`;
+    ctx.font = `400 16px ${C.font}`;
     ctx.fillText(trunc(props.topStrength, maxLineLen), PADDING + 26, 526);
   }
   if (props.topGap) {
     ctx.fillStyle = C.copper;
-    ctx.font = `700 16px 'Satoshi', system-ui, -apple-system, sans-serif`;
+    ctx.font = `700 16px ${C.font}`;
     ctx.fillText("↑", PADDING, 556);
     ctx.fillStyle = C.coal;
-    ctx.font = `400 16px 'Satoshi', system-ui, -apple-system, sans-serif`;
+    ctx.font = `400 16px ${C.font}`;
     ctx.fillText(trunc(props.topGap, maxLineLen), PADDING + 26, 556);
   }
 
   /* ── Footer ─────────────────────────────────────────────────────── */
   ctx.textAlign = "center";
   ctx.fillStyle = C.inkSoft;
-  ctx.font = `400 15px 'Satoshi', system-ui, -apple-system, sans-serif`;
+  ctx.font = `400 15px ${C.font}`;
   ctx.fillText("Practice at hirestepx.com", W / 2, H - 22);
 
   /* ── Export as PNG ───────────────────────────────────────────────── */
@@ -198,24 +201,15 @@ export function ScoreCardDownloadButton(props: ScoreCardProps & { className?: st
   };
 
   return (
-    <button
+    <Button
       type="button"
+      variant="outline"
       onClick={handleClick}
       aria-label="Download score card as image"
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 7,
-        padding: "10px 18px",
-        borderRadius: 10,
-        border: `1px solid ${t.line}`,
-        background: "transparent",
         color: t.coal,
-        fontFamily: "'Satoshi', system-ui, -apple-system, sans-serif",
-        fontSize: 13,
+        fontFamily: fonts.sans,
         fontWeight: 600,
-        cursor: "pointer",
-        lineHeight: 1,
       }}
     >
       {/* Download icon */}
@@ -235,6 +229,6 @@ export function ScoreCardDownloadButton(props: ScoreCardProps & { className?: st
         <line x1="12" y1="15" x2="12" y2="3" />
       </svg>
       Download Score Card
-    </button>
+    </Button>
   );
 }

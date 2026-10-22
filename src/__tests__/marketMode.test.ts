@@ -102,4 +102,21 @@ describe("_market-mode — inferCompanyMode (ITEM 2)", () => {
   it("role with 'series b' → STARTUP regardless of company name", () => {
     expect(inferCompanyMode("series b startup engineer", "Unknown Startup")).toBe<CompanyMode>("STARTUP");
   });
+
+  /* S53-B3/S52-WL-B2 (2026-07-24): consulting firms and extended GCC companies
+   * were falling through to IT_SERVICES → "soft" market. Both should be neutral. */
+  it("McKinsey → CONSULTING (not IT_SERVICES)", () => {
+    expect(inferCompanyMode("management consultant", "McKinsey")).toBe<CompanyMode>("CONSULTING");
+    expect(inferCompanyMode("associate", "BCG")).toBe<CompanyMode>("CONSULTING");
+    expect(inferCompanyMode("analyst", "Deloitte")).toBe<CompanyMode>("CONSULTING");
+    expect(inferCompanyMode("senior consultant", "Accenture")).toBe<CompanyMode>("CONSULTING");
+    expect(inferCompanyMode("consultant", "KPMG")).toBe<CompanyMode>("CONSULTING");
+  });
+
+  it("Walmart Labs / Adobe / Cisco → GCC (not IT_SERVICES)", () => {
+    expect(inferCompanyMode("software engineer", "Walmart Labs")).toBe<CompanyMode>("GCC");
+    expect(inferCompanyMode("product manager", "Adobe India")).toBe<CompanyMode>("GCC");
+    expect(inferCompanyMode("backend engineer", "Cisco Systems")).toBe<CompanyMode>("GCC");
+    expect(inferCompanyMode("data analyst", "Mastercard")).toBe<CompanyMode>("GCC");
+  });
 });

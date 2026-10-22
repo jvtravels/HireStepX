@@ -1,0 +1,264 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { cn } from "cn";
+import { SortableHead, type Sort } from "@/components/SortableHead";
+import { TablePaginationFooter } from "@/components/TablePaginationFooter";
+import { Table, TableBody, TableCaption, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { InfoTip } from "@/employer/_panelParts";
+import { availabilityOf } from "@/employer/_jobDetailHelpers";
+import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AnimatePresence } from "motion/react";
+import CandidateRow from "./CandidateRow";
+import { MAX_SELECTION } from "./shortlistSelection";
+import { CAND_TABLE_CSS } from "./candidateTableStyles";
+import { COLUMN_LABEL, SORT_OPTIONS, type SortColumn } from "./candidateTableModel";
+
+/* Below 768px the column headers are hidden, so sorting moves to this select. */
+const PLAIN_HEAD = "h-10 px-3 text-[13px] font-semibold text-hx-ink-soft";
+
+export default function CandidatesTable({
+  rows,
+  requirementId,
+  requiredSkills,
+  readOnly,
+  suspended,
+  sort,
+  onSortChange,
+  onUnlock,
+  onViewEvidence,
+  onMessage,
+  onStageChange,
+  selectedIds,
+  onSelectedChange,
+  pageState,
+  onTogglePage,
+  selectionFull,
+  activeId,
+  totalCount,
+  filteredCount,
+  rowsPerPage,
+  onRowsPerPageChange,
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  rows: Candidate[];
+  requirementId: string;
+  requiredSkills: string[];
+  readOnly: boolean;
+  suspended: boolean;
+  sort: Sort<SortColumn>;
+  onSortChange: (s: Sort<SortColumn>) => void;
+  onUnlock: (c: Candidate) => void;
+  onViewEvidence: (c: Candidate) => void;
+  onMessage: (c: Candidate) => void;
+  onStageChange: (c: Candidate, status: CandidateStatus) => void;
+  selectedIds: ReadonlySet<string>;
+  onSelectedChange: (c: Candidate, checked: boolean, range: boolean) => void;
+  pageState: "none" | "some" | "all";
+  onTogglePage: () => void;
+  selectionFull: boolean;
+  activeId: string | null;
+  totalCount: number;
+  filteredCount: number;
+  rowsPerPage: number;
+  onRowsPerPageChange: (n: number) => void;
+  page: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [moreRight, setMoreRight] = useState(false);
+
+  /* When the table is narrower than its columns the Stage column sits past the fold; the fade next to the
+     pinned Actions column tells the employer there is more to scroll to. */
+  const measure = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure, rows.length]);
+
+  const showAvailability = rows.some((c) => availabilityOf(c.resume?.noticePeriod).label !== "Not stated");
+  const mobileValue = `${sort.column}-${sort.direction}`;
+  const mobileKnown = SORT_OPTIONS.some((s) => s.value === mobileValue);
+
+  return (
+    <>
+      <div className="mb-3 md:hidden">
+        <label htmlFor="cand-mobile-sort" className="mb-1 block text-[13px] text-hx-ink-soft">
+          Sort candidates
+        </label>
+        <Select
+          value={mobileKnown ? mobileValue : "match-desc"}
+          onValueChange={(v) => {
+            const next = SORT_OPTIONS.find((o) => o.value === v);
+            if (next) onSortChange(next.sort);
+          }}
+        >
+          <SelectTrigger id="cand-mobile-sort" className="h-11 w-full border-hx-line bg-white px-3 text-[14px] text-hx-coal"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {!readOnly && !suspended && (
+          <label htmlFor="select-page-mobile" className="mt-2 flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal">
+            <Checkbox
+              id="select-page-mobile"
+              checked={pageState === "all"}
+              onCheckedChange={onTogglePage}
+              disabled={rows.length === 0 || (selectionFull && pageState === "none")}
+              className="shrink-0 size-6"
+            />
+            Select all on this page
+          </label>
+        )}
+      </div>
+      <div className="cand-shell flex flex-none flex-col overflow-clip border-t border-hx-line bg-white">
+        <div className="relative">
+        <div
+          ref={scrollRef}
+          onScroll={measure}
+          role="region"
+          aria-label="Candidates table. Scroll sideways to see more columns."
+          // Keyboard users can only scroll an overflow region they can focus.
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+          tabIndex={0}
+          className="cand-scroll flex-none overflow-x-auto min-[1240px]:overflow-x-clip focus-visible:outline-2 focus-visible:-outline-offset-2"
+        >
+          <style>{CAND_TABLE_CSS}</style>
+          <Table role="table" className="cand-table min-w-[860px]" containerClassName="overflow-visible">
+            <TableCaption className="sr-only">
+              Candidates for this job, {filteredCount} shown. Each row has a checkbox to select it. Column headers are buttons that sort the table.
+            </TableCaption>
+            <TableHeader className="cand-thead">
+              <TableRow className="h-10 bg-hx-row hover:bg-hx-row">
+                <SortableHead
+                  inset={12}
+                  leading={
+                    !readOnly && !suspended ? (
+                      <Checkbox
+                        checked={pageState === "all"}
+                        onCheckedChange={onTogglePage}
+                        disabled={rows.length === 0 || (selectionFull && pageState === "none")}
+                        aria-label="Select all candidates on this page"
+                        title={`Select all on this page. Up to ${MAX_SELECTION} at a time; shift-click selects a range.`}
+                        className="shrink-0 pointer-coarse:size-6 pointer-coarse:after:-inset-3"
+                      />
+                    ) : undefined
+                  }
+                  column="name" columnLabel={COLUMN_LABEL.name} defaultDirection="asc" width="29%" minWidth={200} sort={sort} onSortChange={onSortChange}>
+                  Candidate
+                </SortableHead>
+                <SortableHead
+                  inset={12}
+                  column="match"
+                  columnLabel={COLUMN_LABEL.match}
+                  width="25%"
+                  minWidth={160}
+                  sort={sort}
+                  onSortChange={onSortChange}
+                  after={<InfoTip label="About Role match">The overall match score out of 100, which weighs skills, role and location. Below it, how many of this job's required skills the candidate lists, and which ones are missing. They may still have a missing skill, so confirm it in the interview.</InfoTip>}
+                >
+                  Role match
+                </SortableHead>
+                {showAvailability && (
+                  <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[120px]`}>
+                    <span className="inline-flex items-center gap-0.5">
+                      Availability
+                      <InfoTip label="About Availability">The candidate's own notice period, as written on their resume. We show their words when we can't read a number.</InfoTip>
+                    </span>
+                  </TableHead>
+                )}
+                <SortableHead
+                  inset={12}
+                  column="interview"
+                  columnLabel={COLUMN_LABEL.interview}
+                  width="17%"
+                  minWidth={150}
+                  sort={sort}
+                  onSortChange={onSortChange}
+                  after={<InfoTip label="About Evidence">The average score from graded HireStepX mock interviews, out of 100, and how many interviews it comes from. Below it, the other sources on file: resume, GitHub and portfolio links. Interview scores measure practice performance and are separate from the job match. Select a row's evidence to see the per-skill report.</InfoTip>}
+                >
+                  Evidence
+                </SortableHead>
+                <SortableHead
+                  inset={12}
+                  column="pipeline"
+                  columnLabel={COLUMN_LABEL.pipeline}
+                  defaultDirection="asc"
+                  width="16%"
+                  minWidth={130}
+                  sort={sort}
+                  onSortChange={onSortChange}
+                  after={<InfoTip label="About Stage">Where this candidate currently stands in your hiring process for this job.</InfoTip>}
+                >
+                  Stage
+                </SortableHead>
+                <TableHead className="cand-th-act w-px whitespace-nowrap px-2">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody role="rowgroup" className="mx-stagger">
+              <AnimatePresence initial={false}>
+              {rows.map((c) => (
+                <CandidateRow
+                  key={c.id}
+                  candidate={c}
+                  requirementId={requirementId}
+                  requiredSkills={requiredSkills}
+                  readOnly={readOnly}
+                  suspended={suspended}
+                  onUnlock={() => onUnlock(c)}
+                  onViewEvidence={() => onViewEvidence(c)}
+                  onMessage={() => onMessage(c)}
+                  onStageChange={(status) => onStageChange(c, status)}
+                  selected={selectedIds.has(c.id)}
+                  selectDisabled={selectionFull}
+                  showAvailability={showAvailability}
+                  onSelectedChange={(checked, range) => onSelectedChange(c, checked, range)}
+                  active={activeId === c.id}
+                />
+              ))}
+              </AnimatePresence>
+            </TableBody>
+          </Table>
+        </div>
+        <div
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-y-0 right-24 hidden w-12 bg-[linear-gradient(to_left,var(--color-white),transparent)] transition-opacity duration-200 ease-out motion-reduce:transition-none md:block",
+            moreRight ? "opacity-100" : "opacity-0",
+          )}
+        />
+        </div>
+        <TablePaginationFooter
+          entityLabel="candidate"
+          entityLabelPlural="candidates"
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+          rowsPerPage={rowsPerPage}
+          onRowsPerPageChange={onRowsPerPageChange}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={onPageChange}
+        />
+      </div>
+    </>
+  );
+}

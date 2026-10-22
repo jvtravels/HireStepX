@@ -1,4 +1,4 @@
-/* HireStepX — Common Indian interview questions (canon)
+/* HireStepX, Common Indian interview questions (canon)
  *
  * Real interviewers in India lean heavily on a small set of recurring
  * questions — "tell me about yourself", "why are you leaving",
@@ -137,7 +137,7 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "problem_solving", text: "Tell me about a time your first solution did not work.", frequency: 3 },
   { category: "problem_solving", text: "How do you find the root cause of a problem?", frequency: 3 },
 
-  /* HR round (Indian-style — non-negotiable) */
+  /* HR round (Indian-style, non-negotiable) */
   { category: "hr_round", text: "What is your current CTC?", frequency: 5 },
   { category: "hr_round", text: "What is your expected CTC?", frequency: 5 },
   { category: "hr_round", text: "What is your fixed and variable breakup?", frequency: 4 },
@@ -178,7 +178,7 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "fresher", text: "What was your specific contribution in your final-year project vs. the team's?", frequency: 5 },
   { category: "fresher", text: "Explain DBMS normalisation up to 3NF with a real example.", frequency: 4 },
   { category: "fresher", text: "What's the difference between an array and a linked list? When would you pick each?", frequency: 4 },
-  { category: "fresher", text: "Explain OOP — give me a real-world example, not the textbook one.", frequency: 4 },
+  { category: "fresher", text: "Explain OOP, give me a real-world example, not the textbook one.", frequency: 4 },
   { category: "fresher", text: "Have you contributed to any open-source project, hackathon, or coding contest? Walk me through one.", frequency: 3 },
   { category: "fresher", text: "Tell me one thing you've learned in the last 30 days that you can't get from coursework.", frequency: 3 },
   { category: "fresher", text: "What's not on your resume that I should know about you?", frequency: 3 },
@@ -220,7 +220,7 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
 
   /* Product / Design */
   { category: "product_design", text: "Walk me through your portfolio.", frequency: 5 },
-  { category: "product_design", text: "Explain your strongest project — what problem were you solving and who were the users?", frequency: 5 },
+  { category: "product_design", text: "Explain your strongest project, what problem were you solving and who were the users?", frequency: 5 },
   { category: "product_design", text: "What research did you do before designing the solution?", frequency: 4 },
   { category: "product_design", text: "Why did you choose this design or solution?", frequency: 4 },
   { category: "product_design", text: "What trade-off did you make on this project?", frequency: 4 },
@@ -236,7 +236,7 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "sales", text: "How do you qualify a prospect?", frequency: 3 },
   { category: "sales", text: "How do you handle objections?", frequency: 4 },
   { category: "sales", text: "Tell me about your toughest sale.", frequency: 4 },
-  { category: "sales", text: "Tell me about a deal you lost — what did you learn?", frequency: 4 },
+  { category: "sales", text: "Tell me about a deal you lost, what did you learn?", frequency: 4 },
   { category: "sales", text: "How do you negotiate pricing?", frequency: 4 },
   { category: "sales", text: "How do you handle rejection?", frequency: 3 },
 
@@ -271,55 +271,55 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
    * for Indian product cos, CiteHR salary-negotiation walkthroughs.
    * Frequency calibrated against ≥3 sources before inclusion. */
 
-  /* Behavioral — additional load-bearing competencies that don't
+  /* Behavioral, additional load-bearing competencies that don't
      show up in a generic STAR list but are very common in mid-to-
      senior Indian rounds. */
-  { category: "behavioral", text: "Tell me about a time you led without formal authority — how did you get people on board?", frequency: 4 },
+  { category: "behavioral", text: "Tell me about a time you led without formal authority, how did you get people on board?", frequency: 4 },
   { category: "behavioral", text: "Tell me about a stretch assignment you took on that was beyond your role.", frequency: 3 },
-  { category: "behavioral", text: "Tell me about a time you managed up — how did you push back on your manager?", frequency: 3 },
+  { category: "behavioral", text: "Tell me about a time you managed up, how did you push back on your manager?", frequency: 3 },
   { category: "behavioral", text: "Tell me about a time you took initiative without being asked.", frequency: 4 },
   { category: "behavioral", text: "Tell me about a time you mentored a junior teammate.", frequency: 3 },
-  { category: "behavioral", text: "Tell me about your biggest mistake — and what you learned from it.", frequency: 4 },
+  { category: "behavioral", text: "Tell me about your biggest mistake, and what you learned from it.", frequency: 4 },
 
-  /* Current job — culturally sticky Indian probes. */
+  /* Current job, culturally sticky Indian probes. */
   { category: "current_job_change", text: "Are you on a service bond or training agreement at your current company?", frequency: 3 },
   { category: "current_job_change", text: "Do you have a buy-out option from your current company?", frequency: 3 },
-  { category: "current_job_change", text: "What did your last appraisal cycle look like — what feedback did you get?", frequency: 3 },
+  { category: "current_job_change", text: "What did your last appraisal cycle look like, what feedback did you get?", frequency: 3 },
 
-  /* HR round — the gotcha closers and trap-style questions surfaced in
+  /* HR round, the gotcha closers and trap-style questions surfaced in
      candidate post-mortems but missing from v1. */
   { category: "hr_round", text: "Where else have you applied? What stage are those interviews at?", frequency: 4 },
   { category: "hr_round", text: "If you got a higher offer just before joining, what would you do?", frequency: 4 },
   { category: "hr_round", text: "What is your plan B if this doesn't work out?", frequency: 3 },
   { category: "hr_round", text: "Are you planning to pursue higher studies in the next 1-2 years?", frequency: 4 },
   { category: "hr_round", text: "Convince me you're worth this salary in one minute.", frequency: 3 },
-  { category: "hr_round", text: "What if we offer you 20% less than your expectation — would you still join?", frequency: 3 },
+  { category: "hr_round", text: "What if we offer you 20% less than your expectation, would you still join?", frequency: 3 },
   { category: "hr_round", text: "Would you accept this offer right now if we extended it?", frequency: 3 },
   { category: "hr_round", text: "Are you ready for client travel including possible overseas postings?", frequency: 3 },
   { category: "hr_round", text: "What does your family think about this opportunity and the location?", frequency: 3 },
 
-  /* Salary negotiation — recruiter-side playbook tactics surfaced
+  /* Salary negotiation, recruiter-side playbook tactics surfaced
      from CiteHR + engineerturnedrecruiter + Hirist. These are the
      pushbacks Indian recruiters actually deploy mid-call. */
-  { category: "salary_negotiation", text: "We see you got a hike just a few months ago — why are you asking for another big jump now?", frequency: 4 },
+  { category: "salary_negotiation", text: "We see you got a hike just a few months ago, why are you asking for another big jump now?", frequency: 4 },
   { category: "salary_negotiation", text: "Standard practice is to offer 10-15% over your current CTC. Why should we deviate?", frequency: 4 },
   { category: "salary_negotiation", text: "Can you share a copy of your last salary slip so we can calibrate the offer?", frequency: 4 },
-  { category: "salary_negotiation", text: "Your expectation is 40-50% over your current — that's outside our pay-band logic. How do you justify it?", frequency: 5 },
+  { category: "salary_negotiation", text: "Your expectation is 40-50% over your current, that's outside our pay-band logic. How do you justify it?", frequency: 5 },
   { category: "salary_negotiation", text: "What if we match your current fixed but lower the variable component?", frequency: 3 },
   { category: "salary_negotiation", text: "Would a sign-on bonus instead of higher fixed salary work for you?", frequency: 3 },
   { category: "salary_negotiation", text: "How firm is your number? Where's your real walk-away?", frequency: 3 },
 
-  /* Closing questions — every Indian interview ends with one of
+  /* Closing questions, every Indian interview ends with one of
      these. Candidates lose offers by saying "no questions" or
      fumbling the joining-date answer. Always-asked closers. */
   { category: "closing_questions", text: "Do you have any questions for us?", frequency: 5 },
-  { category: "closing_questions", text: "When can you join — what's the earliest realistic date?", frequency: 5 },
+  { category: "closing_questions", text: "When can you join, what's the earliest realistic date?", frequency: 5 },
   { category: "closing_questions", text: "Are you currently interviewing elsewhere? Where are those processes at?", frequency: 4 },
   { category: "closing_questions", text: "Anything you'd like to highlight that we haven't covered?", frequency: 3 },
   { category: "closing_questions", text: "On a scale of 1-10, how interested are you in this role?", frequency: 3 },
   { category: "closing_questions", text: "Is there anything that would stop you from accepting this offer?", frequency: 3 },
 
-  /* MBA / higher studies — asked of freshers and lateral candidates
+  /* MBA / higher studies, asked of freshers and lateral candidates
      where the resume shows a gap or a degree-jump. These are highly
      load-bearing for filtering "will this person leave for a degree
      in 6 months" risk. */
@@ -333,7 +333,7 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "mba_higher_studies", text: "Tell me about a class, professor, or live project that shaped your thinking.", frequency: 3 },
   { category: "mba_higher_studies", text: "What was your CAT/GMAT/CET score, and why did you choose this college over higher-ranked ones?", frequency: 3 },
 
-  /* Banking / PSU finance — RBI Grade B / IBPS PO / SBI PO / RBI
+  /* Banking / PSU finance, RBI Grade B / IBPS PO / SBI PO / RBI
      scientist all heavily test current monetary-policy awareness +
      functional knowledge. Sourced from Anuj Jindal + ixambee + PW
      interview reports. */
@@ -349,34 +349,34 @@ export const COMMON_INDIAN_QUESTIONS: IndianCanonEntry[] = [
   { category: "banking_psu_finance", text: "How is the digital rupee (CBDC) different from UPI?", frequency: 3 },
   { category: "banking_psu_finance", text: "What role do priority-sector lending norms play in Indian banking?", frequency: 3 },
 
-  /* Service-bond / relocation — IT-services lifecycle questions. The
+  /* Service-bond / relocation, IT-services lifecycle questions. The
      2-year service agreement and "any location in India" clauses are
      load-bearing filters at TCS/Infosys/Wipro/Cognizant/Capgemini. */
   { category: "service_bond_relocation", text: "Are you comfortable signing a 2-year service agreement / training bond?", frequency: 5 },
-  { category: "service_bond_relocation", text: "What if you have to repay the bond mid-tenure — are you prepared for that liability?", frequency: 4 },
+  { category: "service_bond_relocation", text: "What if you have to repay the bond mid-tenure, are you prepared for that liability?", frequency: 4 },
   { category: "service_bond_relocation", text: "Are you flexible to be posted at any location in India, including tier-2 or tier-3 cities?", frequency: 5 },
-  { category: "service_bond_relocation", text: "What if we post you at a client site for 6-12 months — would you be comfortable?", frequency: 4 },
+  { category: "service_bond_relocation", text: "What if we post you at a client site for 6-12 months, would you be comfortable?", frequency: 4 },
   { category: "service_bond_relocation", text: "Will your family relocate with you, or will you commute?", frequency: 3 },
   { category: "service_bond_relocation", text: "Are you comfortable with 24x7 rotational shifts including night shifts?", frequency: 4 },
   { category: "service_bond_relocation", text: "Are you open to onsite postings in the US, UK, Singapore, or APAC if a project demands it?", frequency: 3 },
   { category: "service_bond_relocation", text: "If we put you on bench for a few months between projects, how would you handle it?", frequency: 3 },
 
-  /* CTC-trap pushback — recruiter mid-call tactics. These deserve a
+  /* CTC-trap pushback, recruiter mid-call tactics. These deserve a
      dedicated category because they fire in salary-negotiation rounds
      AND in HR rounds, but the candidate's defence is identical: shift
      to market data, never anchor on percentage of current. */
   { category: "ctc_trap_pushback", text: "What's your current take-home / in-hand salary, not just CTC?", frequency: 5 },
   { category: "ctc_trap_pushback", text: "Can you share your last three months' payslips for verification?", frequency: 4 },
-  { category: "ctc_trap_pushback", text: "What's the breakdown — fixed, variable, ESOPs, joining bonus, retention bonus?", frequency: 5 },
+  { category: "ctc_trap_pushback", text: "What's the breakdown, fixed, variable, ESOPs, joining bonus, retention bonus?", frequency: 5 },
   { category: "ctc_trap_pushback", text: "Your expectation is way above our band. Can you reconsider, or should we close the conversation here?", frequency: 4 },
   { category: "ctc_trap_pushback", text: "What's the absolute minimum number you'd accept today?", frequency: 4 },
   { category: "ctc_trap_pushback", text: "If we close this offer in 48 hours, can you commit?", frequency: 3 },
-  { category: "ctc_trap_pushback", text: "We're hiring at the lower end of the band — would you join and prove yourself for a hike in 6 months?", frequency: 3 },
+  { category: "ctc_trap_pushback", text: "We're hiring at the lower end of the band, would you join and prove yourself for a hike in 6 months?", frequency: 3 },
 
-  /* IT services peer-comparison — a TCS/Infosys/Wipro/Cognizant
+  /* IT services peer-comparison, a TCS/Infosys/Wipro/Cognizant
      interview almost always asks "why us specifically over our
      direct competitor". Candidates lose marks for vague answers. */
-  { category: "it_services", text: "Why our company specifically — and not TCS / Infosys / Wipro / Cognizant?", frequency: 5 },
+  { category: "it_services", text: "Why our company specifically, and not TCS / Infosys / Wipro / Cognizant?", frequency: 5 },
   { category: "it_services", text: "What do you know about our values and culture? (e.g. TCS Values, Infosys Spirit, Wipro 5 Habits)", frequency: 4 },
   { category: "it_services", text: "Have you applied to any of our direct competitors? At what stage are those?", frequency: 3 },
 
@@ -518,7 +518,7 @@ export function formatCommonIndianCanon(opts: {
   const limit = Math.max(1, opts.limit ?? 10);
   const minFreq = opts.highFrequencyOnly ? 4 : 3;
 
-  /* Canon is only for focuses where the format actually matches —
+  /* Canon is only for focuses where the format actually matches ,
      opening / CTC / behavioral chestnuts would break the arc of a
      case-study, technical, strategic, panel, or management round. */
   if (!CANON_ENABLED_FOCUSES.has(focus)) return "";
@@ -556,6 +556,6 @@ export function formatCommonIndianCanon(opts: {
   if (top.length === 0) return "";
 
   const bullets = top.map((e) => `- ${e.text}`).join("\n");
-  return `INDIAN INTERVIEWER CANON (must paraphrase at least one of these per session — never copy verbatim, but preserve the probe's intent so the candidate practises the question they will actually face):
+  return `INDIAN INTERVIEWER CANON (must paraphrase at least one of these per session, never copy verbatim, but preserve the probe's intent so the candidate practises the question they will actually face):
 ${bullets}`;
 }

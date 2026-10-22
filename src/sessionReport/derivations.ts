@@ -69,33 +69,76 @@ export const TOTAL_PHASES = 5;
 export function derivePhases(outcome: NegotiationOutcome) {
   const tactics = outcome.tacticsUsed ?? [];
   const info = outcome.infoAsked ?? [];
-  const levers = outcome.leverDiversity ?? 0;
-  const heldPushback =
-    outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
+  /* S13-B9 — the candidate-INITIATED subset of info asks. Stage 2 ("You
+     justified your number") credits a structural-discovery justification only
+     when the candidate raised it on their OWN initiative — a disclosure the
+     recruiter ELICITED ("what's your current breakdown?" → the candidate
+     answers) is not the candidate justifying their number. Legacy rows without
+     the split fall back to the full set in the adapter, so this is inert there. */
+  const infoInitiated = outcome.infoAskedInitiated ?? info;
+  // A "counter" semantically requires a recruiter offer to counter. When no
+  // offer ever landed (offers === []), the candidate's stated number is an
+  // OPENING ANCHOR, not a counter — labelling it "counter" is the S16-B7 /
+  // S1-B1 mislabel. Same single source (outcome.offers) as the hero.
+  const offers = outcome.offers ?? [];
+  const hasPriorOffer = offers.length > 0;
 
   const reachedCounter = outcome.candidateAsk !== null;
-  // Justified — defended the number with a range, a tactic, or structural
-  // discovery; a bare blurted number does NOT reach it.
+  const heldPushback =
+    outcome.pushbacks?.some((p) => p.outcome === "held" || p.outcome === "deflected") ?? false;
+  // Justified — defended the number with a range, a Voss tactic, structural
+  // discovery, or a Phase-11 hike-rationale (market-data / YOE / scope / etc.).
+  // S3-B2: rationaleKind is sourced from finalState.rationale.kind in the
+  // kernel (Phase-11 `_hike-rationale.ts`) and is set whenever the candidate
+  // gave a grounded reason for their ask — "market rate for my YOE is ₹X",
+  // "I have a competing offer at ₹Y", etc. A bare blurted number without
+  // reasoning does NOT set rationaleKind and therefore does NOT reach this stage.
   const reachedJustification =
     reachedCounter &&
     (outcome.anchorBracket?.type === "range_with_justification" ||
       tactics.length > 0 ||
-      info.length > 0);
-  // Handled pushback — a held/deflected classifier event or a Voss tactic
-  // the candidate played; passively absorbing offers does not count.
-  const reachedPushback = tactics.length > 0 || heldPushback;
-  // Explored levers — kernel lever-diversity or a structural question asked.
-  const reachedLevers = levers >= 1 || info.length > 0;
+      infoInitiated.length > 0 ||
+      outcome.rationaleKind !== undefined);
+  // Handled pushback — a held/deflected classifier event OR a Voss tactic.
+  // S16-B4: gated on reachedCounter — you cannot "handle pushback on your
+  // number" without having named one.
+  // NOTE (S6-B3): The pushbacks classifier was never built (outcome.pushbacks
+  // is always undefined), so this stage only fires via Voss tactics today.
+  // A grounded proxy based on offers.length >= 2 was attempted but violates
+  // the REPORT-6 anti-fabrication contract (test line 127) — recruiter-offer
+  // count alone must never credit a candidate stage. Requires building the
+  // pushbacks classifier first.
+  const reachedPushback = reachedCounter && (tactics.length > 0 || heldPushback);
+  // Explored levers — S16-B5: `leverDiversity` counts the RECRUITER's move
+  // levers (always ≥1 once any turn occurs), so it must NOT credit the
+  // candidate. The candidate "explores levers" only by asking a SPECIFIC
+  // expert-level question (clawback period, vesting schedule, strike price,
+  // etc.). S19-B6: generic routing intents (benefits-overview, package-
+  // breakdown, compensation-breakdown) are kernel-routing hints that fire on
+  // any mention of equity/benefits in interrogative shape — they do not
+  // indicate the candidate probed a specific comp lever. Only the 9 intents
+  // that appear in INFO_LABELS count; all others are excluded.
+  const EXPERT_LEVER_INTENTS = new Set([
+    "clawback-period", "variable-history", "vest-schedule", "strike-price",
+    "in-hand-monthly", "exercise-window", "acceleration",
+    "fixed-vs-variable", "perks-non-cash",
+  ]);
+  const reachedLevers = info.some((i) => EXPERT_LEVER_INTENTS.has(i));
   const reachedClose =
     outcome.outcome === "accepted" || outcome.outcome === "walked_away";
   return [
     {
       num: 1,
-      name: "You named a counter number",
+      // S16-B7 / S1-B1: the STAGE NAME "counter" presumes a recruiter offer to
+      // counter — with offers === [] the candidate's number is an OPENING
+      // anchor. The NOTE stays the neutral "Asked for ₹X LPA" (true either way).
+      name: hasPriorOffer ? "You named a counter number" : "You named your opening number",
       reached: reachedCounter,
       note: outcome.candidateAsk
         ? `Asked for ₹${outcome.candidateAsk} LPA`
-        : "No counter named yet",
+        : hasPriorOffer
+          ? "No counter named yet"
+          : "No number named yet",
     },
     {
       num: 2,
@@ -106,7 +149,19 @@ export function derivePhases(outcome: NegotiationOutcome) {
           ? "Framed a defended range"
           : tactics.length > 0
             ? `Backed it with ${tactics.length} tactic${tactics.length === 1 ? "" : "s"}`
-            : "Asked about comp structure to support it"
+            : infoInitiated.length > 0
+              ? "Asked about comp structure to support it"
+              : outcome.rationaleKind === "market-data"
+                ? "Backed it with market-rate data"
+                : outcome.rationaleKind === "competing-offer"
+                  ? "Used a competing offer as the anchor"
+                  : outcome.rationaleKind === "tenure-yoe"
+                    ? "Justified by experience and tenure"
+                    : outcome.rationaleKind === "scope-expansion"
+                      ? "Justified by expanded scope and responsibility"
+                      : outcome.rationaleKind === "specialization"
+                        ? "Justified by niche skill or specialization"
+                        : "Gave a grounded reason for the number"
         : undefined,
     },
     {
@@ -123,11 +178,7 @@ export function derivePhases(outcome: NegotiationOutcome) {
       num: 4,
       name: "You explored package levers",
       reached: reachedLevers,
-      note: reachedLevers
-        ? levers >= 1
-          ? `Raised ${levers} lever${levers === 1 ? "" : "s"} beyond base`
-          : "Asked about non-cash components"
-        : undefined,
+      note: reachedLevers ? "Asked about non-cash components" : undefined,
     },
     {
       num: 5,
@@ -222,6 +273,49 @@ export function anchorAtLabel(
   return `Turn ${anchorTurn} (late)`;
 }
 
+/* REPORT-3e (2026-07-13, live staging — session 686b5699, Senior Product
+   Designer @ Flipkart): the hero's one-line headline verdict. Every OTHER
+   negotiation hero surface is grounded in the kernel — strengths are filtered
+   by candidateAsk (filterNegotiationStrengths), delivery metrics by the kernel
+   ask (buildNegotiationMetrics), per-question rebuilt from the transcript — but
+   the headline alone passed the raw LLM `report.verdict` straight through. On a
+   no-counter / no-deal session that string read "You negotiated well but didn't
+   quantify results": "negotiated well" is false beside the report's own "0 of 5
+   skills", 30-second read "never named a number", and N1 "No counter named",
+   while "quantify results" is leaked STAR-behavioural phrasing that has no place
+   in a negotiation report. Derive the headline from the same single source (the
+   kernel outcome) so it can never diverge from the 30-second read it sits above.
+   Terse by design — the rich narrative lives in TLDRHero; this is the pull-quote. */
+export function negotiationHeadlineVerdict(outcome: NegotiationOutcome): string {
+  const offers = outcome.offers ?? [];
+  const opening = offers[0]?.total ?? null;
+  const closing = outcome.finalTotal ?? (offers[offers.length - 1]?.total ?? null);
+  const delta = opening !== null && closing !== null ? closing - opening : null;
+  const counterNamed = outcome.candidateAsk !== null;
+
+  if (outcome.outcome === "accepted") {
+    if (delta !== null && delta > 0) return "You closed the deal and moved the offer up.";
+    if (counterNamed) return "You closed the deal, but took their opening without moving it.";
+    return "You accepted the first offer without countering.";
+  }
+  if (outcome.outcome === "walked_away") {
+    return counterNamed
+      ? "You walked away rather than settle below your counter."
+      : "You walked away without naming a counter.";
+  }
+  // no_agreement — nothing closed. S17-B2: "the recruiter's number stood" is
+  // false when no offer was ever on the table (offers === []); say so honestly.
+  // S62-B2 (2026-07-24): when no recruiter offer was tabled, candidateAsk is
+  // the candidate's opening anchor — calling it a "counter" is wrong; mirror
+  // the derivations hasPriorOffer logic (hasPriorOffer = offers.length > 0).
+  if (counterNamed) return offers.length > 0
+    ? "You countered, but the deal never closed."
+    : "You named your number, but no offer came back.";
+  return offers.length > 0
+    ? "No counter named — the recruiter's number stood."
+    : "The conversation ended before any number was on the table.";
+}
+
 export function computeNpvRows(outcome: NegotiationOutcome) {
   const offers = outcome.offers ?? [];
   if (offers.length === 0) return [];
@@ -230,9 +324,10 @@ export function computeNpvRows(outcome: NegotiationOutcome) {
   const delta = closing - opening;
   if (delta === 0) return [];
   const sign = delta >= 0 ? "+" : "−";
-  const abs = Math.abs(delta);
+  const r1 = (n: number) => Math.round(n * 10) / 10;
+  const abs = r1(Math.abs(delta));
   const tone: "good" | "bad" = delta >= 0 ? "good" : "bad";
-  const fourYr = abs * NPV_MODEL.horizonYears;
+  const fourYr = r1(abs * NPV_MODEL.horizonYears);
   const afterTax = Math.round(fourYr * (1 - NPV_MODEL.incomeTaxRate) * 10) / 10;
   const npv = Math.round(afterTax * NPV_MODEL.inflationDiscountFactor * 10) / 10;
   const taxPct = Math.round(NPV_MODEL.incomeTaxRate * 100);

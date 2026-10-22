@@ -17,6 +17,15 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
     }) as MediaQueryList;
 }
 
+// jsdom has no ResizeObserver; Radix primitives (Checkbox, Switch) measure with it on mount.
+if (typeof globalThis.ResizeObserver === "undefined") {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // Node's experimental localStorage can be active without a backing file (see the
 // "--localstorage-file" warning), leaving getItem/setItem undefined. Components
 // that touch localStorage during render (interview draft restore) then throw and
@@ -50,6 +59,16 @@ if (
 // never decode images under test, so neutralize the side effect at its source
 // on the impl prototype. This is ordering-independent and covers every code
 // path (the `.src` setter and React's setAttribute) in one place.
+// jsdom's HTMLCanvasElement.getContext throws ("Canvas.createCanvas is not a
+// function") rather than returning null when the optional native `canvas`
+// package isn't installed, because it always tries to hand back a real
+// context. Libraries that render into <canvas> (thinking-orbs) already treat
+// a null context as "no rendering available" and bail out cleanly — so stub
+// getContext to return null instead of throwing, matching that contract.
+if (typeof window !== "undefined" && typeof window.HTMLCanvasElement === "function") {
+  window.HTMLCanvasElement.prototype.getContext = () => null;
+}
+
 if (typeof window !== "undefined" && typeof window.HTMLImageElement === "function") {
   try {
     const probe = window.document.createElement("img");

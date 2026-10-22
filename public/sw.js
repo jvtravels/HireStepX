@@ -2,7 +2,8 @@
 
 // Bump this string on intentional SW changes to force clients to swap in the new version
 // (Vercel doesn't substitute __BUILD_TS__, so we version manually.)
-const SW_VERSION = "v4-2026-04-24";
+const SW_VERSION = "v6-2026-10-17";
+const OFFLINE_ASSETS = ["/offline.html", "/offline.css", "/offline.js"];
 const CACHE_NAME = `hirestepx-${SW_VERSION}`;
 
 self.addEventListener("install", (event) => {
@@ -16,7 +17,11 @@ self.addEventListener("install", (event) => {
   //      user visits /interview and keeps it warm for later offline use.
   //      Trade-off: brand-new users can't start an interview while
   //      offline. Acceptable because onboarding requires network anyway.
-  event.waitUntil(caches.open(CACHE_NAME));
+  // The offline fallback page is the one document we do precache: it is static,
+  // carries no app scripts and is only ever served when a navigation has no network.
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(OFFLINE_ASSETS)).catch(() => { /* never block SW install on this */ }),
+  );
   self.skipWaiting();
 });
 
@@ -27,6 +32,28 @@ self.addEventListener("activate", (event) => {
     )
   );
   self.clients.claim();
+});
+
+/* ─── Push Notification Receive Handler ───
+ * Fires when the server sends a web push message. Payload is JSON:
+ * { title, body, url, tag }
+ * VAPID keys must be configured in Vercel env:
+ *   NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT
+ */
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  let data = {};
+  try { data = event.data.json(); } catch { data = { title: "HireStepX", body: event.data.text() }; }
+  const title = data.title || "HireStepX";
+  const options = {
+    body: data.body || "",
+    icon: "/apple-icon.png",
+    badge: "/apple-icon.png",
+    tag: data.tag || "hirestepx",
+    data: { url: data.url || "/dashboard" },
+    requireInteraction: false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 /* ─── Push Notification Click Handler ─── */
@@ -51,13 +78,29 @@ self.addEventListener("notificationclick", (event) => {
  *   - Never intercept non-GET, /api/, or cross-origin requests. Cross-origin
  *     SDKs (GrowthBook, analytics, etc.) are governed by CSP connect-src and
  *     an SW refetch only obscures CSP errors as "Failed to fetch" rejections.
- *   - Never intercept navigation/HTML: Content-Security-Policy lives on the
+ *   - Never cache navigation/HTML: Content-Security-Policy lives on the
  *     document response headers, and caching HTML means stale CSP until the
- *     cache is explicitly cleared. Always go to network.
+ *     cache is explicitly cleared. Always go to network; only a failed
+ *     navigation falls back to the precached /offline.html.
  *   - Cache static same-origin assets (JS/CSS/fonts/images) with a simple
  *     cache-first strategy. These are content-hashed by Next.js so staleness
  *     is a non-issue.
  */
+// One short retry first: a single dropped request (a deploy swapping, a cold
+// edge) shouldn't strand someone who is online on the offline page.
+async function fetchNavigation(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    try {
+      return await fetch(request);
+    } catch {
+      return (await caches.match("/offline.html")) || Response.error();
+    }
+  }
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
 
@@ -71,7 +114,12 @@ self.addEventListener("fetch", (event) => {
 
   // Don't touch API routes or navigation documents.
   if (url.pathname.startsWith("/api/")) return;
-  if (request.mode === "navigate" || request.destination === "document") return;
+  if (request.mode === "navigate" || request.destination === "document") {
+    // Network first, always. Only when the request itself fails do we show the offline page;
+    // the HTML response is never written to the cache.
+    event.respondWith(fetchNavigation(request));
+    return;
+  }
 
   // Only cache static asset extensions.
   const isAsset = /\.(?:js|mjs|css|woff2?|ttf|png|jpg|jpeg|svg|webp|ico)$/i.test(url.pathname);

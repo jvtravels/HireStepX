@@ -13,6 +13,7 @@ import {
   composeDuplicateReplyRescue,
   sanitizeBehaviouralRegister,
 } from "../../server-handlers/_follow-up-helpers";
+import { isWalkAway } from "../../server-handlers/_walkaway-detection";
 
 /**
  * follow-up.ts is 697 lines and was entirely uncovered. The two highest-
@@ -63,8 +64,375 @@ describe("detectCandidateIntent", () => {
       expect(r.rejected).toBe(true);
     });
 
+    it("S83-B1: 'As agreed, I expect the joining date to change' must NOT be accepted", () => {
+      expect(detectCandidateIntent("As agreed, I expect the joining date to change.").accepted).toBe(false);
+    });
+    it("S83-B1: 'We agreed that the base would be 40L' — past reference, NOT acceptance", () => {
+      expect(detectCandidateIntent("We agreed that the base would be 40L.").accepted).toBe(false);
+    });
+    it("S83-B1 regression: bare 'Agreed!' IS acceptance (via shortAffirmativeStart)", () => {
+      expect(detectCandidateIntent("Agreed!").accepted).toBe(true);
+    });
+    it("S83-B1 correction: 'Agreed, but I need equity' IS acceptance (conditional)", () => {
+      // bare "Agreed" at start — lookbehind passes, so acceptWords fires → accepted=true
+      // hedge fires too but rejectWords should not, so accepted=true is kept
+      const r = detectCandidateIntent("Agreed, but I need some equity component.");
+      expect(r.accepted).toBe(true);
+    });
+    it("S83-B1 correction: 'Agreed, let us proceed' IS acceptance (unconditional)", () => {
+      expect(detectCandidateIntent("Agreed, let us proceed.").accepted).toBe(true);
+    });
+    it("S83-B1: 'They agreed to raise the offer' — subject is third party, NOT acceptance", () => {
+      expect(detectCandidateIntent("They agreed to raise the offer.").accepted).toBe(false);
+    });
+    it("S83-B1: 'You agreed the number was fair' — second-person past, NOT acceptance", () => {
+      expect(detectCandidateIntent("You agreed the number was fair earlier.").accepted).toBe(false);
+    });
+    it("S83-B1: 'We had agreed on 40L' — past perfect, NOT acceptance", () => {
+      expect(detectCandidateIntent("We had agreed on 40L in the last round.").accepted).toBe(false);
+    });
+    it("S83-B2: 'I agree the variable is tricky, but I need more fixed' must NOT be accepted", () => {
+      expect(detectCandidateIntent("I agree the variable component is tricky, but I need more fixed.").accepted).toBe(false);
+    });
+    it("S83-B2: 'I agree with your reasoning but need 45L' must NOT be accepted", () => {
+      expect(detectCandidateIntent("I agree with your reasoning, but I still need 45L.").accepted).toBe(false);
+    });
+    it("S83-B2 regression: 'I agree to the offer' IS acceptance", () => {
+      expect(detectCandidateIntent("I agree to the offer.").accepted).toBe(true);
+    });
+    it("S83-B3: 'sounds good in theory, but the numbers don't work for me' must NOT be accepted", () => {
+      expect(detectCandidateIntent("Sounds good in theory, but the numbers don't work for me.").accepted).toBe(false);
+    });
+    it("S83-B3 regression: 'sounds good' IS acceptance", () => {
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
     it("'that works for me' is acceptance", () => {
       expect(detectCandidateIntent("that works for me").accepted).toBe(true);
+    });
+
+    // S84 (2026-07-26) — common acceptance phrases were missing from acceptWords
+    it("S84: \"I'll take it\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'll take it.").accepted).toBe(true);
+    });
+    it("S84: 'I will take it' IS acceptance", () => {
+      expect(detectCandidateIntent("I will take it.").accepted).toBe(true);
+    });
+    it("S84: \"That's acceptable to me\" IS acceptance", () => {
+      expect(detectCandidateIntent("That's acceptable to me.").accepted).toBe(true);
+    });
+    it("S84: 'That is acceptable' IS acceptance", () => {
+      expect(detectCandidateIntent("That is acceptable.").accepted).toBe(true);
+    });
+    it("S84: 'Count me in' IS acceptance", () => {
+      expect(detectCandidateIntent("Count me in.").accepted).toBe(true);
+    });
+    it("S84: 'Consider it done' IS acceptance", () => {
+      expect(detectCandidateIntent("Consider it done.").accepted).toBe(true);
+    });
+    it("S84: \"I'm happy to proceed\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'm happy to proceed with that offer.").accepted).toBe(true);
+    });
+    it("S84: \"I'm on board with that\" IS acceptance", () => {
+      expect(detectCandidateIntent("I'm on board with that.").accepted).toBe(true);
+    });
+    it("S84 guard: \"I'm on board but need more fixed\" is NOT full accept (hedge+rejection)", () => {
+      // acceptWords fires (on board), hedge fires (but), rejectWords fires (need more fixed) → hedgeIsRejection=true
+      expect(detectCandidateIntent("I'm on board but need more fixed.").accepted).toBe(false);
+    });
+    it("S84 guard: \"I'm on board but need more money\" is NOT full accept", () => {
+      expect(detectCandidateIntent("I'm on board but need more money.").accepted).toBe(false);
+    });
+    it("S84 guard: \"I'm happy to proceed but need higher comp\" is NOT full accept", () => {
+      expect(detectCandidateIntent("I'm happy to proceed but need higher comp.").accepted).toBe(false);
+    });
+    it("S84 hedge: \"I'll take it if you can confirm by EOD\" is conditionalAccept", () => {
+      const r = detectCandidateIntent("I'll take it if you can confirm by EOD.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  // S86 (2026-07-26)
+  describe("S86 false negatives in rejection detection", () => {
+    it("S86-B1: 'I expect at least 45L' IS rejection (expect without -ing)", () => {
+      expect(detectCandidateIntent("I expect at least 45L.").rejected).toBe(true);
+    });
+    it("S86-B1 regression: 'I am expecting at least 46 LPA' IS rejection", () => {
+      expect(detectCandidateIntent("I am expecting at least 46 LPA.").rejected).toBe(true);
+    });
+    it("S86-B1: 'I expect a fair number' is NOT a rejection (no at-least + digit)", () => {
+      expect(detectCandidateIntent("I expect a fair number.").rejected).toBe(false);
+    });
+    it("S86-B2: 'That does not work for me' IS rejection", () => {
+      expect(detectCandidateIntent("That does not work for me.").rejected).toBe(true);
+    });
+    it("S86-B2: 'That does not work at all' IS rejection", () => {
+      expect(detectCandidateIntent("That does not work at all.").rejected).toBe(true);
+    });
+    it("S86-B2: 'I need more time' is NOT rejection (non-comp need)", () => {
+      expect(detectCandidateIntent("I need more time to review.").rejected).toBe(false);
+    });
+  });
+
+  // S88-B1 (2026-07-26) — Hindi affirmatives missing from shortAffirmativeStart
+  describe("S88-B1 Hindi affirmatives", () => {
+    it("S88-B1: 'Haan.' IS accepted (bare Hindi yes)", () => {
+      expect(detectCandidateIntent("Haan.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Ji haan.' IS accepted", () => {
+      expect(detectCandidateIntent("Ji haan.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Hanji.' IS accepted", () => {
+      expect(detectCandidateIntent("Hanji.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Theek hai.' IS accepted", () => {
+      expect(detectCandidateIntent("Theek hai.").accepted).toBe(true);
+    });
+    it("S88-B1: 'Bilkul.' IS accepted", () => {
+      expect(detectCandidateIntent("Bilkul.").accepted).toBe(true);
+    });
+  });
+
+  // S88-B2 (2026-07-26) — short affirmative + hedge had no conditionalAccept path
+  describe("S88-B2 short affirmative + hedge = conditionalAccept", () => {
+    it("S88-B2: 'Sure, if you can bump it to 38L' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump it to 38L.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2: 'Deal, though I want equity included' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Deal, though I want equity included.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2: 'Ok, provided the joining bonus stays' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Ok, provided the joining bonus stays.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S88-B2 regression: 'Fine, but I need at least 40L' is NOT accepted (hedge+reject)", () => {
+      const r = detectCandidateIntent("Fine, but I need at least 40L.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("S88-B2 regression: 'Ok, but that is still too low' is NOT accepted", () => {
+      const r = detectCandidateIntent("Ok, but that is still too low.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    // S89-B1 (2026-07-26) — word limit raised 12→18 to cover longer conditionals
+    it("S89-B1: 14-word conditional 'Ok, if you can confirm by EOD and include joining bonus' IS conditionalAccept", () => {
+      const r = detectCandidateIntent("Ok, if you can confirm by EOD and also include joining bonus in writing.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("S89-B1 thinkWords guard: 'Ok, I need to think about this if possible' is NOT accepted", () => {
+      const r = detectCandidateIntent("Ok, I need to think about this a bit more carefully if possible.");
+      expect(r.accepted).toBe(false);
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  // S91-B1 (2026-07-26) — competingWords missing "another offer", "other companies" etc.
+  describe("S91-B1 competingWords gaps", () => {
+    it("S91-B1: 'I have another offer at 45L from Amazon' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I have another offer at 45L from Amazon.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: 'I am interviewing with a few other companies' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I am interviewing with a few other companies.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: 'I received an offer from Google yesterday' IS mentionedCompeting", () => {
+      expect(detectCandidateIntent("I received an offer from Google yesterday.").mentionedCompeting).toBe(true);
+    });
+    it("S91-B1: accepted + competing together fires both flags", () => {
+      const r = detectCandidateIntent("Sounds good, and I have another offer so I need to decide by Friday.");
+      expect(r.accepted).toBe(true);
+      expect(r.mentionedCompeting).toBe(true);
+    });
+    it("S91-B1 regression: 'also talking to another company' still fires", () => {
+      expect(detectCandidateIntent("I am also talking to another company.").mentionedCompeting).toBe(true);
+    });
+  });
+
+  // S92-B1 (2026-07-26) — thinkWords gaps: "check/consult/speak with spouse", "think this through", "time to think"
+  describe("S92-B1 thinkWords gaps", () => {
+    it("S92-B1: 'I need to check with my spouse' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to check with my spouse.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'Let me consult with my wife about this' IS needsTime", () => {
+      expect(detectCandidateIntent("Let me consult with my wife about this.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'I need to speak with my husband first' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to speak with my husband first.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'I need to think this through' IS needsTime", () => {
+      expect(detectCandidateIntent("I need to think this through.").needsTime).toBe(true);
+    });
+    it("S92-B1: 'Can I have some time to think' IS needsTime", () => {
+      expect(detectCandidateIntent("Can I have some time to think?").needsTime).toBe(true);
+    });
+    it("S92-B1 regression: 'talk to my family' still fires needsTime", () => {
+      expect(detectCandidateIntent("I need to talk to my family.").needsTime).toBe(true);
+    });
+    it("S92-B1 regression: 'consider' + number is NOT needsTime (counter)", () => {
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+  });
+
+  // S93-B1/B2 (2026-07-26) — "I am in" not in acceptWords; "let us go ahead" not matched
+  describe("S93-B1 and S93-B2 acceptance gaps", () => {
+    it("S93-B1: 'I am in' IS accepted", () => {
+      expect(detectCandidateIntent("I am in.").accepted).toBe(true);
+    });
+    it("S93-B1: \"I'm in\" IS accepted", () => {
+      expect(detectCandidateIntent("I'm in.").accepted).toBe(true);
+    });
+    it("S93-B1 guard: 'I am in a difficult position' is NOT accepted (false positive guard)", () => {
+      expect(detectCandidateIntent("I am in a difficult position.").accepted).toBe(false);
+    });
+    it("S93-B1 guard: 'I am in the middle of reviewing' is NOT accepted", () => {
+      expect(detectCandidateIntent("I am in the middle of reviewing.").accepted).toBe(false);
+    });
+    it("S93-B2: 'Let us go ahead with this' IS accepted", () => {
+      expect(detectCandidateIntent("Let us go ahead with this.").accepted).toBe(true);
+    });
+    it("S93-B2 regression: 'Let's go ahead' still fires", () => {
+      expect(detectCandidateIntent("Let's go ahead.").accepted).toBe(true);
+    });
+  });
+
+  describe("S94-B1 walk-away in post-hedge not surfaced when accept precedes hedge", () => {
+    it("'Sounds good, but actually I am walking away if you cannot match it' IS a walk", () => {
+      expect(detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.").walkAway).toBe(true);
+    });
+    it("'Sounds good, but actually I am walking away' is also accepted (conditional)", () => {
+      expect(detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.").accepted).toBe(true);
+    });
+    it("'I accept, but if this does not improve I am walking away' IS a walk", () => {
+      expect(detectCandidateIntent("I accept, but if this does not improve I am walking away.").walkAway).toBe(true);
+    });
+    it("S94-B1 regression: 'Sounds good, but I need to think about it' is NOT a walk", () => {
+      expect(detectCandidateIntent("Sounds good, but I need to think about it.").walkAway).toBe(false);
+    });
+    it("S94-B1 regression: 'I accept, but can we review equity?' is NOT a walk", () => {
+      expect(detectCandidateIntent("I accept, but can we review equity?").walkAway).toBe(false);
+    });
+  });
+
+  describe("S95-B1 bare 'works for me' missing (requires 'that' prefix currently)", () => {
+    it("'Works for me, thank you' IS accepted", () => {
+      expect(detectCandidateIntent("Works for me, thank you.").accepted).toBe(true);
+    });
+    it("'That works for me' still fires", () => {
+      expect(detectCandidateIntent("That works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S95-B2 'happy to accept' missing from acceptWords", () => {
+    it("'Happy to accept that' IS accepted", () => {
+      expect(detectCandidateIntent("Happy to accept that.").accepted).toBe(true);
+    });
+    it("'I am happy to accept' IS accepted", () => {
+      expect(detectCandidateIntent("I am happy to accept the offer.").accepted).toBe(true);
+    });
+  });
+
+  describe("S95-B3 'not going to accept' / 'won't accept' missing from rejectWords", () => {
+    it("'I am not going to accept this' IS rejected", () => {
+      expect(detectCandidateIntent("I am not going to accept this.").rejected).toBe(true);
+    });
+    it("\"I won't accept that\" IS rejected", () => {
+      expect(detectCandidateIntent("I won't accept that offer.").rejected).toBe(true);
+    });
+    it("'I refuse to accept at this number' IS rejected", () => {
+      expect(detectCandidateIntent("I refuse to accept at this number.").rejected).toBe(true);
+    });
+  });
+
+  describe("S95-B4 thinkWords missing time-period phrases", () => {
+    it("'Can I have a day or two to think?' IS needsTime", () => {
+      expect(detectCandidateIntent("Can I have a day or two to think?").needsTime).toBe(true);
+    });
+    it("'I need the weekend to decide' IS needsTime", () => {
+      expect(detectCandidateIntent("I need the weekend to decide.").needsTime).toBe(true);
+    });
+    it("'Give me a night to think it over' IS needsTime", () => {
+      expect(detectCandidateIntent("Give me a night to think it over.").needsTime).toBe(true);
+    });
+    it("S95-B4 regression: 'I need time to think' still fires", () => {
+      expect(detectCandidateIntent("I need time to think about this.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S96-B1 and S96-B2 accept gaps: fully on board / fine by me", () => {
+    it("'I am fully on board' IS accepted", () => {
+      expect(detectCandidateIntent("I am fully on board.").accepted).toBe(true);
+    });
+    it("'That is fine by me' IS accepted", () => {
+      expect(detectCandidateIntent("That is fine by me.").accepted).toBe(true);
+    });
+    it("S96-B1 regression: 'I am on board' still fires", () => {
+      expect(detectCandidateIntent("I am on board.").accepted).toBe(true);
+    });
+  });
+
+  describe("S96-B3 rejectWords: 'would not accept'", () => {
+    it("\"I wouldn't accept anything below 40 lakhs\" IS rejected", () => {
+      expect(detectCandidateIntent("I wouldn't accept anything below 40 lakhs.").rejected).toBe(true);
+    });
+    it("\"I would not accept that\" IS rejected", () => {
+      expect(detectCandidateIntent("I would not accept that offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S96-B4/B5 thinkWords: give me until / couple of days", () => {
+    it("'Can you give me until tomorrow?' IS needsTime", () => {
+      expect(detectCandidateIntent("Can you give me until tomorrow?").needsTime).toBe(true);
+    });
+    it("'I would like a couple of days before deciding' IS needsTime", () => {
+      expect(detectCandidateIntent("I would like a couple of days before deciding.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S96-B6/B7/B8 walkAway: explore other / no longer interested / part ways", () => {
+    it("'I am going to explore other opportunities' IS walkAway", () => {
+      expect(detectCandidateIntent("I am going to explore other opportunities.").walkAway).toBe(true);
+    });
+    it("'I am no longer interested in pursuing this' IS walkAway", () => {
+      expect(detectCandidateIntent("I am no longer interested in pursuing this.").walkAway).toBe(true);
+    });
+    it("S96-B7 guard: 'no longer interested in the variable component' is NOT walkAway", () => {
+      expect(detectCandidateIntent("I am no longer interested in the variable component.").walkAway).toBe(false);
+    });
+    it("'I think it is best we part ways here' IS walkAway", () => {
+      expect(detectCandidateIntent("I think it is best we part ways here.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S94-B2 deal-closing idioms missing from acceptWords", () => {
+    it("'Done deal' IS accepted", () => {
+      expect(detectCandidateIntent("Done deal.").accepted).toBe(true);
+    });
+    it("'We have a deal' IS accepted", () => {
+      expect(detectCandidateIntent("We have a deal.").accepted).toBe(true);
+    });
+    it("'You got a deal' IS accepted", () => {
+      expect(detectCandidateIntent("You got a deal.").accepted).toBe(true);
+    });
+    it("'You've got yourself a deal' IS accepted", () => {
+      expect(detectCandidateIntent("You've got yourself a deal.").accepted).toBe(true);
+    });
+    it("'Let us close the deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let us close the deal.").accepted).toBe(true);
+    });
+    it("'Let's finalize this deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let's finalize this deal.").accepted).toBe(true);
+    });
+    it("'Let's seal the deal' IS accepted", () => {
+      expect(detectCandidateIntent("Let's seal the deal.").accepted).toBe(true);
+    });
+    it("'I'm game' IS accepted", () => {
+      expect(detectCandidateIntent("I'm game.").accepted).toBe(true);
     });
   });
 
@@ -132,6 +500,50 @@ describe("detectCandidateIntent", () => {
       const r = detectCandidateIntent("I accept the offer, I'm not interested in negotiating further");
       expect(r.accepted).toBe(true);
       expect(r.walkAway).toBe(false);
+    });
+
+    it("S77-B3: 'not interested in the variable component' must NOT set walkAway (component preference)", () => {
+      const r = detectCandidateIntent("I'm not interested in the variable component, I prefer all-fixed");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("S77-B3: 'not interested in equity' must NOT set walkAway", () => {
+      const r = detectCandidateIntent("I'm not interested in equity, just raise the base");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("S77-B3: 'not interested in this role' IS a walk-away (job noun)", () => {
+      expect(detectCandidateIntent("I'm not interested in this role anymore.").walkAway).toBe(true);
+    });
+    it("S78-B1: 'Let's move on to the equity discussion' must NOT set walkAway (topic redirect)", () => {
+      expect(detectCandidateIntent("Let's move on to the equity discussion.").walkAway).toBe(false);
+    });
+    it("S78-B1: 'Can we move on to sign-on bonus?' must NOT set walkAway (topic redirect)", () => {
+      expect(detectCandidateIntent("Can we move on to sign-on bonus?").walkAway).toBe(false);
+    });
+    it("S78-B1: 'I'll move on if you can't improve' IS a walk-away (first-person departure)", () => {
+      expect(detectCandidateIntent("I'll move on if you can't improve the offer.").walkAway).toBe(true);
+    });
+    it("S78-B1: 'I'd rather move on from this' IS a walk-away (first-person departure)", () => {
+      expect(detectCandidateIntent("I'd rather move on from this.").walkAway).toBe(true);
+    });
+    it("S81-B1: 'not worth fighting over 2L — can we split it?' must NOT set walkAway (counter-propose)", () => {
+      expect(detectCandidateIntent("It's not worth fighting over 2L — can we split it?").walkAway).toBe(false);
+    });
+    it("S81-B1: 'not worth arguing about' must NOT set walkAway (compromise invite)", () => {
+      expect(detectCandidateIntent("Not worth arguing about — let's just split the difference.").walkAway).toBe(false);
+    });
+    it("S81-B1: 'this offer is just not worth it' IS a walk-away (S81-B1 regression)", () => {
+      expect(detectCandidateIntent("This offer is just not worth it.").walkAway).toBe(true);
+    });
+    it("S81-B2: 'I decline to answer that question' must NOT set walkAway (info privacy)", () => {
+      expect(detectCandidateIntent("I decline to answer that question.").walkAway).toBe(false);
+    });
+    it("S81-B2: 'I decline to reveal my current CTC' must NOT set walkAway", () => {
+      expect(detectCandidateIntent("I decline to reveal my current CTC.").walkAway).toBe(false);
+    });
+    it("S81-B2: 'I decline this offer' IS a walk-away (S81-B2 regression)", () => {
+      expect(detectCandidateIntent("I decline this offer.").walkAway).toBe(true);
     });
   });
 
@@ -866,5 +1278,3826 @@ describe("sanitizeBehaviouralRegister", () => {
     const input = "Great, let's dive deeper. We can circle back and you can reach out to leverage your network.";
     const out = sanitizeBehaviouralRegister(input);
     expect(/\b(dive|delve|circle back|touch base|reach out|leverage|unpack)\b/i.test(out)).toBe(false);
+  });
+});
+
+/* ── S97 (2026-07-26) — Wave 3 adversarial battery ── */
+describe("S97-B1 — 'okay with this/that/it' accepted", () => {
+  it("'I am okay with the revised terms.' → accepted", () => {
+    // "okay with this/that/it" arm fires; "okay with the" stripped to avoid false positives
+    const r = detectCandidateIntent("I am okay with it.");
+    expect(r.accepted).toBe(true);
+    expect(r.rejected).toBe(false);
+  });
+  it("'I am okay with this.' → accepted", () => {
+    const r = detectCandidateIntent("I am okay with this.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am okay with that.' → accepted", () => {
+    const r = detectCandidateIntent("I am okay with that.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am not okay with this number.' → rejected (not accepted)", () => {
+    const r = detectCandidateIntent("I am not okay with this number.");
+    expect(r.accepted).toBe(false);
+    expect(r.rejected).toBe(true);
+  });
+  it("guard: 'That is okay with the team but I need more fixed.' → NOT accepted", () => {
+    // 'okay with the team' should not fire as acceptance
+    const r = detectCandidateIntent("That is okay with the team but I need more fixed.");
+    expect(r.accepted).toBe(false);
+  });
+});
+
+describe("S97-B2 — 'happy to take/go with the offer' accepted", () => {
+  it("'Perfect, I am happy to take the offer.' → accepted", () => {
+    const r = detectCandidateIntent("Perfect, I am happy to take the offer.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'Happy to go with this.' → accepted", () => {
+    const r = detectCandidateIntent("Happy to go with this.");
+    expect(r.accepted).toBe(true);
+  });
+  it("'I am happy to go with the package.' → accepted", () => {
+    const r = detectCandidateIntent("I am happy to go with the package.");
+    expect(r.accepted).toBe(true);
+  });
+});
+
+describe("S97-B3 — 'withdrawing' gerund fires walk-away", () => {
+  it("'I am withdrawing my application.' → walkAway", () => {
+    const r = detectCandidateIntent("I am withdrawing my application.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("guard: 'I am withdrawing my counter offer.' → NOT walkAway (counter exclusion)", () => {
+    const r = detectCandidateIntent("I am withdrawing my counter offer.");
+    expect(r.walkAway).toBe(false);
+  });
+  it("bare 'withdraw' still fires: 'I withdraw from this process.' → walkAway", () => {
+    const r = detectCandidateIntent("I withdraw from this process.");
+    expect(r.walkAway).toBe(true);
+  });
+});
+
+describe("S97-B4 — 'insufficient' rejected", () => {
+  it("'I find this offer insufficient.' → rejected", () => {
+    const r = detectCandidateIntent("I find this offer insufficient.");
+    expect(r.rejected).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'The package is insufficient.' → rejected", () => {
+    const r = detectCandidateIntent("The package is insufficient.");
+    expect(r.rejected).toBe(true);
+  });
+});
+
+describe("S97-B5 — 'does not meet expectations' rejected", () => {
+  it("'This does not meet my expectations.' → rejected", () => {
+    const r = detectCandidateIntent("This does not meet my expectations.");
+    expect(r.rejected).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("contraction form → rejected", () => {
+    const r = detectCandidateIntent("This doesn't meet my expectations.");
+    expect(r.rejected).toBe(true);
+  });
+});
+
+describe("S97-B6 — 'take some time to reflect' needsTime", () => {
+  it("'Let me take some time to reflect.' → needsTime", () => {
+    const r = detectCandidateIntent("Let me take some time to reflect.");
+    expect(r.needsTime).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'I need to take more time to decide.' → needsTime", () => {
+    const r = detectCandidateIntent("I need to take more time to decide.");
+    expect(r.needsTime).toBe(true);
+  });
+});
+
+describe("S97-B7 — 'review with lawyer' needsTime", () => {
+  it("'I need to review this with my lawyer before deciding.' → needsTime", () => {
+    const r = detectCandidateIntent("I need to review this with my lawyer before deciding.");
+    expect(r.needsTime).toBe(true);
+    expect(r.accepted).toBe(false);
+  });
+  it("'Let me consult with my advisor on this.' → needsTime", () => {
+    const r = detectCandidateIntent("Let me consult with my advisor on this.");
+    expect(r.needsTime).toBe(true);
+  });
+});
+
+describe("S97-B8 — post-hedge 'not at this number' prevents false accept", () => {
+  it("'Works for me in theory but not at this number.' → NOT accepted", () => {
+    const r = detectCandidateIntent("Works for me in theory but not at this number.");
+    expect(r.accepted).toBe(false);
+  });
+  it("'Sounds good but not at this salary.' → NOT accepted", () => {
+    const r = detectCandidateIntent("Sounds good but not at this salary.");
+    expect(r.accepted).toBe(false);
+  });
+  it("guard: 'Sounds good, I accept.' (no post-hedge rejection) → accepted", () => {
+    const r = detectCandidateIntent("Sounds good, I accept.");
+    expect(r.accepted).toBe(true);
+  });
+});
+
+describe("S97-B9 — 'removing myself' and 'take me off list' walk-away", () => {
+  it("'I am removing myself from this process.' → walkAway", () => {
+    const r = detectCandidateIntent("I am removing myself from this process.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'Please take me off your list.' → walkAway", () => {
+    const r = detectCandidateIntent("Please take me off your list.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'I will take another offer.' → walkAway", () => {
+    const r = detectCandidateIntent("I will take another offer.");
+    expect(r.walkAway).toBe(true);
+  });
+  it("'I am going to take the other offer.' → walkAway", () => {
+    const r = detectCandidateIntent("I am going to take the other offer.");
+    expect(r.walkAway).toBe(true);
+  });
+
+  /* ── S98-B1 — 'i will accept' accepted ── */
+  describe("S98-B1 — 'i will accept' accepted", () => {
+    it("'I will accept the position.' → accepted", () => {
+      const r = detectCandidateIntent("I will accept the position.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Yes, I accept the position.' → accepted", () => {
+      const r = detectCandidateIntent("Yes, I accept the position.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B2 — 'willing to accept' accepted ── */
+  describe("S98-B2 — 'willing to accept' accepted", () => {
+    it("'I am willing to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am willing to accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B3 — 'X is acceptable' accepted ── */
+  describe("S98-B3 — 'X is acceptable' accepted", () => {
+    it("'That arrangement is acceptable.' → accepted", () => {
+      const r = detectCandidateIntent("That arrangement is acceptable.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'The offer is acceptable to me.' → accepted", () => {
+      const r = detectCandidateIntent("The offer is acceptable to me.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B4 — 'let us proceed / happy to move forward' accepted ── */
+  describe("S98-B4 — 'let us proceed / happy to move forward' accepted", () => {
+    it("'Let us proceed.' → accepted", () => {
+      const r = detectCandidateIntent("Let us proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Let us move forward.' → accepted", () => {
+      const r = detectCandidateIntent("Let us move forward.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Happy to move forward with this.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to move forward with this.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'Happy to move forward.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to move forward.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S98-B5 — 'cannot accept' / 'can not accept' rejected ── */
+  describe("S98-B5 — 'cannot accept' and 'can not accept' rejected", () => {
+    it("'I cannot accept this offer as is.' → rejected", () => {
+      const r = detectCandidateIntent("I cannot accept this offer as is.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I can not accept this.' → rejected", () => {
+      const r = detectCandidateIntent("I can not accept this.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B6 — 'below expectations' rejected ── */
+  describe("S98-B6 — 'below expectations' rejected", () => {
+    it("'This is below my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This is below my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The package is below expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The package is below expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B7 — 'not competitive' rejected ── */
+  describe("S98-B7 — 'not competitive' rejected", () => {
+    it("'The salary is not competitive.' → rejected", () => {
+      const r = detectCandidateIntent("The salary is not competitive.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S98-B8 — 'as long as' / 'so long as' → conditionalAccept ── */
+  describe("S98-B8 — 'as long as' / 'so long as' conditional accept", () => {
+    it("'Yes, as long as the start date is flexible.' → conditionalAccept", () => {
+      const r = detectCandidateIntent("Yes, as long as the start date is flexible.");
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Sure, so long as relocation is covered.' → conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, so long as relocation is covered.");
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  /* ── S98-B9 — 'few days' needsTime ── */
+  describe("S98-B9 — 'few days' needsTime", () => {
+    it("'I need a few days.' → needsTime", () => {
+      const r = detectCandidateIntent("I need a few days.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'Give me a few days to decide.' → needsTime", () => {
+      const r = detectCandidateIntent("Give me a few days to decide.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B10 — 'mull it/this/that over' needsTime ── */
+  describe("S98-B10 — 'mull it/this/that over' needsTime", () => {
+    it("'Let me mull it over.' → needsTime", () => {
+      const r = detectCandidateIntent("Let me mull it over.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need to mull this over.' → needsTime", () => {
+      const r = detectCandidateIntent("I need to mull this over.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need to mull that over.' → needsTime", () => {
+      const r = detectCandidateIntent("I need to mull that over.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B11 — 'until end of week/month' needsTime ── */
+  describe("S98-B11 — 'until end of week/month' needsTime", () => {
+    it("'Can I have until end of week?' → needsTime", () => {
+      const r = detectCandidateIntent("Can I have until end of week?");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'I need until end of the month.' → needsTime", () => {
+      const r = detectCandidateIntent("I need until end of the month.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S98-B12 — decline with adverb/modal → walkAway ── */
+  describe("S98-B12 — decline with adverb/modal walkAway", () => {
+    it("'I respectfully decline.' → walkAway", () => {
+      const r = detectCandidateIntent("I respectfully decline.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I must decline this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I must decline this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have to decline.' → walkAway", () => {
+      const r = detectCandidateIntent("I have to decline.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I am afraid I will have to decline to share my current CTC.' → NOT walkAway (info-verb guard)", () => {
+      const r = detectCandidateIntent("I am afraid I will have to decline to share my current CTC.");
+      expect(r.walkAway).toBe(false);
+    });
+  });
+
+  /* ── S98-B13 — 'choosing to move on' → walkAway ── */
+  describe("S98-B13 — 'choosing to move on' walkAway", () => {
+    it("'I am choosing to move on.' → walkAway", () => {
+      const r = detectCandidateIntent("I am choosing to move on.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B14 — 'be pursuing other opportunities' → walkAway ── */
+  describe("S98-B14 — 'be pursuing other opportunities' walkAway", () => {
+    it("'I will be pursuing other opportunities.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be pursuing other opportunities.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B15 — 'accepted another offer / position elsewhere' → walkAway ── */
+  describe("S98-B15 — 'accepted another offer / position elsewhere' walkAway", () => {
+    it("'I have accepted a position elsewhere.' → walkAway", () => {
+      const r = detectCandidateIntent("I have accepted a position elsewhere.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have accepted another offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I have accepted another offer.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S98-B16 — 'decided to go with another company' → walkAway ── */
+  describe("S98-B16 — 'decided to go with another company' walkAway", () => {
+    it("'I have decided to go with another company.' → walkAway", () => {
+      const r = detectCandidateIntent("I have decided to go with another company.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B1 — 'sounds acceptable' / 'prepared/glad to accept' accepted ── */
+  describe("S99-B1 — 'sounds acceptable' / 'prepared/glad to accept' accepted", () => {
+    it("'That sounds acceptable.' → accepted", () => {
+      const r = detectCandidateIntent("That sounds acceptable.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am prepared to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am prepared to accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am glad to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I am glad to accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S99-B2 — 'happy to proceed' standalone accepted ── */
+  describe("S99-B2 — 'happy to proceed' standalone accepted", () => {
+    it("'Happy to proceed with this offer.' → accepted", () => {
+      const r = detectCandidateIntent("Happy to proceed with this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S99-B3 — 'not sufficient' / 'unacceptable' / 'not satisfied' rejected ── */
+  describe("S99-B3 — 'not sufficient' / 'unacceptable' / 'not satisfied' rejected", () => {
+    it("'The compensation is not sufficient.' → rejected", () => {
+      const r = detectCandidateIntent("The compensation is not sufficient.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I find this unacceptable.' → rejected", () => {
+      const r = detectCandidateIntent("I find this unacceptable.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I am not satisfied with this offer.' → rejected", () => {
+      const r = detectCandidateIntent("I am not satisfied with this offer.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S99-B4 — 'does not align with expectations' rejected ── */
+  describe("S99-B4 — 'does not align with expectations' rejected", () => {
+    it("'This salary does not align with my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This salary does not align with my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S99-B5 — 'N hours to decide' needsTime ── */
+  describe("S99-B5 — 'N hours to decide' needsTime", () => {
+    it("'I need 48 hours to decide.' → needsTime", () => {
+      const r = detectCandidateIntent("I need 48 hours to decide.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("'Give me 24 hours to think.' → needsTime", () => {
+      const r = detectCandidateIntent("Give me 24 hours to think.");
+      expect(r.needsTime).toBe(true);
+    });
+  });
+
+  /* ── S99-B6 — 'chosen to pursue other opportunities' walkAway ── */
+  describe("S99-B6 — 'chosen to pursue other opportunities' walkAway", () => {
+    it("'I have chosen to pursue other opportunities.' → walkAway", () => {
+      const r = detectCandidateIntent("I have chosen to pursue other opportunities.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B7 — 'no longer pursuing this role' walkAway ── */
+  describe("S99-B7 — 'no longer pursuing this role' walkAway", () => {
+    it("'I am no longer pursuing this role.' → walkAway", () => {
+      const r = detectCandidateIntent("I am no longer pursuing this role.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B8 — 'i will pass on this' walkAway ── */
+  describe("S99-B8 — 'i will pass on this' walkAway", () => {
+    it("'I think I will pass on this.' → walkAway", () => {
+      const r = detectCandidateIntent("I think I will pass on this.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will pass on this opportunity.' → walkAway", () => {
+      const r = detectCandidateIntent("I will pass on this opportunity.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S99-B9 — 'i agree to review' NOT accepted (false-accept guard) ── */
+  describe("S99-B9 — 'i agree to review' NOT accepted (info-verb guard)", () => {
+    it("'I agree to review the offer letter.' → NOT accepted", () => {
+      const r = detectCandidateIntent("I agree to review the offer letter.");
+      expect(r.accepted).toBe(false);
+    });
+    it("'I agree to the offer.' → still accepted (noun after to)", () => {
+      const r = detectCandidateIntent("I agree to the offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B1 — 'i'll take the offer/package' accepted (noun after take) ── */
+  describe("S100-B1 — 'take the offer/package' accepted", () => {
+    it("'I'll take the offer.' → accepted", () => {
+      const r = detectCandidateIntent("I'll take the offer.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'll take the package.' → accepted", () => {
+      const r = detectCandidateIntent("I'll take the package.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I will take the position.' → accepted", () => {
+      const r = detectCandidateIntent("I will take the position.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would take the deal.' → accepted", () => {
+      const r = detectCandidateIntent("I would take the deal.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B2 — 'i'm totally on board' accepted (adverb injection) ── */
+  describe("S100-B2 — 'totally/completely on board' accepted", () => {
+    it("'I'm totally on board.' → accepted", () => {
+      const r = detectCandidateIntent("I'm totally on board.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am completely on board.' → accepted", () => {
+      const r = detectCandidateIntent("I am completely on board.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'm definitely on board.' → accepted", () => {
+      const r = detectCandidateIntent("I'm definitely on board.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B3 — 'i'll happily accept' accepted (adverb before accept) ── */
+  describe("S100-B3 — 'happily/gladly accept' accepted", () => {
+    it("'I'll happily accept.' → accepted", () => {
+      const r = detectCandidateIntent("I'll happily accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I will gladly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I will gladly accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would willingly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I would willingly accept.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B4 — 'i'm very happy to proceed' accepted (adverb before happy) ── */
+  describe("S100-B4 — 'very/quite happy to proceed' accepted", () => {
+    it("'I'm very happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I'm very happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am quite happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I am quite happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I'm really happy to proceed.' → accepted", () => {
+      const r = detectCandidateIntent("I'm really happy to proceed.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S100-B5 — 'doesn't work' rejected (contraction form) ── */
+  describe("S100-B5 — \"doesn't work\" rejected", () => {
+    it("'The package doesn\\'t work for me.' → rejected", () => {
+      const r = detectCandidateIntent("The package doesn't work for me.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This offer doesn\\'t work.' → rejected", () => {
+      const r = detectCandidateIntent("This offer doesn't work.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S100-B6 — "isn't competitive/sufficient" rejected (contraction) ── */
+  describe("S100-B6 — \"isn't competitive/sufficient\" rejected", () => {
+    it("'The offer isn\\'t competitive.' → rejected", () => {
+      const r = detectCandidateIntent("The offer isn't competitive.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This package isn\\'t sufficient.' → rejected", () => {
+      const r = detectCandidateIntent("This package isn't sufficient.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The salary isn\\'t acceptable.' → rejected", () => {
+      const r = detectCandidateIntent("The salary isn't acceptable.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S100-B7 — 'i'm going to pass' walkAway ── */
+  describe("S100-B7 — \"i'm going to pass\" walkAway", () => {
+    it("'I\\'m going to pass on this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm going to pass on this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I\\'m going to pass.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm going to pass.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S100-B8 — 'i'll be moving on' walkAway (gerund form) ── */
+  describe("S100-B8 — \"be moving on\" walkAway", () => {
+    it("'I\\'ll be moving on.' → walkAway", () => {
+      const r = detectCandidateIntent("I'll be moving on.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will be moving on from this.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be moving on from this.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S100-B9 — 'chosen to accept another offer' walkAway ── */
+  describe("S100-B9 — \"chosen/decided to accept another offer\" walkAway", () => {
+    it("'I\\'ve chosen to accept another offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I've chosen to accept another offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I have decided to accept another position.' → walkAway", () => {
+      const r = detectCandidateIntent("I have decided to accept another position.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B1 — 'i'd love to accept' accepted ── */
+  describe("S101-B1 — \"i'd love to accept\" accepted", () => {
+    it("'I\\'d love to accept.' → accepted", () => {
+      const r = detectCandidateIntent("I'd love to accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would love to accept this offer.' → accepted", () => {
+      const r = detectCandidateIntent("I would love to accept this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B2 — 'i wholeheartedly accept' accepted ── */
+  describe("S101-B2 — \"i wholeheartedly accept\" accepted", () => {
+    it("'I wholeheartedly accept.' → accepted", () => {
+      const r = detectCandidateIntent("I wholeheartedly accept.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I enthusiastically accept the offer.' → accepted", () => {
+      const r = detectCandidateIntent("I enthusiastically accept the offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B3 — 'that's a deal' accepted ── */
+  describe("S101-B3 — \"that's a deal\" accepted", () => {
+    it("'That\\'s a deal.' → accepted", () => {
+      const r = detectCandidateIntent("That's a deal.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'That\\'s a deal then.' → accepted", () => {
+      const r = detectCandidateIntent("That's a deal then.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'This is a deal.' → accepted", () => {
+      const r = detectCandidateIntent("This is a deal.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S101-B4 — 'way below market rate' rejected ── */
+  describe("S101-B4 — \"way below\" rejected", () => {
+    it("'This is way below market rate.' → rejected", () => {
+      const r = detectCandidateIntent("This is way below market rate.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The offer is way below my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is way below my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B5 — 'need significantly more' rejected ── */
+  describe("S101-B5 — \"need significantly more\" rejected", () => {
+    it("'I need significantly more than that.' → rejected", () => {
+      const r = detectCandidateIntent("I need significantly more than that.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I need considerably more to make this work.' → rejected", () => {
+      const r = detectCandidateIntent("I need considerably more to make this work.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B6 — 'not up to expectations' rejected ── */
+  describe("S101-B6 — \"not up to expectations\" rejected", () => {
+    it("'The offer is not up to my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is not up to my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'This is not up to expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This is not up to expectations.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S101-B7 — 'stepping back from this' walkAway ── */
+  describe("S101-B7 — \"stepping back from this\" walkAway", () => {
+    it("'I\\'m stepping back from this negotiation.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm stepping back from this negotiation.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I am stepping back from the process.' → walkAway", () => {
+      const r = detectCandidateIntent("I am stepping back from the process.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B8 — 'prefer to explore other avenues' walkAway ── */
+  describe("S101-B8 — \"prefer to explore other avenues\" walkAway", () => {
+    it("'I prefer to explore other avenues.' → walkAway", () => {
+      const r = detectCandidateIntent("I prefer to explore other avenues.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I prefer to consider other alternatives.' → walkAway", () => {
+      const r = detectCandidateIntent("I prefer to consider other alternatives.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B9 — 'opting out of this process' walkAway ── */
+  describe("S101-B9 — \"opting out\" walkAway", () => {
+    it("'I am opting out of this process.' → walkAway", () => {
+      const r = detectCandidateIntent("I am opting out of this process.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I\\'m opting out of the negotiation.' → walkAway", () => {
+      const r = detectCandidateIntent("I'm opting out of the negotiation.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S101-B10 — 'a bit low' / 'slightly low' rejected ── */
+  describe("S101-B10 — \"a bit low\" rejected", () => {
+    it("'The offer is a bit low.' → rejected", () => {
+      const r = detectCandidateIntent("The offer is a bit low.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The salary is slightly low for this role.' → rejected", () => {
+      const r = detectCandidateIntent("The salary is slightly low for this role.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B1 — 'fine with that' accepted ── */
+  describe("S102-B1 — \"fine with that\" accepted", () => {
+    it("'I'm fine with that.' → accepted", () => {
+      const r = detectCandidateIntent("I'm fine with that.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I am perfectly fine with this offer.' → accepted", () => {
+      const r = detectCandidateIntent("I am perfectly fine with this offer.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S102-B2 — 'I'll go for it' accepted ── */
+  describe("S102-B2 — \"I'll go for it\" accepted", () => {
+    it("'I'll go for it.' → accepted", () => {
+      const r = detectCandidateIntent("I'll go for it.");
+      expect(r.accepted).toBe(true);
+    });
+    it("'I would go for it without hesitation.' → accepted", () => {
+      const r = detectCandidateIntent("I would go for it without hesitation.");
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  /* ── S102-B3 — 'does not meet requirements' rejected ── */
+  describe("S102-B3 — \"does not meet requirements\" rejected", () => {
+    it("'This does not meet my requirements.' → rejected", () => {
+      const r = detectCandidateIntent("This does not meet my requirements.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The offer doesn't meet my needs.' → rejected", () => {
+      const r = detectCandidateIntent("The offer doesn't meet my needs.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B4 — 'falls short' rejected ── */
+  describe("S102-B4 — \"falls short\" rejected", () => {
+    it("'This falls short of my expectations.' → rejected", () => {
+      const r = detectCandidateIntent("This falls short of my expectations.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'The package falls short of my standards.' → rejected", () => {
+      const r = detectCandidateIntent("The package falls short of my standards.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B5 — 'need higher number' rejected ── */
+  describe("S102-B5 — \"need higher number\" rejected", () => {
+    it("'I need a higher number.' → rejected", () => {
+      const r = detectCandidateIntent("I need a higher number.");
+      expect(r.rejected).toBe(true);
+    });
+    it("'I need a better salary.' → rejected", () => {
+      const r = detectCandidateIntent("I need a better salary.");
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  /* ── S102-B6 — 'I'll be passing on this' walkAway ── */
+  describe("S102-B6 — \"I'll be passing on this\" walkAway", () => {
+    it("'I'll be passing on this offer.' → walkAway", () => {
+      const r = detectCandidateIntent("I'll be passing on this offer.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("'I will be passing on this opportunity.' → walkAway", () => {
+      const r = detectCandidateIntent("I will be passing on this opportunity.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  /* ── S103-B1 — 'That's acceptable' accepted ── */
+  describe("S103-B1 — \"That's acceptable\" accepted", () => {
+    it("'That\\'s acceptable.' → accepted", () => {
+      expect(detectCandidateIntent("That's acceptable.").accepted).toBe(true);
+    });
+    it("'The offer is acceptable to me.' → accepted", () => {
+      expect(detectCandidateIntent("The offer is acceptable to me.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S103-B2 — 'willing/prepared/glad to accept' accepted ── */
+  describe("S103-B2 — willing/prepared/glad to accept", () => {
+    it("'I\\'m willing to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to accept.").accepted).toBe(true);
+    });
+    it("'I\\'m prepared to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm prepared to accept.").accepted).toBe(true);
+    });
+    it("'I\\'m glad to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'm glad to accept.").accepted).toBe(true);
+    });
+    it("'I\\'d love to accept.' → accepted", () => {
+      expect(detectCandidateIntent("I'd love to accept.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S103-B3 — 'not competitive / not satisfied / doesn't align' rejected ── */
+  describe("S103-B3 — not competitive / not satisfied / doesn't align rejected", () => {
+    it("'That\\'s not competitive.' → rejected", () => {
+      expect(detectCandidateIntent("That's not competitive.").rejected).toBe(true);
+    });
+    it("'The offer isn\\'t competitive.' → rejected", () => {
+      expect(detectCandidateIntent("The offer isn't competitive.").rejected).toBe(true);
+    });
+    it("'I\\'m not satisfied with this.' → rejected", () => {
+      expect(detectCandidateIntent("I'm not satisfied with this.").rejected).toBe(true);
+    });
+    it("'This doesn\\'t align with my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't align with my expectations.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S103-B4 — 'decided to pursue other' / 'removing myself from consideration' walkAway ── */
+  describe("S103-B4 — decided to pursue other / removing from consideration walkAway", () => {
+    it("'I\\'ve decided to pursue other opportunities.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to pursue other opportunities.").walkAway).toBe(true);
+    });
+    it("'I\\'ll be moving on from this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be moving on from this process.").walkAway).toBe(true);
+    });
+    it("'Thanks but no thanks.' → walkAway", () => {
+      expect(detectCandidateIntent("Thanks but no thanks.").walkAway).toBe(true);
+    });
+    it("'I am removing myself from consideration.' → walkAway", () => {
+      expect(detectCandidateIntent("I am removing myself from consideration.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S103-B5 — 'have until Friday' / 'like some time to review' needsTime ── */
+  describe("S103-B5 — have until / like some time to review needsTime", () => {
+    it("'Could I have until Friday to decide?' → needsTime", () => {
+      expect(detectCandidateIntent("Could I have until Friday to decide?").needsTime).toBe(true);
+    });
+    it("'I\\'d like some time to review the terms.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like some time to review the terms.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S105-B4d — 'formally decline' walkAway ── */
+  describe("S105-B4d — \"formally decline\" walkAway", () => {
+    it("'I formally decline.' → walkAway", () => {
+      expect(detectCandidateIntent("I formally decline.").walkAway).toBe(true);
+    });
+    it("'I formally decline the offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I formally decline the offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S105-B5a — 'consult my family' needsTime (no with) ── */
+  describe("S105-B5a — \"consult my family\" needsTime without 'with'", () => {
+    it("'I\\'d like to consult my family.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to consult my family.").needsTime).toBe(true);
+    });
+    it("'I want to consult my spouse before deciding.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to consult my spouse before deciding.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S106-safe-A — 'I agree on the variable but not on base' should not be accepted ── */
+  describe("S106-safe-A — partial agreement should not fire accepted", () => {
+    it("'I agree on the variable portion but not on the fixed base.' → not accepted", () => {
+      expect(detectCandidateIntent("I agree on the variable portion but not on the fixed base.").accepted).toBe(false);
+    });
+    it("'I agree with your rationale but the number is still low.' → not accepted", () => {
+      expect(detectCandidateIntent("I agree with your rationale but the number is still low.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S106-B2b — 'chosen to go with another company' walkAway ── */
+  describe("S106-B2b — \"chosen to go with another company\" walkAway", () => {
+    it("'I\\'ve chosen to go with another company.' → walkAway", () => {
+      expect(detectCandidateIntent("I've chosen to go with another company.").walkAway).toBe(true);
+    });
+    it("'I\\'ve decided to go with a different offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to go with a different offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S106-B3a — 'need some more time to evaluate' needsTime ── */
+  describe("S106-B3a — \"need some more time to evaluate\" needsTime", () => {
+    it("'I need some more time to evaluate this.' → needsTime", () => {
+      expect(detectCandidateIntent("I need some more time to evaluate this.").needsTime).toBe(true);
+    });
+    it("'I need more time to think.' → needsTime", () => {
+      expect(detectCandidateIntent("I need more time to think.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S106-B4 — Hindi/Hinglish walk-away arms ── */
+  describe("S106-B4 — Hindi/Hinglish walk-away", () => {
+    it("'join nahi karunga' → walkAway", () => {
+      expect(detectCandidateIntent("join nahi karunga").walkAway).toBe(true);
+    });
+    it("'mujhe nahi chahiye yeh offer' → walkAway", () => {
+      expect(detectCandidateIntent("mujhe nahi chahiye yeh offer").walkAway).toBe(true);
+    });
+    it("'nahi chahiye' → walkAway", () => {
+      expect(detectCandidateIntent("nahi chahiye").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S107-B2c — 'align with industry standards' rejected ── */
+  describe("S107-B2c — \"align with industry standards\" rejected", () => {
+    it("'The compensation doesn\\'t align with industry standards.' → rejected", () => {
+      expect(detectCandidateIntent("The compensation doesn't align with industry standards.").rejected).toBe(true);
+    });
+    it("'This doesn\\'t align with market standards.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't align with market standards.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S107-B3a — 'going to have to move on' walkAway ── */
+  describe("S107-B3a — \"going to have to move on\" walkAway", () => {
+    it("'I\\'m going to have to move on.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm going to have to move on.").walkAway).toBe(true);
+    });
+    it("'I\\'ll have to move on from this.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll have to move on from this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S107-B3b — 'step back from this' (non-progressive form) walkAway ── */
+  describe("S107-B3b — \"step back from this\" walkAway (non-progressive)", () => {
+    it("'I\\'ve decided to step back from this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I've decided to step back from this process.").walkAway).toBe(true);
+    });
+    it("'I need to step back from this.' → walkAway", () => {
+      expect(detectCandidateIntent("I need to step back from this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S108-B2c — 'much lower than my target' rejected ── */
+  describe("S108-B2c — \"much lower than target\" rejected", () => {
+    it("'This is much lower than my target.' → rejected", () => {
+      expect(detectCandidateIntent("This is much lower than my target.").rejected).toBe(true);
+    });
+    it("'This is significantly lower than my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This is significantly lower than my expectations.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S108-B4b — 'discuss this with my spouse' needsTime ── */
+  describe("S108-B4b — \"discuss this with\" needsTime (pronoun before with)", () => {
+    it("'I need to discuss this with my spouse.' → needsTime", () => {
+      expect(detectCandidateIntent("I need to discuss this with my spouse.").needsTime).toBe(true);
+    });
+    it("'Let me discuss it with my family.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me discuss it with my family.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S108-safe-B — 'withdrawing my previous comment' should NOT be walkAway ── */
+  describe("S108-safe-B — withdraw suppression handles adjective before noun", () => {
+    it("'I\\'m withdrawing my previous comment about equity.' → NOT walkAway", () => {
+      expect(detectCandidateIntent("I'm withdrawing my previous comment about equity.").walkAway).toBe(false);
+    });
+    it("'I\\'m withdrawing my earlier feedback.' → NOT walkAway", () => {
+      expect(detectCandidateIntent("I'm withdrawing my earlier feedback.").walkAway).toBe(false);
+    });
+  });
+
+  /* ── S109-B2a — 'won't work for me' rejected ── */
+  describe("S109-B2a — \"won't work for me\" rejected", () => {
+    it("'I\\'m afraid this won\\'t work for me.' → rejected", () => {
+      expect(detectCandidateIntent("I'm afraid this won't work for me.").rejected).toBe(true);
+    });
+    it("'This offer won\\'t work for me.' → rejected", () => {
+      expect(detectCandidateIntent("This offer won't work for me.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B2b — 'not satisfactory' rejected ── */
+  describe("S109-B2b — \"not satisfactory\" rejected", () => {
+    it("'The package is not satisfactory.' → rejected", () => {
+      expect(detectCandidateIntent("The package is not satisfactory.").rejected).toBe(true);
+    });
+    it("'This isn\\'t satisfactory for my level.' → rejected", () => {
+      expect(detectCandidateIntent("This isn't satisfactory for my level.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B2c — 'was expecting more' rejected ── */
+  describe("S109-B2c — \"was expecting more\" rejected", () => {
+    it("'I was expecting more.' → rejected", () => {
+      expect(detectCandidateIntent("I was expecting more.").rejected).toBe(true);
+    });
+    it("'I expected much more for this role.' → rejected", () => {
+      expect(detectCandidateIntent("I expected much more for this role.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S109-B3a — 'taking another offer' walkAway (gerund form) ── */
+  describe("S109-B3a — \"taking another offer\" walkAway (gerund)", () => {
+    it("'I\\'m taking another offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking another offer.").walkAway).toBe(true);
+    });
+    it("'I\\'m taking the other offer on the table.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking the other offer on the table.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S109-B4b — 'let me review the offer letter' needsTime ── */
+  describe("S109-B4b — \"let me review the offer letter\" needsTime", () => {
+    it("'Let me review the offer letter first.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me review the offer letter first.").needsTime).toBe(true);
+    });
+    it("'Let me review the contract terms.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me review the contract terms.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S110-B2b — 'below market rate' rejected ── */
+  describe("S110-B2b — \"below market rate\" rejected", () => {
+    it("'The CTC is below market rate.' → rejected", () => {
+      expect(detectCandidateIntent("The CTC is below market rate.").rejected).toBe(true);
+    });
+    it("'This is below industry standard.' → rejected", () => {
+      expect(detectCandidateIntent("This is below industry standard.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S110-B3a — 'taking another opportunity' walkAway (extended noun group) ── */
+  describe("S110-B3a — \"taking another opportunity\" walkAway", () => {
+    it("'I\\'ll be taking another opportunity.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be taking another opportunity.").walkAway).toBe(true);
+    });
+    it("'I\\'m taking another position.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm taking another position.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S110-B3b — 'made my decision to move on' walkAway ── */
+  describe("S110-B3b — \"made my decision to move on\" walkAway", () => {
+    it("'I\\'ve made my decision to move on.' → walkAway", () => {
+      expect(detectCandidateIntent("I've made my decision to move on.").walkAway).toBe(true);
+    });
+    it("'I\\'ve made a decision to pursue other options.' → walkAway", () => {
+      expect(detectCandidateIntent("I've made a decision to pursue other options.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S110-B4a — 'consult my CA' needsTime (without with) ── */
+  describe("S110-B4a — \"consult my CA\" needsTime", () => {
+    it("'I\\'d like to consult my CA before deciding.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to consult my CA before deciding.").needsTime).toBe(true);
+    });
+    it("'I want to consult my accountant first.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to consult my accountant first.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S111-B2a — 'inadequate' rejected ── */
+  describe("S111-B2a — \"inadequate\" rejected", () => {
+    it("'I find the compensation inadequate.' → rejected", () => {
+      expect(detectCandidateIntent("I find the compensation inadequate.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S111-B2b — 'not what I was hoping for' rejected ── */
+  describe("S111-B2b — \"not what I was hoping for\" rejected", () => {
+    it("'It\\'s not what I was hoping for.' → rejected", () => {
+      expect(detectCandidateIntent("It's not what I was hoping for.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S111-B2c — 'cannot justify leaving' rejected ── */
+  describe("S111-B2c — \"cannot justify leaving\" rejected", () => {
+    it("'I cannot justify leaving my current role for this number.' → rejected", () => {
+      expect(detectCandidateIntent("I cannot justify leaving my current role for this number.").rejected).toBe(true);
+    });
+    it("'I can\\'t justify accepting this.' → rejected", () => {
+      expect(detectCandidateIntent("I can't justify accepting this.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S112-B2a — 'way off from my expectations' rejected ── */
+  describe("S112-B2a — \"way off from expectations\" rejected", () => {
+    it("'This is way off from my expectations.' → rejected", () => {
+      expect(detectCandidateIntent("This is way off from my expectations.").rejected).toBe(true);
+    });
+    it("'The offer is way off from my target.' → rejected", () => {
+      expect(detectCandidateIntent("The offer is way off from my target.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B1 — 'sounds great to me' accepted ── */
+  describe("S113-B1 — \"sounds great\" accepted", () => {
+    it("'Sounds great to me.' → accepted", () => {
+      expect(detectCandidateIntent("Sounds great to me.").accepted).toBe(true);
+    });
+    it("'Sounds great!' → accepted", () => {
+      expect(detectCandidateIntent("Sounds great!").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B2 — 'fair enough' accepted ── */
+  describe("S113-B2 — \"fair enough\" accepted", () => {
+    it("'That\\'s fair enough.' → accepted", () => {
+      expect(detectCandidateIntent("That's fair enough.").accepted).toBe(true);
+    });
+    it("'Fair enough for me.' → accepted", () => {
+      expect(detectCandidateIntent("Fair enough for me.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B3 — 'let's make this happen' accepted ── */
+  describe("S113-B3 — \"let's make this happen\" accepted", () => {
+    it("'Let\\'s make this happen.' → accepted", () => {
+      expect(detectCandidateIntent("Let's make this happen.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B4 — 'I can live with that' accepted ── */
+  describe("S113-B4 — \"I can live with that\" accepted", () => {
+    it("'I can live with that.' → accepted", () => {
+      expect(detectCandidateIntent("I can live with that.").accepted).toBe(true);
+    });
+    it("'I can live with this.' → accepted", () => {
+      expect(detectCandidateIntent("I can live with this.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S113-B5 — 'not in the ballpark' rejected ── */
+  describe("S113-B5 — \"not in the ballpark\" rejected", () => {
+    it("'That\\'s not in the ballpark.' → rejected", () => {
+      expect(detectCandidateIntent("That's not in the ballpark.").rejected).toBe(true);
+    });
+    it("'This offer is not in the ballpark for me.' → rejected", () => {
+      expect(detectCandidateIntent("This offer is not in the ballpark for me.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B6 — 'I am worth more than that' rejected ── */
+  describe("S113-B6 — \"I'm worth more than\" rejected", () => {
+    it("'I\\'m worth more than that.' → rejected", () => {
+      expect(detectCandidateIntent("I'm worth more than that.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B8 — 'doesn't reflect my market value' rejected ── */
+  describe("S113-B8 — \"doesn't reflect my market value\" rejected", () => {
+    it("'This doesn\\'t reflect my market value.' → rejected", () => {
+      expect(detectCandidateIntent("This doesn't reflect my market value.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B9 — 'expected a higher number' rejected ── */
+  describe("S113-B9 — \"expected a higher number\" rejected", () => {
+    it("'I expected a higher number.' → rejected", () => {
+      expect(detectCandidateIntent("I expected a higher number.").rejected).toBe(true);
+    });
+    it("'I expected a higher salary offer.' → rejected", () => {
+      expect(detectCandidateIntent("I expected a higher salary offer.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B10 — 'significant pay cut' rejected ── */
+  describe("S113-B10 — \"pay cut\" rejected", () => {
+    it("'This is a significant pay cut for me.' → rejected", () => {
+      expect(detectCandidateIntent("This is a significant pay cut for me.").rejected).toBe(true);
+    });
+    it("'This represents a pay cut.' → rejected", () => {
+      expect(detectCandidateIntent("This represents a pay cut.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B11 — 'leaving money on the table' rejected ── */
+  describe("S113-B11 — \"leaving money on the table\" rejected", () => {
+    it("'I\\'d be leaving money on the table.' → rejected", () => {
+      expect(detectCandidateIntent("I'd be leaving money on the table.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S113-B13 — 'reached an impasse' walkAway ── */
+  describe("S113-B13 — \"impasse\" walkAway", () => {
+    it("'I think we\\'ve reached an impasse.' → walkAway", () => {
+      expect(detectCandidateIntent("I think we've reached an impasse.").walkAway).toBe(true);
+    });
+    it("'We are at an impasse.' → walkAway", () => {
+      expect(detectCandidateIntent("We are at an impasse.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B14 — 'don't think this is going to work out' walkAway ── */
+  describe("S113-B14 — \"don't think this is going to work out\" walkAway", () => {
+    it("'I don\\'t think this is going to work out.' → walkAway", () => {
+      expect(detectCandidateIntent("I don't think this is going to work out.").walkAway).toBe(true);
+    });
+    it("'I do not think this is going to work.' → walkAway", () => {
+      expect(detectCandidateIntent("I do not think this is going to work.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B15 — 'call it quits' walkAway ── */
+  describe("S113-B15 — \"call it quits\" walkAway", () => {
+    it("'Let\\'s call it quits.' → walkAway", () => {
+      expect(detectCandidateIntent("Let's call it quits.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B16 — 'bow out' walkAway ── */
+  describe("S113-B16 — \"bow out\" walkAway", () => {
+    it("'I need to bow out of this process.' → walkAway", () => {
+      expect(detectCandidateIntent("I need to bow out of this process.").walkAway).toBe(true);
+    });
+    it("'I\\'m bowing out.' → walkAway", () => {
+      expect(detectCandidateIntent("I'm bowing out.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S113-B17 — 'run this by my family' needsTime ── */
+  describe("S113-B17 — \"run this by my family\" needsTime", () => {
+    it("'I want to run this by my family.' → needsTime", () => {
+      expect(detectCandidateIntent("I want to run this by my family.").needsTime).toBe(true);
+    });
+    it("'Let me run it by my wife.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me run it by my wife.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S113-B19 — 'let me think out loud' NOT needsTime ── */
+  describe("S113-B19 — \"let me think out loud\" safe (no needsTime)", () => {
+    it("'Let me think out loud.' → needsTime=false", () => {
+      expect(detectCandidateIntent("Let me think out loud.").needsTime).toBe(false);
+    });
+  });
+
+  /* ── S114-B1 — 'I would accept nothing less' NOT accepted (FP fix) ── */
+  describe("S114-B1 — \"I would accept nothing less\" safe (no accepted)", () => {
+    it("'I would accept nothing less than 30.' → accepted=false", () => {
+      expect(detectCandidateIntent("I would accept nothing less than 30.").accepted).toBe(false);
+    });
+    it("'I would accept nothing less.' → accepted=false", () => {
+      expect(detectCandidateIntent("I would accept nothing less.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S114-B2 — 'walking away with a package' NOT walkAway (FP fix) ── */
+  describe("S114-B2 — \"walking away with\" safe (no walkAway)", () => {
+    it("'I\\'d be walking away with a great package if we settle at 28.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'd be walking away with a great package if we settle at 28.").walkAway).toBe(false);
+    });
+    it("'walking away from this' still fires walkAway=true", () => {
+      expect(detectCandidateIntent("I am walking away from this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B3 — 'I'll go with this' accepted ── */
+  describe("S114-B3 — \"I'll go with this\" accepted", () => {
+    it("'I\\'ll go with this.' → accepted", () => {
+      expect(detectCandidateIntent("I'll go with this.").accepted).toBe(true);
+    });
+    it("'I would go with it.' → accepted", () => {
+      expect(detectCandidateIntent("I would go with it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B4 — 'in agreement' accepted ── */
+  describe("S114-B4 — \"in agreement with the terms\" accepted", () => {
+    it("'I\\'m in agreement with the terms.' → accepted", () => {
+      expect(detectCandidateIntent("I'm in agreement with the terms.").accepted).toBe(true);
+    });
+    it("'In agreement.' → accepted", () => {
+      expect(detectCandidateIntent("In agreement.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B5 — 'I'm satisfied with this' accepted ── */
+  describe("S114-B5 — \"I'm satisfied with this\" accepted", () => {
+    it("'I\\'m satisfied with this.' → accepted", () => {
+      expect(detectCandidateIntent("I'm satisfied with this.").accepted).toBe(true);
+    });
+    it("'I am fully satisfied with the offer.' → accepted", () => {
+      expect(detectCandidateIntent("I am fully satisfied with the offer.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S114-B6 — 'I'll be declining your offer' walkAway ── */
+  describe("S114-B6 — \"I'll be declining\" walkAway", () => {
+    it("'I\\'ll be declining your offer.' → walkAway", () => {
+      expect(detectCandidateIntent("I'll be declining your offer.").walkAway).toBe(true);
+    });
+    it("'I will be declining.' → walkAway", () => {
+      expect(detectCandidateIntent("I will be declining.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B7 — 'can't come to an agreement' walkAway ── */
+  describe("S114-B7 — \"can't come to an agreement\" walkAway", () => {
+    it("'We can\\'t come to an agreement.' → walkAway", () => {
+      expect(detectCandidateIntent("We can't come to an agreement.").walkAway).toBe(true);
+    });
+    it("'I cannot come to an agreement on this.' → walkAway", () => {
+      expect(detectCandidateIntent("I cannot come to an agreement on this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S114-B8 — 'let me sit with this' needsTime ── */
+  describe("S114-B8 — \"sit with this\" needsTime", () => {
+    it("'Let me sit with this for a bit.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me sit with this for a bit.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S114-B9 — 'have some time to process' needsTime ── */
+  describe("S114-B9 — \"have some time to process\" needsTime", () => {
+    it("'Can I have some time to process?' → needsTime", () => {
+      expect(detectCandidateIntent("Can I have some time to process?").needsTime).toBe(true);
+    });
+    it("'I\\'d like to have more time to decide.' → needsTime", () => {
+      expect(detectCandidateIntent("I'd like to have more time to decide.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B2 — accept: willing to move forward ── */
+  describe("S115-B2 — \"willing to move forward\" accepted", () => {
+    it("'I\\'m willing to move forward.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to move forward.").accepted).toBe(true);
+    });
+    it("'I\\'m willing to proceed.' → accepted", () => {
+      expect(detectCandidateIntent("I'm willing to proceed.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S115-B3 — accept: let's do it ── */
+  describe("S115-B3 — \"let's do it\" accepted", () => {
+    it("'Let\\'s do it.' → accepted", () => {
+      expect(detectCandidateIntent("Let's do it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S115-B8 — reject: like/want more fixed pay ── */
+  describe("S115-B8 — \"like more fixed pay\" rejected", () => {
+    it("'I\\'d like more fixed pay.' → rejected", () => {
+      expect(detectCandidateIntent("I'd like more fixed pay.").rejected).toBe(true);
+    });
+    it("'I want a higher base salary.' → rejected", () => {
+      expect(detectCandidateIntent("I want a higher base salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B10 — reject: CTC to be at least ── */
+  describe("S115-B10 — \"CTC to be at least\" rejected", () => {
+    it("'I need my CTC to be at least 30.' → rejected", () => {
+      expect(detectCandidateIntent("I need my CTC to be at least 30.").rejected).toBe(true);
+    });
+    it("'The salary to be at least 25 LPA.' → rejected", () => {
+      expect(detectCandidateIntent("The salary to be at least 25 LPA.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B12 — reject: hoping for at least ── */
+  describe("S115-B12 — \"hoping for at least\" rejected", () => {
+    it("'I was hoping for at least 28 LPA.' → rejected", () => {
+      expect(detectCandidateIntent("I was hoping for at least 28 LPA.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B14 — reject: much lower than current package ── */
+  describe("S115-B14 — \"much lower than current package\" rejected", () => {
+    it("'This is much lower than my current package.' → rejected", () => {
+      expect(detectCandidateIntent("This is much lower than my current package.").rejected).toBe(true);
+    });
+    it("'This is significantly lower than my current salary.' → rejected", () => {
+      expect(detectCandidateIntent("This is significantly lower than my current salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S115-B18 — walkAway: no longer wish to proceed ── */
+  describe("S115-B18 — \"no longer wish to proceed\" walkAway", () => {
+    it("'I no longer wish to proceed.' → walkAway", () => {
+      expect(detectCandidateIntent("I no longer wish to proceed.").walkAway).toBe(true);
+    });
+    it("'I no longer want to continue this negotiation.' → walkAway", () => {
+      expect(detectCandidateIntent("I no longer want to continue this negotiation.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S115-B23 — needsTime: ponder ── */
+  describe("S115-B23 — \"ponder\" needsTime", () => {
+    it("'Let me ponder this.' → needsTime", () => {
+      expect(detectCandidateIntent("Let me ponder this.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B24 — needsTime: give me N hours ── */
+  describe("S115-B24 — \"give me 48 hours\" needsTime", () => {
+    it("'Give me 48 hours.' → needsTime", () => {
+      expect(detectCandidateIntent("Give me 48 hours.").needsTime).toBe(true);
+    });
+    it("'Give me a day.' → needsTime", () => {
+      expect(detectCandidateIntent("Give me a day.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B25 — needsTime: discuss internally ── */
+  describe("S115-B25 — \"discuss internally\" needsTime", () => {
+    it("'I need to discuss this internally.' → needsTime", () => {
+      expect(detectCandidateIntent("I need to discuss this internally.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S115-B26 — safe: 'could look elsewhere' not walkAway (FP fix) ── */
+  describe("S115-B26 — \"could look elsewhere\" safe (no walkAway)", () => {
+    it("'We could look elsewhere if needed.' → walkAway=false", () => {
+      expect(detectCandidateIntent("We could look elsewhere if needed.").walkAway).toBe(false);
+    });
+    it("'I\\'ll look elsewhere.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll look elsewhere.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S116-B1 — FP: "not willing to proceed" must not be accepted ── */
+  describe("S116-B1 — \"not willing to proceed\" accepted=false (FP fix)", () => {
+    it("'I\\'m not willing to proceed at this number.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'm not willing to proceed at this number.").accepted).toBe(false);
+    });
+    it("'I am not willing to move forward with this offer.' → accepted=false", () => {
+      expect(detectCandidateIntent("I am not willing to move forward with this offer.").accepted).toBe(false);
+    });
+    it("'I\\'m willing to proceed.' → accepted=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I'm willing to proceed.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B4 — accept: "go ahead with" ── */
+  describe("S116-B4 — \"go ahead with\" accepted", () => {
+    it("'I\\'ll go ahead with this offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'll go ahead with this offer.").accepted).toBe(true);
+    });
+    it("'I\\'d go ahead with it.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'd go ahead with it.").accepted).toBe(true);
+    });
+    it("'I will go ahead.' → accepted=true", () => {
+      expect(detectCandidateIntent("I will go ahead.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B6 — accept: "good with this" ── */
+  describe("S116-B6 — \"good with this\" accepted", () => {
+    it("'I\\'m good with this.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm good with this.").accepted).toBe(true);
+    });
+    it("'I am totally good with that.' → accepted=true", () => {
+      expect(detectCandidateIntent("I am totally good with that.").accepted).toBe(true);
+    });
+    it("'I\\'m pretty good with the terms.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm pretty good with the terms.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S116-B7 — FP: "don't want more variable" must not be rejected ── */
+  describe("S116-B7 — \"don't want more variable\" rejected=false (FP fix)", () => {
+    it("'I don\\'t want more variable equity.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't want more variable equity.").rejected).toBe(false);
+    });
+    it("'I don\\'t need more fixed.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't need more fixed.").rejected).toBe(false);
+    });
+    it("'I want more fixed salary.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I want more fixed salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S116-B10 — reject: "had been expecting more" ── */
+  describe("S116-B10 — \"had been expecting more\" rejected", () => {
+    it("'I had been expecting more.' → rejected=true", () => {
+      expect(detectCandidateIntent("I had been expecting more.").rejected).toBe(true);
+    });
+    it("'I had been expecting much more than this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I had been expecting much more than this.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S116-B12 — walkAway: "pulling out" gerund form ── */
+  describe("S116-B12 — \"pulling out\" walkAway", () => {
+    it("'I\\'ll be pulling out of this process.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll be pulling out of this process.").walkAway).toBe(true);
+    });
+    it("'I am pulling out.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am pulling out.").walkAway).toBe(true);
+    });
+    it("'I need to pull out of this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I need to pull out of this.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S116-B13 — walkAway: "decided not to move forward" ── */
+  describe("S116-B13 — \"decided not to move forward\" walkAway", () => {
+    it("'I\\'ve decided not to move forward with this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I've decided not to move forward with this.").walkAway).toBe(true);
+    });
+    it("'I have decided not to proceed.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I have decided not to proceed.").walkAway).toBe(true);
+    });
+    it("'I decided not to continue.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I decided not to continue.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S116-B14 — needsTime: "a few more days" ── */
+  describe("S116-B14 — \"a few more days\" needsTime", () => {
+    it("'I\\'d like a few more days to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'd like a few more days to decide.").needsTime).toBe(true);
+    });
+    it("'Give me a few more days.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Give me a few more days.").needsTime).toBe(true);
+    });
+    it("'I need a few days.' → needsTime=true (original preserved)", () => {
+      expect(detectCandidateIntent("I need a few days.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S117-B1 FP — accept: "Accept nothing below 30 LPA" ── */
+  describe("S117-B1 — \"Accept nothing below\" accepted=false (FP fix)", () => {
+    it("'Accept nothing below 30 LPA.' → accepted=false", () => {
+      expect(detectCandidateIntent("Accept nothing below 30 LPA.").accepted).toBe(false);
+    });
+    it("'I accept.' → accepted=true (short affirmative preserved)", () => {
+      expect(detectCandidateIntent("I accept.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S117-B5 FP — reject: "don't think I need more equity" ── */
+  describe("S117-B5 — \"don't think I need more equity\" rejected=false (FP fix)", () => {
+    it("'I don\\'t think I need more equity to make this work.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't think I need more equity to make this work.").rejected).toBe(false);
+    });
+    it("'I want more fixed salary.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I want more fixed salary.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S117-B7/B8 FPs — needsTime: negated think phrases ── */
+  describe("S117-B7B8 — negated think-time phrases needsTime=false (FP fixes)", () => {
+    it("'I don\\'t need time, I accept.' → needsTime=false", () => {
+      expect(detectCandidateIntent("I don't need time, I accept.").needsTime).toBe(false);
+    });
+    it("'No need to think about it, I\\'m in.' → needsTime=false", () => {
+      expect(detectCandidateIntent("No need to think about it, I'm in.").needsTime).toBe(false);
+    });
+    it("'I need more time to decide.' → needsTime=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I need more time to decide.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S117-B11 — accept: "consider it settled" (+ FN fix for bare consider) ── */
+  describe("S117-B11 — \"consider it settled\" accepted", () => {
+    it("'Consider it settled.' → accepted=true", () => {
+      expect(detectCandidateIntent("Consider it settled.").accepted).toBe(true);
+    });
+    it("'Consider it settled.' → needsTime=false (double-bug fix)", () => {
+      expect(detectCandidateIntent("Consider it settled.").needsTime).toBe(false);
+    });
+  });
+
+  /* ── S117-B12/B13/B14/B15 — accept: sign/shake/settled idioms ── */
+  describe("S117-B12-B15 — deal-close accept idioms", () => {
+    it("'I\\'m happy to sign.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm happy to sign.").accepted).toBe(true);
+    });
+    it("'Sign me up.' → accepted=true", () => {
+      expect(detectCandidateIntent("Sign me up.").accepted).toBe(true);
+    });
+    it("'That\\'s settled then.' → accepted=true", () => {
+      expect(detectCandidateIntent("That's settled then.").accepted).toBe(true);
+    });
+    it("'Let\\'s shake on it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's shake on it.").accepted).toBe(true);
+    });
+  });
+
+  /* ── S117-B16/B19 — accept: content/comfortable with ── */
+  describe("S117-B16B19 — \"content/comfortable with\" accepted", () => {
+    it("'I\\'m content with this package.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm content with this package.").accepted).toBe(true);
+    });
+    it("'I\\'m comfortable with this.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'm comfortable with this.").accepted).toBe(true);
+    });
+    it("'I\\'m not comfortable with this.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'm not comfortable with this.").accepted).toBe(false);
+    });
+  });
+
+  /* ── S117-B21/B22/B24/B26 — reject: disappointment/underwhelming/below par ── */
+  describe("S117-B21-B26 — sentiment-based rejection FNs", () => {
+    it("'This is not what I was expecting.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is not what I was expecting.").rejected).toBe(true);
+    });
+    it("'I\\'m disappointed with this offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm disappointed with this offer.").rejected).toBe(true);
+    });
+    it("'This feels underwhelming.' → rejected=true", () => {
+      expect(detectCandidateIntent("This feels underwhelming.").rejected).toBe(true);
+    });
+    it("'This is below par.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is below par.").rejected).toBe(true);
+    });
+    it("'I\\'m not happy with this offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm not happy with this offer.").rejected).toBe(true);
+    });
+  });
+
+  /* ── S117-B36/B37 — walkAway: stepping away / made up my mind ── */
+  describe("S117-B36B37 — stepping away / made up my mind walkAway", () => {
+    it("'I\\'m stepping away from this process.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm stepping away from this process.").walkAway).toBe(true);
+    });
+    it("'I\\'ve made up my mind to decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I've made up my mind to decline this offer.").walkAway).toBe(true);
+    });
+  });
+
+  /* ── S117-B48/B52 — needsTime: couple of weeks / chew on this ── */
+  describe("S117-B48B52 — needsTime new arms", () => {
+    it("'I\\'ll need a couple of weeks to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'll need a couple of weeks to decide.").needsTime).toBe(true);
+    });
+    it("'Let me chew on this a bit.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me chew on this a bit.").needsTime).toBe(true);
+    });
+    it("'I need some space to decide.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need some space to decide.").needsTime).toBe(true);
+    });
+    it("'I\\'d like to weigh my options.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I'd like to weigh my options.").needsTime).toBe(true);
+    });
+  });
+
+  /* ── S118 — wave 24 adversarial hardening (15 bugs) ── */
+  /* B9 FP: bare "i accept" guard; B11 FN: shake hands; B1/B2/B10/B3 FP: isShortAffirmativeConditional */
+  /* B4 FP: disappointed restricted; B5 FP: a-bit-low lookahead; B6 FP: not-happy restricted */
+  /* B7 FP: step away restricted; B8 FP: process this restricted; B13 FN: ca in check/speak */
+  /* B12 FN: exit the; B14 FN: moving on; B15 FN: have the weekend */
+
+  describe("S118-B9 — 'i accept nothing below' must NOT fire accepted=true", () => {
+    it("'I accept nothing below 30 LPA.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept nothing below 30 LPA.").accepted).toBe(false);
+    });
+    it("'I accept no less than 40 lakhs.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept no less than 40 lakhs.").accepted).toBe(false);
+    });
+    it("'I accept anything less than 35 LPA.' → accepted=false (anything less guard)", () => {
+      expect(detectCandidateIntent("I accept anything less than 35 LPA.").accepted).toBe(false);
+    });
+    it("'I accept the offer.' → accepted=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+    });
+  });
+
+  describe("S118-B11 — 'let's shake hands on it' accepted", () => {
+    it("'Let\\'s shake hands on it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's shake hands on it.").accepted).toBe(true);
+    });
+    it("'Let\\'s shake on it.' → accepted=true (existing preserved)", () => {
+      expect(detectCandidateIntent("Let's shake on it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S118-B1/B2/B10 — inverted-order rejection phrases not accepted as conditional", () => {
+    it("'Sure, but I need more than this.' → accepted=false", () => {
+      expect(detectCandidateIntent("Sure, but I need more than this.").accepted).toBe(false);
+    });
+    it("'Okay, but the equity needs to be higher.' → accepted=false", () => {
+      expect(detectCandidateIntent("Okay, but the equity needs to be higher.").accepted).toBe(false);
+    });
+    it("'That works, but the salary needs to be increased.' → accepted=false", () => {
+      expect(detectCandidateIntent("That works, but the salary needs to be increased.").accepted).toBe(false);
+    });
+    it("'Sure, but that doesn\\'t work in practice.' → accepted=false", () => {
+      expect(detectCandidateIntent("Sure, but that doesn't work in practice.").accepted).toBe(false);
+    });
+  });
+
+  describe("S118-B5 — 'a bit low-key' must NOT fire rejected=true", () => {
+    it("'The vibe is a bit low-key for me.' → rejected=false", () => {
+      expect(detectCandidateIntent("The vibe is a bit low-key for me.").rejected).toBe(false);
+    });
+    it("'The offer feels a bit low.' → rejected=true (true positive preserved)", () => {
+      expect(detectCandidateIntent("The offer feels a bit low.").rejected).toBe(true);
+    });
+  });
+
+  describe("S118-B7 — 'stepping away from the microphone' must NOT fire walkAway", () => {
+    it("'I\\'m stepping away from the microphone.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm stepping away from the microphone.").walkAway).toBe(false);
+    });
+    it("'I\\'m stepping away from this negotiation.' → walkAway=true (preserved)", () => {
+      expect(detectCandidateIntent("I'm stepping away from this negotiation.").walkAway).toBe(true);
+    });
+    it("'I\\'m stepping away from this.' → walkAway=true (bare this preserved)", () => {
+      expect(detectCandidateIntent("I'm stepping away from this.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B12 — 'exiting the negotiation' walkAway", () => {
+    it("'I\\'m exiting the negotiation.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm exiting the negotiation.").walkAway).toBe(true);
+    });
+    it("'Exiting this discussion.' → walkAway=true (preserved)", () => {
+      expect(detectCandidateIntent("Exiting this discussion.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B14 — 'I am moving on / I\\'m moving on' walkAway", () => {
+    it("'I am moving on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am moving on.").walkAway).toBe(true);
+    });
+    it("'I\\'m moving on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm moving on.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S118-B13 — 'check with my CA' needsTime", () => {
+    it("'I need to check with my CA.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to check with my CA.").needsTime).toBe(true);
+    });
+    it("'Let me speak with my CA first.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me speak with my CA first.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S118-B15 — 'can I have the weekend' needsTime", () => {
+    it("'Can I have the weekend to think?' → needsTime=true", () => {
+      expect(detectCandidateIntent("Can I have the weekend to think?").needsTime).toBe(true);
+    });
+    it("'Could I get the weekend to decide?' → needsTime=true", () => {
+      expect(detectCandidateIntent("Could I get the weekend to decide?").needsTime).toBe(true);
+    });
+  });
+
+  describe("S118-B8 — 'want to process this' restricted to offer context", () => {
+    it("'I want to process this offer.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I want to process this offer.").needsTime).toBe(true);
+    });
+  });
+
+  // ── S119 wave-25 adversarial hardening ──────────────────────────────────────
+
+  describe("S119-B1 — 'I accept nothing less' must NOT be accepted", () => {
+    it("'I accept nothing less than 30 LPA.' → accepted=false", () => {
+      const r = detectCandidateIntent("I accept nothing less than 30 LPA.");
+      expect(r.accepted).toBe(false);
+    });
+    it("'I accept no less than 25 LPA.' → rejected=true, accepted=false", () => {
+      const r = detectCandidateIntent("I accept no less than 25 LPA.");
+      expect(r.accepted).toBe(false);
+    });
+  });
+
+  describe("S119-B2 — 'I accept that' (pronoun) must NOT fire accept", () => {
+    it("'I accept that the base is too low.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept that the base is too low.").accepted).toBe(false);
+    });
+    it("'I accept whatever lower number you want.' → accepted=false", () => {
+      expect(detectCandidateIntent("I accept whatever lower number you want.").accepted).toBe(false);
+    });
+  });
+
+  describe("S119-B3 — 'I'm going to have to pass on this one' → walkAway", () => {
+    it("'I'm going to have to pass on this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm going to have to pass on this.").walkAway).toBe(true);
+    });
+    it("'I will have to pass on this opportunity.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will have to pass on this opportunity.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B4 — 'pass on dessert/food' must NOT be walkAway", () => {
+    it("'I'll pass on dessert, let's talk numbers.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'll pass on dessert, let's talk numbers.").walkAway).toBe(false);
+    });
+    it("'I'll pass on the food, but about the offer...' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'll pass on the food, but about the offer...").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B5/B6/B7 — walkAwayNegationRe suppresses false positives", () => {
+    it("'I don't want to walk away from this.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I don't want to walk away from this.").walkAway).toBe(false);
+    });
+    it("'I'm not going to walk away.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm not going to walk away.").walkAway).toBe(false);
+    });
+    it("'I won't decline this offer.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I won't decline this offer.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B8 — 'won't work' with amount context stays walkAway", () => {
+    it("'This won't work for me.' → walkAway=true", () => {
+      expect(detectCandidateIntent("This won't work for me.").walkAway).toBe(true);
+    });
+    it("'Won't work for anything less than 30.' → walkAway=false (conditional)", () => {
+      expect(detectCandidateIntent("Won't work for anything less than 30.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S119-B9 — 'let's do this/it' accept", () => {
+    it("'Let's do this.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let's do this.").accepted).toBe(true);
+    });
+    it("'Let us do it.' → accepted=true", () => {
+      expect(detectCandidateIntent("Let us do it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S119-B10/B12 — 'absolutely/perfect that works' shortAffirmative accept", () => {
+    it("'Absolutely, that works for me.' → accepted=true", () => {
+      expect(detectCandidateIntent("Absolutely, that works for me.").accepted).toBe(true);
+    });
+    it("'Perfect, that works.' → accepted=true", () => {
+      expect(detectCandidateIntent("Perfect, that works.").accepted).toBe(true);
+    });
+    it("'Absolutely.' alone → needsTime/rejected/walkAway all false", () => {
+      const r = detectCandidateIntent("Absolutely.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+  });
+
+  describe("S119-B11 — 'I'd happily take the offer' accept", () => {
+    it("'I'd happily take the offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'd happily take the offer.").accepted).toBe(true);
+    });
+    it("'I will gladly take it.' → accepted=true", () => {
+      expect(detectCandidateIntent("I will gladly take it.").accepted).toBe(true);
+    });
+  });
+
+  describe("S119-B13 — 'loop in family' needsTime", () => {
+    it("'I need to loop in my spouse first.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to loop in my spouse first.").needsTime).toBe(true);
+    });
+    it("'Let me loop in my advisor.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me loop in my advisor.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S119-B14 — 'not satisfied' with object", () => {
+    it("'I'm not satisfied with this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'm not satisfied with this.").rejected).toBe(true);
+    });
+    it("'Not satisfied with the offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("Not satisfied with the offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B15 — 'expected better' reject", () => {
+    it("'I expected much better than this.' → rejected=true", () => {
+      expect(detectCandidateIntent("I expected much better than this.").rejected).toBe(true);
+    });
+    it("'Expected better communication.' → rejected=false (excluded)", () => {
+      expect(detectCandidateIntent("Expected better communication.").rejected).toBe(false);
+    });
+  });
+
+  describe("S119-B16 — 'component needs to be higher'", () => {
+    it("'The variable component needs to be higher.' → rejected=true", () => {
+      expect(detectCandidateIntent("The variable component needs to be higher.").rejected).toBe(true);
+    });
+    it("'Equity needs to be higher.' → rejected=true", () => {
+      expect(detectCandidateIntent("Equity needs to be higher.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B18 — degree adverbs with 'lower than'", () => {
+    it("'This is much lower than my expectations.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is much lower than my expectations.").rejected).toBe(true);
+    });
+    it("'Significantly lower than what I asked for.' → rejected=true", () => {
+      expect(detectCandidateIntent("Significantly lower than what I asked for.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B19 — 'was expecting more'", () => {
+    it("'I was expecting a bit more.' → rejected=true", () => {
+      expect(detectCandidateIntent("I was expecting a bit more.").rejected).toBe(true);
+    });
+    it("'Have been expecting more.' → rejected=true", () => {
+      expect(detectCandidateIntent("Have been expecting more.").rejected).toBe(true);
+    });
+  });
+
+  describe("S119-B21 — 'cannot come to an agreement' walkAway", () => {
+    it("'I cannot come to an agreement on this.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I cannot come to an agreement on this.").walkAway).toBe(true);
+    });
+    it("'We can't reach terms here.' → walkAway=true", () => {
+      expect(detectCandidateIntent("We can't reach terms here.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B22 — 'I'll need to pass' walkAway", () => {
+    it("'I'll need to pass on this one.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'll need to pass on this one.").walkAway).toBe(true);
+    });
+    it("'I'd need to pass on this position.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'd need to pass on this position.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S119-B23/B24 — thinkNegationRe extensions", () => {
+    it("'I'm not going to think about it.' → needsTime=false", () => {
+      expect(detectCandidateIntent("I'm not going to think about it.").needsTime).toBe(false);
+    });
+    it("'Won't think about it, I'm in.' → needsTime=false", () => {
+      expect(detectCandidateIntent("Won't think about it, I'm in.").needsTime).toBe(false);
+    });
+  });
+
+  describe("S119-B25 — 'before deciding' needsTime", () => {
+    it("'I need a day before deciding.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need a day before deciding.").needsTime).toBe(true);
+    });
+    it("'Before committing, I want to review.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Before committing, I want to review.").needsTime).toBe(true);
+    });
+  });
+
+  // ── S120 wave-26 adversarial hardening ──────────────────────────────────────
+
+  describe("S120-B1 — walkAwayNegationRe extended to guard rejected too", () => {
+    it("'I don't want to walk away from this.' → rejected=false", () => {
+      expect(detectCandidateIntent("I don't want to walk away from this.").rejected).toBe(false);
+    });
+    it("'I'm not going to walk away.' → rejected=false", () => {
+      expect(detectCandidateIntent("I'm not going to walk away.").rejected).toBe(false);
+    });
+  });
+
+  describe("S120-B2 — 'walk away with' idiom must NOT fire reject/walkAway", () => {
+    it("'I'll walk away with great memories of this process.' → walkAway=false, rejected=false", () => {
+      const r = detectCandidateIntent("I'll walk away with great memories of this process.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+  });
+
+  describe("S120-B3 — 'take it as a no' must NOT fire accept", () => {
+    it("'I'll take it as a no.' → accepted=false", () => {
+      expect(detectCandidateIntent("I'll take it as a no.").accepted).toBe(false);
+    });
+  });
+
+  describe("S120-B5/B6 — new reject idioms", () => {
+    it("'This is a lowball offer.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is a lowball offer.").rejected).toBe(true);
+    });
+    it("'That's not even close.' → rejected=true", () => {
+      expect(detectCandidateIntent("That's not even close.").rejected).toBe(true);
+    });
+    it("'This doesn't come close.' → rejected=true", () => {
+      expect(detectCandidateIntent("This doesn't come close.").rejected).toBe(true);
+    });
+  });
+
+  describe("S120-B7/B8/B9 — losing money / seen better / below walk-away number", () => {
+    it("'I'd be losing money at this rate.' → rejected=true", () => {
+      expect(detectCandidateIntent("I'd be losing money at this rate.").rejected).toBe(true);
+    });
+    it("'I've seen better offers elsewhere.' → rejected=true, mentionedCompeting=true", () => {
+      const r = detectCandidateIntent("I've seen better offers elsewhere.");
+      expect(r.rejected).toBe(true);
+      expect(r.mentionedCompeting).toBe(true);
+    });
+    it("'That's below my walk-away number.' → rejected=true", () => {
+      expect(detectCandidateIntent("That's below my walk-away number.").rejected).toBe(true);
+    });
+  });
+
+  describe("S120-B10 — walkAwayWords synced with canonical WALKAWAY_PATTERN", () => {
+    it("'I'm done negotiating.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm done negotiating.").walkAway).toBe(true);
+    });
+    it("'I refuse to continue.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I refuse to continue.").walkAway).toBe(true);
+    });
+    it("'Not a chance.' → walkAway=true", () => {
+      expect(detectCandidateIntent("Not a chance.").walkAway).toBe(true);
+    });
+    it("'That won't work.' → walkAway=true", () => {
+      expect(detectCandidateIntent("That won't work.").walkAway).toBe(true);
+    });
+    it("'Let's end this conversation.' → walkAway=true", () => {
+      expect(detectCandidateIntent("Let's end this conversation.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S120-B11 — 'bilkul nahi' (absolutely not) rejected, not accepted", () => {
+    it("'Bilkul nahi, this is too low.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("Bilkul nahi, this is too low.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'Bilkul, that works for me.' → accepted=true (bare bilkul preserved)", () => {
+      expect(detectCandidateIntent("Bilkul, that works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S120-B13 — Hindi 'sochna padega' needsTime", () => {
+    it("'Sochna padega, thoda time chahiye.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Sochna padega, thoda time chahiye.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S120-B14 — 'run it by my team/manager' needsTime", () => {
+    it("'Let me run it by my team.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Let me run it by my team.").needsTime).toBe(true);
+    });
+    it("'I need to run this by my manager.' → needsTime=true", () => {
+      expect(detectCandidateIntent("I need to run this by my manager.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B1 (wave 27) — 'sounds  good' with irregular whitespace still accepts", () => {
+    it("'Sounds  good, I accept.' → accepted=true", () => {
+      expect(detectCandidateIntent("Sounds  good, I accept.").accepted).toBe(true);
+    });
+  });
+
+  describe("S121-B2 (wave 27) — bare number + 'works' accepts", () => {
+    it("'42 LPA works for me.' → accepted=true", () => {
+      expect(detectCandidateIntent("42 LPA works for me.").accepted).toBe(true);
+    });
+    it("'42 works.' → accepted=true", () => {
+      expect(detectCandidateIntent("42 works.").accepted).toBe(true);
+    });
+  });
+
+  describe("S121-B3 (wave 27) — minutes-scale 'to think' needsTime", () => {
+    it("'Give me 30 minutes to think.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Give me 30 minutes to think.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B4 (wave 27) — Hindi 'lekin' hedge / 'sochne do' think-time", () => {
+    it("'Sounds good lekin I need to check with my family.' → conditionalAccept=true", () => {
+      const r = detectCandidateIntent("Sounds good lekin I need to check with my family.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Sochne do, main baad mein bataunga.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Sochne do, main baad mein bataunga.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B5 (wave 27) — Hindi 'time chahiye' needsTime", () => {
+    it("'Mujhe time chahiye isse sochne ke liye.' → needsTime=true", () => {
+      expect(detectCandidateIntent("Mujhe time chahiye isse sochne ke liye.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S121-B6 (wave 27) — generic topic-redirect deflection", () => {
+    it("'Can we talk about the joining bonus instead?' → deflected=true", () => {
+      expect(detectCandidateIntent("Can we talk about the joining bonus instead?").deflected).toBe(true);
+    });
+    it("'Let's circle back to this later.' → deflected=true", () => {
+      expect(detectCandidateIntent("Let's circle back to this later.").deflected).toBe(true);
+    });
+  });
+
+  describe("S121-B7 (wave 27, highest severity) — walk-away retraction suppressed, genuine walk-away still fires", () => {
+    it("'I was about to walk away but let's talk more.' → walkAway=false, rejected=false", () => {
+      const r = detectCandidateIntent("I was about to walk away but let's talk more.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("'I was going to decline but I am open to discussing.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I was going to decline but I am open to discussing.").walkAway).toBe(false);
+    });
+    it("'I am walking away, this offer is unacceptable.' → walkAway=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("I am walking away, this offer is unacceptable.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S122-B1 (wave 28, P1) — bare 'not' walk-away negation desynced from isWalkAway()", () => {
+    it("'I'm not walking away, just need a moment to think.' → walkAway=false", () => {
+      expect(detectCandidateIntent("I'm not walking away, just need a moment to think.").walkAway).toBe(false);
+    });
+    it("'I'm not sure, but I will walk away if you don't match.' → walkAway=true (not over-suppressed)", () => {
+      const r = detectCandidateIntent("I'm not sure, but I will walk away if you don't match.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  describe("S122-B2 (wave 28, P1) — bare 'too low' missing negation guard", () => {
+    it("'Not too low, actually it's pretty fair.' → rejected=false", () => {
+      expect(detectCandidateIntent("Not too low, actually it's pretty fair.").rejected).toBe(false);
+    });
+    it("'That's too low for me.' → rejected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("That's too low for me.").rejected).toBe(true);
+    });
+  });
+
+  describe("S122-B4 (wave 28, P2) — 'insulting' required literal \"that's\", missed \"this is\"/\"it's\"", () => {
+    it("'This is insulting.' → rejected=true", () => {
+      expect(detectCandidateIntent("This is insulting.").rejected).toBe(true);
+    });
+    it("'It's insulting, honestly.' → rejected=true", () => {
+      expect(detectCandidateIntent("It's insulting, honestly.").rejected).toBe(true);
+    });
+  });
+
+  describe("S122-B5 (wave 28, P2) — deflect 'what...offer' false-fired on legitimate non-cash questions", () => {
+    it("'What can you offer me in terms of growth here?' → deflected=false", () => {
+      expect(detectCandidateIntent("What can you offer me in terms of growth here?").deflected).toBe(false);
+    });
+    it("'What benefits do you offer besides the base salary?' → deflected=false", () => {
+      expect(detectCandidateIntent("What benefits do you offer besides the base salary?").deflected).toBe(false);
+    });
+    it("'What would you offer? You go first.' → deflected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("What would you offer? You go first.").deflected).toBe(true);
+    });
+  });
+
+  describe("S122-B6 (wave 28, P3) — 'hard pass' returned NONE", () => {
+    it("'hard pass' → walkAway=true", () => {
+      expect(detectCandidateIntent("hard pass").walkAway).toBe(true);
+    });
+  });
+
+  describe("S123-B1 (wave 29, P1) — 'don't think X works' fired accepted=true instead of rejected=true", () => {
+    it("'I don't think this works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I don't think this works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I dont think it works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I dont think it works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'42 works for me.' → accepted=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("42 works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S123-B2 (wave 29, P1) — double-negative 'not interested' reassurance fired rejected/walkAway=true", () => {
+    it("'It's not like I'm not interested.' → rejected=false, walkAway=false", () => {
+      const r = detectCandidateIntent("It's not like I'm not interested.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("isWalkAway(\"It's not like I'm not interested.\") → false", () => {
+      expect(isWalkAway("It's not like I'm not interested.")).toBe(false);
+    });
+    it("'I can't say I'm not interested.' → rejected=false, walkAway=false", () => {
+      const r = detectCandidateIntent("I can't say I'm not interested.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("isWalkAway(\"I can't say I'm not interested.\") → false", () => {
+      expect(isWalkAway("I can't say I'm not interested.")).toBe(false);
+    });
+    it("'Not interested, thanks.' → rejected=true, walkAway=true (not over-suppressed)", () => {
+      const r = detectCandidateIntent("Not interested, thanks.");
+      expect(r.rejected).toBe(true);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway("Not interested, thanks.")).toBe(true);
+    });
+  });
+
+  describe("S123-B3 (wave 29, P2) — litotes 'can't say I wouldn't accept' fired rejected=true", () => {
+    it("'I can't say I wouldn't accept that.' → rejected=false", () => {
+      expect(detectCandidateIntent("I can't say I wouldn't accept that.").rejected).toBe(false);
+    });
+    it("'Not that I wouldn't accept it, but I need to check numbers first.' → rejected=false", () => {
+      expect(detectCandidateIntent("Not that I wouldn't accept it, but I need to check numbers first.").rejected).toBe(false);
+    });
+    it("'I wouldn't accept that offer.' → rejected=true (not over-suppressed)", () => {
+      expect(detectCandidateIntent("I wouldn't accept that offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S124-B1 (wave 30) — bare 'I am walking out' desynced between walkAwayWords and WALKAWAY_PATTERN", () => {
+    it("'I am walking out of this meeting.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I am walking out of this meeting.").walkAway).toBe(true);
+    });
+    it("'I walk.' (bare verb, no away/out) → walkAway=true", () => {
+      expect(detectCandidateIntent("I walk.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S124-B4 (wave 30) — 'I'm out of here' wrongly excluded by the blanket 'out of X' guard", () => {
+    it("\"I'm out of here.\" → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm out of here.").walkAway).toBe(true);
+    });
+    it("\"I'm out of options here, what can you do?\" → walkAway=false (not over-firing)", () => {
+      expect(detectCandidateIntent("I'm out of options here, what can you do?").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B4b (wave 30) — 'no deal breakers' missing the breakers guard synced from canonical", () => {
+    it("\"No deal breakers here, we're fine.\" → walkAway=false", () => {
+      expect(detectCandidateIntent("No deal breakers here, we're fine.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B5 (wave 30) — 'walkin' dropped-g typo not recognized as walk-away", () => {
+    it("\"I'm walkin away from this deal.\" → walkAway=true", () => {
+      expect(detectCandidateIntent("I'm walkin away from this deal.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S124-B1/B4/B4b/B5 (wave 30) — canonical isWalkAway() parity checks", () => {
+    it("'I am walking out of this meeting.' → isWalkAway=true", () => {
+      expect(isWalkAway("I am walking out of this meeting.")).toBe(true);
+    });
+    it("'This offer is not for me.' → isWalkAway=true (missing from canonical WALKAWAY_PATTERN)", () => {
+      expect(isWalkAway("This offer is not for me.")).toBe(true);
+    });
+    it("'Thanks but no.' → isWalkAway=true (missing from canonical WALKAWAY_PATTERN)", () => {
+      expect(isWalkAway("Thanks but no.")).toBe(true);
+    });
+    it("\"I'll walk away with nothing if you don't move.\" → isWalkAway=false (floor statement, not exit)", () => {
+      expect(isWalkAway("I'll walk away with nothing if you don't move.")).toBe(false);
+    });
+    it("\"I'm out of here.\" → isWalkAway=true", () => {
+      expect(isWalkAway("I'm out of here.")).toBe(true);
+    });
+    it("\"I'm walkin away from this deal.\" → isWalkAway=true", () => {
+      expect(isWalkAway("I'm walkin away from this deal.")).toBe(true);
+    });
+  });
+
+  describe("S124-B2 (wave 30) — stripNegatedDepartures() per-match lookback window over-suppressed a later genuine walk-away", () => {
+    it("\"I don't want to walk away, but if you don't match this I will walk away.\" → isWalkAway=true", () => {
+      expect(
+        isWalkAway("I don't want to walk away, but if you don't match this I will walk away."),
+      ).toBe(true);
+    });
+    it("\"I don't want to walk away, but if you don't match this I will walk away.\" → detectCandidateIntent walkAway=true (still correct via post-hedge fallback)", () => {
+      expect(
+        detectCandidateIntent(
+          "I don't want to walk away, but if you don't match this I will walk away.",
+        ).walkAway,
+      ).toBe(true);
+    });
+    it("existing negated walk-away is still suppressed (no regression)", () => {
+      expect(isWalkAway("I'm not walking away, just need a moment.")).toBe(false);
+      expect(detectCandidateIntent("I'm not walking away, just need a moment.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S124-B3 (wave 30, P1) — 'don't think X works' still fired accepted=true instead of rejected=true", () => {
+    it("'I don't think this works for me.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I don't think this works for me.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S125-A (wave 31, P1) — 'I will/now/hereby decline' desynced between canonical decline arms and the duplicate walkAwayWords/walkRe", () => {
+    it("'I will decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will decline this offer.").walkAway).toBe(true);
+    });
+    it("'I now decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I now decline this offer.").walkAway).toBe(true);
+    });
+    it("'I hereby decline this offer.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I hereby decline this offer.").walkAway).toBe(true);
+    });
+    it("'I will likely move on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I will likely move on.").walkAway).toBe(true);
+    });
+    it("isWalkAway parity: 'I will decline this offer.' / 'I hereby decline this offer.'", () => {
+      expect(isWalkAway("I will decline this offer.")).toBe(true);
+      expect(isWalkAway("I hereby decline this offer.")).toBe(true);
+    });
+  });
+
+  describe("S125-B (wave 31, P1) — hedge-branch walk-away fallback bypassed the negation guard entirely", () => {
+    it("'I will not accept this, but I will not walk away either, let's keep talking.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent(
+          "I will not accept this, but I will not walk away either, let's keep talking.",
+        ).walkAway,
+      ).toBe(false);
+    });
+    it("genuine post-hedge walk-away still fires (no regression)", () => {
+      expect(
+        detectCandidateIntent("Sounds good, but actually I am walking away if you cannot match it.")
+          .walkAway,
+      ).toBe(true);
+    });
+  });
+
+  describe("S125-C (wave 31, P1) — bare 'I walk' verb arm false-fired on unrelated habitual/possessive sentences", () => {
+    it("'I walk in on Mondays around 9am, so scheduling calls before that is tough.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent(
+          "I walk in on Mondays around 9am, so scheduling calls before that is tough.",
+        ).walkAway,
+      ).toBe(false);
+    });
+    it("'I walk her dog every morning before work, so mornings are tight.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent("I walk her dog every morning before work, so mornings are tight.")
+          .walkAway,
+      ).toBe(false);
+    });
+    it("'I walk.' (bare verb, end of reply) → walkAway=true (no regression)", () => {
+      expect(detectCandidateIntent("I walk.").walkAway).toBe(true);
+    });
+    it("'I am walking out of this meeting.' → walkAway=true (no regression)", () => {
+      expect(detectCandidateIntent("I am walking out of this meeting.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S125-D (wave 31, P3) — deflectWords missing 'you go first' verb-inserted variant", () => {
+    it("'You go first, tell me your budget.' → deflected=true", () => {
+      expect(detectCandidateIntent("You go first, tell me your budget.").deflected).toBe(true);
+    });
+  });
+
+  describe("S126-B1 (wave 32, P1) — number-lock reject signal blanket-suppressed by unrelated accept phrase", () => {
+    it("'That works for me. Sticking with 30 LPA is what I need.' → rejected=true", () => {
+      expect(
+        detectCandidateIntent("That works for me. Sticking with 30 LPA is what I need.").rejected,
+      ).toBe(true);
+    });
+    it("'sounds good, I should hold at 26 lakhs.' → rejected=true", () => {
+      expect(detectCandidateIntent("sounds good, I should hold at 26 lakhs.").rejected).toBe(true);
+    });
+    it("regression: existing number-lock tests still fire unchanged", () => {
+      expect(
+        detectCandidateIntent("No, I would like to stick with 26 lakhs per annum").rejected,
+      ).toBe(true);
+      expect(detectCandidateIntent("I'm holding firm at 30 LPA").rejected).toBe(true);
+      expect(
+        detectCandidateIntent("I'd be staying at 32 LPA — that's my floor").rejected,
+      ).toBe(true);
+    });
+    it("regression: benign 'stick with the team' (no number) still not a rejection", () => {
+      expect(detectCandidateIntent("I'd love to stick with the team I have today").rejected).toBe(
+        false,
+      );
+    });
+  });
+
+  describe("S126-B2 (wave 32, P1) — walk-away-negation guard on rejected scoped to the walk-away arm only", () => {
+    it("'I won't accept this but I won't walk away either.' → rejected=true", () => {
+      expect(
+        detectCandidateIntent("I won't accept this but I won't walk away either.").rejected,
+      ).toBe(true);
+    });
+    it("regression: S120-B1 'I don't want to walk away' still not a rejection", () => {
+      expect(detectCandidateIntent("I don't want to walk away").rejected).toBe(false);
+    });
+  });
+
+  describe("S126-B3 (wave 32, P1) — needsTime suppressed by a number that merely references the recruiter's own offer", () => {
+    it("'I need a few days to think about the 45 LPA offer.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("I need a few days to think about the 45 LPA offer.").needsTime,
+      ).toBe(true);
+    });
+    it("regression: 'could you consider 30 LPA instead?' is still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+    });
+  });
+
+  describe("S126-B4 (wave 32, P1) — walkAwayWords/walkRe subject frame missing 'want to'/'guess i'll'", () => {
+    it("'I want to move on from this negotiation.' → walkAway=true", () => {
+      expect(
+        detectCandidateIntent("I want to move on from this negotiation.").walkAway,
+      ).toBe(true);
+    });
+    it("'I guess I'll move on.' → walkAway=true", () => {
+      expect(detectCandidateIntent("I guess I'll move on.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S127-B1 (wave 33, P1) — accepted/rejected co-firing when a live number-lock accompanies an unrelated accept phrase", () => {
+    it("'Sticking with 30 LPA is what I need. That works for me otherwise.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent(
+        "Sticking with 30 LPA is what I need. That works for me otherwise.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I'm fine with this. Holding firm at 32 LPA though.' → accepted=false, rejected=true", () => {
+      const r = detectCandidateIntent("I'm fine with this. Holding firm at 32 LPA though.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: plain accepts still accept", () => {
+      expect(detectCandidateIntent("Sounds good, I accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("That works for me.").accepted).toBe(true);
+    });
+  });
+
+  describe("S127-B2 (wave 33, P1) — needsTime negation guard tested against the whole string instead of the clause", () => {
+    it("'I don't need time to think about the base, but I do need a couple of days to think about the equity component.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent(
+          "I don't need time to think about the base, but I do need a couple of days to think about the equity component.",
+        ).needsTime,
+      ).toBe(true);
+    });
+    it("regression: negated think-time with no other clause is still suppressed", () => {
+      expect(detectCandidateIntent("I don't need time to think about it.").needsTime).toBe(false);
+    });
+    it("regression: consider+number still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+  });
+
+  describe("S127-B3 (wave 33, P2) — mentionedCompeting had no first-person subject guard", () => {
+    it("'My friend got an offer of 40 LPA.' → mentionedCompeting=false", () => {
+      expect(detectCandidateIntent("My friend got an offer of 40 LPA.").mentionedCompeting).toBe(
+        false,
+      );
+    });
+    it("'My brother received an offer from Google last year.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("My brother received an offer from Google last year.")
+          .mentionedCompeting,
+      ).toBe(false);
+    });
+    it("regression: candidate's own competing offer still fires", () => {
+      expect(
+        detectCandidateIntent("I already have an offer from another company.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent("I also have another offer on the table too.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S127-B4/B5 (wave 33, P2) — Hindi needsTime gaps: 'sochna hai'/'time dijiye'/'baat karni hai'", () => {
+    it("'Sir mujhe sochna hai, thoda time dijiye please.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Sir mujhe sochna hai, thoda time dijiye please.").needsTime,
+      ).toBe(true);
+    });
+    it("'Mujhe apne family se baat karni hai pehle, phir bataunga.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Mujhe apne family se baat karni hai pehle, phir bataunga.")
+          .needsTime,
+      ).toBe(true);
+    });
+  });
+
+  describe("S127-B6 (wave 33, P2) — acceptWords missing 'I'll take whatever you offer'", () => {
+    it("'I'll take whatever you offer.' → accepted=true", () => {
+      expect(detectCandidateIntent("I'll take whatever you offer.").accepted).toBe(true);
+    });
+  });
+
+  describe("S128-B1 (wave 34, P1) — Hindi number-anchor 'X se kam nahi lunga/lungi' misfired walkAway instead of rejected", () => {
+    it("'30 lakh se kam nahi lunga.' → walkAway=false, rejected=true", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'Main 30 lakh se kam nahi lungi, lekin baaki sab thik hai.' → walkAway=false", () => {
+      const r = detectCandidateIntent("Main 30 lakh se kam nahi lungi, lekin baaki sab thik hai.");
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: genuine Hindi walk-away phrasing still fires walkAway", () => {
+      expect(detectCandidateIntent("Mujhe yeh job nahi chahiye.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S128-B2 (wave 34, P1) — needsTime lost when a separate clause states a target number", () => {
+    it("'Give me a couple of days, my target is 40 LPA minimum.' → needsTime=true", () => {
+      expect(
+        detectCandidateIntent("Give me a couple of days, my target is 40 LPA minimum.")
+          .needsTime,
+      ).toBe(true);
+    });
+    it("regression: 'consider' + number in the same clause is still a counter, not needsTime", () => {
+      expect(detectCandidateIntent("could you consider 30 LPA instead?").needsTime).toBe(false);
+      expect(detectCandidateIntent("I can consider 38L.").needsTime).toBe(false);
+    });
+    it("regression: offer-reference number still needsTime", () => {
+      expect(
+        detectCandidateIntent("I need a few days to think about the 45 LPA offer.").needsTime,
+      ).toBe(true);
+    });
+  });
+
+  describe("S128-B3 (wave 34, P2) — bare trailing 'though' filler over-triggered conditionalAccept", () => {
+    it("'I accept, though.' → accepted=true, conditionalAccept=false", () => {
+      const r = detectCandidateIntent("I accept, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("'Deal, though.' → accepted=true, conditionalAccept=false", () => {
+      const r = detectCandidateIntent("Deal, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("regression: a genuine stated condition after the hedge still fires conditionalAccept", () => {
+      const r = detectCandidateIntent("I accept, though I'd like to discuss equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S129-B1 (wave 35, P1) — post-hedge walk-away phrasing not covered by rejectWords failed to suppress accepted", () => {
+    it("'I am in, but I also do not think this is going to work out for me.' → accepted=false, walkAway=true", () => {
+      const r = detectCandidateIntent(
+        "I am in, but I also do not think this is going to work out for me.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.conditionalAccept).toBe(false);
+      expect(r.walkAway).toBe(true);
+    });
+    it("regression: genuine conditional accept still fires", () => {
+      const r = detectCandidateIntent("I accept, though I'd like to discuss equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S129-B2 (wave 35, P1/P2) — bare Hindi 'nahi kar sakta' (generic inability) over-triggered walkAway", () => {
+    it("'Main abhi decide nahi kar sakta, thoda time do.' → walkAway=false", () => {
+      expect(
+        detectCandidateIntent("Main abhi decide nahi kar sakta, thoda time do.").walkAway,
+      ).toBe(false);
+    });
+    it("regression: 'yeh nahi kar sakta' deal-refusal idiom still fires walkAway", () => {
+      expect(
+        detectCandidateIntent("Yeh nahi kar sakta main, deal cancel.").walkAway,
+      ).toBe(true);
+    });
+  });
+
+  describe("S129-B3 (wave 35, P2) — mentionedCompeting had no negation guard", () => {
+    it("'I don't have another offer, but I am exploring one.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I don't have another offer, but I am exploring one.")
+          .mentionedCompeting,
+      ).toBe(false);
+    });
+    it("'I haven't received any other offer yet.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I haven't received any other offer yet.").mentionedCompeting,
+      ).toBe(false);
+    });
+    it("'I have no other offer right now.' → mentionedCompeting=false", () => {
+      expect(
+        detectCandidateIntent("I have no other offer right now.").mentionedCompeting,
+      ).toBe(false);
+    });
+    it("regression: genuine competing offer mention still fires, even alongside a negated clause", () => {
+      expect(
+        detectCandidateIntent("I have another offer at 40 LPA.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent(
+          "I don't have another offer, but I do have a competing offer from another company.",
+        ).mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S129-B4 (wave 35, P3) — Hindi number-lock idiom 'se kam nahi chalega' returned no signal", () => {
+    it("'30 lakh se kam nahi chalega.' → walkAway=false, rejected=true", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi chalega.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: existing 'lung[ai]' arm still works", () => {
+      expect(detectCandidateIntent("30 lakh se kam nahi lunga.").rejected).toBe(true);
+    });
+  });
+
+  describe("S130-B1 (wave 36, P1) — sarcastic/rhetorical refusals misfired accepted=true", () => {
+    const sarcasticCases = [
+      "Yeah right, like I'd accept that.",
+      "Yeah, like I'd accept that offer.",
+      "Ha, like I would accept this.",
+      "Do you really think I'd accept 20 LPA?",
+      "You really think I'd accept this?",
+      "Do you think I would accept this offer? No way.",
+      "As if I would accept this ridiculous number.",
+      "I would accept this if hell froze over.",
+      "Sure, if pigs could fly I'd accept this.",
+      "Sure, if pigs could fly.",
+    ];
+    for (const c of sarcasticCases) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    it("regression: genuine accept still fires", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
+    it("regression: genuine hedged/conditional accept still fires", () => {
+      const r = detectCandidateIntent("I would accept this if you can match 40 LPA.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S131-B1 (wave 37, P1) — negated rhetorical-question + punctuation-variant sarcasm gaps", () => {
+    const negatedRhetorical = [
+      "You don't actually think I'd accept this, do you?",
+      "You don't think I'd accept this, do you?",
+      "You don't really think I'd accept that, right?",
+      "Surely you don't think I'll accept this offer?",
+      "You didn't actually think I'd accept, did you?",
+    ];
+    for (const c of negatedRhetorical) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    const punctuationVariants = [
+      "like...I'd accept that",
+      "like....I'd accept that",
+      "as if... I'd accept",
+      "like, I'd accept?!?!",
+    ];
+    for (const c of punctuationVariants) {
+      it(`'${c}' → accepted=false`, () => {
+        expect(detectCandidateIntent(c).accepted).toBe(false);
+      });
+    }
+    it("regression: wave 36 sarcasm cases still fire accepted=false", () => {
+      expect(detectCandidateIntent("Yeah right, like I'd accept that.").accepted).toBe(false);
+      expect(detectCandidateIntent("Do you really think I'd accept 20 LPA?").accepted).toBe(false);
+      expect(detectCandidateIntent("I would accept this if hell froze over.").accepted).toBe(false);
+    });
+    it("regression: genuine accept still fires", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("Sounds good to me.").accepted).toBe(true);
+    });
+    it("regression: genuine hedged/conditional accept still fires", () => {
+      const r = detectCandidateIntent("I would accept this if you can match 40 LPA.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S132-B1/B2 (wave 38, P3/P1) — WALKAWAY_PATTERN drift: missing bare decline arm + curly-quote gap", () => {
+    it("bare 'decline the offer' with no first-person subject", () => {
+      expect(isWalkAway("We should decline the offer on the table.")).toBe(true);
+      expect(isWalkAway("My recommendation is to decline the offer.")).toBe(true);
+    });
+    it("curly/smart apostrophe departure forms", () => {
+      expect(isWalkAway("I’m going to move on from this opportunity.")).toBe(true);
+      expect(isWalkAway("I’ll decline this, thank you.")).toBe(true);
+      expect(isWalkAway("I’d rather move on to other opportunities.")).toBe(true);
+    });
+    it("regression: straight-apostrophe forms still fire", () => {
+      expect(isWalkAway("I'll decline this, thank you.")).toBe(true);
+      expect(isWalkAway("I am walking away from this deal.")).toBe(true);
+    });
+  });
+
+  describe("S132-B3 (wave 38, P1) — acceptWords missing 'going to accept' modal arm", () => {
+    it("'I'm/I am going to accept' fires accepted=true", () => {
+      expect(detectCandidateIntent("I'm going to accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("I'm actually going to accept.").accepted).toBe(true);
+      expect(detectCandidateIntent("I am definitely going to accept.").accepted).toBe(true);
+    });
+  });
+
+  describe("S132-B4 (wave 38, P1) — walkAway/rejected missing third-party reported-speech guard", () => {
+    it("reported advice to walk away is not the candidate's own walk-away/reject", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("bare reported speech (no trailing accept clause) still suppressed", () => {
+      const r = detectCandidateIntent("My friend said I should walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("third-party reported speech about the employer's own stance", () => {
+      const r = detectCandidateIntent("My recruiter said the company might walk away from the deal.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: genuine first-person walk-away/reject still fires", () => {
+      expect(detectCandidateIntent("I'm walking away from this offer.").walkAway).toBe(true);
+      expect(detectCandidateIntent("My friend works at Google and got a great offer.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S133-B1 (wave 39, P1) — acceptWords missing emphatic 'I do accept' form", () => {
+    it("'I do accept'/'I did accept' fires accepted=true", () => {
+      expect(detectCandidateIntent("Actually wait, forget what I said earlier, I do accept this offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("I did accept the offer.").accepted).toBe(true);
+    });
+    it("regression: bare 'I accept' and its negative-lookahead exclusions still hold", () => {
+      expect(detectCandidateIntent("I accept the offer.").accepted).toBe(true);
+      expect(detectCandidateIntent("I accept nothing less than 40 LPA.").accepted).toBe(false);
+    });
+  });
+
+  describe("S133-B2 (wave 39, P1) — walkAway swallowed by unrelated post-hedge accept clause", () => {
+    it("pre-hedge walk-away statement survives an unrelated post-hedge accept", () => {
+      const r = detectCandidateIntent("I'm walking away from the equity discussion, but I accept the base salary.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("regression: genuine retraction ('I was going to walk away, but I accept') still suppresses walkAway", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+  });
+
+  describe("S133-B3 (wave 39, P1) — trailing elliptical negation doesn't retract an earlier departure verb", () => {
+    it("'...but I won't.' retracts an earlier 'considered walking away'", () => {
+      const r = detectCandidateIntent("I'm not going to lie, I considered walking away, but I won't.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I'm not going to lie, I considered walking away, but I won't.")).toBe(false);
+    });
+    it("regression: 'but I won't accept less than X' still has content after the negator and isn't retracted away", () => {
+      const r = detectCandidateIntent("I considered walking away, but I won't accept less than 30 LPA.");
+      expect(r.walkAway).toBe(true);
+    });
+  });
+
+  describe("S134-B1 (wave 40, P1) — hedgeWords missing 'although' (word boundary blocks matching inside it via 'though')", () => {
+    it("explicit 'I reject' before an 'although' hedge is not overridden by post-hedge positive sentiment", () => {
+      const r = detectCandidateIntent("I reject this offer, although honestly it sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("'I accept, although I would prefer more equity.' is a conditional accept, not a full accept", () => {
+      const r = detectCandidateIntent("I accept, although I would prefer more equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("'Although the offer sounds decent, I have to reject it.' fires rejected=true", () => {
+      const r = detectCandidateIntent("Although the offer sounds decent, I have to reject it.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S132-B4 third-party reported walk-away still suppressed (preHedgeIsRejection stays narrow)", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: S133-B2 'was going to walk away' retraction still suppresses walkAway, not accepted", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: bare 'though' hedge still works", () => {
+      const r = detectCandidateIntent("I accept, though I would prefer more equity.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S135-B1 (wave 41, P1) — numberLockWords blanket-suppressed accepted/walkAway across sentence boundaries", () => {
+    it("a number-lock in a distinct 'Also,' sentence no longer blanket-suppresses an earlier walkAway", () => {
+      const r = detectCandidateIntent("I'm out. Also, I'm sticking with 30 LPA.");
+      expect(r.walkAway).toBe(true);
+    });
+    it("a number-lock in a distinct 'Also,' sentence no longer blanket-suppresses an earlier accepted", () => {
+      const r = detectCandidateIntent("I accept. Also, I'm sticking with 30 LPA.");
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: S128-B1 Hindi number-lock idiom still suppresses walkAway (same-sentence lock always applies)", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S127-B1 anaphoric cross-sentence lock (no discourse marker) still suppresses accepted", () => {
+      const r = detectCandidateIntent("Sticking with 30 LPA is what I need. That works for me otherwise.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S135-B2 (wave 41, P1) — preHedgeIsRejection too narrow, missed non-'I reject'-worded rejectWords arms before a hedge", () => {
+    it("'Not acceptable' stated before a hedge fires rejected=true, not accepted=true", () => {
+      const r = detectCandidateIntent("Not acceptable — although honestly the number itself sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S132-B4 third-party reported walk-away before a hedge still suppressed", () => {
+      const r = detectCandidateIntent("My friend said I should walk away, but I'm actually going to accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("regression: S133-B2 'was going to walk away' retraction before a hedge still suppressed", () => {
+      const r = detectCandidateIntent("I was going to walk away, but I accept the offer.");
+      expect(r.walkAway).toBe(false);
+      expect(r.accepted).toBe(true);
+    });
+    it("regression: S134-B1 explicit 'I reject' before a hedge still works", () => {
+      const r = detectCandidateIntent("I reject this offer, although honestly it sounds good.");
+      expect(r.accepted).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S135-B3 (wave 41, P2) — needsTime's numberIsOfferReferenceRe missed alternate offer-reference phrasings", () => {
+    it("'the X number you mentioned' framing keeps needsTime true", () => {
+      const r = detectCandidateIntent("I need a couple of days to think about the 40 LPA number you mentioned.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("regression: S126-B3 'the X offer' framing still keeps needsTime true", () => {
+      const r = detectCandidateIntent("I need a few days to think about the 45 LPA offer.");
+      expect(r.needsTime).toBe(true);
+    });
+    it("regression: a genuine counter-in-disguise number still suppresses needsTime", () => {
+      const r = detectCandidateIntent("Let me consider 30 LPA.");
+      expect(r.needsTime).toBe(false);
+    });
+  });
+
+  describe("S136-B1 (wave 42, P1) — isWalkAway() had no third-party/reported-speech guard", () => {
+    it("'my manager said I should walk away, but I accept' does not fire isWalkAway", () => {
+      expect(isWalkAway("My manager said I should walk away, but honestly I accept the offer.")).toBe(false);
+    });
+    it("'my friend said I should walk away' does not fire isWalkAway", () => {
+      expect(isWalkAway("My friend said I should walk away.")).toBe(false);
+    });
+    it("'my recruiter said I should walk away, but I need more time' does not fire isWalkAway", () => {
+      expect(isWalkAway("My recruiter said I should walk away, but I need more time to think.")).toBe(false);
+    });
+    it("stays in sync with detectCandidateIntent().walkAway on the same third-party inputs", () => {
+      const answer = "My wife said I should walk away from this, but I'm still considering it.";
+      expect(detectCandidateIntent(answer).walkAway).toBe(false);
+      expect(isWalkAway(answer)).toBe(false);
+    });
+  });
+
+  describe("S136-B3 (wave 42, P2) — sarcastic 'like/as if I'd walk away' was read literally", () => {
+    it("'like I would ever walk away...I accept' resolves to accepted, not walkAway/rejected", () => {
+      const r = detectCandidateIntent("Oh sure, like I would ever walk away from a bird in hand — I accept!");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("'as if I would walk away...I accept' resolves to accepted, not walkAway/rejected", () => {
+      const r = detectCandidateIntent("As if I would walk away from this deal, I accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(false);
+    });
+    it("isWalkAway() also stays false on the same sarcastic inputs", () => {
+      expect(isWalkAway("Oh sure, like I would ever walk away from a bird in hand — I accept!")).toBe(false);
+      expect(isWalkAway("As if I would walk away from this deal, I accept.")).toBe(false);
+    });
+  });
+
+  describe("S137-B1 (wave 43, P1) — 'no chance I'd reject/say no/turn down' misfired walkAway", () => {
+    it("'No chance I'm rejecting this offer.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'm rejecting this offer.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'm rejecting this offer.")).toBe(false);
+    });
+    it("'No chance I'd say no to this.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'd say no to this.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'd say no to this.")).toBe(false);
+    });
+    it("'No chance I'd turn this down.' does not fire walkAway", () => {
+      const r = detectCandidateIntent("No chance I'd turn this down.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("No chance I'd turn this down.")).toBe(false);
+    });
+    it("floor-assertion 'no chance I'm going below X' still does not fire walkAway (no regression)", () => {
+      expect(detectCandidateIntent("No chance I'm going below 30 LPA.").walkAway).toBe(false);
+    });
+  });
+
+  describe("S137-B2 (wave 43, P1) — 'insulting' arm restricted to that/this/it subjects", () => {
+    it("'The offer is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("The offer is insulting.").rejected).toBe(true);
+    });
+    it("'20 LPA is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("20 LPA is insulting.").rejected).toBe(true);
+    });
+    it("'Your proposal is insulting.' fires rejected", () => {
+      expect(detectCandidateIntent("Your proposal is insulting.").rejected).toBe(true);
+    });
+    it("'This is insulting.' still fires rejected (no regression)", () => {
+      expect(detectCandidateIntent("This is insulting.").rejected).toBe(true);
+    });
+  });
+
+  describe("S137-B3 (wave 43, P2) — acceptWords had zero Hinglish coverage", () => {
+    it("'Main accept karta hoon.' fires accepted", () => {
+      expect(detectCandidateIntent("Main accept karta hoon.").accepted).toBe(true);
+    });
+    it("'Mujhe ye offer manzoor hai.' fires accepted", () => {
+      expect(detectCandidateIntent("Mujhe ye offer manzoor hai.").accepted).toBe(true);
+    });
+  });
+
+  describe("S137-B4 (wave 43, P2) — deflectWords missed reversed-question deflection", () => {
+    it("'What do you think is a fair number?' fires deflected", () => {
+      expect(detectCandidateIntent("What do you think is a fair number?").deflected).toBe(true);
+    });
+    it("'What's your best offer?' fires deflected (contraction boundary)", () => {
+      expect(detectCandidateIntent("What's your best offer?").deflected).toBe(true);
+    });
+    it("'What can you offer me in terms of growth here?' still does not fire deflected (no regression)", () => {
+      expect(detectCandidateIntent("What can you offer me in terms of growth here?").deflected).toBe(false);
+    });
+  });
+
+  describe("S138-B1 (wave 44, P1) — hasHedgeAfterAccept had no clause/sentence boundary check", () => {
+    it("a hedge word in a wholly unrelated later sentence does not fire conditionalAccept", () => {
+      const inputs = [
+        "I accept. By the way, if it rains tomorrow I might be late.",
+        "I accept the offer. But anyway, thanks for the opportunity.",
+        "I accept the offer. Though I should mention, my train leaves at 5pm.",
+        "I accept the position. If you need anything else from me, let me know.",
+      ];
+      for (const i of inputs) {
+        const r = detectCandidateIntent(i);
+        expect(r.accepted).toBe(true);
+        expect(r.conditionalAccept).toBe(false);
+      }
+    });
+    it("regression: a genuine same-clause condition still fires conditionalAccept", () => {
+      const r = detectCandidateIntent("I accept the offer, but I'd like to discuss the joining bonus.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+    it("regression: S128-B3 bare trailing hedge filler stays accepted, not conditional", () => {
+      const r = detectCandidateIntent("I accept, though.");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(false);
+    });
+  });
+
+  describe("S139-B1 (wave 45, P1) — rejectWords had near-zero Hindi/Hinglish coverage", () => {
+    it("Hindi/Hinglish reject idioms fire rejected=true", () => {
+      const inputs = [
+        "Mujhe yeh salary manzoor nahi hai.",
+        "Main is offer ko reject karta hoon.",
+        "Ye offer theek nahi lag raha hai mujhe.",
+        "Itni kam salary mein kaam nahi kar sakta.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).rejected, i).toBe(true);
+      }
+    });
+    it("regression: existing English rejectWords arms still fire", () => {
+      expect(detectCandidateIntent("That's not acceptable to me.").rejected).toBe(true);
+      expect(detectCandidateIntent("Absolutely not.").rejected).toBe(true);
+    });
+  });
+
+  describe("S139-B2 (wave 45, P1) — walkAwayWords/WALKAWAY_PATTERN/walkRe had zero Hindi coverage", () => {
+    it("Hindi walk-away idioms fire walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      const inputs = [
+        "Main is deal se hat raha hoon.",
+        "Main ab is negotiation mein interested nahi hoon.",
+        "Main peeche hatna chahta hoon.",
+        "Main is negotiation se peeche hat raha hoon.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).walkAway, i).toBe(true);
+        expect(isWalkAway(i), i).toBe(true);
+      }
+    });
+    it("regression: existing English walk-away arms still fire", () => {
+      expect(detectCandidateIntent("I'm going to walk away from this.").walkAway).toBe(true);
+      expect(isWalkAway("I'm going to walk away from this.")).toBe(true);
+    });
+  });
+
+  describe("S139-B3 (wave 45, P2) — deflectWords missed Hindi idioms + 'best number' phrasing", () => {
+    it("Hindi deflection idioms and 'best number' fire deflected=true", () => {
+      expect(detectCandidateIntent("Aap hi bataiye ki kitna de sakte hain.").deflected).toBe(true);
+      expect(detectCandidateIntent("Pehle aap apna number batao.").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best number?").deflected).toBe(true);
+    });
+    it("regression: existing 'fair number' and English arms still fire", () => {
+      expect(detectCandidateIntent("What's your offer?").deflected).toBe(true);
+      expect(detectCandidateIntent("What would be a fair number?").deflected).toBe(true);
+    });
+  });
+
+  describe("S139-B4 (wave 45, P2) — thinkWords family-consultation arm missed verb-conjugation form", () => {
+    it("'<family> se baat karke' fires needsTime=true", () => {
+      expect(detectCandidateIntent("Main apni wife se baat karke batata hoon.").needsTime).toBe(true);
+    });
+    it("regression: existing Hindi/noun-phrase thinkWords arms still fire", () => {
+      expect(detectCandidateIntent("Mujhe sochne ke liye kal tak ka time chahiye.").needsTime).toBe(true);
+      expect(detectCandidateIntent("I need to discuss this with my wife se baat karni hai.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S139-B5 (wave 45, P1) — competingWords missed vague/company-name/percentage competing-offer references", () => {
+    it("company-name, vague, percentage, and Hinglish competing-offer phrasings fire mentionedCompeting=true", () => {
+      const inputs = [
+        "Amazon has also made me an offer.",
+        "I'm considering an offer from a startup too.",
+        "Another firm has offered me 20% more.",
+        "Flipkart is offering me more.",
+        "I'm weighing this against an offer from Google.",
+        "Ek MNC ne bhi mujhe offer diya hai.",
+        "I have a 15% better offer in hand from elsewhere.",
+      ];
+      for (const i of inputs) {
+        expect(detectCandidateIntent(i).mentionedCompeting, i).toBe(true);
+      }
+    });
+    it("regression: existing explicit numeric competing-offer phrasings still fire", () => {
+      expect(detectCandidateIntent("I got an offer from Wipro as well.").mentionedCompeting).toBe(true);
+      expect(
+        detectCandidateIntent("There's a competing offer on the table from another employer.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S140-B1 (wave 46, P2) — deflectWords 'what's your best number/offer' missed curly-apostrophe input", () => {
+    it("curly and straight apostrophes both fire deflected=true", () => {
+      expect(detectCandidateIntent("What’s your best number?").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best number?").deflected).toBe(true);
+      expect(detectCandidateIntent("What’s your best offer?").deflected).toBe(true);
+      expect(detectCandidateIntent("What's your best offer?").deflected).toBe(true);
+    });
+  });
+
+  describe("S140-B2 (wave 46, P2) — walkAwayWords/WALKAWAY_PATTERN/walkRe 'call it quits' missed gerund form", () => {
+    it("'calling it quits' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      const t = "I'm calling it quits on this negotiation.";
+      expect(detectCandidateIntent(t).walkAway).toBe(true);
+      expect(isWalkAway(t)).toBe(true);
+    });
+    it("regression: bare imperative 'call it quits' still fires", () => {
+      expect(detectCandidateIntent("I call it quits.").walkAway).toBe(true);
+      expect(detectCandidateIntent("Let's call it quits.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S141-B1 (wave 47, P1) — rejectWords 'rejecting' gerund missing", () => {
+    it("'I am rejecting this offer.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I am rejecting this offer.").rejected).toBe(true);
+    });
+    it("regression: bare present tense 'I reject this offer.' still fires", () => {
+      expect(detectCandidateIntent("I reject this offer.").rejected).toBe(true);
+    });
+  });
+
+  describe("S141-B2/B3 (wave 47, P1) — walkAwayWords/WALKAWAY_PATTERN/walkRe missing declined/withdrew/passed past tense", () => {
+    it("'I declined the position/offer.' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      expect(detectCandidateIntent("I declined the position.").walkAway).toBe(true);
+      expect(isWalkAway("I declined the position.")).toBe(true);
+      expect(detectCandidateIntent("I declined the offer.").walkAway).toBe(true);
+      expect(isWalkAway("I declined the offer.")).toBe(true);
+    });
+    it("'I withdrew from the process.' fires walkAway=true", () => {
+      expect(detectCandidateIntent("I withdrew from the process.").walkAway).toBe(true);
+      expect(isWalkAway("I withdrew from the process.")).toBe(true);
+    });
+    it("'I passed on the offer.' fires walkAway=true", () => {
+      expect(detectCandidateIntent("I passed on the offer.").walkAway).toBe(true);
+      expect(isWalkAway("I passed on the offer.")).toBe(true);
+    });
+    it("regression: existing gerund/bare forms still fire", () => {
+      expect(detectCandidateIntent("I'm declining this offer.").walkAway).toBe(true);
+      expect(detectCandidateIntent("I am withdrawing from the offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S141-B4 (wave 47, P2) — numberLockWords 'stuck with' past tense missing", () => {
+    it("'I stuck with my number of 30 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I stuck with my number of 30 lakhs.").rejected).toBe(true);
+    });
+    it("regression: gerund 'sticking with' still fires", () => {
+      expect(detectCandidateIntent("I'm sticking with 26 lakhs.").rejected).toBe(true);
+    });
+  });
+
+  describe("S141-B5 (wave 47, P2) — acceptWords apostrophe fully dropped ('Ill'/'Id') missed", () => {
+    it("'Ill take it.' and 'Id accept that.' fire accepted=true", () => {
+      expect(detectCandidateIntent("Ill take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("Id accept that.").accepted).toBe(true);
+    });
+    it("regression: curly and straight apostrophe forms still fire", () => {
+      expect(detectCandidateIntent("I'll take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("I’ll take it.").accepted).toBe(true);
+      expect(detectCandidateIntent("I'd accept that.").accepted).toBe(true);
+    });
+  });
+
+  describe("S141-B6 (wave 47, P2) — competingWords missed plain declarative 'gave/offered me an offer/N LPA'", () => {
+    it("plain declarative competing-offer phrasings fire mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("Amazon gave me an offer of 20 lakhs per annum.").mentionedCompeting,
+      ).toBe(true);
+      expect(detectCandidateIntent("Google has offered me 35 LPA.").mentionedCompeting).toBe(true);
+      expect(detectCandidateIntent("Another firm offered me a job.").mentionedCompeting).toBe(true);
+    });
+    it("regression: also/too-prefixed and percentage forms still fire", () => {
+      expect(
+        detectCandidateIntent("Amazon has also made me an offer.").mentionedCompeting,
+      ).toBe(true);
+      expect(
+        detectCandidateIntent("Another firm has offered me 20% more.").mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S142-B2 (wave 48, P1) — rejectWords/walkAwayWords missed subjectless telegraphic replies", () => {
+    it("'Rejecting the offer.' fires rejected=true with no subject prefix", () => {
+      expect(detectCandidateIntent("Rejecting the offer.").rejected).toBe(true);
+    });
+    it("'Declining.' fires walkAway=true via detectCandidateIntent and isWalkAway", () => {
+      expect(detectCandidateIntent("Declining.").walkAway).toBe(true);
+      expect(isWalkAway("Declining.")).toBe(true);
+    });
+    it("regression: subject-prefixed forms still fire", () => {
+      expect(detectCandidateIntent("I reject this offer.").rejected).toBe(true);
+      expect(detectCandidateIntent("I'm declining this offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S142-B3 (wave 48, P2) — numberLockWords 'stuck at' preposition missing", () => {
+    it("'Stuck at 30 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("Stuck at 30 lakhs.").rejected).toBe(true);
+    });
+    it("regression: 'stuck with' still fires", () => {
+      expect(detectCandidateIntent("I stuck with my number of 30 lakhs.").rejected).toBe(true);
+    });
+  });
+
+  describe("S142-B4 (wave 48, P3) — numberLockWords lookahead missed spelled-out numbers with no unit word", () => {
+    it("'Sticking with thirty.' fires rejected=true", () => {
+      expect(detectCandidateIntent("Sticking with thirty.").rejected).toBe(true);
+    });
+    it("regression: digit and unit-word forms still fire", () => {
+      expect(detectCandidateIntent("I'm sticking with 26 lakhs.").rejected).toBe(true);
+      expect(detectCandidateIntent("Holding at 30 LPA.").rejected).toBe(true);
+    });
+  });
+
+  describe("S143-B1/B4 (wave 49, P1) — walkAwayNegationRe missing wouldn't/would not", () => {
+    it("'I wouldn't walk away even if you don't move on the number.' returns no walk/reject signal", () => {
+      const r = detectCandidateIntent("I wouldn't walk away even if you don't move on the number.");
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I wouldn't walk away even if you don't move on the number.")).toBe(false);
+    });
+    it("'Even if it's a lowball offer I wouldn't walk away.' returns no walk/reject signal", () => {
+      const r = detectCandidateIntent("Even if it's a lowball offer I wouldn't walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+    it("'I wouldn't withdraw even if you don't move.' returns walkAway=false", () => {
+      expect(detectCandidateIntent("I wouldn't withdraw even if you don't move.").walkAway).toBe(false);
+    });
+    it("regression: full-word 'would not' form and genuine walk-away still behave correctly", () => {
+      expect(
+        detectCandidateIntent("I would not walk away even if you do not move.").walkAway,
+      ).toBe(false);
+      expect(detectCandidateIntent("I'm walking away from this offer.").walkAway).toBe(true);
+    });
+  });
+
+  describe("S143-B2 (wave 49, P2) — thinkWords missing 'need/want until <weekday>'", () => {
+    it("'I need until Friday to decide.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I need until Friday to decide.").needsTime).toBe(true);
+    });
+    it("regression: 'Give me until Friday to decide.' still fires", () => {
+      expect(detectCandidateIntent("Give me until Friday to decide.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S143-B3 (wave 49, P2) — competingWords missed bare past-tense 'offered me more'", () => {
+    it("'What would you say if I told you Google offered me more?' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("What would you say if I told you Google offered me more?")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("regression: present-tense 'is offering me more' still fires", () => {
+      expect(detectCandidateIntent("Another firm is offering me more.").mentionedCompeting).toBe(
+        true,
+      );
+    });
+  });
+
+  describe("S144-B1 (wave 50, P1) — competingWords missed bare plural offer mentions", () => {
+    it("'Amazon, Google, and Microsoft have all made offers.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("Amazon, Google, and Microsoft have all made offers.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'I have offers from TCS, Infosys, and Wipro.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("I have offers from TCS, Infosys, and Wipro.").mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'TCS, Infosys, and Wipro have all offered me positions.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("TCS, Infosys, and Wipro have all offered me positions.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("'I'm also considering offers from Amazon and Google.' fires mentionedCompeting=true", () => {
+      expect(
+        detectCandidateIntent("I'm also considering offers from Amazon and Google.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+    it("regression: 'I have multiple offers from TCS, Infosys, and Wipro.' still fires", () => {
+      expect(
+        detectCandidateIntent("I have multiple offers from TCS, Infosys, and Wipro.")
+          .mentionedCompeting,
+      ).toBe(true);
+    });
+  });
+
+  describe("S144-B2 (wave 50, P2) — thinkWords missing 'by <deadline>' and spelled-out hours", () => {
+    it("'I need this by EOD.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I need this by EOD.").needsTime).toBe(true);
+    });
+    it("'I'll decide by tomorrow morning.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("I'll decide by tomorrow morning.").needsTime).toBe(true);
+    });
+    it("'Give me a couple of hours to think.' fires needsTime=true", () => {
+      expect(detectCandidateIntent("Give me a couple of hours to think.").needsTime).toBe(true);
+    });
+    it("regression: 'I need until Friday to decide.' still fires", () => {
+      expect(detectCandidateIntent("I need until Friday to decide.").needsTime).toBe(true);
+    });
+  });
+
+  describe("S144-B3 (wave 50, P2) — deflectWords missed agree-then-pivot deflections", () => {
+    it("'Sure, but first let's talk about the joining bonus.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Sure, but first let's talk about the joining bonus.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(r.conditionalAccept).toBe(false);
+    });
+    it("'Fine, but first, what's the joining bonus?' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Fine, but first, what's the joining bonus?");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'OK, but before we finalize, can we discuss the notice period?' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent(
+        "OK, but before we finalize, can we discuss the notice period?",
+      );
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("regression: genuine hedged conditional accept still fires accepted+conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump to 38L");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S144-B4 (wave 50, P2) — rejectWords missed bare rhetorical-question soft rejections", () => {
+    it("'You call that competitive?' fires rejected=true", () => {
+      expect(detectCandidateIntent("You call that competitive?").rejected).toBe(true);
+    });
+    it("'Is that really your best offer?' fires rejected=true", () => {
+      expect(detectCandidateIntent("Is that really your best offer?").rejected).toBe(true);
+    });
+    it("'You expect me to take this seriously?' fires rejected=true", () => {
+      expect(detectCandidateIntent("You expect me to take this seriously?").rejected).toBe(true);
+    });
+    it("regression: 'Even if it's a lowball offer I wouldn't walk away.' still returns no reject/walk signal", () => {
+      const r = detectCandidateIntent("Even if it's a lowball offer I wouldn't walk away.");
+      expect(r.rejected).toBe(false);
+      expect(r.walkAway).toBe(false);
+    });
+  });
+
+  describe("S145-B1 (wave 51) — hedgeless pivot deflection fired accepted", () => {
+    it("'Sure, let's discuss the notice period first.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Sure, let's discuss the notice period first.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'Yes, let's discuss the notice period first.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Yes, let's discuss the notice period first.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("regression: 'Sure, if you can bump to 38L' still fires accepted+conditionalAccept", () => {
+      const r = detectCandidateIntent("Sure, if you can bump to 38L");
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S145-B2 (wave 51) — deflection appearing before the hedge word fired accepted", () => {
+    it("'Before that, what's your best number, but yes I'm on board.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("Before that, what's your best number, but yes I'm on board.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'What's your best number, but yes I'm on board.' fires deflected=true, not accepted", () => {
+      const r = detectCandidateIntent("What's your best number, but yes I'm on board.");
+      expect(r.deflected).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+  });
+
+  describe("S145-B3 (wave 51) — accept<->walkAway retraction ordering desync", () => {
+    it("'I accept. Actually no, I'm walking away.' fires walkAway=true, not accepted, and isWalkAway()=true", () => {
+      const r = detectCandidateIntent("I accept. Actually no, I'm walking away.");
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(isWalkAway("I accept. Actually no, I'm walking away.")).toBe(true);
+    });
+    it("'I accept the offer. Actually, I'm walking away.' fires walkAway=true, not accepted", () => {
+      const r = detectCandidateIntent("I accept the offer. Actually, I'm walking away.");
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+    });
+    it("'I'm walking away. Actually no, I accept.' fires accepted=true, walkAway=false, and isWalkAway()=false", () => {
+      const r = detectCandidateIntent("I'm walking away. Actually no, I accept.");
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway("I'm walking away. Actually no, I accept.")).toBe(false);
+    });
+  });
+
+  describe("S145-B4 (wave 51) — numberLockWords missed 'sticking between X and Y' range without 'with'", () => {
+    it("'I'm sticking between 26 and 28 lakhs.' fires rejected=true", () => {
+      expect(detectCandidateIntent("I'm sticking between 26 and 28 lakhs.").rejected).toBe(true);
+    });
+    it("regression: 'I'm sticking with between 26 and 28 lakhs.' still fires rejected=true", () => {
+      expect(
+        detectCandidateIntent("I'm sticking with between 26 and 28 lakhs.").rejected,
+      ).toBe(true);
+    });
+  });
+
+  describe("S146-B1 (wave 52) — number-lock suppression zeroed out an explicit same-sentence ultimatum", () => {
+    it("'I'm sticking with 30 LPA, otherwise I'll walk away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm sticking with 30 LPA, otherwise I'll walk away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'I'm holding at 30 LPA, otherwise I'll walk away.' fires walkAway=true", () => {
+      expect(
+        detectCandidateIntent("I'm holding at 30 LPA, otherwise I'll walk away.").walkAway,
+      ).toBe(true);
+    });
+    it("'Sticking with 30 LPA. I'll walk away otherwise.' fires walkAway=true across sentences", () => {
+      expect(
+        detectCandidateIntent("Sticking with 30 LPA. I'll walk away otherwise.").walkAway,
+      ).toBe(true);
+    });
+    it("regression: S128-B1 Hindi number-lock idiom (no ultimatum marker) still suppresses walkAway", () => {
+      const r = detectCandidateIntent("30 lakh se kam nahi lunga.");
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+    it("regression: S127-B1 anaphoric cross-sentence lock still suppresses accepted (no walk-away phrase present)", () => {
+      const r = detectCandidateIntent(
+        "Sticking with 30 LPA is what I need. That works for me otherwise.",
+      );
+      expect(r.accepted).toBe(false);
+      expect(r.walkAway).toBe(false);
+      expect(r.rejected).toBe(true);
+    });
+  });
+
+  describe("S147-B1 (wave 53) — wrong-subject negator suppressed a genuine walk-away", () => {
+    it("'I'm sticking with 35 LPA but if you can't do it I walk.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm sticking with 35 LPA but if you can't do it I walk.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'If she can't approve it I walk.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "If she can't approve it I walk.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: candidate's own 'I can't do this, I'm walking away' still suppressed by own-subject negator when applicable elsewhere unaffected", () => {
+      const r = detectCandidateIntent("I don't want to walk away, just need a moment.");
+      expect(r.walkAway).toBe(false);
+    });
+  });
+
+  describe("S147-B2 (wave 53) — later un-hedged accept retraction failed to cancel a pre-hedge walk-away", () => {
+    it("'I'm walking away, but give me a day to think, actually I accept.' fires accepted=true, walkAway=false, matches isWalkAway()", () => {
+      const s = "I'm walking away, but give me a day to think, actually I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.accepted).toBe(true);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S145-B3 'I accept. Actually no, I'm walking away.' still fires walkAway=true, not accepted", () => {
+      const s = "I accept. Actually no, I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(r.accepted).toBe(false);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S147-B3 (wave 53) — shared departure-frame regex missed the \"I'm\" contraction", () => {
+    it("'I'm walking away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I'm walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'Stuck at 28 lakhs, or else I'm walking.' fires walkAway=true", () => {
+      const s = "Stuck at 28 lakhs, or else I'm walking.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: 'I am walking away.' (no contraction) still fires walkAway=true", () => {
+      const s = "I am walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S146-B1 number-lock ultimatum still works with the contraction form", () => {
+      const s = "I'm sticking with 30 LPA, otherwise I'm walking away.";
+      expect(detectCandidateIntent(s).walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S94-B1 conditional threat unaffected by retractionToAccept change", () => {
+      const r = detectCandidateIntent(
+        "Sounds good, but actually I am walking away if you cannot match it.",
+      );
+      expect(r.accepted).toBe(true);
+      expect(r.conditionalAccept).toBe(true);
+    });
+  });
+
+  describe("S148-B1 (wave 54) — \"can't say I'm walking away\" litotes desynced accepted/rejected walkAway", () => {
+    it("'I can't say I'm not interested, but I also can't say I'm walking away.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'I can't say I'm walking away, but I need more time to think.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I can't say I'm walking away, but I need more time to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S124-B2 genuine reassertion after unrelated negation still fires walkAway", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S122-B1 'I don't want to walk away' still suppressed", () => {
+      const s = "I don't want to walk away, just need a moment to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S149-B1 (wave 55) — possessive contraction broke the third-party-departure guard", () => {
+    it("'My manager's told me I should just walk away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "My manager's told me I should just walk away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S136-B1 third-party without possessive still suppressed", () => {
+      const s = "My friend said I should walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine walk-away with an unrelated manager noun still fires", () => {
+      const s = "My manager keeps pushing but I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S149-B2 (wave 55) — SAY_LITOTES/SAY_LITOTES_LOCAL too narrow, only covered can't/couldn't say", () => {
+    it("'I never want to say I'm walking away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I never want to say I'm walking away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'I don't want to say I'm walking away from this.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I don't want to say I'm walking away from this.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: S124-B2 genuine reassertion after unrelated negation still fires", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: S148-B1 can't-say litotes still suppressed", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S150-B1 (wave 56) — walkAwayNegationCoversLocal only inspected the FIRST departure-verb occurrence", () => {
+    it("'I can't say I'm walking away, I can't say I'm walking away, I am walking away.' fires walkAway=true, matches isWalkAway()", () => {
+      const s = "I can't say I'm walking away, I can't say I'm walking away, I am walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: a single, fully-covered litotes instance still suppresses", () => {
+      const s = "I can't say I'm not interested, but I also can't say I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S150-B2 (wave 56) — walkAwayNegationRe had no \"ain't\" negator arm", () => {
+    it("'I ain't walking away from this deal.' fires walkAway=false, matches isWalkAway()", () => {
+      const s = "I ain't walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine unhedged walk-away still fires", () => {
+      const s = "I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B1 (wave 57) — negator lookback crossed clause boundaries", () => {
+    it("'I won't decline, I won't decline, but I decline.' fires walkAway=true (fresh clause overrides earlier negations)", () => {
+      const s = "I won't decline, I won't decline, but I decline.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'I'm not pulling out, pulling out isn't something I'd do, but pulling out is what I'd doing now.' fires walkAway=true", () => {
+      const s = "I'm not pulling out, pulling out isn't something I'd do, but pulling out is what I'd doing now.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B2 (wave 57) — per-occurrence \"covered\" defaulted true with no negator adjacent at all", () => {
+    it("'I'm not going to withdraw, I withdraw, and yeah I withdraw again.' fires walkAway=true", () => {
+      const s = "I'm not going to withdraw, I withdraw, and yeah I withdraw again.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B3 (wave 57) — NEGATABLE_DEPARTURE/walkAwayWords missing the \"parting ways\" gerund form", () => {
+    it("'I never said I'd part ways, I won't part ways, yet here I am, parting ways.' fires walkAway=true", () => {
+      const s = "I never said I'd part ways, I won't part ways, yet here I am, parting ways.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S151-B4 (wave 57) — isWalkAway() had no general accept-clause guard (sarcastic setup / leading accept clause)", () => {
+    it("sarcastic setup clause followed by plain trailing accept: walkAway=false", () => {
+      const s = "Oh yeah, right, because I'm totally going to walk away from a package like this. Not happening — I accept!";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("second sarcastic setup variant: walkAway=false", () => {
+      const s = "Sure, sure, I'll just decline the best offer of my career. Obviously I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("third sarcastic setup variant: walkAway=false", () => {
+      const s = "Wow, what a great idea, let me just withdraw from my dream job. Yeah right, I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("fourth sarcastic setup variant, parenthetical accept: walkAway=false", () => {
+      const s = "Totally, I'll definitely walk away over 2 LPA. (I accept, obviously.)";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("leading unhedged accept clause followed by hedged departure clause: walkAway=false", () => {
+      const s = "This works for me, that said I'm leaning towards withdrawing from the process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: plain accept alone still not walkAway", () => {
+      const s = "I accept this offer, thank you.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: genuine unhedged walk-away with no accept clause still fires", () => {
+      const s = "I'm walking away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S152-B... (wave 58) — hostile-battery hardening", () => {
+    it("parenthesized accept clause no longer swallows a later genuine departure clause", () => {
+      const s = "(I accept) but (I'm withdrawing).";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("sarcasm-undercut accept clause followed by a genuine departure still fires walkAway", () => {
+      const s = "That works for me, yeah right, like I'd accept that — I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a genuinely soft/tentative later departure clause still doesn't override an accept", () => {
+      const s = "This works for me, that said I'm leaning towards withdrawing from the process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'no way am I walking away' negator arm now recognized", () => {
+      const s = "No way am I walking away from this offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'there's no way I'll withdraw' — negator's own 'I'll' tail is not a fresh reassertion", () => {
+      const s = "There's no way I'll withdraw from this process.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I walk away' negator arm now recognized", () => {
+      const s = "Under no circumstances will I walk away from this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I decline' negator arm now recognized", () => {
+      const s = "Under no circumstances will I decline this offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("rhetorical-denial framing followed by a genuine trailing accept doesn't fire walkAway", () => {
+      const s = "In your dreams if you think I'm walking away. I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("third-party's own departure clause doesn't suppress a later genuine first-person departure", () => {
+      const s = "My manager told me to walk away, but I'm also walking away myself.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("third-party mention + candidate's own accept: third-party veto still suppresses walkAway", () => {
+      const s = "My friend is walking away from her offer, but I accept mine.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: 'if you don't match this I will walk away' (no comma) still fires via subject-shift reassertion", () => {
+      const s = "I don't want to walk away, but if you don't match this I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("regression: original comma'd S124-B2 reassertion still fires", () => {
+      const s = "if you don't match this, I will walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S153-B... (wave 59) — hostile-battery hardening", () => {
+    it("'under no circumstances will I accept' no longer masks a genuine trailing walk-away", () => {
+      const s = "Under no circumstances will I accept this — I'm walking away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a tentative pre-hedge near-departure ('this close to walking away') yields to a genuine trailing accept", () => {
+      const s = "Not gonna lie, I'm this close to walking away, but honestly... I accept.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("regression: a firm, topic-scoped pre-hedge walk-away still survives an unrelated post-hedge accept", () => {
+      const s = "I'm walking away from the equity discussion, but I accept the base salary.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+    });
+    it("'no wait, I mean' self-correction into a genuine accept is recognized (isWalkAway)", () => {
+      const s = "I'm walking away from the table, no wait, I mean I'm walking TOWARD a deal — I accept.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'just kidding' retraction into a genuine accept is recognized (isWalkAway)", () => {
+      const s = "Ok fine, I'm out — just kidding! I'm totally on board, let's do this.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'not saying I'm walking away' (gerund litotes) doesn't fire walkAway", () => {
+      const s = "I'm not saying no, and I'm not saying I'm walking away — I just need a day to think.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'just kidding' retraction FROM an accept INTO a genuine walk-away fires walkAway", () => {
+      const s = "I accept — just kidding, obviously I'm walking away from this joke of an offer.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("post-verb negation ('IS NOT AN OPTION') suppresses isWalkAway", () => {
+      const s = "WALKING AWAY IS NOT AN OPTION FOR ME RIGHT NOW, I accept your offer.";
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S154-B... (wave 60) — hostile-battery hardening", () => {
+    it("a bare 'no wait, I'm not walking away, I mean I'm walking straight into this deal' stays false on both sides", () => {
+      const s = "No wait, I'm not walking away, I mean I'm walking straight into this deal.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a tentative pre-hedge near-departure retracted via 'no wait, I mean, actually' yields to a genuine accept", () => {
+      const s = "I'm this close to walking away, no wait, I mean, actually, I accept everything.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a double negation ('under no circumstances ... will I NOT walk away') cancels back to an affirmed walk-away", () => {
+      const s =
+        "Under no circumstances will I walk away — oh wait, no, actually, under no circumstances will I NOT walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("an emoji-heavy 'NO WAIT ... WALKING AWAY' retraction fires walkAway on both sides", () => {
+      const s = "😊 sounds good... 😡 NO WAIT 😡 i'm WALKING AWAY 🚶 for real this time 🙄";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+  });
+
+  describe("S154-B... (wave 61) — hostile-battery hardening", () => {
+    it("a stacked double-negation hedge over 'walking away'/'withdrawing' stays false on both sides", () => {
+      const s =
+        "I can't say I'm not walking away, and I also can't say I'm not withdrawing.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'under no circumstances will I not walk away' double negation confirms a genuine walk-away on both sides", () => {
+      const s = "Under no circumstances will I not walk away — I mean it, I'm out.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a retraction-into-accept whose post-text ALSO restates the walk-away doesn't win over the walk-away", () => {
+      const s =
+        "Not walking away — repeat, NOT walking away — okay actually, yes, walking away, confirmed.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("a retraction into 'I'm in' overrides an earlier 'I'm out' even with a trailing bare mention of walking", () => {
+      const s =
+        "This offer? Nah, I'm out. Wait, no, actually, I'm in, forget I said anything about walking.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S154-B... (wave 62) — hostile-battery hardening", () => {
+    it("a bare 'never' negator (not just 'never want to') suppresses a caps-lock walk-away denial", () => {
+      const s = "I WOULD NEVER EVER WALK AWAY FROM THIS.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("'as if X wasn't already Y' rhetorical-affirmation idiom doesn't cancel the walk-away it affirms", () => {
+      const s = "Ha! As if this offer wasn't already making me want to walk away.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(true);
+      expect(isWalkAway(s)).toBe(true);
+    });
+    it("'jk jk' (texting-slang 'just kidding') retracts a walk-away into a genuine accept", () => {
+      const s = "I'll pass — jk jk, I'm in.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+  });
+
+  describe("S154-B... (wave 63) — hostile-battery hardening", () => {
+    it("a 'wasn't already obvious I'm not walking away' rhetorical question stays a stay, not a walk-away", () => {
+      const s = "Wasn't already obvious I'm not walking away? Just checking flexibility on the bonus.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
+    it("a retraction whose post-text negator sits mid-clause (not at the very start) still suppresses the walk-away", () => {
+      const s =
+        "It's not like I'm not withdrawing — oh wait, I actually take that back, I'm not withdrawing after all.";
+      const r = detectCandidateIntent(s);
+      expect(r.walkAway).toBe(false);
+      expect(isWalkAway(s)).toBe(false);
+    });
   });
 });

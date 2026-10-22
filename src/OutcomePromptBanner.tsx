@@ -1,6 +1,10 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { c, font } from "./tokens";
+import { tokens as T } from "./auth/_tokens";
+import { authHeaders } from "./supabase";
+import { apiFetch } from "./apiClient";
 
 /**
  * Voluntary outcome self-report banner.
@@ -25,7 +29,7 @@ interface ExistingOutcome {
   may_share_publicly: boolean;
 }
 
-type Stage = "loading" | "prompt" | "filling" | "submitted" | "skipped" | "hidden";
+type Stage = "loading" | "prompt" | "filling" | "submitted" | "error" | "skipped" | "hidden";
 
 const SKIP_KEY = "hirestepx_outcome_skip_until";
 const SKIP_DAYS = 30;
@@ -53,8 +57,10 @@ export default function OutcomePromptBanner() {
       }
     } catch { /* ignore */ }
 
-    fetch("/api/user-outcome", { credentials: "include" })
-      .then(async (res) => {
+    (async () => {
+      try {
+        const headers = await authHeaders();
+        const res = await fetch("/api/user-outcome", { headers });
         if (cancelled) return;
         if (!res.ok) { setStage("hidden"); return; }
         const data = await res.json();
@@ -65,8 +71,10 @@ export default function OutcomePromptBanner() {
           return;
         }
         setStage("prompt");
-      })
-      .catch(() => { if (!cancelled) setStage("hidden"); });
+      } catch {
+        if (!cancelled) setStage("hidden");
+      }
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -78,36 +86,44 @@ export default function OutcomePromptBanner() {
 
   const onSubmit = useCallback(async () => {
     setSubmitting(true);
-    try {
-      const res = await fetch("/api/user-outcome", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          applied, interviewed, offer, accepted,
-          company: company.trim() || undefined,
-          roleLanded: roleLanded.trim() || undefined,
-          testimonial: testimonial.trim() || undefined,
-          mayShare: mayShare && offer,
-        }),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setStage("submitted");
-      // Clear skip pref since they engaged.
-      try { localStorage.removeItem(SKIP_KEY); } catch { /* ignore */ }
-    } catch (err) {
-      console.warn("[outcome] submit failed:", err instanceof Error ? err.message : err);
-    } finally {
-      setSubmitting(false);
+    const res = await apiFetch("/api/user-outcome", {
+      applied, interviewed, offer, accepted,
+      company: company.trim() || undefined,
+      roleLanded: roleLanded.trim() || undefined,
+      testimonial: testimonial.trim() || undefined,
+      mayShare: mayShare && offer,
+    });
+    setSubmitting(false);
+    if (!res.ok) {
+      console.warn("[outcome] submit failed:", res.error ?? res.status);
+      setStage("error");
+      return;
     }
+    setStage("submitted");
+    // Clear skip pref since they engaged.
+    try { localStorage.removeItem(SKIP_KEY); } catch { /* ignore */ }
   }, [applied, interviewed, offer, accepted, company, roleLanded, testimonial, mayShare]);
 
   if (stage === "hidden" || stage === "loading" || stage === "skipped") return null;
 
+  if (stage === "error") {
+    return (
+      <div style={{
+        background: T.error100, border: `1px solid ${T.errorLine}`,
+        borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
+      }}>
+        <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1 }}>
+          Couldn&apos;t save your update. Please try again.
+        </p>
+        <Button onClick={() => setStage("filling")} size="sm" >Retry</Button>
+      </div>
+    );
+  }
+
   if (stage === "submitted") {
     return (
       <div style={{
-        background: "rgba(21,128,61,0.06)", border: `1px solid rgba(21,128,61,0.22)`,
+        background: T.success100, border: `1px solid ${T.successLine}`,
         borderRadius: 12, padding: "14px 18px", display: "flex", alignItems: "center", gap: 10,
       }}>
         <span style={{ fontSize: 18 }}>🎉</span>
@@ -121,7 +137,7 @@ export default function OutcomePromptBanner() {
   if (stage === "prompt") {
     return (
       <div style={{
-        background: "rgba(180,83,9,0.04)", border: `1px solid rgba(180,83,9,0.22)`,
+        background: `oklch(from ${T.indigo} l c h / 0.04)`, border: `1px solid oklch(from ${T.indigo} l c h / 0.22)`,
         borderRadius: 12, padding: "14px 18px",
         display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12,
       }}>
@@ -130,14 +146,8 @@ export default function OutcomePromptBanner() {
           <strong style={{ color: c.ivory }}>How&apos;s your job search going?</strong> 30-second update — helps us show real outcomes (and the next person practicing what you did).
         </p>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onSkip} style={{
-            fontFamily: font.ui, fontSize: 12, color: c.stone, background: "transparent",
-            border: `1px solid ${c.border}`, borderRadius: 6, padding: "6px 12px", cursor: "pointer",
-          }}>Not now</button>
-          <button onClick={() => setStage("filling")} style={{
-            fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: c.obsidian,
-            background: c.gilt, border: "none", borderRadius: 6, padding: "6px 14px", cursor: "pointer",
-          }}>Share update</button>
+          <Button onClick={onSkip} variant="outline" size="sm" style={{ color: c.stone }}>Not now</Button>
+          <Button onClick={() => setStage("filling")} size="sm" >Share update</Button>
         </div>
       </div>
     );
@@ -148,7 +158,7 @@ export default function OutcomePromptBanner() {
     <div style={{
       background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 12, padding: "18px 20px",
     }}>
-      <h3 style={{ fontFamily: font.display, fontSize: 18, fontWeight: 400, color: c.ivory, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
+      <h3 style={{ fontFamily: font.ui, fontSize: 18, fontWeight: 600, color: c.ivory, margin: "0 0 4px", letterSpacing: "-0.01em" }}>
         Quick outcome update
       </h3>
       <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, margin: "0 0 14px" }}>
@@ -186,12 +196,14 @@ export default function OutcomePromptBanner() {
             }}
             placeholder="The structured-feedback section was the thing that finally moved my offer rate."
           />
-          <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, cursor: "pointer" }}>
+          <label htmlFor="outcome-may-share" style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, cursor: "pointer" }}>
             <input
+              id="outcome-may-share"
+              name="mayShare"
               type="checkbox"
               checked={mayShare}
               onChange={(e) => setMayShare(e.target.checked)}
-              style={{ accentColor: c.gilt }}
+              style={{ accentColor: T.indigo }}
             />
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.chalk }}>
               You may share my first name + role + company with this quote on the website.
@@ -201,27 +213,20 @@ export default function OutcomePromptBanner() {
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-        <button onClick={onSkip} style={{
-          fontFamily: font.ui, fontSize: 12, color: c.stone, background: "transparent",
-          border: `1px solid ${c.border}`, borderRadius: 6, padding: "8px 14px", cursor: "pointer",
-        }}>Cancel</button>
-        <button onClick={onSubmit} disabled={submitting} style={{
-          fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.obsidian,
-          background: submitting ? "rgba(180,83,9,0.4)" : `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`,
-          border: "none", borderRadius: 6, padding: "8px 18px",
-          cursor: submitting ? "default" : "pointer",
-        }}>
+        <Button onClick={onSkip} variant="outline" style={{ color: c.stone }}>Cancel</Button>
+        <Button onClick={onSubmit} disabled={submitting} >
           {submitting ? "Saving…" : "Submit"}
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
 
 function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
+  const id = useId();
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
-      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: c.gilt }} />
+    <label htmlFor={id} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }}>
+      <input id={id} name={id} type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} style={{ accentColor: T.indigo }} />
       <span style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk }}>{label}</span>
     </label>
   );
@@ -230,10 +235,13 @@ function Toggle({ label, checked, onChange }: { label: string; checked: boolean;
 function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   // Wrap the input in the label so screen readers associate them without
   // needing a unique htmlFor/id pair on every render.
+  const id = useId();
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{label}</span>
       <input
+        id={id}
+        name={id}
         value={value}
         onChange={(e) => onChange(e.target.value.slice(0, 120))}
         placeholder={placeholder}

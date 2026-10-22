@@ -12,14 +12,17 @@
  * The old footnote hardcoded "5 sessions · valid till <date>",
  * which (a) restated the plan name/date already shown in the card header and
  * usage row, and (b) printed the pack SIZE, not what's left — so a spent pack
- * still advertised "5 sessions" directly above a buy CTA. Here the footnote
- * carries only the one thing nothing else on the card conveys — the pack's
- * one-off, non-resetting nature — and flips to a spent-status line when used up.
+ * still advertised "5 sessions" directly above a buy CTA.
+ *
+ * While sessions remain, the footnote carries the one thing nothing else on
+ * the card conveys — the pack's one-off, non-resetting nature. Once the pack
+ * is spent it returns "" (no footnote): exhaustion is already stated loudly by
+ * the red "N of N" usage row, the full progress bar, the "0 extra sessions"
+ * chip, and the buy CTA, so a "Sprint Pack used up" line only adds redundancy.
+ * Callers must skip rendering the element when this is empty.
  */
-export function starterPackFootnote(starterRemaining: number): string {
-  return starterRemaining <= 0
-    ? "Sprint Pack used up"
-    : "One-off pack · doesn’t reset";
+export function starterPackFootnote(_starterRemaining: number): string {
+  return "";
 }
 
 /** Inputs that decide the primary plan-card CTA label. */
@@ -31,24 +34,36 @@ export type PlanCtaState = {
 
 /**
  * Label for the plan card's primary button. Only states that actually render a
- * button reach this: active Pro shows "Manage Subscription", exhausted Pro is
- * handled separately, and an active Starter with sessions left shows no button.
- * So this covers exhausted-Starter and Free (active or exhausted).
+ * button reach this: an active Starter with sessions left shows no button, so
+ * this covers exhausted-Starter and Free (active or exhausted).
  *
- * A spent Sprint Pack is a pack customer, not a Pro lead — its CTA mirrors the
- * exhausted-Pro "buy sessions" path (the upgrade modal offers another pack or
- * individual sessions) rather than pushing a recurring upgrade. Pushing
- * "Upgrade to Pro" there both misreads intent and misdescribes the modal.
+ * A spent Sprint Pack is a pack customer, not a subscriber to upsell — its CTA
+ * offers "buy more sessions" (the upgrade modal offers another pack or
+ * individual sessions) rather than pushing a recurring upgrade. There is no
+ * Pro tier to push customers toward; it isn't purchasable anywhere in the app.
  */
 export function planCtaLabel(s: PlanCtaState): string {
   if (s.starterExhausted) return "Buy more sessions";
   if (s.freeExhausted) return s.creditBalance > 0 ? "Buy more sessions" : "Unlock sessions now";
-  return "Upgrade to Pro";
+  return "See plans";
 }
 
 /** Tooltip/aria description matched to the CTA — buy vs. the Pro pitch. */
 export function planCtaTitle(label: string): string {
-  return label === "Upgrade to Pro"
-    ? "See what's included in Pro — unlimited sessions, STAR coaching, skill tracking"
+  return label === "See plans"
+    ? "Get more sessions — ₹9 per session or ₹39 for 5 (Sprint Pack)"
     : "Buy more interview sessions";
+}
+
+/**
+ * Labels for the two separate quota pieces on the plan card. "Sessions used
+ * 2 of 2" next to "4 extra sessions available" read as a contradiction, so
+ * the plan allowance and purchased credits are named distinctly: the first is
+ * the plan's own allowance, the second is a separate bought balance.
+ */
+export function planUsageLabels(isStarter: boolean): { allowance: string; credits: string } {
+  return {
+    allowance: isStarter ? "Pack sessions used" : "Plan sessions used",
+    credits: "Purchased sessions left",
+  };
 }

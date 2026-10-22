@@ -23,7 +23,9 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { t, f } from "./tokens";
+import { Button } from "@/components/ui/button";
 import type {
   BehavioralFullReportData,
   BehavioralStarRow,
@@ -154,10 +156,8 @@ function Card({
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: 20,
+        borderTop: `1px solid ${t.line}`,
+        padding: "20px 0 0",
         display: "flex",
         flexDirection: "column",
         gap: 14,
@@ -211,10 +211,8 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        padding: 20,
+        borderTop: `1px solid ${t.line}`,
+        padding: "20px 0 0",
       }}
     >
       <div
@@ -241,7 +239,9 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
         </span>
       </div>
       <div
+        className="bfr-matrix"
         style={{
+          ["--bfr-n" as string]: rows.length,
           display: "grid",
           gridTemplateColumns: `84px repeat(${rows.length}, minmax(0, 1fr)) 1.4fr`,
           gap: "10px 14px",
@@ -293,7 +293,7 @@ function StarMatrix({ rows }: { rows: BehavioralStarRow[] }) {
                 </div>
               );
             })}
-            <div style={{ fontSize: 12.5, color: t.inkSoft, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.45 }}>
               {rowCoach[k]}
             </div>
           </React.Fragment>
@@ -400,8 +400,8 @@ function Radar({
       title={`Competency strength · ${radar.track}`}
       status={{ label: radar.statusLabel, tone: radar.statusTone }}
     >
-      <div style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: 24, alignItems: "center" }}>
-        <svg width={400} height={400} viewBox="0 0 400 400">
+      <div className="bfr-radar" style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: 24, alignItems: "center" }}>
+        <svg width={400} height={400} viewBox="0 0 400 400" style={{ maxWidth: "100%", height: "auto" }}>
           {[0.25, 0.5, 0.75, 1].map((frac, idx) => (
             <polygon
               key={idx}
@@ -503,10 +503,8 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
   return (
     <div
       style={{
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
-        padding: "12px 16px",
+        borderTop: `1px solid ${t.line}`,
+        padding: "12px 0",
         display: "flex",
         alignItems: "center",
         gap: 14,
@@ -523,7 +521,7 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
       >
         {row.questionId}
       </span>
-      <span style={{ flex: 1, fontSize: 13.5, color: t.coal }}>{row.topic}</span>
+      <span style={{ flex: 1, fontSize: 14, color: t.coal }}>{row.topic}</span>
       <span style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
         {row.pills.map((pill) => (
           <StatusPill key={pill.label} label={pill.label} tone={pill.tone} />
@@ -535,10 +533,27 @@ function TranscriptRow({ row }: { row: BehavioralTranscriptRow }) {
 
 /* ─── Main component ──────────────────────────────────────────────────── */
 
+const BFR_RESPONSIVE_CSS = `
+  .bfr-hero > *, .bfr-diag > *, .bfr-evidence > *, .bfr-radar > * { min-width: 0; }
+  @media (max-width: 900px) {
+    .bfr-hero { grid-template-columns: 1fr !important; gap: 16px !important; }
+    .bfr-radar { grid-template-columns: 1fr !important; justify-items: center; }
+    .bfr-diag { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)) !important; }
+  }
+  @media (max-width: 640px) {
+    .bfr-ribbon { padding: 10px 16px !important; }
+    .bfr-body { padding: 20px 16px 0 !important; }
+    .bfr-evidence { grid-template-columns: 1fr !important; gap: 14px !important; }
+    .bfr-matrix { grid-template-columns: 56px repeat(var(--bfr-n), minmax(0, 1fr)) minmax(0, 1.2fr) !important; gap: 8px 6px !important; }
+  }
+`;
+
 export default function BehavioralFullReport({
   data,
+  practiceHref,
 }: {
   data: BehavioralFullReportData;
+  practiceHref?: string;
 }) {
   // Score-driven hero accent — copper on low scores, emerald on high,
   // default indigo otherwise. Paired with a label so it's never color-
@@ -559,10 +574,13 @@ export default function BehavioralFullReport({
         color: t.coal,
         minHeight: "100vh",
         paddingBottom: 120,
+        overflowWrap: "anywhere",
       }}
     >
+      <style>{BFR_RESPONSIVE_CSS}</style>
       {/* Persona ribbon */}
       <div
+        className="bfr-ribbon"
         style={{
           background: t.indigo,
           color: t.white,
@@ -577,23 +595,21 @@ export default function BehavioralFullReport({
         }}
       >
         <span>
-          You just interviewed with a <strong>{data.persona.voice}</strong> at a{" "}
-          <strong>{data.persona.tier}</strong> · {data.persona.role}, {data.persona.lpaBand} band
+          You just interviewed with a <strong>{data.persona.voice}</strong>
+          {data.persona.tier ? <> at a <strong>{data.persona.tier}</strong></> : null} · {data.persona.role}, {data.persona.lpaBand} band
         </span>
         <span style={{ opacity: 0.85, fontSize: 12 }}>
-          Session {String(data.sessionMeta.number).padStart(2, "0")} · {data.sessionMeta.dateISO} ·{" "}
+          {data.sessionMeta.dateISO} ·{" "}
           {data.sessionMeta.durationMin}&nbsp;min · {data.sessionMeta.substantiveAnswers} substantive answers
         </span>
       </div>
 
-      <div style={{ padding: "32px 40px 0", display: "flex", flexDirection: "column", gap: 24 }}>
+      <div className="bfr-body" style={{ padding: "32px 40px 0", display: "flex", flexDirection: "column", gap: 24 }}>
         {/* Compact hero */}
         <div
+          className="bfr-hero"
           style={{
-            background: t.white,
-            border: `1px solid ${t.line}`,
-            borderRadius: 16,
-            padding: 24,
+            paddingBottom: 24,
             display: "grid",
             gridTemplateColumns: "150px 1fr 360px",
             gap: 28,
@@ -675,10 +691,10 @@ export default function BehavioralFullReport({
             >
               ONE HABIT TO FIX
             </span>
-            <div style={{ fontSize: 15, fontWeight: 600, color: t.coal, lineHeight: 1.4 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, color: t.coal, lineHeight: 1.4 }}>
               {data.oneHabit.headline}
             </div>
-            <div style={{ fontSize: 12.5, color: t.inkSoft, lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5 }}>
               {data.oneHabit.rationale}
             </div>
           </div>
@@ -690,10 +706,8 @@ export default function BehavioralFullReport({
         ) : (
           <div
             style={{
-              background: t.white,
-              border: `1px solid ${t.line}`,
-              borderRadius: 12,
-              padding: "14px 20px",
+              borderTop: `1px solid ${t.line}`,
+              padding: "14px 0 0",
               fontSize: 13,
               color: t.inkSoft,
             }}
@@ -706,6 +720,7 @@ export default function BehavioralFullReport({
 
         {/* Three diagnostic cards — failure / conflict hidden when not asked */}
         <div
+          className="bfr-diag"
           style={{
             display: "grid",
             gridTemplateColumns:
@@ -742,7 +757,7 @@ export default function BehavioralFullReport({
                   background: t.creamSoft,
                   borderRadius: 8,
                   padding: 12,
-                  fontSize: 12.5,
+                  fontSize: 12,
                   color: t.inkSoft,
                   lineHeight: 1.5,
                   fontStyle: "italic",
@@ -830,7 +845,7 @@ export default function BehavioralFullReport({
           title="Evidence quality"
           status={{ label: data.evidence.statusLabel, tone: data.evidence.statusTone }}
         >
-          <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 24, alignItems: "start" }}>
+          <div className="bfr-evidence" style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 24, alignItems: "start" }}>
             <div style={{ display: "grid", gridTemplateRows: "repeat(3, auto)", gap: 8 }}>
               {[
                 { l: "Metric claims", n: data.evidence.metricClaims, color: t.coal },
@@ -879,10 +894,10 @@ export default function BehavioralFullReport({
                     style={{
                       margin: 0,
                       padding: "10px 14px",
-                      borderLeft: `3px solid ${t.copper}`,
+                      borderRadius: 8,
                       background: t.copper100,
                       fontStyle: "italic",
-                      fontSize: 13.5,
+                      fontSize: 14,
                       color: t.coal,
                       lineHeight: 1.5,
                     }}
@@ -909,14 +924,12 @@ export default function BehavioralFullReport({
         {/* AI accountability strip */}
         <div
           style={{
-            background: t.creamSoft,
-            border: `1px solid ${t.line}`,
-            borderRadius: 10,
-            padding: "12px 18px",
+            borderTop: `1px solid ${t.line}`,
+            padding: "14px 0 0",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: 12.5,
+            fontSize: 12,
             color: t.inkSoft,
             flexWrap: "wrap",
             gap: 8,
@@ -935,10 +948,6 @@ export default function BehavioralFullReport({
             <span>
               Ownership probes{" "}
               <strong style={{ color: t.coal }}>{data.aiAccountability.ownershipProbes}</strong>
-            </span>
-            <span>
-              Deflected{" "}
-              <strong style={{ color: t.success }}>{data.aiAccountability.deflected}</strong>
             </span>
           </span>
         </div>
@@ -985,21 +994,9 @@ export default function BehavioralFullReport({
         }}
       >
         <div style={{ fontSize: 13, color: t.inkSoft }}>{data.ctaSubcopy}</div>
-        <button
-          type="button"
-          style={{
-            background: t.indigo,
-            color: t.white,
-            border: "none",
-            borderRadius: 10,
-            padding: "12px 22px",
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          {data.ctaPrimaryLabel}
-        </button>
+        <Button asChild size="lg">
+          <Link href={practiceHref ?? "/session/new"}>{data.ctaPrimaryLabel}</Link>
+        </Button>
       </div>
     </div>
   );

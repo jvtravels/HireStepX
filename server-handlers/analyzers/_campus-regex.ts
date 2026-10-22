@@ -17,7 +17,10 @@
 
 export const ACADEMIC_PROJECT = /\b(capstone|final[- ]?year project|btech project|major project|college project|coursework|cgpa|gpa|sgpa|kt\b|backlog)\b/i;
 export const FRESHER_LEXICON = /\b(fresher|just graduated|final year|recent graduate|college senior|placement|on[- ]campus|btech|b\.?tech|bca|mca|m\.?tech)\b/i;
-export const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?learn)\b/i;
+// B3: narrowed `love (?:to )?learn` — bare "I love to learn" without a tech
+// subject is too broad (matches learning music / cooking / anything). Require
+// a tech object after "learn" OR replace with direct tech verbs "code/build/create".
+export const GENERIC_PASSION = /\b(passionate about (?:tech|coding|technology|engineering|programming)|always loved|since childhood|always wanted to|love (?:to )?(?:learn\s+(?:(?:new\s+)?tech(?:nolog(?:y|ies))?|coding|programming|to\s+code)|code|build|create))\b/i;
 export const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designed|trained|integrated|published)\s+\w+/i;
 /* Substantiation tokens — any one of these next to a "passionate"
  * claim turns the claim from cliché into a defendable answer. We
@@ -29,7 +32,11 @@ export const SPECIFIC_PROJECT = /\b(built|implemented|deployed|led|coded|designe
  *   - a quantified outcome ("won", "ranked", "200+ problems", percentile)
  * Mirrors the GENERIC_WHY / SPECIFIC_WHY paired pattern from hr-round.ts.
  */
-export const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:problems|leetcode|questions|submissions))\b/i;
+// G3: added `(?:on\s+)?` before the platform names so "100 on LeetCode" /
+// "200 on Codeforces" match, not just "100 LeetCode" / "200 submissions".
+// G4 note: `\w+` in SPECIFIC_PROJECT intentionally matches digits (\w=[a-zA-Z0-9_])
+// so "I built 2048 Game" or "I coded 15Puzzle" correctly trigger the pattern.
+export const SUBSTANTIATION_TOKEN = /\b(github\.com\/[\w-]+|github\.io|gitlab\.com\/[\w-]+|leetcode\.com\/[\w-]+|codeforces\.com\/profile|kaggle\.com\/[\w-]+|hackerrank\.com\/[\w-]+|hackathon|sih\b|smart india hackathon|coding contest|code[- ]?jam|hash[- ]?code|kickstart|internship|intern at|interned at|nptel|coursera|udemy|edx\b|cs50|striver(?:'s)?\s+sdc?\s*sheet|striver sde|neetcode|grokking|knight (?:badge|rated)|guardian rated|expert rated|specialist rated|top\s+\d+%?|\d{2,}\s*\+?\s*(?:on\s+)?(?:problems|leetcode|questions|submissions))\b/i;
 export const AVAILABILITY = /\b(available (?:from|after)|join (?:by|in|on|after)|notice|graduation|exam|semester|joining date|relocat)\b/i;
 export const COLLEGE_BADMOUTH = /\b(my college (?:was|is) (?:bad|terrible|awful)|(?:professors|faculty) (?:are|were) (?:useless|incompetent|terrible)|nothing was taught|wasted (?:my )?time)\b/i;
 
@@ -63,7 +70,8 @@ export const TECH_APPLIED = /\b(?:(?:\d+\s+)?(?:rest|graphql|grpc)?\s*(?:api\s+)
  * to assume the most distant signal applies. We surface a flag when the
  * candidate cites only DISTANT markers (1st year / 2nd sem) for project
  * narration. The presence of any RECENT marker suppresses. */
-export const PROJECT_RECENT_MARKER = /\b(?:final[- ]?year(?:\s+project)?|fy(?:p|np)?\b|capstone|currently\s+(?:building|working\s+on|developing)|this\s+(?:semester|month|year|week)|last\s+(?:semester|month)|ongoing|in\s+progress|recently\s+(?:built|finished|completed|shipped|deployed)|8th\s+sem(?:ester)?|7th\s+sem(?:ester)?|final\s+sem(?:ester)?|pre[- ]?final|3rd\s+year|fourth\s+year|senior\s+year|major\s+project)\b/i;
+// C5: added "right now building/working/developing" as a recency anchor.
+export const PROJECT_RECENT_MARKER = /\b(?:final[- ]?year(?:\s+project)?|fy(?:p|np)?\b|capstone|(?:currently|right\s+now)\s+(?:building|working\s+on|developing)|this\s+(?:semester|month|year|week)|last\s+(?:semester|month)|ongoing|in\s+progress|recently\s+(?:built|finished|completed|shipped|deployed)|8th\s+sem(?:ester)?|7th\s+sem(?:ester)?|final\s+sem(?:ester)?|pre[- ]?final|3rd\s+year|fourth\s+year|senior\s+year|major\s+project)\b/i;
 export const PROJECT_DISTANT_MARKER = /\b(?:1st\s+year|first\s+year|2nd\s+year|second\s+year|1st\s+sem(?:ester)?|2nd\s+sem(?:ester)?|3rd\s+sem(?:ester)?|4th\s+sem(?:ester)?|first\s+sem(?:ester)?|second\s+sem(?:ester)?|freshman\s+year|sophomore\s+year|two\s+years\s+(?:ago|back)|three\s+years\s+(?:ago|back)|long\s+(?:time\s+)?ago)\b/i;
 
 /* Implausible team-size brag for a fresher / college context. */
@@ -76,7 +84,11 @@ export const WHY_COMPANY_PROBE = /\b(?:why\b[^?.!]{0,80}?\b(?:join us|work (?:he
  * the candidate did real research, not generic filler. Avoid generic
  * words like "team" / "product" / "values" — those false-positive on
  * unrelated answers. */
-export const COMPANY_GENERIC_FILLER = /\b(great culture|good culture|brand value|brand name|great brand|big company|good company|great company|reputation|growth opportunit|learning opportunit|big mnc)\b/i;
+// B5: removed `brand name` — "brand name" false-positives on negation counter-
+// examples like "I'm not a brand-name person; I care about the product". The
+// distinct alternatives `brand value` + `great brand` already cover genuine
+// brand-appeal filler without the negation risk. (Parity: update CP_COMPANY_GENERIC.)
+export const COMPANY_GENERIC_FILLER = /\b(great culture|good culture|brand value|great brand|big company|good company|great company|reputation|growth opportunit|learning opportunit|big mnc)\b/i;
 export const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|engage|step program|leadership principles?|customer obsession|day\s*1|crucible|future leaders|gennxt|peak|spirit of wipro|infosys lex|tata code of conduct|your (?:founder|ceo|cofounder|recent|latest|q[1-4]|fy\d|launch|ipo|acquisition|investment|hiring plan|product line|ai strategy|tech stack)|i (?:read|saw|noticed|came across|listened to))\b/i;
 /* Service-tier acceptable narrative — TCS / Infosys / Wipro / Cognizant
  * recruiters EXPECT freshers to anchor on stability, structured training,
@@ -88,6 +100,20 @@ export const COMPANY_SPECIFIC_SIGNAL = /\b(trailhead|nqt|infytq|techbee|genc|eng
  * the candidate gave a context-appropriate answer. Product-co loops
  * (Google / Flipkart / Razorpay) still demand specific signal — the
  * archetype gate handles that asymmetry below. */
+// I6: split inline into named clusters so future edits touch one group at
+// a time without risk of breaking neighbouring alternatives.
+//   Group A — training / onboarding vocabulary
+//     structured training | training program | ilp | initial learning program
+//     onboarding program/process/cohort | fresher training/cohort/program
+//   Group B — stability / growth vocabulary
+//     stable career/growth/environment/long-term | long-term career/growth/stability
+//   Group C — scale / delivery vocabulary
+//     proven client/track record/delivery | client base/portfolio/delivery
+//     service-led | services model/business/firm | global delivery/footprint/presence
+//     scale of operations/delivery | established firm/company/leader/player
+//   Group D — brand / domain vocabulary
+//     brand maturity | industry leader | Fortune N
+//     domain exposure | industry exposure | breadth of projects/domains
 export const COMPANY_SERVICE_TIER_NARRATIVE = /\b(?:structured\s+training|training\s+program|stable\s+(?:career|growth|environment|long[- ]term)|long[- ]term\s+(?:career|growth|stability)|proven\s+(?:client|track\s+record|delivery)|client\s+(?:base|portfolio|delivery)|service[- ]led|services?\s+(?:model|business|firm)|global\s+(?:delivery|footprint|presence)|scale\s+of\s+(?:operations?|delivery)|established\s+(?:firm|company|leader|player)|brand\s+maturity|industry\s+leader|fortune\s+\d+|domain\s+exposure|industry\s+exposure|breadth\s+of\s+(?:projects?|domains?)|onboarding\s+(?:program|process|cohort)|fresher\s+(?:training|cohort|program)|ilp\b|initial\s+learning\s+program)\b/i;
 
 /* v6.7 — Cognizant GenC / Capgemini Exceller specifically reward a
@@ -129,7 +155,10 @@ export const FILLER_PER_100_WORDS_THRESHOLD = 4;
 
 /* Internship probe + content. */
 export const INTERNSHIP_CLAIM = /\b(internship|interned|intern at|summer intern|summer training|industrial training|6[- ]month\s+intern)\b/i;
-export const INTERNSHIP_DETAIL = /\b(intern(ship)?\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
+// C4: broadened from "internship at X" to also catch "worked at X", "employed at X",
+// "placed at X" so candidates who summarize their internship without the word
+// "internship" still get detail credit.
+export const INTERNSHIP_DETAIL = /\b(intern(?:ship)?\s+at\s+\w|worked\s+(?:at|for|with)\s+[A-Z]|employed\s+at\s+\w|placed\s+at\s+\w|stipend|deliverable|reported to|mentor|onboarded|shipped|merged|in production)\b/i;
 
 /* Mother-Tongue-Influence (MTI) — high-frequency Indian-English deviations
  * that recruiters at TIER-1 firms (Google / MS / Goldman / McKinsey India)
@@ -163,8 +192,20 @@ export const MTI_PATTERNS: RegExp[] = [
   /\breach\s+(?:by|at|till)\s+\d/i,         // "reach by 5" vs "arrive by 5"
 ];
 
-/* Stated CGPA values — captures the numeric value so we can grade framing. */
-export const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)/i;
+/* Stated CGPA values — captures the numeric value so we can grade framing.
+ * Group 1: numeric form  "my CGPA is 8.5"
+ * C1: also exported separately as CGPA_STATED_WORD_FORM for spoken forms
+ *     "my CGPA is eight point five" that the digit-only pattern misses. */
+// C2: added optional `\/10` and `out of 10/ten` suffix so "My CGPA is 9/10"
+// and "My CGPA is 8.5 out of 10" match with group-1 capturing the numeric
+// part (9 and 8.5 respectively). The suffix is non-capturing so existing
+// `cgpaMatch[1]` callers are unaffected.
+export const CGPA_STATED = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*(\d(?:\.\d{1,2})?)(?:\s*\/\s*10|\s+out\s+of\s+(?:10|ten))?\b/i;
+/* C1: word-form CGPA — "my CGPA is eight point five" / "seven point eight".
+ * The analyzer parses this with parseWordFormCgpa() and treats it identically
+ * to CGPA_STATED for framing checks + meta surfacing. Only covers common
+ * whole+decimal combos (e.g. "seven point five", not "seven and a half"). */
+export const CGPA_STATED_WORD_FORM = /\b(?:cgpa|gpa|sgpa)\s*(?:is|was|of|:)?\s*((?:ten|nine|eight|seven|six|five|four|three)(?:\s+point\s+(?:ten|nine|eight|seven|six|five|four|three|two|one|zero)(?:\s+(?:ten|nine|eight|seven|six|five|four|three|two|one|zero))?)?)\b/i;
 /* College / TPO internal CGPA gatekeeping. Many tier-2/3 colleges enforce
  * 6.5–7.0 internal bars even though TCS firm cutoff is 6.0. A candidate
  * stating their CGPA alongside "my college won't send me below 6.5" or
@@ -194,7 +235,14 @@ export const REVERSE_QUESTION_DECLINED = /\b(?:no\s*[,.]?\s*(?:i\s+(?:don'?t|do\
  * about bonds" or refuse outright disqualify themselves. */
 export const BOND_PROBE = /\b(?:service\s+agreement|service\s+bond|training\s+bond|two[- ]?year\s+bond|2[- ]?year\s+bond|1[- ]?year\s+bond|bond\s+(?:period|duration|amount)|sign\s+(?:the\s+|a\s+)?bond|notice\s+period\s+bond)\b/i;
 export const BOND_HEALTHY_RESPONSE = /\b(?:comfortable\s+(?:with|signing)|i'?m\s+aware|i\s+know\s+(?:the|about|of)\s+(?:the\s+)?(?:bond|service\s+agreement|2\s*year|1\s*year)|happy\s+to\s+sign|(?:2|two|1|one|15)\s*(?:[- ]?)(?:month|year)s?|standard\s+practice|fully\s+aware)\b/i;
-export const BOND_REFUSAL = /\b(?:i\s+won'?t\s+sign|absolutely\s+not|no\s+way|refuse|never\s+sign|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
+// B1: removed bare `refuse` (false-positives on "I refuse to believe...",
+// "I refuse to accept less"). Refusal phrases now either:
+//   (a) contain "sign" — specific enough that "I won't sign" always means
+//       contract refusal in an interview context, OR
+//   (b) contain "bond" explicitly — anchors vague negatives like "no way".
+// The analyzer gates the whole block on BOND_PROBE firing first, which
+// provides additional context; BOND_REFUSAL is also self-contained.
+export const BOND_REFUSAL = /\b(?:i\s+won'?t\s+(?:sign|agree\s+to)\s+(?:any\s+|the\s+|a\s+)?(?:bond|service\s+agreement|contract)?|absolutely\s+not\s+(?:sign(?:ing)?|agree(?:ing)?)|no\s+way\s+(?:i'?(?:m|ll)\s+sign|i'?ll\s+agree)|refuse\s+to\s+sign\s+(?:any\s+|the\s+|a\s+)?(?:bond|service\s+agreement|contract)|never\s+sign(?:ing)?\s+(?:any\s+|a\s+|the\s+)?(?:bond|service\s+agreement|contract)|i\s+don'?t\s+(?:sign|do)\s+bonds?)\b/i;
 export const BOND_IGNORANCE = /\b(?:what'?s?\s+(?:a\s+)?bond|i\s+don'?t\s+know\s+(?:about|what)|never\s+heard\s+of|first\s+(?:time\s+)?hearing)\b/i;
 
 /* ── Wave 3: real-life campus edge cases ─────────────────────────────────
@@ -247,7 +295,11 @@ export const NEGATIVE_COMPARE = /\b(?:(?:tcs|infosys|wipro|cognizant|hcl|tech\s+
 
 /* Salary expectation probe + value extraction. */
 export const SALARY_EXPECTATION_PROBE = /\b(?:salary\s+expectation|expected\s+(?:ctc|salary|package|compensation)|what\s+(?:are|is)\s+your\s+(?:salary|ctc|package)\s+expectation|how\s+much\s+(?:are\s+you\s+expecting|do\s+you\s+want|salary)|expected\s+pay)\b/i;
-export const SALARY_NUMBER_LPA = /\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa|lakhs?\s*per\s*annum|l\.?p\.?a\.?)\b/i;
+// C3: added plain "lakhs?" (without "per annum" suffix) so "5 lakhs" / "6 lakh"
+// matches. The gate is already `aiAskedSalary`, so false positives from
+// non-salary "lakhs" (e.g. "my project served 5 lakh users") are acceptable;
+// that context would only be reached after AI explicitly asks about salary.
+export const SALARY_NUMBER_LPA = /\b(\d{1,2}(?:\.\d{1,2})?)\s*(?:lpa\b|lakhs?\s*(?:per\s*annum\b)?|l\.?p\.?a\.?)\b/i;
 
 /* User raised salary too early — in a technical / introductory round.
  * We flag if the user mentions CTC/salary before the AI has done so, AND
@@ -305,8 +357,9 @@ export const STIPEND_CONCRETE = /\b(?:\d{1,2},?\d{3}\s*(?:per\s+month|\/month|mo
 /* ── Wave-5 patterns — softer-signal Indian campus realism ────────── */
 
 /* Memorized self-intro — verbatim YouTube-template openers. Fires when
- * the candidate's response to TMAY contains 2+ canonical template phrases. */
-export const MEMORIZED_TEMPLATE = /\b(?:good\s+(?:morning|afternoon|evening)\s+(?:sir|ma'?am|mam|sir\s*\/\s*ma'?am)|first\s+of\s+all\s+(?:i'?d\s+like\s+to\s+)?thank\s+you\s+for\s+(?:this\s+(?:wonderful\s+)?opportunity|giving\s+me\s+this\s+(?:wonderful\s+)?opportunity)|coming\s+to\s+my\s+(?:introduction|family\s+background)|i\s+would\s+like\s+to\s+(?:introduce\s+myself|begin\s+(?:with|by))|talking\s+about\s+my\s+(?:family|hobbies|strengths)|on\s+a\s+concluding\s+note|that'?s\s+all\s+(?:about|from)\s+me|this\s+is\s+all\s+about\s+(?:me|myself)|myself\s+\w+\s+\w+(?:,|\s+and\s+i\s+am))/i;
+ * the candidate's response to TMAY contains 2+ canonical template phrases.
+ * C6: added "giving a brief introduction" / "begin with a brief" variants. */
+export const MEMORIZED_TEMPLATE = /\b(?:good\s+(?:morning|afternoon|evening)\s+(?:sir|ma'?am|mam|sir\s*\/\s*ma'?am)|first\s+of\s+all\s+(?:i'?d\s+like\s+to\s+)?thank\s+you\s+for\s+(?:this\s+(?:wonderful\s+)?opportunity|giving\s+me\s+this\s+(?:wonderful\s+)?opportunity)|coming\s+to\s+my\s+(?:introduction|family\s+background)|i\s+would\s+(?:like\s+to\s+|want\s+to\s+)?(?:introduce\s+myself|begin\s+(?:with|by)|give\s+(?:a\s+)?(?:brief\s+)?(?:introduction|intro))|talking\s+about\s+my\s+(?:family|hobbies|strengths)|on\s+a\s+concluding\s+note|that'?s\s+all\s+(?:about|from)\s+me|this\s+is\s+all\s+about\s+(?:me|myself)|myself\s+\w+\s+\w+(?:,|\s+and\s+i\s+am))/i;
 
 /* Aptitude / on-spot puzzle refusal — AI asks a live aptitude / DSA /
  * estimation question; user refuses or stalls. */

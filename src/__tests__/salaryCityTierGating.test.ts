@@ -231,11 +231,11 @@ describe("seed→AB flip — engineering-track entry/mid", () => {
 
 describe("lookupSalaryContext — sample-size confidence", () => {
   it("surfaces n=count + tier label when an AB-imported override is in effect", () => {
-    // 1mg has no curator override — the AB-imported entry (n=63 SDE entry)
-    // wins. Confirms the Sample line surfaces real scrape sample size.
+    // Accenture SE entry flips to AB-imported (n=5192). Confirms the
+    // Sample line surfaces real scrape sample size when flip fires.
     const ctx = lookupSalaryContext({
       role: "Software Engineer",
-      company: "1mg",
+      company: "Accenture",
       experienceLevel: "entry",
     });
     expect(ctx).toMatch(/Sample: [\d,]+ self-reports/);

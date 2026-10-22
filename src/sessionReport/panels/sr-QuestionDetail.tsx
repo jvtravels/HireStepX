@@ -5,87 +5,39 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f, radius, space } from "../tokens";
-import type { AnswerSpan, HighlightKind, Question } from "../types";
+import { t, f, radius, space, size } from "../tokens";
+import type { AnswerSpan, Question } from "../types";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-function StarChip({ active, letter, label }: { active: boolean; letter: string; label: string }) {
+function StarChip({ active, label }: { active: boolean; label: string }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-      <span
-        style={{
-          width: 32,
-          height: 32,
-          borderRadius: "50%",
-          background: active ? t.successAccent : t.line,
-          color: active ? t.success : t.inkFaint,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: f.mono,
-          fontSize: 13,
-          fontWeight: 700,
-        }}
-      >
-        {letter}
-      </span>
-      <span style={{ fontFamily: f.sans, fontSize: 10, color: t.inkSoft }}>{label}</span>
-    </div>
+    <span
+      className={active ? "ir-star-chip ir-star-chip-on" : "ir-star-chip"}
+      title={active ? `${label} found in your answer` : `${label} not found in your answer`}
+    >
+      {active ? "\u2713 " : ""}{label}
+    </span>
   );
 }
 
-function HighlightLegend() {
-  const items: { kind: HighlightKind; label: string }[] = [
-    { kind: "filler", label: "Filler / Hesitation" },
-    { kind: "hedge", label: "Hedging" },
-    { kind: "quantified", label: "Impact / Quantified" },
-    { kind: "firstPerson", label: "First Person" },
+function HighlightLegend({ spans }: { spans: AnswerSpan[] }) {
+  const all: { kind: NonNullable<AnswerSpan["highlight"]>; cls: string; label: string }[] = [
+    { kind: "filler", cls: "ir-highlight-filler", label: "Filler words" },
+    { kind: "hedge", cls: "ir-highlight-hedge", label: "Hedging" },
+    { kind: "quantified", cls: "ir-highlight-quant", label: "Numbers and impact" },
+    { kind: "firstPerson", cls: "ir-highlight-first", label: "\u201CI\u201D statements" },
   ];
-  const colorFor = (k: HighlightKind) =>
-    k === "filler" ? t.leanHireRing
-    : k === "hedge" ? t.hedgeTint
-    : k === "quantified" ? t.successAccent
-    : t.indigoTint;
+  const items = all.filter((i) => spans.some((s) => s.highlight === i.kind));
+  if (items.length === 0) return null;
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 12 }}>
+    <div className="ir-legend">
       {items.map((i) => (
-        <span
-          key={i.kind}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontFamily: f.sans,
-            fontSize: 11,
-            color: t.inkSoft,
-          }}
-        >
-          <span style={{ width: 10, height: 10, borderRadius: radius.micro, background: colorFor(i.kind) }} />
+        <span key={i.label} className="ir-legend-item">
+          <span className={`${i.cls} ir-legend-swatch`} aria-hidden="true" />
           {i.label}
         </span>
       ))}
     </div>
-  );
-}
-
-function CornerBadge({ bg, color, children }: { bg: string; color: string; children: React.ReactNode }) {
-  return (
-    <span
-      style={{
-        position: "absolute",
-        top: 12,
-        right: 12,
-        padding: "3px 8px",
-        borderRadius: radius.pill,
-        background: bg,
-        color,
-        fontFamily: f.mono,
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: "0.06em",
-      }}
-    >
-      {children}
-    </span>
   );
 }
 
@@ -106,7 +58,7 @@ function AnswerBody({
         borderRadius: radius.bar,
         padding: "16px 18px",
         fontFamily: f.sans,
-        fontSize: 14,
+        fontSize: size.md,
         lineHeight: 1.7,
         color: t.coal,
       }}
@@ -129,275 +81,155 @@ function AnswerBody({
   );
 }
 
+const LABEL: React.CSSProperties = { fontFamily: f.sans, fontSize: size.sm, fontWeight: 600, color: t.inkSoft };
+
 export function QuestionDetail({ q }: { q: Question }) {
   const [tab, setTab] = useState<"answer" | "restructured" | "exemplar">("answer");
   const isStrong = q.band === "strong" || q.band === "complete";
+  const starCount = Object.values(q.star).filter(Boolean).length;
   const coachHeading = isStrong ? "Why it landed" : "Why it scored low";
-  const coachColor = isStrong ? t.success : t.copper;
-  const coachBg = isStrong ? t.successWash : t.leanHireWash;
-  const coachBorder = isStrong ? t.successAccent : t.copper100;
-  const idBase = `ir-tab-${q.index}`;
+  const metricTiles = q.focusMetrics
+    ? q.focusMetrics.map((m) => ({
+        label: m.label,
+        value: m.value,
+        tone: m.tone === "good" ? t.success : m.tone === "watch" ? t.warning : m.tone === "miss" ? t.error : t.coal,
+      }))
+    : [
+        { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
+        { label: "Length", value: `${q.metrics.responseSec.toFixed(0)}s`, tone: t.coal },
+        { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
+        { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.warning : t.coal },
+      ];
   return (
-    <div style={{ padding: "0 18px 18px" }}>
-      <div role="tablist" aria-label={`Question ${q.index} answer views`} style={{ borderBottom: `1px solid ${t.line}`, marginBottom: 16 }}>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-answer-tab`}
-          aria-selected={tab === "answer"}
-          aria-controls={`${idBase}-answer-panel`}
-          tabIndex={tab === "answer" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("answer")}
-        >
-          Your Answer
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-restructured-tab`}
-          aria-selected={tab === "restructured"}
-          aria-controls={`${idBase}-restructured-panel`}
-          tabIndex={tab === "restructured" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("restructured")}
-          disabled={!q.restructured}
-          style={!q.restructured ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
-        >
-          Restructured (STAR)
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id={`${idBase}-exemplar-tab`}
-          aria-selected={tab === "exemplar"}
-          aria-controls={`${idBase}-exemplar-panel`}
-          tabIndex={tab === "exemplar" ? 0 : -1}
-          className="ir-tab-btn"
-          onClick={() => setTab("exemplar")}
-          disabled={!q.topPerformerAnswer}
-          style={!q.topPerformerAnswer ? { opacity: 0.4, cursor: "not-allowed" } : undefined}
-        >
-          Top Performer Answer
-          <span
-            style={{
-              marginLeft: 6,
-              padding: "1px 6px",
-              borderRadius: radius.pill,
-              background: t.copperSoft,
-              color: t.copper,
-              fontFamily: f.mono,
-              fontSize: 9,
-              fontWeight: 700,
-              letterSpacing: "0.06em",
-            }}
-          >
-            EXEMPLAR
-          </span>
-        </button>
-      </div>
+    <div className="ir-panel-in" style={{ padding: "0 0 18px" }}>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+        <TabsList variant="line" aria-label={`Question ${q.index} answer views`} className="mb-4">
+          <TabsTrigger value="answer">Your answer</TabsTrigger>
+          <TabsTrigger value="restructured" disabled={!q.restructured}>Restructured (STAR)</TabsTrigger>
+          <TabsTrigger value="exemplar" disabled={!q.topPerformerAnswer}>Model answer</TabsTrigger>
+        </TabsList>
 
-      <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18, alignItems: "start" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <div>
-          {tab === "answer" && (
-            <div role="tabpanel" id={`${idBase}-answer-panel`} aria-labelledby={`${idBase}-answer-tab`}>
-              <AnswerBody spans={q.answer} />
-              <HighlightLegend />
-            </div>
-          )}
-          {tab === "restructured" && q.restructured && (
-            <div role="tabpanel" id={`${idBase}-restructured-panel`} aria-labelledby={`${idBase}-restructured-tab`}>
-              <div style={{ position: "relative" }}>
-                <CornerBadge bg={t.indigo100} color={t.indigo}>AI-RESTRUCTURED</CornerBadge>
-                <AnswerBody spans={q.restructured} bg={t.white} border={t.line} />
-              </div>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
-                Same content as your answer, reorganized into clean STAR. Save this as your reference version.
-              </p>
-            </div>
-          )}
-          {tab === "exemplar" && q.topPerformerAnswer && (
-            <div role="tabpanel" id={`${idBase}-exemplar-panel`} aria-labelledby={`${idBase}-exemplar-tab`}>
-              <div style={{ position: "relative" }}>
-                <CornerBadge bg={t.successTint} color={t.success}>EXEMPLAR</CornerBadge>
-                <AnswerBody
-                  spans={q.topPerformerAnswer}
-                  bg={t.successWash}
-                  border={t.successAccent}
-                />
-              </div>
-              <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
-                What an L4-equivalent candidate at this company would say. Use it as a reference shape, not a script — the goal is to internalize the structure.
-              </p>
-              {q.whatMakesItStrong && q.whatMakesItStrong.length > 0 && (
-                <>
-                  <div style={{ fontFamily: f.mono, fontSize: 11, color: t.success, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600, marginTop: 14 }}>
-                    What makes it strong
-                  </div>
-                  <ul className="ir-strong-list">
-                    {q.whatMakesItStrong.map((bullet) => (
-                      <li key={bullet} className="ir-strong-list-item">
-                        <span className="ir-strong-list-marker" aria-hidden="true" />
-                        <span>{bullet}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+        <div className="ir-pq-detail-grid" style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 18, alignItems: "start" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 14, minWidth: 0 }}>
+            <div>
+              <TabsContent value="answer">
+                <AnswerBody spans={q.answer} />
+                <HighlightLegend spans={q.answer} />
+              </TabsContent>
+              {q.restructured && (
+                <TabsContent value="restructured">
+                  <AnswerBody spans={q.restructured} bg={t.white} border={t.line} />
+                  <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+                    Same content as your answer, reorganized into clean STAR. Save this as your reference version.
+                  </p>
+                </TabsContent>
+              )}
+              {q.topPerformerAnswer && (
+                <TabsContent value="exemplar">
+                  <AnswerBody spans={q.topPerformerAnswer} bg={t.white} border={t.line} />
+                  <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.55, margin: "10px 0 0" }}>
+                    What a strong candidate would say. Use it as a shape to copy, not a script.
+                  </p>
+                  {q.whatMakesItStrong && q.whatMakesItStrong.length > 0 && (
+                    <>
+                      <div style={{ ...LABEL, marginTop: 14 }}>What makes it strong</div>
+                      <ul className="ir-strong-list" style={{ marginTop: 6 }}>
+                        {q.whatMakesItStrong.map((bullet) => (
+                          <li key={bullet} className="ir-strong-list-item">
+                            <span className="ir-strong-list-marker" aria-hidden="true" />
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                </TabsContent>
               )}
             </div>
-          )}
-        </div>
 
-        <div
-          className="ir-pq-metrics-strip"
-          style={{
-            background: t.white,
-            border: `1px solid ${t.line}`,
-            borderRadius: radius.bar,
-            padding: "12px 16px",
-            display: "flex",
-            flexWrap: "wrap",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <div style={{ display: "flex", gap: 8 }}>
-            <StarChip active={q.star.situation} letter="S" label="Situation" />
-            <StarChip active={q.star.task} letter="T" label="Task" />
-            <StarChip active={q.star.action} letter="A" label="Action" />
-            <StarChip active={q.star.result} letter="R" label="Result" />
-            <StarChip active={q.star.learning} letter="L" label="Learning" />
+            <details className="ir-more ir-pq-metrics-strip">
+              <summary>
+                <span className="ir-more-title">Answer details</span>
+                {starCount > 0 && <span>{starCount} of 5 STAR parts</span>}
+                {metricTiles.slice(0, 2).map((m) => (
+                  <span key={m.label}>{m.value} {m.label.toLowerCase()}</span>
+                ))}
+                <svg className="ir-more-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div className="ir-more-body">
+                {starCount > 0 && (
+                  <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6 }}>
+                    <span style={{ ...LABEL, marginRight: 4 }}>STAR structure</span>
+                    <StarChip active={q.star.situation} label="Situation" />
+                    <StarChip active={q.star.task} label="Task" />
+                    <StarChip active={q.star.action} label="Action" />
+                    <StarChip active={q.star.result} label="Result" />
+                    <StarChip active={q.star.learning} label="Learning" />
+                  </div>
+                )}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px 28px" }}>
+                  {metricTiles.map((m) => (
+                    <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
+                      <span style={{ ...LABEL, fontWeight: 500 }}>{m.label}</span>
+                      <span style={{ fontFamily: f.sans, fontSize: size.lg, fontWeight: 600, color: m.tone, marginTop: 1 }}>{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </details>
           </div>
-          <span aria-hidden="true" style={{ width: 1, alignSelf: "stretch", background: t.line }} />
-          {/* Focus-aware override: if focusMetrics is present (technical,
-              case-study, system-design, etc.) render those tiles; otherwise
-              fall back to the generic 4. Tone strings map to design tokens. */}
-          {(q.focusMetrics
-            ? q.focusMetrics.map((m) => ({
-                label: m.label,
-                value: m.value,
-                tone: m.tone === "good" ? t.success
-                    : m.tone === "watch" ? t.copper
-                    : m.tone === "miss"  ? t.error
-                    : t.coal,
-              }))
-            : [
-                { label: "Words", value: `${q.metrics.wordCount}`, tone: t.coal },
-                { label: "Length", value: `${q.metrics.responseSec.toFixed(1)}s`, tone: t.coal },
-                { label: "First-person", value: `${q.metrics.firstPersonRatioPct}%`, tone: t.coal },
-                { label: "Quantified", value: `${q.metrics.quantificationCount}`, tone: q.metrics.quantificationCount === 0 ? t.error : t.coal },
-              ]
-          ).map((m) => (
-            <div key={m.label} style={{ display: "flex", flexDirection: "column", minWidth: 64 }}>
-              <span style={{ fontFamily: f.mono, fontSize: 9, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: t.inkSoft }}>{m.label}</span>
-              <span style={{ fontFamily: f.mono, fontSize: 14, fontWeight: 600, color: m.tone, marginTop: 2 }}>{m.value}</span>
-            </div>
-          ))}
-        </div>
-        </div>
 
-        <div
-          style={{
-            background: coachBg,
-            border: `1px solid ${coachBorder}`,
-            borderRadius: radius.bar,
-            padding: "16px 18px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 12,
-          }}
-        >
-          <div style={{ fontFamily: f.mono, fontSize: 11, color: coachColor, letterSpacing: "0.10em", textTransform: "uppercase", fontWeight: 600 }}>
-            {coachHeading}
+          <div
+            style={{
+              background: t.creamSoft,
+              border: `1px solid ${t.line}`,
+              borderRadius: radius.bar,
+              padding: "16px 18px",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              minWidth: 0,
+            }}
+          >
+            <div style={{ fontFamily: f.sans, fontSize: size.base, fontWeight: 600, color: t.coal }}>{coachHeading}</div>
+            {q.whyScored && (
+              <p style={{ fontFamily: f.sans, fontSize: size.md, color: t.coal, lineHeight: 1.55, margin: 0 }}>{q.whyScored}</p>
+            )}
+            {q.redFlags && q.redFlags.length > 0 && (
+              <ul className="ir-redflag-list" aria-label="Red flags">
+                {q.redFlags.map((rf) => (
+                  <li key={rf.title} className="ir-redflag-item">
+                    <span style={{ flex: 1 }}>
+                      <span className="ir-redflag-item-title">{rf.title}.</span>{" "}
+                      {rf.explanation}
+                      {rf.quote && <span className="ir-redflag-item-quote">&ldquo;{rf.quote}&rdquo;</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!isStrong && q.likelyFollowUp && (
+              <div className="ir-likely-followup">
+                <span className="ir-likely-followup-eyebrow">Likely follow-up</span>
+                {q.likelyFollowUp}
+              </div>
+            )}
+            {!isStrong && q.idealAnswerSnippet && (
+              <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: radius.bar, padding: `${space.sm}px ${space.md}px`, display: "flex", flexDirection: "column", gap: space.xs }}>
+                <span style={LABEL}>Try this instead</span>
+                <p style={{ fontFamily: f.sans, fontSize: size.base, color: t.coal, lineHeight: 1.55, margin: 0 }}>
+                  &ldquo;{q.idealAnswerSnippet.text}&rdquo;
+                </p>
+                <p style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
+                  {q.idealAnswerSnippet.whyBetter}
+                </p>
+              </div>
+            )}
           </div>
-          <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, lineHeight: 1.55, margin: 0 }}>
-            {q.whyScored}
-          </p>
-          {q.redFlags && q.redFlags.length > 0 && (
-            <ul className="ir-redflag-list" aria-label="Red flags">
-              {q.redFlags.map((rf) => (
-                <li key={rf.title} className="ir-redflag-item">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.error} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }}>
-                    <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-                    <line x1="12" y1="9" x2="12" y2="13" />
-                    <line x1="12" y1="17" x2="12.01" y2="17" />
-                  </svg>
-                  <span style={{ flex: 1 }}>
-                    <span className="ir-redflag-item-title">{rf.title}.</span>{" "}
-                    {rf.explanation}
-                    {rf.quote && <span className="ir-redflag-item-quote">&ldquo;{rf.quote}&rdquo;</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {!isStrong && q.likelyFollowUp && (
-            <div className="ir-likely-followup">
-              <span className="ir-likely-followup-eyebrow">Likely follow-up</span>
-              {q.likelyFollowUp}
-            </div>
-          )}
-          {q.idealAnswerSnippet && (
-            <div
-              style={{
-                background: t.copperSoft,
-                border: `1px solid ${t.copper100}`,
-                borderRadius: radius.bar,
-                padding: `${space.sm}px ${space.md}px`,
-                display: "flex",
-                flexDirection: "column",
-                gap: space.xs,
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: f.mono,
-                  fontSize: 10,
-                  color: t.copper,
-                  letterSpacing: "0.10em",
-                  textTransform: "uppercase",
-                  fontWeight: 700,
-                }}
-              >
-                Try this instead
-              </span>
-              <p
-                style={{
-                  fontFamily: f.sans,
-                  fontSize: 13,
-                  fontStyle: "italic",
-                  color: t.coal,
-                  lineHeight: 1.55,
-                  margin: 0,
-                  paddingLeft: space.sm,
-                  borderLeft: `2px solid ${t.copper100}`,
-                }}
-              >
-                &ldquo;{q.idealAnswerSnippet.text}&rdquo;
-              </p>
-              <p
-                style={{
-                  fontFamily: f.sans,
-                  fontSize: 12,
-                  color: t.inkSoft,
-                  lineHeight: 1.5,
-                  margin: 0,
-                }}
-              >
-                {q.idealAnswerSnippet.whyBetter}
-              </p>
-            </div>
-          )}
-          <button type="button" className="ir-cta-primary" style={{ alignSelf: "flex-start", marginTop: "auto" }}>
-            Try this question again
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <polyline points="23 4 23 10 17 10" />
-              <path d="M20.49 15A9 9 0 1 1 5.64 5.64L1 10" />
-            </svg>
-          </button>
         </div>
-      </div>
+      </Tabs>
     </div>
   );
 }

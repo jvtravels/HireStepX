@@ -1,16 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif, JetBrains_Mono } from "next/font/google";
+import { Instrument_Serif } from "next/font/google";
+import localFont from "next/font/local";
 import "../src/index.css";
 
-/* ── Google Fonts via next/font ──
+/* ── Instrument Serif via next/font/google ──
  *
- * Each font has:
  *   - display: "swap" so FCP never blocks on font download
  *   - adjustFontFallback: auto — Next.js generates a size-adjusted fallback
  *     which removes the CLS spike when the real font loads
- *   - preload: true for the two critical (UI + display) fonts; JetBrains Mono
- *     (used only in the Hero metrics + occasional badges) is preload:false
- *     to cut a parallel font download off the critical path.
+ *   - preload: true — this is one of the two critical (UI + display) fonts.
  */
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],
@@ -22,13 +20,33 @@ const instrumentSerif = Instrument_Serif({
   fallback: ["Georgia", "Times New Roman", "serif"],
 });
 
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "600"],
+/* Geist Mono — self-hosted via next/font/local (variable woff2, from the
+ * `geist` npm package's bundled font files, copied into public/fonts/ so
+ * the build has no runtime dependency on that package). Replaces JetBrains
+ * Mono to match Geist Sans below. */
+const geistMono = localFont({
+  src: [
+    { path: "../public/fonts/geist-mono-var.woff2", weight: "400 700", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
   preload: false,  // Non-critical — used only in metrics/badges below the fold
   fallback: ["SF Mono", "Consolas", "Menlo", "monospace"],
+});
+
+/* ── Geist Sans — self-hosted via next/font/local ──
+ * Replaces Satoshi. Same self-hosting rationale: no CDN/build-time fetch
+ * dependency, enables preload, gives next/font the adjustFontFallback CLS
+ * fix. Variable woff2 from the `geist` npm package's bundled font files. */
+const geistSans = localFont({
+  src: [
+    { path: "../public/fonts/geist-sans-var.woff2", weight: "400 700", style: "normal" },
+  ],
+  variable: "--font-ui",
+  display: "swap",
+  preload: true,
+  fallback: ["-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+  adjustFontFallback: "Arial",
 });
 
 /* ── SEO Metadata ── */
@@ -90,10 +108,13 @@ export const metadata: Metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-title": "HireStepX",
-    // apple-touch-icon points at the same 512 asset — iOS picks the best
-    // size from the 512 SVG. When we ship a rasterised 180×180 PNG later,
-    // update this href.
     "apple-touch-icon": "/favicon.svg",
+    // Google Search Console ownership verification.
+    // Set NEXT_PUBLIC_GSC_VERIFICATION in Vercel env vars after verifying
+    // the property in GSC (HTML tag method). Redeploy once set.
+    ...(process.env.NEXT_PUBLIC_GSC_VERIFICATION
+      ? { "google-site-verification": process.env.NEXT_PUBLIC_GSC_VERIFICATION }
+      : {}),
   },
 };
 
@@ -111,133 +132,30 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-/* ── Structured Data (JSON-LD) ── */
-const structuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: "HireStepX",
-    url: "https://hirestepx.com",
-    description:
-      "AI-powered mock interview platform with real-time feedback and STAR analysis",
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web",
-    offers: {
-      "@type": "Offer",
-      price: "0",
-      priceCurrency: "INR",
-      description: "2 free sessions, no credit card required",
-    },
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "HireStepX",
-    applicationCategory: "EducationalApplication",
-    operatingSystem: "Web",
-    description:
-      "AI-powered mock interview platform with voice interviews, STAR method scoring, speech analytics, and company-specific question banks for TCS, Infosys, Google, Amazon & more.",
-    url: "https://hirestepx.com",
-    offers: [
-      { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
-      { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-      { "@type": "Offer", price: "49", priceCurrency: "INR", name: "Weekly", description: "7 sessions over 7 days" },
-    ],
-    applicationSubCategory: "Interview Preparation",
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "Is HireStepX free to use?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Start with 2 full AI mock interviews, complete with real-time feedback, scores, and detailed performance reports. No credit card required." },
-      },
-      {
-        "@type": "Question",
-        name: "How does the AI mock interview work?",
-        acceptedAnswer: { "@type": "Answer", text: "Upload your resume, pick your target company and role, and choose from 10 interview types. The AI interviewer asks role-specific questions via voice, listens to your answers, asks follow-up questions, and delivers scored feedback after each session." },
-      },
-      {
-        "@type": "Question",
-        name: "What types of interviews can I practice?",
-        acceptedAnswer: { "@type": "Answer", text: "10 types: Behavioral, Technical, Strategic, Case Study, Campus Placement, HR Round, Panel, Management, Salary Negotiation, and Government/PSU. Each with 3 difficulty levels and mini or full session options." },
-      },
-      {
-        "@type": "Question",
-        name: "Can I practice for specific companies like TCS, Infosys, or Google?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. We support 50+ target companies including Google, Amazon, TCS, Infosys, Flipkart, Razorpay, McKinsey, Deloitte, and more, each with distinct interview patterns." },
-      },
-      {
-        "@type": "Question",
-        name: "How is this different from ChatGPT or practicing with friends?",
-        acceptedAnswer: { "@type": "Answer", text: "ChatGPT is text-only with no voice, no scoring, no resume integration, and no progress tracking. HireStepX is a purpose-built interview simulator: voice-based, resume-personalized, with detailed analytics." },
-      },
-      {
-        "@type": "Question",
-        name: "Is my interview data private and secure?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes. Data is encrypted via Supabase with row-level security. Recordings and transcripts are never shared with employers or third parties. Delete everything anytime from Settings." },
-      },
-      {
-        "@type": "Question",
-        name: "Does HireStepX work on mobile?",
-        acceptedAnswer: { "@type": "Answer", text: "Yes, on any modern browser. For the best experience during mock interviews, use a laptop or desktop with a microphone." },
-      },
-      {
-        "@type": "Question",
-        name: "How much does it cost compared to a career coach?",
-        acceptedAnswer: { "@type": "Answer", text: "A single coaching session typically costs \u20b93,000-10,000. HireStepX is \u20b99 per session or \u20b949/week for 7 sessions with full AI coaching and analytics, available 24/7." },
-      },
-    ],
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "HireStepX",
-    legalName: "HireStepX",
-    url: "https://hirestepx.com",
-    logo: "https://hirestepx.com/wordmark.png",
-    description:
-      "AI-powered mock interview platform for job seekers in India. Practice for Google, TCS, Flipkart, and 50+ companies.",
-    foundingDate: "2026",
-    address: {
-      "@type": "PostalAddress",
-      addressCountry: "IN",
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      contactType: "customer support",
-      email: "support@hirestepx.com",
-    },
-  },
-];
-
 /* ── Client helpers (extracted to keep layout a server component) ── */
 import { ServiceWorkerRegistrar } from "./ServiceWorkerRegistrar";
 import { OfflineBanner } from "./OfflineBanner";
 import CookieConsent from "./CookieConsent";
-import ConsentGatedAnalytics from "./ConsentGatedAnalytics";
 import { RouteFocusManager } from "./RouteFocusManager";
-import { headers } from "next/headers";
 
-export default async function RootLayout({
+/* No headers()/nonce here on purpose — reading headers() forces the whole
+   app dynamic (this is the ONE shared layout every route renders through),
+   which is what kept every marketing page stuck server-rendering per-request
+   instead of static/ISR. Nonce-dependent rendering (analytics scripts, the
+   csp-nonce meta tag consumed by dashboardComponents.tsx's Razorpay loader
+   and BlogPage's client JSON-LD injection) now lives in the route groups
+   that actually need it: app/(app)/layout.tsx, app/(auth)/layout.tsx, and
+   app/admin/layout.tsx render <AnalyticsNonce />; app/(marketing)/layout.tsx
+   renders <MarketingAnalytics /> (no nonce, hash-allowlisted instead). */
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Read the nonce injected by middleware.ts so we can attach it to every
-  // <script> tag in this server component. This allows the per-request CSP
-  // (which includes 'nonce-{nonce}' in script-src) to greenlight these scripts
-  // in browsers that enforce CSP Level 2+, which ignores 'unsafe-inline' when
-  // a nonce is present. Falls back to empty string — the page still renders
-  // correctly; only the nonce-based enforcement degrades to 'unsafe-inline'.
-  const nonce = (await headers()).get("x-nonce") ?? "";
-
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${jetbrainsMono.variable}`}
+      className={`${instrumentSerif.variable} ${geistMono.variable}`}
     >
       <head>
         {/*
@@ -247,36 +165,20 @@ export default async function RootLayout({
           but only the /interview route actually uses those services. We now
           preconnect from Interview.tsx with useEffect-injected links.
         */}
-        {/* Satoshi — primary UI font. Loaded from Fontshare CDN with a
-            preconnect to eliminate DNS + TLS round-trip on the font request.
-            Inter removed: Satoshi now owns --font-ui end-to-end. */}
-        <link rel="preconnect" href="https://api.fontshare.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://cdn.fontshare.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
-        />
-        <link rel="preconnect" href="https://esluwqkqoofmquqdevap.supabase.co" crossOrigin="anonymous" />
+        {/* Geist Sans is self-hosted via next/font/local (public/fonts/geist-sans-var.woff2).
+            The CDN preconnects and stylesheet link are no longer needed. */}
+        <meta name="google-adsense-account" content="ca-pub-7810403590527236" />
+        <link rel="preconnect" href="https://wieczicacakuonbevwlx.supabase.co" crossOrigin="anonymous" />
         {/* dns-prefetch (not preconnect) for LLM/TTS/STT origins — only
             /interview needs a live TCP connection. Prefetch cuts the first-lookup
             latency when the user eventually starts a session without burning a
             TCP+TLS handshake on every page that never reaches the interview. */}
         <link rel="dns-prefetch" href="https://api.groq.com" />
-        <link rel="dns-prefetch" href="https://api.sarvam.ai" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
-
-        {/* Structured Data — server-rendered so SEO crawlers see it immediately,
-            but moved AFTER preconnects so network scheduling doesn't stall on parsing JSON. */}
-        {structuredData.map((data, i) => (
-          <script
-            key={i}
-            type="application/ld+json"
-            nonce={nonce || undefined}
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-          />
-        ))}
+        <link rel="dns-prefetch" href="https://us.i.posthog.com" />
       </head>
-      <body className="bg-[#FAF7F0] text-[#0E0C08]">
+      <body className={`bg-background text-foreground ${geistSans.variable}`}>
+        <a href="#main-content" className="skip-to-content">Skip to main content</a>
         {/* Route change announcer for screen readers */}
         <div
           id="route-announcer"
@@ -295,7 +197,6 @@ export default async function RootLayout({
 
         <ServiceWorkerRegistrar />
         <CookieConsent />
-        <ConsentGatedAnalytics />
       </body>
     </html>
   );

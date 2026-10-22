@@ -1,0 +1,176 @@
+/**
+ * ATS Compliance Check — client-side keyword/regex scorer.
+ *
+ * Pure and deterministic: no LLM call, runs instantly whenever a resume's
+ * text changes. Shared by DashboardResume.tsx and ResumeV2.tsx (both
+ * render the same "ATS readiness" card off the same score/found/missing
+ * shape) — extracted here so neither screen owns a second copy of the
+ * rubric that could drift from the other.
+ */
+
+export interface ATSResult {
+  score: number;
+  label: string;
+  found: string[];
+  missing: string[];
+  suggestions: string[];
+}
+
+/* A heading line is short and mostly-just-the-heading — "Skills" or
+ * "Technical Skills" qualifies; "Managed multiple projects at once in a
+ * fast-moving agency" does not, even though it contains the word
+ * "projects". Without this check, `text.includes(keyword)` treated any
+ * mention of the word anywhere in the resume as proof a whole section
+ * existed — e.g. a resume with no Projects section at all still showed
+ * "Projects" as Found because one unrelated bullet used that word. */
+function hasHeadingLine(lines: string[], keywords: string[]): boolean {
+  return lines.some(l => {
+    const t = l.trim().toLowerCase();
+    if (!t || t.length > 40) return false;
+    if (t.split(/\s+/).length > 5) return false;
+    return keywords.some(k => new RegExp(`\\b${k}\\b`).test(t));
+  });
+}
+
+/* Sections the caller already knows exist from structured parsing. Plain
+ * text from PDF extraction is often flattened (no line breaks), which hides
+ * headings from hasHeadingLine() and produced false "missing Work
+ * Experience" next to a visibly populated Experience section. */
+export interface ATSStructuredHints {
+  experience?: boolean;
+  skills?: boolean;
+  education?: boolean;
+}
+
+/* The rubric matches English section headings and action verbs, and
+ * interviews run in English only. A resume written mostly in another
+ * script (Devanagari, Tamil, ...) would score near zero for the wrong
+ * reason, so callers should show "not available" instead of a number. */
+export function isMostlyEnglishScript(text: string): boolean {
+  const letters = text.match(/\p{L}/gu);
+  if (!letters || letters.length < 40) return true;
+  const latin = letters.filter((c) => /[A-Za-z\u00C0-\u024F]/.test(c)).length;
+  return latin / letters.length >= 0.6;
+}
+
+export function computeATSScore(resumeText: string, _targetRole?: string, hints?: ATSStructuredHints): ATSResult {
+  const text = resumeText.toLowerCase();
+  const lines = resumeText.split("\n").filter(l => l.trim().length > 0);
+
+  // Contact Info is a field-presence check (email/phone/etc. never need
+  // their own heading), so it stays a plain substring match. The other
+  // sections are real document sections and should only count as "found"
+  // when a short heading-like line actually names them — see
+  // hasHeadingLine() above.
+  const requiredSections = [
+    { name: "Contact Info", keywords: ["email", "@", "phone", "linkedin", "github"], heading: false, known: false },
+    { name: "Work Experience", keywords: ["experience", "employment", "work history", "professional experience"], heading: true, known: hints?.experience === true },
+    { name: "Education", keywords: ["education", "academic", "university", "degree", "college"], heading: true, known: hints?.education === true },
+    { name: "Skills", keywords: ["skills", "technical skills", "technologies", "competencies", "tools"], heading: true, known: hints?.skills === true },
+  ];
+
+  // Bonus sections
+  const bonusSections = [
+    { name: "Summary", keywords: ["summary", "objective", "profile", "about"], heading: true, known: false },
+    { name: "Projects", keywords: ["projects", "portfolio"], heading: true, known: false },
+    { name: "Certifications", keywords: ["certifications", "certificates", "licenses"], heading: true, known: false },
+  ];
+
+  // Action verbs — require more for a high score
+  const actionVerbs = ["achieved", "led", "managed", "developed", "implemented", "designed", "built", "increased", "reduced", "improved", "launched", "delivered", "created", "optimized", "coordinated", "analyzed", "spearheaded", "orchestrated", "streamlined", "pioneered", "established", "transformed", "automated", "mentored", "negotiated", "resolved"];
+
+  // Metrics/quantification patterns
+  const metricPatterns = [
+    /\d+%/,
+    /\$[\d,]+/,
+    /\d+\+?\s*(users|customers|team|members|engineers|projects|clients|people)/i,
+    /\d+x\b/i,
+    /\b(revenue|growth|savings|reduction|increase|improvement)\b.*\d/i,
+  ];
+  const metricsFound = metricPatterns.filter(p => p.test(resumeText)).length;
+  const hasMetrics = metricsFound > 0;
+
+  // Check sections
+  const matchesSection = (s: { keywords: string[]; heading: boolean; known: boolean }): boolean =>
+    s.known || (s.heading ? hasHeadingLine(lines, s.keywords) : s.keywords.some(k => text.includes(k)));
+  const foundSections = requiredSections.filter(matchesSection);
+  const missingSections = requiredSections.filter(s => !matchesSection(s));
+  const foundBonus = bonusSections.filter(matchesSection);
+
+  // Check action verbs
+  const foundVerbs = actionVerbs.filter(v => new RegExp(`\\b${v}\\w*\\b`, "i").test(text));
+
+  // Length & density checks
+  const wordCount = resumeText.trim().split(/\s+/).length;
+  const hasSufficientLength = wordCount >= 150;
+  const hasGoodLength = wordCount >= 300 && wordCount <= 1200;
+  const bulletCount = (resumeText.match(/^[\s]*[-•●◦▪]/gm) || []).length;
+  const hasBullets = bulletCount >= 3;
+
+  // Formatting red flags
+  const hasLongParagraphs = lines.some(l => l.trim().split(/\s+/).length > 60);
+  const hasAllCapsBlocks = (resumeText.match(/^[A-Z\s]{20,}$/gm) || []).length > 3;
+
+  // Score: 100 points total, harder to max out
+  let score = 0;
+
+  // Sections: up to 30 pts (required) + 6 pts (bonus)
+  score += foundSections.length * 7.5;  // up to 30
+  score += Math.min(6, foundBonus.length * 2); // up to 6
+
+  // Action verbs: up to 15 pts (need 8+ verbs for full marks)
+  score += Math.min(15, foundVerbs.length * 1.9);
+
+  // Metrics: up to 15 pts (more metrics = higher score)
+  score += Math.min(15, metricsFound * 5);
+
+  // Structure: up to 14 pts
+  score += hasSufficientLength ? 4 : 0;
+  score += hasGoodLength ? 4 : 0;
+  score += hasBullets ? 4 : 0;
+  score += (!hasLongParagraphs) ? 2 : 0;
+
+  // Formatting: up to 10 pts
+  score += (!hasAllCapsBlocks) ? 3 : 0;
+  score += (foundSections.length >= 3) ? 4 : 0;
+  score += (wordCount > 100 && bulletCount >= 5) ? 3 : 0;
+
+  // Penalties
+  if (!hasSufficientLength) score -= 5;
+  if (missingSections.length >= 2) score -= 5;
+  if (foundVerbs.length < 3) score -= 5;
+
+  score = Math.min(100, Math.max(0, Math.round(score)));
+
+  const label = score >= 85 ? "Excellent" : score >= 70 ? "Good" : score >= 50 ? "Needs Work" : "Poor";
+
+  const found = [
+    ...foundSections.map(s => s.name),
+    ...foundBonus.map(s => s.name),
+    foundVerbs.length > 0 ? `${foundVerbs.length} action verbs` : null,
+    hasMetrics ? "Quantified achievements" : null,
+    hasBullets ? "Bullet-point formatting" : null,
+    hasGoodLength ? "Good length" : null,
+  ].filter(Boolean) as string[];
+
+  const missing = [
+    ...missingSections.map(s => `${s.name} section`),
+    foundVerbs.length < 5 ? "Add more action verbs (achieved, led, built, implemented...)" : null,
+    !hasMetrics ? "Add quantified metrics (%, $, numbers)" : null,
+    !hasBullets ? "Use bullet points for better readability" : null,
+    !hasSufficientLength ? "Resume is too short — add more detail" : null,
+    hasLongParagraphs ? "Break long paragraphs into bullet points" : null,
+  ].filter(Boolean) as string[];
+
+  const suggestions = [
+    missingSections.length > 0 ? `Add clear section headers: ${missingSections.map(s => s.name).join(", ")}` : null,
+    !hasMetrics ? "Quantify achievements with specific numbers (e.g., 'increased revenue by 30%')" : null,
+    foundVerbs.length < 8 ? "Start bullet points with strong action verbs: achieved, led, implemented, designed" : null,
+    !hasBullets ? "Format experience as bullet points for ATS readability" : null,
+    hasLongParagraphs ? "Keep paragraphs under 3 lines — ATS and recruiters prefer concise bullets" : null,
+    "Use standard section headings (Experience, Education, Skills) for better ATS parsing",
+    "Avoid tables, graphics, and complex formatting that ATS cannot read",
+  ].filter(Boolean) as string[];
+
+  return { score, label, found, missing, suggestions: suggestions.slice(0, 5) };
+}

@@ -37,6 +37,9 @@ const SKILL_VOCAB: Record<string, Phrasings> = {
   problemSolving:      { strength: "Strong problem-solving instinct", gap: "Break problems down step by step" },
   confidence:          { strength: "Answered with confidence",       gap: "Sound more certain in answers" },
   specificity:         { strength: "Backed claims with specifics",   gap: "Add numbers and specifics" },
+  adaptability:        { strength: "Adapted well to follow-ups",     gap: "Adapt faster to follow-ups" },
+  businessImpact:      { strength: "Connected work to business outcomes", gap: "Connect your work to business outcomes" },
+  answerCompleteness:  { strength: "Fully addressed every part asked", gap: "Address every part of the question" },
 
   // ── Common analyzer keys (in case evaluator widens vocabulary) ──
   empathy:             { strength: "Showed real user empathy",       gap: "Lead with user empathy" },
@@ -45,6 +48,39 @@ const SKILL_VOCAB: Record<string, Phrasings> = {
   productSense:        { strength: "Strong product instincts",       gap: "Sharpen your product instincts" },
   systemThinking:      { strength: "Thought in systems, not features", gap: "Think in systems, not features" },
   starStructure:       { strength: "Hit every STAR beat cleanly",    gap: "Walk through Situation → Result" },
+};
+
+/* Short noun-phrase label per competency key, for surfaces that name a
+ * topic rather than coach it — e.g. the Recent Sessions table's "Focus"
+ * column ("Compensation package", "Answer structure"). Distinct from
+ * SKILL_VOCAB's strength/gap phrasings, which are full coaching sentences.
+ * Unknown keys fall back to skillLabel()'s humanized key. */
+const TOPIC_VOCAB: Record<string, string> = {
+  anchoring:          "Opening anchor",
+  packageThinking:    "Compensation package",
+  leverageUse:        "Negotiation leverage",
+  concessionStrategy: "Concession strategy",
+  closingTechnique:   "Closing technique",
+  composure:          "Composure under pressure",
+  professionalTone:   "Professional tone",
+
+  communication:      "Communication clarity",
+  structure:          "Answer structure",
+  technicalDepth:     "Technical depth",
+  leadership:         "Ownership & leadership",
+  problemSolving:     "Problem-solving approach",
+  confidence:         "Answer confidence",
+  specificity:        "Specific examples",
+  adaptability:       "Follow-up adaptability",
+  businessImpact:     "Business impact",
+  answerCompleteness: "Answer completeness",
+
+  empathy:            "User empathy",
+  metricsLiteracy:    "Metrics literacy",
+  prioritization:     "Prioritization",
+  productSense:       "Product sense",
+  systemThinking:     "Systems thinking",
+  starStructure:      "STAR structure",
 };
 
 /* Split a camelCase / snake_case token into spaced Title Case. Used as
@@ -90,7 +126,7 @@ export function gapCopy(value: string | null | undefined): string {
 }
 
 /* Short, sentence-embeddable noun label for a skill key — for inline use
- * like "Your Leverage use is the highest-leverage thing to practice".
+ * like "Leverage use" in a score breakdown.
  * Unlike strengthCopy/gapCopy (which return full coaching phrases), this
  * returns the humanized key itself: `leverageUse` → "Leverage use".
  * Already-humanized phrases (anything with whitespace) pass through
@@ -100,4 +136,30 @@ export function skillLabel(value: string | null | undefined): string {
   if (!value) return "";
   if (!isRawKey(value)) return value;
   return titleCaseFromKey(value);
+}
+
+/* Short noun-phrase topic label for a raw competency key — see TOPIC_VOCAB.
+ * Falls back to skillLabel() (humanized key) for keys outside the
+ * vocabulary, so an unmapped key still reads as a topic, never a raw token. */
+export function focusTopicLabel(value: string | null | undefined): string {
+  if (!value) return "";
+  if (!isRawKey(value)) return value;
+  return TOPIC_VOCAB[value] || skillLabel(value);
+}
+
+/* Card headline from a full coaching sentence: keep the first clause, cap
+ * the length at a word boundary, and drop trailing connectives so the cut
+ * never reads as a sentence that stopped mid-thought ("... on the"). */
+const DANGLING = new Set(["a", "an", "and", "or", "but", "the", "of", "to", "in", "on", "at", "for", "with", "by", "your", "you", "is", "are", "that", "as", "from", "into"]);
+
+export function clipHeadline(text: string, max = 55): string {
+  const first = text.split(/[:\u2014]|(?<=[.!?])\s/)[0].trim().replace(/[.,;]$/, "");
+  let clip = first;
+  if (clip.length > max) {
+    const cut = clip.slice(0, max).lastIndexOf(" ");
+    clip = clip.slice(0, cut > 15 ? cut : max);
+  }
+  const words = clip.split(/\s+/);
+  while (words.length > 2 && DANGLING.has(words[words.length - 1].toLowerCase().replace(/[^a-z]/g, ""))) words.pop();
+  return words.join(" ").replace(/[.,;:\u2013-]$/, "");
 }

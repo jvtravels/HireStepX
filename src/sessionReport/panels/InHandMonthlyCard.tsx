@@ -1,4 +1,4 @@
-import { EyebrowLabel, StatTile, t, radius } from "./_primitives";
+import { EyebrowLabel, StatTile, t } from "./_primitives";
 
 export interface InHandMonthlyMeta {
   closingTotalLpa?: number | null;
@@ -32,11 +32,8 @@ export function InHandMonthlyCard({
   return (
     <div
       style={{
-        margin: "8px 0 4px",
-        padding: "14px 16px",
-        background: t.creamSoft,
-        border: `1px solid ${t.line}`,
-        borderRadius: radius.bar,
+        padding: "24px 0",
+        borderTop: `1px solid ${t.line}`,
       }}
     >
       <EyebrowLabel marginBottom={8}>

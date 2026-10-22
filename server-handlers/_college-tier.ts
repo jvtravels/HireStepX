@@ -52,7 +52,13 @@ const TIER_2_PATTERNS: RegExp[] = [
   /\bvellore\s+institute\s+of\s+technology\b/i,
   /\bmanipal\s+(?:institute|university|academy|college)\b/i,
   /\bMIT\s+manipal\b/i,
-  /\bSRM\s+(?:university|institute|chennai|kattankulathur|ramapuram)\b/i,
+  // SRM: qualifier optional — "I study at SRM" is as common as "SRM Chennai".
+  // E3: bare \bSRM\b is intentionally loose — the alternative (requiring a
+  // qualifier) would miss the ~60% of candidates who just say "SRM". False-
+  // positives are unlikely because "SRM" has no other common meaning in an
+  // Indian campus-interview context. If a false-positive is reported, add a
+  // negative lookahead: /\bSRM(?!\s+(?:tool|file|drive|system))\b/i.
+  /\bSRM(?:\s+(?:university|institute|chennai|kattankulathur|ramapuram|ist))?\b/i,
   /\bthapar\s+(?:university|institute)\b/i,
   /\bTIET\b/i,
   /\bDTU\b|\bdelhi\s+technological\s+university\b/i,
@@ -69,11 +75,19 @@ const TIER_2_PATTERNS: RegExp[] = [
   /\bSSN\s+(?:college|institute)\b/i,
   /\bIIEST\b|\bbesu\b/i,
   /\bNITK\b/i,                                   // alt for Surathkal but already in T1
+  /\bKIIT\b|\bkalinga\s+institute\s+of\s+industrial\s+technology\b/i,
+  /\banna\s+university\b/i,                      // main campus Chennai; affiliates vary but candidates say "Anna University"
   /\bamity\s+(?:university|noida)\b/i,           // borderline; many recruiters call T2
   /\bLPU\b|\blovely\s+professional\b/i,          // borderline; mass intake
   /\bchitkara\s+university\b/i,
   /\bsymbiosis\s+(?:institute|sit)\b/i,
   /\bjamia\s+millia\b/i,
+  // D4: full-name fallbacks for colleges whose short codes are too
+  // ambiguous to match safely but whose full names are unambiguous.
+  /\bsri\s+venkateswara\s+(?:university|college|institute)\b/i,
+  /\bthiagarajar\s+college\s+of\s+engineering\b/i,
+  /\bVJTI\b|\bveermata\s+jijabai\s+(?:technological|tech)\b/i,
+  /\bICT\s+mumbai\b|\binstitute\s+of\s+chemical\s+technology\s+mumbai\b/i,
 ];
 
 /**

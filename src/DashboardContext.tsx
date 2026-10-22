@@ -8,28 +8,109 @@ import { type InterviewEvent, loadEvents } from "./dashboardHelpers";
 import {
   type PersistedState, type DashboardSession, type SkillData, type TrendPoint,
   type RealSession, type SkillVelocity, type CompanyReadiness, type ImprovementPlan,
-  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT,
+  type PracticeCoverage, type EvidenceCapability,
+  FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT,
   loadState, saveState, getSessionData,
   generateFallbackInsights, generateNotifications, generateGoals,
   getReturnContext, getSmartScheduleSuggestion, getImprovementPlan,
   computeWeekActivity, computeStreak, computeReadiness, computeCompanyReadiness, daysUntil,
+  computePracticeCoverage, computeEvidenceCapabilities,
   generateReport,
   computeBadges, getDailyChallenge, getPracticeReminder,
 } from "./dashboardData";
+import { clipHeadline } from "./skillCopy";
+import { computeFocusRounds, type FocusRound } from "./focusRounds";
 import { getCurriculumState, type CurriculumState } from "./curriculum";
+import type { SessionCoaching } from "./dashboardTypes";
+import type { SessionRecord } from "./supabase";
+import { retryQueuedEvals } from "./interviewAPI";
+
+/* S70-B1: session cards that only ever received a deterministic fallback
+ * evaluation have coaching=null — the LLM never wrote the pair. The skill_scores
+ * fallback (topStrength/topWeakness) picks the highest/lowest key, which
+ * degenerates when all values are equal (e.g. all-95 placeholder): both pick
+ * the same key ("anchoring") and the card shows "Anchored the number first" as
+ * the strength AND "Anchor your number first" as the gap — a direct contradiction.
+ * Synthesize a coaching pair from wins[0]/fixes[0] instead; those are always
+ * populated by the deterministic fallback and carry the true outcome signal. */
+function cardCoachingFromWinsFixes(
+  wins: Array<{ text: string }> | null | undefined,
+  fixes: Array<{ text: string }> | null | undefined,
+): SessionCoaching | undefined {
+  const win = wins?.[0]?.text;
+  const fix = fixes?.[0]?.text;
+  if (!win || !fix) return undefined;
+  const headline = clipHeadline;
+  return { strength: { headline: headline(win), meaning: win }, gap: { headline: headline(fix), meaning: fix, example: "" } };
+}
+
+const SESSIONS_FRESH_MS = 60_000;
+
+/* Single mapping from the raw Supabase row to the app's RealSession shape —
+ * shared by the initial load and refreshSessions() so a tab-refocus refetch
+ * can't drift from what first paint showed (previously refreshSessions
+ * dropped company/target_role/negotiationMetrics, so a session's company
+ * name would vanish from the card after the user switched tabs and back). */
+function mapSessionRecord(s: SessionRecord): RealSession {
+  return {
+    id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
+    focus: s.focus, duration: s.duration,
+    company: s.target_company ?? undefined,
+    target_role: s.target_role ?? undefined,
+    /* Canonical score = the report's blended-and-anchored overall when a
+       report has been generated (report_json.overallScore), else the
+       quick eval persisted at save time (sessions.score). The report
+       page shows the blended number; without this the list/dashboard
+       showed the quick number for the same session (e.g. 64 vs 51).
+       New reports also write the blended value back into sessions.score
+       (evaluate-session saveCachedReport) — this client-side preference
+       additionally reconciles sessions whose reports were cached before
+       that writeback shipped, without forcing a re-evaluation. */
+    score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
+    questions: s.questions,
+    ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
+    /* Plain-language coaching pair. Persisted in report_json.coaching by
+       evaluate-session; synthesized from wins/fixes when coaching=null
+       (S70-B1) so the card never falls back to the degenerate
+       skill_scores pair (contradictory when all values are equal). */
+    coaching: s.report_json?.coaching ??
+      cardCoachingFromWinsFixes(s.report_json?.wins, s.report_json?.fixes) ?? undefined,
+    /* Per-focus signature strip (mvp-9+), persisted in
+       report_json.focusMetrics. Empty/undefined for older rows → the
+       card renders no instrument strip. */
+    focusMetrics: s.report_json?.focusMetrics ?? undefined,
+    /* Real per-question scores, persisted in report_json.perQuestion.
+       Undefined until the session's report has been generated at least
+       once — realSessionsToDashboard falls back to the overall score. */
+    perQuestion: s.report_json?.perQuestion ?? undefined,
+    /* Kernel-aware negotiation metrics. The Supabase column type
+       is jsonb so we get an unknown-shaped object back; the
+       RealSession field is strictly typed. Cast is intentional —
+       validateNegotiationMetrics in the report layer is the
+       trust boundary, not this mapping. */
+    negotiationMetrics: (s as { negotiation_metrics?: unknown }).negotiation_metrics as RealSession["negotiationMetrics"] | undefined,
+  };
+}
 
 /* ─── Sub-context types ─── */
 
-interface SessionsContextValue {
+export interface SessionsContextValue {
   recentSessions: DashboardSession[];
   scoreTrend: TrendPoint[];
   skills: SkillData[];
   skillVelocity: SkillVelocity[];
-  overallStats: { sessionsCompleted: number; avgScore: number; improvement: number; hoursLogged: number };
+  overallStats: { sessionsCompleted: number; avgScore: number; improvement: number; hoursLogged: number; questionsAnswered: number };
   hasData: boolean;
   weekActivity: boolean[];
   currentStreak: number;
   readinessScore: number;
+  /** Readiness points gained since the user's first session. null when
+   *  there isn't enough history (fewer than 2 sessions) to compare. */
+  readinessDelta: number | null;
+  practiceCoverage: PracticeCoverage;
+  evidenceCapabilities: EvidenceCapability[];
+  /** Per-focus round progress (cleared / practising / not started). */
+  focusRounds: FocusRound[];
   calendarEvents: InterviewEvent[];
   /**
    * Per-section initial-load flags. Replaces the all-or-nothing
@@ -40,6 +121,8 @@ interface SessionsContextValue {
    * does not blank the streak/sessions cards.
    */
   sessionsLoading: boolean;
+  /** Initial/refetch failed with no cached list to fall back on. Lets the Sessions page show a retry state instead of a misleading "No sessions yet". */
+  sessionsLoadFailed: boolean;
   eventsLoading: boolean;
   /**
    * Gap-flag codes from the user's most-recently analyzed session
@@ -50,24 +133,25 @@ interface SessionsContextValue {
    */
   topGaps: string[];
   refreshSessions: () => void;
+  /** Bump the session-fetch epoch so the data effect re-runs immediately.
+   *  Also writes a localStorage dirty flag so a remount (e.g. returning
+   *  from /interview) picks up the signal even without a live context call. */
+  invalidateSessions: () => void;
+  sessionVersion: number;
 }
 
-interface SubscriptionContextValue {
+export interface SubscriptionContextValue {
   isFree: boolean;
   isStarter: boolean;
-  isPro: boolean;
   atSessionLimit: boolean;
   sessionsUsed: number;
   sessionsRemaining: number;
   starterRemaining: number;
   sessionsThisWeek: number;
-  /** Sessions started in the current calendar month — used to track Pro's 40/month cap. */
   sessionsThisMonth: number;
-  /** Sessions remaining for Pro this calendar month (max 0). Always 0 for non-Pro tiers. */
-  proRemaining: number;
   /** Purchased one-off session credits (₹9 each). Acts as a top-up for any tier
-   *  that has exhausted its plan allotment (free, starter, or pro). The `atSessionLimit`
-   *  gate clears for all three tiers when creditBalance > 0. Fetched lazily after auth;
+   *  that has exhausted its plan allotment (free or starter). The `atSessionLimit`
+   *  gate clears for both tiers when creditBalance > 0. Fetched lazily after auth;
    *  0 until loaded. */
   creditBalance: number;
   /** True once the credit balance DB fetch has resolved (success or error).
@@ -76,7 +160,7 @@ interface SubscriptionContextValue {
   creditsLoaded: boolean;
 }
 
-interface UIContextValue {
+export interface UIContextValue {
   showUpgradeModal: boolean;
   setShowUpgradeModal: (v: boolean) => void;
   dataLoading: boolean;
@@ -97,7 +181,20 @@ interface UIContextValue {
   setCreditBalanceDirect: (newBalance: number) => void;
 }
 
-interface CoreContextValue {
+/** Stable-identity action functions split out of UIContextValue. Consumers
+ *  that only need to trigger UI (open upgrade modal, show a toast, refresh
+ *  credits) should use `useDashboardUIActions()` instead of `useDashboardUI()`
+ *  — this context's value never changes identity on toast/banner/syncError
+ *  churn, so those consumers skip the re-render entirely instead of
+ *  recomputing render output on every unrelated UI event. */
+export interface UIActionsContextValue {
+  setShowUpgradeModal: (v: boolean) => void;
+  showToast: (msg: string) => void;
+  refreshCreditBalance: () => void;
+  setCreditBalanceDirect: (newBalance: number) => void;
+}
+
+export interface CoreContextValue {
   persisted: PersistedState;
   updatePersisted: (updates: Partial<PersistedState>) => void;
   displayName: string;
@@ -122,15 +219,22 @@ interface CoreContextValue {
   handleExport: () => void;
   handleDownload: () => void;
   handleExportCSV: () => void;
-  handleExportPDF: () => void;
 }
 
 /* ─── Contexts ─── */
 
-const SessionsContext = createContext<SessionsContextValue | null>(null);
-const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
-const UIContext = createContext<UIContextValue | null>(null);
-const CoreContext = createContext<CoreContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<SessionsContext.Provider value={...}>` — the real DashboardProvider
+ *  performs live Supabase network calls unsuitable for canvas mode. */
+export const SessionsContext = createContext<SessionsContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<SubscriptionContext.Provider value={...}>` — see SessionsContext above. */
+export const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
+export const UIContext = createContext<UIContextValue | null>(null);
+export const UIActionsContext = createContext<UIActionsContextValue | null>(null);
+/** Exported so canvas storyboards can supply a mock value directly via
+ *  `<CoreContext.Provider value={...}>` — see SessionsContext above. */
+export const CoreContext = createContext<CoreContextValue | null>(null);
 
 /* ─── Focused hooks ─── */
 
@@ -139,6 +243,13 @@ export function useDashboardSessions() {
   if (!ctx) throw new Error("useDashboardSessions must be used within DashboardProvider");
   return ctx;
 }
+
+/** Round progress without requiring the provider, for screens that also render
+ *  outside the dashboard shell (and in tests). */
+export function useFocusRounds(): FocusRound[] {
+  return useContext(SessionsContext)?.focusRounds ?? NO_ROUNDS;
+}
+const NO_ROUNDS: FocusRound[] = [];
 
 export function useDashboardSubscription() {
   const ctx = useContext(SubscriptionContext);
@@ -149,6 +260,16 @@ export function useDashboardSubscription() {
 export function useDashboardUI() {
   const ctx = useContext(UIContext);
   if (!ctx) throw new Error("useDashboardUI must be used within DashboardProvider");
+  return ctx;
+}
+
+/** Prefer this over `useDashboardUI()` when a component only needs to
+ *  trigger UI (open the upgrade modal, show a toast, refresh credits) and
+ *  doesn't read `toast`/`syncError`/`paymentBanner`/`isMobile` — see
+ *  UIActionsContextValue for why. */
+export function useDashboardUIActions() {
+  const ctx = useContext(UIActionsContext);
+  if (!ctx) throw new Error("useDashboardUIActions must be used within DashboardProvider");
   return ctx;
 }
 
@@ -194,6 +315,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // initial dashboard paint isn't blocked by it; empty until the fetch
   // completes (degrades gracefully to skill-based CTA).
   const [topGaps, setTopGaps] = useState<string[]>([]);
+  // sessionVersion increments each time invalidateSessions() is called,
+  // forcing the data-fetch useEffect to re-run. Also consumed on mount
+  // when a dirty flag was written by useInterviewEngine after a cloud save.
+  const [sessionVersion, setSessionVersion] = useState(0);
   const [syncError, setSyncError] = useState("");
   /* Per-section loading flags — split from a single `dataLoading`
      boolean so one slow Supabase call (events) cannot blank the rest
@@ -202,17 +327,12 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
      still in flight, preserving the old gate semantics for consumers
      that need a both-loaded view (Resume, Settings, Analytics). */
   const [sessionsLoading, setSessionsLoading] = useState(true);
+  const [sessionsLoadFailed, setSessionsLoadFailed] = useState(false);
   const [eventsLoading, setEventsLoading] = useState(true);
   const dataLoading = sessionsLoading || eventsLoading;
-  /* Synchronous initial value — without it, every mobile visitor saw a
-     desktop-shaped paint (sidebar visible, two-column grid) then a layout
-     flash to the mobile shape after the useEffect fired. matchMedia is
-     synchronous and available pre-hydration on the client; on the server
-     we fall back to false (desktop default) so SSR markup matches the
-     initial-paint assumption. */
-  const [isMobile, setIsMobile] = useState(() =>
-    typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches
-  );
+  // Keep the server render and the browser's first render identical. The
+  // breakpoint is applied in the mount effect below once hydration completes.
+  const [isMobile, setIsMobile] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [paymentBanner, setPaymentBanner] = useState<"success" | "cancelled" | null>(null);
   const [creditBalance, setCreditBalance] = useState(0);
@@ -239,6 +359,19 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* sessionStorage unavailable (private-browsing) — stay with defaults */ }
   }, [user?.id]);
+
+  // Flush any evaluations that failed during a past session and were queued
+  // for retry (see _evaluation-flow.ts). Previously this only ran from the
+  // interview engine's online-event listener, so a candidate who closed the
+  // tab right after a failed eval (and never returned to an active session)
+  // would carry a stale fallback score on their dashboard indefinitely.
+  const retryFlushDoneRef = useRef(false);
+  useEffect(() => {
+    if (!user?.id || retryFlushDoneRef.current) return;
+    retryFlushDoneRef.current = true;
+    retryQueuedEvals(user.id).catch(() => { /* best-effort */ });
+  }, [user?.id]);
+
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const showToast = useCallback((msg: string) => {
@@ -333,7 +466,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // ─── Google Calendar sync state ───
   const [googleSyncStatus, setGoogleSyncStatus] = useState<"idle" | "syncing" | "done" | "error">("idle");
   const [googleSyncError, setGoogleSyncError] = useState<string | null>(null);
-  const [hasGoogleToken, setHasGoogleToken] = useState(() => !!getGoogleProviderToken());
+  // localStorage is browser-only; read it after hydration so the first client
+  // render matches the server render.
+  const [hasGoogleToken, setHasGoogleToken] = useState(false);
+
+  useEffect(() => {
+    setHasGoogleToken(!!getGoogleProviderToken());
+  }, []);
 
   const syncGoogleCalendar = useCallback(async () => {
     if (!user?.id || googleSyncStatus === "syncing") return;
@@ -388,20 +527,37 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.name, user?.targetRole, user?.interviewDate, user?.resumeFileName, user?.hasCompletedOnboarding]);
 
-  // Load data from Supabase on mount, with localStorage cache fallback
+  // Load data from Supabase on mount, with localStorage cache fallback.
+  // Also runs when sessionVersion increments (invalidateSessions() call
+  // or dirty-flag consumed from a cross-page write by useInterviewEngine).
   useEffect(() => {
     if (!user?.id) { setSessionsLoading(false); setEventsLoading(false); return; }
 
     const sessionsCacheKey = `hirestepx_cache_sessions_${user.id}`;
     const eventsCacheKey = `hirestepx_cache_events_${user.id}`;
 
+    // Consume the dirty flag written by useInterviewEngine after a cloud
+    // save. On a sessionVersion > 0 run the cache is intentionally skipped
+    // so stale data never flickers in over the fresh network result.
+    const dirtyKey = `hirestepx_sessions_dirty_${user.id}`;
+    let skipSessionsCache = false;
+    try {
+      if (localStorage.getItem(dirtyKey)) {
+        localStorage.removeItem(dirtyKey);
+        skipSessionsCache = true;
+      }
+    } catch { /* localStorage unavailable — proceed normally */ }
+
     let cancelled = false;
 
     // Show cached data immediately for instant LCP, then refresh from network.
     // Cache hits flip per-section flags independently so a card whose
     // cache is warm renders straight away while the other still streams.
+    // Skip the sessions cache when skipSessionsCache is set — a dirty flag
+    // written by useInterviewEngine means the cached list is stale and
+    // showing it would cause a visible flicker back to the old entry count.
     try {
-      const cachedSessions = localStorage.getItem(sessionsCacheKey);
+      const cachedSessions = skipSessionsCache ? null : localStorage.getItem(sessionsCacheKey);
       const cachedEvents = localStorage.getItem(eventsCacheKey);
       if (cachedSessions) {
         setSupabaseSessions(JSON.parse(cachedSessions));
@@ -418,36 +574,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     Promise.allSettled([
       getUserSessions(user.id).then(sessions => {
         if (cancelled) return;
-        const mapped = sessions.map(s => ({
-          id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-          focus: s.focus, duration: s.duration,
-          /* Canonical score = the report's blended-and-anchored overall when a
-             report has been generated (report_json.overallScore), else the
-             quick eval persisted at save time (sessions.score). The report
-             page shows the blended number; without this the list/dashboard
-             showed the quick number for the same session (e.g. 64 vs 51).
-             New reports also write the blended value back into sessions.score
-             (evaluate-session saveCachedReport) — this client-side preference
-             additionally reconciles sessions whose reports were cached before
-             that writeback shipped, without forcing a re-evaluation. */
-          score: typeof s.report_json?.overallScore === "number" ? s.report_json.overallScore : s.score,
-          questions: s.questions,
-          ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-          /* Plain-language coaching pair, persisted inside report_json by
-             evaluate-session. Undefined for pre-mvp-8 rows → the card
-             falls back to the legacy strength/weakness one-liners. */
-          coaching: s.report_json?.coaching ?? undefined,
-          /* Per-focus signature strip (mvp-9+), persisted in
-             report_json.focusMetrics. Empty/undefined for older rows → the
-             card renders no instrument strip. */
-          focusMetrics: s.report_json?.focusMetrics ?? undefined,
-          /* Kernel-aware negotiation metrics. The Supabase column type
-             is jsonb so we get an unknown-shaped object back; the
-             RealSession field is strictly typed. Cast is intentional —
-             validateNegotiationMetrics in the report layer is the
-             trust boundary, not this mapping. */
-          negotiationMetrics: (s as { negotiation_metrics?: unknown }).negotiation_metrics as RealSession["negotiationMetrics"] | undefined,
-        }));
+        sessionsFetchedAtRef.current = Date.now();
+        const mapped = sessions.map(mapSessionRecord);
+        setSessionsLoadFailed(false);
         setSupabaseSessions(mapped);
         try { localStorage.setItem(sessionsCacheKey, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
       }).catch(() => {
@@ -458,8 +587,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
             setSyncError("Offline — showing cached data.");
           } else {
             setSyncError("Could not load session data.");
+            setSessionsLoadFailed(true);
           }
-        } catch { setSyncError("Could not load session data."); }
+        } catch { setSyncError("Could not load session data."); setSessionsLoadFailed(true); }
       }).finally(() => { if (!cancelled) setSessionsLoading(false); }),
       // Best-effort fetch of latest analyzed-session flags for the
       // gap-aware "Your next move" CTA. Failure → empty topGaps →
@@ -516,25 +646,39 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     }, 10000);
     return () => { cancelled = true; clearTimeout(timeout); };
     // syncError is read inside one of the inner .catch handlers as a "don't overwrite" guard. Adding it as a dep would refetch the whole dashboard whenever the error string toggles, which is exactly the loop we're trying to avoid.
+    // sessionVersion is intentionally included: invalidateSessions() bumps it to
+    // force a fresh fetch after a session save (B9 fix — no hard reload required).
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, sessionVersion]);
+
+  // Invalidate the sessions cache — bumps sessionVersion so the data-fetch
+  // useEffect re-runs immediately. Also writes a localStorage dirty flag so
+  // a DashboardProvider remount (e.g. returning from /interview via SPA nav)
+  // skips the stale cache and goes straight to a network fetch.
+  const invalidateSessions = useCallback(() => {
+    if (!user?.id) return;
+    try { localStorage.setItem(`hirestepx_sessions_dirty_${user.id}`, "1"); } catch { /* non-critical */ }
+    setSessionVersion(v => v + 1);
   }, [user?.id]);
 
-  // Refetch sessions from Supabase (debounced to prevent rapid-fire calls)
+  // Refetch sessions from Supabase (debounced to prevent rapid-fire calls
+  // on tab-switch. Debounce reduced from 5s → 1s: it now only guards against
+  // rapid visibilitychange retriggers, not the normal post-session navigation.)
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionsFetchedAtRef = useRef(0);
   const refreshSessions = useCallback(() => {
     if (!user?.id) return;
-    // Debounce: skip if a refresh was triggered within the last 5 seconds
+    // Debounce: skip if a refresh was triggered within the last 1 second
     if (refreshTimeoutRef.current) return;
-    refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 5000);
+    // Freshness window: a tab-switch within SESSIONS_FRESH_MS of the last
+    // successful fetch has nothing new to show. Saves invalidate explicitly
+    // (invalidateSessions), so this only gates passive refocus refetches.
+    if (Date.now() - sessionsFetchedAtRef.current < SESSIONS_FRESH_MS) return;
+    refreshTimeoutRef.current = setTimeout(() => { refreshTimeoutRef.current = null; }, 1000);
     getUserSessions(user.id).then(sessions => {
-      const mapped = sessions.map(s => ({
-        id: s.id, date: s.date, type: s.type, difficulty: s.difficulty,
-        focus: s.focus, duration: s.duration, score: s.score, questions: s.questions,
-        ai_feedback: s.ai_feedback, skill_scores: s.skill_scores,
-        coaching: s.report_json?.coaching ?? undefined,
-        focusMetrics: s.report_json?.focusMetrics ?? undefined,
-      }));
-      setSupabaseSessions(mapped);
+      sessionsFetchedAtRef.current = Date.now();
+      const mapped = sessions.map(mapSessionRecord);
+      setSupabaseSessions(prev => (JSON.stringify(prev) === JSON.stringify(mapped) ? prev : mapped));
       try { localStorage.setItem(`hirestepx_cache_sessions_${user.id}`, JSON.stringify(mapped)); } catch { /* expected: localStorage may be unavailable */ }
     }).catch(() => {});
   }, [user?.id]);
@@ -554,10 +698,13 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   }, [user?.id, refreshSessions]);
 
   // Session data
-  const { recentSessions, scoreTrend, skills, overallStats, hasData, skillVelocity } = useMemo(
+  const { recentSessions, scoreTrend, skills, overallStats, hasData, skillVelocity, readinessDelta, realSessions } = useMemo(
     () => getSessionData(user?.targetRole || persisted.targetRole, supabaseSessions),
     [user?.targetRole, persisted.targetRole, supabaseSessions],
   );
+  const practiceCoverage: PracticeCoverage = useMemo(() => computePracticeCoverage(skills), [skills]);
+  const evidenceCapabilities: EvidenceCapability[] = useMemo(() => computeEvidenceCapabilities(realSessions), [realSessions]);
+  const focusRounds: FocusRound[] = useMemo(() => computeFocusRounds(realSessions), [realSessions]);
 
   const weekActivity = useMemo(() => computeWeekActivity(recentSessions), [recentSessions]);
   const currentStreak = useMemo(() => computeStreak(recentSessions), [recentSessions]);
@@ -595,7 +742,10 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* expected: cache read may fail */ }
 
-    const ac = new AbortController();
+    // Not aborted on cleanup: this effect re-runs whenever `user`/`skills`/`recentSessions`
+    // change identity, and an aborted request still burns the server's 5/hour limit while
+    // insightsFetchedRef blocks any refetch — so the result was lost and later calls 429'd.
+    const requestUserId = user.id;
     (async () => {
       try {
         const { authHeaders } = await import("./supabase");
@@ -603,7 +753,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const res = await fetch("/api/generate-insights", {
           method: "POST",
           headers: hdrs,
-          signal: ac.signal,
           body: JSON.stringify({
             role: user.targetRole,
             company: user.targetCompany,
@@ -619,15 +768,15 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         if (res.ok) {
           const data = await res.json();
           if (data.insights && data.insights.length > 0) {
-            setLlmInsights(data.insights);
+            if (insightsUserRef.current === requestUserId) setLlmInsights(data.insights);
             try { localStorage.setItem(cacheKey, JSON.stringify({ insights: data.insights, ts: Date.now() })); } catch { /* expected: localStorage may be unavailable */ }
           }
         }
       } catch {
-        // Silently fall back to template insights (also handles AbortError)
+        // Fall back to template insights; allow a later retry after a network failure
+        if (insightsFetchedRef.current === cacheKey) insightsFetchedRef.current = "";
       }
     })();
-    return () => ac.abort();
   }, [user, skills, recentSessions]);
 
   const aiInsights = llmInsights || fallbackInsights;
@@ -687,7 +836,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       setTimeout(() => setPaymentBanner(null), payment === "success" ? 8000 : 6000);
     }
     const pendingPlan = params.get("plan");
-    if (pendingPlan === "weekly" || pendingPlan === "monthly") {
+    if (pendingPlan === "weekly") {
       setShowUpgradeModal(true);
       window.history.replaceState({}, "", window.location.pathname);
     }
@@ -721,7 +870,6 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const effectiveTier = isTierExpired ? "free" : rawTier;
   const isFree = effectiveTier === "free";
   const isStarter = effectiveTier === "starter";
-  const isPro = effectiveTier === "pro";
   const sessionsUsed = practiceTimestamps.length;
   const sessionsRemaining = Math.max(0, FREE_SESSION_LIMIT - sessionsUsed);
   // Starter is a "Sprint Pack": 5 sessions counted from the day the pack was
@@ -731,19 +879,20 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   // previous calendar-week anchor (Sunday 00:00) wrongly swept in free-tier
   // practice sessions the user did earlier the same week, so a freshly
   // purchased pack could show "5 of 5 used" before any paid session ran.
-  const EIGHT_DAYS_MS = 8 * 24 * 60 * 60 * 1000; // clamp slightly over 7-day pack
-  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  const PACK_VALIDITY_CLAMP_MS = 31 * 24 * 60 * 60 * 1000; // clamp to the 30-day pack + 1 day slack — mirrors the server gate
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
   const subStartMs = user?.subscriptionStart ? new Date(user.subscriptionStart).getTime() : NaN;
-  // Anchor on subscription_start when present; clamp to at most 8 days back
-  // (just over the 7-day pack — mirrors the server gate). If start is missing
-  // derive from subscription_end - 7d; last resort: rolling 7-day lookback.
+  // Anchor on subscription_start when present; clamp to at most 31 days back
+  // (the 30-day pack + 1 day slack — mirrors the server gate). If start is
+  // missing, derive from subscription_end - 30d; last resort: rolling 30-day
+  // lookback.
   const subEndMs = user?.subscriptionEnd ? new Date(user.subscriptionEnd).getTime() : NaN;
   const derivedStartMs = Number.isFinite(subStartMs)
     ? subStartMs
     : Number.isFinite(subEndMs)
-      ? subEndMs - SEVEN_DAYS_MS
-      : Date.now() - SEVEN_DAYS_MS;
-  const packStartMs = Math.max(derivedStartMs, Date.now() - EIGHT_DAYS_MS);
+      ? subEndMs - THIRTY_DAYS_MS
+      : Date.now() - THIRTY_DAYS_MS;
+  const packStartMs = Math.max(derivedStartMs, Date.now() - PACK_VALIDITY_CLAMP_MS);
   const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay()); weekStart.setHours(0, 0, 0, 0);
   // For starter, count within the pack window; other tiers keep the calendar
   // week (used only for informational display, not gating).
@@ -754,21 +903,17 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     } catch { return false; }
   }).length;
   const starterRemaining = Math.max(0, STARTER_WEEKLY_LIMIT - sessionsThisWeek);
-  // Pro plan: 40 sessions per calendar month. Track this so the sidebar
-  // and SessionSetup can show real remaining counts instead of "Unlimited".
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const sessionsThisMonth = practiceTimestamps.filter((t) => {
     try { return new Date(t).getTime() >= monthStart.getTime(); } catch { return false; }
   }).length;
-  const proRemaining = isPro ? Math.max(0, PRO_MONTHLY_LIMIT - sessionsThisMonth) : 0;
   // Users past their plan allotment are NOT at the limit if they hold purchased
   // credits — the backend will consume one on session start. This applies to
-  // all tiers: free (past 2 free sessions), starter (past weekly cap), and
-  // pro (past monthly cap). Credits are a universal top-up, not free-only.
+  // both tiers: free (past 2 free sessions) and starter (past weekly cap).
+  // Credits are a universal top-up, not free-only.
   const atSessionLimit = (isFree && sessionsUsed >= FREE_SESSION_LIMIT && creditBalance === 0)
-    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0)
-    || (isPro && sessionsThisMonth >= PRO_MONTHLY_LIMIT && creditBalance === 0);
+    || (isStarter && sessionsThisWeek >= STARTER_WEEKLY_LIMIT && creditBalance === 0);
 
   const daysLeft = persisted.interviewDate ? daysUntil(persisted.interviewDate) : 0;
   const readinessScore = scoreTrend.length > 0 && skills.length > 0 ? computeReadiness(scoreTrend, skills) : 0;
@@ -818,45 +963,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     showToast("CSV exported");
   }, [recentSessions, showToast]);
 
-  const handleExportPDF = useCallback(() => {
-    const report = generateReport(persisted.userName, overallStats, skills, recentSessions);
-    const rows = recentSessions.slice(0, 20).map(s =>
-      `<tr><td>${s.date}</td><td>${s.type}</td><td>${s.score}</td><td>${s.topStrength || "-"}</td><td>${s.topWeakness || "-"}</td></tr>`
-    ).join("");
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>HireStepX Progress Report</title>
-<style>body{font-family:Arial,Helvetica,sans-serif;color:#1a1a1a;max-width:720px;margin:0 auto;padding:40px 24px;line-height:1.6}
-h1{font-size:22px;margin-bottom:4px}h2{font-size:16px;margin-top:32px;border-bottom:1px solid #ddd;padding-bottom:6px}
-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid #eee}
-th{background:#f5f5f5;font-weight:600}.meta{color:#666;font-size:13px}pre{white-space:pre-wrap;font-size:12px;background:#f9f9f9;padding:16px;border-radius:8px}
-@media print{body{padding:20px}}</style></head><body>
-<h1>HireStepX Progress Report</h1>
-<p class="meta">${persisted.userName || "User"} · Generated ${new Date().toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</p>
-<h2>Overview</h2>
-<p>Sessions: ${overallStats.sessionsCompleted} · Average Score: ${overallStats.avgScore} · Improvement: ${overallStats.improvement > 0 ? "+" : ""}${overallStats.improvement}%</p>
-${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th>Change</th></tr>${skills.map(s => `<tr><td>${s.name}</td><td>${s.score}/100</td><td>${s.score - s.prev >= 0 ? "+" : ""}${s.score - s.prev}</td></tr>`).join("")}</table>` : ""}
-<h2>Recent Sessions</h2>
-<table><tr><th>Date</th><th>Type</th><th>Score</th><th>Strength</th><th>To Improve</th></tr>${rows}</table>
-<h2>Full Report</h2><pre>${report.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre>
-</body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); w.print(); }
-    showToast("PDF export opened — use Save as PDF in print dialog");
-  }, [persisted.userName, overallStats, skills, recentSessions, showToast]);
-
   /* ─── Memoized sub-context values ─── */
 
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
-    weekActivity, currentStreak, readinessScore,
-    calendarEvents, topGaps, refreshSessions,
-    sessionsLoading, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, calendarEvents, topGaps, refreshSessions, sessionsLoading, eventsLoading]);
+    weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, focusRounds,
+    calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
+    sessionsLoading, sessionsLoadFailed, eventsLoading,
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, focusRounds, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, sessionsLoadFailed, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
-    isFree, isStarter, isPro, atSessionLimit,
+    isFree, isStarter, atSessionLimit,
     sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek,
-    sessionsThisMonth, proRemaining, creditBalance, creditsLoaded,
-  }), [isFree, isStarter, isPro, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, proRemaining, creditBalance, creditsLoaded]);
+    sessionsThisMonth, creditBalance, creditsLoaded,
+  }), [isFree, isStarter, atSessionLimit, sessionsUsed, sessionsRemaining, starterRemaining, sessionsThisWeek, sessionsThisMonth, creditBalance, creditsLoaded]);
+
+  const uiActionsValue: UIActionsContextValue = useMemo(() => ({
+    setShowUpgradeModal, showToast, refreshCreditBalance,
+    setCreditBalanceDirect: setCreditBalance,
+  }), [showToast, refreshCreditBalance, setCreditBalance]);
 
   const uiValue: UIContextValue = useMemo(() => ({
     showUpgradeModal, setShowUpgradeModal,
@@ -874,7 +999,7 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     returnContext, smartSchedule, prepPlan, companyReadiness, curriculumState,
     badges, dailyChallenge, practiceReminder,
     googleSyncStatus, googleSyncError, hasGoogleToken, syncGoogleCalendar,
-    handleStartSession, handleExport, handleDownload, handleExportCSV, handleExportPDF,
+    handleStartSession, handleExport, handleDownload, handleExportCSV,
   }), [
     persisted, updatePersisted,
     displayName, isNewUser, daysLeft,
@@ -882,17 +1007,19 @@ ${skills.length > 0 ? `<h2>Skills</h2><table><tr><th>Skill</th><th>Score</th><th
     returnContext, smartSchedule, prepPlan, companyReadiness, curriculumState,
     badges, dailyChallenge, practiceReminder,
     googleSyncStatus, googleSyncError, hasGoogleToken, syncGoogleCalendar,
-    handleStartSession, handleExport, handleDownload, handleExportCSV, handleExportPDF,
+    handleStartSession, handleExport, handleDownload, handleExportCSV,
   ]);
 
   return (
     <SessionsContext.Provider value={sessionsValue}>
       <SubscriptionContext.Provider value={subscriptionValue}>
+        <UIActionsContext.Provider value={uiActionsValue}>
         <UIContext.Provider value={uiValue}>
           <CoreContext.Provider value={coreValue}>
             {children}
           </CoreContext.Provider>
         </UIContext.Provider>
+        </UIActionsContext.Provider>
       </SubscriptionContext.Provider>
     </SessionsContext.Provider>
   );

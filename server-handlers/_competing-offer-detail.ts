@@ -127,6 +127,7 @@ function maskCurrentCtcClauses(text: string): string {
 function extractCompetingAmount(
   text: string,
   hasCompetingContext: boolean,
+  hasNamedCompany: boolean,
 ): number | null {
   /* Require ANY competing-offer contextual signal in the same utterance:
    *   - a recognised company name OR a status/stage pattern (caller
@@ -146,6 +147,24 @@ function extractCompetingAmount(
     const n = parseFloat(lpa[1]);
     if (Number.isFinite(n)) return n;
   }
+  /* S19-B1 (2026-07-22) — bare number fallback for "at N" / "for N" pattern.
+   * "I have an offer from Zomato at 38, can you match it?" sets company="zomato"
+   * and stage="offered" but the amount "38" has no LPA/lakh suffix, so
+   * AMOUNT_LPA_RE returns null. Guard: requires hasNamedCompany (not just any
+   * hasCompetingContext) because status="letter" alone (from "offer letter" in an
+   * acceptance utterance like "move ahead with the offer letter") also sets
+   * hasCompetingContext=true and would falsely extract "24.5" from the fitment
+   * figure in the same sentence. A status-only signal without a named company is
+   * too ambiguous — "our offer letter" vs "their offer letter" — to safely read
+   * a bare number as the competing amount.
+   * Negative lookahead excludes AM/PM clock-time matches ("interview at 10am"). */
+  if (hasNamedCompany) {
+    const bare = /\b(?:at|for|of)\s+(?:₹\s*)?(\d+(?:\.\d+)?)\b(?!\s*(?:am|pm|a\.m\.|p\.m\.))/i.exec(scan);
+    if (bare && bare[1]) {
+      const n = parseFloat(bare[1]);
+      if (Number.isFinite(n) && n > 0) return n;
+    }
+  }
   return null;
 }
 
@@ -160,6 +179,29 @@ const ON_HOLD_PATTERNS: RegExp[] = [
   /\b(?:bgv|background\s+(?:check|verification))\s+(?:is\s+)?(?:pending|delayed|stuck|on\s+hold)/i,
   /\b(?:they.?ve\s+(?:put|placed)\s+(?:my\s+)?(?:offer|joining)\s+on\s+hold|put\s+on\s+hold)\b/i,
 ];
+
+/* OA-B65 — competing-offer REVOCATION (the candidate withdraws their own
+ * BATNA: "that offer fell through", "they backed out", "it's off the table
+ * now"). Distinct from ON_HOLD (delayed / frozen but still real): a revoked
+ * offer carries NO leverage, so the kernel must clear the numeric
+ * competingOffer entirely, not merely flag it weakened. Kept revocation-
+ * specific in wording; the kernel additionally gates the clear on an offer
+ * actually being on record, so a stray match is a harmless no-op. */
+const REVOKED_PATTERNS: RegExp[] = [
+  /\b(?:offer|it|that|they|the\s+other\s+one)\s+(?:has\s+|had\s+|just\s+|'s\s+|s\s+)?(?:fell|fallen|falls)\s+(?:through|apart|out)\b/i,
+  /\b(?:offer\s+)?(?:fell|fallen)\s+(?:through|apart)\b/i,
+  /\b(?:no\s+longer\s+(?:on\s+the\s+table|valid|available|an\s+option)|off\s+the\s+table(?:\s+now)?|not\s+(?:happening|going\s+(?:ahead|through))(?:\s+anymore)?)\b/i,
+  /\b(?:they|recruiter|company)\s+(?:backed|pulled|dropped)\s+out\b/i,
+  /\b(?:backed|pulled|dropped)\s+out\s+(?:of\s+)?(?:the\s+|that\s+|their\s+)?offer\b/i,
+  /\b(?:offer\s+(?:got\s+|was\s+|has\s+been\s+)?(?:rescinded|revoked|withdrawn|cancell?ed|retracted|pulled))\b/i,
+];
+
+/** OA-B65 — true when this utterance withdraws a previously-stated competing
+ *  offer. Single source of truth for the kernel's leverage-clear. */
+export function isCompetingOfferRevoked(text: string): boolean {
+  if (!text) return false;
+  return REVOKED_PATTERNS.some((p) => p.test(text));
+}
 
 /* Recognized India-market hiring brands. Patterns require word boundaries
  * to avoid catching substrings (e.g. "tcs" inside other words). */
@@ -187,13 +229,45 @@ const COMPANY_PATTERNS: { canonical: string; pattern: RegExp }[] = [
   { canonical: "myntra", pattern: /\b(?:myntra)\b/i },
   { canonical: "byju's", pattern: /\b(?:byju.?s?|byjus)\b/i },
   { canonical: "unacademy", pattern: /\b(?:unacademy)\b/i },
-  { canonical: "razorpay", pattern: /\b(?:razorpay)\b/i },
   { canonical: "atlassian", pattern: /\b(?:atlassian)\b/i },
   { canonical: "salesforce", pattern: /\b(?:salesforce|sfdc)\b/i },
   { canonical: "oracle", pattern: /\b(?:oracle)\b/i },
   { canonical: "sap", pattern: /\b(?:sap)\b/i },
   { canonical: "adobe", pattern: /\b(?:adobe)\b/i },
   { canonical: "intuit", pattern: /\b(?:intuit)\b/i },
+  /* S40-B3 (2026-07-23) — Indian startup brands missing from the list.
+   * Candidates routinely cite these as competing offers; without a match
+   * the company field stays null, hasConcreteTell() never fires, and the
+   * fake-leverage-challenge probe is never armed. */
+  { canonical: "meesho", pattern: /\b(?:meesho)\b/i },
+  { canonical: "nykaa", pattern: /\b(?:nykaa)\b/i },
+  { canonical: "zepto", pattern: /\b(?:zepto)\b/i },
+  { canonical: "blinkit", pattern: /\b(?:blinkit|grofers)\b/i },
+  { canonical: "groww", pattern: /\b(?:groww)\b/i },
+  { canonical: "oyo", pattern: /\b(?:oyo(?:\s+rooms?)?)\b/i },
+  { canonical: "dream11", pattern: /\b(?:dream\s*11|dream\s*xi)\b/i },
+  { canonical: "mpl", pattern: /\b(?:mpl|mobile\s+premier\s+league)\b/i },
+  { canonical: "slice", pattern: /\b(?:slice\s+(?:pay|card|fintech)?|slicepay)\b/i },
+  { canonical: "jar", pattern: /\b(?:jar\s+(?:app)?)\b/i },
+  { canonical: "juspay", pattern: /\b(?:juspay)\b/i },
+  { canonical: "dunzo", pattern: /\b(?:dunzo)\b/i },
+  { canonical: "urban-company", pattern: /\b(?:urban\s+company|urban\s+clap|urbanclap)\b/i },
+  { canonical: "vedantu", pattern: /\b(?:vedantu)\b/i },
+  { canonical: "physics-wallah", pattern: /\b(?:physics\s+wallah|pw(?:\s+(?:live|app))?)\b/i },
+  { canonical: "mfine", pattern: /\b(?:mfine)\b/i },
+  { canonical: "licious", pattern: /\b(?:licious)\b/i },
+  { canonical: "porter", pattern: /\b(?:porter(?:\s+(?:delivery|logistics))?)\b/i },
+  { canonical: "purplle", pattern: /\b(?:purplle)\b/i },
+  { canonical: "healthkart", pattern: /\b(?:healthkart|hk\s+vitals)\b/i },
+  { canonical: "sharechat", pattern: /\b(?:sharechat|moj)\b/i },
+  { canonical: "dailyhunt", pattern: /\b(?:dailyhunt|verse\s+innovation)\b/i },
+  { canonical: "logitech", pattern: /\b(?:logitech)\b/i },
+  { canonical: "nutanix", pattern: /\b(?:nutanix)\b/i },
+  { canonical: "rubrik", pattern: /\b(?:rubrik)\b/i },
+  { canonical: "palo-alto", pattern: /\b(?:palo\s*alto\s*networks|palo\s*alto)\b/i },
+  { canonical: "crowdstrike", pattern: /\b(?:crowdstrike)\b/i },
+  { canonical: "servicenow", pattern: /\b(?:servicenow)\b/i },
+  { canonical: "workday", pattern: /\b(?:workday)\b/i },
 ];
 
 const STATUS_PATTERNS: { kind: CompetingOfferStatus; pattern: RegExp }[] = [
@@ -257,10 +331,24 @@ const PROOF_SHARE_PATTERNS: RegExp[] = [
  * reading the wrong source (per-utterance extraction). This now reads
  * the ACCUMULATED CompetingOfferDetail (the merged state object) so a
  * dribbled disclosure satisfies the predicate without forcing the
- * candidate to re-state everything in a single sentence. */
+ * candidate to re-state everything in a single sentence.
+ *
+ * S19-B1/B3 (2026-07-22) — stage "offered"/"accepted" is accepted as an
+ * alternative to status. "I have an offer from Zomato at 38" extracts
+ * stage="offered" but status=null (no verbal/email/letter word). Without
+ * this arm, hasConcreteTell always returned false for the most common
+ * disclosure pattern — at counterRound>=1 the defensive ladder (comparative-
+ * anchoring) fired instead of fake-leverage-challenge, ignoring the
+ * competing offer entirely. "interviewing" is explicitly excluded because
+ * the candidate is still in process and has no offer yet. */
 export function hasConcreteTell(detail: CompetingOfferDetail | null | undefined): boolean {
   if (!detail) return false;
-  return detail.company != null && detail.status != null && detail.amount != null;
+  const hasConcreteStage = detail.stage === "offered" || detail.stage === "accepted";
+  return (
+    detail.company != null &&
+    detail.amount != null &&
+    (detail.status != null || hasConcreteStage)
+  );
 }
 
 /* finding #110 (2026-06-20) — canonicalize a free-text company name to a
@@ -290,6 +378,15 @@ const COMPANY_DISPLAY: Record<string, string> = {
   myntra: "Myntra", "byju's": "BYJU'S", unacademy: "Unacademy",
   atlassian: "Atlassian", salesforce: "Salesforce", oracle: "Oracle",
   sap: "SAP", adobe: "Adobe", intuit: "Intuit",
+  meesho: "Meesho", nykaa: "Nykaa", zepto: "Zepto", blinkit: "Blinkit",
+  groww: "Groww", oyo: "OYO", dream11: "Dream11", mpl: "MPL",
+  slice: "Slice", jar: "Jar", juspay: "Juspay", dunzo: "Dunzo",
+  "urban-company": "Urban Company", vedantu: "Vedantu",
+  "physics-wallah": "Physics Wallah", mfine: "mfine", licious: "Licious",
+  porter: "Porter", purplle: "Purplle", healthkart: "HealthKart",
+  sharechat: "ShareChat", dailyhunt: "Dailyhunt", logitech: "Logitech",
+  nutanix: "Nutanix", rubrik: "Rubrik", "palo-alto": "Palo Alto Networks",
+  crowdstrike: "CrowdStrike", servicenow: "ServiceNow", workday: "Workday",
 };
 
 export function displayCompany(name: string | null | undefined): string {
@@ -350,7 +447,7 @@ export function extractCompetingOfferDetail(
    * Otherwise the candidate's own target / current CTC / market quote
    * would be mis-attributed as the competing-offer amount. */
   const hasCompetingContext = company != null || status != null || stage != null;
-  const amount = extractCompetingAmount(text, hasCompetingContext);
+  const amount = extractCompetingAmount(text, hasCompetingContext, company != null);
 
   /* fake-leverage-challenge — proofProvided at PARSE time only fires on
    * an explicit proof-share pattern (offer letter / redacted PDF /

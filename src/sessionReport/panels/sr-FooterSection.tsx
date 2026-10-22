@@ -3,7 +3,8 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f } from "../tokens";
+import { t, f, size } from "../tokens";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 export function FooterSection({
   onTrustAnswer,
@@ -28,6 +29,21 @@ export function FooterSection({
         padding: "8px 4px",
       }}
     >
+      <h2
+        style={{
+          position: "absolute",
+          width: 1,
+          height: 1,
+          padding: 0,
+          margin: -1,
+          overflow: "hidden",
+          clip: "rect(0,0,0,0)",
+          whiteSpace: "nowrap",
+          border: 0,
+        }}
+      >
+        Report feedback
+      </h2>
       <div
         style={{
           display: "flex",
@@ -37,105 +53,85 @@ export function FooterSection({
           gap: 12,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.inkFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
             <polyline points="9 12 11 14 15 10" />
           </svg>
-          Your data is private and secure.
+          Your data is secure. You control employer visibility in Settings.
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
           Was this report helpful?
-          <button
-            type="button"
-            className={`ir-thumb-btn${thumb === "up" ? " active" : ""}`}
-            aria-label="Helpful"
-            aria-pressed={thumb === "up"}
-            onClick={() => { setThumb(thumb === "up" ? null : "up"); setReason(null); }}
+          <ToggleGroup
+            type="single"
+            value={thumb ?? ""}
+            onValueChange={(v) => { setThumb((v as "up" | "down") || null); setReason(null); }}
+            aria-label="Was this report helpful?"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className={`ir-thumb-btn${thumb === "down" ? " active" : ""}`}
-            aria-label="Not helpful"
-            aria-pressed={thumb === "down"}
-            onClick={() => { setThumb(thumb === "down" ? null : "down"); setReason(null); }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
-            </svg>
-          </button>
+            <ToggleGroupItem value="up" aria-label="Helpful">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3" />
+              </svg>
+            </ToggleGroupItem>
+            <ToggleGroupItem value="down" aria-label="Not helpful">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+              </svg>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
       {thumb && (
         <div
           className="ir-feedback-row"
-          role="group"
-          aria-label="What was off?"
-          style={{ justifyContent: "flex-end", paddingTop: 4 }}
+          style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", paddingTop: 4 }}
         >
-          <span style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+          <span style={{ fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
             {thumb === "down" ? "What was off?" : "What worked?"}
           </span>
-          {reasons.map((r) => (
-            <button
-              key={r}
-              type="button"
-              className={`ir-feedback-tag${reason === r ? " active" : ""}`}
-              aria-pressed={reason === r}
-              onClick={() => setReason(reason === r ? null : r)}
-            >
-              {r}
-            </button>
-          ))}
+          <ToggleGroup
+            type="single"
+            value={reason ?? ""}
+            onValueChange={(v) => setReason(v || null)}
+            aria-label={thumb === "down" ? "What was off?" : "What worked?"}
+          >
+            {reasons.map((r) => (
+              <ToggleGroupItem key={r} value={r}>
+                {r}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
           {reason && (
-            <span style={{ fontFamily: f.sans, fontSize: 11, color: t.success, fontWeight: 500 }}>
-              ✓ Thanks — recorded
+            <span style={{ fontFamily: f.sans, fontSize: size.xs, color: t.success, fontWeight: 500 }}>
+              ✓ Thanks, recorded
             </span>
           )}
         </div>
       )}
-      <div className="ir-poll-row" style={{ paddingTop: 6, justifyContent: "space-between" }}>
-        <div className="ir-poll-row">
+      <div className="ir-poll-row" style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: 12, paddingTop: 6, justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span>Did this score feel fair?</span>
-          <button
-            type="button"
-            className={`ir-poll-yes${trust === "yes" ? " active" : ""}`}
-            aria-pressed={trust === "yes"}
-            onClick={() => { setTrust("yes"); onTrustAnswer?.("yes"); }}
+          <ToggleGroup
+            type="single"
+            value={trust ?? ""}
+            onValueChange={(v) => { if (!v) return; setTrust(v as "yes" | "no"); onTrustAnswer?.(v as "yes" | "no"); }}
+            aria-label="Did this score feel fair?"
           >
-            Yes
-          </button>
-          <button
-            type="button"
-            className={`ir-poll-no${trust === "no" ? " active" : ""}`}
-            aria-pressed={trust === "no"}
-            onClick={() => { setTrust("no"); onTrustAnswer?.("no"); }}
-          >
-            No
-          </button>
+            <ToggleGroupItem value="yes">Yes</ToggleGroupItem>
+            <ToggleGroupItem value="no">No</ToggleGroupItem>
+          </ToggleGroup>
         </div>
-        <div className="ir-poll-row">
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span>Will you act on this feedback?</span>
-          <button
-            type="button"
-            className={`ir-poll-yes${useful === "yes" ? " active" : ""}`}
-            aria-pressed={useful === "yes"}
-            onClick={() => { setUseful("yes"); onUsefulAnswer?.("yes"); }}
+          <ToggleGroup
+            type="single"
+            value={useful ?? ""}
+            onValueChange={(v) => { if (!v) return; setUseful(v as "yes" | "no"); onUsefulAnswer?.(v as "yes" | "no"); }}
+            aria-label="Will you act on this feedback?"
           >
-            Yes
-          </button>
-          <button
-            type="button"
-            className={`ir-poll-no${useful === "no" ? " active" : ""}`}
-            aria-pressed={useful === "no"}
-            onClick={() => { setUseful("no"); onUsefulAnswer?.("no"); }}
-          >
-            No
-          </button>
+            <ToggleGroupItem value="yes">Yes</ToggleGroupItem>
+            <ToggleGroupItem value="no">No</ToggleGroupItem>
+          </ToggleGroup>
         </div>
       </div>
     </footer>

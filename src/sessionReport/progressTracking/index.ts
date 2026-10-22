@@ -140,6 +140,29 @@ export function computeTrend(
   };
 }
 
+/* Scope a multi-session point series to END at a specific session.
+ *
+ * A session report's Skill Progress panel must trend the VIEWED session vs
+ * the sessions before it — not vs whatever the user's globally-latest
+ * session happens to be. Since `fetchSkillProgressTrends` pulls the whole
+ * recent history (newest-first) and `computeTrend` treats the chronologically
+ * last point as "latest", opening any non-latest report would otherwise show
+ * the newest session's numbers for every skill. (The anchor axis alone looked
+ * session-correct because it's grounded per-viewed-session upstream — which is
+ * exactly what produced the "8 skills identical across reports, anchor varies"
+ * incoherence.) Drop every point newer than the viewed session by completedAt
+ * so the viewed session becomes the trend's endpoint. If the viewed session
+ * isn't in the series (e.g. older than the fetch window), return unchanged. */
+export function capHistoryToSession(
+  history: SkillProgressPoint[],
+  viewedSessionId: string,
+): SkillProgressPoint[] {
+  const viewed = history.filter((p) => p.sessionId === viewedSessionId);
+  if (viewed.length === 0) return history;
+  const cutoff = Math.max(...viewed.map((p) => p.completedAt));
+  return history.filter((p) => p.completedAt <= cutoff);
+}
+
 /* Convenience: compute trends for every unique skill present in
  * `history`. Order: alphabetical by skill name for stable rendering. */
 export function computeAllTrends(history: SkillProgressPoint[]): SkillTrend[] {
@@ -246,4 +269,111 @@ export function sessionRowsToProgressPoints(
     }
   }
   return points;
+}
+
+/* ── No-counter anchor grounding (single source) ────────────────────────
+ * When the negotiation kernel says the candidate never named a counter,
+ * any anchor / counter / specificity skill score is a provable failure: an
+ * anchor score IS the strength of the number you named, and none was named.
+ * This is the ONE grounding rule the whole app applies wherever ungrounded
+ * persisted skill_scores are consumed:
+ *   - the write seam (save-session.ts) — so the stored row is coherent, and
+ *   - the cross-session read seam (fetchSkillProgressTrends) — so the Skill
+ *     Progress panel matches the same report's Skills Breakdown / hero for
+ *     the session being viewed (rows saved before the write fix carry raw
+ *     values otherwise).
+ * Keyed on candidateAsk (null ⇒ no counter). Only invoked when the caller
+ * has an AUTHORITATIVE candidateAsk for the row — the render adapter's
+ * superset value (kernel-persisted OR transcript-recovered), never a
+ * kernel-only field — so a counter the kernel missed but the transcript
+ * caught is not wrongly capped. Leverage / package / composure axes,
+ * demonstrable without a hard counter, pass through untouched. Values are
+ * a bare number or a legacy { score } wrapper — both shapes preserved. */
+export const NEG_ANCHOR_SKILL_KEY_RE = /anchor|counter|specificity/i;
+export const NO_ANCHOR_CEILING = 35;
+export function groundNoCounterSkillScores<T extends Record<string, unknown>>(
+  skillScores: T | null | undefined,
+  candidateAsk: number | null,
+): T | null | undefined {
+  if (!skillScores || candidateAsk !== null) return skillScores;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(skillScores)) {
+    if (NEG_ANCHOR_SKILL_KEY_RE.test(key)) {
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        out[key] = Math.min(raw, NO_ANCHOR_CEILING);
+        continue;
+      }
+      if (raw && typeof raw === "object" && typeof (raw as { score?: unknown }).score === "number") {
+        const r = raw as { score: number };
+        out[key] = { ...r, score: Math.min(r.score, NO_ANCHOR_CEILING) };
+        continue;
+      }
+    }
+    out[key] = raw;
+  }
+  return out as T;
+}
+
+/* S44-B13 (2026-07-23) — gap-closure cap at the write seam.
+ *
+ * The adapter's groundNegotiationReport caps outcome-dependent skill axes
+ * (leverage, anchor, closing, concession, etc.) at render time based on
+ * how much of the ask-vs-offer gap the candidate closed. This is the right
+ * economic truth: a candidate who accepted ₹45L on a ₹55L ask after a ₹43L
+ * opening did NOT demonstrate strong leverage skill. But the cap only lives
+ * in the adapter — the raw LLM value (95/100) was written to the DB and
+ * shown as-is in the Skill Progress panel ("Across Sessions"), creating a
+ * direct contradiction with the Skills Breakdown on the SAME report page.
+ *
+ * Fix: apply the SAME ceiling at write time so the persisted skill_scores
+ * already reflect economic reality. The ceiling schedule mirrors the adapter:
+ *   gap < 10% → ceiling 45  (accepted, closed almost nothing)
+ *   gap < 30% → ceiling 60  (token movement)
+ *   gap < 55% → ceiling 75  (closed under half)
+ *   gap ≥ 55% → uncapped    (genuinely closed the gap)
+ *
+ * Only outcome-dependent axes are capped — the same /leverage|clos|anchor|
+ * concession|package|deal|counter|trade|structural|walk/ regex used in the
+ * adapter. Demeanour axes (composure, professional tone) pass through. */
+const NEG_OUTCOME_SKILL_KEY_RE = /leverage|clos(?:e|ing)|anchor|concession|package|deal|counter|trade|structural|walk/i;
+
+export function groundGapClosureSkillScores<T extends Record<string, unknown>>(
+  skillScores: T | null | undefined,
+  outcome: string | null,
+  candidateAskLpa: number | null,
+  initialOfferLpa: number | null | undefined,
+  finalOfferLpa: number | null | undefined,
+): T | null | undefined {
+  if (!skillScores || outcome !== "accepted") return skillScores;
+  if (
+    typeof initialOfferLpa !== "number" ||
+    typeof finalOfferLpa !== "number" ||
+    typeof candidateAskLpa !== "number" ||
+    candidateAskLpa <= initialOfferLpa
+  ) return skillScores;
+  const gapClosurePct = Math.max(0, Math.min(100,
+    Math.round(((finalOfferLpa - initialOfferLpa) / (candidateAskLpa - initialOfferLpa)) * 100)
+  ));
+  let ceiling: number | null = null;
+  if (gapClosurePct < 10) ceiling = 45;
+  else if (gapClosurePct < 30) ceiling = 60;
+  else if (gapClosurePct < 55) ceiling = 75;
+  if (ceiling === null) return skillScores;
+  const cap = ceiling;
+  const out: Record<string, unknown> = {};
+  for (const [key, raw] of Object.entries(skillScores)) {
+    if (NEG_OUTCOME_SKILL_KEY_RE.test(key)) {
+      if (typeof raw === "number" && Number.isFinite(raw)) {
+        out[key] = Math.min(raw, cap);
+        continue;
+      }
+      if (raw && typeof raw === "object" && typeof (raw as { score?: unknown }).score === "number") {
+        const r = raw as { score: number };
+        out[key] = { ...r, score: Math.min(r.score, cap) };
+        continue;
+      }
+    }
+    out[key] = raw;
+  }
+  return out as T;
 }

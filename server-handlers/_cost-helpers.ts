@@ -14,11 +14,15 @@
  * per-turn seconds once analytics ingestion is live. */
 
 export interface CostRates {
-  /** Blended (in+out) USD per million tokens, primary LLM (Groq Llama-class). */
+  /** Blended (in+out) USD per million tokens for calls logged with
+   *  is_fallback=false. Since Gemini became primary for big/slow calls,
+   *  this bucket mixes Gemini (slow-path primary) and Groq (fast-path
+   *  primary) token volume — see the rate derivation note below. */
   llmUsdPerMToken: number;
-  /** Blended USD per million tokens, fallback LLM (Gemini Flash). */
+  /** Blended USD per million tokens for calls logged with is_fallback=true
+   *  (mixes Gemini fast-path fallback and Groq slow-path fallback). */
   llmFallbackUsdPerMToken: number;
-  /** USD per million characters, TTS (Azure/Cartesia/Sarvam ~ same order). */
+  /** USD per million characters, TTS — primary provider (Sarvam bulbul:v3). */
   ttsUsdPerMChar: number;
   /** USD per STT session. Estimate: avg session minutes × per-minute rate. */
   sttUsdPerCall: number;
@@ -26,14 +30,55 @@ export interface CostRates {
   usdToInr: number;
 }
 
-/** Defaults: public list rates as of mid-2026. VERIFY before locking price. */
+/** Defaults: public list rates as of 2026-10-03. VERIFY before locking price.
+ *
+ * Both LLM numbers below are volume-weighted blends, not a single model's
+ * rate — re-derive the weights from llm_usage/PostHog model-volume mix
+ * whenever the provider chain or call-routing (fast vs slow) changes
+ * materially, not just when a vendor reprices:
+ *  - llmUsdPerMToken (is_fallback=false, last 7d mix ~84% Gemini 3.5
+ *    Flash-Lite slow-path-primary @ $0.30 in/$2.50 out ≈ $1.40/M avg,
+ *    ~16% Groq GPT-OSS 20B fast-path-primary @ $0.075 in/$0.30 out ≈
+ *    $0.1875/M avg) → weighted ≈ $1.20/M.
+ *  - llmFallbackUsdPerMToken (is_fallback=true, ~97% Gemini fast-path
+ *    fallback ≈ $1.40/M, ~3% Groq GPT-OSS 120B slow-path fallback @
+ *    $0.15 in/$0.60 out ≈ $0.375/M avg) → weighted ≈ $1.37/M.
+ * The previous constants (0.7 / 0.3) predated Gemini becoming primary for
+ * slow calls and modeled Gemini at its input-only price, undercounting its
+ * real (output-heavy) blended cost by ~4-5x on the fallback bucket. */
 export const DEFAULT_COST_RATES: CostRates = {
-  llmUsdPerMToken: 0.7, // Groq Llama 3.3 70B, blended ~$0.59 in / $0.79 out
-  llmFallbackUsdPerMToken: 0.3, // Gemini 2.x Flash, blended
-  ttsUsdPerMChar: 16, // Azure Standard $16 / 1M chars (Cartesia/Sarvam comparable)
+  llmUsdPerMToken: 1.2,
+  llmFallbackUsdPerMToken: 1.37,
+  // Sarvam bulbul:v3 (primary TTS as of Aug 2026 migration): ₹30/10K chars
+  // = ₹3000/1M chars ≈ $35.71/1M @ usdToInr below. bulbul:v2 was ₹15/10K
+  // (~$16.7/1M, coincidentally close to the old Azure-list-price placeholder
+  // this constant used to carry) — update this alongside any future Sarvam
+  // model/price change so the credit guardrail (_sarvam-credit-guard.ts)
+  // and admin cost dashboard don't quietly under-count real spend.
+  ttsUsdPerMChar: 35.71,
   sttUsdPerCall: 0.0077, // ≈ 1.8 min avg × $0.0043/min (Deepgram Nova) — rough
   usdToInr: 84,
 };
+
+/** ISO date DEFAULT_COST_RATES was last deliberately checked against a real
+ * provider price signal — bump this (alongside the rate itself) whenever a
+ * rate changes for a KNOWN reason, e.g. the bulbul:v2→v3 migration above.
+ * Read by the admin health-alert staleness check (admin-data.ts) so a quiet
+ * vendor repricing or expired volume-discount tier the team never hears
+ * about doesn't go unnoticed indefinitely — see RATE_STALENESS_THRESHOLD_DAYS. */
+export const RATES_LAST_VERIFIED_AT = "2026-10-03";
+
+/** Days after which an unconfirmed rate card is flagged stale. */
+export const RATE_STALENESS_THRESHOLD_DAYS = 45;
+
+export function rateCardAgeDays(now: number = Date.now()): number {
+  const verified = new Date(RATES_LAST_VERIFIED_AT).getTime();
+  return Math.max(0, Math.floor((now - verified) / 86_400_000));
+}
+
+export function isRateCardStale(now: number = Date.now()): boolean {
+  return rateCardAgeDays(now) > RATE_STALENESS_THRESHOLD_DAYS;
+}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -48,6 +93,34 @@ export function ttsInr(chars: number, rates: CostRates = DEFAULT_COST_RATES): nu
 
 export function sttInr(calls: number, rates: CostRates = DEFAULT_COST_RATES): number {
   return Math.max(0, calls) * rates.sttUsdPerCall * rates.usdToInr;
+}
+
+/** Public list USD per million tokens {input, output}, matched by substring of
+ *  the logged model id (most specific first). Unknown models fall back to the
+ *  blended rate. */
+const MODEL_USD_PER_M: Array<[string, { in: number; out: number }]> = [
+  ["gemini-3.5-flash-lite", { in: 0.3, out: 2.5 }],
+  ["gemini-2.5-flash-lite", { in: 0.1, out: 0.4 }],
+  ["gpt-oss-120b", { in: 0.15, out: 0.6 }],
+  ["gpt-oss-20b", { in: 0.075, out: 0.3 }],
+];
+
+export function llmCallInr(
+  call: { model?: string | null; promptTokens: number; completionTokens: number; totalTokens: number; isFallback: boolean },
+  rates: CostRates = DEFAULT_COST_RATES,
+): number {
+  const m = (call.model || "").toLowerCase();
+  const hit = MODEL_USD_PER_M.find(([k]) => m.includes(k));
+  if (hit && (call.promptTokens > 0 || call.completionTokens > 0)) {
+    const usd = (call.promptTokens * hit[1].in + call.completionTokens * hit[1].out) / 1_000_000;
+    return usd * rates.usdToInr;
+  }
+  return llmInr(call.totalTokens, call.isFallback, rates);
+}
+
+/** India (UTC+5:30) calendar date of an ISO timestamp — "today" for the admin. */
+export function istDate(iso: string | number): string {
+  return new Date(new Date(iso).getTime() + 19_800_000).toISOString().slice(0, 10);
 }
 
 export interface CostInputs {

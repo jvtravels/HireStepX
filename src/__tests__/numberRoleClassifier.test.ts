@@ -27,6 +27,36 @@ const ROWS: Row[] = [
   /* ── Current-CTC cues ──────────────────────────────────────────── */
   { label: "currently earning N",        text: "I am currently earning 18 LPA",         expect: { currentCtc: 18 } },
   { label: "my current CTC",             text: "My current CTC is 22 LPA",              expect: { currentCtc: 22 } },
+  /* OA-B2: bare comma-grouped absolute rupees must bind through the same
+   * shared input normalisation (substituteAbsoluteRupees) as the fact parser. */
+  { label: "B2 Indian-grouped current", text: "My current CTC is 48,00,000",           expect: { currentCtc: 48 } },
+  { label: "B2 crore-scale current",    text: "current package 1,20,00,000",            expect: { currentCtc: 120 } },
+  { label: "B2 Western-grouped current",text: "my salary is 4,800,000 per annum",       expect: { currentCtc: 48 } },
+  { label: "B2 count is NOT pay",       text: "we serve 1,50,000 users",                expect: { currentCtc: null, target: null } },
+  /* OA-B71: foreign-currency disclosures normalise to LPA at the SAME shared
+   * input boundary (substituteForeignCurrency) so both subsystems bind them —
+   * and the pre-fix confident-wrong binds (AED→₹4L, £/€ raw→LPA) are gone.
+   * Values use the fixed FX table (USD 83 / GBP 105 / EUR 90 / AED 22.6). */
+  { label: "B71 AED code current",       text: "my current is AED 400,000",              expect: { currentCtc: 90.4 } },
+  { label: "B71 GBP symbol current",     text: "my current salary is £90,000",           expect: { currentCtc: 94.5 } },
+  { label: "B71 EUR symbol current",     text: "my current CTC is €85,000 per annum",     expect: { currentCtc: 76.5 } },
+  { label: "B71 GBP k-suffix target",    text: "I want £120k",   ctx: { phase: "probe-expectations", lastAiText: "expectations?" }, expect: { target: 126 } },
+  { label: "B71 USD $ path preserved",   text: "I'm currently earning $120,000",          expect: { currentCtc: 99.6 } },
+  /* OA-B13: a trailing "thousand"/"grand" scale word normalises at the SAME
+   * shared boundary (substituteThousandScale) so a sub-lakh figure no longer
+   * false-binds as N LPA (the pre-fix "fifty thousand" → 50 LPA 100x error). */
+  { label: "B13 fifty thousand target dropped",  text: "my target is fifty thousand",       ctx: { phase: "probe-expectations", lastAiText: "expectations?" }, expect: { target: null } },
+  { label: "B13 50 thousand current dropped",    text: "my current is 50 thousand",          expect: { currentCtc: null } },
+  { label: "B13 lakh-scale thousand binds",      text: "my current is 500 thousand",         expect: { currentCtc: 5 } },
+  { label: "B13 grand variant dropped",          text: "I make eighty grand",                expect: { currentCtc: null, target: null } },
+  /* OA-B21: a "total"/"overall" scope cue that LEADS the figure ("...base is
+   * 20L, total is 80L") is now read symmetrically — the total is the full
+   * current package and supersedes the leading component, not the reverse. */
+  { label: "B21 left-total supersedes component",   text: "my current base is 20L, total is 80L",             expect: { currentCtc: 80 } },
+  { label: "B21 left-total with current cue",       text: "my current base is 20L, my current total is 80L",  expect: { currentCtc: 80 } },
+  { label: "B21 left-total 'comes to'",             text: "currently 20 fixed, total comes to 30",            expect: { currentCtc: 30 } },
+  { label: "B21 target total not mis-grabbed",      text: "I make 20L now, targeting a total of 80L",         expect: { currentCtc: 20, target: 80 } },
+  { label: "B21 want-total stays target",           text: "my base is 20L, but I want 80L total",             expect: { target: 80 } },
   { label: "I make N",                   text: "I make 15 LPA right now",               expect: { currentCtc: 15 } },
   { label: "drawing N",                  text: "drawing 19 LPA at present",             expect: { currentCtc: 19 } },
   { label: "I'm at N",                   text: "I'm at 12 LPA",                         expect: { currentCtc: 12 } },
@@ -216,6 +246,32 @@ const ROWS: Row[] = [
     label: "anchoring between range",
     text: "anchoring between 30-40 LPA",
     expect: { target: 40, targetAsRange: true },
+  },
+
+  /* ── S46-B1: "between X and Y [unit]" range (2026-07-23) ──────────
+   * Candidate says "somewhere between 48 and 52 lakhs" — the "between
+   * … and" pattern was not in RANGE_RE, so target stayed null and the
+   * planner looped asking for target every turn. Fixed by BETWEEN_RANGE_RE
+   * Pass 0 in findSalarySpans. */
+  {
+    label: "S46-B1 between X and Y lakhs (plain)",
+    text: "I'm thinking somewhere between 48 and 52 lakhs for this role.",
+    expect: { target: 52, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between X and Y LPA",
+    text: "somewhere between 45 and 50 LPA",
+    expect: { target: 50, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between ₹X and ₹Y lakhs",
+    text: "I'm targeting between ₹48 and ₹55 lakhs",
+    expect: { target: 55, targetAsRange: true },
+  },
+  {
+    label: "S46-B1 between XL and YL",
+    text: "between 40L and 45L for this move",
+    expect: { target: 45, targetAsRange: true },
   },
 
   /* ── Equity-scope guard (L1 / PRI-50, 2026-06-17) ──────────────────
@@ -459,6 +515,102 @@ const ROWS: Row[] = [
    * cash tag stays suppressed (binds to nothing). */
   { label: "PRI-62/PRI-50: equity-only 'stock worth 5 LPA' stays null",    text: "I get stock worth 5 LPA",                    ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
   { label: "PRI-62/PRI-50: 'RSUs worth roughly 3 LPA' stays null",         text: "RSUs worth roughly 3 LPA a year.",           ctx: { lastAiText: "what's your current CTC?" }, expect: { currentCtc: null } },
+  /* OA-B55 (2026-07-17): URL port / path digits must NOT false-bind as a
+   * salary figure — stripUrls removes the URL before span discovery. */
+  { label: "OA-B55: URL port/path digits do NOT bind as target",           text: "check https://example.com:8080/jobs/45 for details", ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null, currentCtc: null } },
+  { label: "OA-B55: bare host+path digits do NOT bind",                    text: "see careers.example.com/page/60 for the JD",       ctx: { lastAiText: "what's your target CTC?" }, expect: { target: null } },
+  { label: "OA-B55: a real salary alongside a URL still binds",            text: "see https://example.com/jobs/45 — I'm targeting 40 LPA", ctx: {}, expect: { target: 40 } },
+
+  /* ── OA-B3 (2026-07-18): a target expressed as a PERCENTAGE HIKE over the
+   *    candidate's current CTC. The "%"/"percent" span is discarded before
+   *    span discovery (a percentage is not a salary unit), so without the
+   *    resolvePercentHikeTarget resolver the target stays null and discovery
+   *    stalls. base = this-turn disclosed current ?? ctx.currentCtc. ────── */
+  { label: "OA-B3: '20% above my CTC' resolves off carried-in base 30 → 36", text: "I'm looking for 20% above my current CTC",  ctx: { currentCtc: 30 }, expect: { target: 36, targetComponent: "total" } },
+  { label: "OA-B3: 'a 30% hike' off base 40 → 52",                          text: "I want a 30% hike",                          ctx: { currentCtc: 40 }, expect: { target: 52 } },
+  { label: "OA-B3: '25% more than I make now' off base 20 → 25",            text: "25% more than what I make now",            ctx: { currentCtc: 20 }, expect: { target: 25 } },
+  { label: "OA-B3: 'hike of 50%' (trailing form) off base 30 → 45",         text: "I'd expect a hike of 50%",                 ctx: { currentCtc: 30 }, expect: { target: 45 } },
+  { label: "OA-B3: same-turn disclosed current wins over ctx base",         text: "I make 20 LPA, want 30% more",             ctx: { currentCtc: 99 }, expect: { currentCtc: 20, target: 26 } },
+  { label: "OA-B3: fractional pct '12.5% jump' off base 40 → 45",           text: "even a 12.5% jump would work",             ctx: { currentCtc: 40 }, expect: { target: 45 } },
+  /* Guards — must NOT false-bind */
+  { label: "OA-B3 guard: no base → percent hike stays null",                text: "I want a 30% hike",                         ctx: {},                 expect: { target: null } },
+  { label: "OA-B3 guard: '20% variable' is a component, not a target",      text: "my comp is 20% variable",                  ctx: { currentCtc: 30 }, expect: { target: null } },
+  { label: "OA-B3 guard: '10% bump on the joining bonus' scoped to JB",     text: "give me a 10% bump on the joining bonus",  ctx: { currentCtc: 30 }, expect: { target: null } },
+  { label: "OA-B3 guard: absolute target still wins over percent phrasing", text: "I make 30, targeting 45 which is a 50% hike", ctx: { currentCtc: 30 }, expect: { target: 45 } },
+
+  /* S4-B15 / S5-B20 — variable-pay component guard. A number tagged "variable" or
+   * "variable pay" in its immediate right context is a CTC sub-component, NOT the
+   * candidate's target ask. Before the fix, "looking for ₹6L variable" bound
+   * target=6, causing the recruiter to say "₹6L? You're undershooting your level." */
+  { label: "S4-B15: ₹6L variable is NOT a target", text: "I am looking for ₹32L fixed + ₹6L variable", expect: { target: 32 } },
+  { label: "S4-B15: 6L variable in probe context is NOT a target", text: "₹6L variable pay", ctx: { phase: "probe-expectations", lastAiText: "What salary are you expecting?" }, expect: { target: null } },
+  { label: "S4-B15: variable pay left-context suppresses span", text: "my variable pay of ₹6L", ctx: { phase: "probe-expectations" }, expect: { target: null } },
+  { label: "S5-B20: variable component right-context suppresses span", text: "6 lakh variable component", ctx: { phase: "probe-expectations", lastAiText: "What is your expected CTC?" }, expect: { target: null } },
+  { label: "S4-B15: performance bonus right-context suppresses span", text: "I want ₹38L with ₹4L performance bonus", expect: { target: 38 } },
+  /* Guard: normal targets must still bind */
+  { label: "S4-B15 guard: plain 42L target still binds", text: "I am expecting 42 LPA", ctx: { phase: "probe-expectations" }, expect: { target: 42 } },
+
+  /* S47-B1 (2026-07-24): NON_SALARY_UNIT_ANCHORED must suppress <N>-<M>%
+   * range patterns. "reducing false positives by 30-40%" — the "-" broke
+   * the guard so "30" leaked through as a potential CTC span. Extended
+   * regex: ^\d[\d,.]*(?:-\d[\d,.]*)?...\s*% to absorb the range upper. */
+  { label: "S47-B1: '30-40%' range percent is NOT a salary span", text: "reducing false positives by 30-40%, my current CTC is 24 LPA", expect: { currentCtc: 24 } },
+  { label: "S47-B1: '25-30%' improvement — only real CTC binds", text: "I drove a 25-30% performance improvement and I'm currently at 18 LPA", expect: { currentCtc: 18 } },
+  { label: "S47-B1 guard: plain '30%' still suppressed", text: "reduced latency by 30% and my current CTC is 22 LPA", expect: { currentCtc: 22 } },
+
+  /* S48-B1/S49-B1/S50-B1/S51-B1/S53-B1/S55-B1 — opening-turn proactive CTC disclosure.
+   * Indian candidates often volunteer both CTC and target in their opening greeting
+   * before the recruiter asks. Two failure patterns were fixed:
+   * (1) "I am at/on N" — legacy regex \bi.?m\s+at\b didn't match "I am" (2 chars, not 1).
+   * (2) "N LPA currently" — the temporal adverb appears in the RIGHT window (after the
+   *     unit), so CURRENT_CUES.left can't fire; added a right-window pattern. */
+  { label: "S48-B1: 'I am at N' → current CTC", text: "I am at 52 lakhs right now and looking for 85 lakhs", expect: { currentCtc: 52, target: 85 } },
+  { label: "S49-B1: 'I am on N' → current CTC", text: "So I am on 18 lakhs currently and I would need at least 28 lakhs", expect: { currentCtc: 18, target: 28 } },
+  { label: "S50-B1: 'N LPA currently, targeting N' → ctc+target", text: "52 LPA currently, targeting 85 LPA", expect: { currentCtc: 52, target: 85 } },
+  { label: "S51-B1: 'I am N LPA currently, expecting N' → ctc+target", text: "I am 22 LPA currently and I am expecting 35 LPA", expect: { currentCtc: 22, target: 35 } },
+  { label: "S53-B1: 'I am at N right now' → current CTC", text: "I am at 30 LPA right now and targeting 45 LPA", expect: { currentCtc: 30, target: 45 } },
+  /* Guard: "I want N LPA currently" must NOT bind current (target verb wins) */
+  { label: "S48-B1 guard: 'I want N currently' → target only", text: "I want 35 LPA currently", expect: { currentCtc: null, target: 35 } },
+  /* Guard: "I am looking for N right now" must NOT bind current */
+  { label: "S48-B1 guard: 'looking for N right now' → target only", text: "I am looking for 85 LPA right now", expect: { currentCtc: null, target: 85 } },
+  /* Guard: "N LPA presently" when no target verb → current */
+  { label: "S55-B1: 'N LPA presently' → current CTC", text: "My package is 40 LPA presently", expect: { currentCtc: 40 } },
+
+  /* S74-B1 (2026-07-25): business-impact amounts must NOT become salary spans.
+   * "saved the company 2 crore per year in cloud costs" → "2 crore" = ₹200L was
+   * being extracted as a competing offer, causing a fabricated contradiction.
+   * Fix: requires BOTH (a) impact verb in left window AND (b) business-object
+   * phrase in right window — so compensation disclosures after the impact clause
+   * are NOT suppressed. */
+  { label: "S74-B1: 'saved 2 crore per year in cloud costs' is NOT a salary span", text: "I saved the company 2 crore per year in cloud costs", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1: 'generated 50 lakh in revenue for the team' is NOT a salary span", text: "I generated 50 lakh in revenue for the team", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1: 'cut 40 lakh in infra costs' is NOT a salary span", text: "I cut 40 lakh in infra costs last quarter", expect: { currentCtc: null, competing: null, target: null } },
+  { label: "S74-B1 guard: CTC in same sentence still binds when right ctx is empty", text: "I saved the company 2 crore per year and I'm currently at 55 LPA", expect: { currentCtc: 55, competing: null } },
+  { label: "S74-B1 guard: 'currently earning 55 LPA for the company' — compensation NOT blocked by right-ctx 'for the company'", text: "I am currently earning 55 LPA for the company", expect: { currentCtc: 55 } },
+  { label: "S74-B1 guard: normal target after period (separate sentence) still binds", text: "I saved the company 2 crore. I am expecting 70 LPA.", expect: { target: 70 } },
+  { label: "S74-B1 guard: plain CTC disclosure with no impact verb still binds", text: "my current CTC is 55 LPA", expect: { currentCtc: 55 } },
+
+  /* ── S139–S148 format-parsing wave (2026-07-31) ──────────────────
+   * Backlog scenarios covering the numeric formats candidates actually
+   * type: K-suffix thousands, per-month/crore/thousands scales, ranges,
+   * "gross" framing, competing offers, mixed current+target. */
+  // S143 — abbreviated "K"/"k" thousands suffix (was binding null).
+  { label: "S143: '950K per annum' → 9.5 LPA current", text: "my current CTC is 950K per annum", expect: { currentCtc: 9.5 } },
+  { label: "S143: bare '950k' → 9.5 LPA current", text: "my current CTC is 950k", expect: { currentCtc: 9.5 } },
+  { label: "S143 guard: 'OK, I accept' does not bind a K-scale figure", text: "Okay, that works. I accept.", expect: { currentCtc: null, target: null, competing: null } },
+  { label: "S143 guard: '5k steps' with no salary cue binds nothing", text: "I have 3 kids and do 5k steps daily", expect: { currentCtc: null, target: null, competing: null } },
+  // S148 — "gross" current-compensation cue (was binding null).
+  { label: "S148: 'my annual gross is 32 lakhs' → 32 current", text: "my annual gross is 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'annual gross of 32 lakhs' → 32 current", text: "annual gross of 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'my gross is 32 lakhs' → 32 current", text: "my gross is 32 lakhs", expect: { currentCtc: 32 } },
+  { label: "S148: 'gross salary is 28 lakhs' → 28 current", text: "gross salary is 28 lakhs", expect: { currentCtc: 28 } },
+  { label: "S148 guard: 'targeting a gross of 50 lakhs' stays TARGET (verb wins)", text: "I'm targeting a gross of 50 lakhs", expect: { target: 50, currentCtc: null } },
+  // S139 / S140 / S144 / S145 / S146 — already-supported formats, locked here.
+  { label: "S139: '1.2 crore' current → 120 LPA", text: "my current CTC is 1.2 crore", expect: { currentCtc: 120 } },
+  { label: "S140: '3.5 lakhs per month' current → 42 LPA", text: "my current is 3.5 lakhs per month", expect: { currentCtc: 42 } },
+  { label: "S144: 'around 65 lakhs' target", text: "I'm looking for around 65 lakhs", ctx: { phase: "probe-expectations" }, expect: { target: 65 } },
+  { label: "S145: competing 'offer from Flipkart for 72 lakhs'", text: "I have an offer from Flipkart for 72 lakhs", expect: { competing: 72 } },
+  { label: "S146: mixed 'CTC is 42 LPA, looking at 68 LPA'", text: "my CTC is 42 LPA, I'm looking at 68 LPA", expect: { currentCtc: 42, target: 68 } },
 ];
 
 describe("number-role classifier — table-driven coverage", () => {

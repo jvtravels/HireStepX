@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 import { adaptHandler } from "../../../lib/vercel-adapter";
 import handler from "../../../server-handlers/aggregate-question-feedback";
 

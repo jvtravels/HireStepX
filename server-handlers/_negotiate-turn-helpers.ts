@@ -23,6 +23,7 @@ import type {
 import {
   canDiscloseSpecificNumber,
   isTerminalPhase,
+  isOfferOnTable,
 } from "./_negotiation-kernel";
 import { resolveVestingSchedule } from "../data/company-vesting-overlay";
 import { clawbackForCompany } from "./_joining-bonus-clawback";
@@ -34,6 +35,7 @@ import {
   isDiscoveryComplete,
 } from "./_discovery-stage";
 import { buildHikeJustificationBrief } from "./_hike-justification-probe";
+import { hikeBriefToken, hikeCalibrationHint } from "./_hike-rationale";
 import { buildRangeDisclosureBrief } from "./_range-disclosure-phase";
 import { detectRangeDisclosure } from "./_trial-close-detector";
 import type { CandidateStanceResult } from "./_candidate-stance";
@@ -169,7 +171,7 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "counter-base":
     "Present the new total CTC. Acknowledge their ask, frame the bump as movement (not capitulation), and invite a response. CRITICAL — when the turn brief includes a COMPONENT BREAKDOWN block (base / variable splits), restate the new total AS the split: '₹{total} LPA = ₹{base}L base + ₹{variable}L variable'. Candidates routinely ask for this breakdown two turns later; surfacing it on the counter itself prevents the repeat-ask loop. If a one-time joining bonus is already on the table from a prior turn, also restate it explicitly. BANNED — do NOT reference 'the existing split', 'the previous breakdown', 'keeping the structure intact', or any phrase implying a prior split was disclosed unless a base/variable breakdown was actually quoted in an earlier AI turn (check RECENT DIALOGUE). The opener typically discloses a HEADLINE number only, not a split — referencing a phantom prior breakdown confuses the candidate. State the new split fresh; do not pretend they've already seen one.",
   "joining-bonus":
-    "Acknowledge cash base is at its ceiling ('we're at the ceiling on fixed' / 'I can't move on base any further'). Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Use 'joining bonus' (Indian register) — NEVER 'signing bonus' (American register). Frame as a sweetener that bridges year-one cash without changing the recurring CTC: 'one-time joining bonus' / 'paid out on joining' / 'doesn't change the recurring CTC'. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total.",
+    "Acknowledge cash base is at its ceiling ('we're at the ceiling on fixed' / 'I can't move on base any further'). Offer a ONE-TIME joining bonus of EXACTLY the kernel-computed amount surfaced in the turn brief (joiningBonusAmount). Quote the rupee number explicitly. Use 'joining bonus' (Indian register) — NEVER 'signing bonus' (American register). Frame as a sweetener that bridges year-one cash without changing the recurring CTC: 'one-time joining bonus' / 'paid out on joining' / 'doesn't change the recurring CTC'. Do NOT propose a different amount, do NOT say 'a range', do NOT defer. If the candidate later asks for breakdown, restate this number and clarify it is one-time (not annual). Do not change the base total. DIRECTION — S13-B5: you are the RECRUITER EXTENDING a joining bonus TO the candidate; do NOT ask what joining bonus the candidate currently receives from their employer or what other companies have offered them — that information is not needed and the question inverts the offer direction.",
   "equity-grant":
     "Add an equity / RSU grant. Note the vesting shape ('25% per year over 4 years' or similar) and frame it as upside.",
   "notice-buyout":
@@ -192,8 +194,11 @@ const LEVER_GUIDANCE: Record<NegotiationLever, string> = {
     "Note that you've run out of turns. Suggest they take time and revert. Brief, neutral.",
   "terminal-restate":
     "The candidate already accepted / walked away on a prior turn but is still talking. Restate the closing position briefly and warmly — confirm the agreed total CTC, note the offer letter will follow, and do NOT renegotiate or introduce new numbers. If the prior turn did not yet collect onboarding documents (Aadhaar / PAN / recent payslips), gently re-prompt for them. One or two short sentences only.",
+  /* S40-B2/S41-B2/S42-B3 (2026-07-23) — removed the explicit example phrase
+   * 'let me not loop on that'; LANGUAGE HYGIENE block below bans it but this
+   * instruction was louder and overrode the ban. Now the example is gone. */
   "acknowledge-and-recover":
-    "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge the loop in ONE short clause ('you're right, my apologies — let me not loop on that') and then advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. The recover line is a meta-turn — it exists to reset rapport, not to negotiate.",
+    "The candidate has signalled they're repeating themselves ('I already told you', 'we covered this', 'you keep asking'). Acknowledge briefly and naturally ('you're right, my apologies') and immediately advance to the next non-redundant topic. Do NOT re-ask anything the candidate has already answered. Do NOT introduce a new number. Do NOT use the phrase 'let me not loop on that' or any other meta-commentary about the conversation — just progress naturally.",
   "ctc-inflation-anchor":
     "The candidate has anchored well above the initial offer. Match the headline number on TOTAL PACKAGE by stacking fixed + variable + ESOP paper-value + joining bonus + benefits — quote each component with the rupee figure from the action payload. The numbers are accurate; the framing weaponises CTC-vs-in-hand confusion to teach the candidate to ask for the guaranteed in-hand breakdown. Do NOT volunteer the in-hand split; if the candidate asks, the next turn ships the truthful breakdown.",
 };
@@ -392,7 +397,111 @@ export const NEGOTIATION_SYSTEM_PROMPT: string =
   "OR ask a question. Verbatim repetition is a critique-failure mode. " +
   "When the TURN BRIEF contains an [ALREADY-STATED FACTS: ...] block, " +
   "treat those tokens as off-limits for restatement — find a different " +
-  "angle or surface a new lever instead.\n\n" +
+  "angle or surface a new lever instead. " +
+  "When the TURN BRIEF contains a [YOUR PRIOR RECRUITER TURN OPENED WITH: ...] block, " +
+  "do NOT begin your response with the same sentence or phrase, and do NOT repeat " +
+  "the same content semantically — find a different opening and a different angle.\n\n" +
+  /* S4-B17, S19-B4, S20-B3 (2026-07-22) — non-answer hallucination.
+   * Root: LLM treats vague affirmatives as substantive discovery data.
+   * Candidates say "okay" / "fine" / "sure" / "alright" to specific
+   * fact-gathering questions (CTC, notice period, target range) and
+   * the recruiter invents a fact from it — e.g. "got it, that's above
+   * our initial band" when no number was ever stated. */
+  "NON-ANSWER HANDLING — If the candidate's reply to a specific " +
+  "fact-gathering question (CTC, target range, notice period, competing " +
+  "offers) is a vague placeholder like 'okay', 'fine', 'sure', 'alright', " +
+  "'sounds good', 'that's fine', or any single-word/non-numeric response " +
+  "that does not actually supply the requested fact, do NOT treat it as " +
+  "providing that fact. Do NOT hallucinate a number or conclusion from it. " +
+  "Re-probe with a shorter, more direct version of the same question.\n\n" +
+  /* S23-B2, S23-B3, S33-B1 (2026-07-22) — delay / family / distress handling.
+   * Root: LLM fabricates premises or asks invasive personal questions
+   * instead of acknowledging the candidate's stated need. */
+  "DELAY / FAMILY / DISTRESS HANDLING — When the candidate says they need " +
+  "more time to decide ('let me think', 'I need to consider', 'I'll get back " +
+  "to you', 'I need to discuss with my family / spouse / partner'), respond " +
+  "with warmth and a clear timeline: acknowledge the request, suggest a " +
+  "specific follow-up ('take the weekend — shall we reconnect Monday?'), " +
+  "and do NOT: (a) probe personal/location details the candidate didn't " +
+  "raise ('is your spouse also looking for a role in the same city?'); " +
+  "(b) fabricate a premise from their non-answer ('you shared a range — " +
+  "where in that range do you see yourself landing?'). " +
+  "When the candidate expresses stress, anxiety, or emotional fatigue " +
+  "('I am quite stressed', 'I am feeling anxious', 'this process has been " +
+  "exhausting'), acknowledge the emotion first before proceeding: " +
+  "'I understand this process can be stressful — let's make sure we get " +
+  "you to clarity quickly.' Do NOT respond with a generic offer-phase " +
+  "question ('how are you feeling about the opportunity?') when the " +
+  "candidate just expressed emotional distress — that is tone-deaf.\n\n" +
+  /* S1-B6, S2-B6, S3-B14 (2026-07-22) — instruction bleed & internal language.
+   * Root: internal kernel/instruction phrases leak verbatim into recruiter prose. */
+  "LANGUAGE HYGIENE — Never use these phrases (they are internal system " +
+  "language that a real recruiter would never say): 'revert' (say 'get " +
+  "back to me' / 'let me know' / 'reconnect'); 'Locking the close at'; " +
+  "'as per our band for this grade' (unless you have already stated the " +
+  "actual band number this session); 'let me not loop on that' (do not " +
+  "acknowledge looping — just progress naturally); 'broadly covered the " +
+  "relevant points'; 'your current side' (say 'your current CTC' or " +
+  "'your current package'); 'anchor off that' (say 'use that as a " +
+  "reference' or 'work from there'). Speak only as a real Indian HR " +
+  "professional would — natural business English, no meta-commentary " +
+  "about the conversation.\n\n" +
+  /* S1-B3 (2026-07-22) — recruiter turn ends mid-thought.
+   * Root: LLM produces a sentence that is grammatically incomplete or
+   * has no question and no closure — a dangling observation. */
+  "TURN COMPLETENESS — Every recruiter turn must be a complete, closed " +
+  "utterance. If it is a probe, end with a question mark. If it is a " +
+  "statement (counter, acknowledgement, offer), end with a full stop and " +
+  "a clear next-step. Never end with a dangling fragment like 'let's " +
+  "anchor off that for a sec' with no follow-up question — always attach " +
+  "the actual question you're leading to.\n\n" +
+  /* S5-B21 (2026-07-22) — off-topic role-scope question during discovery.
+   * Root: LLM drifts into job-description territory ('how significant a
+   * role does design system ownership play in this fitment?') when the
+   * session's entire purpose is salary negotiation. */
+  "DISCOVERY SCOPE — During salary negotiation discovery your ONLY valid " +
+  "probing topics are: current CTC (total / base / variable / ESOP), " +
+  "expected/target CTC, notice period, competing offers, and joining " +
+  "timeline. Do NOT ask about role scope, responsibilities, design " +
+  "ownership, technical depth, team size, or any job-description topic " +
+  "— those belong in a competency interview, not a salary discussion. " +
+  "If the candidate volunteers role context, acknowledge briefly and " +
+  "immediately steer back to the salary fact you still need.\n\n" +
+  /* S39 (2026-07-23) — non-monetary opener during discovery.
+   * Root: LLM quotes a salary number in the same turn it should only
+   * acknowledge WFH/remote/hybrid demand and pivot to comp discovery.
+   * When the turn brief contains [CANDIDATE NON-MONETARY ASK: ...], the
+   * LLM MUST NOT volunteer any salary number; it must acknowledge then ask. */
+  "NON-MONETARY OPENER — If the turn brief contains [CANDIDATE NON-MONETARY ASK], " +
+  "do NOT mention any salary figure or comp number in your response. " +
+  "Structure your reply as: (1) one clause acknowledging the flexibility ask " +
+  "('Noted — hybrid/WFH arrangements are part of the offer; we'll finalise " +
+  "those once we align on comp.'), then (2) the discovery question from " +
+  "[NEXT REQUIRED ACTION]. Do NOT say 'we can offer ₹X' or quote any LPA " +
+  "figure when the non-monetary brief is present and no offer has been made yet.\n\n" +
+  /* S13-B27 (2026-07-22) — negation inversion.
+   * Root: "NOT focused on base" parsed as "interested in base". */
+  "NEGATION GROUNDING — When the candidate explicitly negates a preference " +
+  "('I am NOT focused on base', 'I don't care about the fixed component', " +
+  "'base is not my priority'), do NOT suggest or probe that component " +
+  "in subsequent turns. If the TURN BRIEF contains a [CANDIDATE NEGATED " +
+  "PREFERENCE: ...] block, treat the named component as off-limits for " +
+  "probing or offering.\n\n" +
+  /* S32-B1 (2026-07-22) — written offer request ignored. */
+  "WRITTEN OFFER REQUEST — If the candidate asks to receive the offer in " +
+  "writing ('can you send the offer in writing', 'please send the offer " +
+  "letter', 'I'd like to see it in writing'), acknowledge this explicitly: " +
+  "'Absolutely — once we align on the final number I'll have our HR ops " +
+  "team send a formal offer letter within 24–48 hours.' Do NOT ignore the " +
+  "written-offer request and pivot to a different question.\n\n" +
+  /* S13-B29 (2026-07-22) — references unshared number.
+   * Root: LLM cites "as I shared" or "the number I mentioned" when no
+   * specific number has been stated this session. */
+  "NUMBER GROUNDING — Never reference a specific salary number as having " +
+  "been 'shared', 'mentioned', or 'disclosed' unless that exact number " +
+  "appears in the RECENT DIALOGUE block or was set by the kernel in a " +
+  "prior TURN BRIEF. If no concrete number has been stated, do not imply " +
+  "one exists.\n\n" +
   "OUTPUT FORMAT: return a single JSON object with EXACTLY these " +
   "keys (no markdown fences, no prose around the JSON):\n" +
   "  text              — string, the candidate-facing sentence(s), 1–3 sentences\n" +
@@ -1635,16 +1744,7 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
      should engage that frame specifically rather than ask for one
      generically. */
   if (state.hikePercent != null) {
-    const pct = state.hikePercent;
-    if (pct >= 50) {
-      hints.push(`Hike is ${pct}% — extreme. Frame your pushback respectfully; ask for the justification before any concession.`);
-    } else if (pct >= 30) {
-      hints.push(`Hike is ${pct}% — aggressive. A justification probe is appropriate before counter-offering.`);
-    } else if (pct >= 15) {
-      hints.push(`Hike is ${pct}% — normal switch-job range. Probe lightly or proceed to counter.`);
-    } else if (pct >= 0) {
-      hints.push(`Hike is ${pct}% — conservative. The candidate's ask is well within market norms; consider matching.`);
-    }
+    hints.push(hikeCalibrationHint(state.hikePercent));
   }
   if (state.rationale) {
     const r = state.rationale;
@@ -1670,7 +1770,9 @@ function buildResponseHints(state: NegotiationState, move?: AiMove): string {
     hints.push(`Candidate requested notice-period buyout. Respond with company policy on this (typical: yes, up to 30-60 days) — do not invent rupee figures unless you know the band has headroom.`);
   }
   if (nj && nj.joiningBonusAsk != null) {
-    hints.push(`Candidate asked for joining bonus of ₹${nj.joiningBonusAsk} LPA. If the lever is joining-bonus, negotiate on this number; otherwise acknowledge and defer.`);
+    // S13-B5: say "requested from us" to avoid the LLM misreading this as the
+    // candidate's current employer's joining bonus and asking them about it.
+    hints.push(`Candidate has requested a joining bonus of ₹${nj.joiningBonusAsk} LPA from us (the employer). If the lever is joining-bonus, counter on this amount with our computed joiningBonusAmount; otherwise acknowledge the request and defer to a future turn.`);
   }
   if (nj && nj.earlyJoinPreferred) {
     hints.push("Candidate wants to join earlier than full notice. Flag this as positive flexibility but don't conflate with the buyout chip.");
@@ -1978,6 +2080,20 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       `[CANDIDATE DISCLOSED — ACKNOWLEDGE THIS TURN: ${list}]`,
     );
   }
+  /* S39 (2026-07-23) — non-monetary WFH/remote/hybrid opener advisory.
+   * When the candidate has mentioned WFH/remote/hybrid flexibility and
+   * no offer is on table yet (pre-anchor discovery), the LLM must NOT
+   * quote a salary number — it should acknowledge the WFH ask briefly
+   * and pivot to the discovery question. Cleared implicitly once the
+   * pendingCandidateAcks prune fires (wfh-flexibility acknowledged). */
+  if (
+    state.wfhFlexibilityMentioned === true &&
+    !isOfferOnTable(state)
+  ) {
+    parts.push(
+      `[CANDIDATE NON-MONETARY ASK: mentioned WFH/remote/hybrid work flexibility — (1) acknowledge briefly in one clause, e.g. 'Noted — hybrid/WFH arrangements are part of the offer; we can finalise those once we align on comp.' (2) then immediately ask the discovery question. Do NOT state any salary number this turn.]`,
+    );
+  }
   /* PDF #17 architectural fix follow-up (2026-05-15) — discovery-stage
    * brief injection. Surfaces the active discovery stage and (when
    * relevant) the next open discovery question as bracketed lines, the
@@ -2148,7 +2264,7 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
      sits"). Without these the LLM has to recompute hike% from
      target+currentCtc each turn and never sees the framing the
      candidate used. */
-  if (state.hikePercent != null) parts.push(`hike=${state.hikePercent}%`);
+  if (state.hikePercent != null) parts.push(hikeBriefToken(state.hikePercent));
   if (state.rationale) parts.push(`rationaleKind=${state.rationale.kind}`);
   /* Phase 13 — notice/joining-bonus economics. Days + buyout-ask +
      joining-bonus-ask are all separable chips the recruiter side
@@ -2471,11 +2587,82 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     parts.push(`redflags=[${seriousFlags.join(",")}]`);
   }
   if (state.leversUsed.length > 0) parts.push(`leversUsed=[${state.leversUsed.join(",")}]`);
+  /* S20-B2 (2026-07-22) — ESOP grant amount directive. When the equity-grant
+   * lever has fired and the state has a concrete grant amount, surface it so
+   * the LLM can cite an actual ₹ figure rather than only describing structure. */
+  if (state.leversUsed.includes("equity-grant") && (state as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa != null) {
+    const grantAmt = (state as { equityGrantAmountLpa?: number | null }).equityGrantAmountLpa as number;
+    parts.push(
+      `[ESOP GRANT ON TABLE: ₹${grantAmt}L total value over 4 years (1-year cliff, then quarterly vesting) — use this figure if the candidate asks about grant size, unit count, or ₹ value]`,
+    );
+  }
   /* Bug 7 (2026-05-14) — anti-repetition. Surface the recruiter-fact
    * tokens the bot has ALREADY stated so the LLM doesn't restate them
    * verbatim turn after turn. */
   if (state.recruiterFactsAlreadySaid && state.recruiterFactsAlreadySaid.length > 0) {
     parts.push(`[ALREADY-STATED FACTS (do NOT repeat verbatim): ${state.recruiterFactsAlreadySaid.join(",")}]`);
+  }
+  /* S4-B17, S19-B4, S20-B3 (2026-07-22) — prior-turn anti-echo.
+   * Surface the first ~120 chars of the immediately prior AI turn so the
+   * LLM knows what it said last and cannot open with the same phrase or
+   * repeat the same content ("Just to reconfirm, [verbatim ESOP pitch]"). */
+  const priorAiEntry = state.conversationLog
+    ? [...state.conversationLog].reverse().find((e) => e.speaker === "ai")
+    : undefined;
+  if (priorAiEntry?.text) {
+    const priorOpener = priorAiEntry.text.slice(0, 120).replace(/\n/g, " ");
+    parts.push(
+      `[YOUR PRIOR RECRUITER TURN OPENED WITH: "${priorOpener}…" — do NOT echo this phrase or repeat the same content; open differently and add new information]`,
+    );
+  }
+  /* S19-B2 (2026-07-22) — own-offer vs competing-offer disambiguation.
+   * When the recruiter has made an offer AND a competing offer is on record,
+   * surface both explicitly so the LLM never conflates our number with theirs. */
+  if ((state.highestOfferMade ?? 0) > 0 && state.competingOffer != null) {
+    const competingCo = state.competingOfferDetail?.company ?? "outside company";
+    parts.push(
+      `[OFFER DISAMBIGUATION: OUR offer (${state.company ?? "this company"}) = ₹${state.highestOfferMade}L | CANDIDATE competing offer from ${competingCo} = ₹${state.competingOffer}L — these are DIFFERENT companies; never attribute OUR number to a competitor or vice versa]`,
+    );
+  }
+  /* S22-B2, S13-B27 (2026-07-22) — last candidate utterance, used by
+   * CTC-correction grounding and negated-preference detection below. */
+  const lastCandText = state.conversationLog
+    ? [...state.conversationLog].reverse().find((e) => e.speaker === "candidate")?.text ?? ""
+    : "";
+  /* S31-B2 (2026-07-22) — no-offer-yet gate.
+   * When no offer has been made (highestOfferMade == 0) and the kernel
+   * lever is a discovery probe (not open-with-offer / anchor), the LLM
+   * must NOT generate offer-phase language ("we've put together an offer",
+   * "let me walk you through the numbers"). That creates a contradiction:
+   * the next kernel turn fires a discovery probe, visibly reverting the
+   * session back to discovery mode and confusing the candidate. */
+  if ((state.highestOfferMade ?? 0) === 0 &&
+      state.phase !== "offer-presented" &&
+      state.phase !== "probe-expectations") {
+    parts.push(
+      "[NO OFFER YET: do not use offer-phase language ('we've put together an offer', 'let me walk you through the numbers') — discovery is still ongoing; stay in discovery mode]",
+    );
+  }
+  /* S22-B2 (2026-07-22) — CTC correction grounding.
+   * When the candidate has provided an explicit CTC value (candidateCurrentCtc != null),
+   * and the last candidate turn contains correction language
+   * ("correct CTC", "I misspoke", "please use", "the correct"), surface a
+   * [CTC GROUNDED] directive so the LLM accepts it without interrogating. */
+  const ctcCorrectionPattern = /\b(correct(?:ed)?\s+ctc|i\s+misspoke|please\s+use|the\s+correct|verified\s+(current\s+)?salary|that\s+is\s+my\s+(current\s+)?ctc)\b/i;
+  if (state.candidateCurrentCtc != null && ctcCorrectionPattern.test(lastCandText)) {
+    parts.push(
+      `[CTC GROUNDED: candidate explicitly corrected — the verified CTC is ₹${state.candidateCurrentCtc}L; accept this without challenge; do NOT ask "which one should I take to the panel?"]`,
+    );
+  }
+  /* S13-B27 (2026-07-22) — negated-preference surface.
+   * When candidate has explicitly negated a compensation component
+   * ("NOT focused on base", "don't care about fixed"), surface it so
+   * the LLM never inverts the negation and probes that component. */
+  if (/\b(not|don['']t|do not|isn['']t|no[t]?)\b.{0,30}\b(base|fixed|variable|esop|equity|bonus|joining)\b/i.test(lastCandText) ||
+      /\b(base|fixed|variable|esop|equity|bonus|joining)\b.{0,30}\b(not|don['']t|do not|isn['']t|no[t]?)\b.{0,25}\b(my|a)?\s*priority\b/i.test(lastCandText)) {
+    parts.push(
+      "[CANDIDATE NEGATED PREFERENCE: candidate explicitly said they are NOT focused on that compensation component — do not probe or suggest it; route to a different lever]",
+    );
   }
   /* Sprint B.3 (2026-05-15) — in-hand vs CTC anchor disambiguation. When
    * the candidate has framed their target as in-hand, surface the CTC
@@ -2516,7 +2703,12 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
       const { formatNonSalaryConstraintsBrief } = require("./_non-salary-constraints") as typeof import("./_non-salary-constraints");
       const line = formatNonSalaryConstraintsBrief(state.nonSalaryConstraints);
       if (line) parts.push(line);
-    } catch { /* defensive */ }
+    } catch (err) {
+      // A failure here means the non-salary-constraints advisory silently
+      // disappears from the brief with no trace — log it, this require()
+      // should never fail except on a real packaging/bundling bug.
+      console.error("[negotiate-turn] formatNonSalaryConstraintsBrief failed:", err);
+    }
   }
   /* Tier-1 ship (2026-05-15) — counter-offer-at-current risk advisory. The
    * detector only fires high when the candidate's currentCtc + target +
@@ -2551,8 +2743,11 @@ function compactTurnBrief(state: NegotiationState, move: AiMove): string {
     if (risk.risk === "high") {
       parts.push(`[COUNTER-OFFER RISK: high — reasons: ${risk.reasons.join("; ")}]`);
     }
-  } catch {
-    /* Defensive: if the module fails to load, do not break the brief. */
+  } catch (err) {
+    // Defensive: if the module fails to load, do not break the brief — but
+    // log it, since this silently drops the counter-offer-risk advisory
+    // with no trace otherwise.
+    console.error("[negotiate-turn] estimateCounterOfferRisk failed:", err);
   }
   parts.push(`rationale=${move.rationale}`);
   /* Architectural bug-prevention (2026-05-15) — extract bracket-tag names

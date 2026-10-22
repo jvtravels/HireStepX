@@ -1,17 +1,28 @@
 import { derivePhases, type NegotiationOutcome } from "../derivations";
+import { atCompany } from "../roleLabel";
 
 export function TLDRHero({
-  outcome, role, company,
-}: { outcome: NegotiationOutcome; role: string; company: string }) {
+  outcome, role, company, priorSessionCount,
+}: { outcome: NegotiationOutcome; role: string; company: string; priorSessionCount?: number }) {
+  /* S44-B10 (2026-07-23) — round all offer figures to 1dp at source so
+   * every downstream string interpolation is clean. Float arithmetic on
+   * LPA values (e.g. 42.1 - 39.5 = 2.5999999999999979) rendered raw
+   * produces "₹2.5999999999999979L" in the verdict and stat cards. */
+  const r1 = (n: number | null | undefined): number | null =>
+    n == null ? null : Math.round(n * 10) / 10;
   const offers = outcome.offers ?? [];
-  const opening = offers[0]?.total ?? null;
-  const closing = outcome.finalTotal ?? (offers[offers.length - 1]?.total ?? null);
-  const delta = (opening !== null && closing !== null) ? closing - opening : null;
+  const opening = r1(offers[0]?.total);
+  const closing = r1(outcome.finalTotal ?? offers[offers.length - 1]?.total);
+  const delta = (opening !== null && closing !== null) ? r1(closing - opening) : null;
   const askGap = (outcome.candidateAsk !== null && opening !== null && closing !== null && outcome.candidateAsk > opening)
-    ? Math.round(((closing - opening) / (outcome.candidateAsk - opening)) * 100)
+    ? Math.round(((closing - opening) / (outcome.candidateAsk! - opening)) * 100)
     : null;
 
-  const phaseCount = derivePhases(outcome).filter(p => p.reached).length;
+  /* S23-B4: derive full phase list so we can check WHICH stage was reached
+   * when phaseCount === 1 (stage 4 / levers-only vs stage 1 / counter). */
+  const phases = derivePhases(outcome);
+  const phaseCount = phases.filter(p => p.reached).length;
+  const stage1Reached = phases[0]?.reached === true;
   const TOTAL_PHASES = 5;
 
   /* A counter was named iff the candidate stated an ask — the SAME single
@@ -28,22 +39,37 @@ export function TLDRHero({
    * "1 of 5 stages — you named a counter", and "Numbers stated 100%". Key it
    * on candidateAsk alone; branches that compare to the opening already guard
    * `opening !== null` (verdict) or `delta !== null` (stats) themselves. */
+  const candidateAsk = r1(outcome.candidateAsk);
   const counterNamed = outcome.candidateAsk !== null;
 
   let verdict: string;
   if (outcome.outcome === "accepted" && delta !== null && delta > 0) {
-    verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${delta * 4}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
+    verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${r1(delta * 4)}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
   } else if (outcome.outcome === "accepted" && delta === 0) {
     verdict = counterNamed
-      ? `You countered at ₹${outcome.candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
+      ? `You countered at ₹${candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
       : `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
+  } else if (outcome.outcome === "accepted") {
+    /* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM):
+     * an ACCEPTED deal whose offer numbers weren't captured (legacy row with no
+     * persisted trajectory, transcript the offer-regex missed → offers empty,
+     * finalTotal null → delta null) matched neither `delta > 0` nor `delta === 0`
+     * and fell through to the no-agreement `else`, printing "No deal closed …
+     * ₹0 gained … walking away" beside this same component's stage tracker
+     * ("you closed the deal") and N1's "Outcome: Accepted". The close is
+     * authoritative from `outcome.outcome`; the no-deal branch must be reachable
+     * ONLY when the deal did not close. State the accept plainly and DON'T
+     * fabricate a delta we can't compute. */
+    verdict = counterNamed
+      ? `You accepted the ${role} offer${atCompany(company)} — you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
+      : `You accepted the ${role} offer${atCompany(company)}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
      * number landed — never interpolate it raw (that renders "₹null LPA"
      * in the user's face). Name the figure only when we actually have it. */
     verdict = closing !== null
-      ? `You walked away from a ₹${closing} LPA offer for ${role} at ${company}. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`
-      : `You walked away from the ${role} offer at ${company} before a firm number landed. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`;
+      ? `You walked away from a ₹${closing} LPA offer for ${role}${atCompany(company)}. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`
+      : `You walked away from the ${role} offer${atCompany(company)} before a firm number landed. The panels below help you decide whether the next round of this role (or a similar one) is worth a counter-anchor.`;
   } else {
     /* R-10 (2026-07-10, live staging — Senior Product Designer @ Lollypop
      * Design Studio): the no-agreement branch read like a win ("You explored N
@@ -51,39 +77,52 @@ export function TLDRHero({
      * in. Name the no-deal plainly — nothing was secured — then point at the
      * recovery play. Distinguish "countered but it never closed" from "never
      * even named a number", since the coaching differs. */
-    verdict = counterNamed
-      ? `No deal closed. You countered at ₹${outcome.candidateAsk} LPA${opening !== null ? ` against their ₹${opening} LPA opening` : ""}, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. Part 2 has the email draft to reopen it before the offer lapses.`
-      : `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. Part 2 has the email draft to restart the conversation.`;
+    /* S16-B9 (2026-07-18 audit) — "reopen it before the offer lapses" and the
+     * email-draft pointer are only honest when an offer actually landed. With
+     * offers === [] there is nothing to reopen (and CounterOfferLetterPanel
+     * renders the re-anchor letter, not an acceptance), so a countered-but-no-
+     * offer session must point at RESTARTING the conversation, not reopening a
+     * non-existent offer. */
+    verdict = !counterNamed
+      ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. What to do next has an email draft to restart the conversation.`
+      : offers.length > 0
+        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. The email draft under What to do next reopens it before the offer lapses.`
+        : `No deal closed. You named ₹${candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. What to do next has an email draft to restart the conversation.`;
   }
 
   type StatTone = "good" | "bad" | "warn" | "neutral";
   const stats: Array<{ label: string; value: string; hint?: string; tone: StatTone }> = [];
 
+  /* S1-B9: only show "Session 1 · first negotiation" when this is genuinely
+     the user's first session (priorSessionCount === 0). A sparse/short run
+     from a user with 84+ sessions is NOT a first-session — it's a bailout.
+     Guard on priorSessionCount; treat undefined as unknown (show the label). */
   const isSparseFirstSession =
     delta === 0 &&
     outcome.candidateAsk === null &&
     phaseCount <= 1 &&
-    typeof outcome.gapClosurePct !== "number";
+    typeof outcome.gapClosurePct !== "number" &&
+    (priorSessionCount == null || priorSessionCount === 0);
 
   if (isSparseFirstSession) {
     stats.push({
       label: "Where you are now",
       value: "Session 1",
-      hint: "first negotiation. Part 2 below has the email draft to start from",
+      hint: "first negotiation. The email draft under What to do next is a starting point",
       tone: "neutral",
     });
   } else if (delta !== null) {
     if (delta > 0) {
       stats.push({
         label: "What you won",
-        value: `+₹${delta * 4}L`,
+        value: `+₹${r1(delta * 4)}L`,
         hint: "extra rupees over 4 years, before tax",
         tone: "good",
       });
     } else if (delta < 0) {
       stats.push({
         label: "What it cost you",
-        value: `−₹${Math.abs(delta * 4)}L`,
+        value: `−₹${r1(Math.abs(delta * 4))}L`,
         hint: "rupees lost over 4 years, before tax",
         tone: "bad",
       });
@@ -100,7 +139,7 @@ export function TLDRHero({
         label: "What you walked from",
         value: opening !== null ? `₹${opening} LPA` : "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved, and you walked`
+          ? `you countered at ₹${candidateAsk} but the offer never moved, and you walked`
           : "you walked from their opening without naming a counter",
         tone: "bad",
       });
@@ -109,7 +148,7 @@ export function TLDRHero({
         label: "Money you left on the table",
         value: "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but accepted their opening; the recruiter didn't move`
+          ? `you countered at ₹${candidateAsk} but accepted their opening; the recruiter didn't move`
           : "you accepted at the first number; no counter named",
         tone: "bad",
       });
@@ -128,7 +167,7 @@ export function TLDRHero({
         label: "Money you left on the table",
         value: "—",
         hint: counterNamed
-          ? `you countered at ₹${outcome.candidateAsk} but the offer never moved and no deal closed`
+          ? `you countered at ₹${candidateAsk} but the offer never moved and no deal closed`
           : "the offer never moved and no deal closed; no counter named",
         tone: "bad",
       });
@@ -174,23 +213,49 @@ export function TLDRHero({
           : `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way`
         : walkedAway
           ? phaseCount === TOTAL_PHASES
-            ? "you reached every stage, then walked away. Part 2 has the next-round play"
-            : "you walked away. Part 2 has the next-round play"
+            ? "you reached every stage, then walked away. What to do next has the next-round play"
+            : "you walked away. What to do next has the next-round play"
           : phaseCount >= 4 ? "one short of the close" :
             phaseCount >= 2 ? "made it past the counter" :
-            phaseCount === 1 ? "you named a counter. Part 2 below shows the next move" :
-            "you didn't push past the first offer. Part 2 has the email draft",
+            /* S23-B4: phaseCount===1 could be stage 1 (counter named) OR stage 4
+             * (levers explored without a counter). Check which stage fired.
+             * S62-B1 (2026-07-24): mirror derivations.ts hasPriorOffer logic —
+             * when no recruiter offer was tabled the candidate's number is an
+             * opening anchor, not a counter; "you named a counter" was wrong. */
+            phaseCount === 1 && stage1Reached ? (offers.length > 0 ? "you named a counter. What to do next shows the next move" : "you named your opening number. What to do next shows the next move") :
+            phaseCount === 1 ? "you explored the conversation but didn't name a counter. What to do next has the next move" :
+            /* S17-B3 (2026-07-18 audit) — "past the first offer" presumes an
+             * offer landed; with offers === [] none did, so name it honestly. */
+            offers.length > 0
+              ? "you didn't push past the first offer. What to do next has the email draft"
+              : "the conversation ended before any offer landed. What to do next has the email draft",
     tone: dealClosed ? "good" : walkedAway ? "warn" : phaseCount >= 4 ? "good" : phaseCount >= 2 ? "warn" : "bad",
   });
   if (delta !== null && opening !== null) {
-    const askedFor = outcome.candidateAsk;
+    const askedFor = r1(outcome.candidateAsk);
     if (askedFor !== null && askedFor > opening) {
       const askPct = Math.round(((askedFor - opening) / opening) * 100);
+      /* S4S5-B5: hint "above their first offer" read as "the deal landed 97%
+       * above the opening" — ambiguous when the final offer didn't move at all.
+       * Distinguish ask (what you named) from outcome (what landed). */
+      const offerMoved = delta > 0;
       stats.push({
         label: "How much you pushed back",
         value: `+${askPct}%`,
-        hint: "above their first offer",
+        hint: offerMoved
+          ? `your counter-ask above their opening offer`
+          : `your counter-ask above their opening — the offer didn't move`,
         tone: askPct >= 25 ? "good" : askPct >= 10 ? "warn" : "bad",
+      });
+    } else if (askedFor !== null) {
+      /* S22-B3: candidate DID name a number but it was at or below the
+       * opening — correct to show 0% push, but "you didn't name a
+       * counter-number" is wrong (they named one; it just didn't move up). */
+      stats.push({
+        label: "How much you pushed back",
+        value: "0%",
+        hint: `you named ₹${askedFor} LPA but didn't push above their opening`,
+        tone: "bad",
       });
     } else {
       stats.push({

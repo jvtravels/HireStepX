@@ -702,6 +702,7 @@ export function closeRecapFormalToMoveSpec(
    * acceptance. Today the planner is supposed to enforce this but a
    * regression slipped through (T11). Throwing here makes the
    * invariant a property of the type layer. */
+  // verbalAcceptanceTurn isn't on the NegotiationState type; narrowed here same as above.
   const verbalAcceptanceTurn = (state as unknown as { verbalAcceptanceTurn?: number })
     .verbalAcceptanceTurn;
   if (typeof verbalAcceptanceTurn !== "number") {
@@ -720,6 +721,7 @@ export function closeRecapFormalToMoveSpec(
     ? action.retentionBonusLpa
     : null;
 
+  // cumulativeUrgency isn't on the NegotiationState type; narrowed here same as above.
   const fastTrackUrgency =
     (state as unknown as { cumulativeUrgency?: string }).cumulativeUrgency === "firm";
 
@@ -812,6 +814,7 @@ export function componentProbeToMoveSpec(
   state: NegotiationState,
   _helpers: MoveSpecHelpers,
 ): ComponentProbeSpec {
+  // candidateComponentBreakdown/candidateCurrentCtc aren't on the NegotiationState type; narrowed here same as above.
   const bd =
     (state as unknown as {
       candidateComponentBreakdown?: { variable?: number; variableInferred?: boolean };

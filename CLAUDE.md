@@ -20,7 +20,8 @@ Stack:
   (thin shims)
 - **DB**: Supabase (Postgres + Auth + Storage) with RLS on every user-scoped
   table (see `supabase-schema.sql`)
-- **LLM**: Groq (primary) + Gemini (fallback) via `server-handlers/_llm.ts`
+- **LLM**: Groq (primary) + Gemini (fallback) + Cloudflare Workers AI (third provider,
+  recognized by `providerFromModel()`) via `server-handlers/_llm.ts`
 - **Voice**: Sarvam Bulbul (primary TTS) + Cartesia WebSocket (2nd) +
   Azure TTS (3rd) + Web Speech API (last resort); Deepgram (primary) +
   Sarvam (fallback) + Web Speech API (last resort) for STT
@@ -58,9 +59,12 @@ supabase-schema.sql     DDL + RLS policies for every table
 
 **Three auth layers**:
 1. Supabase Auth (email + password, plus Google OAuth)
-2. Device-token enforcement in `AuthContext.tsx` — a session stored on
-   user_metadata.active_device_token, checked on restore and rotated on
-   login. Single-device only.
+2. Session handling in `AuthContext.tsx` — multiple devices may be signed in
+   at once (single-device `active_device_token` enforcement was removed in
+   `c1326e9c`; `signout-other-devices.ts` still rotates the token but nothing
+   reads it for enforcement); tabs sync logout over a BroadcastChannel. Email verification
+   is a custom HMAC link (`custom_email_verified`, `verify-email.ts`), and
+   `/api/resend-verification` re-issues it with a generic response.
 3. `withAuthAndRateLimit()` preamble in `server-handlers/_shared.ts` —
    every API handler composes this for CORS + origin + body-size +
    IP-limit + auth + per-user limit + quota.
@@ -84,7 +88,9 @@ full story. Same pattern applies to any auth'd mutation.
 **Streak / reward economy** — practice_timestamps + session_credits
 live on `profiles`. Reward triggers:
 - Streak milestones 7 / 14 / 30 (save-session.ts)
-- Referral conversion to paid tier (verify-payment.ts)
+- Referral: friend is credited on signup (new account ≤7 days old, `_referral-apply.ts`);
+  referrer is paid on the friend's first session with ≥3 answers
+  (`payReferrerForReferral` via save-session.ts). Daily cap 20, lifetime cap 50.
 - Single-session purchase
 The `_streak-reward.ts` and `_referral-reward.ts` helpers are
 unit-tested; the compare-and-swap semantics are load-bearing.
@@ -182,7 +188,7 @@ batch lifts the measured numbers.
 - **Edge runtime** — no Node APIs. Use `crypto.subtle`, `fetch`, etc.
   Files in `server-handlers/` marked `runtime: "edge"` must be
   WinterCG-compliant.
-- **CSP** — all external origins live in `next.config.js`. Adding a
+- **CSP** — all external origins live in `proxy.ts` (built per request). Adding a
   new LLM/TTS/STT provider means updating `connect-src`.
 - **Cartesia TTS** — returns raw PCM via WebSocket; AudioContext must
   be resumed after mobile tab backgrounding (see
@@ -199,6 +205,24 @@ batch lifts the measured numbers.
   `evaluate-session.ts` or similar, keep static rules/schema *before*
   per-call dynamic content (transcript, tier, role) — reordering
   defeats the cache and triples per-call cost.
+- **LLM provider health is shared, not per-instance** — `_llm-health.ts`
+  keeps rolling success/failure counts and quota cooldowns in Upstash so
+  every serverless instance routes around a failing provider (degraded
+  providers move to the back of the chain, never out of it). In-memory
+  breakers alone just make each cold instance relearn the outage on a real
+  user's request. Slow-path chain is gemini → gemini-2.5-flash-lite → groq →
+  cloudflare; `hedgeAfterMs` races the two Gemini models. Keep new health
+  reads bounded (`redisPipeline` has a hard timeout) and fail-open.
+- **LLM model ids live in `_llm-models.ts`, not in call sites** — Gemini
+  ladder via `GEMINI_MODELS` (ordered, comma-separated, max 3; first rung
+  keeps the chain name `gemini`), Groq via `GROQ_MODEL` / `GROQ_FAST_MODEL`.
+  When a vendor announces a retirement, change the env var and redeploy — no
+  code change. A 404/"not found"/"deprecated" from a model benches that model
+  id for 24h (shared via Redis). The daily `/api/cron/llm-model-watchdog`
+  checks every configured model against the vendor model list plus a probe and
+  alerts on missing/retiring ones; add newly announced retirements to
+  `KNOWN_RETIRING` in `_llm-watchdog-helpers.ts`. Don't use `-latest` aliases
+  (the accepted thinking param depends on what they resolve to).
 - **`generate-questions` response cache** — same request body within
   300s returns from Upstash Redis (`gq:<hash>` keys) marked
   `_cached: true`. Static fallback fires from
@@ -214,19 +238,17 @@ git push origin main    # Vercel auto-deploys from main
 
 Preview deploys happen per PR. `/api/uptime-check` is the health probe.
 
-**Always test on staging before it reaches production.** `main` deploys
-straight to prod, so any change whose behaviour can only be confirmed
-on a real deploy (anything touching the LLM/TTS/STT/payment provider
-paths, edge-runtime-only code, or an end-to-end interview flow) must be
-validated on **`staging.hirestepx.com`** (the team/pre-prod full-app
-host, see `proxy.ts`) — or its per-branch Vercel preview — *before*
-merging to `main`. Don't push provider-path or flow changes straight to
-`main` and call them verified off local unit tests alone. Workflow:
-branch → push → let Vercel build the preview → run the live/E2E check
-against that URL (`BASE_URL=<preview-or-staging-url>`, see
-`.github/workflows/e2e.yml`) → merge once green. Staging is behind
-Vercel deployment protection; automated runs need the bypass secret +
-a staging test user (ask the maintainer if not configured locally).
+**Deploy directly to production (2026-08-20 policy change, explicit
+maintainer request).** Push/merge to `main` and let Vercel's auto-deploy
+take it straight to prod — don't gate on a staging/preview check first,
+including for changes touching the LLM/TTS/STT/payment provider paths,
+edge-runtime-only code, or the end-to-end interview flow. Still run
+`npx tsc --noEmit` and `npm test` locally before pushing, and still watch
+the Vercel/CI build status after push in case it fails outright — this
+policy trades pre-merge staging verification for speed, it doesn't
+excuse shipping code that doesn't build or fails its own unit tests.
+`staging.hirestepx.com` and per-branch Vercel previews still exist and
+remain available if a change specifically warrants that extra check.
 
 **DO NOT run `vercel deploy --prod` from the CLI.** The Vercel GitHub
 integration is enabled on this repo — every push to `main` triggers a
@@ -255,3 +277,84 @@ if you need to confirm readiness — do not re-trigger.
   `_subscription-actions.ts` example.
 - The git workflow: small focused commits on `main` with imperative
   subject lines. Don't amend published commits.
+
+## Candidate product rules (from the maintainer, repeated — do not re-ask)
+
+- **Candidate sidebar** is exactly: Dashboard, Sessions, Analytics, Your Profile,
+  Jobs. No Messages, Settings or Referrals in the sidebar; Settings and Referrals live
+  in the account menu. The header Messages and Notifications icons STAY: they are how a
+  candidate learns about an invite. (`navItems` / `offNavRoutes` in
+  `src/DashboardLayout.tsx`.)
+- Candidates cannot apply to jobs. Only matched jobs are visible to them.
+- Candidates can chat only with employers who contacted them or sent an interview invite.
+- Interviews are always in English. No replay, no peer/human mocks in the MVP.
+- Keep the input border colour as it is.
+
+## Audit Department Registry
+
+When the user asks for "all departments" or "the audit list", pull this section.
+27 departments carefully chosen for HireStepX — distinct perspectives only,
+stage-appropriate, all producing actionable findings. Status tracks what has
+been audited + fixed. Removed 12 that overlapped or were premature.
+
+**BUSINESS VIABILITY — highest ROI**
+| # | Department | Status |
+|---|---|---|
+| 1 | Y Combinator Partner (retention, activation, default alive, unit economics) | pending |
+| 2 | CPO — Chief Product Officer (core loop quality, feature gaps, user journey) | pending |
+| 3 | CFO — Chief Financial Officer (API cost per session vs pricing, unit economics) | pending |
+| 4 | CRO — Chief Revenue Officer (free→paid conversion, upgrade triggers) | pending |
+| 5 | CEO (strategic focus, north star metric, is product scattered or sharp?) | pending |
+
+**HIRESTEPX-SPECIFIC — unique to this product and market**
+| # | Department | Status |
+|---|---|---|
+| 6 | India Market Expert (mobile-first, UPI, WhatsApp share, tier-2 trust signals) | pending |
+| 7 | HR / Recruiting Industry Expert (STAR rubric accuracy, question bank quality) | pending |
+| 8 | Voice / AI Quality (TTS quality, STT accuracy, LLM scoring, latency, fallbacks) | pending |
+| 9 | Competitive Intelligence (vs Pramp, Interviewing.io, Indian rivals, ChatGPT) | pending |
+
+**TECHNICAL HEALTH**
+| # | Department | Status |
+|---|---|---|
+| 10 | Performance (Core Web Vitals, bundle size, India slow-connection load times) | pending |
+| 11 | Mobile / Responsive (iOS audio context, touch targets, low-end Android) | pending |
+| 12 | Database / Data Layer (RLS policy coverage, missing indexes, query performance) | pending |
+| 13 | Error Handling / Observability (what users see when Groq/STT/TTS fails) | pending |
+| 14 | Frontend Engineer (React patterns, component quality, bundle, hooks) | pending |
+| 15 | Backend Engineer (edge runtime compliance, server-handler patterns, API safety) | pending |
+| 16 | QA Engineer (exploratory testing, try to break voice flow, payment, report) | pending |
+
+**GROWTH & GTM**
+| # | Department | Status |
+|---|---|---|
+| 17 | CMO — Chief Marketing Officer (SEO content strategy, acquisition channels, brand) | pending |
+| 18 | Pricing Strategy (INR anchoring, plan name clarity, upgrade friction) | pending |
+| 19 | Onboarding / Activation (time-to-first-session, empty states, aha moment) | pending |
+| 20 | Retention / Habit Loop (streak mechanics, re-engagement, spaced repetition) | pending |
+| 21 | Email / Notifications (lifecycle email gaps, deliverability, templates) | pending |
+| 22 | Head of Design (visual consistency, design system maturity, brand polish) | pending |
+| 23 | Content / Copy (marketing copy conversion, CTA clarity, trust signals) | pending |
+
+**ALREADY DONE ✅**
+| # | Department | Status |
+|---|---|---|
+| 24 | Security / CISO | done ✅ |
+| 25 | Legal / Compliance (DPDP, IT Rules, CPA 2019, Grievance Officer) | done ✅ |
+| 26 | Accessibility (WCAG 2.1 AA — skip-link, route announce, aria) | done ✅ |
+| 27 | SEO · Testing/QA · CI/CD · SRE · Analytics · Payments (partial) | done ✅ |
+
+**Summary:** 27 done ✅ · 0 pending · 27 total (full audit complete 2026-07-16, overall score C+)
+**Removed (redundant/premature):** Head of Engineering, Senior Engineer, EdTech Expert,
+Product Hunt Reviewer, Customer Support, Growth/Acquisition (→ CMO), Privacy/Data
+Governance (→ Legal), CISO (→ Security), CLO (→ Legal), Angel/VC investors, COO.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

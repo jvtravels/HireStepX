@@ -5,7 +5,7 @@ import { describe, it, expect } from "vitest";
  * Verifies that expired paid subscriptions are correctly downgraded to "free".
  */
 
-type SubscriptionTier = "free" | "starter" | "pro" | "team";
+type SubscriptionTier = "free" | "starter" | "team";
 
 function getEffectiveTier(tier: SubscriptionTier, subscriptionEnd?: string | null): SubscriptionTier {
   if (tier !== "free" && subscriptionEnd) {
@@ -29,14 +29,6 @@ describe("Subscription Expiry Auto-Downgrade", () => {
     expect(getEffectiveTier("starter", "2020-01-01T00:00:00Z")).toBe("free");
   });
 
-  it("active pro stays pro", () => {
-    expect(getEffectiveTier("pro", "2099-12-31T23:59:59Z")).toBe("pro");
-  });
-
-  it("expired pro downgrades to free", () => {
-    expect(getEffectiveTier("pro", "2020-01-01T00:00:00Z")).toBe("free");
-  });
-
   it("active team stays team", () => {
     expect(getEffectiveTier("team", "2099-12-31T23:59:59Z")).toBe("team");
   });
@@ -46,18 +38,17 @@ describe("Subscription Expiry Auto-Downgrade", () => {
   });
 
   it("paid tier with no end date stays active", () => {
-    expect(getEffectiveTier("pro", null)).toBe("pro");
     expect(getEffectiveTier("starter", null)).toBe("starter");
     expect(getEffectiveTier("team", undefined)).toBe("team");
   });
 
   it("subscription expiring 1 second ago downgrades", () => {
     const justExpired = new Date(Date.now() - 1000).toISOString();
-    expect(getEffectiveTier("pro", justExpired)).toBe("free");
+    expect(getEffectiveTier("starter", justExpired)).toBe("free");
   });
 
   it("subscription expiring 1 hour from now stays active", () => {
     const soonExpiring = new Date(Date.now() + 3600_000).toISOString();
-    expect(getEffectiveTier("pro", soonExpiring)).toBe("pro");
+    expect(getEffectiveTier("starter", soonExpiring)).toBe("starter");
   });
 });

@@ -2,7 +2,7 @@
  * Tier-aware CGPA calibration note for campus-placement sessions.
  * Pure presentation. */
 
-import { t, shadows, radius } from "../tokens";
+import { t, radius, size } from "../tokens";
 
 export function CampusCgpaCalibrationNote({
   meta,
@@ -16,9 +16,11 @@ export function CampusCgpaCalibrationNote({
     targetCompany?: string | null;
     archetype?: string;
     archetypeLabel?: string;
+    bondProbeCount?: number;
+    aptitudeProbeExpectedType?: string;
   };
 }) {
-  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany, archetypeLabel } = meta;
+  const { companyTier, collegeTier, baseCgpaCutoff, adjustedCgpaCutoff, statedCgpa, targetCompany, archetypeLabel, bondProbeCount, aptitudeProbeExpectedType } = meta;
   const adjustmentDelta = adjustedCgpaCutoff - baseCgpaCutoff;
   const tierLabel = (() => {
     if (companyTier === "product-global") return "Tier-1 global product";
@@ -43,18 +45,19 @@ export function CampusCgpaCalibrationNote({
         border: `1px solid ${t.success}`,
         borderRadius: radius.card,
         padding: "clamp(12px, 3.5vw, 16px) clamp(14px, 4vw, 20px)",
-        boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
         gap: 6,
       }}
     >
-      <header style={{ fontSize: 13, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-        <span>CGPA calibration</span>
+      <header style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <h2 style={{ margin: 0, fontSize: size.base, fontWeight: 600, color: t.success, letterSpacing: 0.3, textTransform: "uppercase" }}>
+          CGPA calibration
+        </h2>
         {archetypeLabel && archetypeLabel !== "Generic campus" && (
           <span
             style={{
-              fontSize: 11,
+              fontSize: size.xs,
               fontWeight: 600,
               color: t.success,
               background: t.successTint,
@@ -69,11 +72,11 @@ export function CampusCgpaCalibrationNote({
           </span>
         )}
       </header>
-      <p style={{ fontSize: 15, color: t.coal, lineHeight: 1.5, margin: 0 }}>
+      <p style={{ fontSize: size.md, color: t.coal, lineHeight: 1.5, margin: 0 }}>
         {companyName} baseline {baseCgpaCutoff.toFixed(1)} CGPA{adjustmentText}
         {statedCgpa !== null && (
           <>
-            {" — you're at "}
+            {": you're at "}
             <strong style={{ color: passed ? t.success : t.error }}>
               {statedCgpa.toFixed(1)} {passed ? "✓" : "✗"}
             </strong>
@@ -81,11 +84,29 @@ export function CampusCgpaCalibrationNote({
         )}
         .
       </p>
-      <p style={{ fontSize: 12, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
+      <p style={{ fontSize: size.sm, color: t.inkSoft, lineHeight: 1.5, margin: 0 }}>
         {collegeLabel === "tier-1"
-          ? "IIT / NIT / BITS / IIIT / IISc get a 0.5 leniency on the cutoff because of harder grading curves."
-          : "Cutoffs combine the company's typical fresher gate with a college-tier adjustment (IIT/NIT/BITS get -0.5)."}
+          ? "IIT / NIT / BITS / IIIT / IISc receive a 0.5 point adjustment reflecting their harder grading curves."
+          : "Your score is benchmarked against the company's standard fresher baseline. IIT / NIT / BITS / IIIT graduates receive a 0.5 adjustment for harder grading curves."}
       </p>
+      {(aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none") || (bondProbeCount !== undefined && bondProbeCount > 0) ? (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 6 }}>
+          {aptitudeProbeExpectedType && aptitudeProbeExpectedType !== "none" && (
+            <span style={{ fontSize: size.sm, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+              {aptitudeProbeExpectedType === "coding"
+                ? "DSA / coding aptitude expected"
+                : aptitudeProbeExpectedType === "puzzle"
+                ? "Logical / puzzle aptitude expected"
+                : "Coding or logical aptitude expected"}
+            </span>
+          )}
+          {bondProbeCount !== undefined && bondProbeCount > 0 && (
+            <span style={{ fontSize: size.sm, color: t.inkSoft, background: t.successTint, borderRadius: radius.pill, padding: "3px 10px" }}>
+              {bondProbeCount === 1 ? "Bond / location commitment probed" : `Bond / location commitment probed (${bondProbeCount}×)`}
+            </span>
+          )}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -12,13 +12,14 @@
  * to the referral link when shareUrl is absent. */
 
 import { useState, type CSSProperties } from "react";
-import { t, f, brand } from "../tokens";
+import { t, f, brand, size } from "../tokens";
 import { useAuth, referralSignupUrl } from "../../AuthContext";
 import { captureClientEvent } from "../../posthogClient";
+import { Button } from "@/components/ui/button";
 
-/** Show the invite only when the candidate just did well — a weak result is
- *  the wrong moment to ask for a share. Matches the onboarding 70 threshold. */
-const MIN_SCORE = 70;
+/** Show the invite when the candidate has done reasonably well — broadened from
+ *  70 to 50 so most free users see the referral CTA and can earn a free session. */
+const MIN_SCORE = 50;
 
 export function ReferralInviteSection({
   score,
@@ -40,7 +41,8 @@ export function ReferralInviteSection({
   const linkedInTarget = shareUrl || link;
 
   const onWhatsApp = () => {
-    const text = `I just scored ${score}/100 on a HireStepX AI mock interview. Sign up with my link and we each get a free practice session: ${link}`;
+    const reportPart = shareUrl ? ` See my full report: ${shareUrl}` : "";
+    const text = `I just scored ${score}/100 on a HireStepX AI mock interview.${reportPart} Sign up with my link and we each get a free practice session: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
     captureClientEvent("referral_invite_sent", { surface: "session_report", channel: "whatsapp", score });
   };
@@ -59,8 +61,7 @@ export function ReferralInviteSection({
   };
 
   const btnBase: CSSProperties = {
-    fontFamily: f.sans, fontSize: 13, fontWeight: 600,
-    padding: "10px 18px", borderRadius: 10, cursor: "pointer",
+    fontFamily: f.sans, fontWeight: 600,
     display: "inline-flex", alignItems: "center", gap: 8,
   };
 
@@ -68,34 +69,34 @@ export function ReferralInviteSection({
     <section
       aria-label="Invite a friend"
       style={{
-        background: t.copperWash,
-        border: `1px solid ${t.copperBorder}`,
+        background: t.creamSoft,
+        border: `1px solid ${t.line}`,
         borderRadius: 16,
         padding: "22px clamp(18px, 3vw, 28px)",
       }}
     >
-      <span style={{ fontFamily: f.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper }}>
+      <span style={{ fontFamily: f.sans, fontSize: size.xs, fontWeight: 600, color: t.inkSoft }}>
         Bring a friend
       </span>
-      <div style={{ fontFamily: f.serif, fontSize: 22, color: t.coal, marginTop: 6 }}>
+      <h2 style={{ fontFamily: f.serif, fontSize: size["2xl"], fontWeight: 400, color: t.coal, marginTop: 6, marginBottom: 0 }}>
         You both get a free session
-      </div>
-      <div style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
+      </h2>
+      <div style={{ fontFamily: f.sans, fontSize: size.md, color: t.inkSoft, marginTop: 6, lineHeight: 1.55, maxWidth: 560 }}>
         Send your link to someone prepping for interviews. When they sign up, you
-        each get a free practice session — credited instantly, no purchase needed.
+        each get a free practice session, credited instantly with no purchase needed.
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 18, flexWrap: "wrap" }}>
-        <button type="button" onClick={onWhatsApp} style={{ ...btnBase, background: t.copper, color: t.white, border: "none" }}>
+        <Button type="button" onClick={onWhatsApp} style={btnBase}>
           Share on WhatsApp
-        </button>
+        </Button>
         {/* LinkedIn share — opens the sharing dialog pre-populated with
             the report URL (or referral link as fallback). Opens in a new
             tab per LinkedIn's recommended share-offsite pattern. */}
-        <button
+        <Button
           type="button"
           onClick={onLinkedIn}
           aria-label="Share on LinkedIn"
-          style={{ ...btnBase, background: brand.linkedIn, color: t.white, border: "none" }}
+          style={{ ...btnBase, background: brand.linkedIn, color: t.white }}
         >
           <svg
             width="16"
@@ -107,10 +108,10 @@ export function ReferralInviteSection({
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
           </svg>
           Share on LinkedIn
-        </button>
-        <button type="button" onClick={onCopy} style={{ ...btnBase, background: "transparent", color: t.copper, border: `1px solid ${t.copperBorder}` }}>
+        </Button>
+        <Button type="button" variant="outline" onClick={onCopy} style={btnBase}>
           {copied ? "Link copied!" : "Copy link"}
-        </button>
+        </Button>
       </div>
     </section>
   );

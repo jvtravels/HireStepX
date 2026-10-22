@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef, memo, Fragment } from "react";
 import { captureClientEvent } from "./posthogClient";
+import { sendGtagEvent } from "./_browser-api-guards";
 import dynamic from "next/dynamic";
 import { c, font } from "./tokens";
 import { tokens as T } from "./auth/_tokens";
 import { scoreLabel, scoreLabelColor } from "./dashboardTypes";
 import type { DashboardSession } from "./dashboardTypes";
-import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, PRO_MONTHLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
+import { FREE_SESSION_LIMIT, STARTER_WEEKLY_LIMIT, SINGLE_SESSION_PRICE } from "./dashboardData";
 import { SectionErrorBoundary } from "./ErrorBoundary";
+import { Button } from "@/components/ui/button";
+import CandidatePageHeader, { CandidatePagePanel } from "./CandidatePageHeader";
+import { PLAN_AMOUNT_PAISE, formatRupees } from "../data/plans";
 
 // Cream/indigo/copper results report — ported from the `interview-result`
 // Tempo canvas. Lazy-loaded to keep the dashboard hero bundle slim.
@@ -107,37 +111,33 @@ export function DataLoadingSkeleton() {
 
 /* ─── Upgrade Modal ─── */
 const PLANS_ALL = [
-  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false, hidden: false },
-  { id: "single",  tier: "free",    name: "Per session", price: "\u20B99",   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false, hidden: false },
-  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: "\u20B939",  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 7-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking"],                                                                                                featured: true,  hidden: false },
-  /* Monthly plan \u2014 hidden until re-enabled. Keep all data intact so re-enabling is a one-line change. */
-  { id: "monthly", tier: "pro",     name: "Monthly",     price: "\u20B9149", unit: "/ 30 days", sub: "Most loved during placement season", cta: "Go monthly",       features: [`${PRO_MONTHLY_LIMIT} sessions \u00B7 30 days`, "Everything in Weekly", "Interview calendar + countdown", "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],                                                    featured: false, hidden: true  },
+  { id: "free",    tier: "free",    name: "Free",        price: "\u20B90",   unit: "forever",   sub: "Try before you pay a rupee",         cta: "Start free",       features: [`${FREE_SESSION_LIMIT} mock sessions`, "Behavioural rounds + basic STAR score", "Email report", "Saved report for 7 days", "No credit card required"],                                                                                               featured: false },
+  { id: "single",  tier: "free",    name: "Per session", price: formatRupees(PLAN_AMOUNT_PAISE.single),   unit: "/ session", sub: "One mock, zero commitment",           cta: "Buy one session",  features: ["1 mock session", "Voice in & out, all round types", "Full STAR score + report", "Credit never expires"],                                                                                                                                       featured: false },
+  { id: "weekly",  tier: "starter", name: "Sprint Pack", price: formatRupees(PLAN_AMOUNT_PAISE.weekly),  compareAt: "\u20B945", unit: "/ 5 sessions", sub: "Prep for your next interview",     cta: "Get Sprint Pack",  features: [`${STARTER_WEEKLY_LIMIT} sessions \u00B7 30-day validity`, "Voice in & out, all round types", "Company-specific rounds", "Skill-decay tracking", "90-day report history"],                                                                                                featured: true },
 ];
-const PLANS_MONTHLY = PLANS_ALL.filter(p => !p.hidden);
 
 // Rank used to determine if a plan card is "below" the user's current subscription.
 // Cards at a lower rank show a non-interactive indicator instead of a checkout button
-// so a Pro user never sees "Start free →" or "Go weekly →" while managing their plan.
-const TIER_RANK: Record<string, number> = { free: 0, starter: 1, pro: 2, team: 3 };
+// so a Team user never sees "Start free →" or "Go weekly →" while managing their plan.
+const TIER_RANK: Record<string, number> = { free: 0, starter: 1, team: 2 };
 
 
 export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: _sessionsUsed, user, currentTier, starterExhausted, onPaymentSuccess, onCreditPurchase }: { onClose: () => void; sessionsUsed: number; user?: { id?: string; email?: string; name?: string } | null; currentTier: string; starterExhausted?: boolean; onPaymentSuccess: (tier: string, start: string, end: string) => void; onCreditPurchase?: (newBalance: number) => void }) {
   // Cream palette shadow — matches the marketing /pricing page and settings repaint.
   // Intentionally shadows the dark `c`/`font` imports for the entire UpgradeModal scope.
   const c = {
-    obsidian: T.cream, graphite: "#FDFCF7", carbon: T.creamSoft,
-    ivory: T.coal, chalk: "#3F3A33", stone: "#6B655C",
-    gilt: T.copper, giltDark: T.copperDark, giltLight: T.copper100,
+    obsidian: T.cream, graphite: T.creamRaised, carbon: T.creamSoft,
+    ivory: T.coal, chalk: T.neutralInk, stone: T.inkSoft,
     sage: T.success, ember: T.error,
     slate: T.indigo,
     border: T.line, borderHover: T.lineStrong,
   };
   const font = {
     display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-    ui: "'Satoshi', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    mono: "'JetBrains Mono', 'SF Mono', monospace",
+    ui: "'Geist Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "'Geist Mono', 'SF Mono', monospace",
   };
-  const PLANS = PLANS_MONTHLY;
+  const PLANS = PLANS_ALL;
   // Exclude the "single" plan from the regular card loop — the null slot below
   // renders it as the interactive slider card. Keeping it in would produce a
   // duplicate "Per session" card alongside the slider.
@@ -157,8 +157,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
   /* Sprint Pack has no weekly reset — removed. */
   /* Live session-count social proof — fetched once on modal open from the
-   * cached /api/platform-stats endpoint (Redis 1 h TTL). Falls back to null
-   * so the display string shows the safe hardcoded "500+" instead. */
+   * cached /api/platform-stats endpoint (Redis 1 h TTL). Stays null (no line
+   * rendered) when the real count is unavailable or too small to show. */
   const [liveSessionCount, setLiveSessionCount] = useState<number | null>(null);
   useEffect(() => {
     fetch("/api/platform-stats")
@@ -169,13 +169,47 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       .catch(() => { /* leave null — UI uses fallback */ });
   }, []);
   // Store Razorpay response + plan in state so useEffect handles verification
-  // (fetch inside Razorpay's handler callback doesn't work reliably)
-  const [pendingVerification, setPendingVerification] = useState<{
+  // (fetch inside Razorpay's handler callback doesn't work reliably). Also
+  // mirrored to sessionStorage: the user has already been charged at this
+  // point, so if the modal unmounts before verification resolves (backdrop
+  // click slipping through, parent re-render, etc.) the next mount picks the
+  // payment back up and finishes verifying instead of silently dropping it.
+  const PENDING_VERIFICATION_KEY = "hirestepx_pending_payment_verification";
+  type PendingVerification = {
     razorpay_order_id: string;
     razorpay_payment_id: string;
     razorpay_signature: string;
     plan: string;
-  } | null>(null);
+  };
+  const [pendingVerification, setPendingVerificationState] = useState<PendingVerification | null>(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_VERIFICATION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { savedAt?: number; data?: PendingVerification };
+      // Only resume a payment recorded in the last 10 minutes — older entries
+      // are almost certainly stale (verification already completed or failed
+      // permanently in a prior session) rather than genuinely still pending.
+      if (!parsed.savedAt || Date.now() - parsed.savedAt > 10 * 60 * 1000) {
+        sessionStorage.removeItem(PENDING_VERIFICATION_KEY);
+        return null;
+      }
+      return parsed.data ?? null;
+    } catch {
+      return null;
+    }
+  });
+  // Wrap the setter so every write also mirrors to sessionStorage (or clears
+  // it once verification resolves) without touching every call site below.
+  const setPendingVerification = (value: PendingVerification | null) => {
+    setPendingVerificationState(value);
+    try {
+      if (value) {
+        sessionStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify({ savedAt: Date.now(), data: value }));
+      } else {
+        sessionStorage.removeItem(PENDING_VERIFICATION_KEY);
+      }
+    } catch { /* sessionStorage unavailable — in-memory state still works for this tab */ }
+  };
   const authHeadersRef = useRef<Record<string, string>>({});
 
   const [verifyRetries, setVerifyRetries] = useState(0);
@@ -190,13 +224,28 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     setLoading("verifying");
     setError("");
 
-    const attemptVerify = (attempt: number) => {
+    const attemptVerify = async (attempt: number) => {
+      // On a fresh mount (e.g. the modal was remounted and resumed a pending
+      // verification restored from sessionStorage), authHeadersRef is never
+      // populated by handleCheckout. Hydrate it before the first attempt so
+      // the resumed verify-payment call doesn't go out unauthenticated.
+      if (Object.keys(authHeadersRef.current).length === 0) {
+        try {
+          authHeadersRef.current = await import("./supabase").then(m => m.authHeaders());
+        } catch { /* fall through — request will 401 and surface as an error below */ }
+      }
       fetch("/api/verify-payment", {
         method: "POST",
         headers: authHeadersRef.current,
         body: JSON.stringify(pendingVerification),
       })
-        .then(r => r.json())
+        .then(r => {
+          // 401 (stale token), 429 and 5xx are transient: the charge already
+          // succeeded, so route them to the retry path instead of treating
+          // them as a definitive rejection that drops the pending record.
+          if (r.status === 401 || r.status === 429 || r.status >= 500) throw new Error(`transient ${r.status}`);
+          return r.json();
+        })
         .then(verifyData => {
           if (cancelled) return;
           if (verifyData.success) {
@@ -207,6 +256,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               // not the new total balance (credits). If you had 2 and bought 10,
               // the message should read "10 sessions added", not "12 sessions added".
               const purchased = typeof verifyData.quantity === "number" ? verifyData.quantity : null;
+              try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
+              captureClientEvent("payment_success", { plan: "single", quantity: purchased ?? 1 });
+              // GA4 ecommerce — revenue visibility independent of PostHog
+              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: 9 * (purchased ?? 1), items: [{ item_id: "single_session", item_name: "Single Interview Session", price: 9, quantity: purchased ?? 1 }] });
               setCreditSuccess(purchased);
               setLoading(null);
               // Update sidebar balance immediately from the server's reported new
@@ -217,24 +270,41 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               }
               return;
             }
+            try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
+            captureClientEvent("payment_success", { plan: pendingVerification?.plan, tier: verifyData?.subscriptionTier });
             captureClientEvent("plan_upgraded", {
               tier: verifyData?.subscriptionTier,
               plan: pendingVerification?.plan,
             });
+            // GA4 ecommerce — revenue visibility independent of PostHog
+            {
+              const planId = pendingVerification?.plan ?? "";
+              const planValue = 39;
+              sendGtagEvent("purchase", { currency: "INR", transaction_id: pendingVerification?.razorpay_payment_id ?? "", value: planValue, items: [{ item_id: planId, item_name: "Sprint Pack", price: planValue, quantity: 1 }] });
+            }
             onPaymentSuccess(verifyData.subscriptionTier, verifyData.subscriptionStart, verifyData.subscriptionEnd);
           } else {
-            setError(verifyData.error || "Payment verification failed. Please try again or contact support@hirestepx.com");
+            // A definitive rejection from the server (signature/amount mismatch,
+            // plan conflict, etc.) won't change on a blind retry — drop the
+            // persisted copy so a stale resume doesn't keep re-surfacing it.
+            try { sessionStorage.removeItem(PENDING_VERIFICATION_KEY); } catch { /* best effort */ }
+            setError(verifyData.error || "Payment verification failed. Please try again or contact hello@hirestepx.com");
             setLoading(null);
           }
         })
         .catch(() => {
           if (cancelled) return;
+          authHeadersRef.current = {}; // force a fresh token on retry (a 401 means it went stale)
           // Auto-retry once after 2 seconds with user feedback
           if (attempt < 1) {
             setError("Verification taking longer than expected — retrying...");
             setTimeout(() => { if (!cancelled) attemptVerify(attempt + 1); }, 2000);
           } else {
-            setError("Payment verification failed. Your payment was received — try refreshing, or contact support@hirestepx.com for help.");
+            // Transient failure (network/timeout) — keep the sessionStorage copy.
+            // The payment was captured server-side; "retryVerification" (and a
+            // future remount via the sessionStorage resume above) should still
+            // be able to pick it back up rather than losing it here.
+            setError("Payment verification failed. Your payment was received — try refreshing, or contact hello@hirestepx.com for help.");
             setVerifyRetries(attempt + 1);
             setLoading(null);
           }
@@ -275,8 +345,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           // Server returned non-JSON (e.g. Vercel crash page)
           console.error("create-order returned", res.status, "with non-JSON body");
           errMsg = res.status === 503
-            ? "Payments are not configured yet. Please contact support@hirestepx.com"
-            : "Payment server error. Please try again or contact support@hirestepx.com";
+            ? "Payments are not configured yet. Please contact hello@hirestepx.com"
+            : "Payment server error. Please try again or contact hello@hirestepx.com";
         }
         setError(errMsg);
         setLoading(null);
@@ -293,6 +363,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         const loadRzpScript = () => new Promise<void>((resolve, reject) => {
           const s = document.createElement("script");
           s.src = "https://checkout.razorpay.com/v1/checkout.js";
+          // CSP is 'strict-dynamic' + per-request nonce (see proxy.ts) — a script tag
+          // without this attribute is silently blocked, which is what made checkout
+          // hang until the 10s timeout below. The nonce is exposed via the <meta
+          // name="csp-nonce"> tag rendered server-side in app/layout.tsx.
+          const nonce = document.querySelector('meta[name="csp-nonce"]')?.getAttribute("content");
+          if (nonce) s.nonce = nonce;
           const timer = setTimeout(() => { s.remove(); reject(new Error("timeout")); }, 10_000);
           s.onload = () => { clearTimeout(timer); resolve(); };
           s.onerror = () => { clearTimeout(timer); s.remove(); reject(); };
@@ -306,7 +382,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             await new Promise(r => setTimeout(r, 1000));
             await loadRzpScript();
           } catch {
-            setError("Payment system failed to load. Check your connection and try again, or contact support@hirestepx.com");
+            setError("Payment system failed to load. Check your connection and try again, or contact hello@hirestepx.com");
             setLoading(null);
             return;
           }
@@ -326,7 +402,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         description: data.description,
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },
-        theme: { color: c.gilt },
+        theme: { color: T.indigo },
+        config: { display: { blocks: { banks: { name: "Pay via UPI / Netbanking", instruments: [{ method: "upi" }, { method: "netbanking" }] } }, sequence: ["block.banks"], preferences: { show_default_blocks: true } } },
+        method: { upi: true, card: true, netbanking: true, wallet: true },
         handler: function (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
           setPendingVerification({
             razorpay_order_id: response.razorpay_order_id,
@@ -347,6 +425,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       // from "user is mid-typing UPI" (leave spinner alone, so they
       // can't double-fire createOrder by clicking again).
       const modalOpened = { fired: false };
+      // Razorpay's checkout.js is loaded from a <script> tag (no published
+      // types); `.on()` exists on the real instance but isn't in whatever
+      // ambient type `rzp` carries.
       (rzp as unknown as { on(event: string, cb: (r: unknown) => void): void }).on("payment.failed", function (response: unknown) {
         modalOpened.fired = true;
         const errDetail = (response as { error?: { code?: string; description?: string; reason?: string } })?.error;
@@ -359,10 +440,12 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         // Razorpay closes its sheet on payment.failed; our modal is still
         // mounted. Show an inline reassurance card rather than redirecting
         // the user out of the product to a dead-end /payment-failed page.
+        captureClientEvent("payment_failed", { plan: planId, code, reason: humanReason });
         setPaymentFailed({ reason: humanReason, plan: planId });
         setLoading(null);
       });
       captureClientEvent("checkout_opened", { plan: planId });
+      sendGtagEvent("checkout_opened", { plan: planId });
       rzp.open();
       // Safety net: clear spinner ONLY if Razorpay never opened. Without
       // the guard, a modal that appears at 7.9s would re-enable the Pay
@@ -381,7 +464,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       } else if (msg.includes("CSP") || msg.includes("Content Security Policy") || msg.includes("unsafe-eval")) {
         setError("Payment blocked by browser security settings. Try disabling browser extensions or use a different browser.");
       } else {
-        setError("Something went wrong. Please try again or contact support@hirestepx.com");
+        setError("Something went wrong. Please try again or contact hello@hirestepx.com");
       }
       setLoading(null);
     }
@@ -389,10 +472,21 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
   const modalRef = useRef<HTMLDivElement>(null);
 
+  // Guard against closing mid-verification: the charge has already gone
+  // through at this point, so dismissing now (Escape, backdrop click, the
+  // close button) used to just abandon the in-flight check with no record
+  // of it anywhere the user could find again. sessionStorage persistence
+  // above means a resume is still possible, but blocking the close is the
+  // simplest way to stop the user from walking away mid-verification at all.
+  const guardedClose = () => {
+    if (loading === "verifying") return;
+    onClose();
+  };
+
   // Focus trap + Escape to close
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { onClose(); return; }
+      if (e.key === "Escape") { guardedClose(); return; }
       if (e.key !== "Tab" || !modalRef.current) return;
       const focusable = modalRef.current.querySelectorAll<HTMLElement>("button, [href], input, select, textarea, [tabindex]:not([tabindex='-1'])");
       if (focusable.length === 0) return;
@@ -401,26 +495,28 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
       else { if (document.activeElement === last) { e.preventDefault(); first.focus(); } }
     };
     document.addEventListener("keydown", handleKeyDown);
-    // Focus first button on mount
-    const first = modalRef.current?.querySelector<HTMLElement>("button");
-    first?.focus();
+    // Focus the modal container on mount (a11y: dialog focus pattern).
+    // Avoids triggering :focus-visible on the close button which shows an
+    // orange outline ring immediately when the modal opens via mouse click.
+    modalRef.current?.focus();
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- guardedClose closes over `loading`; re-running this effect is intentional whenever it changes
+  }, [onClose, loading]);
 
   return (
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- dialog backdrop dismissal
-    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={onClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
+    <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={guardedClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
-      <div ref={modalRef} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)" }}>
-        <button onClick={onClose} aria-label="Close dialog" style={{ position: "absolute", top: 14, right: 14, background: "none", border: "none", color: c.stone, cursor: "pointer", padding: 4 }}>
+      <div ref={modalRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)", outline: "none" }}>
+        <Button variant="ghost" size="icon-sm" onClick={guardedClose} disabled={loading === "verifying"} aria-label={loading === "verifying" ? "Verifying payment — please wait" : "Close dialog"} style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
+        </Button>
 
         <div style={{ textAlign: "center", marginBottom: 24 }}>
-          <h2 id="upgrade-modal-title" style={{ fontFamily: font.display, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More reps. More offers.</h2>
+          <h2 id="upgrade-modal-title" style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More practice, better answers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
-            {currentTier === "pro" || currentTier === "team"
-              ? "Add sessions — your Pro plan stays active."
+            {currentTier === "team"
+              ? "Add sessions — your Team plan stays active."
               : currentTier === "starter"
               ? "Sprint Pack sessions expire with the pack. Grab another to keep going."
               : "No subscription — pay for one session or a five-session pack."}
@@ -430,18 +526,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* ── Sprint Pack exhausted banner — only shown when sessions are used up */}
         {currentTier === "starter" && starterExhausted && (
           <div style={{ display: "flex", alignItems: "center", gap: 12,
-            background: "rgba(180,83,9,0.06)", border: "1px solid rgba(180,83,9,0.18)",
+            background: T.indigo100, border: `1px solid ${T.indigoRing}`,
             borderRadius: 12, padding: "12px 16px", marginBottom: 20 }}>
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"
-              stroke={T.copper} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              stroke={T.indigo} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
             </svg>
             <div style={{ flex: 1, minWidth: 0 }}>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600,
-                color: T.copper, margin: 0, lineHeight: 1.3 }}>
+                color: T.indigo, margin: 0, lineHeight: 1.3 }}>
                 You&apos;ve used all sessions in your Sprint Pack
               </p>
-              <p style={{ fontFamily: font.ui, fontSize: 11, color: "#6B655C",
+              <p style={{ fontFamily: font.ui, fontSize: 11, color: T.inkSoft,
                 margin: "2px 0 0", lineHeight: 1.4 }}>
                 Get another Sprint Pack (₹39 · 5 sessions) or buy individual sessions below.
               </p>
@@ -451,39 +547,40 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
         {/* Payment.failed inline card — keeps users in context with reassurance + retry */}
         {paymentFailed && (
-          <div style={{ background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 12, padding: "20px 20px 16px", marginBottom: 16 }}>
+          <div style={{ background: T.warning100, border: `1px solid ${T.warningLine}`, borderRadius: 12, padding: "20px 20px 16px", marginBottom: 16 }}>
             <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: "#FEF3C7", border: "1px solid #FCD34D", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div style={{ flexShrink: 0, width: 36, height: 36, borderRadius: "50%", background: T.warning100, border: `1px solid ${T.warningLine}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={T.warning} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
                   <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: "#92400E", margin: "0 0 2px" }}>Payment didn&apos;t go through</p>
-                <p style={{ fontFamily: font.ui, fontSize: 12, color: "#78350F", margin: "0 0 8px", lineHeight: 1.5 }}>{paymentFailed.reason}</p>
-                <p style={{ fontFamily: font.ui, fontSize: 11, color: "#92400E", margin: "0 0 12px", fontWeight: 500 }}>
+                <p style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: T.warningInk, margin: "0 0 2px" }}>Payment didn&apos;t go through</p>
+                <p style={{ fontFamily: font.ui, fontSize: 12, color: T.warningInk, margin: "0 0 8px", lineHeight: 1.5 }}>{paymentFailed.reason}</p>
+                <p style={{ fontFamily: font.ui, fontSize: 11, color: T.warningInk, margin: "0 0 12px", fontWeight: 500 }}>
                   ✓ No money was debited from your account.
                 </p>
-                <button
+                <Button
+                  size="sm"
                   onClick={() => { setPaymentFailed(null); handleCheckout(paymentFailed.plan); }}
-                  style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 600, color: "#fff", background: "#D97706", border: "none", borderRadius: 8, padding: "8px 16px", cursor: "pointer" }}
+                  style={{ background: T.warning, color: T.white }}
                 >
                   Try again
-                </button>
+                </Button>
               </div>
             </div>
           </div>
         )}
 
         {error && (
-          <div style={{ background: "#FBEAE7", border: `1px solid #F2C9C2`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
+          <div style={{ background: T.error100, border: `1px solid ${T.errorLine}`, borderRadius: 8, padding: "10px 14px", marginBottom: 16, textAlign: "center" }}>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.ember, display: "block", marginBottom: 8 }}>{error}</span>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               {verifyRetries > 0 && (
-                <button onClick={retryVerification} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.graphite, background: c.ember, border: "none", borderRadius: 10, padding: "5px 14px", cursor: "pointer" }}>Retry Verification</button>
+                <Button size="sm" onClick={retryVerification}>Retry Verification</Button>
               )}
-              <button onClick={() => { setError(""); setVerifyRetries(0); }} style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: "none", border: `1px solid ${c.borderHover}`, borderRadius: 10, padding: "8px 14px", cursor: "pointer", minHeight: 36 }}>Dismiss</button>
+              <Button variant="outline" size="sm" onClick={() => { setError(""); setVerifyRetries(0); }} style={{ color: T.indigo }}>Dismiss</Button>
             </div>
           </div>
         )}
@@ -491,9 +588,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         {/* Promo Code — collapsed by default */}
         {!showPromo && !promoResult?.valid && (
           <div style={{ textAlign: "left", marginBottom: 12 }}>
-            <button onClick={() => setShowPromo(true)} style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, background: "none", border: "none", padding: 0, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            <Button variant="link" onClick={() => setShowPromo(true)} style={{ color: T.indigo }}>
               Have a promo code?
-            </button>
+            </Button>
           </div>
         )}
         {(showPromo || promoResult?.valid) && (
@@ -502,9 +599,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
               placeholder="Promo code" aria-label="Promo code"
               /* eslint-disable-next-line jsx-a11y/no-autofocus -- input is revealed on demand; focusing it on appear is the expected affordance. */
               autoFocus
-              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, outline: "none", letterSpacing: "0.04em" }}
+              style={{ fontFamily: font.mono, fontSize: 12, color: c.ivory, background: "transparent", border: "none", borderBottom: `1px solid ${promoResult?.valid ? c.sage : c.borderHover}`, borderRadius: 0, padding: "6px 2px", flex: 1, letterSpacing: "0.04em" }}
             />
-            <button disabled={promoLoading || !promoCode.trim()} onClick={async () => {
+            <Button variant="outline" size="sm" disabled={promoLoading || !promoCode.trim()} onClick={async () => {
               setPromoLoading(true); setPromoError("");
               try {
                 const hdrs = await import("./supabase").then(m => m.authHeaders());
@@ -519,17 +616,14 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 if (data.valid) { setPromoResult(data); } else { setPromoError(data.error || "Invalid code"); setPromoResult(null); }
               } catch { setPromoError("Could not validate code"); }
               finally { setPromoLoading(false); }
-            }} style={{
-              fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.gilt, background: c.giltLight,
-              border: `1px solid ${c.borderHover}`, borderRadius: 8, padding: "8px 14px", cursor: promoLoading ? "wait" : "pointer", opacity: !promoCode.trim() ? 0.5 : 1,
-            }}>
+            }} style={{ color: T.indigo, background: T.indigo100 }}>
               {promoLoading ? "..." : "Apply"}
-            </button>
+            </Button>
           </div>
         )}
         {promoError && <p style={{ fontFamily: font.ui, fontSize: 11, color: c.ember, marginBottom: 12, marginTop: -4 }}>{promoError}</p>}
         {promoResult?.valid && (
-          <div style={{ background: "#E8F2EA", border: `1px solid #BFD9C3`, borderRadius: 8, padding: "8px 14px", marginBottom: 12, marginTop: -4, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ background: T.success100, border: `1px solid ${T.successLine}`, borderRadius: 8, padding: "8px 14px", marginBottom: 12, marginTop: -4, display: "flex", alignItems: "center", gap: 8 }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
             <span style={{ fontFamily: font.ui, fontSize: 12, color: c.sage, fontWeight: 500 }}>
               {promoResult.discount_percent ? `${promoResult.discount_percent}% off` : `₹${Math.round((promoResult.discount_amount || 0) / 100)} off`} applied!
@@ -546,9 +640,9 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   {/* Slider thumb styles — scoped to .upgrade-session-slider */}
                   <style>{`
                     .upgrade-session-slider { -webkit-appearance: none; appearance: none; width: 100%; height: 3px; border-radius: 2px; outline: none; cursor: pointer; }
-                    .upgrade-session-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
-                    .upgrade-session-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #B45309; border: 2.5px solid #1A1712; cursor: pointer; }
-                    .upgrade-session-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid #B45309; outline-offset: 2px; }
+                    .upgrade-session-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: ${T.copper}; border: 2.5px solid ${T.coal}; box-shadow: 0 1px 4px rgba(0,0,0,0.25); cursor: pointer; }
+                    .upgrade-session-slider::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: ${T.copper}; border: 2.5px solid ${T.coal}; cursor: pointer; }
+                    .upgrade-session-slider:focus-visible::-webkit-slider-thumb { outline: 2px solid ${T.copper}; outline-offset: 2px; }
                   `}</style>
                   <div style={{
                     position: "relative", padding: 22, borderRadius: 20,
@@ -559,10 +653,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   }}>
                     {creditSuccess !== null ? (
                       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "32px 0" }}>
-                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#E8F2EA", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <div style={{ width: 44, height: 44, borderRadius: "50%", background: T.success100, display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                         </div>
-                        <p style={{ margin: 0, fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
+                        <p style={{ margin: 0, fontFamily: font.ui, fontSize: 22, fontWeight: 400, color: c.ivory, textAlign: "center" }}>
                           {creditSuccess === 1 ? "1 session" : `${creditSuccess} sessions`} added
                         </p>
                         <p style={{ margin: 0, fontFamily: font.ui, fontSize: 13, color: c.stone, textAlign: "center" }}>
@@ -572,8 +666,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     ) : (
                       <>
                         <div>
-                          <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: c.gilt }}>Per Session</p>
-                          <p style={{ margin: "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                          <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: T.indigo }}>Per Session</p>
+                          <p style={{ margin: "10px 0 0", fontFamily: font.ui, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                             &#x20B9;{SINGLE_SESSION_PRICE}
                             <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: c.stone }}>/ session</span>
                           </p>
@@ -582,36 +676,35 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                           {["Voice in & out, all round types", "Full STAR score + coached answer", "Use anytime, no expiry"].map((f) => (
                             <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: c.chalk }}>
-                              <span aria-hidden style={{ color: c.gilt, marginTop: 2, flexShrink: 0 }}>&#8594;</span>{f}
+                              <span aria-hidden style={{ color: T.indigo, marginTop: 2, flexShrink: 0 }}>&#8594;</span>{f}
                             </li>
                           ))}
                         </ul>
                         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
                           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
                             <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.stone }}>How many?</span>
-                            <span style={{ fontFamily: font.ui, fontSize: 12, color: c.gilt, fontWeight: 600 }}>&#x20B9;{SINGLE_SESSION_PRICE * singleQty} total</span>
+                            <span style={{ fontFamily: font.ui, fontSize: 12, color: T.indigo, fontWeight: 600 }}>&#x20B9;{SINGLE_SESSION_PRICE * singleQty} total</span>
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <button onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
-                              style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty <= 1 ? c.border : c.borderHover}`, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory, cursor: singleQty <= 1 || !!loading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty <= 1 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s" }}>&#8722;</button>
+                            <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.max(1, q - 1))} disabled={singleQty <= 1 || !!loading} aria-label="Remove one session"
+                              style={{ flexShrink: 0, background: c.carbon, color: singleQty <= 1 ? c.stone : c.ivory }}>&#8722;</Button>
                             <input type="range" min={1} max={10} step={1} value={singleQty} onChange={e => setSingleQty(Number(e.target.value))} disabled={!!loading} aria-label="Number of sessions" aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10} className="upgrade-session-slider"
-                              style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
-                            <button onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
-                              style={{ width: 32, height: 32, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty >= 10 ? c.border : c.gilt}`, background: singleQty >= 10 ? c.carbon : `rgba(180,83,9,0.10)`, color: singleQty >= 10 ? c.stone : c.gilt, cursor: singleQty >= 10 || !!loading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty >= 10 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s, background 0.15s" }}>&#43;</button>
+                              style={{ flex: 1, background: `linear-gradient(to right, ${T.copper} 0%, ${T.copper} ${((singleQty - 1) / 9) * 100}%, ${c.border} ${((singleQty - 1) / 9) * 100}%, ${c.border} 100%)` }} />
+                            <Button variant="outline" size="icon" onClick={() => setSingleQty(q => Math.min(10, q + 1))} disabled={singleQty >= 10 || !!loading} aria-label="Add one session"
+                              style={{ flexShrink: 0, background: singleQty >= 10 ? c.carbon : `oklch(0.359 0.135 278.697 / 0.10)`, color: singleQty >= 10 ? c.stone : T.indigo }}>&#43;</Button>
                           </div>
                           <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, color: c.stone, textAlign: "center" }}>
                             {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
-                            {singleQty >= 10 && <span style={{ color: c.gilt }}> &#xB7; max per order</span>}
+                            {singleQty >= 10 && <span style={{ color: T.indigo }}> &#xB7; max per order</span>}
                           </p>
                         </div>
-                        <button onClick={() => handleCheckout("single")} disabled={!!loading}
-                          style={{ width: "100%", padding: "12px 18px", borderRadius: 10, border: "none", background: c.slate, color: "#FFFFFF", fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer", opacity: loading && loading !== "single" ? 0.5 : 1, boxShadow: "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)", transition: "transform 0.18s ease, box-shadow 0.18s ease", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}
-                          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+                        <Button onClick={() => handleCheckout("single")} disabled={!!loading}
+                          className="w-full"
+                          style={{ opacity: loading && loading !== "single" ? 0.5 : 1 }}
                         >
                           {loading === "single" ? "Opening Razorpay..." : loading === "verifying" ? "Verifying..."
                             : <>{singleQty === 1 ? "Buy 1 session" : `Buy ${singleQty} sessions`} &#xB7; &#x20B9;{SINGLE_SESSION_PRICE * singleQty} <span style={{ fontSize: 16 }}>&#8594;</span></>}
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
@@ -620,13 +713,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
             }
             const isCurrent = plan.tier === currentTier;
             // True when this card represents a lower tier than the user already has.
-            // e.g. Free cards are "lower" for a Pro user.
+            // e.g. Free cards are "lower" for a Team user.
             // Sprint Pack (weekly) is ALWAYS repurchasable — it's a consumable top-up,
             // not a subscription step, so we bypass isCurrent and isLowerTier for it.
             const isRepurchasable = plan.id === "weekly";
             const isLowerTier = !isRepurchasable && (TIER_RANK[plan.tier] ?? 0) < (TIER_RANK[currentTier] ?? 0);
             const featured = plan.featured;
-            const ribbonText = featured ? "Most loved" : null;
+            const ribbonText = featured ? "Best value" : null;
             return (
               <div key={plan.id} style={{
                 position: "relative", padding: 22, borderRadius: 20,
@@ -640,18 +733,18 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                   <span style={{
                     position: "absolute", top: -12, left: 24,
                     fontFamily: font.ui, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase",
-                    color: c.ivory, background: c.giltLight,
+                    color: c.ivory, background: T.indigo100,
                     padding: "4px 10px", borderRadius: 999, border: `1px solid ${c.borderHover}`,
                   }}>{ribbonText}</span>
                 )}
                 <div>
-                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? c.giltLight : c.gilt }}>{plan.name}</p>
+                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: featured ? T.indigo100 : T.indigo }}>{plan.name}</p>
                   {"compareAt" in plan && plan.compareAt && (
                     <p style={{ margin: "6px 0 0", fontFamily: font.ui, fontSize: 13, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textDecoration: "line-through" }}>
                       {plan.compareAt}
                     </p>
                   )}
-                  <p style={{ margin: "compareAt" in plan && plan.compareAt ? "2px 0 0" : "10px 0 0", fontFamily: font.display, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
+                  <p style={{ margin: "compareAt" in plan && plan.compareAt ? "2px 0 0" : "10px 0 0", fontFamily: font.ui, fontSize: 44, lineHeight: 1, letterSpacing: "-0.02em", color: featured ? c.obsidian : c.ivory, display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     {plan.price}
                     <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: featured ? "rgba(250,247,240,0.7)" : c.stone }}>
                       {plan.unit}
@@ -663,13 +756,13 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {plan.features.map((f) => (
                     <li key={f} style={{ display: "flex", alignItems: "flex-start", gap: 10, fontFamily: font.ui, fontSize: 13, lineHeight: 1.5, color: featured ? "rgba(250,247,240,0.86)" : c.chalk }}>
-                      <span aria-hidden style={{ color: featured ? c.giltLight : c.gilt, marginTop: 2 }}>→</span>{f}
+                      <span aria-hidden style={{ color: featured ? T.indigo100 : T.indigo, marginTop: 2 }}>→</span>{f}
                     </li>
                   ))}
                 </ul>
 
                 {isCurrent && !isRepurchasable ? (
-                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? c.giltLight : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
+                  <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${featured ? "rgba(244,229,216,0.3)" : c.borderHover}`, background: "transparent", fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: featured ? T.indigo100 : c.stone, textAlign: "center" }}>You&rsquo;re on this plan</div>
                 ) : isLowerTier ? (
                   /* User is already on a higher tier — suppress the downgrade CTA */
                   <div style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: `1px solid ${c.border}`, background: "transparent", fontFamily: font.ui, fontSize: 13, fontWeight: 400, color: c.stone, textAlign: "center", opacity: 0.55 }}>Not available on your plan</div>
@@ -678,29 +771,17 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
                     {currentTier === "free" ? "Your current plan" : plan.cta}
                   </div>
                 ) : (
-                  <button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
-                    style={{ marginTop: "auto", width: "100%", padding: "12px 18px", borderRadius: 10, border: "none",
+                  <Button onClick={() => handleCheckout(plan.id)} disabled={!!loading}
+                    className="w-full"
+                    style={{ marginTop: "auto",
                       background: featured ? c.obsidian : c.slate,
-                      color: featured ? c.ivory : "#FFFFFF",
-                      fontFamily: font.ui, fontSize: 14, fontWeight: 600, cursor: loading ? "wait" : "pointer",
+                      color: featured ? c.ivory : T.white,
                       opacity: loading && loading !== plan.id ? 0.5 : 1,
                       boxShadow: featured ? "0 1px 0 rgba(244,229,216,.08), 0 8px 24px rgba(244,229,216,0.18)" : "0 1px 2px rgba(20,17,10,.12), 0 4px 12px -4px rgba(20,17,10,.20)",
-                      transition: "transform 0.18s ease, box-shadow 0.18s ease",
-                      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
                     }}
-                    onMouseEnter={(e) => { if (!loading) e.currentTarget.style.transform = "translateY(-1px)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
                   >
                     {loading === "verifying" ? "Verifying..." : loading === plan.id ? "Opening Razorpay..." : <>{isRepurchasable && isCurrent ? "Get another Sprint Pack" : plan.cta} <span style={{ fontSize: 16 }}>→</span></>}
-                  </button>
-                )}
-                {/* Auto-renewal disclosure — RBI / Indian payment best practice.
-                    Free plan has no billing; single-session has no subscription. */}
-                {/* Sprint Pack doesn't auto-renew — suppress the renewal disclosure for it */}
-                {!(isCurrent && !isRepurchasable) && !isLowerTier && plan.id !== "free" && !isRepurchasable && (
-                  <p style={{ margin: 0, fontFamily: font.ui, fontSize: 10, color: featured ? "rgba(250,247,240,0.45)" : c.stone, textAlign: "center", lineHeight: 1.5 }}>
-                    Renews at {plan.price} {plan.unit.replace(/^\/\s*/, "every ")} · Cancel anytime from Settings
-                  </p>
+                  </Button>
                 )}
               </div>
             );
@@ -708,70 +789,73 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
 
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ display: "flex" }}>
-              {[c.gilt, c.sage, c.ember].map((col, i) => (
-                <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: col, border: `2px solid ${c.carbon}`, marginLeft: i > 0 ? -6 : 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill={c.graphite} stroke="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </div>
-              ))}
-            </div>
+        {liveSessionCount !== null && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: 20, padding: "14px 0", borderTop: `1px solid ${c.border}` }}>
             <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk }}>
-              {liveSessionCount !== null ? `${liveSessionCount}+` : "500+"} interviews practiced
+              {liveSessionCount}+ interviews practiced
             </span>
           </div>
-          <div style={{ width: 1, height: 16, background: c.border }} />
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            {[1, 2, 3, 4, 5].map(i => (
-              <svg key={i} width="12" height="12" viewBox="0 0 24 24" fill={c.gilt} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-            ))}
-            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.chalk, marginLeft: 2 }}>4.8 avg rating</span>
-          </div>
-        </div>
+        )}
 
         <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, textAlign: "center", marginTop: 8, opacity: 0.7 }}>
-          Secure checkout powered by Razorpay · UPI, Cards, Netbanking · Cancel anytime from Settings
+          Secure checkout powered by Razorpay · UPI, Cards, Netbanking ·{" "}
+          <a href="/refund" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>Refund policy</a>
         </p>
       </div>
     </div>
   );
 });
 
-/* ─── Pro Feature Gate ─── */
+/* ─── Paywall Feature Gate ─── */
 const featureHighlights: Record<string, { icon: string; items: string[] }> = {
   "Performance Analytics": { icon: "chart", items: ["Readiness score tracking", "Skill radar & velocity charts", "Score trends over time", "AI-generated insights", "Date range comparisons"] },
   "The Readiness Index": { icon: "chart", items: ["Target-specific 0-100 readiness score", "Five weighted pillars with evidence", "Skill-decay refresh queue", "Blind spots & likely follow-ups", "RI trajectory and projection"] },
   "Interview Calendar": { icon: "calendar", items: ["Month grid view", "Interview countdown timers", "Google Calendar sync", ".ics file export", "Prep reminders before interviews"] },
 };
 
-export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
-  const highlights = featureHighlights[feature];
-  return (
-    <div style={{ position: "relative", minHeight: "calc(100dvh - 160px)", overflow: "hidden" }}>
-      {/* Blurred preview background */}
-      <div aria-hidden="true" style={{ position: "absolute", inset: 0, opacity: 0.15, filter: "blur(6px)", pointerEvents: "none", padding: 40 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{ height: 80, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
-          ))}
-        </div>
-        <div style={{ height: 200, borderRadius: 14, background: c.graphite, border: `1px solid ${c.border}`, marginBottom: 16 }} />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          {[1, 2].map(i => (
-            <div key={i} style={{ height: 120, borderRadius: 12, background: c.graphite, border: `1px solid ${c.border}` }} />
-          ))}
-        </div>
-      </div>
+/* Per-feature gate copy. Every PaywallGate call site is gated on `isFree`
+   (DashboardContext.tsx) — i.e. unlocked by ANY paid plan (the ₹39 Sprint
+   Pack included). There is no Pro-only tier to upsell into, so copy must
+   never pitch "Upgrade to Pro" — that plan isn't purchasable anywhere in
+   the app. Default copy below mirrors the honest "Interview Calendar" case. */
+type GateCopy = { body: string; cta: string; footnote: string };
+const gateCopy: Record<string, GateCopy> = {
+  "Interview Calendar": {
+    body: "The Interview Calendar is included with every paid plan — month view, countdown timers, Google Calendar sync, and prep reminders.",
+    cta: "See plans",
+    footnote: "On any paid plan · Sprint Pack from ₹39",
+  },
+};
 
-      {/* Lock overlay — flex-centered within the full-viewport-height container */}
-      <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "calc(100dvh - 160px)", textAlign: "center", padding: 40, zIndex: 1 }}>
-        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "rgba(180,83,9,0.06)", border: `1.5px solid rgba(180,83,9,0.15)`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
-          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+/* Page title a gated feature shows in the panel header, matching its breadcrumb. */
+const GATE_TITLE: Record<string, string> = {
+  "The Readiness Index": "Analytics",
+  "Performance Analytics": "Analytics",
+  "Interview Calendar": "Calendar",
+};
+
+export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
+  const highlights = featureHighlights[feature];
+  const copy: GateCopy = gateCopy[feature] ?? {
+    body: `Upgrade to unlock ${feature.toLowerCase()}. Included with any paid plan — Sprint Pack starts at ₹39.`,
+    cta: "See plans",
+    footnote: "On any paid plan · Sprint Pack from ₹39",
+  };
+
+  useEffect(() => {
+    captureClientEvent("paywall_shown", { feature });
+    sendGtagEvent("paywall_shown", { feature });
+  }, [feature]);
+
+  return (
+    <CandidatePagePanel>
+      <CandidatePageHeader title={GATE_TITLE[feature] ?? feature} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "48px 24px" }}>
+        <div style={{ width: 64, height: 64, borderRadius: "50%", background: T.indigo100, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
+          <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-        <h3 style={{ fontFamily: font.display, fontSize: 22, fontWeight: 400, color: c.ivory, marginBottom: 8 }}>{feature}</h3>
-        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, marginBottom: highlights ? 16 : 24 }}>
-          Upgrade to access {feature.toLowerCase()}. Unlock full analytics, calendar tools, and unlimited sessions with the Pro plan.
+        <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, maxWidth: 360, margin: `0 0 ${highlights ? 16 : 24}px` }}>
+          {copy.body}
         </p>
 
         {highlights && (
@@ -785,15 +869,12 @@ export const ProGate = memo(function ProGate({ feature, onUpgrade }: { feature: 
           </div>
         )}
 
-        <button onClick={onUpgrade} style={{ padding: "12px 28px", borderRadius: 10, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.gilt}, ${c.giltDark})`, color: c.obsidian, fontFamily: font.ui, fontSize: 14, fontWeight: 600, transition: "opacity 0.2s" }}
-          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
-          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
-        >
-          Upgrade to Pro
-        </button>
-        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>Starting at just ₹9/session</span>
+        <Button onClick={onUpgrade} size="lg">
+          {copy.cta}
+        </Button>
+        <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, marginTop: 10 }}>{copy.footnote}</span>
       </div>
-    </div>
+    </CandidatePagePanel>
   );
 });
 
@@ -865,8 +946,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {showConfetti && <ConfettiBurst />}
       <style>{`
-        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px rgba(180,83,9,0.15); } 50% { box-shadow: 0 8px 40px rgba(180,83,9,0.4); } }
-        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px rgba(180,83,9,0.15) !important; } }
+        @keyframes warmupPulse { 0%, 100% { box-shadow: 0 8px 32px oklch(0.359 0.135 278.697 / 0.15); } 50% { box-shadow: 0 8px 40px oklch(0.359 0.135 278.697 / 0.4); } }
+        @media (prefers-reduced-motion: reduce) { .warmup-pulse-btn { animation: none !important; box-shadow: 0 8px 32px oklch(0.359 0.135 278.697 / 0.15) !important; } }
       `}</style>
       <h1 style={{ fontFamily: font.ui, fontSize: isMobile ? 20 : 26, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>
         {timeGreeting}, {firstName}
@@ -875,46 +956,42 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
         {targetRole ? `Let's get you ready for your ${targetRole} interview.` : "Let's get you interview-ready."}
       </p>
 
-      <div style={{ background: `linear-gradient(135deg, rgba(180,83,9,0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid rgba(180,83,9,0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "rgba(180,83,9,0.08)", border: "1px solid rgba(180,83,9,0.15)", marginBottom: 24 }}>
-          <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: c.gilt, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
-          <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>Guided Warmup</span>
+      <div style={{ background: `linear-gradient(135deg, oklch(0.359 0.135 278.697 / 0.12) 0%, ${c.graphite} 100%)`, borderRadius: 16, border: `1px solid oklch(0.359 0.135 278.697 / 0.15)`, padding: isMobile ? "32px 24px" : "48px 40px", textAlign: "center", marginBottom: 28 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 20, background: "oklch(0.359 0.135 278.697 / 0.08)", border: "1px solid oklch(0.359 0.135 278.697 / 0.15)", marginBottom: 24 }}>
+          <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: T.indigo, letterSpacing: "0.08em" }}>SESSION 1 OF 3</span>
+          <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>Guided Warmup</span>
         </div>
-        <h2 style={{ fontFamily: font.display, fontSize: isMobile ? 22 : 28, fontWeight: 400, color: c.ivory, marginBottom: 10, letterSpacing: "-0.02em" }}>
+        <h2 style={{ fontFamily: font.ui, fontSize: isMobile ? 22 : 28, fontWeight: 400, color: c.ivory, marginBottom: 10, letterSpacing: "-0.02em" }}>
           {targetRole ? `Your ${targetRole} warmup is ready` : "Your warmup session is ready"}
         </h2>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.stone, lineHeight: 1.6, marginBottom: 28, maxWidth: 440, margin: "0 auto 28px" }}>
           3 friendly behavioral questions, ~5 minutes. We'll use your resume to personalize every question and set your baseline score.
         </p>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-          <button className="shimmer-btn warmup-pulse-btn" onClick={onStartWarmup}
-            style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 500, padding: "14px 36px", borderRadius: 8, border: "none", background: c.gilt, color: c.obsidian, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, animation: "warmupPulse 2s ease-in-out infinite" }}
-            onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.15)"; e.currentTarget.style.animation = "none"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.filter = "brightness(1)"; e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
+          <Button className="shimmer-btn warmup-pulse-btn" size="lg" onClick={onStartWarmup}
+            style={{ animation: "warmupPulse 2s ease-in-out infinite" }}
+            onMouseEnter={(e) => { e.currentTarget.style.animation = "none"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.animation = "warmupPulse 2s ease-in-out infinite"; }}
           >
             <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="5,3 19,12 5,21" /></svg>
             Start Warmup
-          </button>
-          <button onClick={onStartCustom}
-            style={{ fontFamily: font.ui, fontSize: 12, fontWeight: 500, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "6px 12px", textDecoration: "underline", textUnderlineOffset: 3 }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-          >
+          </Button>
+          <Button variant="link" onClick={onStartCustom} style={{ color: c.stone }}>
             or choose your own session
-          </button>
+          </Button>
         </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
         {[
-          { step: "1", title: "Warmup", desc: "3 friendly behavioral questions to set your baseline. Personalized from your resume.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>, active: true },
+          { step: "1", title: "Warmup", desc: "3 friendly behavioral questions to set your baseline. Personalized from your resume.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="1.5" strokeLinecap="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>, active: true },
           { step: "2", title: "Focus", desc: "Targeted practice on your weakest skill from the warmup.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="1.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, active: false },
           { step: "3", title: "Challenge", desc: "Full interview simulation tailored to your target role.", icon: <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="1.5" strokeLinecap="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>, active: false },
         ].map((item) => (
-          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "rgba(180,83,9,0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
+          <div key={item.step} style={{ background: c.graphite, borderRadius: 12, border: `1px solid ${item.active ? "oklch(0.359 0.135 278.697 / 0.3)" : c.border}`, padding: "24px 20px", opacity: item.active ? 1 : 0.5 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
               {item.icon}
-              <span style={{ fontFamily: font.mono, fontSize: 10, fontWeight: 600, color: item.active ? c.gilt : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
+              <span style={{ fontFamily: font.mono, fontSize: 11, fontWeight: 600, color: item.active ? T.indigo : c.stone, letterSpacing: "0.08em" }}>SESSION {item.step}</span>
             </div>
             <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 6 }}>{item.title}</h3>
             <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, lineHeight: 1.5 }}>{item.desc}</p>
@@ -930,8 +1007,8 @@ export const EmptyState = memo(function EmptyState({ onStartWarmup, onStartCusto
           { value: "Free", label: "No card needed" },
         ].map((item) => (
           <div key={item.label} style={{ textAlign: "center" }}>
-            <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: c.gilt, display: "block", marginBottom: 2 }}>{item.value}</span>
-            <span style={{ fontFamily: font.ui, fontSize: 10, color: c.stone }}>{item.label}</span>
+            <span style={{ fontFamily: font.mono, fontSize: 16, fontWeight: 600, color: T.indigo, display: "block", marginBottom: 2 }}>{item.value}</span>
+            <span style={{ fontFamily: font.ui, fontSize: 11, color: c.stone }}>{item.label}</span>
           </div>
         ))}
       </div>
@@ -958,19 +1035,16 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
 
   return (
     <div style={{ maxWidth: 800, margin: "0 auto" }}>
-      <button onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: font.ui, fontSize: 13, color: c.stone, background: "none", border: "none", cursor: "pointer", padding: "0 0 20px" }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = c.ivory; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = c.stone; }}
-      >
+      <Button variant="ghost" onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 8, color: c.stone, padding: "0 0 20px", height: "auto" }}>
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         Back to Dashboard
-      </button>
+      </Button>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
         <div className="session-detail-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20, flexWrap: "wrap", gap: 16 }}>
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: c.gilt, background: "rgba(180,83,9,0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
+              <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: T.indigo, background: "oklch(0.359 0.135 278.697 / 0.08)", padding: "4px 10px", borderRadius: 4 }}>{session.type}</span>
               <span style={{ fontFamily: font.ui, fontSize: 13, color: c.stone }}>{session.dateLabel} · {session.duration}</span>
             </div>
             <h2 style={{ fontFamily: font.ui, fontSize: 22, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>{session.role}</h2>
@@ -985,7 +1059,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
               </svg>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <span style={{ fontFamily: font.mono, fontSize: 28, fontWeight: 700, color: c.ivory, lineHeight: 1 }}>{session.score}</span>
-                <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: scoreLabelColor(session.score), marginTop: 2 }}>{scoreLabel(session.score)}</span>
+                <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: scoreLabelColor(session.score), marginTop: 2 }}>{scoreLabel(session.score)}</span>
               </div>
             </div>
             <span style={{ fontFamily: font.mono, fontSize: 12, fontWeight: 600, color: session.change > 0 ? c.sage : c.ember, display: "block", marginTop: 4 }}>
@@ -995,19 +1069,19 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
         </div>
 
         <div className="session-detail-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.12)` }}>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: T.success100, border: `1px solid ${T.successLine}` }}>
+            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.sage, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>Top Strength</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topStrength}</span>
           </div>
-          <div style={{ padding: "14px 16px", borderRadius: 10, background: "rgba(185,28,28,0.04)", border: `1px solid rgba(185,28,28,0.12)` }}>
-            <span style={{ fontFamily: font.ui, fontSize: 10, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
+          <div style={{ padding: "14px 16px", borderRadius: 10, background: T.error100, border: `1px solid ${T.errorLine}` }}>
+            <span style={{ fontFamily: font.ui, fontSize: 11, fontWeight: 600, color: c.ember, letterSpacing: "0.06em", textTransform: "uppercase", display: "block", marginBottom: 6 }}>To Improve</span>
             <span style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 500, color: c.ivory }}>{session.topWeakness}</span>
           </div>
         </div>
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Question Scores</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Question Scores</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {session.questionScores.map((q, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 16, padding: "12px 16px", borderRadius: 10, background: c.obsidian, border: `1px solid ${c.border}` }}>
@@ -1030,13 +1104,13 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px", marginBottom: 20 }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Full Transcript</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 20 }}>Full Transcript</h3>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {session.transcript.map((msg, i) => (
             <div key={i} style={{ display: "flex", gap: 12, flexDirection: msg.speaker === "user" ? "row-reverse" : "row" }}>
-              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "rgba(180,83,9,0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${msg.speaker === "ai" ? "rgba(180,83,9,0.2)" : "rgba(21,128,61,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.1)" : "rgba(21,128,61,0.1)", border: `1px solid ${msg.speaker === "ai" ? "oklch(0.359 0.135 278.697 / 0.2)" : "rgba(21,128,61,0.2)"}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {msg.speaker === "ai" ? (
-                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.gilt} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
+                  <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={T.indigo} strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2m-9-11h2m18 0h2M5.6 5.6l1.4 1.4m9.9 9.9l1.4 1.4M5.6 18.4l1.4-1.4m9.9-9.9l1.4-1.4"/></svg>
                 ) : (
                   <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.sage} strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 )}
@@ -1046,7 +1120,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
                   {msg.text}
                 </div>
                 {msg.scoreNote && (
-                  <span style={{ fontFamily: font.mono, fontSize: 10, color: c.stone, display: "block", marginTop: 4, textAlign: msg.speaker === "ai" ? "left" : "right", paddingLeft: msg.speaker === "ai" ? 16 : 0, paddingRight: msg.speaker === "user" ? 16 : 0 }}>
+                  <span style={{ fontFamily: font.mono, fontSize: 11, color: c.stone, display: "block", marginTop: 4, textAlign: msg.speaker === "ai" ? "left" : "right", paddingLeft: msg.speaker === "ai" ? 16 : 0, paddingRight: msg.speaker === "user" ? 16 : 0 }}>
                     {msg.scoreNote}
                   </span>
                 )}
@@ -1057,7 +1131,7 @@ export const SessionDetailView = memo(function SessionDetailView({ session, onBa
       </div>
 
       <div style={{ background: c.graphite, borderRadius: 14, border: `1px solid ${c.border}`, padding: "28px 32px" }}>
-        <h3 style={{ fontFamily: font.ui, fontSize: 15, fontWeight: 600, color: c.ivory, marginBottom: 12 }}>AI Coach Summary</h3>
+        <h3 style={{ fontFamily: font.ui, fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 12 }}>AI Coach Summary</h3>
         <p style={{ fontFamily: font.ui, fontSize: 14, color: c.chalk, lineHeight: 1.7, margin: 0 }}>{session.feedback}</p>
       </div>
     </div>

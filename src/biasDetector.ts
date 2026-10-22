@@ -48,10 +48,12 @@ const PATTERNS: Pattern[] = [
   },
   {
     kind: "uptalk",
-    // Heuristic: statements ending with "?" where the clause is declarative
-    // (starts with I/we/my/our). Limited false-positives by requiring a
-    // minimum clause length.
-    re: /(?:\b(?:i|we|my|our)\b[^?.!]{15,}?)\?/gi,
+    // Heuristic: declarative sentences (starting with I/we/my/our) that end
+    // with "?". Anchored to sentence boundaries to avoid matching "we/I"
+    // fragments inside genuine interrogatives like "Could you...so we can...?"
+    // Requires the pronoun to appear at start-of-string (^, multiline) or
+    // immediately after a sentence-ending [.!] + whitespace.
+    re: /(?:^|(?<=[.!]\s))(?:i|we|my|our)\b[^?.!]{15,}?\?/gim,
     suggestion: 'End the statement with a period, not a question mark — owns it.',
   },
 ];

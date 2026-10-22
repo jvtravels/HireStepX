@@ -4,8 +4,10 @@
  * Pure presentation. */
 
 import { useState } from "react";
-import { t, f, shadows, radius } from "../tokens";
+import { t, f, radius, size } from "../tokens";
 import type { CredibilitySummary } from "../../_credibilityCallout";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export function CredibilitySection({
   summary,
@@ -25,14 +27,13 @@ export function CredibilitySection({
         border: `1px solid ${t.error}`,
         borderRadius: radius.card,
         padding: "clamp(14px, 4vw, 20px) clamp(14px, 4vw, 22px)",
-        boxShadow: shadows.card,
         display: "flex",
         flexDirection: "column",
         gap: 14,
       }}
     >
       <header style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <span
+        <Badge
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -42,15 +43,15 @@ export function CredibilitySection({
             padding: "0 8px",
             borderRadius: radius.pill,
             background: t.error,
-            color: "#fff",
+            color: t.white,
             fontFamily: f.sans,
-            fontSize: 12,
+            fontSize: size.sm,
             fontWeight: 700,
           }}
           aria-label={`${summary.count} credibility issue${summary.count === 1 ? "" : "s"}`}
         >
           {summary.count}
-        </span>
+        </Badge>
         <h2
           style={{
             margin: 0,
@@ -68,7 +69,7 @@ export function CredibilitySection({
         style={{
           margin: 0,
           fontFamily: f.sans,
-          fontSize: 13,
+          fontSize: size.base,
           lineHeight: 1.55,
           color: t.coal,
           opacity: 0.85,
@@ -108,7 +109,7 @@ export function CredibilitySection({
             <div
               style={{
                 fontFamily: f.sans,
-                fontSize: 14,
+                fontSize: size.md,
                 fontWeight: 600,
                 color: t.coal,
               }}
@@ -119,7 +120,7 @@ export function CredibilitySection({
               <div
                 style={{
                   fontFamily: f.mono ?? f.sans,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   color: t.coal,
                   opacity: 0.78,
                   lineHeight: 1.5,
@@ -131,7 +132,7 @@ export function CredibilitySection({
               <div
                 style={{
                   fontFamily: f.sans,
-                  fontSize: 12,
+                  fontSize: size.sm,
                   color: t.coal,
                   opacity: 0.78,
                   lineHeight: 1.5,
@@ -147,7 +148,7 @@ export function CredibilitySection({
                 borderRadius: radius.tile,
                 background: t.successWash,
                 fontFamily: f.sans,
-                fontSize: 12,
+                fontSize: size.sm,
                 color: t.success,
                 lineHeight: 1.5,
               }}
@@ -162,8 +163,10 @@ export function CredibilitySection({
                   justifyContent: "flex-end",
                 }}
               >
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   disabled={disputed.has(item.flag)}
                   onClick={() => {
                     if (disputed.has(item.flag)) return;
@@ -175,26 +178,23 @@ export function CredibilitySection({
                     onDispute(item.flag);
                   }}
                   style={{
-                    background: "transparent",
-                    border: "none",
+                    height: "auto",
                     padding: "4px 6px",
                     fontFamily: f.sans,
-                    fontSize: 11,
+                    fontSize: size.xs,
                     color: disputed.has(item.flag) ? t.success : t.coal,
                     opacity: disputed.has(item.flag) ? 0.7 : 0.55,
-                    cursor: disputed.has(item.flag) ? "default" : "pointer",
-                    textDecoration: disputed.has(item.flag) ? "none" : "underline",
                   }}
                   aria-label={
                     disputed.has(item.flag)
-                      ? "Thanks — feedback recorded"
+                      ? "Thanks, feedback recorded"
                       : "Report that this flag doesn't apply to you"
                   }
                 >
                   {disputed.has(item.flag)
-                    ? "✓ Thanks — feedback recorded"
+                    ? "✓ Thanks, feedback recorded"
                     : "Doesn't apply to me?"}
-                </button>
+                </Button>
               </div>
             )}
           </li>

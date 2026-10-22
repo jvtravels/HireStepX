@@ -3,15 +3,19 @@ import { useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
-import { useAuth, hasStoredSession } from "../AuthContext";
+import { useAuth, readSessionFromLocalStorage } from "../AuthContext";
 import { captureClientEvent } from "../posthogClient";
 import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
+import { CopyEmailLink } from "../_CopyEmailLink";
+import { HeroV2 } from "./Hero";
+import { Button } from "@/components/ui/button";
+import { LazyBandVideo } from "./_editorial-lazy-video";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Marketing Homepage v2 (brand-aligned)
    Cream + indigo + copper editorial system, matching the production
-   auth/onboarding surfaces. Instrument Serif display + Satoshi UI.
+   auth/onboarding surfaces. Instrument Serif display + Geist Sans UI.
    ════════════════════════════════════════════════════════════════════ */
 
 const ease = "cubic-bezier(0.16, 1, 0.3, 1)";
@@ -33,10 +37,15 @@ const ResponsiveSheet = () => (
       .mv2-container { padding-left: 18px !important; padding-right: 18px !important; }
       .mv2-hero-display { font-size: clamp(40px, 12vw, 56px) !important; line-height: 1.02 !important; }
       .mv2-hero-cta-row a { width: 100% !important; justify-content: center !important; }
-      main, footer { padding-bottom: 96px !important; }
+      .mv2-hero-mock-outer { padding-left: 16px !important; padding-right: 16px !important; }
+      /* Mosaic: single column on phones */
+      .mv2-bento-mosaic { grid-template-columns: 1fr !important; }
+      .mv2-bento-mosaic > *:first-child { grid-column: 1 !important; }
+      main { padding-bottom: 40px !important; }
       .mv2-tap-44 { min-height: 44px !important; }
-      .mv2-features-h2 { white-space: normal !important; font-size: clamp(34px, 9vw, 48px) !important; }
+      .mv2-features-h2 { white-space: normal !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
+      .mv2-hero-eyebrow { white-space: nowrap; letter-spacing: 0.07em !important; padding-left: 12px !important; padding-right: 12px !important; font-size: 10px !important; }
       /* Focus type icon grids: phone */
       .mv2-focus-live-grid { grid-template-columns: repeat(2, 1fr) !important; }
       .mv2-focus-soon-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 24px 16px !important; }
@@ -48,18 +57,20 @@ const ResponsiveSheet = () => (
       .mv2-nav-burger { display: inline-flex !important; }
       .mv2-hero-mock-body { grid-template-columns: 1fr !important; }
       .mv2-hero-mock-side { border-left: none !important; border-top: 1px solid var(--mv2-line) !important; }
-      .mv2-hero-grid { grid-template-columns: 1fr !important; gap: 40px !important; }
       .mv2-hero-section { min-height: 0 !important; display: block !important; }
-      .mv2-hero-mock-wrap { margin-top: 0 !important; }
-      .mv2-hero-margin-note { display: none !important; }
-      .mv2-hero-rule-label-end { display: none !important; }
+      .mv2-hero-mock-outer { padding-left: 20px !important; padding-right: 20px !important; }
       .mv2-story-stage { grid-template-columns: 1fr !important; gap: 32px !important; padding-top: 40px !important; padding-bottom: 40px !important; }
+      .mv2-story-stages { flex-direction: column !important; }
+      .mv2-story-arrow { display: none !important; }
+      .mv2-bento-resume-row { flex-direction: column !important; gap: 24px !important; }
       .mv2-focus-flagship { grid-template-columns: 1fr !important; gap: 28px !important; padding: 28px !important; }
       .mv2-focus-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-grid { grid-template-columns: 1fr !important; }
       .mv2-feature-span2 { grid-column: span 1 !important; }
-      .mv2-bento-row1 { grid-template-columns: 1fr !important; }
-      .mv2-bento-row2 { grid-template-columns: 1fr !important; }
+      /* Mosaic: collapse to 2-col at tablet (Before card spans full width) */
+      .mv2-bento-mosaic { grid-template-columns: 1fr 1fr !important; grid-template-rows: auto !important; height: auto !important; }
+      .mv2-bento-mosaic > *:first-child { grid-column: 1 / 3 !important; grid-row: auto !important; height: auto !important; min-height: 200px; }
+      .mv2-bento-mosaic > *:not(:first-child) { grid-column: auto !important; grid-row: auto !important; height: auto !important; }
       .mv2-bento-large, .mv2-bento-small { grid-column: 1 / -1 !important; }
       .mv2-india-grid { grid-template-columns: 1fr !important; gap: 32px !important; }
       .mv2-india-logos { justify-content: flex-start !important; }
@@ -80,11 +91,14 @@ const ResponsiveSheet = () => (
          not under the number. Same pattern as the 881-1100px breakpoint. */
       .mv2-why-row { grid-template-columns: 40px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
-      main, footer { padding-bottom: 96px; }
+      /* Hired-directly: text + roster-preview card stack on tablet/mobile */
+      .mv2-hired-grid { grid-template-columns: 1fr !important; gap: 36px !important; }
+      .mv2-hired-card { max-width: 420px; }
+      main { padding-bottom: 48px; }
     }
     /* ── Small laptops (lg) ── */
     @media (max-width: 1100px) and (min-width: 881px) {
-      .mv2-pricing-grid { grid-template-columns: repeat(2, 1fr) !important; }
+      .mv2-pricing-grid { grid-template-columns: repeat(3, 1fr) !important; }
       .mv2-why-row { grid-template-columns: 56px 1fr !important; gap: 20px !important; padding: 28px 0 !important; }
       .mv2-why-row > p:last-child { grid-column: 2 / 3 !important; }
       .mv2-trust-row { flex-direction: column !important; gap: 16px !important; align-items: flex-start !important; }
@@ -146,11 +160,14 @@ const ResponsiveSheet = () => (
     .mv2-marquee-mask { mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); -webkit-mask-image: linear-gradient(90deg, transparent, black 8%, black 92%, transparent); overflow: hidden; content-visibility: auto; contain-intrinsic-size: 1px 96px; }
     .mv2-marquee-mask:hover .mv2-marquee-track { animation-play-state: paused; }
     @media (prefers-reduced-motion: reduce) { .mv2-marquee-track { animation: none; } }
+    /* Bento card animations */
+    @keyframes mv2-dot-bounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-5px); } }
+    @media (prefers-reduced-motion: reduce) { [style*="mv2-dot-bounce"] { animation: none !important; } }
     /* Skip paint + pause CSS animations on off-screen sections (battery on low-end mobile) */
     .mv2-cv-auto { content-visibility: auto; contain-intrinsic-size: 1px 700px; }
     /* Hero load cascade — stepped entrance, one orchestrated moment */
     @keyframes mv2-cascade { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
-    .mv2-cascade { opacity: 0; animation: mv2-cascade 0.72s ${ease} forwards; }
+    .mv2-cascade { animation: mv2-cascade 0.72s ${ease} both; }
     .mv2-cascade-1 { animation-delay: 0ms; }
     .mv2-cascade-2 { animation-delay: 80ms; }
     .mv2-cascade-3 { animation-delay: 160ms; }
@@ -180,6 +197,27 @@ const ResponsiveSheet = () => (
     @media (prefers-reduced-motion: reduce) {
       .mv2-feature-card, .mv2-feature-icon { transition: none !important; transform: none !important; }
     }
+    /* Bento card hover lift */
+    .mv2-bento-large, .mv2-bento-small { transition: transform 0.28s ${ease}, box-shadow 0.28s ${ease}, border-color 0.2s ease; }
+    .mv2-bento-large:hover, .mv2-bento-small:hover { transform: translateY(-3px); box-shadow: ${shadows.featureHover}; border-color: ${t.lineStrong}; }
+    @media (prefers-reduced-motion: reduce) { .mv2-bento-large, .mv2-bento-small { transition: none !important; transform: none !important; } }
+    /* HireStepX comparison card glow on hover */
+    .mv2-cmp-hsx { transition: box-shadow 0.3s ${ease}; }
+    .mv2-cmp-hsx:hover { box-shadow: 0 24px 64px rgba(14,12,8,0.36), 0 6px 20px rgba(14,12,8,0.18); }
+    @media (prefers-reduced-motion: reduce) { .mv2-cmp-hsx { transition: none !important; } }
+    /* Dark-surface cross-links — arrow nudge on hover */
+    .mv2-dark-link { transition: color 0.18s ease; }
+    .mv2-dark-link .mv2-dark-arrow { display: inline-block; transition: transform 0.22s ${ease}; }
+    .mv2-dark-link:hover .mv2-dark-arrow { transform: translateX(3px); }
+    /* Mobile sticky CTA press state */
+    .mv2-sticky-btn { transition: transform 0.15s ease, opacity 0.1s ease; }
+    .mv2-sticky-btn:active { transform: scale(0.96); }
+    @media (prefers-reduced-motion: reduce) { .mv2-sticky-btn { transition: none !important; transform: none !important; } }
+    /* Pricing CTA press state */
+    .mv2-pricing-cta { transition: transform 0.2s ${ease}, opacity 0.15s ease; }
+    .mv2-pricing-cta:hover { transform: translateY(-1px); }
+    .mv2-pricing-cta:active { transform: scale(0.97); transition-duration: 0.08s; }
+    @media (prefers-reduced-motion: reduce) { .mv2-pricing-cta { transition: none !important; transform: none !important; } }
   `}</style>
 );
 
@@ -263,14 +301,14 @@ function MotionReveal({
 const container: CSSProperties = {
   maxWidth: 1240,
   margin: "0 auto",
-  paddingLeft: 32,
-  paddingRight: 32,
+  paddingLeft: 48,
+  paddingRight: 48,
 };
 
 const sectionBase: CSSProperties = {
   position: "relative",
-  paddingTop: 120,
-  paddingBottom: 120,
+  paddingTop: 80,
+  paddingBottom: 80,
 };
 
 
@@ -286,7 +324,7 @@ const h2: CSSProperties = {
 
 const body: CSSProperties = {
   fontFamily: fonts.sans,
-  fontSize: 18,
+  fontSize: 16,
   lineHeight: 1.6,
   color: t.indigoGray,
   margin: 0,
@@ -296,28 +334,41 @@ const body: CSSProperties = {
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
   const navLinks: Array<[string, string]> = [
-    ["How it works", "/#hd-story"],
-    ["Pricing", "/#hd-pricing"],
-    ["FAQs", "/#faq"],
+    ["Blog", "/blog"],
+    ["Pricing", "/pricing"],
+    ["For Employers", "/employers"],
+    ["Contact", "/contact"],
   ];
   /* Auth-aware CTA pair. Supabase session restore is async, so
      useAuth().isLoggedIn starts `false` and flips after restore — which
      leaves logged-in users staring at "Sign in / Start free" for the
      ~1-2s of cold restore. We sidestep that by checking localStorage
-     synchronously after mount: if a Supabase auth token is present we
-     optimistically render the Dashboard CTA right away, then keep it
-     in sync with the real `isLoggedIn` once restore completes.
+     synchronously after mount: if a Supabase auth token is present AND
+     not yet expired we optimistically render the Dashboard CTA right
+     away, then keep it in sync with the real `isLoggedIn` once restore
+     completes. Using the expiry-checked reader (not the presence-only
+     hasStoredSession) avoids flashing "Dashboard" for a stale/expired
+     token that RequireAuth will just bounce back to /login — which from
+     the user's side looks like "login dumped me on the dashboard".
      SSR + first paint still render the signed-out variant to avoid
      hydration mismatch. */
   const { isLoggedIn, loading } = useAuth();
   const [hasSession, setHasSession] = useState(false);
-  useEffect(() => { setHasSession(hasStoredSession()); }, [isLoggedIn]);
+  useEffect(() => { setHasSession(readSessionFromLocalStorage() !== null); }, [isLoggedIn]);
   const showDashboard = isLoggedIn || (loading && hasSession);
   const pathname = usePathname();
   const isActive = (href: string) => {
     if (href.startsWith("/#")) return false;
     return pathname === href || (href !== "/" && pathname?.startsWith(href));
   };
+
+  // On the employer-facing marketing pages, "Sign in"/"Start free" should
+  // route into the employer console, not the candidate signup flow.
+  const isEmployerContext = pathname?.startsWith("/employers") ?? false;
+  const dashboardHref = isEmployerContext ? "/employer" : "/dashboard";
+  const dashboardLabel = isEmployerContext ? "Go to console" : "Dashboard";
+  const signInHref = isEmployerContext ? "/login?next=/employer" : "/login";
+  const signUpHref = isEmployerContext ? "/signup?next=/employer" : "/signup";
 
   // Mobile drawer (≤880px): the desktop link row is hidden by the
   // responsive sheet, so without this the nav links are unreachable on
@@ -435,6 +486,7 @@ export function NavV2() {
           border: `1px solid ${scrolled ? t.line : "transparent"}`,
           boxShadow: scrolled ? "0 4px 24px rgba(14,12,8,0.09), 0 1px 4px rgba(14,12,8,0.04)" : "none",
           overflow: "hidden",
+          position: "relative",
           /* Different easing per direction: the CSS transition on the destination
              state is what the browser uses. Shrink → snappy expo ease-out (400ms).
              Expand → relaxed standard ease (550ms) so the nav opens gracefully
@@ -456,24 +508,37 @@ export function NavV2() {
           <a
             href="/"
             aria-label="HireStepX home"
-            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}
+            style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 10, flexShrink: 0 }}
           >
-            {/* Swap wordmark ↔ X mark based on scroll state. */}
-            {scrolled ? (
-              <img src="/favicon.svg" alt="HireStepX" style={{ width: 28, height: 28, borderRadius: 6, display: "block" }} />
-            ) : (
-              <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} style={{ height: 26, width: "auto" }} />
+            <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority style={{ height: scrolled ? 21 : 26, width: "auto", transition: "height 0.2s ease" }} />
+            {isEmployerContext && (
+              <span
+                style={{
+                  fontFamily: fonts.mono,
+                  fontSize: 11,
+                  letterSpacing: 1.2,
+                  textTransform: "uppercase",
+                  color: t.copper,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                Companies
+              </span>
             )}
           </a>
 
           <div
             className="mv2-nav-links"
             style={{
+              flex: 1,
               display: "flex",
               alignItems: "center",
-              gap: 32,
+              justifyContent: "center",
+              gap: 28,
               fontFamily: fonts.sans,
               fontSize: 14,
+              minWidth: 0,
             }}
           >
             {navLinks.map(([label, href]) => {
@@ -492,10 +557,10 @@ export function NavV2() {
             })}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexShrink: 0 }}>
             {showDashboard ? (
               <a
-                href="/dashboard"
+                href={dashboardHref}
                 style={{
                   fontFamily: fonts.sans,
                   fontSize: 14,
@@ -503,20 +568,20 @@ export function NavV2() {
                   color: t.white,
                   background: t.indigo,
                   padding: "9px 18px",
-                  borderRadius: 999,
+                  borderRadius: 8,
                   textDecoration: "none",
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
                 }}
               >
-                Dashboard
+                {dashboardLabel}
                 <span style={{ fontSize: 16, lineHeight: 1 }}>→</span>
               </a>
             ) : (
               <>
                 <a
-                  href="/login"
+                  href={signInHref}
                   className="mv2-nav-sign-in"
                   style={{
                     fontFamily: fonts.sans,
@@ -529,7 +594,7 @@ export function NavV2() {
                   Sign in
                 </a>
                 <a
-                  href="/signup"
+                  href={signUpHref}
                   style={{
                     fontFamily: fonts.sans,
                     fontSize: 14,
@@ -537,7 +602,7 @@ export function NavV2() {
                     color: t.white,
                     background: t.indigo,
                     padding: "9px 18px",
-                    borderRadius: 999,
+                    borderRadius: 8,
                     textDecoration: "none",
                     display: "inline-flex",
                     alignItems: "center",
@@ -550,26 +615,16 @@ export function NavV2() {
               </>
             )}
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               className="mv2-nav-burger mv2-tap-44"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
               aria-controls="mv2-mobile-menu"
               onClick={() => setMenuOpen((v) => !v)}
-              style={{
-                display: "none",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 44,
-                height: 44,
-                marginRight: -8,
-                padding: 0,
-                border: "none",
-                background: "transparent",
-                color: t.coal,
-                cursor: "pointer",
-              }}
+              style={{ display: "none", marginRight: -8, color: t.coal }}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 {menuOpen ? (
@@ -585,7 +640,7 @@ export function NavV2() {
                   </>
                 )}
               </svg>
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -629,7 +684,7 @@ export function NavV2() {
             <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
               {showDashboard ? (
                 <a
-                  href="/dashboard"
+                  href={dashboardHref}
                   onClick={() => setMenuOpen(false)}
                   style={{
                     fontFamily: fonts.sans,
@@ -638,17 +693,17 @@ export function NavV2() {
                     color: t.white,
                     background: t.indigo,
                     padding: "13px 18px",
-                    borderRadius: 999,
+                    borderRadius: 8,
                     textDecoration: "none",
                     textAlign: "center",
                   }}
                 >
-                  Go to dashboard →
+                  {isEmployerContext ? "Go to console →" : "Go to dashboard →"}
                 </a>
               ) : (
                 <>
                   <a
-                    href="/login"
+                    href={signInHref}
                     onClick={() => setMenuOpen(false)}
                     style={{
                       fontFamily: fonts.sans,
@@ -658,7 +713,7 @@ export function NavV2() {
                       background: t.white,
                       border: `1px solid ${t.lineStrong}`,
                       padding: "12px 18px",
-                      borderRadius: 999,
+                      borderRadius: 8,
                       textDecoration: "none",
                       textAlign: "center",
                     }}
@@ -666,7 +721,7 @@ export function NavV2() {
                     Sign in
                   </a>
                   <a
-                    href="/signup"
+                    href={signUpHref}
                     onClick={() => setMenuOpen(false)}
                     style={{
                       fontFamily: fonts.sans,
@@ -675,7 +730,7 @@ export function NavV2() {
                       color: t.white,
                       background: t.indigo,
                       padding: "13px 18px",
-                      borderRadius: 999,
+                      borderRadius: 8,
                       textDecoration: "none",
                       textAlign: "center",
                     }}
@@ -724,860 +779,26 @@ function Waveform({ accent }: { accent?: string }) {
   );
 }
 
-function ProductMockHero() {
-  type Phase = "idle" | "listening" | "scoring" | "done";
-  const scenarios = [
-    {
-      company: "Razorpay",
-      round: "Behavioural Round",
-      question:
-        "Tell me about a time you led a cross-functional project under a tight deadline.",
-      transcript:
-        "Last quarter at Razorpay, our checkout latency spiked during a Tier-1 sale. I was asked to lead a tiger team across infra and product",
-      score: "8.4",
-      bars: [
-        ["Situation", 92],
-        ["Task", 88],
-        ["Action", 71],
-        ["Result", 64],
-      ] as Array<[string, number]>,
-      fix: 'Quantify the result. Try "checkout p95 latency from 1.4s → 380ms".',
-    },
-    {
-      company: "Zomato",
-      round: "Product Sense",
-      question:
-        "How would you re-design the Zomato Gold flow for tier-2 cities?",
-      transcript:
-        "I'd start by segmenting Gold users by frequency, then audit the funnel from search to checkout. The drop-off in tier-2 is at payment, not discovery",
-      score: "9.1",
-      bars: [
-        ["Framework", 95],
-        ["User empathy", 92],
-        ["Metrics", 86],
-        ["Tradeoffs", 78],
-      ] as Array<[string, number]>,
-      fix: "Strong frame. Add one cost tradeoff to push past a 9.5.",
-    },
-    {
-      company: "TCS Digital",
-      round: "HR Round",
-      question: "Why TCS Digital and not just TCS?",
-      transcript:
-        "Digital is where TCS bets on the next decade: cloud, data, the modernisation work. The codebase pace matches my pace; the regular stream felt like maintenance.",
-      score: "7.6",
-      bars: [
-        ["Honesty", 88],
-        ["Specificity", 74],
-        ["Brand fit", 82],
-        ["Confidence", 70],
-      ] as Array<[string, number]>,
-      fix: 'Add one concrete project. "I want to work on Aurora rollouts" beats brand talk.',
-    },
-  ];
-  const [idx, setIdx] = useState(0);
-  const scene = scenarios[idx];
-  const [phase, setPhase] = useState<Phase>("done");
-  const [typed, setTyped] = useState("");
-  const [displayScore, setDisplayScore] = useState(parseFloat(scenarios[0].score));
-  const reducedMotion = usePrefersReducedMotion();
-
-  useEffect(() => {
-    if (phase !== "listening") return;
-    /* Reduced-motion: skip the typewriter, jump straight to scored state */
-    if (reducedMotion) {
-      setTyped(scene.transcript);
-      setPhase("done");
-      return;
-    }
-    let i = 0;
-    const id = setInterval(() => {
-      i += 2;
-      setTyped(scene.transcript.slice(0, i));
-      if (i >= scene.transcript.length) {
-        clearInterval(id);
-        setTimeout(() => setPhase("scoring"), 350);
-        setTimeout(() => setPhase("done"), 1500);
-      }
-    }, 28);
-    return () => clearInterval(id);
-  }, [phase, scene.transcript, reducedMotion]);
-
-  /* Score count-up on each new scored answer */
-  useEffect(() => {
-    if (phase !== "done") return;
-    const target = parseFloat(scene.score);
-    /* Reduced-motion: set final value instantly, no rAF loop */
-    if (reducedMotion) {
-      setDisplayScore(target);
-      return;
-    }
-    const start = performance.now();
-    const dur = 700;
-    let raf = 0;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / dur);
-      const eased = 1 - Math.pow(1 - p, 4);
-      setDisplayScore(Math.round(target * eased * 10) / 10);
-      if (p < 1) raf = requestAnimationFrame(tick);
-    };
-    setDisplayScore(0);
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [phase, scene.score, idx, reducedMotion]);
-
-  /* Auto-cycle scenarios — bounded + pausable per critique.
-     - Bounded: stops after looping through every scenario once (autoLoops < scenarios.length).
-       The previous infinite cycle competed with the H1 for attention forever.
-     - Pausable: user can stop the rotation; survives until they tap "Try it" again.
-     - First cycle delayed (4.5s instead of 6.2s the first tick) so the user has
-       time to read the hero before the mock starts moving on its own. */
-  const [autoPaused, setAutoPaused] = useState(false);
-  const [autoLoops, setAutoLoops] = useState(0);
-  useEffect(() => {
-    if (phase !== "done" || reducedMotion || autoPaused) return;
-    if (autoLoops >= scenarios.length) return;
-    const delay = autoLoops === 0 ? 4500 : 6200;
-    const id = setTimeout(() => {
-      setIdx((i) => (i + 1) % scenarios.length);
-      setAutoLoops((n) => n + 1);
-      setPhase("done");
-    }, delay);
-    return () => clearTimeout(id);
-  }, [phase, idx, scenarios.length, reducedMotion, autoPaused, autoLoops]);
-
-  const start = () => {
-    if (phase === "done") setIdx((i) => (i + 1) % scenarios.length);
-    setTyped("");
-    setPhase("listening");
-    /* User-initiated → reset auto-cycle budget so they get fresh rotation */
-    setAutoLoops(0);
-    setAutoPaused(false);
-  };
-
-  const phaseLabel =
-    phase === "idle"
-      ? "Ready · tap Try it"
-      : phase === "listening"
-        ? "Live · 00:24"
-        : phase === "scoring"
-          ? "Scoring…"
-          : "Scored · 00:31";
-
-  const phaseColor =
-    phase === "scoring" ? t.copper : phase === "done" ? t.indigo : t.success;
-
-  /* Screen-reader narration for the silent visual phase machine */
-  const liveAnnounce =
-    phase === "listening"
-      ? `AI is listening to your answer for ${scene.company} ${scene.round}.`
-      : phase === "scoring"
-        ? "Scoring your answer."
-        : phase === "done"
-          ? `Scored ${scene.score} out of 10. ${scene.fix}`
-          : "Demo ready. Press Try it to start.";
-
-  return (
-    <div
-      className="mv2-mock-card"
-      role="region"
-      aria-label="Live mock interview demo"
-      style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 980,
-        margin: "56px auto 0",
-        borderRadius: 20,
-        background: t.white,
-        border: `1px solid ${t.line}`,
-        boxShadow: shadows.modal,
-        overflow: "hidden",
-      }}
-    >
-      {/* SR-only narration of the phase state machine (silent to sighted users) */}
-      <span
-        aria-live="polite"
-        aria-atomic="true"
-        style={{
-          position: "absolute",
-          width: 1,
-          height: 1,
-          padding: 0,
-          margin: -1,
-          overflow: "hidden",
-          clip: "rect(0,0,0,0)",
-          whiteSpace: "nowrap",
-          border: 0,
-        }}
-      >
-        {liveAnnounce}
-      </span>
-      {/* Window chrome */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          padding: "12px 18px",
-          borderBottom: `1px solid ${t.line}`,
-          background: t.creamSoft,
-        }}
-      >
-        {[t.error, t.warning, t.success].map((color, i) => (
-          <span
-            key={i}
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: "50%",
-              background: color,
-              opacity: 0.85,
-            }}
-          />
-        ))}
-        <span
-          style={{
-            marginLeft: 14,
-            fontFamily: fonts.mono,
-            fontSize: 12,
-            color: t.inkFaint,
-          }}
-        >
-          hirestepx.com/interview · {scene.round} · {scene.company}
-        </span>
-        <span
-          style={{
-            marginLeft: "auto",
-            fontFamily: fonts.sans,
-            fontSize: 10,
-            letterSpacing: "0.16em",
-            textTransform: "uppercase",
-            color: t.inkFaint,
-            fontWeight: 600,
-            fontVariantNumeric: "tabular-nums",
-          }}
-        >
-          Round {String(idx + 1).padStart(2, "0")} / {String(scenarios.length).padStart(2, "0")}
-        </span>
-      </div>
-
-      {/* Body */}
-      <div className="mv2-hero-mock-body" style={{ display: "grid", gridTemplateColumns: "1fr 280px" }}>
-        {/* Left: live transcript */}
-        <div
-          style={{
-            padding: 32,
-            borderRight: `1px solid ${t.line}`,
-            background: t.white,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 20,
-            }}
-          >
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                color: phaseColor,
-                fontWeight: 600,
-                padding: "4px 10px",
-                background:
-                  phase === "scoring"
-                    ? t.copperSoft
-                    : phase === "done"
-                      ? t.indigo100
-                      : t.success100,
-                borderRadius: 999,
-              }}
-            >
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: "50%",
-                  background: phaseColor,
-                  animation:
-                    phase === "listening" ? "pulse 1s infinite" : undefined,
-                }}
-              />
-              {phaseLabel}
-              <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}`}</style>
-            </span>
-            {phase === "listening" && <Waveform />}
-            <button
-              onClick={start}
-              disabled={phase === "listening" || phase === "scoring"}
-              style={{
-                marginLeft: "auto",
-                border: 0,
-                cursor: phase === "idle" || phase === "done" ? "pointer" : "default",
-                background: phase === "idle" || phase === "done" ? t.indigo : t.cream,
-                color: phase === "idle" || phase === "done" ? t.white : t.inkFaint,
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                fontWeight: 600,
-                padding: "6px 12px",
-                borderRadius: 999,
-                boxShadow:
-                  phase === "idle" || phase === "done" ? shadows.cta : "none",
-              }}
-            >
-              {phase === "done" ? "Replay" : phase === "idle" ? "Try it ▶" : "…"}
-            </button>
-            {/* Pause / Resume — only meaningful while auto-rotation is still
-                budgeted and the user hasn't asked for reduced motion. Keeps
-                the User Control & Freedom heuristic honest without adding
-                chrome that does nothing 90% of the time. */}
-            {!reducedMotion && phase === "done" && autoLoops < scenarios.length && (
-              <button
-                onClick={() => setAutoPaused((p) => !p)}
-                aria-pressed={autoPaused}
-                aria-label={autoPaused ? "Resume auto rotation" : "Pause auto rotation"}
-                style={{
-                  border: `1px solid ${t.lineStrong}`,
-                  cursor: "pointer",
-                  background: "transparent",
-                  color: t.inkSoft,
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  padding: "5px 10px",
-                  borderRadius: 999,
-                }}
-              >
-                {autoPaused ? "Resume" : "Pause"}
-              </button>
-            )}
-          </div>
-
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.inkFaint,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              margin: 0,
-              marginBottom: 6,
-              fontWeight: 600,
-            }}
-          >
-            Interviewer
-          </p>
-          <p
-            key={`question-${idx}`}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 18,
-              color: t.coal,
-              lineHeight: 1.55,
-              margin: 0,
-              marginBottom: 20,
-              animation: `mv2-fade-up 0.55s ${ease} both`,
-            }}
-          >
-            {scene.question}
-          </p>
-
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.copper,
-              textTransform: "uppercase",
-              letterSpacing: "0.12em",
-              margin: 0,
-              marginBottom: 6,
-              fontWeight: 600,
-            }}
-          >
-            You
-          </p>
-          <p
-            key={`transcript-${idx}-${phase}`}
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 18,
-              color: t.inkSoft,
-              lineHeight: 1.55,
-              margin: 0,
-              minHeight: 80,
-              animation:
-                phase === "done"
-                  ? `mv2-fade-up 0.6s ${ease} 80ms both`
-                  : undefined,
-            }}
-          >
-            {phase === "idle" ? (
-              <span style={{ color: t.inkFaint, fontStyle: "italic" }}>
-                Your answer appears here as you speak…
-              </span>
-            ) : (
-              <>
-                {phase === "done" ? scene.transcript : typed}
-                {(phase === "listening" || phase === "done") && (
-                  <span
-                    aria-hidden
-                    style={{
-                      display: "inline-block",
-                      width: 8,
-                      height: 18,
-                      background: t.copper,
-                      verticalAlign: "text-bottom",
-                      marginLeft: 2,
-                      opacity: phase === "done" ? 0.5 : 1,
-                      animation: "caret 1.1s steps(1) infinite",
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </p>
-          <style>{`@keyframes caret{50%{opacity:0}}`}</style>
-        </div>
-
-        {/* Right: scored answer */}
-        <div
-          className="mv2-hero-mock-side"
-          style={{
-            padding: 24,
-            background: t.cream,
-            display: "flex",
-            flexDirection: "column",
-            gap: 14,
-          }}
-        >
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 11,
-              color: t.inkFaint,
-              textTransform: "uppercase",
-              letterSpacing: "0.14em",
-              fontWeight: 600,
-              margin: 0,
-            }}
-          >
-            Last answer
-          </p>
-
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-            <span
-              key={`score-${idx}-${phase}`}
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 56,
-                color: t.indigo,
-                lineHeight: 1,
-                opacity: phase === "done" ? 1 : 0.3,
-                animation:
-                  phase === "done"
-                    ? `mv2-fade-up 0.55s ${ease} 200ms both`
-                    : undefined,
-              }}
-            >
-              {phase === "done" ? displayScore.toFixed(1) : "—"}
-            </span>
-            <span
-              style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}
-            >
-              / 10
-            </span>
-          </div>
-
-          {scene.bars.map(([label, val], i) => (
-            <div key={label as string}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  color: t.coal,
-                  fontWeight: 500,
-                  marginBottom: 4,
-                }}
-              >
-                <span>{label}</span>
-                <span style={{ color: t.inkFaint }}>{val}</span>
-              </div>
-              <div
-                style={{
-                  height: 4,
-                  background: t.copper100,
-                  borderRadius: 2,
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  key={`bar-${idx}-${i}-${phase}`}
-                  style={{
-                    width: `${val}%`,
-                    height: "100%",
-                    background:
-                      (val as number) > 80
-                        ? t.success
-                        : (val as number) > 70
-                          ? t.indigo
-                          : t.copper,
-                    transformOrigin: "left center",
-                    animation:
-                      phase === "done"
-                        ? `mv2-bar-fill 0.9s ${ease} ${320 + i * 110}ms both`
-                        : undefined,
-                  }}
-                />
-              </div>
-            </div>
-          ))}
-
-          <div
-            style={{
-              marginTop: "auto",
-              padding: 12,
-              background: t.white,
-              border: `1px solid ${t.line}`,
-              borderRadius: 10,
-              fontFamily: fonts.sans,
-              fontSize: 12,
-              color: t.coal,
-              lineHeight: 1.5,
-            }}
-          >
-            <span style={{ color: t.copper, fontWeight: 600 }}>Fix →</span>{" "}
-            {scene.fix}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* Editorial section masthead — numbered hairline used across the page */
-function SectionMasthead({
-  n,
-  label,
-  right,
-  live = false,
-  style,
-}: {
+/* Editorial section masthead — numbered hairline that once headed each
+   section. The design dropped the visible mastheads; the call sites stay
+   (they document section order/labels) but the component renders nothing.
+   Props are accepted-and-ignored via a single `_props` so the neutered
+   stub doesn't trip no-unused-vars. */
+function SectionMasthead(_props: {
   n: string;
   label: string;
   right?: React.ReactNode;
   live?: boolean;
   style?: CSSProperties;
-}) {
+}): null {
   return null;
-}
-
-/* Aspirational micro-copy, not testimonials. We don't have customers
-   yet (founded 2026) — fabricating named quotes would burn credibility
-   the second any prospect googles the names. Rotated through the hero
-   as a "what this product is for" line. */
-const heroQuotes = [
-  { text: "Walk into the loop already knowing how you sound.", by: "Built for Indian candidates" },
-  { text: "Practice the why-this-company answer until it lands.", by: "Behavioral · campus · negotiation" },
-  { text: "Scored feedback on every answer, every session.", by: "Free first session — no card" },
-];
-
-export function HeroV2() {
-  const [quoteIdx, setQuoteIdx] = useState(0);
-  useEffect(() => {
-    const id = setInterval(
-      () => setQuoteIdx((i) => (i + 1) % heroQuotes.length),
-      6200,
-    );
-    return () => clearInterval(id);
-  }, []);
-  const quote = heroQuotes[quoteIdx];
-  return (
-    <section
-      aria-labelledby="hd-hero"
-      className="mv2-hero-section"
-      style={{
-        ...sectionBase,
-        paddingTop: 56,
-        paddingBottom: 88,
-        background: t.cream,
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
-      {/* Editorial backdrop — copper wash anchored to the mock side */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "radial-gradient(ellipse 55% 45% at 78% 18%, rgba(180, 83, 9, 0.08) 0%, transparent 65%)",
-          pointerEvents: "none",
-          contain: "paint",
-        }}
-      />
-      <div
-        style={{
-          ...container,
-          position: "relative",
-          width: "100%",
-        }}
-      >
-        <div className="mv2-cascade mv2-cascade-1">
-          <SectionMasthead
-            n="01"
-            label="Practice"
-            live
-            right="Live · Edition 2026"
-          />
-        </div>
-
-        {/* Asymmetric editorial split — text + mock in two columns, the
-            hero is content-sized (no forced viewport height) so there's
-            no dead-air band below. */}
-        <div
-          className="mv2-hero-grid"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1.2fr",
-            gap: 56,
-            alignItems: "center",
-            marginTop: 32,
-          }}
-        >
-          {/* Left — text column */}
-          <div style={{ maxWidth: 600 }}>
-            <h1
-              id="hd-hero"
-              className="mv2-hero-display mv2-cascade mv2-cascade-2"
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: "clamp(40px, 4.6vw, 64px)",
-                lineHeight: 1.04,
-                letterSpacing: "-0.025em",
-                color: t.coal,
-                margin: 0,
-                fontWeight: 400,
-              }}
-            >
-              Practice the interview.
-              <br />
-              <span style={{ fontStyle: "italic", color: t.copper }}>
-                Not the panic.
-              </span>
-            </h1>
-
-            <p
-              className="mv2-cascade mv2-cascade-3"
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 18,
-                lineHeight: 1.55,
-                color: t.inkSoft,
-                maxWidth: 480,
-                margin: "28px 0 0",
-              }}
-            >
-              AI mock interviews you actually speak to — scored against the
-              rubrics real Indian panels use. Your first 2 sessions are free, no
-              card needed. STAR breakdown back before your chai cools.
-            </p>
-
-            <div
-              className="mv2-hero-cta-row mv2-cascade mv2-cascade-4"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 36,
-                flexWrap: "wrap",
-              }}
-            >
-              <a
-                href="/signup"
-                className="mv2-tap-44 mv2-cta-primary"
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: t.white,
-                  background: t.indigo,
-                  padding: "14px 24px",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Start round 01
-                <span aria-hidden className="mv2-cta-arrow" style={{ fontSize: 16 }}>→</span>
-              </a>
-              <a
-                href="/how-it-works"
-                className="mv2-tap-44 mv2-cta-secondary"
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: t.coal,
-                  padding: "14px 22px",
-                  borderRadius: 999,
-                  textDecoration: "none",
-                  border: `1px solid ${t.lineStrong}`,
-                  background: "transparent",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 8,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Watch 60-sec preview
-              </a>
-            </div>
-
-            {/* Single-line trust band — replaces helper + pulse pill */}
-            <div
-              className="mv2-cascade mv2-cascade-5"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                marginTop: 32,
-                paddingTop: 20,
-                borderTop: `1px solid ${t.line}`,
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                color: t.inkSoft,
-                flexWrap: "wrap",
-              }}
-            >
-              <span style={{ color: t.coal, fontWeight: 600 }}>
-                2 sessions free
-              </span>
-              <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-              <span>No card needed</span>
-              <span aria-hidden style={{ color: t.inkFaint }}>·</span>
-              <span>
-                <span
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontStyle: "italic",
-                    color: t.copper,
-                  }}
-                >
-                  ₹9
-                </span>{" "}
-                per session after
-              </span>
-            </div>
-
-            {/* Social proof — rotating testimonial */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                marginTop: 14,
-                fontFamily: fonts.sans,
-                fontSize: 12,
-                color: t.inkFaint,
-                minHeight: 20,
-              }}
-            >
-              <span
-                aria-hidden
-                className="mv2-pulse-dot"
-                style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: "50%",
-                  background: t.success,
-                  flexShrink: 0,
-                }}
-              />
-              <span
-                key={`quote-${quoteIdx}`}
-                style={{
-                  animation: `mv2-fade-up 0.5s ${ease} both`,
-                }}
-              >
-                <span
-                  style={{
-                    fontFamily: fonts.serif,
-                    fontStyle: "italic",
-                    color: t.coal,
-                  }}
-                >
-                  "{quote.text}"
-                </span>{" "}
-                <span style={{ color: t.inkFaint }}>({quote.by})</span>
-              </span>
-            </div>
-          </div>
-
-          {/* Right — product mock with editorial caption */}
-          <div
-            className="mv2-hero-mock-wrap"
-            style={{ position: "relative", marginTop: -56 }}
-          >
-            <ProductMockHero />
-            {/* Caption row — credits the mock, restores rhythm against left trust band */}
-            <div
-              className="mv2-hero-margin-note"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                marginTop: 18,
-                paddingLeft: 4,
-                fontFamily: fonts.sans,
-                fontSize: 11,
-                letterSpacing: "0.16em",
-                textTransform: "uppercase",
-                color: t.inkFaint,
-                fontWeight: 600,
-              }}
-            >
-              <span style={{ color: t.coal }}>Live mock</span>
-              <span aria-hidden style={{ color: t.line }}>/</span>
-              <span>Behavioural · Razorpay</span>
-              <span aria-hidden style={{ color: t.line }}>/</span>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <span
-                  aria-hidden
-                  style={{
-                    width: 5,
-                    height: 5,
-                    borderRadius: "50%",
-                    background: t.copper,
-                  }}
-                />
-                Scored in ~12s
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
 }
 
 /* ─────────────────────────── 3.5. INTERVIEW FOCUS ─────────────────────────── */
 export function InterviewFocusV2() {
-  /* Copper gradient — references the shared <defs> below */
   const G  = "url(#hsx-cg)";
   const rp = { strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
 
-  /* ── Live interview types (4 available now) ─────────────────────── */
   const LIVE_TYPES = [
     {
       label: "Behavioral",
@@ -1596,18 +817,10 @@ export function InterviewFocusV2() {
       desc: "TCS · Infosys · Wipro · Cognizant",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* Diamond board — wide flat mortarboard cap top */}
-          <path d="M32 10 L56 24 L32 38 L8 24 Z"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
-          {/* Centre button — turns diamond into graduation cap */}
-          <circle cx="32" cy="24" r="5"
-            stroke={G} strokeWidth={1.5} fill={G} fillOpacity="0.55"/>
-          {/* Tassel: L-cord from button across cap top then hanging down */}
-          <path d="M32 24 L56 24 L56 46"
-            stroke={G} strokeWidth={2} strokeLinecap="round" fill="none"/>
-          {/* Bob */}
-          <circle cx="56" cy="51" r="4.5"
-            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.40"/>
+          <path d="M32 10 L56 24 L32 38 L8 24 Z" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+          <circle cx="32" cy="24" r="5" stroke={G} strokeWidth={1.5} fill={G} fillOpacity="0.55"/>
+          <path d="M32 24 L56 24 L56 46" stroke={G} strokeWidth={2} strokeLinecap="round" fill="none"/>
+          <circle cx="56" cy="51" r="4.5" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.40"/>
         </svg>
       ),
     },
@@ -1617,7 +830,7 @@ export function InterviewFocusV2() {
       icon: (
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <text x="32" y="48" textAnchor="middle" fontSize="48"
-            fontFamily='"Satoshi", "Inter", system-ui, sans-serif'
+            fontFamily='"Geist Sans", "Inter", system-ui, sans-serif'
             fontWeight="500" fill={G}>₹</text>
         </svg>
       ),
@@ -1627,121 +840,89 @@ export function InterviewFocusV2() {
       desc: "Culture fit · motivation · expectations",
       icon: (
         <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          {/* Head */}
-          <circle cx="32" cy="20" r="11"
-            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.12"/>
-          {/* Shoulders */}
-          <path d="M6 56 Q6 38 32 38 Q58 38 58 56"
-            stroke={G} strokeWidth={2} strokeLinecap="round" fill={G} fillOpacity="0.08"/>
-          {/* Erase shoulder arc behind badge — #FAF7F0 = canvas cream bg */}
+          <circle cx="32" cy="20" r="11" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.12"/>
+          <path d="M6 56 Q6 38 32 38 Q58 38 58 56" stroke={G} strokeWidth={2} strokeLinecap="round" fill={G} fillOpacity="0.08"/>
           <circle cx="50" cy="46" r="11" fill="#FAF7F0"/>
-          {/* Approval badge */}
-          <circle cx="50" cy="46" r="10"
-            stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
-          {/* Checkmark */}
-          <path d="M44 46 L48 50 L56 40"
-            stroke={G} strokeWidth={2.5} {...rp}/>
+          <circle cx="50" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+          <path d="M44 46 L48 50 L56 40" stroke={G} strokeWidth={2.5} {...rp}/>
         </svg>
       ),
     },
   ];
 
-  /* ── Coming-soon interview types (6 on the roadmap) ─────────────── */
   const SOON_TYPES = [
     {
       label: "Leadership Round",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path d="M6 50 L6 26 L20 40 L32 8 L44 40 L58 26 L58 50"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
-          <rect x="6" y="50" width="52" height="8" rx="2"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
-          <circle cx="6"  cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
-          <circle cx="32" cy="8"  r="4.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
-          <circle cx="58" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M6 50 L6 26 L20 40 L32 8 L44 40 L58 26 L58 50" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+        <rect x="6" y="50" width="52" height="8" rx="2" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.18"/>
+        <circle cx="6" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+        <circle cx="32" cy="8" r="4.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+        <circle cx="58" cy="26" r="3.5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.55"/>
+      </svg>),
     },
     {
       label: "Technical Leadership",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <rect x="8" y="10" width="48" height="34" rx="4"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
-          <rect x="12" y="14" width="40" height="26" rx="2"
-            stroke={G} strokeWidth={2} {...rp}/>
-          <path d="M22 23 L15 27 L22 31" stroke={G} strokeWidth={2} {...rp}/>
-          <path d="M42 23 L49 27 L42 31" stroke={G} strokeWidth={2} {...rp}/>
-          <line x1="34" y1="20" x2="30" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <path d="M29 44 L26 54 L38 54 L35 44" stroke={G} strokeWidth={2} {...rp}/>
-          <line x1="22" y1="54" x2="42" y2="54" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <rect x="8" y="10" width="48" height="34" rx="4" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+        <rect x="12" y="14" width="40" height="26" rx="2" stroke={G} strokeWidth={2} {...rp}/>
+        <path d="M22 23 L15 27 L22 31" stroke={G} strokeWidth={2} {...rp}/>
+        <path d="M42 23 L49 27 L42 31" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="34" y1="20" x2="30" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <path d="M29 44 L26 54 L38 54 L35 44" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="22" y1="54" x2="42" y2="54" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+      </svg>),
     },
     {
       label: "Case Study",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path d="M10 8 h24 l12 12 v36 H10 Z"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
-          <path d="M34 8 v12 h12" stroke={G} strokeWidth={2} {...rp}/>
-          <line x1="16" y1="28" x2="30" y2="28" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="16" y1="34" x2="28" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.10"/>
-          <line x1="51" y1="53" x2="57" y2="59" stroke={G} strokeWidth={3} strokeLinecap="round"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M10 8 h24 l12 12 v36 H10 Z" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.07"/>
+        <path d="M34 8 v12 h12" stroke={G} strokeWidth={2} {...rp}/>
+        <line x1="16" y1="28" x2="30" y2="28" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="16" y1="34" x2="28" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <circle cx="44" cy="46" r="10" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.10"/>
+        <line x1="51" y1="53" x2="57" y2="59" stroke={G} strokeWidth={3} strokeLinecap="round"/>
+      </svg>),
     },
     {
       label: "Panel Interview",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="14" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
-          <circle cx="32" cy="15" r="8" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.13"/>
-          <circle cx="50" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
-          <rect x="4" y="36" width="56" height="6" rx="2"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.14"/>
-          <circle cx="32" cy="54" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.07"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="14" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="32" cy="15" r="8" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.13"/>
+        <circle cx="50" cy="17" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <rect x="4" y="36" width="56" height="6" rx="2" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.14"/>
+        <circle cx="32" cy="54" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.07"/>
+      </svg>),
     },
     {
       label: "Management",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <circle cx="32" cy="14" r="9" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
-          <line x1="32" y1="23" x2="32" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="12" y1="34" x2="52" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="12" y1="34" x2="12" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="32" y1="34" x2="32" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="52" y1="34" x2="52" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <circle cx="12" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
-          <circle cx="32" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
-          <circle cx="52" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <circle cx="32" cy="14" r="9" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.16"/>
+        <line x1="32" y1="23" x2="32" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="12" y1="34" x2="52" y2="34" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="12" y1="34" x2="12" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="32" y1="34" x2="32" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="52" y1="34" x2="52" y2="42" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <circle cx="12" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="32" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+        <circle cx="52" cy="49" r="7" stroke={G} strokeWidth={2} fill={G} fillOpacity="0.08"/>
+      </svg>),
     },
     {
       label: "Govt / PSU",
-      icon: (
-        <svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
-          <path d="M8 26 L32 6 L56 26"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
-          <circle cx="32" cy="17" r="5"  stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.26"/>
-          <circle cx="32" cy="17" r="2"  fill={G} fillOpacity="0.60"/>
-          <rect x="8" y="26" width="48" height="5" rx="1"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
-          <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
-          <rect x="6"  y="53" width="52" height="4" rx="1"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
-          <rect x="4"  y="57" width="56" height="3" rx="1"
-            stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.06"/>
-        </svg>
-      ),
+      icon: (<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">
+        <path d="M8 26 L32 6 L56 26" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+        <circle cx="32" cy="17" r="5" stroke={G} strokeWidth="1.5" fill={G} fillOpacity="0.26"/>
+        <circle cx="32" cy="17" r="2" fill={G} fillOpacity="0.60"/>
+        <rect x="8" y="26" width="48" height="5" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.10"/>
+        <line x1="14" y1="31" x2="14" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="22" y1="31" x2="22" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="32" y1="31" x2="32" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="42" y1="31" x2="42" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <line x1="50" y1="31" x2="50" y2="53" stroke={G} strokeWidth={2} strokeLinecap="round"/>
+        <rect x="6" y="53" width="52" height="4" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.09"/>
+        <rect x="4" y="57" width="56" height="3" rx="1" stroke={G} strokeWidth={2} {...rp} fill={G} fillOpacity="0.06"/>
+      </svg>),
     },
   ];
 
@@ -1751,7 +932,6 @@ export function InterviewFocusV2() {
       aria-labelledby="hd-focus"
       style={{ ...sectionBase, background: t.cream }}
     >
-      {/* Pulsing live dot for "Available now" indicator */}
       <style>{`
         .hsx-focus-live-dot {
           width: 6px; height: 6px; border-radius: 50%;
@@ -1777,20 +957,17 @@ export function InterviewFocusV2() {
         </defs>
       </svg>
 
-      <div style={{ ...container }}>
+      <div style={{ ...container }} className="mv2-container">
         <SectionMasthead n="03" label="Interview formats" right="10 types · 4 live now" style={{ marginBottom: 44 }} />
 
         <MotionReveal style={{ textAlign: "center", maxWidth: 860, margin: "0 auto" }}>
-          <h2 id="hd-focus" style={{ ...h2, fontSize: 64 }}>
+          <h2 id="hd-focus" style={{ ...h2, fontSize: "clamp(36px, 8vw, 64px)" }}>
             Walk into any round<br />
             <span style={{ fontStyle: "italic", color: t.copper }}>knowing exactly what it&rsquo;s testing.</span>
           </h2>
-
         </MotionReveal>
 
-        {/* ── Row 1: Live types — 4 items, 80px icons, animated ── */}
-
-        {/* "Available now" label */}
+        {/* ── Available now: divider ── */}
         <MotionReveal style={{
           display: "flex", alignItems: "center", gap: 14,
           margin: "56px 0 36px",
@@ -1807,6 +984,7 @@ export function InterviewFocusV2() {
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </MotionReveal>
 
+        {/* ── Available now: 4-column icon grid ── */}
         <div
           className="mv2-focus-live-grid"
           style={{
@@ -1835,9 +1013,7 @@ export function InterviewFocusV2() {
           ))}
         </div>
 
-        {/* ── Row 2: Coming-soon types — 6 items compact, single row, 60px icons ── */}
-
-        {/* "Coming soon" label */}
+        {/* ── Coming soon: divider ── */}
         <MotionReveal style={{
           display: "flex", alignItems: "center", gap: 14,
           margin: "52px 0 32px",
@@ -1851,9 +1027,7 @@ export function InterviewFocusV2() {
           <div style={{ flex: 1, height: 1, background: "#EBE5D2" }} />
         </MotionReveal>
 
-        {/* 6-col single row — compact, label only, no description */}
-        {/* MotionReveal wraps a plain container; opacity/filter live on the inner grid
-            so the CSS animation (which fills at opacity:1) doesn't clobber the faded look */}
+        {/* ── Coming soon: 6-column icon grid (faded) ── */}
         <MotionReveal>
           <div
             className="mv2-focus-soon-grid"
@@ -1887,137 +1061,55 @@ export function InterviewFocusV2() {
 }
 
 /* ─────────────────────────── 4. 3-STEP PRODUCT STORY ─────────────────────────── */
-function Step03Score() {
-  const target = 7.8;
-  const [val, setVal] = useState(0);
-  const ref = useRef<HTMLSpanElement | null>(null);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    let raf = 0;
-    const obs = new IntersectionObserver((entries) => {
-      entries.forEach((e) => {
-        if (!e.isIntersecting) return;
-        obs.unobserve(el);
-        const start = performance.now();
-        const dur = 1100;
-        const tick = (now: number) => {
-          const p = Math.min(1, (now - start) / dur);
-          const eased = 1 - Math.pow(1 - p, 4);
-          setVal(target * eased);
-          if (p < 1) raf = requestAnimationFrame(tick);
-        };
-        raf = requestAnimationFrame(tick);
-      });
-    }, { threshold: 0.5 });
-    obs.observe(el);
-    return () => {
-      obs.disconnect();
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-  return (
-    <span ref={ref} style={{ color: t.copper, fontWeight: 600 }}>
-      {val.toFixed(1)} / 10
-    </span>
-  );
-}
 
-function StepMock({ step }: { step: number }) {
-  const wrap: CSSProperties = {
-    padding: 32,
+function CompactStepMock({ step }: { step: number }) {
+  const card: CSSProperties = {
     background: t.white,
-    borderRadius: 20,
     border: `1px solid ${t.line}`,
+    borderRadius: 16,
+    padding: 20,
     boxShadow: shadows.card,
-    minHeight: 360,
-  };
-  const kicker: CSSProperties = {
-    fontFamily: fonts.sans,
-    fontSize: 11,
-    color: t.inkFaint,
-    letterSpacing: "0.14em",
-    fontWeight: 600,
-    margin: 0,
-  };
-  const kickerDark: CSSProperties = {
-    ...kicker,
-    color: t.creamMuted,
   };
   if (step === 0) {
     return (
-      <div style={{ padding: "8px 0", minHeight: 360 }}>
-        <p style={kicker}>STEP 01 / RESUME / 4S</p>
+      <div style={{ ...card, minHeight: 248 }}>
         <div
           style={{
-            marginTop: 20,
-            padding: 24,
+            padding: 18,
             border: `1.5px dashed ${t.copper}`,
-            borderRadius: 14,
+            borderRadius: 12,
             background: t.copperSoft,
             textAlign: "center",
+            marginBottom: 14,
           }}
         >
+          {/* Document icon — more meaningful than a generic upload arrow */}
           <div
             style={{
-              width: 44,
-              height: 44,
+              width: 34,
+              height: 34,
               margin: "0 auto",
-              borderRadius: 10,
+              borderRadius: 8,
               background: t.copper,
               color: t.white,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 22,
             }}
           >
-            ↑
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="9" y1="13" x2="15" y2="13" />
+              <line x1="9" y1="17" x2="13" y2="17" />
+            </svg>
           </div>
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 15,
-              fontWeight: 600,
-              color: t.coal,
-              marginTop: 12,
-              marginBottom: 4,
-            }}
-          >
-            Drop your resume
-          </p>
-          <p
-            style={{
-              fontFamily: fonts.sans,
-              fontSize: 12,
-              color: t.inkSoft,
-              margin: 0,
-            }}
-          >
-            PDF, DOCX · auto-parsed in 4s
-          </p>
+          <p style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal, marginTop: 8, marginBottom: 2 }}>Drop your resume</p>
+          <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, margin: 0 }}>PDF, DOCX · auto-parsed in 4s</p>
         </div>
-        <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 8 }}>
-          {[
-            ["Sample Candidate", "Tier-1 Engineering · 2026"],
-            ["Backend Intern", "6 months"],
-            ["Python, Go, Postgres, k8s", "Skills"],
-          ].map(([a, b], idx) => (
-            <div
-              key={a}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                fontFamily: fonts.sans,
-                fontSize: 13,
-                padding: "10px 14px",
-                borderRadius: 8,
-                background: t.cream,
-                border: `1px solid ${t.line}`,
-                opacity: 0,
-                animation: `mv2-fade-up 0.5s ${ease} ${600 + idx * 220}ms forwards`,
-              }}
-            >
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[["Backend Intern", "6 months"], ["Python, Go, k8s", "Skills"]].map(([a, b]) => (
+            <div key={a} style={{ display: "flex", justifyContent: "space-between", fontFamily: fonts.sans, fontSize: 12, padding: "7px 11px", borderRadius: 7, background: t.cream, border: `1px solid ${t.line}` }}>
               <span style={{ color: t.coal, fontWeight: 500 }}>{a}</span>
               <span style={{ color: t.inkSoft }}>{b}</span>
             </div>
@@ -2028,75 +1120,39 @@ function StepMock({ step }: { step: number }) {
   }
   if (step === 1) {
     return (
-      <div style={wrap}>
-        <p style={kicker}>STEP 02 / TARGET / 200 ROLES</p>
-        <p
-          style={{
-            fontFamily: fonts.serif,
-            fontSize: 28,
-            color: t.coal,
-            margin: 0,
-            marginTop: 12,
-          }}
-        >
-          Who are you interviewing with?
-        </p>
-        <div
-          style={{
-            marginTop: 20,
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12,
-          }}
-        >
-          {[
-            ["Razorpay", "Backend SDE-2", true],
-            ["Zomato", "Product Manager", false],
-            ["TCS", "Digital · Fresher", false],
-            ["Flipkart", "Data Analyst", false],
-          ].map(([co, role, active]) => (
+      <div style={{ ...card, minHeight: 248 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {(
+            [
+              ["Razorpay", "Backend SDE-2", true],
+              ["TCS", "Digital · Fresher", false],
+              ["Zomato", "Product Manager", false],
+              ["Flipkart", "Data Analyst", false],
+            ] as [string, string, boolean][]
+          ).map(([co, role, active]) => (
             <div
-              key={co as string}
+              key={co}
               style={{
-                padding: 16,
-                borderRadius: 12,
+                padding: "9px 11px",
+                borderRadius: 10,
                 background: active ? t.indigo100 : t.cream,
                 border: `1px solid ${active ? t.indigo : t.line}`,
               }}
             >
-              <p
-                style={{
-                  fontFamily: fonts.serif,
-                  fontSize: 18,
-                  color: t.coal,
-                  margin: 0,
-                }}
-              >
-                {co}
-              </p>
-              <p
-                style={{
-                  fontFamily: fonts.sans,
-                  fontSize: 12,
-                  color: t.inkSoft,
-                  marginTop: 4,
-                  marginBottom: 0,
-                }}
-              >
-                {role}
-              </p>
+              <p style={{ fontFamily: fonts.serif, fontSize: 14, color: t.coal, margin: 0 }}>{co}</p>
+              <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, marginTop: 2, marginBottom: 0 }}>{role}</p>
             </div>
           ))}
         </div>
-        <div style={{ marginTop: 20, display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {["Behavioural", "System Design", "Negotiation"].map((r, i) => (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {["Behavioral", "System Design", "Negotiation"].map((r, i) => (
             <span
               key={r}
               style={{
                 fontFamily: fonts.sans,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: 500,
-                padding: "6px 12px",
+                padding: "5px 10px",
                 borderRadius: 999,
                 color: i === 0 ? t.white : t.coal,
                 background: i === 0 ? t.indigo : t.white,
@@ -2113,100 +1169,50 @@ function StepMock({ step }: { step: number }) {
   return (
     <div
       style={{
-        ...wrap,
         background: t.coal,
         border: `1px solid ${t.creamLineFaint}`,
-        /* Quieter: shadow tinted toward coal (was pure black), lower alpha so
-           the step-03 mock sits on the page instead of hovering off it. */
+        borderRadius: 16,
+        padding: 24,
+        minHeight: 248,
         boxShadow: `0 20px 50px -22px ${t.coalShadow}`,
-        minHeight: undefined,
       }}
     >
-      <p style={kickerDark}>STEP 03 / PRACTICE / 312MS</p>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginTop: 12,
-          marginBottom: 20,
-        }}
-      >
-        <span
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            background: t.error,
-            boxShadow: `0 0 12px ${t.error}`,
-          }}
-        />
-        <span
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 13,
-            fontWeight: 600,
-            color: t.cream,
-            letterSpacing: "0.05em",
-          }}
-        >
-          REC · 03:14
-        </span>
-        <span style={{ marginLeft: "auto", opacity: 0.7 }}>
-          <Waveform />
-        </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: t.error, boxShadow: `0 0 8px ${t.error}`, flexShrink: 0 }} />
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 600, color: t.cream, letterSpacing: "0.05em" }}>REC · 03:14</span>
+        <span style={{ marginLeft: "auto", opacity: 0.7 }}><Waveform /></span>
       </div>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 11,
-          color: t.creamMuted,
-          margin: 0,
-          letterSpacing: "0.12em",
-          textTransform: "uppercase",
-          fontWeight: 600,
-        }}
-      >
-        Coach
+      <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.cream, lineHeight: 1.5, margin: "0 0 14px" }}>
+        &ldquo;Walk me through how you&apos;d design a UPI fraud detection pipeline.&rdquo;
       </p>
-      <p
-        style={{
-          fontFamily: fonts.sans,
-          fontSize: 16,
-          color: t.cream,
-          lineHeight: 1.55,
-          marginTop: 6,
-          marginBottom: 20,
-        }}
-      >
-        Walk me through how you'd design a UPI fraud detection pipeline.
-      </p>
+      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+        {(
+          [["S", 92], ["T", 78], ["A", 85], ["R", 55]] as [string, number][]
+        ).map(([l, v]) => (
+          <div key={l} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.creamMuted, width: 10 }}>{l}</span>
+            <div style={{ flex: 1, height: 4, background: t.creamLineSoft, borderRadius: 2, overflow: "hidden" }}>
+              <div style={{ width: `${v}%`, height: "100%", background: t.copper, borderRadius: 2 }} />
+            </div>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.creamMuted, width: 22, textAlign: "right" }}>{v}</span>
+          </div>
+        ))}
+      </div>
       <div
         style={{
-          padding: 16,
+          padding: "7px 11px",
           background: t.creamSurfaceLow,
           border: `1px solid ${t.creamLineSoft}`,
-          borderRadius: 10,
+          borderRadius: 8,
           display: "flex",
-          alignItems: "center",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.cream }}>
-          Live score:{" "}
-          <Step03Score />
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.cream }}>
+          Score: <span style={{ color: t.copperOnDark, fontWeight: 600 }}>8.4 / 10</span>
         </span>
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 11,
-            color: t.success,
-            padding: "3px 8px",
-            background: t.successMist,
-            borderRadius: 6,
-            fontWeight: 600,
-          }}
-        >
+        <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.success, padding: "2px 7px", background: t.successMist, borderRadius: 5, fontWeight: 600 }}>
           STAR · 4/4
         </span>
       </div>
@@ -2224,7 +1230,7 @@ export function ProductStoryV2() {
     {
       kicker: "02",
       title: "Pick the company & round",
-      desc: "200+ Indian roles (Razorpay PM, TCS Digital, ISRO scientist). We know the format.",
+      desc: "Role and company-specific question banks for Indian employers (Razorpay PM, TCS Digital, ISRO scientist).",
     },
     {
       kicker: "03",
@@ -2234,93 +1240,81 @@ export function ProductStoryV2() {
   ];
 
   return (
-    <section aria-labelledby="hd-story" style={{ ...sectionBase, background: t.cream }}>
-      <div style={container}>
-        <SectionMasthead n="04" label="How it works" right="Three steps" style={{ marginBottom: 24 }} />
-        <MotionReveal style={{ textAlign: "center", marginBottom: 80 }}>
+    <section aria-labelledby="hd-story" className="mv2-section" style={{ ...sectionBase, background: t.cream, paddingTop: 96, paddingBottom: 72 }}>
+      <div style={container} className="mv2-container">
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <h2 id="hd-story" style={h2}>
-            Three steps.{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>Zero fluff.</span>
+            Resume in.{" "}
+            <span style={{ fontStyle: "italic", color: t.copper }}>Scored answer out.</span>
           </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "10px 0 0", lineHeight: 1.5 }}>
+            From file upload to scored STAR breakdown: under 10 minutes, no prep materials needed.
+          </p>
         </MotionReveal>
 
-        <ol
+        {/* 3-column layout — gaps between columns act as dividers */}
+        <div
           className="mv2-story-stages"
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            display: "flex",
-            flexDirection: "column",
-          }}
+          style={{ display: "flex", alignItems: "start", gap: 32 }}
         >
-          {steps.map((s, i) => (
-            <li
-              key={s.kicker}
-              className="mv2-story-stage"
+          {steps.map((step, i) => (
+            <MotionReveal
+              key={step.kicker}
+              delay={i * 120}
               style={{
-                display: "grid",
-                gridTemplateColumns: "minmax(260px, 360px) 1fr",
-                gap: 80,
-                alignItems: "center",
-                paddingTop: i === 0 ? 0 : 64,
-                paddingBottom: 64,
-                borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+                flex: 1,
+                minWidth: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 18,
               }}
             >
-              <MotionReveal>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginBottom: 14 }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
                   <span
                     style={{
                       fontFamily: fonts.mono,
-                      fontSize: 13,
+                      fontSize: 12,
                       color: t.copper,
                       fontWeight: 600,
                       letterSpacing: "0.05em",
                     }}
                   >
-                    {s.kicker}
+                    {step.kicker}
                   </span>
-                  <span
-                    aria-hidden
-                    style={{ width: 24, height: 1, background: t.line }}
-                  />
+                  <span aria-hidden style={{ flex: 1, height: 1, background: t.line }} />
                 </div>
                 <h3
                   style={{
                     fontFamily: fonts.serif,
-                    fontSize: 36,
+                    fontSize: 22,
                     color: t.coal,
                     margin: 0,
                     letterSpacing: "-0.02em",
                     fontWeight: 400,
-                    lineHeight: 1.1,
+                    lineHeight: 1.2,
                     textWrap: "balance" as const,
                   }}
                 >
-                  {s.title}
+                  {step.title}
                 </h3>
                 <p
                   style={{
                     fontFamily: fonts.sans,
-                    fontSize: 16,
+                    fontSize: 14,
                     color: t.inkSoft,
                     lineHeight: 1.6,
-                    marginTop: 16,
+                    marginTop: 8,
                     marginBottom: 0,
-                    maxWidth: 380,
                   }}
                 >
-                  {s.desc}
+                  {step.desc}
                 </p>
-              </MotionReveal>
-
-              <MotionReveal delay={80}>
-                <StepMock step={i} />
-              </MotionReveal>
-            </li>
+              </div>
+              <CompactStepMock step={i} />
+            </MotionReveal>
           ))}
-        </ol>
+        </div>
       </div>
     </section>
   );
@@ -2329,82 +1323,194 @@ export function ProductStoryV2() {
 /* ─────────────────────────── 5. FEATURE BENTO ─────────────────────────── */
 
 /* Voice Follow-up visual: transcript with a follow-up question surfacing */
-function VoiceFollowUpVisual() {
+/* Shared hook: Intersection Observer that fires once when element enters view.
+   Returns a ref to attach and a boolean `inView`. */
+function useInViewOnce<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") { setInView(true); return; }
+    const io = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); io.disconnect(); } },
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return [ref, inView] as const;
+}
+
+/* Shared hook: looping animation driver.
+   Calls `runFrame` with the current frame index (0 = reset) on a schedule.
+   Only runs while `active` is true. Cleans up on unmount. */
+function useBentoLoop(
+  active: boolean,
+  frames: number[],   /* ms delays from frame 0 */
+  loopMs: number,     /* total cycle duration before restart */
+  onFrame: (frame: number) => void,
+) {
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  useEffect(() => {
+    if (!active) return;
+    function runCycle() {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+      onFrame(0);
+      frames.forEach((delay, i) => {
+        timers.current.push(setTimeout(() => onFrame(i + 1), delay));
+      });
+      timers.current.push(setTimeout(runCycle, loopMs));
+    }
+    runCycle();
+    return () => timers.current.forEach(clearTimeout);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
+}
+
+/* Reveal transition helper: items snap-to-hidden on reset (frame 0), animate in after */
+function revealStyle(visible: boolean, resetting: boolean): CSSProperties {
+  return {
+    opacity: visible ? 1 : 0,
+    transform: visible ? "translateY(0)" : "translateY(8px)",
+    transition: resetting ? "none" : "opacity 0.38s cubic-bezier(0.16,1,0.3,1), transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+  };
+}
+
+/* Resume-aware visual: personalized question chip — staggered reveal */
+function ResumeAwareVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [step, setStep] = useState(0);
+  const resetting = useRef(false);
+
+  useBentoLoop(inView && !reduced, [200, 950, 1750, 2600], 6600, (frame) => {
+    resetting.current = frame === 0;
+    setStep(frame);
+  });
+
   return (
-    <div
-      style={{
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 12,
-        overflow: "hidden",
-        fontFamily: fonts.sans,
-        fontSize: 13,
-      }}
-    >
-      {/* Transcript lines */}
-      <div style={{ padding: "14px 16px", borderBottom: `1px solid ${t.line}` }}>
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.inkFaintWeak }}>YOU</span>
-        <p style={{ margin: "4px 0 0", color: t.inkSoft, lineHeight: 1.45 }}>
-          "I improved team communication by setting up weekly syncs…"
-        </p>
+    <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={revealStyle(step >= 1, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.copper100, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.copperDark, lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 600 }}>From your resume →</span>
+          <p style={{ margin: "4px 0 0" }}>Python · Razorpay internship · Final year</p>
+        </div>
       </div>
-      {/* Follow-up highlight */}
-      <div
-        style={{
-          padding: "14px 16px",
-          background: `linear-gradient(135deg, ${t.indigoMist} 0%, transparent 100%)`,
-          borderLeft: `3px solid ${t.indigo}`,
-        }}
-      >
-        <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: t.indigo, opacity: 0.7 }}>AI INTERVIEWER</span>
-        <p style={{ margin: "4px 0 0", color: t.coal, lineHeight: 1.45, fontWeight: 500 }}>
-          "What metric did you track to know the syncs were working?"
-        </p>
+      <div style={revealStyle(step >= 2, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.white, border: `1px solid ${t.line}`, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
+          "Walk me through the specific bug you fixed in the Razorpay payment gateway."
+        </div>
       </div>
-      {/* Waveform row */}
-      <div style={{ padding: "10px 16px", display: "flex", alignItems: "center", gap: 8, borderTop: `1px solid ${t.line}` }}>
-        <Waveform />
-        <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 600 }}>listening…</span>
+      <div style={revealStyle(step >= 3, resetting.current)}>
+        <div style={{ padding: "10px 12px", background: t.indigoMist, borderRadius: 8, fontFamily: fonts.sans, fontSize: 12, color: t.coal, lineHeight: 1.4 }}>
+          <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: t.indigo, display: "block", marginBottom: 4 }}>Follow-up</span>
+          "What was the transaction volume affected? Did you escalate to senior engineers?"
+        </div>
+      </div>
+      <div style={revealStyle(step >= 4, resetting.current)}>
+        <div style={{ padding: "8px 12px", background: t.successMist, border: `1px solid rgba(21,128,61,0.22)`, borderRadius: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.success }}>✓</span>
+          <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.success, fontWeight: 600 }}>
+            12 questions prepared from your Razorpay internship
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
-/* Salary negotiation visual: counter-offer exchange */
-function SalaryNegVisual() {
+/* Voice follow-up visual: user → typing dots → AI reply → waveform */
+function VoiceFollowUpVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [phase, setPhase] = useState(0);
+  const resetting = useRef(false);
+
+  /* user(200) → dots(900) → ai-reply(2000) → wave(2900) */
+  useBentoLoop(inView && !reduced, [200, 900, 2000, 2900], 5600, (frame) => {
+    resetting.current = frame === 0;
+    setPhase(frame);
+  });
+
+  const row = { padding: "9px 14px", borderBottom: `1px solid ${t.line}` } as const;
+  const lbl = { fontSize: 9, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" } as const;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {/* Company offer */}
-      <div
-        style={{
-          padding: "12px 14px",
-          background: t.cream,
-          border: `1px solid ${t.line}`,
-          borderRadius: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>HR's offer</span>
-        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.coal }}>₹12 LPA</span>
+    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10, overflow: "hidden", fontFamily: fonts.sans }}>
+      <div style={{ ...row, ...revealStyle(phase >= 1, resetting.current) }}>
+        <span style={{ ...lbl, color: t.inkFaint }}>YOU</span>
+        <p style={{ margin: "3px 0 0", fontSize: 12, color: t.inkSoft, lineHeight: 1.4 }}>
+          "I improved comms by setting up weekly syncs…"
+        </p>
       </div>
-      {/* Your counter */}
-      <div
-        style={{
-          padding: "12px 14px",
-          background: t.indigoDeep,
-          borderRadius: 10,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <div style={{ ...row, background: t.indigoMist, minHeight: 50, ...revealStyle(phase >= 2, resetting.current) }}>
+        <span style={{ ...lbl, color: t.indigoGray }}>AI INTERVIEWER</span>
+        <div style={{ marginTop: 5, display: "flex", gap: 4, alignItems: "center", height: 13,
+          opacity: phase === 2 ? 1 : 0, transition: "opacity 0.18s ease" }}>
+          {[0, 130, 260].map(d => (
+            <span key={d} style={{ width: 5, height: 5, borderRadius: "50%", background: t.indigo, opacity: 0.6,
+              animation: `mv2-dot-bounce 1.1s ${d}ms ease-in-out infinite` }} />
+          ))}
+        </div>
+        <p style={{ margin: "-13px 0 0", fontSize: 12, color: t.coal, fontWeight: 500, lineHeight: 1.4,
+          opacity: phase >= 3 ? 1 : 0, transform: phase >= 3 ? "none" : "translateY(4px)",
+          transition: resetting.current ? "none" : "opacity 0.28s ease, transform 0.28s cubic-bezier(0.16,1,0.3,1)" }}>
+          "What metric did you track to know the syncs were working?"
+        </p>
+      </div>
+      <div style={{ padding: "7px 14px", display: "flex", alignItems: "center", gap: 8,
+        ...revealStyle(phase >= 4, resetting.current) }}>
+        <Waveform />
+        <span style={{ marginLeft: "auto", fontFamily: fonts.mono, fontSize: 10, color: t.success, fontWeight: 600 }}>listening…</span>
+      </div>
+    </div>
+  );
+}
+
+/* Salary negotiation visual: slide-in rows + integer counter ₹12→₹14 */
+function SalaryNegVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [step, setStep] = useState(0);
+  const [counter, setCounter] = useState(12);
+  const resetting = useRef(false);
+  const counterTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useBentoLoop(inView && !reduced, [200, 1050], 5500, (frame) => {
+    resetting.current = frame === 0;
+    setStep(frame);
+    if (frame === 0) {
+      counterTimers.current.forEach(clearTimeout);
+      setCounter(12);
+    }
+    if (frame === 2) {
+      /* counter row just appeared showing ₹12 — tick to 14 */
+      counterTimers.current.push(setTimeout(() => setCounter(13), 600));
+      counterTimers.current.push(setTimeout(() => setCounter(14), 950));
+      /* show delta after counter settles */
+      counterTimers.current.push(setTimeout(() => setStep(3), 1300));
+    }
+  });
+
+  return (
+    <div ref={ref} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ padding: "12px 14px", background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        ...revealStyle(step >= 1, resetting.current) }}>
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkSoft }}>HR&apos;s offer</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.coal, fontVariantNumeric: "tabular-nums" }}>₹12 LPA</span>
+      </div>
+      <div style={{ padding: "12px 14px", background: t.indigoDeep, borderRadius: 10,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        ...revealStyle(step >= 2, resetting.current) }}>
         <span style={{ fontFamily: fonts.sans, fontSize: 12, color: t.creamMuted }}>Your counter</span>
-        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.copper100 }}>₹14 LPA</span>
+        <span style={{ fontFamily: fonts.mono, fontSize: 16, fontWeight: 700, color: t.copper100, fontVariantNumeric: "tabular-nums" }}>
+          ₹{counter} LPA
+        </span>
       </div>
-      {/* Delta callout */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, paddingTop: 2,
+        ...revealStyle(step >= 3, resetting.current) }}>
         <span style={{ fontFamily: fonts.mono, fontSize: 11, color: t.success, fontWeight: 700 }}>+₹2L/yr</span>
         <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>recovered in 4 minutes of practice</span>
       </div>
@@ -2412,122 +1518,50 @@ function SalaryNegVisual() {
   );
 }
 
-/* Resume-aware visual: personalized question chip */
-function ResumeAwareVisual() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <div
-        style={{
-          padding: "10px 12px",
-          background: t.copper100,
-          borderRadius: 8,
-          fontFamily: fonts.sans,
-          fontSize: 12,
-          color: t.copperDark,
-          lineHeight: 1.4,
-        }}
-      >
-        <span style={{ fontWeight: 600 }}>From your resume →</span>
-        <p style={{ margin: "4px 0 0" }}>Python · Razorpay internship · Final year</p>
-      </div>
-      <div
-        style={{
-          padding: "10px 12px",
-          background: t.white,
-          border: `1px solid ${t.line}`,
-          borderRadius: 8,
-          fontFamily: fonts.sans,
-          fontSize: 12,
-          color: t.coal,
-          lineHeight: 1.4,
-        }}
-      >
-        "Walk me through the specific bug you fixed in the Razorpay payment gateway."
-      </div>
-    </div>
-  );
-}
-
-/* Bias detector visual: flagged phrases with crisp rewrite */
+/* Bias detector visual: cascading word highlights → slide-up crisp rewrite */
 function BiasDetectorVisual() {
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  const [marks, setMarks] = useState(0);
+  const [showRewrite, setShowRewrite] = useState(false);
+  const resetting = useRef(false);
+
+  useBentoLoop(inView && !reduced, [800, 1300, 1800, 2600], 5800, (frame) => {
+    resetting.current = frame === 0;
+    if (frame === 0) { setMarks(0); setShowRewrite(false); }
+    else if (frame <= 3) setMarks(frame);
+    else setShowRewrite(true);
+  });
+
+  const markStyle = (n: number): CSSProperties => ({
+    background: marks >= n ? "rgba(180,83,9,0.14)" : "transparent",
+    color: marks >= n ? t.copper : "inherit",
+    borderRadius: 3,
+    padding: "1px 4px",
+    fontWeight: marks >= n ? 600 : "inherit" as CSSProperties["fontWeight"],
+    fontStyle: "normal" as const,
+    transition: resetting.current ? "none" : "background 0.28s ease, color 0.28s ease",
+  });
+
   return (
-    <div
-      style={{
-        background: t.cream,
-        border: `1px solid ${t.line}`,
-        borderRadius: 10,
-        overflow: "hidden",
-        fontFamily: fonts.sans,
-        fontSize: 13,
-      }}
-    >
-      {/* Transcript with highlighted phrases */}
+    <div ref={ref} style={{ background: t.cream, border: `1px solid ${t.line}`, borderRadius: 10, overflow: "hidden", fontFamily: fonts.sans, fontSize: 13 }}>
       <div style={{ padding: "12px 14px", lineHeight: 1.7, color: t.inkSoft }}>
         {"I "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          basically
-        </mark>
+        <mark style={markStyle(1)}>basically</mark>
         {" restructured the team and "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          I think
-        </mark>
+        <mark style={markStyle(2)}>I think</mark>
         {" it "}
-        <mark
-          style={{
-            background: "rgba(180,83,9,0.14)",
-            color: t.copper,
-            borderRadius: 3,
-            padding: "1px 4px",
-            fontWeight: 600,
-            fontStyle: "normal",
-          }}
-        >
-          probably
-        </mark>
+        <mark style={markStyle(3)}>probably</mark>
         {" helped…"}
       </div>
-      {/* Rewrite bar */}
-      <div
-        style={{
-          padding: "10px 14px",
-          background: t.indigoMist,
-          borderTop: `1px solid ${t.line}`,
-          display: "flex",
-          alignItems: "baseline",
-          gap: 10,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 9,
-            fontWeight: 700,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: t.indigo,
-            flexShrink: 0,
-          }}
-        >
-          Crisp
-        </span>
+      <div style={{
+        padding: "10px 14px", background: t.indigoMist, borderTop: `1px solid ${t.line}`,
+        display: "flex", alignItems: "baseline", gap: 10,
+        opacity: showRewrite ? 1 : 0,
+        transform: showRewrite ? "translateY(0)" : "translateY(10px)",
+        transition: resetting.current ? "none" : "opacity 0.35s ease, transform 0.4s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.indigo, flexShrink: 0 }}>Crisp</span>
         <span style={{ fontSize: 12, color: t.coal, fontWeight: 500, lineHeight: 1.4 }}>
           "I restructured the team. Throughput rose 30% in Q3."
         </span>
@@ -2536,88 +1570,66 @@ function BiasDetectorVisual() {
   );
 }
 
-/* Thought Bubble visual: per-question engagement bars + trigger sentence */
+/* Thought Bubble visual: sequential bar fills, Q4 dramatic drop, trigger reveal */
 function ThoughtBubbleVisual() {
-  const qs = [
-    { q: "Q1", width: "88%", color: t.success },
-    { q: "Q2", width: "80%", color: t.success },
-    { q: "Q3", width: "66%", color: t.copper },
-    { q: "Q4", width: "22%", color: "#DC2626" },
-  ];
+  const reduced = usePrefersReducedMotion();
+  const [ref, inView] = useInViewOnce<HTMLDivElement>();
+  /* Start in the "story told" state — bars filled, trigger visible — so the card
+     reads immediately before the loop kicks in on scroll. */
+  const [bars, setBars] = useState([88, 80, 66, 22]);
+  const [showTrigger, setShowTrigger] = useState(true);
+  const [q4Dropping, setQ4Dropping] = useState(true);
+  const resetting = useRef(false);
+  const barTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useBentoLoop(inView && !reduced, [350], 6400, (frame) => {
+    resetting.current = frame === 0;
+    barTimers.current.forEach(clearTimeout);
+    barTimers.current = [];
+    if (frame === 0) { setBars([0, 0, 0, 0]); setShowTrigger(false); setQ4Dropping(false); return; }
+    /* Stagger Q1-Q3 fills, then Q4 fills then drops */
+    barTimers.current.push(setTimeout(() => setBars([88, 0, 0, 0]), 0));
+    barTimers.current.push(setTimeout(() => setBars([88, 80, 0, 0]), 450));
+    barTimers.current.push(setTimeout(() => setBars([88, 80, 66, 0]), 900));
+    barTimers.current.push(setTimeout(() => { setQ4Dropping(false); setBars([88, 80, 66, 72]); }, 1350));
+    barTimers.current.push(setTimeout(() => { setQ4Dropping(true);  setBars([88, 80, 66, 22]); }, 1870));
+    barTimers.current.push(setTimeout(() => setShowTrigger(true), 2450));
+  });
+
+  const BAR_COLORS = [t.success, t.success, t.copper, "#DC2626"];
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Per-question bars */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {qs.map(({ q, width, color }) => (
+    <div ref={ref} style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 148 }}>
+        {["Q1", "Q2", "Q3", "Q4"].map((q, i) => (
           <div key={q} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                color: t.inkFaintWeak,
-                width: 18,
-                flexShrink: 0,
-              }}
-            >
-              {q}
-            </span>
-            <div
-              style={{
-                flex: 1,
-                height: 6,
-                background: t.line,
-                borderRadius: 3,
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ width, height: "100%", background: color, borderRadius: 3 }} />
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, color: t.inkSoft, width: 18, flexShrink: 0 }}>{q}</span>
+            <div style={{ flex: 1, height: 10, background: t.line, borderRadius: 4, overflow: "hidden" }}>
+              <div style={{
+                width: `${bars[i]}%`, height: "100%", background: BAR_COLORS[i], borderRadius: 4,
+                transition: resetting.current ? "none"
+                  : i === 3 && q4Dropping
+                    ? "width 0.22s cubic-bezier(0.6,0,1,1)"
+                    : "width 0.45s cubic-bezier(0.16,1,0.3,1)",
+              }} />
             </div>
           </div>
         ))}
       </div>
-      {/* Trigger sentence */}
-      <div
-        style={{
-          padding: "10px 12px",
-          background: "rgba(220, 38, 38, 0.05)",
-          border: "1px solid rgba(220, 38, 38, 0.14)",
-          borderRadius: 8,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: fonts.mono,
-            fontSize: 9,
-            letterSpacing: "0.12em",
-            textTransform: "uppercase",
-            color: "#DC2626",
-            opacity: 0.75,
-            display: "block",
-            marginBottom: 4,
-          }}
-        >
+      <div style={{
+        flex: 1, padding: "10px 12px",
+        background: "rgba(220, 38, 38, 0.09)", border: "1px solid rgba(220, 38, 38, 0.22)", borderRadius: 8,
+        opacity: showTrigger ? 1 : 0,
+        transform: showTrigger ? "translateY(0)" : "translateY(6px)",
+        transition: resetting.current ? "none" : "opacity 0.38s ease, transform 0.38s cubic-bezier(0.16,1,0.3,1)",
+      }}>
+        <span style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: "0.12em", textTransform: "uppercase", color: "#DC2626", display: "block", marginBottom: 4 }}>
           Trigger · Q4
         </span>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 12,
-            color: t.coal,
-            margin: 0,
-            lineHeight: 1.4,
-            fontStyle: "italic",
-          }}
-        >
+        <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.coal, margin: 0, lineHeight: 1.4, fontStyle: "italic" }}>
           "It was a learning experience."
         </p>
-        <p
-          style={{
-            fontFamily: fonts.sans,
-            fontSize: 11,
-            color: t.inkFaint,
-            margin: "4px 0 0",
-          }}
-        >
+        <p style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkSoft, margin: "5px 0 0" }}>
           90 words at Q3 → 6 words. The room shifted here.
         </p>
       </div>
@@ -2653,272 +1665,103 @@ function BentoCard({
   );
 }
 
-/* Row label — small mono text above each bento row */
-function BentoRowLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 12,
-        marginBottom: 12,
-      }}
-    >
-      <span
-        style={{
-          fontFamily: fonts.mono,
-          fontSize: 10,
-          letterSpacing: "0.2em",
-          textTransform: "uppercase",
-          color: t.inkFaintWeak,
-        }}
-      >
-        {children}
-      </span>
-      <div style={{ flex: 1, height: 1, background: t.line }} />
-    </div>
-  );
-}
-
+/* Compact act-row label embedded inside a card */
 export function FeatureGridV2() {
   return (
-    <section aria-labelledby="hd-features" style={{ ...sectionBase, background: t.cream }}>
-      <div style={container}>
-        <SectionMasthead n="05" label="What sets it apart" right="Distinct mechanics" style={{ marginBottom: 24 }} />
-        <MotionReveal style={{ marginBottom: 52 }}>
-          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2, whiteSpace: "nowrap" }}>
+    <section
+      aria-labelledby="hd-features"
+      className="mv2-section"
+      style={{ position: "relative", background: t.cream, paddingTop: "clamp(20px,3vh,36px)", paddingBottom: "clamp(20px,3vh,36px)" }}
+    >
+      <div style={container} className="mv2-container">
+        <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
+          <h2 id="hd-features" className="mv2-features-h2" style={{ ...h2 }}>
             What practice alone{" "}
-            <span style={{ fontStyle: "italic", color: t.copper }}>
-              never shows you.
-            </span>
+            <span style={{ fontStyle: "italic", color: t.copper }}>never shows you.</span>
           </h2>
-          <p style={{ ...body, marginTop: 16 }}>
-            None of this fits in a question bank.
+          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.inkSoft, margin: "10px auto 0", lineHeight: 1.55, maxWidth: 520 }}>
+            Your resume. Your voice. The exact moment you lost the room. None of it surfaces in a generic prep sheet.
           </p>
         </MotionReveal>
 
-        {/* ── Row 1: During the session ── */}
-        <BentoRowLabel>During the session</BentoRowLabel>
+        {/* Grid fills remaining viewport height: rows grow with available space */}
         <div
-          className="mv2-bento-row1"
+          className="mv2-bento-mosaic"
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 16,
-            marginBottom: 16,
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateRows: "minmax(0,1fr) minmax(0,1fr) minmax(0,0.78fr)",
+            gap: 12,
+            height: "calc(100vh - 255px)",
+            maxHeight: 660,
           }}
         >
-          {/* LARGE 1 — Voice follow-up */}
-          <BentoCard large>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.indigo,
-                opacity: 0.6,
-                marginBottom: 16,
-              }}
-            >
-              Real conversation
+          {/* ── Before: left column, spans all 3 rows ── */}
+          <BentoCard large style={{ gridColumn: "1", gridRow: "1 / 4", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 8, display: "block" }}>
+              Before · Personalisation
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 10,
-                letterSpacing: "-0.015em",
-                fontWeight: 400,
-                lineHeight: 1.25,
-              }}
-            >
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 22, color: t.coal, margin: "0 0 14px", letterSpacing: "-0.015em", fontWeight: 400, lineHeight: 1.2 }}>
+              Your resume is <em>the question paper.</em>
+            </h3>
+            <div aria-hidden="true" style={{ overflow: "hidden" }}>
+              <ResumeAwareVisual />
+            </div>
+          </BentoCard>
+
+          {/* ── During: Voice follow-up — wide top strip ── */}
+          <BentoCard large style={{ gridColumn: "2 / 4", gridRow: "1", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 8, display: "block" }}>
+              During · Real Conversation
+            </span>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 20, color: t.coal, margin: "0 0 12px", letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               Vague answer?{" "}
               <span style={{ color: t.copper, fontStyle: "italic" }}>It asks again. Harder.</span>
             </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                color: t.inkSoft,
-                lineHeight: 1.55,
-                margin: 0,
-                marginBottom: 24,
-                maxWidth: 360,
-              }}
-            >
-              Every follow-up is generated from your answer — not a pre-written script. Specific answers move on. Vague ones get a sharper question back.
-            </p>
-            <VoiceFollowUpVisual />
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <VoiceFollowUpVisual />
+            </div>
           </BentoCard>
 
-          {/* LARGE 2 — Salary negotiation */}
-          <BentoCard large style={{ background: t.indigoDeep }}>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper100,
-                opacity: 0.6,
-                marginBottom: 16,
-              }}
-            >
-              Salary negotiation
+          {/* ── During: Salary negotiation — middle left ── */}
+          <BentoCard large style={{ gridColumn: "2", gridRow: "2", background: t.indigoDeep, border: "none", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper100, marginBottom: 8, display: "block" }}>
+              During · Salary Negotiation
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 26,
-                color: t.cream,
-                margin: 0,
-                marginBottom: 10,
-                letterSpacing: "-0.015em",
-                fontWeight: 400,
-                lineHeight: 1.25,
-              }}
-            >
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.cream, margin: "0 0 12px", letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.2 }}>
               You left{" "}
               <span style={{ color: t.copper100, fontStyle: "italic" }}>₹2L on the table.</span>{" "}
               Practice changing that.
             </h3>
-            <p
-              style={{
-                fontFamily: fonts.sans,
-                fontSize: 14,
-                color: t.creamMuted,
-                lineHeight: 1.55,
-                margin: 0,
-                marginBottom: 24,
-                maxWidth: 360,
-              }}
-            >
-              The only mode that trains you to counter-offer, anchor high, and hold the silence until HR moves first.
-            </p>
-            <SalaryNegVisual />
-          </BentoCard>
-        </div>
-
-        {/* ── Row 2: In the report after ── */}
-        <BentoRowLabel>In the report after</BentoRowLabel>
-        <div
-          className="mv2-bento-row2"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 16,
-          }}
-        >
-          {/* SMALL 3 — Resume-aware */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
-              Your resume
-            </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              Your resume is{" "}
-              <em>the question paper.</em>
-            </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              Upload once. Every session drills your actual projects — not someone else's.
-            </p>
-            <ResumeAwareVisual />
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <SalaryNegVisual />
+            </div>
           </BentoCard>
 
-          {/* SMALL 4 — Bias detector */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
-              Perception optimizer
+          {/* ── After: Filler Words — middle right ── */}
+          <BentoCard style={{ gridColumn: "3", gridRow: "2", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 8, display: "block" }}>
+              After · Filler Words
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              You said{" "}
-              <em>"basically"</em>{" "}
-              9 times. The room heard uncertainty.
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: "0 0 12px", letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+              You said <em>&ldquo;basically&rdquo;</em> 9 times.
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              We flag every hedge, filler, and self-diminutive phrase — and show the crisp rewrite beside it.
-            </p>
-            <BiasDetectorVisual />
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <BiasDetectorVisual />
+            </div>
           </BentoCard>
 
-          {/* SMALL 5 — Thought Bubble */}
-          <BentoCard>
-            <span
-              style={{
-                fontFamily: fonts.mono,
-                fontSize: 10,
-                letterSpacing: "0.18em",
-                textTransform: "uppercase",
-                color: t.copper,
-                opacity: 0.7,
-                marginBottom: 14,
-              }}
-            >
-              Thought bubble
+          {/* ── After: Engagement Drop — wide bottom strip ── */}
+          <BentoCard style={{ gridColumn: "2 / 4", gridRow: "3", overflow: "hidden", padding: 18, boxSizing: "border-box" }}>
+            <span style={{ fontFamily: fonts.mono, fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: t.copper, marginBottom: 8, display: "block" }}>
+              After · Engagement Drop
             </span>
-            <h3
-              style={{
-                fontFamily: fonts.serif,
-                fontSize: 20,
-                color: t.coal,
-                margin: 0,
-                marginBottom: 8,
-                letterSpacing: "-0.01em",
-                fontWeight: 400,
-                lineHeight: 1.3,
-              }}
-            >
-              The exact answer{" "}
-              <em>that lost the room.</em>
+            <h3 style={{ fontFamily: fonts.serif, fontSize: 18, color: t.coal, margin: "0 0 10px", letterSpacing: "-0.01em", fontWeight: 400, lineHeight: 1.25 }}>
+              The exact answer <em>that lost the room.</em>
             </h3>
-            <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5, margin: "0 0 20px" }}>
-              The AI's engagement score per question — with the sentence that triggered the drop.
-            </p>
-            <ThoughtBubbleVisual />
+            <div aria-hidden="true" style={{ flex: 1, minHeight: 0, overflow: "hidden" }}>
+              <ThoughtBubbleVisual />
+            </div>
           </BentoCard>
         </div>
       </div>
@@ -2940,11 +1783,13 @@ export function ComparisonV2() {
 
   return (
     <section
+      aria-labelledby="hd-comparison"
       className="mv2-cv-auto"
       style={{ background: t.cream, padding: "96px 24px 110px", display: "flex", flexDirection: "column", alignItems: "center" }}
     >
       {/* Headline */}
       <h2
+        id="hd-comparison"
         className="mv2-reveal"
         style={{
           fontFamily: fonts.serif,
@@ -2958,22 +1803,23 @@ export function ComparisonV2() {
           maxWidth: 760,
         }}
       >
-        Practice that can&rsquo;t score you{" "}
-        <em style={{ fontStyle: "italic", color: t.copper }}>isn&rsquo;t practice.</em>
+        Other tools give you a question.
+        <br />
+        HireStepX tells you where you lost the panel.
       </h2>
 
       {/* Subhead */}
       <p style={{
         fontFamily: fonts.sans,
-        fontSize: 17,
+        fontSize: 16,
         lineHeight: 1.65,
         color: t.inkSoft,
         textAlign: "center",
         maxWidth: 520,
         margin: "0 0 60px",
       }}>
-        A senior&rsquo;s mock is hard to arrange. An AI session agrees with everything.
-        Neither tells you where you lost the HR panel.
+        A senior&rsquo;s mock is hard to arrange. Scripted AI agrees with everything.
+        Neither scores you against the rubric the HR panel actually uses.
       </p>
 
       {/* Three cards — 3-col grid on desktop, 2-col on tablet (HireStepX full-width), 1-col on phone */}
@@ -3020,7 +1866,7 @@ export function ComparisonV2() {
             <span style={{
               fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
               letterSpacing: "0.10em", textTransform: "uppercase" as const,
-              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+              color: t.copper, display: "block", marginBottom: 10,
             }}>What you needed</span>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
               Q3: You dropped the STAR structure and never recovered the impact statement.
@@ -3061,7 +1907,7 @@ export function ComparisonV2() {
             <span style={{
               fontFamily: fonts.sans, fontSize: 10, fontWeight: 600,
               letterSpacing: "0.10em", textTransform: "uppercase" as const,
-              color: t.copper, display: "block", marginBottom: 10, opacity: 0.8,
+              color: t.copper, display: "block", marginBottom: 10,
             }}>What you needed</span>
             <p style={{ fontFamily: fonts.sans, fontSize: 14, lineHeight: 1.6, color: t.inkSoft, margin: 0 }}>
               You gave the same answer to Q2 and Q4. The AI didn&rsquo;t catch it.
@@ -3103,7 +1949,7 @@ export function ComparisonV2() {
               color: "rgba(254,252,248,0.4)", letterSpacing: "0.08em",
               textTransform: "uppercase" as const, display: "block", marginBottom: 16,
             }}>
-              Q3 — Behaviour question
+              Q3: Behaviour question
             </span>
 
             {/* Score row */}
@@ -3157,7 +2003,7 @@ export function ComparisonV2() {
           style={{
             fontFamily: fonts.sans, fontSize: 15, fontWeight: 600,
             color: t.white, background: t.coal,
-            padding: "14px 30px", borderRadius: 999,
+            padding: "14px 30px", borderRadius: 8,
             textDecoration: "none",
             display: "inline-flex", alignItems: "center", gap: 8,
             letterSpacing: "-0.01em",
@@ -3273,7 +2119,7 @@ export function BuiltForIndiaV2() {
                 fontWeight: 400,
               }}
             >
-              200+
+              India-first
             </span>
             <span
               style={{
@@ -3284,7 +2130,7 @@ export function BuiltForIndiaV2() {
                 lineHeight: 1.4,
               }}
             >
-              Indian roles in the question bank. IT services, unicorns, PSUs, MNCs.
+              question banks for Indian roles and companies. IT services, unicorns, PSUs, MNCs.
             </span>
           </div>
 
@@ -3334,6 +2180,75 @@ export function BuiltForIndiaV2() {
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* Cross-links to pillar pages — signals topical authority to Google */}
+          <div style={{ display: "flex", gap: 16, marginTop: 32, flexWrap: "wrap" }}>
+            <a
+              href="/ai-mock-interview"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              How AI mock interviews work <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
+            <a
+              href="/questions"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Browse practice questions <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
+            <a
+              href="/salary"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Salary guides India <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
+            <a
+              href="/for-students"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.copper100, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Campus placement guide <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
+            <a
+              href="/interview-prep"
+              className="mv2-dark-link"
+              style={{
+                fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
+                color: t.cream, textDecoration: "none",
+                display: "inline-flex", alignItems: "center", gap: 6,
+                borderBottom: `1px solid ${t.creamLine}`,
+                paddingBottom: 2,
+              }}
+            >
+              Company interview guides <span className="mv2-dark-arrow" aria-hidden>→</span>
+            </a>
           </div>
 
         </div>
@@ -3395,14 +2310,13 @@ export function TestimonialsV2() {
   return (
     <section className="mv2-section" aria-labelledby="hd-why" style={{ ...sectionBase, background: t.cream, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <SectionMasthead n="06" label="Why" right="Three objections" style={{ marginBottom: 24 }} />
-        <MotionReveal style={{ textAlign: "center", marginBottom: 64, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48, maxWidth: 760, marginLeft: "auto", marginRight: "auto" }}>
           <h2 id="hd-why" style={{ ...h2, textWrap: "balance" as const }}>
             The interview help{" "}
             <span style={{ fontStyle: "italic", color: t.copper }}>nobody made for you.</span>
           </h2>
           <p style={{ ...body, marginTop: 16 }}>
-            Built by candidates who sat through enough Indian loops to know what serious prep actually looks like.
+            Three objections. Three answers. Skip to the one that sounds like you.
           </p>
         </MotionReveal>
 
@@ -3515,14 +2429,13 @@ export function PricingV2() {
       sub: "Try before you pay a rupee",
       features: [
         "2 mock sessions",
-        "Behavioural rounds + basic STAR score",
-        "Email report",
-        "No card required",
+        "Behavioral rounds + basic STAR score",
+        "Full scored report after each session",
+        "No credit card required",
       ],
       cta: "Start free",
       href: "/signup?plan=free",
       featured: false,
-      studentDiscount: false,
     },
     {
       name: "Per session",
@@ -3533,12 +2446,11 @@ export function PricingV2() {
         "Buy 1–10 sessions at ₹9 each",
         "Voice in & out, all round types",
         "Full STAR score + report",
-        "Use them anytime, no expiry",
+        "Company-specific rounds",
       ],
       cta: "Buy sessions",
       href: "/signup?plan=single",
       featured: false,
-      studentDiscount: false,
     },
     {
       name: "Sprint Pack",
@@ -3555,18 +2467,12 @@ export function PricingV2() {
       cta: "Get Sprint Pack",
       href: "/signup?plan=weekly",
       featured: true,
-      studentDiscount: true,
     },
-    // Monthly plan temporarily hidden — re-enable by removing hidden:true
-    // { name: "Monthly", price: "₹149", unit: "/ 30 days", sub: "Most loved during placement season",
-    //   features: ["40 sessions · 30 days", "Everything in Weekly", "Interview calendar + countdown",
-    //     "Performance analytics & trends", "Export PDF, CSV, JSON", "Priority coach feedback"],
-    //   cta: "Go monthly", href: "/signup?plan=monthly", featured: true, studentDiscount: true },
   ];
   return (
     <section ref={sectionRef} className="mv2-section" aria-labelledby="hd-pricing" style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}>
       <div className="mv2-container" style={container}>
-        <div style={{ textAlign: "center", marginBottom: 56 }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
           <MotionReveal>
             <SectionMasthead n="07" label="Pricing" right="From ₹9 / session" style={{ marginBottom: 16 }} />
           </MotionReveal>
@@ -3577,8 +2483,8 @@ export function PricingV2() {
             </h2>
           </MotionReveal>
           <MotionReveal delay={160}>
-            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, marginTop: 16, maxWidth: 600, marginLeft: "auto", marginRight: "auto" }}>
-              Start with 2 free sessions, no card needed. After that, ₹9 per session or ₹39 for 5. Pay only when you want more.
+            <p style={{ ...body, fontSize: 16, fontWeight: 400, color: t.inkSoft, margin: "16px auto 0", textAlign: "center" }}>
+              Pay when a round is coming. Stop when you&apos;re ready. No subscription, no monthly guilt.
             </p>
           </MotionReveal>
         </div>
@@ -3731,9 +2637,11 @@ export function PricingV2() {
               {tier.price === "₹9" && (
                 <>
                   <style>{`
-                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:2px;outline:none;cursor:pointer;}
-                    .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;}
-                    .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;}
+                    .pricing-session-slider{-webkit-appearance:none;appearance:none;width:100%;height:18px;background:transparent;outline:none;cursor:pointer;}
+                    .pricing-session-slider::-webkit-slider-runnable-track{height:3px;border-radius:2px;background:linear-gradient(to right,#B45309 0%,#B45309 var(--fill,0%),#EBE5D2 var(--fill,0%),#EBE5D2 100%);}
+                    .pricing-session-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.18);cursor:pointer;margin-top:-7.5px;}
+                    .pricing-session-slider::-moz-range-track{height:3px;border-radius:2px;background:linear-gradient(to right,#B45309 0%,#B45309 var(--fill,0%),#EBE5D2 var(--fill,0%),#EBE5D2 100%);}
+                    .pricing-session-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#B45309;border:2.5px solid #fff;cursor:pointer;box-sizing:border-box;}
                     .pricing-session-slider:focus-visible::-webkit-slider-thumb{outline:2px solid #B45309;outline-offset:2px;}
                   `}</style>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -3742,12 +2650,15 @@ export function PricingV2() {
                       <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, fontWeight: 600 }}>₹{SINGLE_PRICE * singleQty} total</span>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <button
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
                         onClick={() => setSingleQty(q => Math.max(1, q - 1))}
                         disabled={singleQty <= 1}
                         aria-label="Remove one session"
-                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty <= 1 ? t.line : t.lineStrong}`, background: "transparent", color: singleQty <= 1 ? t.inkFaint : t.coal, cursor: singleQty <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty <= 1 ? 0.3 : 1, transition: "opacity 0.15s" }}
-                      >−</button>
+                        style={{ flexShrink: 0, fontWeight: 300 }}
+                      ><span aria-hidden="true">−</span></Button>
                       <input
                         type="range" min={1} max={10} step={1}
                         value={singleQty}
@@ -3755,14 +2666,17 @@ export function PricingV2() {
                         aria-label="Number of sessions"
                         aria-valuenow={singleQty} aria-valuemin={1} aria-valuemax={10}
                         className="pricing-session-slider"
-                        style={{ flex: 1, background: `linear-gradient(to right, #B45309 0%, #B45309 ${((singleQty - 1) / 9) * 100}%, ${t.line} ${((singleQty - 1) / 9) * 100}%, ${t.line} 100%)` }}
+                        style={{ flex: 1, "--fill": `${((singleQty - 1) / 9) * 100}%` } as React.CSSProperties}
                       />
-                      <button
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon-sm"
                         onClick={() => setSingleQty(q => Math.min(10, q + 1))}
                         disabled={singleQty >= 10}
                         aria-label="Add one session"
-                        style={{ width: 30, height: 30, borderRadius: 8, flexShrink: 0, border: `1.5px solid ${singleQty >= 10 ? t.line : t.copper}`, background: singleQty >= 10 ? "transparent" : "rgba(180,83,9,0.08)", color: singleQty >= 10 ? t.inkFaint : t.copper, cursor: singleQty >= 10 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 300, opacity: singleQty >= 10 ? 0.3 : 1, transition: "opacity 0.15s, border-color 0.15s, background 0.15s" }}
-                      >+</button>
+                        style={{ flexShrink: 0, fontWeight: 300 }}
+                      ><span aria-hidden="true">+</span></Button>
                     </div>
                     <p style={{ margin: 0, fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, textAlign: "center" }}>
                       {singleQty === 1 ? "1 session" : `${singleQty} sessions`}
@@ -3778,7 +2692,7 @@ export function PricingV2() {
                   Weekly      → cream on coal — primary conversion driver */}
               <a
                 href={tier.price === "₹9" ? `${tier.href}&qty=${singleQty}` : tier.href}
-                className="mv2-tap-44"
+                className="mv2-tap-44 mv2-pricing-cta"
                 style={{
                   marginTop: "auto",
                   display: "inline-flex",
@@ -3789,10 +2703,10 @@ export function PricingV2() {
                   fontSize: 14,
                   fontWeight: 600,
                   padding: "12px 18px",
-                  borderRadius: 999,
+                  borderRadius: 8,
                   textDecoration: "none",
-                  color: tier.featured ? t.coal : tier.price === "₹0" ? t.coal : t.white,
-                  background: tier.featured ? t.cream : tier.price === "₹0" ? "transparent" : t.indigo,
+                  color: tier.featured ? t.coal : tier.price === "₹0" ? t.coal : t.cream,
+                  background: tier.featured ? t.cream : tier.price === "₹0" ? "transparent" : t.copper,
                   border: !tier.featured && tier.price === "₹0" ? `1px solid ${t.line}` : "none",
                   boxShadow: tier.featured || tier.price === "₹0" ? "none" : shadows.cta,
                 }}
@@ -3825,7 +2739,7 @@ export function PricingV2() {
           {[
             "2 free sessions, no card needed",
             "₹9 sessions never expire",
-            "Cancel Sprint Pack any time · UPI · cards",
+            "Sprint Pack is a one-time buy · UPI · cards",
           ].map((v) => (
             <span key={v} style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
               <span
@@ -3862,19 +2776,19 @@ export function FAQV2() {
   const qs: Array<{ q: string; a: string }> = [
     {
       q: "What exactly is free? Do I need a card to start?",
-      a: "2 sessions completely free: no account needed, no card required. You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel the Sprint Pack any time before the next cycle.",
+      a: "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews.",
     },
     {
       q: "Will the AI understand my Indian English accent?",
-      a: "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX.",
+      a: "Our speech recognition is tuned for Indian English accents, and you can speak naturally. If you can speak to a real interviewer, you can speak to HireStepX.",
     },
     {
       q: "Is ₹9 per session really it? What's the catch?",
-      a: "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. Built on Indian infrastructure at Indian costs. No hidden charges either way.",
+      a: "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way.",
     },
     {
       q: "Will my current company know I'm practicing?",
-      a: "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you.",
+      a: "No. We don't connect to LinkedIn, your current employer, or your target company, and we never tell them you practise here. If employer discovery is on, employers on HireStepX can find your practice evidence, but your name and contact stay hidden until an employer unlocks your profile. You can turn this off any time in Settings.",
     },
     {
       q: "How long does a session take?",
@@ -3885,12 +2799,16 @@ export function FAQV2() {
       a: "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs.",
     },
     {
-      q: "What if I cancel? Do I lose my reports?",
-      a: "Your reports are yours. We keep them for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning.",
+      q: "Do plans auto-renew? What happens when my Sprint Pack runs out?",
+      a: "No. Every purchase, including the Sprint Pack, is one-time — we never store your card for recurring billing. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; if you don't use all the sessions, they expire with no auto-charge for a new pack. Buy another any time you need more.",
     },
     {
       q: "Do you share my data with my employer or target company?",
-      a: "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant.",
+      a: "We don't sell your data or share it with advertisers or third parties. Employers on HireStepX can discover your practice evidence with your name and contact hidden until they unlock your profile, and you control that in Settings. Your audio is never stored. Built to align with the DPDP Act 2023.",
+    },
+    {
+      q: "How is this different from just asking ChatGPT?",
+      a: "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions.",
     },
   ];
   return (
@@ -3901,7 +2819,7 @@ export function FAQV2() {
       style={{ ...sectionBase, background: t.creamSoft, borderTop: `1px solid ${t.line}` }}
     >
       <div className="mv2-container" style={container}>
-        <MotionReveal style={{ textAlign: "center", marginBottom: 40 }}>
+        <MotionReveal style={{ textAlign: "center", marginBottom: 48 }}>
           <SectionMasthead n="09" label="FAQ" right="Asked & answered" style={{ marginBottom: 16 }} />
           <h2 id="hd-faq" style={h2}>
             Things you'd ask{" "}
@@ -3997,12 +2915,12 @@ export function FAQV2() {
           }}
         >
           Still curious?{" "}
-          <a
-            href="mailto:hello@hirestepx.com"
+          <CopyEmailLink
+            email="hello@hirestepx.com"
             style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
           >
             Ask us directly →
-          </a>
+          </CopyEmailLink>
         </p>
       </div>
     </section>
@@ -4014,22 +2932,25 @@ export function FAQV2() {
 
 /* ─────────────────────────── STRUCTURED DATA (JSON-LD) ─────────────────────────── */
 function StructuredData() {
+  /* Mirrors FAQV2's `qs` array verbatim (below in this file) — keep the two
+     in sync so the structured data matches the visible accordion exactly. */
   const faqs = [
-    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no account needed, no card required. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions that renews monthly. Cancel any time before the next cycle."],
-    ["Will the AI understand my Indian English accent?", "Yes, built specifically for Indian English. Our voice model is trained on Indian speech patterns, including regional accents. If you can speak to a real interviewer, you can speak to HireStepX."],
-    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, renews monthly, cancel any time before the next cycle. No hidden charges either way."],
-    ["Will my current company know I'm practicing?", "No. HireStepX is completely private. We don't connect to LinkedIn, your employer, or your target company. Nothing you practice here is visible to anyone but you."],
-    ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after."],
+    ["What exactly is free? Do I need a card to start?", "2 sessions completely free: no card required, just a free account (email or Google, 30 seconds). You get the full voice interview and the full scored report both times. After that, ₹9 per session with no expiry, or ₹39 for a Sprint Pack of 5 sessions valid for 30 days. Both are one-time purchases — buy another pack whenever you need more, nothing auto-renews."],
+    ["Will the AI understand my Indian English accent?", "Our speech recognition is tuned for Indian English accents, and you can speak naturally. If you can speak to a real interviewer, you can speak to HireStepX."],
+    ["Is ₹9 per session really it? What's the catch?", "That's the real price. ₹9 per session with no expiry: buy one, use it whenever. Or get the Sprint Pack: 5 sessions for ₹39, valid for 30 days, a one-time purchase with no auto-renewal. Built on Indian infrastructure at Indian costs. No hidden charges either way."],
+    ["Will my current company know I'm practicing?", "No. We don't connect to LinkedIn, your current employer, or your target company, and we never tell them you practise here. If employer discovery is on, employers on HireStepX can find your practice evidence, but your name and contact stay hidden until an employer unlocks your profile. You can turn this off any time in Settings."],
+    ["How long does a session take?", "18 minutes on average: one focused interview topic, real-time scoring, full report ready immediately after. You don't need an afternoon. You need 20 minutes and headphones."],
     ["Does this work on mobile?", "Yes. Works on any modern Chrome or Safari: phone, tablet, laptop. Optimised for Realme and Redmi-class Android on Indian 4G. No downloads, no app installs."],
-    ["What if I cancel? Do I lose my reports?", "Your reports are yours for 90 days after cancellation so you can export or reference them before your next interview. Nothing gets deleted without warning."],
-    ["Do you share my data with my employer or target company?", "Never. Your resume, voice, and practice answers are not shared with your current employer, your target company, or any third party. Encrypted end to end. DPDPA 2023 compliant."],
+    ["Do plans auto-renew? What happens when my Sprint Pack runs out?", "No. Every purchase, including the Sprint Pack, is one-time — we never store your card for recurring billing. The Sprint Pack (₹39 for 5 sessions) stays active for 30 days; if you don't use all the sessions, they expire with no auto-charge for a new pack. Buy another any time you need more."],
+    ["Do you share my data with my employer or target company?", "We don't sell your data or share it with advertisers or third parties. Employers on HireStepX can discover your practice evidence with your name and contact hidden until they unlock your profile, and you control that in Settings. Your audio is never stored. Built to align with the DPDP Act 2023."],
+    ["How is this different from just asking ChatGPT?", "ChatGPT agrees with you. HireStepX disagrees, constructively. It scores your answer on the STAR framework, names which beat is weak, and gives you a coached model answer. You also speak out loud (voice in and out) instead of typing, so you practise the actual skill. ChatGPT has no Indian company rubrics, no role-specific question bank, and no score you can track across sessions."],
   ];
   const org = {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "HireStepX",
     url: "https://hirestepx.com",
-    logo: "https://hirestepx.com/logo.png",
+    logo: "https://hirestepx.com/wordmark.png",
     sameAs: ["https://twitter.com/hirestepx"],
     address: {
       "@type": "PostalAddress",
@@ -4042,13 +2963,14 @@ function StructuredData() {
     "@type": "Product",
     name: "HireStepX · AI Mock Interviewer",
     description: "Voice-first AI mock interviews scored on STAR, built for Indian job seekers.",
+    image: "https://hirestepx.com/opengraph-image",
     brand: { "@type": "Brand", name: "HireStepX" },
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "INR",
       lowPrice: "0",
-      highPrice: "149",
-      offerCount: "4",
+      highPrice: "39",
+      offerCount: "3",
     },
   };
   const faqPage = {
@@ -4072,17 +2994,18 @@ function StructuredData() {
 /* ─────────────────────────── PERSONALIZED REPORTS ─────────────────────────── */
 
 const rpt_STYLES = `
-@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap');
+/* Geist Sans is already loaded globally (self-hosted via next/font in
+   app/layout.tsx) — no per-section CDN import needed. */
 
 /* Fan card showcase — responsive containment */
 @media (max-width: 640px) {
   /* Hide side cards on mobile; only the center report card stays */
   .mv2-rpt-side { display: none !important; }
   /* Make the center card fluid so it fits within the mobile viewport */
-  .mv2-rpt-center-card { width: min(520px, calc(100vw - 48px)) !important; }
+  .mv2-rpt-center-card { width: min(520px, calc(100% - 48px)) !important; }
   /* Shrink top padding and headline for mobile */
   .mv2-rpt-section { padding-top: 60px !important; padding-bottom: 48px !important; }
-  .mv2-rpt-h2 { font-size: 40px !important; letter-spacing: -1px !important; }
+  .mv2-rpt-h2 { letter-spacing: -1px !important; }
   .mv2-rpt-showcase { height: 440px !important; }
 }
 `;
@@ -4099,12 +3022,13 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
     { key: "A", label: "Action",     score: 71, c: t.copper },
     { key: "R", label: "Result",     score: 42, c: t.error },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
+  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'Geist Mono', 'Fira Code', monospace" };
   /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
   const arcLen = 85;
   return (
     <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: t.success }}>68%</span>
         <span style={{ fontSize: 8, color: t.inkSoft }}>Razorpay Senior PD · ~3 sessions to close gap</span>
@@ -4120,7 +3044,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>82</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkSoft }}>/ 100</div>
           </div>
           <span style={{ fontSize: 7.5, background: t.success100, color: t.success, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Hire ✓</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
@@ -4130,7 +3054,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI INTERVIEW VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage — then you're ready for the bar-raiser.</div>
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 9 }}>Specific, owned, outcome-anchored. Tighten the Q2 "we" usage, then you're ready for the bar-raiser.</div>
           <div style={{ fontSize: 7.5, background: "#F3EFE5", padding: "4px 8px", borderRadius: 3, color: t.inkSoft }}>
             Calibrated to Senior · Strong ≥ 85 · Hire ≥ 70 · Lean ≥ 55
           </div>
@@ -4162,7 +3086,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
         <div style={{ fontSize: 8, fontWeight: 700, color: t.copper, letterSpacing: 0.4, marginBottom: 6 }}>✦ MODEL ANSWER EXCERPT</div>
         <div style={{ fontSize: 9, color: "#4A4540", lineHeight: 1.6, background: "#F3EFE5", borderRadius: 5, padding: "8px 10px", borderLeft: `2px solid ${t.copper}` }}>
           {"Instead of 'we reduced latency,' say: "}
-          <span style={{ fontStyle: "italic", color: t.coal }}>{"I led the caching rewrite — my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
+          <span style={{ fontStyle: "italic", color: t.coal }}>{"I led the caching rewrite: my call to switch to Redis cut p99 from 420ms to 38ms, unblocking the iOS team."}</span>
         </div>
       </div>
     </div>
@@ -4176,12 +3100,13 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
     { n: 2, label: "Justified with market data" },
     { n: 3, label: "Closed at ₹48L target" },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
+  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
   /* Arc length for 84% of a semicircle: π × r × 0.84 = π × 37 × 0.84 ≈ 98 */
   const arcLen = 98;
   return (
     <div className="mv2-rpt-center-card" style={{ width: 520, background: "#FEFDF8", borderRadius: 18, border: "1.5px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 56px 160px rgba(14,12,8,0.34), 0 16px 48px rgba(14,12,8,0.16)" : "0 48px 140px rgba(14,12,8,0.26), 0 12px 40px rgba(14,12,8,0.12)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
       <div style={{ background: t.cream, padding: "10px 18px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 14, fontWeight: 800, color: t.success }}>84%</span>
         <span style={{ fontSize: 8.5, color: t.inkSoft }}>PhonePe Senior EM · Top quartile, ready to negotiate.</span>
@@ -4197,7 +3122,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 25, fontWeight: 800, color: t.coal, lineHeight: 1 }}>84</div>
-            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -5, left: 0, right: 0, textAlign: "center", fontSize: 8, color: t.inkSoft }}>/ 100</div>
           </div>
           <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
             <span style={{ fontSize: 8, background: t.success100, color: t.success, padding: "3px 7px", borderRadius: 3, fontWeight: 600 }}>Strong Hire ✓</span>
@@ -4222,7 +3147,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
         <div style={{ marginTop: 8 }}>
           <div style={{ fontSize: 8.5, fontWeight: 700, color: t.copper, letterSpacing: 0.4 }}>THE 30-SECOND READ</div>
           <div style={{ fontSize: 11, fontWeight: 700, color: t.coal, marginTop: 4, lineHeight: 1.35, fontFamily: rptF.serif }}>
-            Landed ₹48L — ₹10L above opening. 71% gap closure in 3 rounds.
+            Landed ₹48L, ₹10L above opening. 71% gap closure in 3 rounds.
           </div>
           <div style={{ marginTop: 6, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 8.5, color: t.inkSoft }}>How far you got in the negotiation</span>
@@ -4266,12 +3191,12 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
     { label: "Project ownership", score: 45, c: t.error },
     { label: "Project depth",     score: 40, c: t.error },
   ];
-  const rptF = { sans: "'Satoshi', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'JetBrains Mono', 'Fira Code', monospace" };
   /* Arc length for 58% of a semicircle: π × r × 0.58 = π × 33 × 0.58 ≈ 60 */
   const arcLen = 60;
   return (
-    <div style={{ width: 460, background: "#FEFDF8", borderRadius: 16, border: "1px solid rgba(180,83,9,0.08)", boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: rptF.sans, transition: "box-shadow 0.50s ease" }}>
-      <div style={{ background: t.cream, padding: "9px 16px", borderBottom: "1px solid #EAE3D0", display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ width: 460, background: t.cream, borderRadius: 16, border: `1px solid ${t.line}`, boxShadow: lifted ? "0 32px 96px rgba(14,12,8,0.28), 0 8px 24px rgba(14,12,8,0.12)" : "0 8px 48px rgba(14,12,8,0.12), 0 2px 8px rgba(14,12,8,0.06)", overflow: "hidden", fontFamily: fonts.sans, transition: "box-shadow 0.50s ease" }}>
+      <div style={{ background: t.creamSoft, padding: "9px 16px", borderBottom: `1px solid ${t.line}`, display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.copper, background: "#FED7AA", padding: "2px 6px", borderRadius: 3 }}>SAMPLE REPORT</span>
         <span style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6, color: t.inkSoft }}>READINESS</span>
         <span style={{ fontSize: 13, fontWeight: 800, color: t.copper }}>42%</span>
         <span style={{ fontSize: 8, color: t.inkSoft }}>Infosys SWE Fresher · ~5 sessions to close gap</span>
@@ -4281,15 +3206,15 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.5, color: t.inkSoft, marginBottom: 6 }}>OVERALL SCORE</div>
           <div style={{ position: "relative", width: 84, height: 52, margin: "0 auto 8px" }}>
             <svg viewBox="0 0 80 50" width="84" height="52">
-              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke="#E8E0D0" strokeWidth="7" strokeLinecap="round" />
+              <path d="M7,46 A33,33 0 0,1 73,46" fill="none" stroke={t.line} strokeWidth="7" strokeLinecap="round" />
               <path d="M7,46 A33,33 0 0,1 48,14" fill="none" stroke={t.copper} strokeWidth="7" strokeLinecap="round"
                 strokeDasharray={arcLen} strokeDashoffset={revealed ? 0 : arcLen}
                 style={{ transition: `stroke-dashoffset 0.9s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 200}ms` }} />
             </svg>
             <div style={{ position: "absolute", bottom: 3, left: 0, right: 0, textAlign: "center", fontSize: 22, fontWeight: 800, color: t.coal, lineHeight: 1 }}>58</div>
-            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaintWeak }}>/ 100</div>
+            <div style={{ position: "absolute", bottom: -4, left: 0, right: 0, textAlign: "center", fontSize: 7.5, color: t.inkFaint }}>/ 100</div>
           </div>
-          <span style={{ fontSize: 7.5, background: "#FEF3C7", color: t.copperDark, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
+          <span style={{ fontSize: 7.5, background: t.copper100, color: t.copperDark, padding: "2px 7px", borderRadius: 3, fontWeight: 600 }}>Lean Hire</span>
           <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
             <svg width="28" height="12" viewBox="0 0 28 12"><polyline points="0,4 5,7 10,5 16,10 22,8 28,12" fill="none" stroke={t.error} strokeWidth="1.2" /></svg>
             <span style={{ fontSize: 9, color: t.error, fontWeight: 700 }}>↓ 8</span>
@@ -4297,21 +3222,21 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.4, color: t.copper, marginBottom: 5 }}>✦ AI CAMPUS VERDICT</div>
-          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we" — distinguish your individual contribution.</div>
-          <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: "#7F1D1D", fontWeight: 600 }}>
-            ⚠ RED FLAG: "we built the backend" — vague project role
+          <div style={{ fontSize: 10, fontWeight: 600, color: t.coal, lineHeight: 1.5, marginBottom: 8 }}>Enthusiasm came through. Project section drifted to "we": distinguish your individual contribution.</div>
+          <div style={{ fontSize: 8, background: t.error100, padding: "4px 8px", borderRadius: 3, color: t.error, fontWeight: 600 }}>
+            ⚠ RED FLAG: "we built the backend" (vague project role)
           </div>
         </div>
       </div>
-      <div style={{ borderTop: "1px solid #EAE3D0", padding: "10px 16px 8px", background: "#FEFDF8" }}>
-        <span style={{ fontSize: 8, background: "#FEF3C7", color: t.copperDark, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
-        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: rptF.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
+      <div style={{ borderTop: `1px solid ${t.line}`, padding: "10px 16px 8px", background: t.cream }}>
+        <span style={{ fontSize: 8, background: t.copper100, color: t.copperDark, padding: "3px 9px", borderRadius: 20, fontWeight: 600 }}>CAMPUS PLACEMENT · FULL REPORT</span>
+        <div style={{ fontSize: 12.5, fontWeight: 700, color: t.coal, marginTop: 7, fontFamily: fonts.serif, lineHeight: 1.25 }}>The full breakdown of your campus interview</div>
         <div style={{ fontSize: 8, color: t.inkSoft, marginTop: 3 }}>Each panel turns one campus skill into something you can rehearse.</div>
       </div>
       <div style={{ margin: "10px 16px 0", background: t.indigo, borderRadius: 6, padding: "8px 12px", display: "flex", gap: 10, alignItems: "center" }}>
-        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: "#fff", padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
+        <span style={{ fontSize: 8, background: "rgba(255,255,255,0.15)", color: t.cream, padding: "2px 7px", borderRadius: 4, fontWeight: 700, whiteSpace: "nowrap" }}>PART 1 OF 3</span>
         <div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: "#fff" }}>Skill breakdown</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: t.cream }}>Skill breakdown</div>
           <div style={{ fontSize: 7.5, color: "rgba(255,255,255,0.65)" }}>Where each axis landed and what to practice next.</div>
         </div>
       </div>
@@ -4319,8 +3244,8 @@ function RPT_ProgressCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolea
         {skills.map((s, i) => (
           <div key={s.label} style={{ marginBottom: 8 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 3 }}>
-              <span style={{ fontSize: 8.5, color: "#4A4540" }}>{s.label}</span>
-              <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: rptF.mono }}>{s.score}</span>
+              <span style={{ fontSize: 8.5, color: t.inkSoft }}>{s.label}</span>
+              <span style={{ fontSize: 8.5, fontWeight: 700, color: s.c, fontFamily: fonts.mono }}>{s.score}</span>
             </div>
             <div style={{ height: 4, background: t.line, borderRadius: 2, overflow: "hidden" }}>
               <div style={{ height: "100%", width: revealed ? `${s.score}%` : "0%", background: s.c, borderRadius: 2, transition: `width 0.7s cubic-bezier(0.16,1,0.3,1) ${baseDelay + 400 + i * 80}ms` }} />
@@ -4370,7 +3295,7 @@ export function PersonalizedReportsV2() {
     <section
       aria-labelledby="hd-reports"
       className="mv2-rpt-section"
-      style={{ background: t.cream, overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 120, paddingBottom: 80 }}
+      style={{ background: t.cream, overflowX: "hidden", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: 80, paddingBottom: 64 }}
     >
       <style>{rpt_STYLES}</style>
 
@@ -4380,9 +3305,9 @@ export function PersonalizedReportsV2() {
         {/* Left card — outer: position + reveal; inner: hover */}
         <div className="mv2-rpt-side" style={{ position: "absolute", left: 220, bottom: 60, zIndex: lActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(0) }}>
           <div style={{ transformOrigin: "bottom center", transform: lActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(-10deg) translateY(6px) scale(0.86)" : "rotate(-8deg)", opacity: anyHov && !lActive ? 0.65 : 1, filter: anyHov && !lActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("left")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Behavioral · 82/100<br />Razorpay Senior PD
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_InterviewCard lifted={lActive} revealed={revealed} baseDelay={0} />
           </div>
@@ -4391,9 +3316,9 @@ export function PersonalizedReportsV2() {
         {/* Center card */}
         <div style={{ position: "absolute", left: "50%", bottom: 60, zIndex: cActive ? 12 : anyHov ? 4 : 5, transform: revealed ? "translateX(-50%) translateY(0px)" : "translateX(-50%) translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(1) }}>
           <div style={{ transform: cActive ? "translateY(-30px) scale(1.08)" : anyHov ? "translateY(6px) scale(0.86)" : "none", opacity: anyHov && !cActive ? 0.65 : 1, filter: anyHov && !cActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("center")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Salary Neg · ₹48L landed<br />PhonePe Senior EM
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_ReportCard lifted={cActive} revealed={revealed} baseDelay={120} />
           </div>
@@ -4402,9 +3327,9 @@ export function PersonalizedReportsV2() {
         {/* Right card */}
         <div className="mv2-rpt-side" style={{ position: "absolute", right: 220, bottom: 60, zIndex: rActive ? 12 : anyHov ? 2 : 3, transform: revealed ? "translateY(0px)" : "translateY(80px)", opacity: revealed ? 1 : 0, transition: RV, transitionDelay: delay(2) }}>
           <div style={{ transformOrigin: "bottom center", transform: rActive ? "rotate(0deg) translateY(-30px) scale(1.08)" : anyHov ? "rotate(10deg) translateY(6px) scale(0.86)" : "rotate(8deg)", opacity: anyHov && !rActive ? 0.65 : 1, filter: anyHov && !rActive ? "brightness(0.92) saturate(0.2)" : "none", transition: TR }} onMouseEnter={() => setHov("right")} onMouseLeave={() => setHov(null)}>
-            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Satoshi', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkFaintWeak, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
+            <div style={{ position: "absolute", top: -68, left: "50%", transform: "translateX(-50%)", textAlign: "center", whiteSpace: "nowrap", pointerEvents: "none", fontFamily: "'Geist Sans', system-ui, sans-serif", fontWeight: 400, fontSize: 12, color: t.inkSoft, lineHeight: 1.4, opacity: hov !== null ? 0 : 1, transition: "opacity 0.30s ease" }}>
               Campus · 58/100<br />Infosys SWE Fresher
-              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkFaintWeak }}>↓</div>
+              <div style={{ fontSize: 13, opacity: 0.7, marginTop: 3, color: t.inkSoft }}>↓</div>
             </div>
             <RPT_ProgressCard lifted={rActive} revealed={revealed} baseDelay={240} />
           </div>
@@ -4416,15 +3341,15 @@ export function PersonalizedReportsV2() {
 
       {/* ── Headline — staggered scroll reveal, each line fires after the cards land ── */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, marginTop: -80 }}>
-        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.02, color: t.coal, margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
+        <h2 id="hd-reports" className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 5.4vw, 72px)", fontWeight: 400, lineHeight: 1.02, color: t.coal, margin: "0 0 4px", textAlign: "center", letterSpacing: -2.5, padding: "0 24px", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(3) : "0ms" }}>
           Personalized reports after
         </h2>
-        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
+        <h2 className="mv2-rpt-h2" style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(40px, 5.4vw, 72px)", fontWeight: 400, fontStyle: "italic", lineHeight: 1.02, color: t.copper, margin: "0 0 24px", textAlign: "center", letterSpacing: -1.5, opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(4) : "0ms" }}>
           every interview
         </h2>
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Satoshi', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
-          HireStepX gives you a full breakdown after every interview — what landed,
-          what to sharpen, and your exact next practice session.
+        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", textAlign: "center", margin: 0, maxWidth: 480, fontWeight: 400, fontFamily: "'Geist Sans', system-ui, sans-serif", opacity: revealed ? 1 : 0, transform: revealed ? "translateY(0px)" : "translateY(28px)", transition: RV, transitionDelay: revealed ? delay(5) : "0ms" }}>
+          STAR scores, bias flags, engagement bars, and a coached rewrite of
+          your weakest answer. Ready before you close the tab.
         </p>
       </div>
     </section>
@@ -4514,7 +3439,7 @@ export function SecurityComplianceV2() {
         </MotionReveal>
         <MotionReveal delay={100} style={{ textAlign: "center", margin: "0 auto 64px", maxWidth: 480 }}>
           <p style={{ fontSize: 16, lineHeight: 1.7, color: "#4A4540", margin: 0, fontFamily: fonts.sans }}>
-            Built for India's regulatory landscape. Every piece of data you share is encrypted, private, and deletable on demand.
+            Built for India&rsquo;s regulatory landscape. Your data is encrypted in transit, you decide whether employers can discover your practice evidence, and you can delete it on demand.
           </p>
         </MotionReveal>
 
@@ -4554,8 +3479,149 @@ export function SecurityComplianceV2() {
   );
 }
 
+/* ─────────────────────────── HIRED DIRECTLY ─────────────────────────── */
+function RosterPreviewCard() {
+  const rows: Array<{ initials: string; name: string; role: string; score: number }> = [
+    { initials: "RS", name: "R. Sharma", role: "Product Analyst", score: 82 },
+    { initials: "AI", name: "A. Iyer", role: "SDE-1, Backend", score: 91 },
+    { initials: "PN", name: "P. Nair", role: "Ops Lead", score: 76 },
+  ];
+  const topScore = Math.max(...rows.map((r) => r.score));
+  return (
+    <div
+      className="mv2-hired-card"
+      style={{
+        background: t.cream,
+        border: `1px solid ${t.line}`,
+        borderRadius: 18,
+        padding: "20px 22px",
+        boxShadow: "0 16px 40px -28px rgba(14, 12, 8, 0.35)",
+        width: "100%",
+        maxWidth: 380,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+        <span style={{ fontFamily: fonts.sans, fontSize: 12, fontWeight: 700, letterSpacing: "0.03em", color: t.coal, textTransform: "uppercase" as const }}>
+          Roster preview
+        </span>
+        <span style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray }}>Illustrative example, not real candidates</span>
+      </div>
+      <div style={{ fontFamily: fonts.sans, fontSize: 11.5, color: t.indigoGray, marginBottom: 14 }}>
+        Interview-readiness score, out of 100
+      </div>
+
+      {rows.map((r, i) => {
+        const isTop = r.score === topScore;
+        return (
+          <div
+            key={r.name}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 12,
+              padding: "10px 0",
+              borderTop: i === 0 ? "none" : `1px solid ${t.line}`,
+            }}
+          >
+            <span
+              aria-hidden
+              style={{
+                width: 34,
+                height: 34,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontFamily: fonts.sans,
+                fontSize: 12,
+                fontWeight: 700,
+                background: isTop ? t.copper100 : t.indigo100,
+                color: isTop ? t.copperDark : t.indigo,
+              }}
+            >
+              {r.initials}
+            </span>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <div style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 700, color: t.coal }}>{r.name}</div>
+              <div style={{ fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>{r.role}</div>
+            </div>
+            <span
+              style={{
+                fontFamily: fonts.sans,
+                fontSize: 11.5,
+                fontWeight: 700,
+                color: isTop ? t.copperDark : t.indigo,
+                background: isTop ? t.copper100 : t.indigo100,
+                borderRadius: 999,
+                padding: "3px 9px",
+                flexShrink: 0,
+              }}
+            >
+              {r.score}/100
+            </span>
+          </div>
+        );
+      })}
+
+      <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${t.line}`, fontFamily: fonts.sans, fontSize: 12, color: t.indigoGray }}>
+        Contact details stay hidden until a company requests them.
+      </div>
+    </div>
+  );
+}
+
+export function HiredDirectlyV2() {
+  return (
+    <section style={{ background: t.creamSoft, borderTop: `1px solid ${t.line}`, borderBottom: `1px solid ${t.line}`, padding: "64px 0" }}>
+      <div
+        className="mv2-hired-grid mv2-container"
+        style={{
+          maxWidth: 1120,
+          margin: "0 auto",
+          padding: "0 40px",
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr) 380px",
+          alignItems: "center",
+          gap: 56,
+        }}
+      >
+        <MotionReveal>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.indigo100, border: `1px solid ${t.indigoRing}`, borderRadius: 999, padding: "5px 12px", marginBottom: 14 }}>
+            <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: t.indigo }} />
+            <span style={{ fontFamily: fonts.sans, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", color: t.indigo, textTransform: "uppercase" as const }}>
+              Talent roster
+            </span>
+          </div>
+          <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(28px, 3.4vw, 38px)", fontWeight: 400, lineHeight: 1.1, letterSpacing: "-0.02em", color: t.coal, margin: "0 0 10px" }}>
+            Employers will soon be able to find practiced candidates
+          </h2>
+          <p style={{ fontFamily: fonts.sans, fontSize: 15.5, lineHeight: 1.6, color: t.coal, margin: "0 0 24px", maxWidth: "48ch" }}>
+            Hiring teams will soon be able to browse a roster of practiced candidates and reach out for real roles, no extra applications. Employers see a masked profile (skills and scores, no name) and can pay to unlock contact details. It is on by default and you can switch it off any time in Settings.
+          </p>
+        </MotionReveal>
+        <MotionReveal delay={90} style={{ display: "flex", justifyContent: "center" }}>
+          <RosterPreviewCard />
+        </MotionReveal>
+      </div>
+    </section>
+  );
+}
+
 /* ─────────────────────────── VIDEO CTA ─────────────────────────── */
-export function VideoCtaV2() {
+export function VideoCtaV2({
+  headingPlain = "Your next interview won't wait.",
+  headingItalic = "Neither should your prep.",
+  body = "One session. A STAR breakdown on every answer. Your weak spots caught before HR finds them first.",
+  ctaLabel = "Start your first free session",
+  ctaHref = "/signup",
+}: {
+  headingPlain?: string;
+  headingItalic?: string;
+  body?: string;
+  ctaLabel?: string;
+  ctaHref?: string;
+} = {}) {
   const [revealed, setRevealed] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -4579,13 +3645,10 @@ export function VideoCtaV2() {
   return (
     <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
 
-      {/* Background video */}
-      <video
-        autoPlay
-        muted
-        loop
-        playsInline
-        crossOrigin="anonymous"
+      {/* Background video — only fetched once this section nears the viewport,
+          same lazy-mount as DarkBand elsewhere (_editorial-lazy-video.tsx) */}
+      <LazyBandVideo
+        src="/cta.mp4"
         style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
           objectFit: "cover", objectPosition: "center 75%",
@@ -4593,9 +3656,7 @@ export function VideoCtaV2() {
           transform: revealed ? "scale(1)" : "scale(1.06)",
           transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
         }}
-      >
-        <source src="/cta.mp4" type="video/mp4" />
-      </video>
+      />
 
       {/* Dark gradient — top to transparent */}
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
@@ -4603,17 +3664,17 @@ export function VideoCtaV2() {
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>
 
-        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: 72, fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, whiteSpace: "nowrap", ...fadeUp(100) }}>
-          Prepare Like Top <span style={{ fontStyle: "italic" }}>Candidates Do</span>
+        <h2 style={{ fontFamily: "'Instrument Serif', Georgia, serif", fontSize: "clamp(36px, 5.5vw, 72px)", fontWeight: 400, lineHeight: 1.04, color: t.cream, margin: "0 0 20px", letterSpacing: -2, textWrap: "balance" as const, ...fadeUp(100) }}>
+          {headingPlain} <span style={{ fontStyle: "italic" }}>{headingItalic}</span>
         </h2>
 
-        <p style={{ fontSize: 16, lineHeight: 1.7, color: "#ffffff", margin: "0 auto 40px", maxWidth: 560, fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
-          Practice with AI interviewers trained to simulate real hiring conversations, identify weaknesses, and help you improve before the actual interview.
+        <p style={{ fontSize: 15, lineHeight: 1.65, color: "#ffffff", margin: "0 auto 40px", maxWidth: 520, fontFamily: "'Geist Sans', -apple-system, system-ui, sans-serif", ...fadeUp(260) }}>
+          {body}
         </p>
 
         <div style={{ display: "flex", justifyContent: "center", ...fadeUp(400) }}>
-          <a href="/login" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Satoshi', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
-            Start your free interview
+          <a href={ctaHref} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: t.copper, color: t.cream, padding: "14px 28px", borderRadius: 8, fontWeight: 700, fontSize: 15, textDecoration: "none", fontFamily: "'Geist Sans', -apple-system, system-ui, sans-serif", letterSpacing: 0.1 }}>
+            {ctaLabel}
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </a>
         </div>
@@ -4642,19 +3703,26 @@ export default function HomepageV2() {
       <StructuredData />
       <a href="#main" className="mv2-skip">Skip to content</a>
       <NavV2 />
-      {/* 12-section composition (matches the planned section list):
+      {/* 13-section composition:
             1. NavV2  2. HeroV2  3. InterviewFocusV2  4. PersonalizedReportsV2
-            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. ComparisonV2
-            8. PricingV2  9. SecurityComplianceV2  10. FAQV2  11. VideoCtaV2  12. FooterDome
-            Arc: hook → focus proof → report proof → features → how-it-works → vs-alternatives → buy */}
+            5. FeatureGridV2  6. ProductStoryV2 (3 Easy Steps)  7. HiredDirectlyV2
+            8. PricingV2  9. ComparisonV2  10. BuiltForIndiaV2  11. SecurityComplianceV2
+            12. FAQV2  13. VideoCtaV2  14. FooterDome
+            Arc: hook → proof → features → how-it-works → price → vs-alternatives → buy
+            Pricing moved before Comparison so candidates see the cost before the
+            competitor contrast — most decide on price first, then validate "why us".
+            HiredDirectlyV2 sits right before pricing: one more reason to pay, right
+            before they see the number. */}
       <main id="main">
         <HeroV2 />
         <InterviewFocusV2 />
+        <TestimonialsV2 />
         <PersonalizedReportsV2 />
         <FeatureGridV2 />
         <ProductStoryV2 />
-        <ComparisonV2 />
+        <HiredDirectlyV2 />
         <PricingV2 />
+        <BuiltForIndiaV2 />
         <SecurityComplianceV2 />
         <FAQV2 />
         <VideoCtaV2 />
@@ -4666,7 +3734,7 @@ export default function HomepageV2() {
 }
 
 /* ─────────────────────────── MOBILE STICKY CTA ─────────────────────────── */
-export function MobileStickyCTA() {
+export function MobileStickyCTA({ employer = false }: { employer?: boolean } = {}) {
   return (
     <div
       className="mv2-mobile-cta"
@@ -4701,12 +3769,13 @@ export function MobileStickyCTA() {
         }}
       >
         <span style={{ fontFamily: fonts.serif, fontStyle: "italic", color: t.copper100 }}>
-          2 free sessions
+          {employer ? "Post a job, free" : "2 free sessions"}
         </span>{" "}
-        · No card needed
+        · {employer ? "Pay only to unlock" : "No card needed"}
       </span>
       <a
-        href="/signup"
+        href={employer ? "/signup?next=/employer" : "/signup"}
+        className="mv2-sticky-btn"
         style={{
           fontFamily: fonts.sans,
           fontSize: 13,
@@ -4714,7 +3783,7 @@ export function MobileStickyCTA() {
           color: t.coal,
           background: t.cream,
           padding: "10px 16px",
-          borderRadius: 999,
+          borderRadius: 8,
           textDecoration: "none",
           whiteSpace: "nowrap",
           display: "inline-flex",
@@ -4722,7 +3791,7 @@ export function MobileStickyCTA() {
           gap: 6,
         }}
       >
-        Start
+        {employer ? "Post" : "Start"}
         <span aria-hidden>→</span>
       </a>
     </div>

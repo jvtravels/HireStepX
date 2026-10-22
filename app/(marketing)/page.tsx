@@ -1,13 +1,40 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
-import ComingSoon from "@/ComingSoon";
 
+// Deliberately NOT titled "AI Mock Interview Practice ... | HireStepX" — that
+// phrase is /ai-mock-interview's exact-match title for the highest-volume
+// non-branded keyword. The homepage owns the brand/category position instead
+// (SEO brief §11: don't make the homepage compete with /ai-mock-interview for
+// the same primary keyword).
 export const metadata: Metadata = {
-  title: "HireStepX — AI Mock Interview Practice for Job Seekers",
+  title: "HireStepX: AI Interview Practice Platform for India",
   description:
-    "Practice interviews with AI. Get real-time feedback on communication, structure, and strategy. Land your dream job with HireStepX.",
+    "HireStepX is India's AI interview practice platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies — voice AI scores your answers. 2 sessions free.",
+  keywords: [
+    "AI interview practice platform India",
+    "AI interview coach India",
+    "mock interview practice India",
+    "interview preparation India 2026",
+    "TCS interview practice",
+    "Google interview preparation India",
+    "campus placement interview practice",
+  ].join(", "),
   alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    title: "HireStepX: AI Interview Practice Platform for India",
+    description: "India's AI interview practice platform. Practice for TCS, Google, Flipkart, and 200+ companies. Voice AI scores your answers in real time. 2 sessions free.",
+    url: "https://hirestepx.com",
+    siteName: "HireStepX",
+    locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX: AI Interview Practice Platform for India" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "HireStepX: AI Interview Practice Platform for India",
+    description: "India's AI interview practice platform. Practice for TCS, Google, Flipkart, and 200+ companies. 2 sessions free.",
+    images: ["https://hirestepx.com/opengraph-image"],
+  },
 };
 
 /* Organization + SoftwareApplication schema — gives Google the
@@ -20,8 +47,9 @@ const ORGANIZATION_SCHEMA = {
   name: "HireStepX",
   url: "https://hirestepx.com",
   logo: "https://hirestepx.com/wordmark.png",
+  image: "https://hirestepx.com/opengraph-image",
   description: "AI-powered mock interview platform for Indian job seekers. Practice with conversational AI interviewers, get scored feedback, and land your next role.",
-  foundingDate: "2026",
+  foundingDate: "2024",
   sameAs: [
     "https://www.linkedin.com/company/hirestepx",
     "https://twitter.com/hirestepx",
@@ -30,7 +58,7 @@ const ORGANIZATION_SCHEMA = {
     "@type": "ContactPoint",
     email: "hello@hirestepx.com",
     contactType: "Customer Support",
-    availableLanguage: ["English", "Hindi"],
+    availableLanguage: ["English"],
   },
 };
 
@@ -43,52 +71,37 @@ const APPLICATION_SCHEMA = {
   offers: [
     { "@type": "Offer", price: "0", priceCurrency: "INR", name: "Free", description: "2 practice sessions" },
     { "@type": "Offer", price: "9", priceCurrency: "INR", name: "Per session", description: "Single mock interview session" },
-    { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions per month, renews monthly, cancel any time" },
+    { "@type": "Offer", price: "39", priceCurrency: "INR", name: "Sprint Pack", description: "5 sessions, valid for 30 days, one-time purchase, buy again anytime" },
   ],
 };
 
-/* Pre-launch "Coming Soon" gate (restored 2026-06-16).
- *
- * Coming Soon renders ONLY on the public production apex hosts. Everywhere
- * else (staging, app.*, vercel previews, localhost) shows the real
- * marketing site so the team can keep shipping while the public site is
- * gated. Rendered dynamically (read host header) so a single deploy serves
- * both staging (full site) and www (Coming Soon) without per-env juggling.
- *
- * NEXT_PUBLIC_COMING_SOON manual override (kept in sync with middleware.ts):
- *   - "0" → never gate (force the real site everywhere → public launch)
- *   - "1" → always gate (lock everything down)
- *   - unset → host-based default below
- *
- * The brand JSON-LD is injected on EVERY path so crawlers get the
- * structured data whether they hit Coming Soon or the full homepage. */
-export const dynamic = "force-dynamic";
+/* WebSite schema — enables Sitelinks Search Box in Google SERP when
+   Google decides to surface it. The SearchAction points to /questions
+   which lists all company × focus pages, the most relevant search target. */
+const WEBSITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HireStepX",
+  url: "https://hirestepx.com",
+  description: "AI mock interview practice for Indian job seekers. Practice for TCS, Google, Flipkart, Amazon, McKinsey, and 200+ companies.",
+  inLanguage: "en-IN",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate: "https://hirestepx.com/questions?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
 
-const PRODUCTION_HOSTS = new Set(["hirestepx.com", "www.hirestepx.com"]);
-
-export default async function Page() {
-  const override = process.env.NEXT_PUBLIC_COMING_SOON;
-
-  let gated: boolean;
-  if (override === "0") {
-    gated = false;
-  } else if (override === "1") {
-    gated = true;
-  } else {
-    // Host-based default. headers() needs await in the Next 15 app router.
-    let host = "";
-    try {
-      const h = await headers();
-      host = (h.get("host") || "").toLowerCase().split(":")[0]; // strip port
-    } catch { /* SSR-only API; on edge cases default to the full site */ }
-    gated = PRODUCTION_HOSTS.has(host);
-  }
-
+export default function Page() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
-      {gated ? <ComingSoon /> : <HomepageV2 />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
+      <HomepageV2 />
     </>
   );
 }

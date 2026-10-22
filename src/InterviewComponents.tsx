@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { e, ef } from "./interviewTokens";
 import { stripProsodyMarkup } from "./_prosody";
+import { getNetworkInfo } from "./_browser-api-guards";
+import { Button } from "@/components/ui/button";
+import { Toggle } from "@/components/ui/toggle";
 
 /* Bridge aliases removed — call sites use e/ef directly. */
-
-declare global {
-  interface Navigator {
-    connection?: { effectiveType?: string; downlink?: number; rtt?: number; addEventListener?: (event: string, cb: () => void) => void; removeEventListener?: (event: string, cb: () => void) => void };
-  }
-}
 
 /* ─── Real Mic-Level Waveform Visualizer ─── */
 export const WaveformVisualizer = React.memo(function WaveformVisualizer({ active, color, barCount = 16, stream }: { active: boolean; color: string; barCount?: number; stream?: MediaStream | null }) {
@@ -66,32 +63,103 @@ export const WaveformVisualizer = React.memo(function WaveformVisualizer({ activ
 
 /* ─── Interviewer Names (deterministic per session) ─── */
 /* Defaults pinned at index 0 of each pool so they're the most prominent
- * pick and the no-seed fallback. "Prita Menon" → female default
- * (routes to Sarvam `anushka`); "Rahul Verma" → male default (routes
- * to Sarvam `abhilash`). The gender→voice mapping lives in
- * server-handlers/sarvam-tts.ts. */
+ * pick and the no-seed fallback. "Prita Menon" → female default;
+ * "Rahul Verma" → male default. The gender→voice mapping lives in
+ * server-handlers/sarvam-tts.ts (Sarvam bulbul:v3 voice roster). */
 export const DEFAULT_FEMALE_INTERVIEWER = "Prita Menon";
 export const DEFAULT_MALE_INTERVIEWER = "Rahul Verma";
 
 export const INTERVIEWER_NAMES = [
   DEFAULT_FEMALE_INTERVIEWER, DEFAULT_MALE_INTERVIEWER,
+  // Original pool
   "Arjun Mehta", "Priya Sharma", "Rohan Kapoor", "Ananya Patel", "Vikram Desai",
   "Kavya Nair", "Siddharth Joshi", "Neha Gupta", "Aditya Rao", "Deepika Iyer",
   "Karthik Nair", "Aisha Rahman", "Rajesh Iyer", "Meera Reddy", "Tanvi Kulkarni",
+  // Extended pool — gender-balanced, regionally diverse Indian recruiter names
+  "Suresh Babu", "Lakshmi Venkat", "Nikhil Bose", "Shreya Pillai", "Amit Saxena",
+  "Divya Krishnamurthy", "Gaurav Tiwari", "Pooja Bhatt", "Manish Choudhary", "Riya Singhania",
+  "Vivek Pandey", "Swati Dubey", "Harish Shetty", "Nandita Ghosh", "Kunal Malhotra",
+  "Aparna Rajan", "Sandeep Garg", "Ishita Chatterjee", "Rakesh Nambiar", "Sonal Joshi",
+  "Dhruv Mathur", "Kriti Aggarwal", "Prasad Kulkarni", "Vandana Hegde", "Ajay Thakur",
 ];
-export function getInterviewerName(seed: string): string {
+
+export function getInterviewerName(seed: string, userId?: string, company?: string): string {
   // Empty / missing seed → fall back to the canonical female default so
   // a fresh load (before session context is wired) still has a coherent
   // name and the Sarvam female voice plays.
   if (!seed) return DEFAULT_FEMALE_INTERVIEWER;
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
-  return INTERVIEWER_NAMES[Math.abs(hash) % INTERVIEWER_NAMES.length];
+  const absHash = Math.abs(hash);
+
+  // localStorage deduplication: ensure no two different companies get the same
+  // recruiter name for the same user in this browser session.
+  if (typeof localStorage !== "undefined" && userId && company) {
+    const usedKey = `hirestepx_recruiter_${userId}_used_names`;
+    let usedMap: Record<string, string> = {};
+    try {
+      usedMap = JSON.parse(localStorage.getItem(usedKey) ?? "{}") as Record<string, string>;
+    } catch {
+      usedMap = {};
+    }
+    // Names already assigned to OTHER companies (not this one) are excluded.
+    const excludedNames = new Set(
+      Object.entries(usedMap)
+        .filter(([compKey]) => compKey !== company)
+        .map(([, name]) => name)
+    );
+    const pool = INTERVIEWER_NAMES.filter((n) => !excludedNames.has(n));
+    // Fallback to full pool if all names are somehow exhausted.
+    const chosen =
+      pool.length > 0
+        ? pool[absHash % pool.length]
+        : INTERVIEWER_NAMES[absHash % INTERVIEWER_NAMES.length];
+    usedMap[company] = chosen;
+    try {
+      localStorage.setItem(usedKey, JSON.stringify(usedMap));
+    } catch {
+      // localStorage full or unavailable — silently ignore.
+    }
+    return chosen;
+  }
+
+  return INTERVIEWER_NAMES[absHash % INTERVIEWER_NAMES.length];
+}
+
+/* ─── Interviewer reroll (user-initiated voice change) ───
+ * getInterviewerName's hash is otherwise fully deterministic per
+ * (type, focus, company, userId), so a user who dislikes the assigned
+ * voice has no way to get a different one. This per-user counter is
+ * mixed into the seed (see useInterviewEngine.ts) to let them roll to
+ * a new name/gender/voice on demand, persisted so it sticks across
+ * reloads until they roll again. */
+const REROLL_KEY_PREFIX = "hirestepx_interviewer_reroll_";
+
+export function getInterviewerRerollCount(userId?: string): number {
+  if (typeof localStorage === "undefined" || !userId) return 0;
+  const raw = localStorage.getItem(`${REROLL_KEY_PREFIX}${userId}`);
+  const n = raw ? parseInt(raw, 10) : 0;
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function bumpInterviewerReroll(userId?: string): number {
+  if (typeof localStorage === "undefined" || !userId) return 0;
+  const next = getInterviewerRerollCount(userId) + 1;
+  try {
+    localStorage.setItem(`${REROLL_KEY_PREFIX}${userId}`, String(next));
+  } catch {
+    // localStorage full or unavailable — silently ignore.
+  }
+  return next;
 }
 
 // Prita is added explicitly; first name lookup keeps gender routing
 // honest end-to-end (display name → gender → TTS voice).
-const FEMALE_FIRST_NAMES = new Set(["Prita", "Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi"]);
+const FEMALE_FIRST_NAMES = new Set([
+  "Prita", "Priya", "Ananya", "Kavya", "Neha", "Deepika", "Aisha", "Meera", "Tanvi",
+  // Extended pool female first names
+  "Lakshmi", "Shreya", "Divya", "Pooja", "Riya", "Swati", "Nandita", "Aparna", "Ishita", "Sonal", "Kriti", "Vandana",
+]);
 /** Determine gender from interviewer name */
 export function getInterviewerGender(name: string): "male" | "female" {
   const firstName = name.split(" ")[0];
@@ -157,9 +225,9 @@ export function getPanelMembers(seed: string): PanelMember[] {
   //   Technical Lead → indigo (interactive — the "challenger" voice)
   //   HR Partner     → success (warm green — the "supportive" voice)
   const roles: { title: string; color: string }[] = [
-    { title: "Hiring Manager", color: "#B45309" },   // copper
-    { title: "Technical Lead", color: "#312E81" },   // indigo
-    { title: "HR Partner",     color: "#15803D" },   // success green
+    { title: "Hiring Manager", color: e.copper },    // copper
+    { title: "Technical Lead", color: e.indigo },    // indigo
+    { title: "HR Partner",     color: e.success },   // success green
   ];
   // Distribute genders: use hash bits to decide. At least 1 male, 1 female.
   // Bit 0 → role[0] gender, bit 1 → role[1] gender, but clamp so we get mix
@@ -194,7 +262,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
   const [quality, setQuality] = useState<"excellent" | "good" | "poor">("excellent");
   useEffect(() => {
     const check = () => {
-      const conn = navigator.connection;
+      const conn = getNetworkInfo();
       if (conn) {
         const dl = conn.downlink ?? 10;
         const rtt = conn.rtt ?? 0;
@@ -206,7 +274,7 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
       }
     };
     check();
-    const conn = navigator.connection;
+    const conn = getNetworkInfo();
     conn?.addEventListener?.("change", check);
     window.addEventListener("online", check);
     window.addEventListener("offline", check);
@@ -218,12 +286,12 @@ export const NetworkIndicator = React.memo(function NetworkIndicator() {
       clearInterval(id);
     };
   }, []);
-  const colors = { excellent: e.success, good: e.copper, poor: e.error };
+  const colors = { excellent: e.success, good: e.indigo, poor: e.error };
   const labels = { excellent: "Excellent", good: "Good", poor: "Poor" };
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "3px 10px", borderRadius: 100, background: "rgba(20,17,10,0.10)", border: `1px solid ${colors[quality]}30` }}>
       <div style={{ width: 6, height: 6, borderRadius: "50%", background: colors[quality], boxShadow: `0 0 6px ${colors[quality]}60` }} />
-      <span style={{ fontFamily: ef.sans, fontSize: 10, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
+      <span style={{ fontFamily: ef.sans, fontSize: 11, fontWeight: 500, color: colors[quality] }}>{labels[quality]}</span>
     </div>
   );
 });
@@ -271,7 +339,7 @@ export const DotGridVisualizer = React.memo(function DotGridVisualizer({ active,
       {dots.map((scale, i) => (
         <div key={i} style={{
           width: 8, height: 8, borderRadius: "50%",
-          background: e.copper,
+          background: e.indigo,
           opacity: active ? Math.min(0.9, scale) : thinking ? Math.min(0.4, scale + 0.05) : 0.1,
           transform: `scale(${active ? 0.5 + scale * 0.5 : thinking ? 0.5 + scale * 0.3 : 0.6})`,
           transition: active ? "all 0.1s ease" : "all 0.3s ease",
@@ -297,8 +365,8 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
         {Array.from({ length: total }).map((_, i) => (
           <div key={i} style={{
             flex: 1, borderRadius: 2, height: 4,
-            background: i < current ? e.copper : i === current ? "rgba(180,83,9,0.40)" : "rgba(20,17,10,0.13)",
-            transition: "all 0.4s ease",
+            background: i < current ? e.indigo : i === current ? "oklch(0.359 0.135 278.697 / 0.40)" : "rgba(20,17,10,0.13)",
+            transition: "background-color 0.4s ease, border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease, opacity 0.4s ease, transform 0.4s ease",
           }} />
         ))}
       </div>
@@ -307,16 +375,37 @@ export const QuestionProgressBar = React.memo(function QuestionProgressBar({ cur
 });
 
 /* ─── Live Captions (synced to TTS voice playback) ─── */
+/* ─── Streaming-text tunables ────────────────────────────────────────────
+ * Ported from the transitions.dev "streaming-text" pattern
+ * (https://transitions.dev/detail.html?t=streaming-text): each word
+ * resolves into place through opacity + a small blur rather than being
+ * typed — it reads as the question condensing into focus, not keystrokes. */
+const STREAM_FADE_MS = 350;
+const STREAM_BLUR_PX = 1;
+const STREAM_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+
+function useReducedMotionPref(): boolean {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduced(mq.matches);
+    const onChange = () => setReduced(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return reduced;
+}
+
 export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, speakingDuration, actualDuration, speechEnded, variant = "card" }: {
   text: string; isTyping: boolean; speakingDuration?: number;
   /** Real TTS audio duration in ms — reported by TTS provider after audio loads */
   actualDuration?: number;
   /** Set to true when TTS voice finishes — triggers fast-complete of remaining text */
   speechEnded?: boolean;
-  /** "card" stamps its own serif/22px (legacy panel layout). "inherit"
+  /** "card" stamps its own sans/22px (legacy panel layout). "inherit"
       defers to the parent — used inside CanvasPlainHeading where the
       h1's clamp() font controls typography. Mismatched type between
-      typewriter and final heading is what caused the visible "jerk"
+      the reveal and final heading is what caused the visible "jerk"
       when speaking → listening swapped the renderer. */
   variant?: "card" | "inherit";
 }) {
@@ -325,20 +414,22 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
   // the visible layer must always be clean. Without this, "[pause]"
   // tokens leak onto the screen.
   const cleanText = useMemo(() => stripProsodyMarkup(text || ""), [text]);
+  const words = useMemo(() => cleanText.split(/\s+/).filter(Boolean), [cleanText]);
+  const reducedMotion = useReducedMotionPref();
 
-  const [displayText, setDisplayText] = useState("");
-  const [charIndex, setCharIndex] = useState(0);
+  const [revealedCount, setRevealedCount] = useState(0);
 
+  // Reduced-motion users get the full question immediately — no staggered
+  // reveal to disable mid-flight, matching the pattern's required guard.
   useEffect(() => {
-    setDisplayText("");
-    setCharIndex(0);
-  }, [cleanText]);
+    setRevealedCount(reducedMotion ? words.length : 0);
+  }, [cleanText, reducedMotion, words.length]);
 
-  // When speech ends, instantly show all remaining text. Rising-edge
+  // When speech ends, instantly resolve every remaining word. Rising-edge
   // detection prevents a stale speechEnded=true from a prior turn from
   // flushing a freshly-arrived next-question text immediately — the
   // bug where the question appeared in full and only THEN started
-  // typing was caused by speechEnded persisting across turns.
+  // streaming was caused by speechEnded persisting across turns.
   const wasSpeechEndedRef = useRef(false);
   // On every cleanText change, reset the rising-edge tracker so the
   // next true-transition counts as a new edge for the new question.
@@ -349,34 +440,32 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
     const isRisingEdge = !!speechEnded && !wasSpeechEndedRef.current;
     wasSpeechEndedRef.current = !!speechEnded;
     if (!isRisingEdge) return;
-    if (charIndex >= cleanText.length) return;
-    setDisplayText(cleanText);
-    setCharIndex(cleanText.length);
+    if (revealedCount >= words.length) return;
+    setRevealedCount(words.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [speechEnded, cleanText]);
+  }, [speechEnded, words]);
 
   useEffect(() => {
-    if (!isTyping || charIndex >= cleanText.length || speechEnded) return;
+    if (!isTyping || words.length === 0 || revealedCount >= words.length || speechEnded) return;
     // Use actualDuration from TTS if available, else fall back to speakingDuration estimate
-    const duration = actualDuration || speakingDuration || Math.max(2500, (cleanText.split(/\s+/).length / 175) * 60 * 1000);
-    // Calculate per-char delay to finish typing in sync with voice
-    // Leave a small buffer (200ms) so typing finishes just before voice ends
-    const remainingChars = cleanText.length - charIndex;
-    const elapsedRatio = charIndex / cleanText.length;
+    const duration = actualDuration || speakingDuration || Math.max(2500, (words.length / 175) * 60 * 1000);
+    // Calculate per-word delay to finish resolving in sync with voice.
+    // Leave a small buffer (200ms) so the last word lands just before voice ends.
+    const remainingWords = words.length - revealedCount;
+    const elapsedRatio = revealedCount / words.length;
     const remainingDuration = duration * (1 - elapsedRatio) - 200;
-    const msPerChar = Math.max(12, remainingDuration / remainingChars);
-    const delay = Math.max(12, Math.min(70, msPerChar + (Math.random() * 4 - 2)));
+    const msPerWord = Math.max(40, remainingDuration / remainingWords);
+    const delay = Math.max(40, Math.min(260, msPerWord));
     const timer = setTimeout(() => {
-      setDisplayText(cleanText.slice(0, charIndex + 1));
-      setCharIndex(charIndex + 1);
+      setRevealedCount(c => c + 1);
     }, delay);
     return () => clearTimeout(timer);
-  }, [charIndex, cleanText, isTyping, speakingDuration, actualDuration, speechEnded]);
+  }, [revealedCount, words, isTyping, speakingDuration, actualDuration, speechEnded]);
 
-  if (!isTyping && !displayText) return null;
+  if (!isTyping && revealedCount === 0) return null;
 
-  /* The typing animation streams text char-by-char. We INTENTIONALLY mark
-     this region aria-hidden so screen readers don't replay every keystroke
+  /* The streaming reveal resolves word-by-word. We INTENTIONALLY mark
+     this region aria-hidden so screen readers don't replay every word
      update — the parent QuestionCard is already aria-live="polite"
      aria-atomic="true" which announces the full question once per phase
      transition. The visible animation is purely sighted-user candy. */
@@ -392,15 +481,28 @@ export const LiveCaptions = React.memo(function LiveCaptions({ text, isTyping, s
               margin: 0, textWrap: "balance",
             }
           : {
-              fontFamily: ef.serif, fontSize: 22, color: e.coal,
+              fontFamily: ef.sans, fontSize: 22, color: e.coal,
               lineHeight: 1.35, margin: 0, minHeight: 30,
               letterSpacing: "-0.01em", textWrap: "balance",
             }
       }>
-        {displayText}
-        {isTyping && charIndex < cleanText.length && (
-          <span style={{ display: "inline-block", width: 2, height: 20, background: e.copper, marginLeft: 2, verticalAlign: "text-bottom", animation: "blink 0.8s ease-in-out infinite" }} />
-        )}
+        {words.map((w, i) => {
+          const isIn = i < revealedCount;
+          return (
+            <React.Fragment key={i}>
+              <span
+                style={{
+                  opacity: isIn ? 1 : 0,
+                  filter: reducedMotion ? "none" : `blur(${isIn ? 0 : STREAM_BLUR_PX}px)`,
+                  transition: reducedMotion ? "none" : `opacity ${STREAM_FADE_MS}ms ${STREAM_EASE}, filter ${STREAM_FADE_MS}ms ${STREAM_EASE}`,
+                }}
+              >
+                {w}
+              </span>
+              {i < words.length - 1 ? " " : ""}
+            </React.Fragment>
+          );
+        })}
       </p>
     </div>
   );
@@ -413,37 +515,39 @@ export function formatTime(seconds: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-/* ─── Control Button ─── */
+/* ─── Control Button ───
+   `danger` (End interview) is a one-shot action, not a toggle → Button.
+   Everything else (mute, AI voice, transcript, camera) is a standalone
+   on/off control → Toggle, matching shadcn's guidance for a single
+   pressed/unpressed action. */
 export const ControlButton = React.memo(function ControlButton({ icon, label, active, danger, onClick }: {
   icon: React.ReactNode; label: string; active?: boolean; danger?: boolean; onClick: () => void;
 }) {
+  if (danger) {
+    return (
+      <Button
+        type="button"
+        variant="destructive"
+        size="icon-lg"
+        className="rounded-full"
+        onClick={onClick}
+        title={label}
+        aria-label={label}
+      >
+        {icon}
+      </Button>
+    );
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Toggle
+      pressed={!!active}
+      onPressedChange={() => onClick()}
+      size="lg"
+      className="size-12 rounded-full"
       title={label}
       aria-label={label}
-      style={{
-        width: 48, height: 48, borderRadius: "50%",
-        background: danger ? e.copperSoft : active ? e.indigo100 : e.white,
-        border: `1px solid ${danger ? "rgba(180,83,9,0.30)" : active ? e.indigoRing : e.line}`,
-        color: danger ? e.copper : active ? e.indigo : e.inkSoft,
-        cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-        transition: "all 0.2s ease", outline: "none",
-        boxShadow: "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)",
-      }}
-      onFocus={(ev) => ev.currentTarget.style.boxShadow = `0 0 0 4px ${danger ? "rgba(180,83,9,0.20)" : e.indigoRing}`}
-      onBlur={(ev) => ev.currentTarget.style.boxShadow = "0 1px 0 rgba(20,17,10,.04), 0 1px 2px rgba(20,17,10,.04)"}
-      onMouseEnter={(ev) => {
-        ev.currentTarget.style.background = danger ? "rgba(180,83,9,0.18)" : active ? e.indigo100 : e.creamSoft;
-        ev.currentTarget.style.transform = "scale(1.05)";
-      }}
-      onMouseLeave={(ev) => {
-        ev.currentTarget.style.background = danger ? e.copperSoft : active ? e.indigo100 : e.white;
-        ev.currentTarget.style.transform = "scale(1)";
-      }}
     >
       {icon}
-    </button>
+    </Toggle>
   );
 });

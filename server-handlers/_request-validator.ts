@@ -41,6 +41,11 @@ export interface ValidatedInitRequest {
   primaryDomain: string | null;
   collegeTier: "tier-1" | "tier-2" | "tier-3" | null;
   internshipMonths?: number;
+  /** B6 — candidate's pre-stated total-CTC target (LPA). Client sends
+   *  this from the setup wizard's "target salary" field so the server
+   *  can clamp the opening offer to leave a meaningful negotiation gap.
+   *  Optional: null when the candidate has not stated a target. */
+  candidateTargetLpa?: number | null;
   /* The kernel re-validates pack shape during build; the validator
    * here only asserts "is an object, not a string or array". The
    * imported types are used at the boundary so downstream callers
@@ -198,7 +203,23 @@ export function validateInitRequest(raw: unknown): ValidationResult<ValidatedIni
   let band: NegotiationBand | undefined;
   if (raw.band !== undefined && raw.band !== null) {
     if (!isPlainObject(raw.band)) return reject("band: expected object");
+    // isPlainObject only proves it's an object, not its field shape; trusted since
+    // the handler recomputes band server-side and never reads this value downstream.
     band = raw.band as unknown as NegotiationBand;
+  }
+
+  /* candidateTargetLpa — optional finite positive number (LPA). The
+   * client sends the candidate's pre-stated target salary from the setup
+   * wizard so the server can clamp the opening offer to leave headroom.
+   * Out-of-range values (≤0 or non-finite) are treated as absent. */
+  let candidateTargetLpa: number | null | undefined;
+  if (raw.candidateTargetLpa != null) {
+    if (!isFiniteNumber(raw.candidateTargetLpa) || (raw.candidateTargetLpa as number) <= 0) {
+      return reject("candidateTargetLpa: expected positive finite number or null");
+    }
+    candidateTargetLpa = raw.candidateTargetLpa as number;
+  } else {
+    candidateTargetLpa = null;
   }
 
   /* resumeFactPack / parsedResume — must be plain objects when present.
@@ -211,6 +232,8 @@ export function validateInitRequest(raw: unknown): ValidationResult<ValidatedIni
     raw.resumeFactPack === undefined || raw.resumeFactPack === null
       ? null
       : isPlainObject(raw.resumeFactPack)
+        // isPlainObject only proves it's an object; the kernel does its own
+        // field-level validation downstream, per the comment above.
         ? (raw.resumeFactPack as unknown as PackT)
         : undefined;
   if (resumeFactPack === undefined) return reject("resumeFactPack: expected object or null");
@@ -219,6 +242,7 @@ export function validateInitRequest(raw: unknown): ValidationResult<ValidatedIni
     raw.parsedResume === undefined || raw.parsedResume === null
       ? null
       : isPlainObject(raw.parsedResume)
+        // Same trust boundary as resumeFactPack above.
         ? (raw.parsedResume as unknown as ResumeT)
         : undefined;
   if (parsedResume === undefined) return reject("parsedResume: expected object or null");
@@ -238,6 +262,7 @@ export function validateInitRequest(raw: unknown): ValidationResult<ValidatedIni
       primaryDomain,
       collegeTier,
       internshipMonths,
+      candidateTargetLpa,
       resumeFactPack,
       parsedResume,
     },

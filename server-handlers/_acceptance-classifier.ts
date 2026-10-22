@@ -92,8 +92,17 @@ export interface AcceptanceResult {
  *  noun is excluded by lookahead so "I'll take 40 minutes", "I'll do 3 rounds",
  *  "I'll take 5%" never match. The verb "take it/the offer" (no number) is
  *  unchanged — it stays with the performative bank. */
+/* Extended 2026-07-13 (offline hostile probe): three natural accept-at-offer
+ * phrasings fell through to no-match because the frame demanded verb-and-number
+ * adjacency: a definite article ("I'll take THE 40"), an adverbial filler
+ * ("I'll JUST take 40", "let's JUST close this at 40"), and an interposed object
+ * in the close idiom ("let's close THIS at 40"). Each is a real concession the
+ * bot silently ignored → it kept countering a done deal. All still route through
+ * the caller's step-2.4 offer gate, so "take the 45" / "close this at 45" (above
+ * a 40 offer) capture the number and correctly fall through as counters — the
+ * broadening cannot manufacture a false accept. */
 const ACCEPT_FRAME_NUMBER_PATTERN =
-  /\b(?:i(?:'?ll|\s+will|\s+would|\s+can|\s+could)?\s+(?:take|do|go\s+with|accept|settle\s+for)|happy\s+(?:with|at)|fine\s+(?:with|at)|good\s+(?:with|at)|ok(?:ay)?\s+(?:with|at)|settle\s+(?:for|at)|let'?s\s+(?:do|close\s+at|go\s+with|settle\s+at))\s+(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?(?!\s*(?:%|percent|per\s?cent|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|yrs?|people|folks?|things?|reasons?|questions?|calls?|rounds?|candidates?|offers?))\b/i;
+  /\b(?:i(?:'?ll|\s+will|\s+would|\s+can|\s+could)?\s+(?:just\s+)?(?:take|do|go\s+with|accept|settle\s+for)|happy\s+(?:with|at)|fine\s+(?:with|at)|good\s+(?:with|at)|ok(?:ay)?\s+(?:with|at)|settle\s+(?:for|at)|let'?s\s+(?:just\s+)?(?:do|close\s+(?:this\s+|it\s+)?at|go\s+with|settle\s+at))\s+(?:the\s+)?(?:₹|rs\.?\s*|inr\s*)?(\d+(?:\.\d+)?)\s*(?:lpa|lakhs?|lac|l|k)?(?!\s*(?:%|percent|per\s?cent|minutes?|mins?|hours?|hrs?|days?|weeks?|months?|years?|yrs?|people|folks?|things?|reasons?|questions?|calls?|rounds?|candidates?|offers?))\b/i;
 
 /** Performative acceptance verbs — these alone are strong enough
  *  to count as acceptance regardless of whether an offer reference
@@ -207,6 +216,18 @@ const STRONG_PERFORMATIVE_PATTERNS: RegExp[] = [
   ),
 ];
 
+/* S42-B7 (2026-07-23) — RECEIVER-SIDE document-gate accept.
+ * "once I receive the offer letter / LOI / paperwork" is an unconditional
+ * accept pending DOCUMENTATION only — not a salary condition.
+ * Exported as a named constant so blockingConditionalReason can exempt it:
+ * CONDITIONAL_DEFERRAL_PATTERN fires on "as soon as I receive … I will sign"
+ * when "sign" falls within 25 chars of the temporal head, which would
+ * false-veto a genuine document-gate close. The exception below lifts that
+ * veto while leaving genuine salary-condition deferrals ("once you bump it")
+ * fully blocked. Scoped to offer-document nouns only. */
+const RECEIVE_PAPERWORK_ACCEPT_PATTERN =
+  /\b(?:once|as\s+soon\s+as|when|after)\s+i\s+(?:get|receive|have)\s+(?:the\s+)?(?:written\s+)?(?:offer\s+(?:letter|document)|letter\s+of\s+intent|loi|paperwork|paper\s*work|formal\s+offer|offer\s+docs?|contract)\b/i;
+
 /* PRI-56 (2026-06-22, offline hostile sweep S2/S4) — unambiguous close-consent
  * idioms the bank missed, each producing a NO-CLOSE on an unambiguous
  * acceptance (bot kept countering / piling levers over an accepted offer).
@@ -251,6 +272,17 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *    excludes. */
   /\bwhatever\s+you\s+(?:just\s+)?(?:said|offered|quoted|proposed|mentioned)\s+(?:works|is\s+(?:fine|good|ok(?:ay)?)|sounds\s+good)\b/i,
   /\bwhatever\s+works\b/i,
+  /* OA-B68 (2026-07-18, offline deictic-accept sweep) — a deictic noun-phrase
+   *    referent for the STANDING offer: "I'll take that number", "I accept that
+   *    figure", "let's go with that amount", "that number works". The take/accept
+   *    arms above only recognised "it"/"the offer" as the accept OBJECT, so a
+   *    candidate who accepts by pointing at the recruiter's own last figure ("that
+   *    number") was re-countered instead of closed — a NO-CLOSE on an unambiguous
+   *    acceptance. Gated post-offer (step 5 / strictBoost highestOfferMade>0), so
+   *    "that number" pre-offer stays filler, and a match REQUEST ("can you match
+   *    what you mentioned?") is a question, not this consent form. */
+  /\b(?:i(?:'ll|\s+will)\s+take|i\s+accept|i(?:'ll|\s+will)\s+go\s+with|let'?s\s+go\s+with)\s+(?:that|this)\s+(?:number|figure|amount)\b/i,
+  /\b(?:that|this)\s+(?:number|figure|amount)\s+(?:works|is\s+(?:fine|good|ok(?:ay)?)|sounds\s+good)\b/i,
   /* 3. "send it" family — a finalize-the-offer instruction over a standing
    *    offer ("yes send it", "send it over", "send across the letter"). The
    *    strict gate already owns "send the offer letter"; these are the terser
@@ -267,6 +299,20 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
   /* PRI-74 (2026-07-10) — verb widened to send|ship: "ship the offer letter"
    * / "ship it over" is the same finalize-the-paperwork consent as "send". */
   /\b(?:send|ship)\s+(?:me\s+|it\s+|them\s+)?(?:(?:over|across)\s+)?(?:the\s+)?(?:offer\s+)?(?:letter|paperwork|paper\s*work|docs?|contract)\b/i,
+  /* S42-B7 (2026-07-23) — RECEIVER-SIDE document-gate. The send-the-paperwork
+   * arms above (#3) own the SENDER perspective ("send me the offer letter").
+   * The symmetric RECEIVER perspective ("once I receive the offer letter / LOI")
+   * was missing — "receive" is not a settle verb in CONDITIONAL_DEFERRAL_PATTERN,
+   * so it did NOT get falsely vetoed, but it also lacked a positive accept arm.
+   * A candidate saying "I'll accept and sign once I receive the LOI" has consented
+   * to the offer subject only to the recruiter completing normal documentation —
+   * not a salary condition, an unconditional accept awaiting paperwork.
+   * Scoped to offer-document nouns; bare "once I receive" is NOT covered.
+   * NOTE: CONDITIONAL_DEFERRAL_PATTERN can match "as soon as I receive ... sign"
+   * when "sign" appears within 25 chars of the temporal head. blockingConditional-
+   * Reason exempts this pattern (RECEIVE_PAPERWORK_ACCEPT_PATTERN) to prevent it
+   * from being false-vetoed. */
+  RECEIVE_PAPERWORK_ACCEPT_PATTERN,
   /* 4. "confirmed" / "yes confirmed" / "confirming" — a bare confirmation
    *    token closing the deal. Anchored to a clause boundary AND required to
    *    END the clause so the info-probe "can you confirm the split" (confirm
@@ -291,14 +337,23 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * runs first in BOTH the medium gate (classifyAcceptance) and the strict gate
    * (HEDGE_VETO_PATTERNS), so "where do I sign once we sort the base" / "count me
    * in if you can do 40" stay rejected. */
-  /* 6. "where do I sign (up)" — asking to sign IS consent to sign. */
-  /\bwhere\s+do\s+i\s+sign(?:\s+up)?\b/i,
+  /* 6. "where do I sign (up)" / "where do I e-sign" — asking to sign IS consent
+   *    to sign. The optional "e[-\s]?" covers the digital-signature idiom
+   *    ("where do I e-sign?", "where do I esign") an offline recall sweep
+   *    (2026-07-17) surfaced as a NO-CLOSE. */
+  /\bwhere\s+do\s+i\s+(?:e[-\s]?)?sign(?:\s+up)?\b/i,
   /* 7. "count me in" — unambiguous opt-in commit. */
   /\bcount\s+me\s+in\b/i,
   /* 8. "you've / we've got a deal" — the deal-struck idiom. Excludes the
    *    rejection sense "deal[- ]breaker" (the bare-"deal" arm #1 owns the
    *    walk-away). */
   /\b(?:you'?ve|you|we'?ve|we)\s+(?:got|have)\s+(?:yourself\s+|ourselves\s+)?(?:a\s+)?deal\b(?!\s*[-\s]?breaker)/i,
+  /* 8c. "that's a deal (then)" — the demonstrative sibling of arm 8. Requires
+   *     the apostrophe-s so the question "is that a deal?" (no 's) cannot match,
+   *     and excludes the rejection sense "that's a deal-breaker". Conditional
+   *     ("that's a deal if you fix base") is owned by CONDITIONAL_DEFERRAL in
+   *     both gates. Offline recall sweep (2026-07-17). */
+  /\bthat.?s\s+a\s+deal\b(?!\s*[-\s]?breaker)/i,
   /* 8b. "you've got yourself a new hire" — the hiring-idiom sibling of arm 8.
    *     Naming the speaker as the company's new hire IS accepting the job
    *     (surfaced as an OVERREACH miss by the 2026-07-10 adversarial probe).
@@ -325,9 +380,12 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * lesson). Anchored to a TERMINAL clause end (. ! ? or string end — NOT a
    * comma) so a hedged comma-tail ("I'm on board, but let me think") does not
    * match in the medium gate, which has no think-it-over veto; the strict gate's
-   * HEDGE_VETO owns the hedged tails regardless. The deferral veto owns "happy
-   * to proceed once you fix X". */
-  /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b\s*(?:[.!?]|$)/i,
+   * HEDGE_VETO owns the hedged tails regardless. An optional positive object
+   * ("on board with this/the offer/number/…") is allowed before the terminal
+   * anchor (offline recall sweep 2026-07-17) — the comma-hedge tail still fails,
+   * and "I'm not on board" breaks the i.?m adjacency. The deferral veto owns
+   * "happy to proceed once you fix X". */
+  /\bi.?m\s+(?:fully\s+|totally\s+|completely\s+|absolutely\s+)?on\s+board\b(?:\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment|role))?\s*(?:[.!?]|$)/i,
   /\bhappy\s+to\s+proceed\b\s*(?:[.!?]|$)/i,
   /* PRI-63 (2026-06-22, offline recall sweep) — "consider it accepted/done/a
    * deal" and "sign me up", unambiguous same-turn consent over a standing offer
@@ -337,8 +395,8 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    * the imperative analogue of the existing "where do I sign"; deferral-gated
    * ("sign me up once you fix base") by CONDITIONAL_DEFERRAL_PATTERN in both
    * gates. */
-  /\bconsider\s+it\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
-  /\bsign\s+me\s+up\b/i,
+  /\bconsider\s+(?:it|this)\s+(?:accepted|done|a\s+deal|sealed|settled|signed|closed|final)\b/i,
+  /\bsign\s+me\s+(?:up|on)\b/i,
   /* PRI-63c (2026-06-22, offline recall sweep) — three more unambiguous
    * same-turn consent idioms the bank missed (NO-CLOSE on a real accept). In
    * CLOSE_CONSENT so BOTH gates fire (the PRI-56 lesson: medium-only leaves them
@@ -364,8 +422,42 @@ const CLOSE_CONSENT_IDIOM_PATTERNS: RegExp[] = [
    *     negotiating the breakdown, NOT consent — does NOT false-close.
    *     CONDITIONAL_DEFERRAL_PATTERN already owns "finalize" as a settle-verb,
    *     so "let's finalize it once you confirm base" stays vetoed in both gates.
-   *     Offline hostile sweep (2026-06-23). */
-  /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer))\b/i,
+   *     Offline hostile sweep (2026-06-23). The object also admits the EXECUTION-
+   *     NOUN class (paperwork / contract / offer letter / papers / docs) — the
+   *     same nouns the send-paperwork (#3) and start-paperwork (#10) arms already
+   *     treat as unambiguous finalize objects — so "let's finalize the paperwork"
+   *     closes like "let's sign the paperwork" (PRI-97, 2026-07-17). Breakdown
+   *     nouns (base/numbers/split/details) remain excluded. */
+  /\b(?:let'?s\s+|let\s+us\s+|we\s+can\s+|happy\s+to\s+)?finali[sz]e\s+(?:it|this|that|the\s+(?:deal|offer|paperwork|paper\s*work|contract|papers|docs?|offer\s+letter|formalities|documentation))\b/i,
+  /* 16. Hortative / readiness SIGN frame — "let's sign", "let's sign the
+   *     paperwork/offer", "ready to sign", "I'm ready to sign". The bank
+   *     already owns first-person-singular "I'll sign" / "let me sign" /
+   *     "where do I sign" / "sign me up", but the first-person-PLURAL hortative
+   *     ("let's sign") and the readiness idiom ("ready to sign") were missed —
+   *     an offline hostile-recall sweep (2026-07-17) surfaced "let's sign the
+   *     paperwork" as a NO-CLOSE, about as unambiguous a yes as exists in a
+   *     negotiation. The NEGATION veto owns "I won't sign", the fronted
+   *     BEFORE_ACCEPT veto owns "before I sign the number has to move", and
+   *     CONDITIONAL_DEFERRAL owns "let's sign once you fix base" — all run
+   *     first in both gates, so this arm only fires on an unconditional sign
+   *     commit. The object is left open (\bsign\b) so bare "let's sign." and
+   *     "let's sign the offer/contract/papers" all close identically. */
+  /\b(?:let'?s|let\s+us|we\s+can|we\s+should)\s+sign\b/i,
+  /* "ready to sign" is clause-anchored via CLAUSE_START so a NEGATED readiness
+   * ("I'm NOT ready to sign this") cannot match — the general NEGATION veto keys
+   * on negation abutting the settle verb ("won't sign"), but here "not" attaches
+   * to "ready", so the bare "ready to sign" substring would otherwise slip
+   * through. Anchoring to clause start (^ or a separator) means the affirmative
+   * "I'm ready to sign" / "Okay — ready to sign" close but "I'm not ready to
+   * sign" (no boundary before "ready") does not. */
+  new RegExp(CLAUSE_START + /(?:i'?m\s+)?ready\s+to\s+sign\b/.source, "i"),
+  /* "ready to join" — readiness-to-join is as strong a commit as "ready to
+   * sign" (mirrors the "I'll join" verb in COMMIT_TO_JOIN). Clause-anchored via
+   * CLAUSE_START for the same reason as "ready to sign": "I'm NOT ready to join
+   * at this number" attaches the negation to "ready" (no boundary before it), so
+   * the affirmative "I'm ready to join" / "ready to join the team" closes while
+   * the negated form cannot match (offline recall sweep, 2026-07-17). */
+  new RegExp(CLAUSE_START + /(?:i'?m\s+)?ready\s+to\s+join(?:\s+(?:the\s+)?(?:company|team|firm|role))?\b/.source, "i"),
 ];
 
 /** Commitment idioms — informal acceptance markers. Weaker than
@@ -390,6 +482,14 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * exists to prevent. Mirror it into the commitment bank; offer-reference is
    * implicit, HEDGE/CONDITIONAL vetoes still run first. */
   /\blet'?s\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
+  /* Positive-affect sibling of the "let's move forward with this offer" arm —
+   * "I'm happy/glad/ready/keen to move forward with this offer" (offline recall
+   * sweep, 2026-07-17). The affect verb (happy/…) must directly abut "I'm" (the
+   * `.?` matches only an apostrophe, not " not "), so "I'm not happy to move
+   * forward with this offer" cannot match — same negation-safe scaffold as the
+   * "new hire" arm. The "with (this|the) offer/…" object keeps ordinary
+   * "let's move forward" chatter out. */
+  /\bi.?m\s+(?:happy|glad|ready|keen|excited|pleased)\s+to\s+move\s+forward\s+with\s+(?:this|the)\s+(?:offer|number|package|deal|fitment)\b/i,
   /\bit.?s\s+a\s+deal\b/i,
   /\bdone\s+deal\b/i,
   /\blet.?s\s+(?:go\s+ahead|do\s+(?:it|this)|lock\s+it\s+in|proceed)\b/i,
@@ -414,7 +514,15 @@ const COMMITMENT_IDIOM_PATTERNS: RegExp[] = [
    * offer-on-table phase gate and the NEGATION/HEDGE/CONDITIONAL vetoes all
    * still apply ("I won't close at that" stays vetoed). */
   /\blet.?s\s+close\s+at\s+(?:that|this|it)\b/i,
-  /\bi.?m\s+happy\s+with\s+(?:that|the\s+offer)\b/i,
+  /\bi.?m\s+happy\s+with\s+(?:that|this|it|the\s+offer)\b/i,
+  /* S42-B1 (2026-07-23) — anaphoric "I'm good with that/it/this". The SOFT_
+   * ALIGNMENT_PATTERNS arm covers "I'm good with the/this/your offer" (explicit
+   * offer noun); these anaphoric pronoun forms ("I'm good with that", "I'm good
+   * with it") were missing and fell through as NO-CLOSE. Offer-on-table phase
+   * gate still applies — "I'm good with this (meeting time)" can't false-close
+   * before a salary offer exists. Parallel with the existing "I'm happy with
+   * that" arm directly above. */
+  /\bi.?m\s+good\s+with\s+(?:that|this|it|the\s+offer)\b/i,
   /\bfine\s+with\s+me\b/i,
   /* Session B (2026-05-14) — bare commitment tokens. Each must be the
    * whole utterance or terminated cleanly — "deal" as a single word,
@@ -525,6 +633,18 @@ const HINDI_MIX_PATTERNS: RegExp[] = [
 const OFFER_REFERENCE_PATTERN =
   /\b(?:offer|deal|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
 
+/* Family C — CONCRETE offer reference for the closed-by-default gate.
+ *  Deliberately NARROWER than OFFER_REFERENCE_PATTERN: it drops the bare
+ *  close-idiom word "deal", which self-satisfies the broad pattern and let a
+ *  pre-offer "Deal." false-close (OA-B1 class, verified 2026-07-17). The gate
+ *  escape must require a *concrete* offer signal — the nouns offer/salary/ctc/
+ *  package, a currency, or a number+unit — not a lone idiom that merely happens
+ *  to lexically overlap the offer vocabulary. Used ONLY to decide whether an
+ *  `offerOnTable === false` utterance is genuinely naming an offer the coarse
+ *  boolean missed; every offer-on-table upgrade path still uses the broad one. */
+const CONCRETE_OFFER_REFERENCE_PATTERN =
+  /\b(?:offer|salary|ctc|package|lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|₹|rs\.?|inr|\$\s*\d|\d+\s*(?:lpa|lp[a-z]|lakhs?|lacs?|lacks|lax|l\b|cr|crore|k\b))\b/i;
+
 /* Veto: walk-away or rejection — owned by the canonical single source
  * of truth `_walkaway-detection.ts` (isWalkAway), imported above. This
  * module previously carried a PRIVATE, divergent WALK_AWAY_PATTERN copy
@@ -549,8 +669,27 @@ const OFFER_REFERENCE_PATTERN =
  * team/the company/approvals); the trailing settlement VERB is still required,
  * so a benign temporal "once payroll ran the numbers last year" (no
  * sort/confirm/finalize/… verb) is untouched. */
+/* PRI-96 (2026-07-12, round-17 offline hostile sweep) — GATEKEEPER-CLEARANCE
+ * deferral. The subject list already carries the third-party gatekeepers (hr /
+ * finance / legal / management / approvals), but the settle-verb list owned
+ * sort/confirm/approve/sign-off and NOT the "clears / greenlights / okays"
+ * clearance verbs — so "Happy to sign — as soon as legal clears it." matched
+ * WILLING_TO_COMMIT ("happy to sign") and FALSE-CLOSED while the candidate was
+ * deferring the commit to legal sign-off. A close gated on a gatekeeper first
+ * CLEARING it is not a present accept; adding the clearance verbs to the same
+ * single-source deferral pattern both gates share closes the gap. A genuine
+ * accept carries no "once/as soon as <gatekeeper> clears" head. */
+/* PRI-97 (2026-07-17, round-18 offline hostile sweep) — ARRIVAL / FULFILLMENT
+ * deferral. The settle-verb list carried sign-off / clearance / vest verbs but
+ * not the "lands / arrives" ARRIVAL class or the "covered" FULFILLMENT verb —
+ * so "Consider it accepted once the equity refresh LANDS." and "Happy to join
+ * the day my relocation is fully COVERED." FALSE-CLOSED (the accept idiom fired
+ * while the commit was deferred to an unrealized future event). These verbs are
+ * already blessed as future-event heads in FUTURE_EVENT_CLOSE_PATTERN; adding
+ * them to the shared deferral pattern both gates read closes the gap at one
+ * source. A genuine accept carries no "once/the day <X> lands/is covered" head. */
 const CONDITIONAL_DEFERRAL_PATTERN =
-  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|the\s+team|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
+  /\b(?:once|after|when|as\s+soon\s+as|assuming|provided(?:\s+that)?|so\s+long\s+as|the\s+(?:day|moment|minute|second))\s+(?:we|you|i|they|it'?s|that'?s|the|my|payroll|hr|finance|legal|management|approvals?|counsel|procurement|compliance|the\s+(?:board|committee|lawyers?|team)|the\s+company)\b[^.!?]{0,25}?\b(?:sort(?:ed|s)?|confirm(?:ed|s)?|finali[sz]e[sd]?|adjust(?:ed|s)?|revis(?:e[sd]?|it(?:s|ed)?)|fix(?:ed|es)?|agree[sd]?|settle[sd]?|match(?:ed|es)?|increase[sd]?|bump(?:ed|s)?|raise[sd]?|hits?|reach(?:es|ed)?|sen[dt]s?|updat(?:e[sd]?|ing)|sign(?:ed|s)?|signs?\s+off|approv(?:e[sd]?|es)|clear(?:s|ed)?|greenlights?|green-?lights?|okays?|vest(?:s|ed|ing)?|cover(?:s|ed)?|lands?|arrives?|in\s+writing|on\s+paper|in\s+the\s+(?:offer|contract|letter|paperwork))\b/i;
 
 /* PRI-59 (2026-06-22, offline precision sweep) — FALSE-CLOSE vetoes. The
  * recall-focused accept idioms (PRI-56/57/58) each carry a short substring
@@ -600,9 +739,43 @@ const IM_IN_HEDGE_PATTERN =
  *  recall bank matches "I'm accept(ing)", so a bare-stem veto here let the
  *  resigned "I'm accepting the reality here" FALSE-CLOSE — same asymmetry as the
  *  rhetorical veto. The proposition NOUN list (reality/fact/position/…) still
- *  excludes "offer", so a genuine "I'm accepting the offer" is untouched. */
+ *  excludes "offer", so a genuine "I'm accepting the offer" is untouched.
+ *
+ *  ZERO-COMPLEMENTIZER CLAUSE (offline hostile sweep, 2026-07-12, round-20) —
+ *  English routinely drops the "that": "I accept this is a good company", "I
+ *  accept things are tight on your end", "I accept you are right about the
+ *  market" are all propositional AGREEMENTS (conceding a fact), never a close on
+ *  the offer. The explicit-"that" arm and the fixed-noun arm both missed them
+ *  because the complementizer is elided and the clause subject is a bare
+ *  pronoun/expletive, not a listed noun. The final arm catches
+ *  accept + (this/it/there/things/you/we/they) + a finite copula/epistemic verb.
+ *  A finite verb after the subject is the disambiguator: "accept this offer" /
+ *  "accept it" / "accept your offer" have a NOUN (or nothing) after the subject,
+ *  not a verb, so genuine closes stay untouched.
+ *
+ *  DETERMINER-NOUN CLAUSE SUBJECT (offline hostile sweep, 2026-07-13, round-21) —
+ *  the bare-pronoun arm missed a clause whose subject is a full noun phrase:
+ *  "I accept this call is over" (walking away), "I accept the offer is final",
+ *  "I accept that budget is tight". The subject "this/that/the + <noun>" carries
+ *  a noun head between the determiner and the finite verb, so the pronoun arm
+ *  (which required the verb to abut the determiner) slipped it. The determiner
+ *  arm below allows an optional single noun head before the finite verb — the
+ *  trailing finite-verb predicate is still the disambiguator (this is the same
+ *  logic the fixed-noun "terms are" arm already encodes). A genuine close —
+ *  "accept this offer", "accept the role" — has a noun head but NO following
+ *  finite verb, so it stays untouched.
+ *
+ *  HINDI COMPLEMENTIZER "ki" (offline hostile sweep, 2026-07-13, round-22) — this
+ *  product targets Indian candidates and supports Hindi-mix speech, where the
+ *  standard complementizer is "ki" (= English "that"): "haan i accept ki company
+ *  acchi hai par number kam hai" ("yes, I accept THAT the company is good, but the
+ *  number is low"), "i accept ki aap sahi ho" ("I accept THAT you are right"). Like
+ *  "that", whatever follows "ki" is an embedded clause — a concession-AGREEMENT,
+ *  never a close on the offer. Treated identically to the "that" complementizer
+ *  arm; a genuine Hinglish close ("haan theek hai, i accept the offer") has no
+ *  "ki" clause and is untouched. */
 const ACCEPT_PROPOSITION_PATTERN =
-  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:that\b|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies))/i;
+  /\bi\s*(?:'m|am|'d|'ve|have|'ll|will|had|was)?\s*(?:been\s+|be\s+)?accept(?:s|ing|ed)?\s+(?:(?:that|ki)\b(?!\s+(?:number|figure|amount|offer|package|deal|comp(?:ensation)?)\b)|the\s+(?:reality|fact|situation|premise|truth|position|challenge|terms\s+are)|your\s+(?:position|point|stance|reasoning|logic|view|argument|concern|apology|apologies)|(?:this|that|the)\s+(?:\w+\s+)?(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?)\b|(?:it|there|things?|you|we|they)\s+(?:is|are|was|were|isn'?t|aren'?t|'s|'re|seems?|sounds?|looks?|means?|do|does|did|have|has|had)\b)/i;
 
 /** Veto (PRI-74, 2026-07-10, offline hostile close battery — round-6) — an
  *  accept verb whose OBJECT is explicitly contrasted AWAY from the offer: "I'd
@@ -616,6 +789,22 @@ const ACCEPT_PROPOSITION_PATTERN =
 const ACCEPT_NOT_THE_OFFER_PATTERN =
   /\baccept(?:s|ing|ed)?\b[^.!?]{0,30}?\bnot\s+(?:this|the|your|that)\s+(?:offer|number|comp(?:ensation)?|package|deal|base|money)\b/i;
 
+/** Veto (offline hostile sweep, 2026-07-12, round-20) — an accept that is
+ *  ATTRIBUTED to a third party's belief/expectation, not asserted first-person
+ *  in this turn: "My wife thinks I'll accept, she's wrong.", "They assume I'll
+ *  accept but I won't.", "You expect I'll accept this? No.". The performative
+ *  bank matched the embedded "I'll accept" substring, but a belief/speech verb
+ *  (thinks/assumes/expects/says/…) FRONTING "I'll accept" makes the accept a
+ *  reported proposition about the speaker, contingent and typically contradicted
+ *  in the same breath — never a same-turn commitment. The mental/speech verb
+ *  immediately before the accept clause is the single disambiguator; a genuine
+ *  first-person "I'll accept the offer" carries no such verb. First-person "I
+ *  think I'll accept" is also caught and is correctly under-accepted: "I think"
+ *  is a hedge, so deferring the close one turn is the safe read. Shared by both
+ *  gates via FALSE_CLOSE_VETO_PATTERNS. */
+const REPORTED_ACCEPT_PATTERN =
+  /\b(?:thinks?|thought|assumes?|assumed|expects?|expected|believes?|believed|figures?|figured|reckons?|reckoned|hopes?|hoped|says?|said|claims?|claimed|presumes?|presumed)\s+(?:that\s+)?i(?:'?ll|\s+will|'?d|\s+would|\s+might|\s+may)\s+(?:accept|take\s+it|sign)\b/i;
+
 /** Veto (PRI-78, 2026-07-10, round-10) — an accept verb whose OBJECT is a
  *  concrete NON-offer noun: "I'm happy to accept a counteroffer, not this", "I
  *  accept your invitation to keep talking". ACCEPT_PROPOSITION owns the
@@ -628,6 +817,24 @@ const ACCEPT_NOT_THE_OFFER_PATTERN =
  *  job" are deliberately excluded so a genuine "accept the offer" is untouched. */
 const WRONG_OBJECT_ACCEPT_PATTERN =
   /\baccept(?:s|ing|ed)?\s+(?:a|an|your|the|another|this|that)\s+(?:counter[\s-]?(?:offer|proposal)|invitation|invite|apology|apologies|challenge|defeat)\b/i;
+
+/** Veto (PRI-98, 2026-07-12, round-19 offline hostile close battery) — an accept
+ *  verb whose OBJECT is an ACCOUNTABILITY noun: "I accept full responsibility, but
+ *  the number stays.", "I accept the blame here.", "I'll accept fault." Taking
+ *  OWNERSHIP of a mistake/blame is a deflection of the offer, never a close.
+ *  WRONG_OBJECT_ACCEPT owns the article-led non-offer objects but its determiner
+ *  set (a/an/your/the/…) can't carry an adjective-qualified bare object ("full
+ *  responsibility", "personal blame") — and its noun list lacks the accountability
+ *  family entirely — so "accept full responsibility" (adjective, no article)
+ *  slipped both it and ACCEPT_PROPOSITION (whose object list is
+ *  reality/fact/position, not responsibility). The accountability noun is the
+ *  single disambiguator: no genuine offer close ever closes on
+ *  responsibility/blame/fault/liability/accountability/culpability. Optional
+ *  qualifier (full/complete/personal/no/the/my/…) and an optional partitive
+ *  fragment ("my SHARE OF the blame", "a PART OF the responsibility") are
+ *  permitted but not required. Shared by both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const ACCEPT_ACCOUNTABILITY_PATTERN =
+  /\baccept(?:s|ing|ed)?\s+(?:(?:a|full|complete|total|personal|partial|sole|entire|some|all|any|no|the|my|your|his|her|their|our|that|this)\s+)?(?:(?:share|part|portion|piece)\s+of\s+(?:the\s+|my\s+|your\s+|this\s+|his\s+|her\s+|their\s+)?)?(?:responsibilit(?:y|ies)|blame|fault|liability|accountability|culpability)\b/i;
 
 /** Veto (PRI-84, 2026-07-10, adversarial probe) — the "accept NO/ZERO excuses"
  *  idiom: "I accept zero excuses for this number", "I'll accept no excuses". The
@@ -720,6 +927,55 @@ const INVERTED_CONDITIONAL_ACCEPT_PATTERN =
  *  terminal close. */
 const IN_PRINCIPLE_PATTERN = /\b(?:in\s+principle|pending\b)/i;
 
+/* PRI-95 (2026-07-12, round-16) — NON-COMMITTAL QUALIFIER. IN_PRINCIPLE owns
+ * "in principle"/"pending"; its siblings are the tentativeness adverbs that
+ * equally negate a firm close: "Agreed, tentatively.", "I accept, hypothetically
+ * speaking.", "Consider it done, more or less.", "I accept under protest." Each
+ * is a hedge the candidate WILL walk back, so a recap that treats it as a done
+ * deal is a soft FALSE-CLOSE. These adverbs never modify a genuine firm accept
+ * (which carries none of them), so bare presence is a safe veto — kept narrow to
+ * the unambiguous tentativeness markers (NOT "theoretically/in theory", which
+ * can modify a non-accept clause). Shared single-source so both gates reject in
+ * lockstep. */
+const TENTATIVE_QUALIFIER_PATTERN =
+  /\b(?:tentatively|provisionally|hypothetically|under\s+protest|more\s+or\s+less)\b/i;
+
+/* PRI-96 (2026-07-12, round-17) — VAGUE-OBJECT hypothetical. A willingness
+ * idiom ("happy to accept", "I'd take") whose OBJECT is an indefinite
+ * "something / anything / whatever" pinned to an APPROXIMATION tail ("in that
+ * range", "around there", "of that sort", "or so"): "I'd be happy to accept
+ * something in that range." WILLING_TO_COMMIT fired on "happy to accept" and
+ * FALSE-CLOSED, but committing to "something in that range" names no figure and
+ * no concrete offer — it is a willingness band, not a present close. Scoped to
+ * the indefinite object + approximation tail so a genuine "I'll accept anything
+ * at this point" (no approximation tail) and "I accept the offer" (definite
+ * object) are untouched. Shared single-source so both gates reject in lockstep. */
+const VAGUE_RANGE_ACCEPT_PATTERN =
+  /\b(?:accept|take|sign\s+(?:on|off)\s+on|go\s+with|do)\s+(?:something|anything|whatever)\b[^.!?]{0,30}?\b(?:in\s+that\s+(?:range|ballpark|neighbou?rhood|area|region|vicinity|zone|bracket)|around\s+(?:there|that)|like\s+that|of\s+that\s+(?:sort|kind|nature|order|magnitude)|along\s+those\s+lines|thereabouts?|in\s+the\s+ballpark|or\s+so\b)/i;
+
+/* PRI-96 (2026-07-12, round-17) — THEORETICAL qualifier ADJACENT to the accept
+ * idiom. PRI-95's TENTATIVE_QUALIFIER deliberately excluded "in theory /
+ * theoretically" because those markers CAN modify a non-accept clause ("in
+ * theory that works, but I accept in practice"). This refines that carve-out
+ * rather than reversing it: the marker is vetoed ONLY when it sits DIRECTLY
+ * adjacent (whitespace + ≤2 punctuation) to the accept idiom on either side —
+ * "I accept, in theory." / "In theory, I accept." — the one arrangement where
+ * it unambiguously hedges the accept itself. A distant "in theory X … I accept"
+ * keeps its accept because the marker is not adjacent to the close idiom. Both
+ * orders covered; shared single-source so both gates reject in lockstep. */
+const THEORETICAL_ACCEPT_PATTERN =
+  /(?:\baccept(?:s|ing|ed)?\b|\btake\s+it\b|\bi.?m\s+in\b|\bit.?s\s+a\s+deal\b|\bsign\s+me\s+up\b)\s*[,—–-]{0,2}\s*(?:but\s+)?(?:in\s+theory|theoretically)\b|\b(?:in\s+theory|theoretically)\s*(?:speaking)?\s*[,—–-]{0,2}\s*(?:i\s+)?(?:accept(?:s|ing|ed)?|take\s+it|i.?m\s+in|sign\s+me\s+up|it.?s\s+a\s+deal)\b/i;
+
+/* PRI-95 (2026-07-12, round-16) — COMPETITOR REDIRECT reversal. A close idiom
+ * ("sign me up", "count me in") flipped by a trailing "..., that is" that
+ * reassigns the commitment to a RIVAL: "Sign me up — for the competitor, that
+ * is." The reversal tag negates the close (the candidate is signing ELSEWHERE),
+ * so it is a refusal, not consent. Scoped to a competitor/rival noun immediately
+ * followed by the "that is" reversal tag; a genuine accept never redirects the
+ * commit to the competition. Shared single-source so both gates reject. */
+const COMPETITOR_REDIRECT_PATTERN =
+  /\bfor\s+(?:the\s+|a\s+|your\s+|our\s+|their\s+)?(?:competitor|competition|rival|other\s+(?:guy|company|side|team))\b[^.!?]{0,12}\bthat\s+is\b/i;
+
 /** Veto: DOUBT / POSSIBILITY governor over an embedded commit idiom (2026-07-09
  *  offline hostile sweep). The performative/idiom banks match the bare "I'll
  *  take it" / "I'm in" / "accept" substring, but a leading non-committal
@@ -810,6 +1066,19 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * negated expectation verb GOVERNING a commit verb within a short window; a
    * genuine "I accept" carries no "don't expect me to" head. */
   /\bdon.?t\s+(?:expect|count\s+on|bank\s+on|hold\s+your\s+breath\s+(?:for|on))\s+me\b[^.!?]{0,18}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|do\s+it|join)\b/i,
+  /* PRI-97 (2026-07-12, round-18 offline hostile close battery) — NEGATED-BELIEF
+   * imperative: "Don't think I'll sign that.", "Don't believe I'm going to
+   * accept." The PRI-74 arm above owns the "don't EXPECT ME to sign" form (object
+   * "me"); the belief-verb form has NO "me" object — instead a negated belief verb
+   * governs a FIRST-PERSON embedded clause ("don't think I'll sign"), so it slipped
+   * the strict gate's disbelief frame (which needs "you … think … accept") and
+   * FALSE-CLOSED the medium gate on the embedded "sign"/"accept". The disambiguator
+   * is a first-person subject ("I'll"/"I'm gonna"/"I will"/"I would") sitting
+   * between the negated belief verb and the commit verb — a genuine accept never
+   * says "don't think I'll sign". Scoped so the idiomatic "Don't think twice, I'll
+   * sign." (hesitation idiom, "twice" between "think" and "I'll") is untouched and
+   * still closes. Shared single-source so both gates reject in lockstep. */
+  /\bdon.?t\s+(?:think|believe|assume|imagine|reckon|suppose|count\s+on\s+it)\s+(?:for\s+(?:a\s+|one\s+)?(?:second|moment|minute|instant)\s+)?(?:that\s+)?i(?:'?ll|'?m\s+(?:gonna|going\s+to)|\s+will|\s+would|\s+am\s+going\s+to)\b[^.!?]{0,18}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|do\s+it|join)\b/i,
   /* PRI-74 (2026-07-10) — COUNTERFACTUAL SUBJUNCTIVE inversion: "Were I you,
    * I'd accept", "Were I in your shoes, I'd sign". The "were I <other-party>"
    * head is a hypothetical about someone ELSE ("but I'm not you"), never the
@@ -868,6 +1137,15 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
    * A genuine accept never subordinates the accept verb under a "much as I want
    * to" concession. Shared single-source so both gates reject in lockstep. */
   /\b(?:as\s+)?much\s+as\s+i(?:(?:'|’)d|\s+would)?\s*(?:really\s+|truly\s+|genuinely\s+|honestly\s+|so\s+much\s+|so\s+)?(?:want(?:ed)?|love|like|long)\s+to\s+(?:accept(?:s|ing|ed)?|take|taking|took|sign(?:s|ing|ed)?|say\s+yes|do\s+it)\b/i,
+  /* PRI-96 (2026-07-12, round-17) — RHETORICAL QUOTE-INSTRUCTION. The disbelief
+   * frame above owns "you think/expect … accept"; its sibling reframes the
+   * accept as a WORD the recruiter wants QUOTED back — "You want me to just say
+   * 'I accept'? It's not that simple." The candidate is not accepting; they are
+   * quoting the accept idiom to reject the demand to utter it. Scoped to the
+   * SECOND-PERSON "you (really) want me to (just) SAY … accept/take/sign/deal"
+   * frame, so the genuine first-person "I want to say I accept" (no "you want
+   * me") is untouched. Shared single-source so both gates reject in lockstep. */
+  /\byou\s+(?:really\s+|just\s+|actually\s+|honestly\s+|seriously\s+)?want\s+(?:me|us)\s+to\s+(?:just\s+|simply\s+|merely\s+)?say\b[^.!?]{0,15}?\b(?:accept(?:s|ing|ed)?|takes?|taking|took|sign(?:s|ing|ed)?|deal)\b/i,
 ];
 
 /* PRI-61 (2026-06-22, offline precision sweep) — PARTIAL accept: the candidate
@@ -879,8 +1157,12 @@ const RHETORICAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
  * …); these reject by NEGATING the money or calling it unacceptable, which that
  * pattern misses. Shared single-source between both gates via FALSE_CLOSE. */
 const PARTIAL_ACCEPT_VETO_PATTERNS: RegExp[] = [
-  /* "… but/except NOT <money noun>" — "but not at this comp", "except for the base" */
-  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\bnot\s+(?:at\s+|for\s+|on\s+|with\s+)?(?:this|that|the|these|those|such\s+a)?\s*(?:comp(?:ensation)?|number|figure|salary|package|ctc|price|amount|level|rate|pay|money|base|terms?)\b/i,
+  /* "… but/except NOT <money noun>" — "but not at this comp", "except for the base".
+   * Money-noun list includes the individual COMP COMPONENTS a candidate can
+   * partially reject while accepting the rest ("I accept the base but not the
+   * variable component", "… but not the joining bonus") — B82, verified
+   * 2026-07-17. Rejecting a named component means the package isn't closed. */
+  /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\bnot\s+(?:at\s+|for\s+|on\s+|with\s+)?(?:this|that|the|these|those|such\s+a)?\s*(?:comp(?:ensation)?|number|figure|salary|package|ctc|price|amount|level|rate|pay|money|base|terms?|variable|equity|esops?|rsus?|stock|bonus(?:es)?|joining)\b/i,
   /* "… but/except <too low / unacceptable / unworkable>" */
   /\b(?:but|except|however|though|aside\s+from)\b[^.!?]{0,40}\b(?:un(?:acceptable|workable|reasonable)|too\s+(?:low|little|less|small|tight))\b/i,
 ];
@@ -1040,8 +1322,16 @@ const CLOSE_THEN_CONDITIONAL_PATTERN =
  *  over" means the candidate is deferring the decision to read it, not
  *  accepting. Verb list excludes commit verbs (take/sign/accept) so a genuine
  *  "yes send me the offer letter" still closes. Offline sweep batch 4. */
+/* PRI-96 (2026-07-20, offline hostile battery) — Indian English stall idioms.
+ * "I'll revert on this" (= "I'll get back to you") and "I'll get back to you"
+ * were absent from the verb list, so "I'll revert on this, deal" and
+ * "I'll get back to you, sounds good" both false-closed. Neither "revert"
+ * nor "get back" is a commit verb — they are deferral idioms — so the welded
+ * close token must be vetoed. Both added at the single source so BOTH gates
+ * reject in lockstep. "Revert" is very common Indian English: "Will revert",
+ * "I'll revert back", "I'll revert on this tomorrow". */
 const REVIEW_TAIL_PATTERN =
-  /\bi'?ll\s+(?:review|look\s+(?:it|that|them)?\s*over|think\s+(?:it|that|this)\s+over|go\s+over\s+(?:it|that|them)|read\s+(?:it|through|over)|consider\s+(?:it|that|this)|mull\s+(?:it|that)\s+over|run\s+(?:it|that)\s+by)\b/i;
+  /\bi'?ll\s+(?:review|look\s+(?:it|that|them)?\s*over|think\s+(?:it|that|this)\s+over|go\s+over\s+(?:it|that|them)|read\s+(?:it|through|over)|consider\s+(?:it|that|this)|mull\s+(?:it|that)\s+over|run\s+(?:it|that)\s+by|revert\b|get\s+back\s+(?:to\s+(?:you|you\s+on\s+this)|on\s+this))\b/i;
 
 /** Veto: commitment deferred to a personal consultation / future return —
  *  "I'll sign after I talk to my wife", "I'll accept once I see it in writing",
@@ -1050,8 +1340,16 @@ const REVIEW_TAIL_PATTERN =
  *  later, so it is not a present accept. Scoped to consult/return verbs so
  *  "once you confirm the base I'll sign" (owned by CONDITIONAL_DEFERRAL) and
  *  genuine accepts are untouched. Offline sweep batch 4. */
+/* PRI-95 (2026-07-12, round-16 offline hostile sweep) — COMPARISON deferral.
+ * The consult-deferral verb list owned talk/consult/check/hear but not the
+ * "let me line this up against my other offer" family: "I'll sign — after I
+ * compare with my other offer", "count me in once I've weighed the options".
+ * A close idiom deferred until the candidate COMPARES / WEIGHS / EVALUATES a
+ * competing offer is not a commitment (it is shopping the offer), so add those
+ * verbs to the same single-source deferral pattern both gates share. A genuine
+ * accept carries no "after I compare/weigh/evaluate" head. */
 const CONSULT_DEFERRAL_PATTERN =
-  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)(?:'?ve|'?d|\s+ha(?:ve|d))?\s+(?:talk|speak|consult|discuss|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
+  /\b(?:after|once|when|until)\s+(?:i'?m\s+back\b|i\s+am\s+back\b|(?:i|we)(?:'?ve|'?d|\s+ha(?:ve|d))?\s+(?:talk|speak|consult|discuss|compar(?:e[sd]?|ing)|weigh(?:s|ed|ing)?|evaluat(?:e[sd]?|ing)|chat|check\b|hear\b|sleep\b|see\b|return\b|run\s+it\s+(?:by|past|with)|get\s+back|am\s+back))/i;
 
 /** Veto (offline hostile close battery, 2026-07-08) — the LEADING consult form:
  *  "Let me run it past my spouse and I'll sign", "let me sleep on it and it's a
@@ -1063,7 +1361,7 @@ const CONSULT_DEFERRAL_PATTERN =
  *  after "let me" so the genuine performative "let me sign" (a commit) does NOT
  *  match. Shared single-source so BOTH gates reject in lockstep. */
 const CONSULT_FIRST_PATTERN =
-  /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over)\b/i;
+  /\blet\s+me\s+(?:first\s+|just\s+)?(?:run\s+it\s+(?:by|past|with)|bounce\s+it\s+(?:off|by)|check\s+(?:with|in\s+with)|speak\s+(?:to|with)|talk\s+(?:to|it\s+over\s+with|with)|consult|discuss\s+(?:it\s+)?with|sleep\s+on\s+it|loop\s+in|think\s+it\s+over|revert\s+on\s+(?:it|this)|get\s+back\s+(?:to\s+you|on\s+this))\b/i;
 
 /** Veto (offline future-deferral battery, 2026-07-09) — a request for TIME
  *  before committing, welded to a close idiom: "Give me till Monday and I'll
@@ -1089,8 +1387,17 @@ const TEMPORAL_DEFERRAL_PATTERN =
  *  lands" slipped them. Scoped to a temporal head noun + a settlement/arrival
  *  verb within 40 chars; genuine accepts never use this frame. Shared
  *  single-source so BOTH gates reject in lockstep. */
+/* PRI-96 (2026-07-17, offline conditional-demand probe) — the same future-event
+ * frame with a MAGNITUDE-INCREASE arrival verb instead of an arrival/settlement
+ * verb: "I'll sign the moment the ESOP doubles", "the day the base increases,
+ * deal", "the minute the equity goes up, I'm in". The commit is still deferred
+ * to an unrealized event — the offer is un-bumped NOW — so it is a FALSE-CLOSE
+ * exactly like "the moment the equity clears". The arrival-verb list carried
+ * only lands/clears/hits-class verbs, so a rise/double/increase event slipped.
+ * A genuine accept never defers its close to a future increase (that IS a
+ * conditional demand), so widening the verb set is safe. */
 const FUTURE_EVENT_CLOSE_PATTERN =
-  /\bthe\s+(?:day|moment|minute|second|instant|hour)\b[^.!?\n]{0,40}?\b(?:lands?|arrives?|comes?\s+(?:in|through)|clears?|hits?|shows?\s+up|is\s+(?:confirmed|sorted|done|in|finalized|settled|through|paid|approved)|goes?\s+through)\b/i;
+  /\bthe\s+(?:day|moment|minute|second|instant|hour)\b[^.!?\n]{0,40}?\b(?:lands?|arrives?|comes?\s+(?:in|through)|clears?|hits?|shows?\s+up|is\s+(?:confirmed|sorted|done|in|finalized|settled|through|paid|approved)|goes?\s+through|doubles?|triples?|quadruples?|increases?|rises?|grows?|improves?|climbs?|jumps?|goes?\s+up|moves?\s+up|bumps?\s+up)\b/i;
 
 /** Veto (offline future-deferral battery, 2026-07-09) — a commit gated on first
  *  receiving a CHANGED document: "Send the revised letter and I'll sign then",
@@ -1167,7 +1474,7 @@ const GRANT_THEN_CLOSE_PATTERN =
  * Like the rest of this bank, "hard pass" / "hard no" never appear in a genuine
  * accept, so a flat token veto anywhere in the clause is safe. */
 const SARCASTIC_REFUSAL_PATTERN =
-  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+on\s+your\s+life|yeah\s+no\b|hard\s+(?:pass|no)\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
+  /\b(?:in\s+your\s+dreams|keep\s+dreaming|dream\s+on|not\s+in\s+a\s+million\s+years|over\s+my\s+dead\s+body|(?:when|the\s+day)\s+pigs\s+fly|monkeys?\s+(?:might\s+|will\s+|could\s+|may\s+|would\s+)?fly|(?:when|till|until)\s+hell\s+freezes(?:\s+over)?|fat\s+chance|not\s+a\s+chance|no\s+chance\b|not\s+on\s+your\s+life|yeah\s+no\b|hard\s+(?:pass|no)\b|said\s+no\s+(?:\w+\s+)?ever|said\s+no\s*(?:one|body)|in\s+(?:an?\s+)?(?:alternate|another|parallel)\s+(?:universe|reality|world|timeline|dimension)|in\s+your\s+(?:imagination|fantasy|fantasies))\b/i;
 
 /** Veto (PRI-79, 2026-07-10, round-11) — an accept verb whose OBJECT is a
  *  GIVING-UP / WALK noun: "I accept defeat — I'm walking", "I accept my
@@ -1207,6 +1514,21 @@ const NON_PARTY_ATTRIBUTION_PATTERN =
  *  "not a problem, deal" are untouched. */
 const TRAILING_NOT_NEGATION_PATTERN =
   /(?:[—–-]{1,2}|\.{2,})\s*not\b[.!\s]*$/i;
+
+/** Veto (PRI-97, 2026-07-12, round-18 offline hostile close battery) — a
+ *  clause-final STANDALONE NEGATOR reversal: "Wow, what a deal. I'll take it.
+ *  (No.)", "Deal. No.", "I'll sign. Nope." The close idiom matches, but the
+ *  candidate ends with a self-contained negator sentence/parenthetical that
+ *  flips the whole thing to a sarcastic refusal. TRAILING_NOT_NEGATION above
+ *  owns only the dash/ellipsis-preceded "— not"; this owns the SENTENCE-FINAL
+ *  bare "no/nope/not really" (optionally parenthesized) sitting as its own
+ *  terminal clause. Scoped hard: the negator must be a WHOLE word immediately
+ *  after a sentence terminator (.!?) and be followed only by closing
+ *  punctuation to end-of-string — so "I'll take it. No question." ("question"
+ *  follows "no"), "Deal, no doubt." (comma, and "doubt" follows), and "I accept.
+ *  Now what?" ("Now" ≠ "no") are all untouched and still close. */
+const TRAILING_NEGATOR_REVERSAL_PATTERN =
+  /[.!?]\s*\(?\s*(?:no|nope|not\s+really|as\s+if|yeah,?\s+right|sike|psych)\b[\s.!?)]*$/i;
 
 /** Veto (PRI-79, 2026-07-10, round-11; temporal head completed PRI-81,
  *  2026-07-10 via the adversarial differential audit) — a commit gated on the
@@ -1317,6 +1639,19 @@ const WORD_DEMAND_THEN_CLOSE_PATTERN =
 const VERB_MAGNITUDE_THEN_CLOSE_PATTERN =
   /\b(?:bump|raise|increase|push|hike|lift|boost|stretch|nudge|add|jack)\b[^.!?]{0,25}?\b(?:\d+(?:\.\d+)?|a|an|one|half\s+a|(?:a\s+)?couple(?:\s+of)?|(?:a\s+)?few|several)\s*(?:%|(?:percent|per\s?cent|lpa|lakhs?|lac|l|k)\b)[^.!?]{0,25}?\b(?:and|then|&)\b/i;
 
+/** S21-B1 (2026-07-22) — term-accept veto. "12 months pro-rata is fine with me"
+ *  (candidate agreeing to a clawback STRUCTURE) matched /fine\s+with\s+me/ in
+ *  COMMITMENT_IDIOM_PATTERNS and auto-closed the session at ₹29.8L. When the
+ *  subject of "is fine with me" is a compensation-term noun — pro-rata, clawback,
+ *  vesting, cliff, probation, bond clause, notice period — the candidate is
+ *  reacting to a TERM, not accepting the total offer. Match the comp-term up to
+ *  80 chars before "fine with me" within the same clause (no .!? crossing) so a
+ *  two-clause utterance "offer is great; pro-rata fine with me" is still caught,
+ *  but "offer is fine with me" (no comp-term antecedent) is untouched.
+ *  Shared single-source between both gates via FALSE_CLOSE_VETO_PATTERNS. */
+const TERM_ACCEPT_FINE_WITH_ME_VETO =
+  /\b(?:\d+\s+months?\s+)?(?:pro[-\s]?rata|clawback|claw[-\s]?back|vesting(?:\s+(?:schedule|cliff|period))?|cliff\s+(?:period|vesting|date)?|probation(?:ary)?(?:\s+period)?|bond\s+(?:clause|period|terms?)?|notice\s+period)\b[^.!?]{0,80}\bfine\s+with\s+me\b/i;
+
 /** All PRI-59/61/63/69 + batch-2 precision vetoes, shared by both gates. */
 const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   DEMAND_FOR_MORE_PATTERN,
@@ -1327,7 +1662,9 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   IM_IN_HEDGE_PATTERN,
   ACCEPT_PROPOSITION_PATTERN,
   ACCEPT_NOT_THE_OFFER_PATTERN,
+  REPORTED_ACCEPT_PATTERN,
   WRONG_OBJECT_ACCEPT_PATTERN,
+  ACCEPT_ACCOUNTABILITY_PATTERN,
   ACCEPT_NO_EXCUSES_PATTERN,
   ACCEPT_NOTHING_PATTERN,
   BEFORE_ACCEPT_PATTERN,
@@ -1335,10 +1672,15 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   COMPARATIVE_OFFER_ACCEPT_PATTERN,
   CLOSE_THEN_CONDITIONAL_PATTERN,
   IN_PRINCIPLE_PATTERN,
+  TENTATIVE_QUALIFIER_PATTERN,
+  VAGUE_RANGE_ACCEPT_PATTERN,
+  THEORETICAL_ACCEPT_PATTERN,
+  COMPETITOR_REDIRECT_PATTERN,
   DOUBT_HEDGE_THEN_COMMIT_PATTERN,
   MONEY_REJECTION_PATTERN,
   COUNTER_NOT_NUMBER_PATTERN,
   SETTLE_NEGATION_PATTERN,
+  TERM_ACCEPT_FINE_WITH_ME_VETO,
   DO_IT_REDIRECT_PATTERN,
   DEFERRED_SETTLE_NOUN_PATTERN,
   NEGOTIATION_REDIRECT_PATTERN,
@@ -1353,6 +1695,7 @@ const FALSE_CLOSE_VETO_PATTERNS: RegExp[] = [
   OFFER_TO_DISAGREE_PATTERN,
   NON_PARTY_ATTRIBUTION_PATTERN,
   TRAILING_NOT_NEGATION_PATTERN,
+  TRAILING_NEGATOR_REVERSAL_PATTERN,
   WORTH_SIGNING_CONDITIONAL_PATTERN,
   DISMISSIVE_OFFER_CHARACTERIZATION_PATTERN,
   REVIEW_TAIL_PATTERN,
@@ -1401,7 +1744,17 @@ function blockingConditionalReason(a: string): "hard-conditional" | "conditional
   ) {
     return "hard-conditional";
   }
-  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) return "conditional-deferral";
+  if (CONDITIONAL_DEFERRAL_PATTERN.test(a)) {
+    /* S42-B7 (2026-07-23) — document-gate exemption. CONDITIONAL_DEFERRAL
+     * fires on "as soon as I receive the LOI I will sign" because "sign"
+     * appears within 25 chars of the temporal head. But the deferral here
+     * is over PAPERWORK, not a salary adjustment — this is an unconditional
+     * accept pending documentation. Lift the veto for the specific class of
+     * "receive [offer-document-noun]" phrases. Genuine salary conditions
+     * ("once you bump it to 52") carry no paperwork noun and are unaffected. */
+    if (RECEIVE_PAPERWORK_ACCEPT_PATTERN.test(a)) return null;
+    return "conditional-deferral";
+  }
   return null;
 }
 
@@ -1582,12 +1935,30 @@ function normalizeQuotesLocal(s: string): string {
     .replace(/[\u201C\u201D]/g, '"');
 }
 
+/** Fold EXPANDED first-person auxiliaries back to the contracted form the
+ *  idiom banks are written against ("i am" \u2192 "i'm", "i will" \u2192 "i'll"). STT
+ *  engines and formal typing routinely emit the expanded form, so accept
+ *  idioms keyed on `i.?m` / `i.?ll` ("I'm in", "I'll take the offer") were
+ *  silently missing "i am in" / "i will take the offer" (offline hostile hunt,
+ *  2026-07-17). Applied at the single entry seam so every downstream gate \u2014
+ *  accept idioms, walk-away, and the conditional/negation vetoes \u2014 sees one
+ *  canonical form; folding toward the contraction only ever helps the veto
+ *  patterns (they too are written against `i.?ll` / `i.?m`). Semantically
+ *  neutral: "i am not going to sign" \u2192 "i'm not going to sign" still vetoes. */
+function normalizeContractionsLocal(s: string): string {
+  return s
+    .replace(/\bi\s+am\b/gi, "I'm")
+    .replace(/\bi\s+will\b/gi, "I'll")
+    .replace(/\bi\s+would\b/gi, "I'd")
+    .replace(/\bi\s+have\b/gi, "I've");
+}
+
 export function classifyAcceptance(
   text: string,
   context: AcceptanceContext = {},
 ): AcceptanceResult {
   const reasons: string[] = [];
-  const a = normalizeQuotesLocal(text || "").trim();
+  const a = normalizeContractionsLocal(normalizeQuotesLocal(text || "")).trim();
   if (!a) return { accepted: false, confidence: "none", reasons: ["empty"] };
 
   /* Step 1: vetoes. Each veto is structural — even if every other
@@ -1637,6 +2008,33 @@ export function classifyAcceptance(
   }
   if (WEAK_AFFIRMATIVE_ONLY_PATTERN.test(a) && !OFFER_REFERENCE_PATTERN.test(a)) {
     return { accepted: false, confidence: "none", reasons: ["weak-affirmative-only"] };
+  }
+
+  /* Family C — closed-by-default acceptance gate (SINGLE SOURCE).
+     With NO offer on the table there is nothing to accept: even a strong
+     performative ("Deal.", "Yes, I accept.") or an offer-ref-upgraded idiom is
+     premature filler, not a close. Hoisted here so it applies UNIFORMLY before
+     every positive-return path (Step 2 performative, Step 2.4 numbered accept,
+     Step 2.5 split-clause, Step 3 soft-alignment, Step 4/5 idiom) — previously
+     the gate lived only in Step 4/5, so a strong verb or a bare "Deal." (whose
+     "deal" self-matched the broad offer-ref) sailed past it and false-closed
+     (OA-B1/B59, verified against ground truth 2026-07-17).
+
+     Only an EXPLICIT `offerOnTable === false` gates; `undefined` (legacy
+     whole-transcript callers with no phase context) stays permissive. A
+     CONCRETE offer reference — a number+unit, currency, or offer/salary/ctc/
+     package noun, but NOT the bare idiom "deal" — escapes the gate, preserving
+     the established "The offer works for me" contract where the coarse boolean
+     under-reports a genuinely-quoted package. */
+  if (
+    context.offerOnTable === false &&
+    !CONCRETE_OFFER_REFERENCE_PATTERN.test(a)
+  ) {
+    return {
+      accepted: false,
+      confidence: "none",
+      reasons: ["phase-gate-no-offer-veto"],
+    };
   }
 
   /* Step 2: performative verb. Unambiguous speech act. */
@@ -1728,12 +2126,9 @@ export function classifyAcceptance(
       reasons.push("commitment-idiom", "offer-reference");
       return { accepted: true, confidence: "medium", reasons };
     }
-    /* Phase gate: caller told us no offer is on the table.
-       "Sounds good" before any number has been quoted is filler. */
-    if (context.offerOnTable === false) {
-      reasons.push("commitment-idiom", "phase-gate-no-offer-veto");
-      return { accepted: false, confidence: "none", reasons };
-    }
+    /* Phase gate now lives once, hoisted to the top (Family C closed-by-default
+       gate). By here `offerOnTable === false` cases without a concrete offer
+       reference have already returned; nothing to re-check. */
     reasons.push("commitment-idiom");
     return { accepted: true, confidence: "medium", reasons };
   }

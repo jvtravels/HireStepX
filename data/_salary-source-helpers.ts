@@ -22,6 +22,31 @@ export function isSeedSource(source: string | undefined): boolean {
   return source?.startsWith(SEED_PREFIX) ?? false;
 }
 
+const CSV_PREFIX = "CSV research dataset";
+function isCsvSource(source: string | undefined): boolean {
+  return source?.startsWith(CSV_PREFIX) ?? false;
+}
+
+/** User-facing label for a salary band's provenance. Curator sources
+ *  ("Curated research 2026-05-08 — Glassdoor + AmbitionBox aggregation")
+ *  are already written for readers and pass through unchanged. Seed and
+ *  CSV sources embed internal shorthand for auditing (company/role
+ *  slugs, tier multipliers like "1.05x", "n=NNN") that isn't meant for
+ *  a candidate reading a FAQ answer — collapse those to a plain
+ *  human sentence keyed off the same confidence tier the LLM
+ *  negotiation prompt already uses, so the visible label and the
+ *  underlying confidence never contradict each other. */
+export function humanizeSalarySource(
+  source: string | undefined,
+  tier: "high" | "medium" | "low" | undefined,
+): string {
+  if (isSeedSource(source) || isCsvSource(source)) {
+    if (tier === "low") return "Directional estimate derived from market benchmarks, confirm with a recruiter";
+    return "Aggregated compensation research (AmbitionBox, Glassdoor)";
+  }
+  return source ?? "HireStepX compensation research";
+}
+
 const AB_PREFIX_RE = /^AmbitionBox/i;
 const AB_BLEND_RE = /Levels\.fyi|DRHP|disclosure|verified/i;
 /** Curator source is plain AmbitionBox with no Levels.fyi / DRHP /
@@ -70,7 +95,7 @@ export const ENGINEERING_TRACK_ROLES: ReadonlySet<string> = new Set([
 export const JUNIOR_LEVELS: ReadonlySet<ExperienceLevel> = new Set(["entry", "mid"]);
 export const LEAD_EXEC_LEVELS: ReadonlySet<ExperienceLevel> = new Set(["lead", "executive"]);
 export const MID_OR_SENIOR_LEVELS: ReadonlySet<ExperienceLevel> = new Set(["mid", "senior"]);
-/** Anything past entry — used by tier-aware "AB undercounts seniors" rules. */
+/** Anything past entry, used by tier-aware "AB undercounts seniors" rules. */
 export const NON_ENTRY_LEVELS: ReadonlySet<ExperienceLevel> = new Set([
   "mid", "senior", "lead", "executive",
 ]);

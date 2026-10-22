@@ -350,17 +350,41 @@ describe("proactive-sweetener — sector-distinct prose", () => {
     expect(prose.toLowerCase()).toContain("relocation");
   });
 
-  it("it-services prose contains 'notice buyout'", () => {
+  it("it-services prose contains 'notice buyout' when notice period is known (S54-B5)", () => {
     const s = withAffinityDrop(
       cappedState({
         sessionId: "ps-prose-it",
         recruiterSectorPersona: "it-services",
+        /* S54-B5: notice buyout arm only fires when notice period is known */
+        noticeJoining: {
+          noticePeriodDays: 90,
+          buyoutRequested: false,
+          joiningBonusAsk: null,
+          earlyJoinPreferred: false,
+          joiningBonusClawbackDiscussed: false,
+          lastWorkingDayText: null,
+          hasAny: true,
+        },
       }),
     );
     const action = planNextAction(s);
     expect(action.kind).toBe("proactive-sweetener");
     const prose = renderCanonicalProse(action, s);
     expect(prose.toLowerCase()).toContain("notice buyout");
+  });
+
+  it("it-services prose falls back to base-structure when no notice period is known (S54-B5)", () => {
+    const s = withAffinityDrop(
+      cappedState({
+        sessionId: "ps-prose-it-no-notice",
+        recruiterSectorPersona: "it-services",
+        /* noticeJoining.noticePeriodDays stays null — default from initState */
+      }),
+    );
+    const action = planNextAction(s);
+    expect(action.kind).toBe("proactive-sweetener");
+    const prose = renderCanonicalProse(action, s);
+    expect(prose.toLowerCase()).toContain("base");
   });
 
   it("early-startup prose contains 'ESOP'", () => {

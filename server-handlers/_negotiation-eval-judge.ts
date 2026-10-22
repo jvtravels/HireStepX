@@ -206,7 +206,7 @@ export async function judgeScenario(
   if (!hasAnyApiKey) {
     return verdictsFromJudgeResponse(
       null,
-      "no LLM API key configured (set GROQ_API_KEY / GEMINI_API_KEY / CEREBRAS_API_KEY)",
+      "no LLM API key configured (set GROQ_API_KEY / GEMINI_API_KEY / CLOUDFLARE_API_TOKEN + CLOUDFLARE_ACCOUNT_ID)",
     );
   }
   const prompt = buildJudgePrompt(scenario, finalState, overrideTurns);

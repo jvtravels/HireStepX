@@ -1,6 +1,9 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
+  "regions": [
+    "bom1"
+  ],
   "crons": [
     {
       "path": "/api/send-renewal-reminders",
@@ -16,7 +19,7 @@
     },
     {
       "path": "/api/uptime-check",
-      "schedule": "0 6 * * *"
+      "schedule": "30 10 * * *"
     },
     {
       "path": "/api/re-engage-users",
@@ -47,8 +50,52 @@
       "schedule": "30 2 * * *"
     },
     {
+      "path": "/api/cron/llm-model-watchdog",
+      "schedule": "15 5 * * *"
+    },
+    {
+      "path": "/api/cron/llm-quality-drift",
+      "schedule": "40 5 * * *"
+    },
+    {
       "path": "/api/prune-llm-usage",
       "schedule": "45 3 * * *"
+    },
+    {
+      "path": "/api/send-onboarding-drip",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/send-winback-emails",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/send-activation-emails",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/rematch-requirements",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/prune-notifications",
+      "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron-reconcile-unlock-orders",
+      "schedule": "20 5 * * *"
+    },
+    {
+      "path": "/api/cron-credit-no-response",
+      "schedule": "40 5 * * *"
+    },
+    {
+      "path": "/api/send-employer-nudges",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/send-employer-winback",
+      "schedule": "30 7 * * *"
     }
   ]
 }

@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "../AuthContext";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import { Field, Wordmark, Spinner } from "./_fields";
@@ -207,10 +208,10 @@ export default function ForgotPassword() {
                 <h1
                   id="forgot-heading"
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                    fontFamily: f.sans,
+                    fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                     lineHeight: 1.05,
-                    fontWeight: 400,
+                    fontWeight: 600,
                     letterSpacing: "-0.02em",
                     whiteSpace: "nowrap",
                     margin: 0,
@@ -218,15 +219,7 @@ export default function ForgotPassword() {
                   }}
                 >
                   Check your{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    inbox
-                  </em>
+                  inbox
                 </h1>
                 <p
                   className="hsx-login-subtitle"
@@ -263,17 +256,17 @@ export default function ForgotPassword() {
                   <a
                     href={provider.url}
                     target="_blank"
-                    rel="noreferrer"
+                    rel="noopener noreferrer"
                     className="hsx-login-cta"
                     style={{
                       width: "100%",
                       fontFamily: f.sans,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: 600,
                       color: t.cream,
                       background: t.indigo,
                       border: "1px solid transparent",
-                      borderRadius: 10,
+                      borderRadius: 8,
                       padding: "16px 18px",
                       cursor: "pointer",
                       boxShadow: shadows.cta,
@@ -304,26 +297,19 @@ export default function ForgotPassword() {
                   </a>
                 )}
 
-                <button
+                <Button
                   type="button"
+                  variant="outline"
+                  size="lg"
                   onClick={handleResend}
                   disabled={cooldown > 0 || resending}
                   aria-busy={resending || undefined}
                   style={{
                     width: "100%",
+                    height: "auto",
                     fontFamily: f.sans,
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: 500,
-                    color: t.coal,
-                    background: t.white,
-                    border: `1px solid ${t.line}`,
-                    borderRadius: 10,
-                    padding: "14px 18px",
-                    cursor:
-                      cooldown > 0 || resending ? "not-allowed" : "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     gap: 10,
                     boxShadow: shadows.card,
                     opacity: cooldown > 0 || resending ? 0.6 : 1,
@@ -341,10 +327,11 @@ export default function ForgotPassword() {
                   ) : (
                     <span aria-live="polite">Resend link</span>
                   )}
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="link"
                   onClick={() => {
                     setSent(false);
                     setCooldown(0);
@@ -355,19 +342,13 @@ export default function ForgotPassword() {
                     fontSize: 14,
                     fontWeight: 500,
                     color: t.indigo,
-                    background: "transparent",
-                    border: "none",
-                    cursor: "pointer",
-                    padding: "10px 14px",
-                    textAlign: "center",
-                    textDecoration: "none",
                   }}
                 >
                   {/* Underline scoped to text width, not full button width */}
                   <span className="hsx-link-indigo">
                     Wrong email? Try a different one
                   </span>
-                </button>
+                </Button>
 
                 <div
                   style={{
@@ -433,10 +414,10 @@ export default function ForgotPassword() {
                 <h1
                   id="forgot-heading"
                   style={{
-                    fontFamily: f.serif,
-                    fontSize: "clamp(2.5rem, 6vw, 4.5rem)",
+                    fontFamily: f.sans,
+                    fontSize: "clamp(1.75rem, 4.4vw, 2.5rem)",
                     lineHeight: 1.05,
-                    fontWeight: 400,
+                    fontWeight: 600,
                     letterSpacing: "-0.02em",
                     whiteSpace: "nowrap",
                     margin: 0,
@@ -444,15 +425,7 @@ export default function ForgotPassword() {
                   }}
                 >
                   Reset your{" "}
-                  <em
-                    style={{
-                      fontStyle: "italic",
-                      fontWeight: 400,
-                      color: t.copper,
-                    }}
-                  >
-                    password
-                  </em>
+                  password
                 </h1>
                 <p
                   className="hsx-login-subtitle"
@@ -528,8 +501,10 @@ export default function ForgotPassword() {
                   {(() => {
                     const isGhost = !canSubmit && !loading;
                     return (
-                      <button
+                      <Button
                         type="submit"
+                        variant="default"
+                        size="lg"
                         disabled={!canSubmit}
                         aria-busy={loading ? "true" : "false"}
                         title={
@@ -540,19 +515,22 @@ export default function ForgotPassword() {
                         className="hsx-login-cta"
                         style={{
                           width: "100%",
+                          height: "auto",
                           fontFamily: f.sans,
-                          fontSize: 15,
+                          fontSize: 16,
                           fontWeight: 600,
                           color: isGhost ? t.inkFaint : t.cream,
                           background: isGhost ? t.creamSoft : t.indigo,
                           border: isGhost
                             ? `1px solid ${t.line}`
                             : "1px solid transparent",
-                          borderRadius: 10,
+                          borderRadius: 8,
                           padding: "16px 18px",
                           cursor: canSubmit ? "pointer" : "not-allowed",
                           marginTop: 4,
-                          boxShadow: isGhost ? "none" : shadows.cta,
+                          boxShadow: isGhost
+                            ? "none"
+                            : `0px 2px 4px color-mix(in srgb, ${t.indigo} 20%, transparent)`,
                           letterSpacing: 0.1,
                           display: "flex",
                           alignItems: "center",
@@ -586,7 +564,7 @@ export default function ForgotPassword() {
                             </svg>
                           </>
                         )}
-                      </button>
+                      </Button>
                     );
                   })()}
 

@@ -17,14 +17,20 @@
 
 export const config = { runtime: "edge" };
 
-import { emailShell, title, para, b, button, dataCard, escapeHtml } from "./_email-theme";
+import { verifyCronAuth } from "./_cron-auth";
+import { recordCronResult } from "./_cron-heartbeat";
+import { emailShell, title, para, b, button, dataCard, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { filterSuppressed, marketingEmailParts } from "./_unsubscribe";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const CRON_SECRET = process.env.CRON_SECRET || "";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const MAX_EMAILS_PER_RUN = 50;
+// Opted-out users are filtered after the query; over-fetch so they can't crowd out the 50 sendable slots.
+const CANDIDATE_OVERFETCH = 4;
 const MIN_HOURS_BETWEEN_EMAILS = 6 * 24;
 
 interface SessionRow {
@@ -57,7 +63,7 @@ async function supa(path: string, opts?: RequestInit): Promise<Response> {
 async function candidateUsers(): Promise<ProfileRow[]> {
   // Users with ≥1 session in the last 14d who haven't been emailed in the last 6d.
   const sinceIso = new Date(Date.now() - MIN_HOURS_BETWEEN_EMAILS * 3600_000).toISOString();
-  const path = `profiles?select=id,email,name,last_summary_email_at&or=(last_summary_email_at.is.null,last_summary_email_at.lt.${encodeURIComponent(sinceIso)})&limit=${MAX_EMAILS_PER_RUN}`;
+  const path = `profiles?select=id,email,name,last_summary_email_at&or=(last_summary_email_at.is.null,last_summary_email_at.lt.${encodeURIComponent(sinceIso)})&limit=${MAX_EMAILS_PER_RUN * CANDIDATE_OVERFETCH}`;
   const res = await supa(path);
   if (!res.ok) return [];
   return (await res.json()) as ProfileRow[];
@@ -71,7 +77,23 @@ async function recentSessions(userId: string): Promise<SessionRow[]> {
   return (await res.json()) as SessionRow[];
 }
 
-function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: string; html: string } | null {
+// Cumulative session count across all time (used for Google Review trigger)
+async function totalSessionCount(userId: string): Promise<number> {
+  const path = `sessions?user_id=eq.${encodeURIComponent(userId)}&select=id`;
+  const res = await supa(path);
+  if (!res.ok) return 0;
+  const rows = await res.json().catch(() => []);
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
+const GOOGLE_REVIEW_URL = process.env.GOOGLE_REVIEW_URL || "";
+
+function buildDigest(
+  profile: ProfileRow,
+  sessions: SessionRow[],
+  totalSessions: number,
+  footer?: EmailFooterOptions,
+): { subject: string; html: string } | null {
   if (sessions.length === 0) return null;
   const latest = sessions[0];
   const latestReport = (latest.report_json || {}) as Record<string, unknown>;
@@ -86,8 +108,12 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
   const safeName = escapeHtml(firstName);
   const sessionCount = `${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
 
+  // Show Google Review ask for users with ≥3 total sessions and latest score ≥75
+  const showReviewAsk = GOOGLE_REVIEW_URL && totalSessions >= 3 && score >= 75;
+
   const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
   const html = emailShell({
+    footer,
     preview: `${sessionCount} this week, latest score ${score}.`,
     body:
       title("Your week,", { accentWord: "in review." }) +
@@ -98,13 +124,24 @@ function buildDigest(profile: ProfileRow, sessions: SessionRow[]): { subject: st
         ["Band", band || "Uncalibrated"],
         ["Change from prior", deltaStr],
       ]) +
-      button("View your latest report", "https://app.hirestepx.com/sessions") +
+      button("View your latest report", `${APP_URL}/sessions`) +
+      (showReviewAsk
+        ? para(
+            `One small favour: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
+          ) +
+          button("Leave a Google review", GOOGLE_REVIEW_URL)
+        : "") +
       para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
   });
   return { subject, html };
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  extra: { reply_to: string; headers: Record<string, string> },
+): Promise<boolean> {
   if (!RESEND_API_KEY) return false;
   try {
     const res = await fetch("https://api.resend.com/emails", {
@@ -114,10 +151,11 @@ async function sendEmail(to: string, subject: string, html: string): Promise<boo
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "HireStepX <reports@hirestepx.com>",
+        from: FROM_EMAIL,
         to: [to],
         subject,
         html,
+        ...extra,
       }),
     });
     return res.ok;
@@ -133,34 +171,54 @@ async function markSent(userId: string): Promise<void> {
   });
 }
 
+// Each user needs ~4 sequential network round-trips (2 Supabase reads, a
+// Resend send, a mark-sent patch). Run users in bounded-concurrency batches
+// instead of one at a time — 50 users x 4 serial round-trips routinely blew
+// past the edge function's 25s initial-response limit.
+const USER_CONCURRENCY = 8;
+
+async function processUser(user: ProfileRow): Promise<"sent" | "skipped"> {
+  const [sessions, total] = await Promise.all([recentSessions(user.id), totalSessionCount(user.id)]);
+  const parts = await marketingEmailParts(user.id, "marketing");
+  const digest = buildDigest(user, sessions, total, parts.footer);
+  if (!digest) return "skipped";
+  const ok = await sendEmail(user.email, digest.subject, digest.html, parts.resend);
+  if (!ok) return "skipped";
+  await markSent(user.id);
+  return "sent";
+}
+
+async function processInBatches(users: ProfileRow[]): Promise<{ sent: number; skipped: number }> {
+  let sent = 0;
+  let skipped = 0;
+  for (let i = 0; i < users.length; i += USER_CONCURRENCY) {
+    const batch = users.slice(i, i + USER_CONCURRENCY);
+    const results = await Promise.all(batch.map(processUser));
+    for (const result of results) {
+      if (result === "sent") sent++;
+      else skipped++;
+    }
+  }
+  return { sent, skipped };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   // Authenticate: Vercel cron attaches the secret as a bearer token.
-  const auth = req.headers.get("authorization") || "";
-  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
+  if (!verifyCronAuth(req)) {
     return new Response("unauthorized", { status: 401 });
   }
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return new Response(JSON.stringify({ error: "supabase not configured" }), { status: 503 });
   }
 
-  const users = await candidateUsers();
-  let sent = 0;
-  let skipped = 0;
-  for (const user of users) {
-    const sessions = await recentSessions(user.id);
-    const digest = buildDigest(user, sessions);
-    if (!digest) { skipped++; continue; }
-    const ok = await sendEmail(user.email, digest.subject, digest.html);
-    if (ok) {
-      await markSent(user.id);
-      sent++;
-    } else {
-      skipped++;
-    }
-  }
+  const candidates = await candidateUsers();
+  const sendable = await filterSuppressed({ supabaseUrl: SUPABASE_URL, serviceKey: SUPABASE_SERVICE_KEY }, candidates, "marketing");
+  const users = sendable.slice(0, MAX_EMAILS_PER_RUN);
+  const { sent, skipped } = await processInBatches(users);
+  await recordCronResult("weekly-summary", { errors: 0 });
 
   return new Response(
-    JSON.stringify({ sent, skipped, total: users.length, emailEnabled: !!RESEND_API_KEY }),
+    JSON.stringify({ sent, skipped, suppressed: candidates.length - sendable.length, total: users.length, emailEnabled: !!RESEND_API_KEY }),
     { status: 200, headers: { "Content-Type": "application/json" } },
   );
 }
