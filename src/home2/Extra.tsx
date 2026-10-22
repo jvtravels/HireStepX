@@ -88,27 +88,27 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-export function Trust() {
+function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage: (i: number) => React.ReactNode }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
   return (
-    <section className="hx-sec hx-privacy" id="faq">
+    <section className="hx-sec hx-privacy" id={id}>
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="hx-tr">
           <div className="hx-tr-l">
             <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
-            <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>Questions, <b>answered plainly</b>.</h2>
-            <div className="hx-ri" style={{ ["--i" as string]: 2 }}><PrivStage i={shown} /></div>
+            <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
+            <div className="hx-ri" style={{ ["--i" as string]: 2 }}>{stage(shown)}</div>
           </div>
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
-            {QA.map(([q, a], i) => (
+            {qa.map(([q, a], i) => (
               <div key={q} className="hx-fi" data-open={open === i}>
-                <button type="button" className="hx-fq" aria-expanded={open === i} aria-controls={`hx-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
+                <button type="button" className="hx-fq" aria-expanded={open === i} aria-controls={`${id ?? "hx"}-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
                   <span className="hx-ft"><i className="hx-gdot" />{q}</span>
                   <span className="hx-fchev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2.5v11M2.5 8h11" /></svg></span>
                 </button>
-                <div className="hx-fp" id={`hx-fa-${i}`} role="region"><div><p>{a}</p></div></div>
+                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region"><div><p>{a}</p></div></div>
               </div>
             ))}
           </div>
@@ -116,4 +116,144 @@ export function Trust() {
       </div>
     </section>
   );
+}
+
+export function Trust() {
+  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={QA} stage={(i) => <PrivStage i={i} />} />;
+}
+
+const EMP_QA: [string, string][] = [
+  ["Can I hire for any role?", "Describe any role. We rank the people in our pool who fit it, so a niche role may show fewer matches than a common one."],
+  ["How are candidates ranked?", "Mostly on how well their role, skills and location fit what you posted. Practice adds to that: how well they scored and how many sessions they have done."],
+  ["Who are these candidates?", "People preparing for interviews on HireStepX. You read their scores and answers first. Their name and contact stay hidden until you unlock them, and candidates who have opted out are never shown."],
+  ["Does the candidate know I looked?", "They get a general notice that an employer viewed their practice evidence. It never names your company or role."],
+  ["What if nobody fits yet?", "Matching reruns every night and whenever a candidate updates their resume, so new people can appear after you post."],
+  ["Do I pay to post a job?", "No. Posting, matching, reading scores and comparing are free. You pay only when you unlock a candidate to contact."],
+];
+
+function EmpStage({ i }: { i: number }) {
+  const [role, setRole] = useState(0);
+  const [unlocked, setUnlocked] = useState(false);
+  const ROLES: [string, string, string][] = [
+    ["Backend Engineer", "Many matches", "Common"],
+    ["Quantum chemist", "A few matches", "Niche"],
+  ];
+  return (
+    <div className="hx-priv-stage" aria-live="polite">
+      <div className="hx-priv-top">
+        <span className="hx-priv-lab"><i className="hx-gdot" />{EMP_QA[i][0]}</span>
+        {i === 2 && (
+          <button type="button" role="switch" aria-checked={unlocked} aria-label="Unlock this candidate" className="hx-sw" onClick={() => setUnlocked(!unlocked)}>
+            <i /><em>{unlocked ? "Unlocked" : "Locked"}</em>
+          </button>
+        )}
+      </div>
+      <div className="hx-priv-body" key={i === 2 ? `u${unlocked}` : i === 0 ? `r${role}` : i}>
+        {i === 0 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">Pick a role</p>
+            <div className="hx-pv-row">
+              {ROLES.map(([r], k) => (
+                <button key={r} type="button" className="hx-pv-opt" aria-pressed={role === k} onClick={() => setRole(k)}>{r}</button>
+              ))}
+            </div>
+            <p className="hx-pv-note">{ROLES[role][1]} in the pool. <em className="hx-pv-tag">{ROLES[role][2]}</em></p>
+          </div>
+        )}
+        {i === 1 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">What moves a candidate up</p>
+            <div className="hx-pv-row"><div><b>Role, skills, location</b><span>How well they fit your post</span></div><em className="hx-pv-tag">Mostly</em></div>
+            <div className="hx-pv-row"><div><b>Practice</b><span>Scores and sessions done</span></div><em className="hx-pv-tag">Adds</em></div>
+          </div>
+        )}
+        {i === 2 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">{unlocked ? "After you unlock" : "What you see first"}</p>
+            <div className="hx-vis-row">
+              <span className="hx-vis-av">4F</span>
+              <div><b>{unlocked ? "Name and contact shown" : "Candidate 4F2K"}</b><span>Product Analyst · Bengaluru</span></div>
+              <strong>82</strong>
+            </div>
+            <div className="hx-vis-lock">
+              {["Name", "Phone", "Email"].map((f) => <span key={f}>{unlocked ? <b className="hx-vis-open">{f}</b> : <><Lock />{f}</>}</span>)}
+            </div>
+          </div>
+        )}
+        {i === 3 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">What the candidate gets</p>
+            <div className="hx-pv-row"><div><b>An employer viewed your practice evidence</b><span>A general notice</span></div></div>
+            <div className="hx-pv-row"><div><b>Your company</b></div><em className="hx-pv-tag gone">Never named</em></div>
+            <div className="hx-pv-row"><div><b>Your role</b></div><em className="hx-pv-tag gone">Never named</em></div>
+          </div>
+        )}
+        {i === 4 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">New people can appear</p>
+            <ol className="hx-pv-steps">
+              <li><b>Every night</b><span>Matching reruns for your open roles</span></li>
+              <li><b>When a resume changes</b><span>That candidate is matched again</span></li>
+            </ol>
+          </div>
+        )}
+        {i === 5 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">What costs money</p>
+            {["Posting a role", "Matching and scores", "Comparing candidates"].map((n) => (
+              <div className="hx-pv-row" key={n}><div><b>{n}</b></div><em className="hx-pv-tag">Free</em></div>
+            ))}
+            <div className="hx-pv-row"><div><b>Unlocking a candidate</b></div><em className="hx-pv-tag gone" style={{ textDecoration: "none" }}>Paid</em></div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function EmpFaq() {
+  return <FaqBlock id="emp-faq" title={<>Before you <b>sign up</b>.</>} qa={EMP_QA} stage={(i) => <EmpStage i={i} />} />;
+}
+
+const CAND_QA: [string, string][] = [
+  QA[0],
+  ["What questions will I get?", "They come from your target role, your experience, the company you name and your resume. A backend engineer and a sales executive get different questions."],
+  ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed. After that it is ₹9 a session, or ₹39 for five sessions valid for 30 days."],
+  QA[2],
+  QA[3],
+  QA[4],
+];
+
+const SAMPLE_Q: [string, string[]][] = [
+  ["Backend Engineer", ["How would you design a rate limiter?", "Tell me about a time you made something faster.", "How do you debug a slow query?"]],
+  ["Product Analyst", ["How would you size the market for a new feature?", "A metric dropped 8% overnight. What do you check first?", "Tell me about a time data changed your mind."]],
+  ["Sales Executive", ["Sell me this pen.", "Tell me about a deal you almost lost.", "How do you handle a client who says it costs too much?"]],
+];
+
+function CandStage({ i }: { i: number }) {
+  const [role, setRole] = useState(0);
+  if (i !== 1) return <PrivStage i={i === 0 ? 0 : i === 2 ? 1 : i - 1} />;
+  return (
+    <div className="hx-priv-stage" aria-live="polite">
+      <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[1][0]}</span></div>
+      <div className="hx-priv-body" key={role}>
+        <div className="hx-priv-card">
+          <p className="hx-mini-cap">Pick a role</p>
+          <div className="hx-pv-row" style={{ flexWrap: "wrap", justifyContent: "flex-start" }}>
+            {SAMPLE_Q.map(([r], k) => (
+              <button key={r} type="button" className="hx-pv-opt" aria-pressed={role === k} onClick={() => setRole(k)}>{r}</button>
+            ))}
+          </div>
+          <ol className="hx-pv-steps">
+            {SAMPLE_Q[role][1].map((q) => <li key={q}><span>{q}</span></li>)}
+          </ol>
+          <p className="hx-pv-note">Samples. Yours are written from your resume.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function CandFaq() {
+  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={CAND_QA} stage={(i) => <CandStage i={i} />} />;
 }
