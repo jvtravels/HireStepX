@@ -71,6 +71,18 @@ const nextConfig = {
 
   async rewrites() {
     return [
+      // staging.hirestepx.com is an alias of the production deployment, so
+      // VERCEL_ENV can't tell the two apart; gate the new homepage by host.
+      {
+        source: "/",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/home-next",
+      },
+      {
+        source: "/employers",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/employers-next",
+      },
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
       // root app/opengraph-image.tsx on the "opengraph-image" metadata
       // convention name, so Next assigns the nested route a hash-suffixed
@@ -91,6 +103,19 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // /home-next is the staging-only homepage; send every other host to "/".
+      {
+        source: "/home-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/employers-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/employers",
+        permanent: false,
+      },
       // www → non-www 301. Vercel serves both by default; without this redirect
       // Google indexes www.hirestepx.com pages separately from hirestepx.com,
       // splitting PageRank across duplicate URLs even when canonical tags are correct.
