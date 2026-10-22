@@ -1,4 +1,5 @@
-import { CandidatesPage, EmployersPage } from "./Pages";
+import { CandidatesPage } from "./Candidates";
+import { EmployersPage } from "./Pages";
 
 export function CandidatesDesktop() {
   return <div style={{ width: 1728 }}><CandidatesPage /></div>;

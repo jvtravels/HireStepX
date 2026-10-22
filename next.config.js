@@ -83,6 +83,11 @@ const nextConfig = {
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/employers-next",
       },
+      {
+        source: "/candidates",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/candidates-next",
+      },
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
       // root app/opengraph-image.tsx on the "opengraph-image" metadata
       // convention name, so Next assigns the nested route a hash-suffixed
@@ -114,6 +119,12 @@ const nextConfig = {
         source: "/employers-next",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/employers",
+        permanent: false,
+      },
+      {
+        source: "/candidates-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
         permanent: false,
       },
       // www → non-www 301. Vercel serves both by default; without this redirect

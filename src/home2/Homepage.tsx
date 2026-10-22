@@ -13,7 +13,7 @@ function Arrow() {
   );
 }
 
-export function Nav({ active, talentHref = "#candidates" }: { active?: "talent" | "companies"; talentHref?: string }) {
+export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies"; talentHref?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;

@@ -4,9 +4,10 @@ import { ScoreChip } from "../employer/_atoms";
 import { homeCss } from "./homeCss";
 import { pagesCss } from "./pagesCss";
 import { Footer, Nav } from "./Homepage";
+import { EmpFaq } from "./Extra";
 import { delay, reduced, useReveal, useScrollStage } from "./motion";
 
-function Arrow() {
+export function Arrow() {
   return (
     <svg className="hx-arr" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <g className="hx-arr-c"><path className="hx-arr-a hx-arr-t" d="M6 4L10 8" /><path className="hx-arr-a hx-arr-b" d="M10 8L6 12" /></g>
@@ -16,7 +17,7 @@ function Arrow() {
 
 const PHOTOS = new Set(["a41f", "c92d", "e07b", "f19a"]);
 
-function Av({ id, size }: { id: string; size?: number }) {
+export function Av({ id, size }: { id: string; size?: number }) {
   const px = size ?? 24;
   if (PHOTOS.has(id)) {
     return <img className="hx-av" src={`/people/${id}.jpg`} alt="" width={px} height={px} style={{ width: px, height: px }} />;
@@ -24,23 +25,23 @@ function Av({ id, size }: { id: string; size?: number }) {
   return <span className="hx-av hx-id" aria-hidden="true" style={size ? { ["--s" as string]: `${size}px` } : undefined}>{id.slice(0, 2)}</span>;
 }
 
-const Lock = () => (
+export const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
 );
 
-function Shell({ active, children }: { active: "talent" | "companies"; children: React.ReactNode }) {
+export function Shell({ active, children }: { active: "talent" | "companies"; children: React.ReactNode }) {
   return (
     <div className="hx">
       <style>{homeCss}</style>
       <style>{pagesCss}</style>
-      <Nav active={active} talentHref="/#candidates" />
+      <Nav active={active} talentHref="/candidates" />
       <main>{children}</main>
       <Footer />
     </div>
   );
 }
 
-function Win({ left, right, alt, children }: { left: string; right?: React.ReactNode; alt?: string; children: React.ReactNode }) {
+export function Win({ left, right, alt, children }: { left: string; right?: React.ReactNode; alt?: string; children: React.ReactNode }) {
   return (
     <div className="pg-win" role={alt ? "img" : undefined} aria-label={alt}>
       <header className="hx-ah">
@@ -53,78 +54,7 @@ function Win({ left, right, alt, children }: { left: string; right?: React.React
   );
 }
 
-function Row({ flip, kicker, title, body, points, children, band, cool }: {
-  flip?: boolean; kicker: string; title: React.ReactNode; body: string; points?: string[]; children: React.ReactNode; band?: boolean; cool?: boolean;
-}) {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className={band ? "pg-sec pg-band" : "pg-sec"}>
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className={flip ? "pg-row flip" : "pg-row"}>
-          <div className="pg-copy hx-ri" style={delay(0)}>
-            <span className="hx-kicker">{kicker}</span>
-            <h2 className="hx-h2">{title}</h2>
-            <p>{body}</p>
-            {points && <ul className="pg-list">{points.map((p) => <li key={p}>{p}</li>)}</ul>}
-          </div>
-          <div className={cool ? "pg-stage cool hx-ri" : "pg-stage hx-ri"} style={delay(2)}>{children}</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Hero({ kicker, title, lede, primary, secondary, note, children }: {
-  kicker: string; title: React.ReactNode; lede: string; primary: [string, string]; secondary: [string, string]; note?: string; children: React.ReactNode;
-}) {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className="pg-hero">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="pg-hero-in">
-          <div className="hx-ri" style={delay(0)}>
-            <span className="hx-kicker">{kicker}</span>
-            <h1 className="pg-h1">{title}</h1>
-            <p className="pg-lede">{lede}</p>
-            <div className="pg-cta">
-              <a data-no-underline className="hx-btn lg" href={primary[1]}>{primary[0]} <Arrow /></a>
-              <a data-no-underline className="hx-btn lg alt" href={secondary[1]}>{secondary[0]}</a>
-            </div>
-            {note && <p className="pg-note">{note}</p>}
-          </div>
-          <div className="pg-stage hx-ri" style={delay(2)}>{children}</div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Pricing({ title, body, rows }: { title: React.ReactNode; body: string; rows: [string, string, string, string?][] }) {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className="pg-sec" id="pricing">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="pg-price">
-          <div className="pg-copy hx-ri" style={delay(0)}>
-            <span className="hx-kicker">Pricing</span>
-            <h2 className="hx-h2">{title}</h2>
-            <p>{body}</p>
-          </div>
-          <div className="hx-ri" style={delay(2)}>
-            <ul className="pg-rows">
-              {rows.map(([n, d, p, u]) => (
-                <li key={n}><div><b>{n}</b><span>{d}</span></div><strong>{p}{u && <small>{u}</small>}</strong></li>
-              ))}
-            </ul>
-            <p className="pg-pnote"><a href="/pricing">Full pricing</a></p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Close({ kicker, title, body, primary, secondary, notes }: {
+export function Close({ kicker, title, body, primary, secondary, notes }: {
   kicker?: string; title: React.ReactNode; body: string; primary: [string, string]; secondary?: [string, string]; notes?: string[];
 }) {
   return (
@@ -147,7 +77,7 @@ function Close({ kicker, title, body, primary, secondary, notes }: {
 
 const WAVE = [10, 22, 14, 30, 18, 36, 24, 12, 28, 16, 32, 20, 10, 26, 14, 22, 30, 18, 12, 24];
 
-function Mic() {
+export function Mic() {
   return (
     <div className="pg-live">
       <span className="pg-dot" />
@@ -158,231 +88,13 @@ function Mic() {
   );
 }
 
-function Dim({ items }: { items: [string, number][] }) {
+export function Dim({ items }: { items: [string, number][] }) {
   return (
     <ul className="pg-mini">
       {items.map(([n, v]) => (
         <li key={n}><span>{n}</span><div className="hx-bar"><i style={{ width: `${v}%` }} /></div><b>{v}</b></li>
       ))}
     </ul>
-  );
-}
-
-/* ── Candidates ── */
-
-function InterviewWindow() {
-  return (
-    <Win left="HireStepX / Mock interview / Backend Engineer" right="Q3 of 6">
-      <div className="pg-body">
-        <ol className="hx-prog" style={{ display: "flex" }} aria-label="Question 3 of 6">{[0, 1, 2, 3, 4, 5].map((i) => <li key={i} className={i < 2 ? "done" : i === 2 ? "now" : undefined} />)}</ol>
-        <h3 className="pg-q">Tell me about a time you made something faster.</h3>
-        <Mic />
-        <p className="pg-tx"><i>0:31</i>&nbsp; We timed checkout on the UPI path before and after, and watched it for two sale weekends</p>
-        <div className="pg-ctl"><span>Answer out loud. Nothing to type.</span><span className="hx-num">Backend Engineer</span></div>
-      </div>
-    </Win>
-  );
-}
-
-function SessionWindow() {
-  const qs: [string, string, number | null][] = [
-    ["Introduce yourself and your last project", "Done", 78],
-    ["Why do you want this role?", "Done", 81],
-    ["Tell me about a time you made something faster", "Answering now", null],
-    ["How would you design a rate limiter?", "Next", null],
-    ["Describe a disagreement with a teammate", "Next", null],
-    ["Where do you want to be in two years?", "Next", null],
-  ];
-  return (
-    <Win left="HireStepX / Mock interview / Backend Engineer" right="12 min">
-      <div className="pg-body">
-        <ul className="pg-matches">
-          {qs.map(([q, s, v], i) => (
-            <li key={q} className={s === "Answering now" ? "first" : undefined} style={{ gridTemplateColumns: "20px minmax(0, 1fr) auto", opacity: s === "Next" ? 0.6 : 1 }}>
-              <span className="hx-n">{i + 1}</span>
-              <span><b style={{ fontWeight: 500 }}>{q}</b><em>{s}</em></span>
-              {v !== null ? <ScoreChip score={v} /> : s === "Answering now" ? <span className="pg-dot" /> : <span />}
-            </li>
-          ))}
-        </ul>
-        <Mic />
-      </div>
-    </Win>
-  );
-}
-
-function SetupWindow() {
-  return (
-    <Win left="HireStepX / New interview" right="Step 1 of 2">
-      <div className="pg-body">
-        <div className="pg-two">
-          <label className="pg-field"><span>Role</span><div className="pg-input">Backend Engineer<em>Change</em></div></label>
-          <label className="pg-field"><span>Experience</span><div className="pg-input">3 years<em>Change</em></div></label>
-        </div>
-        <label className="pg-field"><span>Company you are aiming at</span><div className="pg-input">Product company, Bengaluru<em>Change</em></div></label>
-        <div className="pg-field">
-          <span>Resume</span>
-          <div className="pg-file">
-            <span className="hx-pv-doc" aria-hidden="true"><i /><i /><i /></span>
-            <div>priya_resume.pdf<div className="pg-tags" style={{ marginTop: 8 }}>{["Node.js", "PostgreSQL", "Redis", "System design"].map((s) => <span key={s} className="pg-tag on">{s}</span>)}</div></div>
-            <em>Read</em>
-          </div>
-        </div>
-        <a className="hx-fakebtn" style={{ alignSelf: "flex-start" }}>Start interview</a>
-      </div>
-    </Win>
-  );
-}
-
-function CoachWindow() {
-  return (
-    <Win left="Session report / Question 3 of 6" right="Answer score 72">
-      <div className="pg-body">
-        <h3 className="pg-q">You made checkout 40% faster. How did you know?</h3>
-        <div className="pg-ans">
-          <div>
-            <h4><span>You said</span><span>R missing</span></h4>
-            <p>We made it <mark>a lot</mark> better after the change.</p>
-          </div>
-          <div className="better">
-            <h4><span>Try saying</span><span>+14 points</span></h4>
-            <p>We made it better. <ins>Checkout time fell from 1.8s to 1.1s, and stayed there through both sales.</ins></p>
-          </div>
-        </div>
-        <Dim items={[["Clarity", 80], ["Relevance", 76], ["Depth", 64], ["Confidence", 70]]} />
-      </div>
-    </Win>
-  );
-}
-
-function Decay() {
-  const rows: [string, number, number, string, boolean][] = [
-    ["System design", 38, 46, "Practise today", true],
-    ["Conflict stories", 66, 46, "Practise in 5 days", false],
-    ["Communication", 88, 46, "Going well", false],
-  ];
-  return (
-    <Win left="Your skills" right="Updated after every session">
-      <div className="pg-body pg-decay">
-        <ul>
-          {rows.map(([n, v, m, d, due]) => (
-            <li key={n}>
-              <span>{n}</span>
-              <div className="pg-fade" aria-label={`${n} strength ${v} percent`}><i className={due ? "due" : undefined} style={{ width: `${v}%` }} /><u style={{ left: `${m}%` }} /></div>
-              <em className={due ? "due" : undefined}>{d}</em>
-            </li>
-          ))}
-        </ul>
-        <div className="pg-ctl"><span>The line marks where a skill starts to fade.</span></div>
-      </div>
-    </Win>
-  );
-}
-
-function Visibility() {
-  return (
-    <div className="pg-seen">
-      <div>
-        <h4>Discovery on</h4>
-        <div className="pg-who"><span className="hx-vis-av">4F</span><div><b>Candidate 4F2K</b><span>Backend Engineer, Bengaluru</span></div><span className="sc"><ScoreChip score={82} /></span></div>
-        <div className="pg-lockrow">{["Name", "Phone", "Email"].map((f) => <span key={f}><Lock />{f}</span>)}</div>
-      </div>
-      <div className="off">
-        <h4>Discovery off</h4>
-        <p>You do not appear in any employer search.</p>
-      </div>
-    </div>
-  );
-}
-
-export function CandidatesPage() {
-  return (
-    <Shell active="talent">
-      <Hero
-        kicker="For candidates"
-        title={<>Practise the interview you will <b>actually get</b>.</>}
-        lede="Pick your role and company, upload your resume, and answer out loud. You get a score on every answer and the exact sentence to fix."
-        primary={["Practise free", "/signup"]}
-        secondary={["See a sample report", "#report"]}
-        note="2 free sessions. No card needed."
-      >
-        <InterviewWindow />
-      </Hero>
-
-      <Row
-        kicker="Set up"
-        title={<>Questions that fit <b>your resume</b>.</>}
-        body="Tell us the role, your experience and the company you want. Your resume is read for skills and projects, so the questions sound like the ones you will be asked."
-        points={["PDF or text resume", "Role and company you are aiming at", "Ready in about a minute"]}
-        band
-        cool
-      >
-        <SetupWindow />
-      </Row>
-
-      <Row
-        flip
-        kicker="Practise"
-        title={<>A voice asks. You <b>answer out loud</b>.</>}
-        body="No typing and no multiple choice. You speak, the answer is turned into text on screen, and you move to the next question when you are ready."
-        points={["Six questions per session", "Your answer is written out as you speak", "Pause and finish whenever you like"]}
-      >
-        <SessionWindow />
-      </Row>
-
-      <div id="report">
-        <Row
-          kicker="Review"
-          title={<>The report points at the sentence that <b>cost you</b>.</>}
-          body="Every answer is marked on situation, task, action and result, then scored on clarity, relevance, depth and confidence. A coached version shows what a stronger answer sounds like."
-          points={["STAR breakdown for each answer", "A model answer to compare against", "Practise the same question again"]}
-          band
-          cool
-        >
-          <CoachWindow />
-        </Row>
-      </div>
-
-      <Row
-        flip
-        kicker="Keep going"
-        title={<>Practise again <b>before it fades</b>.</>}
-        body="Skills slip when you stop using them. HireStepX tracks each one and tells you when to revisit it, so one good session does not have to be your last."
-        points={["A next-practice date for every skill", "Starts with your weakest area"]}
-      >
-        <Decay />
-      </Row>
-
-      <Row
-        kicker="Get found"
-        title={<>Employers find you. <b>You decide</b>.</>}
-        body="Switch discovery on and employers can search by role and score. They see a code, never your name, phone or email. Switch it off in Settings and you vanish from search."
-        points={["On by default, one switch to turn off", "Delete your account any time"]}
-        band
-        cool
-      >
-        <Visibility />
-      </Row>
-
-      <Pricing
-        title={<>Start free. Pay <b>only as you practise</b>.</>}
-        body="No subscription. Credits you buy never expire, and you can pay by UPI, card or netbanking."
-        rows={[
-          ["Free", "Two full sessions with scored reports. No card needed.", "₹0"],
-          ["One session", "A full interview and report. The credit never expires.", "₹9", "per session"],
-          ["Sprint Pack", "Five sessions for a week of focused prep. Valid for 30 days.", "₹39", "5 sessions"],
-        ]}
-      />
-
-      <Close
-        kicker="Ready when you are"
-        title={<>Start with <b>one answer</b>.</>}
-        body="Practise out loud, see exactly what to fix, and let employers find the proof."
-        primary={["Practise free", "/signup"]}
-        secondary={["Hire from proof", "/employers"]}
-        notes={["2 free sessions", "No card needed", "Delete anytime"]}
-      />
-    </Shell>
   );
 }
 
@@ -622,30 +334,6 @@ function CompareView() {
 }
 
 
-function Faq({ kicker, title, items }: { kicker?: string; title: React.ReactNode; items: [string, string][] }) {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className="pg-sec">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="pg-price">
-          <div className="pg-copy hx-ri" style={delay(0)}>
-            {kicker && <span className="hx-kicker">{kicker}</span>}
-            <h2 className="hx-h2">{title}</h2>
-          </div>
-          <div className="pg-faq hx-ri" style={delay(2)}>
-            {items.map(([q, a], i) => (
-              <details key={q} open={i === 0}>
-                <summary>{q}<i aria-hidden="true" /></summary>
-                <p>{a}</p>
-              </details>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function EmpHero() {
   const { ref, on } = useReveal<HTMLDivElement>();
   return (
@@ -673,12 +361,12 @@ const HOW: [string, string][] = [
   ["Unlock", "Pay to see the name and contact details, then invite them to interview."],
 ];
 
-const d = (s: number): React.CSSProperties => ({ ["--d" as string]: `${s}s` });
+export const d = (s: number): React.CSSProperties => ({ ["--d" as string]: `${s}s` });
 
 const HS_SKILLS: [string, number][] = [["Node.js", 88], ["PostgreSQL", 84], ["System design", 80]];
 const HS_RANK = [["a41f", 97, 2], ["e07b", 80, 0], ["c92d", 74, 3], ["f19a", 66, 1]] as const;
 
-function SkillBars({ rows, start }: { rows: [string, number | null][]; start: number }) {
+export function SkillBars({ rows, start }: { rows: [string, number | null][]; start: number }) {
   return (
     <ul className="hs-bars">
       {rows.map(([s, v], i) => (
@@ -688,7 +376,7 @@ function SkillBars({ rows, start }: { rows: [string, number | null][]; start: nu
   );
 }
 
-function Cursor({ press }: { press: number }) {
+export function Cursor({ press }: { press: number }) {
   return (
     <span className="hs-cur" style={d(press - 1.1)} aria-hidden="true">
       <svg viewBox="0 0 20 22" width="20" height="22"><path d="M2 2l15 7.5-6.3 1.8L8.6 18z" fill="currentColor" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" /></svg>
@@ -697,7 +385,7 @@ function Cursor({ press }: { press: number }) {
   );
 }
 
-function Summary({ children, at }: { children: React.ReactNode; at: number }) {
+export function Summary({ children, at }: { children: React.ReactNode; at: number }) {
   return (
     <p className="hs-sum hs-in" style={d(at)}>
       <b><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /></svg>HireStepX summary</b>
@@ -794,7 +482,7 @@ const HOW_ICONS: React.ReactNode[] = [
   <g key="5"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8.5 11V8a3.5 3.5 0 017 0" /></g>,
 ];
 
-function HowItWorks() {
+export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [string, string][]; icons: React.ReactNode[]; scene: (n: number) => React.ReactNode; wideAt?: number; title: string }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [step, setStep] = useState(0);
   const [armed, setArmed] = useState(false);
@@ -824,21 +512,21 @@ function HowItWorks() {
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="em-head ctr hx-ri" style={delay(0)}>
           <span className="hx-kicker">How it works</span>
-          <h2 className="hx-h2">From a job post to a conversation in five steps.</h2>
+          <h2 className="hx-h2">{title}</h2>
         </div>
         <div className={`hs${paused ? " paused" : ""}`} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)}>
           <div className="hs-tabs hx-ri" style={delay(1)} role="tablist" aria-label="How it works" ref={tabs}>
-            {HOW.map(([t], i) => (
+            {steps.map(([t], i) => (
               <button key={t} type="button" role="tab" id={`hs-t${i}`} aria-selected={i === step} aria-controls="hs-panel" className={`hs-tab${i === step ? " on" : i < step ? " done" : ""}`} onClick={() => setStep(i)}>
-                <span className="hs-bar"><i style={{ animationDuration: `${STEP_MS}ms` }} onAnimationEnd={() => setStep((s) => (s + 1) % HOW.length)} /></span>
-                <span className="hs-t"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{HOW_ICONS[i]}</svg>{t}</span>
+                <span className="hs-bar"><i style={{ animationDuration: `${STEP_MS}ms` }} onAnimationEnd={() => setStep((s) => (s + 1) % steps.length)} /></span>
+                <span className="hs-t"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[i]}</svg>{t}</span>
               </button>
             ))}
           </div>
           <div ref={stage} id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage hx-ri" style={delay(2)}>
-            <div key={step} className={`hs-scene${step === 3 ? " wide" : ""}`}><HowScene n={step} /></div>
+            <div key={step} className={`hs-scene${step === wideAt ? " wide" : ""}`}>{scene(step)}</div>
           </div>
-          <p key={step} className="hs-cap" aria-live="polite">{HOW[step][1]}</p>
+          <p key={step} className="hs-cap" aria-live="polite">{steps[step][1]}</p>
         </div>
       </div>
     </section>
@@ -892,15 +580,6 @@ function WhyUs() {
     </section>
   );
 }
-
-const EMP_FAQ: [string, string][] = [
-  ["Can I hire for any role?", "Describe any role. We rank the people in our pool who fit it, so a niche role may show fewer matches than a common one."],
-  ["How are candidates ranked?", "Mostly on how well their role, skills and location fit what you posted. Practice adds to that: how well they scored and how many sessions they have done."],
-  ["Who are these candidates?", "People preparing for interviews on HireStepX. You read their scores and answers first. Their name and contact stay hidden until you unlock them, and candidates who have opted out are never shown."],
-  ["Does the candidate know I looked?", "They get a general notice that an employer viewed their practice evidence. It never names your company or role."],
-  ["What if nobody fits yet?", "Matching reruns every night and whenever a candidate updates their resume, so new people can appear after you post."],
-  ["Do I pay to post a job?", "No. Posting, matching, reading scores and comparing are free. You pay only when you unlock a candidate to contact."],
-];
 
 /* ── Features ── */
 
@@ -958,7 +637,9 @@ const TAB_ICONS: React.ReactNode[] = [
   <path key="d" d="M4 5h16v11H9l-5 4z" />,
 ];
 
-const TABS: { name: string; title: string; body: string; points?: string[]; view: (alt: boolean) => React.ReactNode }[] = [
+export type FeatureTab = { name: string; title: string; body: string; points?: string[]; view: (alt: boolean) => React.ReactNode };
+
+const TABS: FeatureTab[] = [
   {
     name: "Ranking",
     title: "Best fit first, every time.",
@@ -986,9 +667,9 @@ const TABS: { name: string; title: string; body: string; points?: string[]; view
   },
 ];
 
-function Features() {
+export function Features({ tabs, icons, kicker, title }: { tabs: FeatureTab[]; icons: React.ReactNode[]; kicker: string; title: string }) {
   const { ref: headRef, on } = useReveal<HTMLDivElement>();
-  const { ref, stage, i, go } = useScrollStage<HTMLDivElement, HTMLDivElement>(TABS.length);
+  const { ref, stage, i, go } = useScrollStage<HTMLDivElement, HTMLDivElement>(tabs.length);
   const [live, setLive] = useState(true);
   const [alt, setAlt] = useState(false);
   useEffect(() => {
@@ -1027,29 +708,29 @@ function Features() {
       <section className="pg-sec ft-head" id="features">
         <div ref={headRef} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
           <div className="em-head ctr hx-ri" style={delay(0)}>
-            <span className="hx-kicker">What you get</span>
-            <h2 className="hx-h2">Everything from first match to final offer.</h2>
+            <span className="hx-kicker">{kicker}</span>
+            <h2 className="hx-h2">{title}</h2>
           </div>
         </div>
       </section>
       <div ref={ref} className="ft">
         <div className="ft-stick">
           <div ref={stage} className="ft-stage">
-            <div className="ft-bg" aria-hidden="true">{TABS.map((t, k) => <i key={t.name} style={{ opacity: `var(--b${k}, ${k === 0 ? 1 : 0})` }} />)}</div>
+            <div className="ft-bg" aria-hidden="true">{tabs.map((t, k) => <i key={t.name} style={{ opacity: `var(--b${k}, ${k === 0 ? 1 : 0})` }} />)}</div>
             <div className="ft-in">
-            <div className="ft-tabs" role="group" aria-label="What you get">
+            <div className="ft-tabs" role="group" aria-label={kicker}>
               <span className="ft-notch" style={{ ["--k" as string]: i }} aria-hidden="true" />
-              {TABS.map((t, k) => (
+              {tabs.map((t, k) => (
                 <button key={t.name} type="button" className={k === i ? "on" : undefined} aria-label={t.name} aria-current={k === i} onClick={() => go(k)}>
-                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{TAB_ICONS[k]}</svg>
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[k]}</svg>
                 </button>
               ))}
             </div>
             <div className="ft-card">
-              {TABS.map((t, k) => (
+              {tabs.map((t, k) => (
                 <div key={t.name} className={`ft-p hx-rv${k === i ? " act" : ""}${k === i && live ? " on" : ""}`} aria-hidden={k !== i} style={{ opacity: `var(--o${k}, ${k === 0 ? 1 : 0})`, transform: `translateY(var(--y${k}, 0px))` }}>
                   <div className="pg-copy">
-                    <span className="ft-name"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{TAB_ICONS[k]}</svg>{t.name}</span>
+                    <span className="ft-name"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[k]}</svg>{t.name}</span>
                     <h3 className="hx-h2">{t.title}</h3>
                     <p>{t.body}</p>
                     {t.points && <ul className="pg-list">{t.points.map((x) => <li key={x}>{x}</li>)}</ul>}
@@ -1132,11 +813,11 @@ export function EmployersPage() {
   return (
     <Shell active="companies">
       <EmpHero />
-      <HowItWorks />
+      <HowItWorks steps={HOW} icons={HOW_ICONS} scene={(n) => <HowScene n={n} />} wideAt={3} title="From a job post to a conversation in five steps." />
       <WhyUs />
-      <Features />
+      <Features tabs={TABS} icons={TAB_ICONS} kicker="What you get" title="Everything from first match to final offer." />
       <EmpPricing />
-      <Faq kicker="Questions" title={<>Before you sign up.</>} items={EMP_FAQ} />
+      <EmpFaq />
       <Close
         kicker="Ready when you are"
         title={<>See who fits before you spend a rupee.</>}
