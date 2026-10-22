@@ -7,7 +7,7 @@ import { getAllCitySlugs } from "../data/city-pages";
 import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
 import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
 import { isSyntheticHeavySalaryPage } from "../src/salaryQuality";
-import { shouldNoindexBlogPost } from "../src/blogQuality";
+import { blogDuplicateKeeper, shouldNoindexBlogPost } from "../src/blogQuality";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
 
 /* sitemap.xml — generated at build time. Includes:
@@ -96,7 +96,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   /* Blog posts — each post uses its own datePublished so Google's freshness
      signal reflects actual content age, not the deploy timestamp. */
   const blogMetaMap = new Map(BLOG_META.map((m) => [m.slug, m]));
-  const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().filter((slug) => !shouldNoindexBlogPost(slug)).map((slug) => ({
+  const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().filter((slug) => !shouldNoindexBlogPost(slug) && !blogDuplicateKeeper(slug)).map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
     lastModified: new Date(blogMetaMap.get(slug)?.datePublished ?? seoPagesLastModified),
     changeFrequency: "monthly" as const,
