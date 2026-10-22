@@ -168,7 +168,7 @@ function deriveCode(el, M, title) {
 
 // ─── 3. build the overlay ───
 function buildOverlay(el, M, opts) {
-  const R = el.getBoundingClientRect(), w = M.w, h = M.h, MG = 44, SP = 15, DOT_GAP = 4.8, GUIDE_GAP = 6.5;
+  const R = el.getBoundingClientRect(), w = M.w, h = M.h, MG = 44, SP = Math.max(15, Math.round(Math.sqrt((w + 88) * (h + 88) / 500))), DOT_GAP = 4.8, GUIDE_GAP = 6.5;
   const layer = document.createElement("div");
   layer.className = "t-gen" + (opts.mode === "skeleton-texts" ? " t-gen--texts" : "");
   layer.setAttribute("aria-hidden", "true"); // decoration only: assistive tech reads the real element
@@ -323,7 +323,7 @@ function frame(G, p, t, D) {
   const eq = G.fade && G.revealAt != null ? SMOOTH_OUT(clamp((t - G.revealAt) / (G.fadeMs || 0.345 * D))) : fq;
   const pad = 80; // keeps the element's own shadow inside the clip
   es.opacity = eq <= 0 ? 0 : f2(eq);
-  es.filter = eq > 0 && eq < 0.99 ? `blur(${f2(3 * (1 - eq))}px)` : G.prev.filter;
+  es.filter = eq > 0 && eq < 0.99 && w * h < 120000 ? `blur(${f2(3 * (1 - eq))}px)` : G.prev.filter;
   if (G.fade) {
     // reveal "fade": no line and no wipe; the drawing fades out as the element fades in, sharpening
     es.clipPath = G.prev.clipPath;

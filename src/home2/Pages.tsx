@@ -345,7 +345,7 @@ function EmpHero() {
         <div className="hx-cta">
           <a data-no-underline className="hx-btn lg" href="/signup">Start hiring <Arrow /></a>
         </div>
-        <Skel className="hx-stage pg-hero-stage hx-ri" style={delay(2)}><HeroChat /></Skel>
+        <Skel className="hx-stage pg-hero-stage" style={delay(2)}><HeroChat /></Skel>
       </div>
     </section>
   );
@@ -525,7 +525,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
               </button>
             ))}
           </div>
-          <div ref={stage} data-sk="pending" id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage hx-ri" style={delay(2)}>
+          <div ref={stage} data-sk="pending" id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage" style={delay(2)}>
             <div key={step} className={`hs-scene${step === wideAt ? " wide" : ""}`}>{scene(step)}</div>
           </div>
           <p key={step} className="hs-cap" aria-live="polite">{steps[step][1]}</p>

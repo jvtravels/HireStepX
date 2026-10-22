@@ -80,7 +80,7 @@ function CandHero() {
             <li><b>No</b> card needed</li>
           </ul>
         </div>
-        <Skel className="hx-stage cx-demo hx-ri" style={delay(2)}><VoiceRound /></Skel>
+        <Skel className="hx-stage cx-demo" style={delay(2)}><VoiceRound /></Skel>
       </div>
     </section>
   );

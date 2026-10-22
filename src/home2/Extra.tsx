@@ -100,7 +100,7 @@ function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNod
           <div className="hx-tr-l">
             <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
             <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
-            <Skel replayKey={shown} className="hx-ri" style={{ ["--i" as string]: 2 }}>{stage(shown)}</Skel>
+            <Skel replayKey={shown}>{stage(shown)}</Skel>
           </div>
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
             {qa.map(([q, a], i) => (
