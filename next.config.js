@@ -70,7 +70,8 @@ const nextConfig = {
   },
 
   async rewrites() {
-    return [
+    return {
+    beforeFiles: [
       // staging.hirestepx.com is an alias of the production deployment, so
       // VERCEL_ENV can't tell the two apart; gate the new homepage by host.
       {
@@ -88,6 +89,8 @@ const nextConfig = {
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/candidates-next",
       },
+    ],
+    afterFiles: [
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
       // root app/opengraph-image.tsx on the "opengraph-image" metadata
       // convention name, so Next assigns the nested route a hash-suffixed
@@ -103,7 +106,8 @@ const nextConfig = {
         source: "/questions/:slug/opengraph-image",
         destination: "/questions/:slug/opengraph-image-15i2cs",
       },
-    ];
+    ],
+    };
   },
 
   async redirects() {

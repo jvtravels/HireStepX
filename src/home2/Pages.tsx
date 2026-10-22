@@ -5,6 +5,7 @@ import { homeCss } from "./homeCss";
 import { pagesCss } from "./pagesCss";
 import { Footer, Nav } from "./Homepage";
 import { EmpFaq } from "./Extra";
+import Skel, { useSkel } from "./Skel";
 import { delay, reduced, useReveal, useScrollStage } from "./motion";
 
 export function Arrow() {
@@ -344,7 +345,7 @@ function EmpHero() {
         <div className="hx-cta">
           <a data-no-underline className="hx-btn lg" href="/signup">Start hiring <Arrow /></a>
         </div>
-        <div className="hx-stage pg-hero-stage hx-ri" style={delay(2)}><HeroChat /></div>
+        <Skel className="hx-stage pg-hero-stage hx-ri" style={delay(2)}><HeroChat /></Skel>
       </div>
     </section>
   );
@@ -489,6 +490,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
   const [seen, setSeen] = useState(false);
   const [held, setHeld] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
+  useSkel(stage);
   const tabs = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -523,7 +525,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
               </button>
             ))}
           </div>
-          <div ref={stage} id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage hx-ri" style={delay(2)}>
+          <div ref={stage} data-sk="pending" id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage hx-ri" style={delay(2)}>
             <div key={step} className={`hs-scene${step === wideAt ? " wide" : ""}`}>{scene(step)}</div>
           </div>
           <p key={step} className="hs-cap" aria-live="polite">{steps[step][1]}</p>
@@ -776,7 +778,7 @@ function EmpPricing() {
             </div>
           </div>
           <div className="pc-r hx-ri" style={delay(2)}>
-            <div className="pg-stage pc-stage">
+            <Skel className="pg-stage pc-stage">
               <Win left="Candidate profile" alt="A candidate profile with scores open and name and contact locked">
                 <div className="pf">
                   <div className="pf-head">
@@ -801,7 +803,7 @@ function EmpPricing() {
                 </div>
                 <div className="pg-ctl pc-ctl"><span>{open ? "Unlocked. You can invite Priya now." : "Read the scores first. Decide after."}</span><button type="button" className="hx-fakebtn pg-press" onClick={() => setOpen(!open)}>{open ? "Lock again" : "Try an unlock"}</button></div>
               </Win>
-            </div>
+            </Skel>
           </div>
         </div>
       </div>
