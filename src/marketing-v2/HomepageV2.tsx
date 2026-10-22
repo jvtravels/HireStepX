@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
+import { useStagingHost, Home2Nav } from "../home2/Chrome";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { tokens as t, fonts, shadows } from "../auth/_tokens";
@@ -332,7 +333,7 @@ const body: CSSProperties = {
 };
 
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
-export function NavV2() {
+function NavV2Legacy() {
   const navLinks: Array<[string, string]> = [
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
@@ -3796,4 +3797,9 @@ export function MobileStickyCTA({ employer = false }: { employer?: boolean } = {
       </a>
     </div>
   );
+}
+
+export function NavV2() {
+  const staging = useStagingHost();
+  return staging ? <Home2Nav /> : <NavV2Legacy />;
 }
