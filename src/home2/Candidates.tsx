@@ -130,23 +130,14 @@ function HeroCoach() {
 function CandHero() {
   const { ref, on } = useReveal<HTMLDivElement>();
   return (
-    <section className="cx-hero">
-      <div ref={ref} className={`hx-wrap cx-hero-in hx-rv${on ? " on" : ""}`}>
-        <div className="cx-copy">
-          <span className="hx-kicker hx-ri" style={delay(0)}>Mock interviews for Indian job seekers</span>
-          <h1 className="cx-h1 hx-ri" style={delay(1)}>Say it out loud. Fix the sentence that <b>costs you</b>.</h1>
-          <p className="cx-lede hx-ri" style={delay(2)}>Answer real questions by voice for your role and target company. Each answer is scored on STAR, and you hear what to say instead.</p>
-          <div className="cx-cta hx-ri" style={delay(3)}>
-            <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-            <a data-no-underline className="cx-ghost" href="#rewrite">See how an answer improves</a>
-          </div>
-          <ul className="cx-facts hx-ri" style={delay(4)}>
-            <li><b>2</b> free sessions</li>
-            <li><b>UPI</b> when you want more</li>
-            <li><b>0</b> cards needed</li>
-          </ul>
+    <section className="hx-hero">
+      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
+        <h1 className="hx-h1">Practise the interview out loud. Fix the one sentence that <b>costs you</b>.</h1>
+        <p className="hx-lede">Pick your role, answer real questions by voice, and see every answer scored on STAR with exactly what to say instead. Your first two sessions are free.</p>
+        <div className="hx-cta">
+          <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
         </div>
-        <div className="cx-demo hx-ri" style={delay(2)}><HeroCoach /></div>
+        <div className="hx-stage pg-hero-stage hx-ri" style={delay(2)}><HeroCoach /></div>
       </div>
     </section>
   );
@@ -176,9 +167,9 @@ function RewriteStory() {
   }, []);
   const P = PASSES[at];
   return (
-    <section className="cx-dark rw" id="rewrite">
+    <section className="pg-sec rw" id="rewrite">
       <div className="hx-wrap">
-        <div className="cx-head">
+        <div className="em-head">
           <span className="hx-kicker">One answer, four passes</span>
           <h2 className="hx-h2">Watch a 58 become a 91 without changing the story.</h2>
           <p>Same project, same person. Only what they said out loud changes.</p>
@@ -193,7 +184,7 @@ function RewriteStory() {
               </li>
             ))}
           </ol>
-          <div className="rw-pane">
+          <div className="rw-pane hx-stage-warm">
             <Win left="Your answer" right={`Pass ${at + 1} of 4`} alt="An interview answer being rewritten in four passes while its score rises">
               <div className="rw-card">
                 <p className="rw-q">Tell me about a time you made something faster.</p>
@@ -237,7 +228,7 @@ function AimIt() {
   return (
     <section className="pg-sec pg-band" id="aim">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="cx-head hx-ri" style={delay(0)}>
+        <div className="em-head ctr hx-ri" style={delay(0)}>
           <span className="hx-kicker">Aimed at the job</span>
           <h2 className="hx-h2">The questions change with the role and the company.</h2>
         </div>
@@ -274,7 +265,7 @@ function Memory() {
   return (
     <section className="pg-sec" id="memory">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="cx-head hx-ri" style={delay(0)}>
+        <div className="em-head ctr hx-ri" style={delay(0)}>
           <span className="hx-kicker">Why it sticks</span>
           <h2 className="hx-h2">You forget most of what you practised within a week.</h2>
           <p>We track the skills you were weakest on and nudge you to say them again just before they fade.</p>
@@ -353,7 +344,7 @@ function CandPricing() {
   return (
     <section className="pg-sec pg-band" id="pricing">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="cx-head hx-ri" style={delay(0)}>
+        <div className="em-head ctr hx-ri" style={delay(0)}>
           <span className="hx-kicker">Pricing</span>
           <h2 className="hx-h2">Two sessions free. Then pay only as you practise.</h2>
         </div>

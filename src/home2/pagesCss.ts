@@ -817,40 +817,8 @@ export const pagesCss = `
 }
 @media (prefers-reduced-motion: reduce) { .rw-step, .rw-meter i, .mm-bars i { transition: none; } .rw-score b, .tg-out { animation: none; } }
 
-/* candidates redesign: own structure */
-.cx-hero { padding: 72px 0 96px; }
-.cx-hero-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 64px; align-items: center; }
-.cx-h1 { margin: 16px 0 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 64px; line-height: 1.02; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; }
-.cx-h1 b { font-weight: inherit; color: var(--btn); }
-.cx-lede { margin: 22px 0 0; font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
-.cx-cta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 32px; }
-.cx-ghost { font-size: 16px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--line-2); padding-bottom: 2px; }
-.cx-facts { list-style: none; display: flex; gap: 28px; flex-wrap: wrap; margin: 40px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
-.cx-facts b { font-size: 22px; font-weight: 600; color: var(--ink); margin-right: 6px; letter-spacing: -0.02em; }
-.cx-demo { padding: 20px; border-radius: 28px; background: var(--wash); border: 1px solid var(--line); }
-.cx-head { max-width: 640px; margin-bottom: 48px; }
-.cx-head .hx-h2 { margin: 12px 0 0; text-align: left; }
-.cx-head p { margin: 16px 0 0; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
-.cx-dark { padding: 112px 0; background: oklch(0.2 0.07 281); color: oklch(0.97 0.01 285); }
-.cx-dark .cx-head p, .cx-dark .hx-kicker { color: oklch(0.8 0.03 285); }
-.cx-dark .hx-h2 { color: oklch(0.98 0.01 285); }
-.cx-dark .rw-step h3 { color: oklch(0.98 0.01 285); }
-.cx-dark .rw-step p { color: oklch(0.82 0.03 285); }
-.cx-dark .rw-k { color: oklch(0.72 0.05 285); }
-.cx-dark .rw-step { min-height: 420px; }
-.cx-dark .rw-pane { top: 96px; }
+/* candidates: sticky rewrite step height */
 .rw-step { min-height: 420px; }
-@container (max-width: 900px) {
-  .cx-hero { padding: 32px 0 56px; }
-  .cx-hero-in { grid-template-columns: 1fr; gap: 36px; }
-  .cx-h1 { font-size: 38px; }
-  .cx-lede { font-size: 17px; }
-  .cx-demo { padding: 10px; border-radius: 20px; }
-  .cx-cta { flex-direction: column; align-items: stretch; gap: 14px; }
-  .cx-cta .hx-btn { width: 100%; }
-  .cx-ghost { align-self: flex-start; }
-  .cx-dark { padding: 64px 0; }
-  .cx-head { margin-bottom: 32px; }
-  .cx-dark .rw-step, .rw-step { min-height: 260px; }
-}
+.rw-pane.hx-stage-warm { margin-top: 0; padding: 28px; border-radius: 24px; }
+@container (max-width: 900px) { .rw-step { min-height: 260px; } }
 `;
