@@ -182,6 +182,11 @@ export const homeCss = `
 .hx-pv-steps span { color: var(--ink-2); font-size: 14px; }
 .hx-pv-score { margin-top: 14px; }
 .hx-pv-score strong { margin-left: auto; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--btn); }
+.hx-pv-opt { all: unset; box-sizing: border-box; cursor: pointer; padding: 7px 14px; border-radius: 99px; font-size: 14px; border: 1px solid var(--line-2); color: var(--ink-2); }
+.hx-pv-opt[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
+.hx-pv-opt:focus-visible { outline: none !important; border-color: var(--btn); }
+.hx-pv-note .hx-pv-tag { margin-left: 6px; }
+.hx-vis-open { font-weight: 500; color: var(--btn); }
 .hx-pv-note { margin: 14px 0 0; font-size: 14px; color: var(--ink-2); }
 .hx-pv-row + .hx-pv-note { margin-top: 4px; }
 .hx-priv-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: 15px; font-weight: 500; }

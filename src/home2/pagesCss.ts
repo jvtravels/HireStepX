@@ -728,4 +728,32 @@ export const pagesCss = `
 @media (prefers-reduced-motion: reduce) { .hs-cur { display: none; } }
 .hs-sum { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--wash); border: 1px solid var(--line); font-size: 14px; line-height: 1.5; color: var(--ink-2); text-align: left; }
 .hs-sum b { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 12px; font-weight: 500; color: var(--btn); }
+
+/* ── Candidates page ── */
+.cd-res { display: flex; flex-direction: column; gap: 16px; flex: 1; justify-content: center; animation: hc-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cd-star { list-style: none; margin: 0; padding: 0; display: flex; gap: 6px; }
+.cd-star li { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; background: var(--white); border: 1px solid var(--btn); color: var(--btn); }
+.cd-star li.miss { border: 1px dashed var(--accent); color: var(--accent-ink, var(--accent)); background: transparent; }
+.cd-star-lg li { width: 44px; height: 44px; font-size: 16px; }
+.cd-score { display: flex; align-items: baseline; gap: 10px; }
+.cd-score b { font-size: 64px; font-weight: 600; letter-spacing: -0.035em; line-height: 1; color: var(--btn); font-variant-numeric: tabular-nums; }
+.cd-score span { font-size: 14px; color: var(--ink-3); }
+.cd-tip { margin: 0; font-size: 14px; color: var(--ink-2); }
+.cd-add { background: color-mix(in oklab, var(--btn) 22%, white); color: var(--ink); border-radius: 4px; padding: 1px 0; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.cd .hc-top > span { font-size: 13px; color: var(--ink-3); }
+.cd-cmp h4 { margin: 0 0 10px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.cd-cmp ul { list-style: none; margin: 0 0 18px; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.cd-cmp ul:last-child { margin-bottom: 0; }
+.cd-cmp li::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 10px; border-radius: 50%; background: var(--btn); vertical-align: 2px; }
+.cd-cmp ul.no li { color: var(--ink-3); }
+.cd-cmp ul.no li::before { background: var(--ink-3); }
+.cd-plan { padding: 24px; display: grid; gap: 18px; }
+.cd-plan h4 { margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.cd-lines { list-style: none; margin: 0; padding: 0; display: grid; }
+.cd-lines li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: 15px; color: var(--ink-2); animation: jr-in .4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.cd-lines b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+.cd-total { display: flex; justify-content: space-between; align-items: baseline; font-size: 15px; color: var(--ink-2); }
+.cd-total b { font-size: 40px; font-weight: 600; letter-spacing: -0.03em; color: var(--btn); font-variant-numeric: tabular-nums; }
+.cd-pay { margin: 14px 0 0; font-size: 14px; color: rgba(255,255,255,.78); }
+@media (prefers-reduced-motion: reduce) { .cd-res, .cd-lines li { animation: none; } }
 `;
