@@ -33,3 +33,23 @@ describe("blogQuality", () => {
     expect(thin / BLOG_POSTS.length).toBeLessThan(0.4);
   });
 });
+
+describe("blog duplicate redirects", () => {
+  it("point at existing posts that are not themselves redirected", async () => {
+    const { blogDuplicateKeeper } = await import("../blogQuality");
+    const redirects = (await import("../../data/blog-duplicate-redirects.json")).default as Record<string, string>;
+    const slugs = new Set(BLOG_POSTS.map((p) => p.slug));
+    for (const [dup, keeper] of Object.entries(redirects)) {
+      expect(slugs.has(keeper)).toBe(true);
+      expect(blogDuplicateKeeper(keeper)).toBeUndefined();
+      expect(dup).not.toBe(keeper);
+    }
+  });
+
+  it("no post lists a redirected duplicate as a related post", async () => {
+    const redirects = (await import("../../data/blog-duplicate-redirects.json")).default as Record<string, string>;
+    for (const p of BLOG_POSTS) {
+      for (const r of p.relatedSlugs ?? []) expect(redirects[r]).toBeUndefined();
+    }
+  });
+});

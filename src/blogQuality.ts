@@ -1,4 +1,5 @@
 import { getBlogPostBySlug, type BlogPost } from "../data/blog-posts";
+import duplicateRedirects from "../data/blog-duplicate-redirects.json";
 
 /* AdSense "Low value content" gate for blog posts. Below this many words a
    post has too little substance to stand alone in search or carry ads. */
@@ -37,4 +38,8 @@ const THIN_BUT_RANKING = new Set([
 
 export function shouldNoindexBlogPost(slug: string): boolean {
   return isThinBlogPost(slug) && !THIN_BUT_RANKING.has(slug);
+}
+
+export function blogDuplicateKeeper(slug: string): string | undefined {
+  return (duplicateRedirects as Record<string, string>)[slug];
 }

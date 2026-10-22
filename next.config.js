@@ -16,6 +16,13 @@ const thinQuestionsRedirects = JSON.parse(
   readFileSync(new URL("./data/thin-questions-redirects.json", import.meta.url), "utf8"),
 );
 
+// Blog posts that target the same query as a stronger, already-indexed post.
+// 301 to the keeper and drop from the sitemap so they stop competing with it.
+// Guarded by src/__tests__/blogQuality.test.ts.
+const blogDuplicateRedirects = JSON.parse(
+  readFileSync(new URL("./data/blog-duplicate-redirects.json", import.meta.url), "utf8"),
+);
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Enable the behavioral v2 diagnostic-first report. The env-flag gate in
@@ -114,6 +121,11 @@ const nextConfig = {
       { source: "/blog/campus-placement-preparation-engineering-students-india-2026", destination: "/blog/campus-placement-preparation-india-2026", permanent: true },
       { source: "/blog/java-developer-interview-core-java-spring-boot-system-design-india-2026", destination: "/blog/java-developer-interview-core-java-system-design-india-2026", permanent: true },
       { source: "/blog/react-developer-interview-india-2026", destination: "/blog/react-developer-interview-hooks-performance-india-2026", permanent: true },
+      ...Object.entries(blogDuplicateRedirects).map(([slug, keeper]) => ({
+        source: `/blog/${slug}`,
+        destination: `/blog/${keeper}`,
+        permanent: true,
+      })),
       // 7 more blog post pairs found in a 2026-09-26 audit with byte-identical
       // <title> values (same pattern as the 10 pairs above, generated across the
       // 2026-06 through 2026-07 content batches). The weaker-linked/thinner post
