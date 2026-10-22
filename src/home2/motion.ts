@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+export const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* Plays once when scrolled into view. Starts "on" so server render, reduced motion and already-visible content show the final state. */
 export function useReveal<T extends HTMLElement>() {
@@ -97,4 +97,58 @@ export function useScrollDepth<T extends HTMLElement>() {
     };
   }, []);
   return ref;
+}
+
+/* Scroll-pinned stage: a card that expands to fill the screen, holds while n panels cross-fade on scroll, then shrinks away. Writes --e (expand 0..1) and per-panel --o/--y/--b vars to the stage with no re-renders. */
+export const FT_ENTER = 320;
+export const FT_STEP = 400;
+export const FT_TOP = 0;
+const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
+const smooth = (x: number) => x * x * (3 - 2 * x);
+
+export function useScrollStage<T extends HTMLElement, S extends HTMLElement>(n: number) {
+  const ref = useRef<T>(null);
+  const stage = useRef<S>(null);
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    const st = stage.current;
+    if (!el || !st) return;
+    let raf = 0;
+    let cur = 0;
+    const update = () => {
+      raf = 0;
+      if (el.offsetHeight - window.innerHeight <= 0) return;
+      const s = FT_TOP - el.getBoundingClientRect().top;
+      const e = smooth(clamp(s / FT_ENTER, 0, 1)) * (1 - smooth(clamp((s - FT_ENTER - n * FT_STEP) / FT_ENTER, 0, 1)));
+      const f = clamp((s - FT_ENTER) / FT_STEP, 0, n - 0.001);
+      const fb = clamp(f, 0.5, n - 0.5);
+      st.style.setProperty("--e", e.toFixed(4));
+      if (st.parentElement) st.parentElement.style.zIndex = e > 0.001 ? "20" : "";
+      for (let k = 0; k < n; k++) {
+        const d = Math.abs(fb - (k + 0.5));
+        st.style.setProperty(`--o${k}`, clamp(1 - (d - 0.36) / 0.14, 0, 1).toFixed(3));
+        st.style.setProperty(`--y${k}`, `${(clamp(fb - (k + 0.5), -0.5, 0.5) * -56).toFixed(1)}px`);
+        st.style.setProperty(`--b${k}`, clamp(1 - Math.abs(fb - (k + 0.5)), 0, 1).toFixed(3));
+      }
+      const idx = Math.floor(f);
+      if (idx !== cur) { cur = idx; setI(idx); }
+    };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
+    update();
+    window.addEventListener("scroll", onScroll, true);
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [n]);
+  const go = (k: number) => {
+    const el = ref.current;
+    if (!el) return;
+    const s = FT_ENTER + FT_STEP * (k + 0.5);
+    window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - FT_TOP + s, behavior: reduced() ? "auto" : "smooth" });
+  };
+  return { ref, stage, i, go };
 }

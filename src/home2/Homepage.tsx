@@ -3,7 +3,7 @@ import { homeCss } from "./homeCss";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
 import { useEffect, useState } from "react";
-import { useScrollTilt, useScrollDepth, useReveal, delay } from "./motion";
+import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
 function Arrow() {
   return (
@@ -13,14 +13,22 @@ function Arrow() {
   );
 }
 
-export function Nav() {
+export function Nav({ active, talentHref = "#candidates" }: { active?: "talent" | "companies"; talentHref?: string }) {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const esc = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [open]);
+  const cur = (k: "talent" | "companies") => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
         <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
         <nav className="hx-links" aria-label="Primary">
-          <a data-no-underline href="#candidates">For Talent</a>
-          <a data-no-underline href="/employers">For companies</a>
+          <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
+          <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
           <a data-no-underline href="/pricing">Pricing</a>
           <a data-no-underline href="/about">About us</a>
         </nav>
@@ -28,7 +36,26 @@ export function Nav() {
           <a data-no-underline className="hx-ghost" href="/login">Log in</a>
           <a data-no-underline className="hx-btn sm" href="/signup">Sign up free</a>
         </div>
+        <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          </svg>
+        </button>
       </div>
+      {open && (
+        <div className="hx-menu" id="hx-menu" onClick={() => setOpen(false)}>
+          <nav aria-label="Mobile">
+            <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
+            <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
+            <a data-no-underline href="/pricing">Pricing</a>
+            <a data-no-underline href="/about">About us</a>
+          </nav>
+          <div className="hx-menu-cta">
+            <a data-no-underline className="hx-btn alt" href="/login">Log in</a>
+            <a data-no-underline className="hx-btn" href="/signup">Sign up free</a>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
@@ -54,47 +81,45 @@ export function Hero() {
   );
 }
 
+const HOW_MS = 5200;
+
 export function Connection() {
-  const steps: [string, string, string][] = [
-    ["01", "Practise", "A candidate runs a voice interview for a real role."],
-    ["02", "Get scored", "Every answer is scored on clarity, relevance, depth and confidence, then saved as evidence."],
-    ["03", "Opt in", "The candidate chooses whether employers can find them."],
-    ["04", "Connect", "An employer reads the answers, then pays to see the name and say hello."],
+  const steps: [string, string][] = [
+    ["Practise", "A candidate runs a voice interview for a real role."],
+    ["Get scored", "Every answer is scored on clarity, relevance, depth and confidence, then saved as evidence."],
+    ["Opt in", "The candidate chooses whether employers can find them."],
+    ["Connect", "An employer reads the answers, then pays to see the name and say hello."],
   ];
   const { ref, on } = useReveal<HTMLDivElement>();
-  const [active, setActive] = useState(-1);
+  const [active, setActive] = useState(0);
+  const [auto, setAuto] = useState(true);
   useEffect(() => {
-    if (!on) return;
-    const cycle = 400 + 3 * 2300 + 3200;
-    const ids: ReturnType<typeof setTimeout>[] = [];
-    const run = () => {
-      [0, 1, 2, 3].forEach((i) => ids.push(setTimeout(() => setActive(i), 400 + i * 2300)));
-      ids.push(setTimeout(() => setActive(-1), cycle - 600));
-      ids.push(setTimeout(run, cycle));
-    };
-    run();
-    return () => ids.forEach(clearTimeout);
-  }, [on]);
-  const state = (i: number) => (active === i ? "now" : active > i ? "done" : "next");
+    if (!on || !auto || reduced()) return;
+    const id = setTimeout(() => setActive((a) => (a + 1) % steps.length), HOW_MS);
+    return () => clearTimeout(id);
+  }, [on, auto, active, steps.length]);
   return (
     <section className="hx-sec" id="how">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <span className="hx-kicker">How it works</span>
         <h2 className="hx-h2 hx-wide">One session, read from <b>both sides</b> of the table.</h2>
-        <div className="hx-stage hx-how-stage" style={{ ["--prog" as string]: Math.max(0, active) / 3 }}>
-          {steps.map(([n], i) => (
-            <div className="hx-sv hx-ri" key={n} style={delay(i + 1)} data-state={state(i)}><StepVisual n={i} play={active >= i} /></div>
-          ))}
+        <div className="hx-how hx-ri" style={delay(1)}>
+          <ol className="hx-how-list">
+            {steps.map(([t, d], i) => (
+              <li key={t} data-state={active === i ? "now" : "idle"}>
+                <button type="button" aria-expanded={active === i} onClick={() => { setActive(i); setAuto(false); }}>
+                  <b>{`0${i + 1}`}</b>
+                  <span>{t}</span>
+                </button>
+                <div className="hx-how-d"><div><p>{d}</p></div></div>
+                {active === i && auto && !reduced() && <i className="hx-how-pg" style={{ animationDuration: `${HOW_MS}ms` }} />}
+              </li>
+            ))}
+          </ol>
+          <div className="hx-stage hx-how-vis">
+            <div className="hx-how-in" key={active}><StepVisual n={active} play /></div>
+          </div>
         </div>
-        <ol className="hx-steps">
-          {steps.map(([n, t, d], i) => (
-            <li key={n} className="hx-ri" style={delay(i + 3)} data-state={state(i)}>
-              <div className="hx-sn"><b>{n}</b></div>
-              <h3>{t}</h3>
-              <p>{d}</p>
-            </li>
-          ))}
-        </ol>
       </div>
     </section>
   );
@@ -176,7 +201,17 @@ export function Footer() {
             <div><h3>Company</h3><a href="/contact">Contact</a><a href="/grievance">Grievance officer</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a></div>
           </nav>
-          <span className="hx-foot-copy">&copy; 2026 HireStepX</span>
+          <div className="hx-foot-bar">
+            <span>&copy; 2026 HireStepX</span>
+            <div className="hx-social">
+              <a data-no-underline href="https://www.linkedin.com/company/hirestepx" target="_blank" rel="noopener noreferrer" aria-label="HireStepX on LinkedIn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" /></svg>
+              </a>
+              <a data-no-underline href="https://twitter.com/hirestepx" target="_blank" rel="noopener noreferrer" aria-label="HireStepX on X">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M18.9 1.15h3.68l-8.04 9.19L24 22.85h-7.4l-5.8-7.58-6.64 7.58H.47l8.6-9.83L0 1.15h7.59l5.24 6.93 6.07-6.93zm-1.29 19.5h2.04L6.48 3.24H4.3l13.31 17.41z" /></svg>
+              </a>
+            </div>
+          </div>
       </footer>
     </div>
   );
