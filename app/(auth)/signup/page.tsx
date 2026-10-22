@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthSkin } from "@/home2/AuthSkin";
 import Signup from "@/auth/Signup";
 
 export const metadata: Metadata = {
@@ -13,5 +14,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <Signup />;
+  return (
+    <AuthSkin>
+      <Signup />
+    </AuthSkin>
+  );
 }
