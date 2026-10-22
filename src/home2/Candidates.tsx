@@ -1,8 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Activity, AudioWaveform, BriefcaseBusiness, Code, Eye, FileText, GraduationCap, IndianRupee, Layers, Lock, MessageSquareText, Mic, Radar, ShieldCheck, Snowflake, Target, Timer, Users, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
 import { Arrow, Close, Dim, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
+import { BRAND_PATHS } from "./brandPaths";
 
 /* ── Hero: answer, see the gap, fix it ── */
 
@@ -135,7 +137,7 @@ function CandHero() {
         <div className="cx-copy">
           <span className="hx-kicker hx-ri" style={delay(0)}>Mock interviews for Indian job seekers</span>
           <h1 className="cx-h1 hx-ri" style={delay(1)}>Say it out loud. Fix the sentence that <b>costs you</b>.</h1>
-          <p className="cx-lede hx-ri" style={delay(2)}>Answer real questions by voice for your role and target company. Each answer is scored on STAR, and you hear what to say instead.</p>
+          <p className="cx-lede hx-ri" style={delay(2)}>Practise HR, behavioural, technical, campus and salary rounds by voice. Get scored against the hire bar for your role, and hear what to say instead.</p>
           <div className="cx-cta hx-ri" style={delay(3)}>
             <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
             <a data-no-underline className="cx-ghost" href="#rewrite">See an answer improve</a>
@@ -395,13 +397,209 @@ function CandPricing() {
   );
 }
 
+/* ── The whole journey: rounds, readiness, delivery, gaps, proof ── */
+
+const I = { size: 18, strokeWidth: 1.75, "aria-hidden": true } as const;
+
+function Sec({ id, band, kicker, title, lede, ctr, children }: { id?: string; band?: boolean; kicker: string; title: ReactNode; lede?: string; ctr?: boolean; children: ReactNode }) {
+  const { ref, on } = useReveal<HTMLDivElement>();
+  return (
+    <section className={`pg-sec${band ? " pg-band" : ""}`} id={id}>
+      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
+        <div className={`em-head${ctr ? " ctr" : ""} hx-ri`} style={delay(0)}>
+          <span className="hx-kicker">{kicker}</span>
+          <h2 className="hx-h2">{title}</h2>
+          {lede ? <p>{lede}</p> : null}
+        </div>
+        <div className="hx-ri" style={delay(1)}>{children}</div>
+      </div>
+    </section>
+  );
+}
+
+const Bar = ({ v, floor }: { v: number; floor?: number }) => (
+  <i className={`cb${floor !== undefined && v < floor ? " low" : ""}`}><b style={{ width: `${v}%` }} />{floor !== undefined ? <u style={{ left: `${floor}%` }} /> : null}</i>
+);
+
+const BRANDS: [string, string][] = [["google", "Google"], ["amazon", "Amazon"], ["microsoft", "Microsoft"], ["flipkart", "Flipkart"], ["swiggy", "Swiggy"], ["zomato", "Zomato"], ["paytm", "Paytm"], ["phonepe", "PhonePe"], ["razorpay", "Razorpay"], ["infosys", "Infosys"], ["tcs", "TCS"], ["atlassian", "Atlassian"]];
+
+function LogoStrip() {
+  return (
+    <section className="cl-logos" aria-label="Companies you can practise for">
+      <div className="hx-wrap">
+        <span className="hx-kicker">Practise for roles at</span>
+        <ul>{BRANDS.map(([f, n]) => <li key={f}><svg viewBox="0 0 24 24" width={26} height={26} fill="currentColor" role="img" aria-label={n}><path d={BRAND_PATHS[f]} /></svg><span>{n}</span></li>)}</ul>
+        <p>Company logos belong to their owners. HireStepX is not affiliated with or endorsed by them.</p>
+      </div>
+    </section>
+  );
+}
+
+type RoundKind = { id: string; label: string; Icon: LucideIcon; blurb: string; gate: string; dims: [string, number][]; probe: string };
+const KINDS: RoundKind[] = [
+  { id: "hr", label: "HR round", Icon: Users, blurb: "Scored on eight things HR actually grades. Clear 60 on every one, because a single zero can sink the offer.", gate: "Pass mark 60 on all 8", dims: [["Logistics clarity", 90], ["Comp transparency", 85], ["Switch rationale", 75], ["Compliance readiness", 90], ["Commitment signal", 80], ["Policy literacy", 65], ["Self-awareness", 80], ["Motivation specificity", 70]], probe: "What about our roadmap caught your eye, compared to other SaaS platforms?" },
+  { id: "beh", label: "Behavioural", Icon: MessageSquareText, blurb: "Stories about ownership, conflict and impact. Checked for structure, real numbers and your own part in it.", gate: "STAR complete", dims: [["Structure", 82], ["Ownership", 74], ["Measurable impact", 58], ["Clarity", 80], ["Empathy", 78]], probe: "What would you do differently if you ran that project again?" },
+  { id: "tech", label: "Technical", Icon: Code, blurb: "Depth on the skills in your resume. Framing the problem, the trade-offs you weighed and how you explain it.", gate: "Depth vs role bar", dims: [["Technical depth", 60], ["Problem framing", 52], ["Trade-off reasoning", 56], ["Communication", 76], ["Ownership", 70]], probe: "Why did you pick that approach over the simpler one?" },
+  { id: "pay", label: "Salary negotiation", Icon: IndianRupee, blurb: "Practise the money conversation before it counts: anchoring, counter-offers and when to walk away.", gate: "Anchor and floor", dims: [["Anchor strength", 82], ["Counter-offer judgement", 56], ["Walk-away discipline", 52], ["Tactical composure", 72], ["Package literacy", 65]], probe: "We can do 18 LPA. How does that sit with you?" },
+  { id: "camp", label: "Campus placement", Icon: GraduationCap, blurb: "For freshers: introduce yourself, explain your projects and show why this company, with no experience to lean on.", gate: "Story completeness", dims: [["Background articulation", 55], ["Company fit", 50], ["Project stories", 62], ["Fundamentals", 70], ["Composure", 78]], probe: "Tell me about the project you are proudest of, and your part in it." },
+];
+
+function Rounds() {
+  const [k, setK] = useState(0);
+  const R = KINDS[k];
+  return (
+    <Sec id="rounds" kicker="Five round types" title={<>Every round has its <b>own scorecard</b>.</>} lede="Pick the round you are about to face. Each one is judged on the things that round actually tests.">
+      <div className="rd">
+        <div className="rd-tabs" role="group" aria-label="Round type">
+          {KINDS.map((x, i) => <button key={x.id} type="button" className="jr-chip" aria-pressed={k === i} onClick={() => setK(i)}><x.Icon {...I} size={16} />{x.label}</button>)}
+        </div>
+        <div className="rd-card hx-stage hx-stage-cool" key={R.id}>
+          <div className="rd-in">
+            <div className="rd-head"><span className="rd-ico"><R.Icon {...I} /></span><div><h3>{R.label}</h3><p>{R.blurb}</p></div></div>
+            <ul className="rd-dims">{R.dims.map(([n, v]) => <li key={n}><span>{n}</span><Bar v={v} floor={60} /><em>{v}</em></li>)}</ul>
+            <p className="rd-foot"><span><Target {...I} size={14} />{R.gate}</span><span>Sample report. Scores out of 100.</span></p>
+            <p className="rd-probe"><Mic {...I} size={14} /><span>Likely next question</span>{R.probe}</p>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+const PILLARS: { n: string; d: string; w: number; v: number; Icon: LucideIcon; lever?: boolean }[] = [
+  { n: "Competence", d: "How deep your knowledge goes", w: 34, v: 63, Icon: Target },
+  { n: "Consistency", d: "How stable your scores are", w: 18, v: 43, Icon: Activity },
+  { n: "Coverage", d: "Round types and STAR completeness", w: 18, v: 32, Icon: Layers, lever: true },
+  { n: "Currency", d: "How fresh each skill is", w: 12, v: 85, Icon: Snowflake },
+  { n: "Composure", d: "Fillers, pace and energy under pressure", w: 18, v: 84, Icon: AudioWaveform },
+];
+
+function Readiness() {
+  return (
+    <Sec id="readiness" band kicker="Readiness index" title={<>Know how far you are from the <b>hire bar</b>.</>} lede="One number for your target role and round, built from five pillars, with the fastest way to move it.">
+      <div className="ri">
+        <div className="ri-main hx-stage hx-stage-warm">
+          <div className="ri-card">
+            <span className="hx-kicker">Senior product designer · behavioural loop</span>
+            <div className="ri-num"><strong>60</strong><span>/ 100</span><em>Building</em></div>
+            <div className="ri-track"><i style={{ width: "60%" }} /><u style={{ left: "70%" }}><span>Hire bar 70</span></u></div>
+            <p>About 4 focused sessions puts you over the bar. The biggest single gain is in coverage.</p>
+          </div>
+        </div>
+        <ul className="ri-pillars">
+          {PILLARS.map((p) => (
+            <li key={p.n} className={p.lever ? "lever" : ""}>
+              <span className="ri-ico"><p.Icon {...I} /></span>
+              <div><h3>{p.n}{p.lever ? <em>Biggest lever</em> : null}</h3><p>{p.d} · {p.w}% of the score</p></div>
+              <Bar v={p.v} /><strong>{p.v}</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Sec>
+  );
+}
+
+const DELIVERY: { Icon: LucideIcon; n: string; v: string; u: string; note: string }[] = [
+  { Icon: AudioWaveform, n: "Filler words", v: "1.1", u: "per min", note: "Comfortable up to 5" },
+  { Icon: Timer, n: "Pace", v: "138", u: "wpm", note: "Ideal 120 to 160" },
+  { Icon: Users, n: "Ownership", v: "88", u: "% I vs we", note: "Shows your own part" },
+  { Icon: MessageSquareText, n: "Hedging", v: "0", u: "per min", note: "Fewer 'sort of', 'maybe'" },
+  { Icon: Activity, n: "Energy", v: "92", u: "/ 100", note: "Vocal variety" },
+  { Icon: Eye, n: "Attention", v: "3", u: "phases", note: "Tracking, probing, wrapping" },
+];
+
+function Delivery() {
+  return (
+    <Sec id="delivery" kicker="How you sound" title={<>It hears <b>how</b> you say it, not only what.</>} lede="Delivery is measured on every answer, and read the way an Indian interview panel hears it.">
+      <div className="dv">
+        <ul className="dv-grid">
+          {DELIVERY.map((d) => <li key={d.n}><span className="dv-ico"><d.Icon {...I} /></span><h3>{d.n}</h3><p><strong>{d.v}</strong><span>{d.u}</span></p><em>{d.note}</em></li>)}
+        </ul>
+        <div className="dv-att hx-stage hx-stage-cool">
+          <div className="dv-att-in">
+            <span className="hx-kicker">Interviewer attention, last session</span>
+            <ol>
+              <li><b>Tracking</b>Listening to your background and graduation details.</li>
+              <li><b>Probing</b>Checking how you measured the impact.</li>
+              <li><b>Wrapping</b>You repeated the same details, so move on to the next question.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
+const GAPS: { Icon: LucideIcon; t: string; d: string; rows: [string, string][] }[] = [
+  { Icon: Radar, t: "Blind spots", d: "Commonly asked in your role, never rehearsed by you.", rows: [["Communication", "90%"], ["Problem-solving", "90%"], ["Ownership", "85%"], ["Execution rigor", "85%"]] },
+  { Icon: Snowflake, t: "Skills going cold", d: "Idle skills fade, so they come back for a refresher.", rows: [["Problem framing", "98 days idle"], ["Technical depth", "98 days idle"], ["Trade-off reasoning", "98 days idle"]] },
+  { Icon: MessageSquareText, t: "Likely follow-ups", d: "What you would most likely be asked next, and why.", rows: [["Walk me through a technical challenge you solved.", "95%"], ["What drew you to large-scale products?", "95%"], ["What about our roadmap caught your eye?", "95%"]] },
+];
+
+function Gaps() {
+  return (
+    <Sec id="gaps" band kicker="What you have not prepared" title={<>See the holes <b>before the interviewer does</b>.</>} lede="It tracks what you skip, what you are forgetting and what you will probably be asked next.">
+      <div className="gp">
+        {GAPS.map((g) => (
+          <div key={g.t} className="gp-col">
+            <span className="gp-ico"><g.Icon {...I} /></span>
+            <h3>{g.t}</h3>
+            <p>{g.d}</p>
+            <ul>{g.rows.map(([a, b]) => <li key={a}><span>{a}</span><em>{b}</em></li>)}</ul>
+          </div>
+        ))}
+      </div>
+    </Sec>
+  );
+}
+
+const PROOF: { Icon: LucideIcon; t: string; d: string }[] = [
+  { Icon: FileText, t: "A resume score you can act on", d: "A score out of 100, an ATS readiness check and the four fixes that matter most." },
+  { Icon: ShieldCheck, t: "Evidence employers can trust", d: "Capabilities such as communication and problem solving are marked verified after you practise them." },
+  { Icon: BriefcaseBusiness, t: "Say it once, skip the screening call", d: "Add notice period, current pay and expected pay. Only employers who unlock your profile see them." },
+  { Icon: Lock, t: "Masked until you say yes", d: "Employers see a code, never your name, phone or email. Turn discovery off any time." },
+];
+
+function Proof() {
+  return (
+    <Sec id="proof" kicker="From practice to hired" title={<>Your practice becomes <b>proof</b> employers can find.</>} lede="Practise privately, then let matching employers see what you can do, on your terms.">
+      <div className="pf">
+        <ul className="pf-list">
+          {PROOF.map((p) => <li key={p.t}><span className="pf-ico"><p.Icon {...I} /></span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>)}
+        </ul>
+        <div className="pf-card hx-stage hx-stage-warm">
+          <div className="pf-in">
+            <span className="hx-kicker">What an employer sees</span>
+            <h3>Candidate K7Q2</h3>
+            <p className="pf-meta">Product designer · 5 years · Pune</p>
+            <ul className="pf-ev">
+              <li><ShieldCheck {...I} size={16} />Communication<em>Verified</em></li>
+              <li><ShieldCheck {...I} size={16} />Problem solving<em>Verified</em></li>
+              <li><ShieldCheck {...I} size={16} />Leadership<em>Verified</em></li>
+              <li className="no"><ShieldCheck {...I} size={16} />Salary negotiation<em>Not yet</em></li>
+            </ul>
+            <p className="pf-lock"><Lock {...I} size={14} />Name and contact stay hidden until you accept.</p>
+          </div>
+        </div>
+      </div>
+    </Sec>
+  );
+}
+
 export function CandidatesPage() {
   return (
     <Shell active="talent">
       <CandHero />
+      <LogoStrip />
+      <Rounds />
       <RewriteStory />
+      <Readiness />
+      <Delivery />
+      <Gaps />
       <AimIt />
       <Memory />
+      <Proof />
       <TrustStrip />
       <CandPricing />
       <CandFaq />
