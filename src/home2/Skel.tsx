@@ -13,7 +13,7 @@ export function useSkel(ref: RefObject<HTMLElement | null>) {
       if (!entries.some((e) => e.isIntersecting)) return;
       io.disconnect();
       el.dataset.sk = "playing";
-      run = generate(el, { mode: "skeleton", duration: 1200, delay: 0, onDone: done });
+      run = generate(el, { mode: "skeleton", duration: 1200, reveal: "fade", fadeDuration: 380, revealAt: 700, delay: 0, onDone: done });
     }, { threshold: 0.25 });
     io.observe(el);
     return () => { io.disconnect(); run?.cancel(); el.dataset.sk = "pending"; };
@@ -30,7 +30,7 @@ export default function Skel({ className, style, children, replayKey }: { classN
     if (first.current) { first.current = false; return; }
     if (!el || el.dataset.sk === "pending") return;
     el.dataset.sk = "playing";
-    generate(el, { mode: "skeleton", duration: 600, delay: 0, onDone: () => { el.dataset.sk = "done"; } });
+    generate(el, { mode: "skeleton", duration: 600, reveal: "fade", fadeDuration: 240, revealAt: 330, delay: 0, onDone: () => { el.dataset.sk = "done"; } });
   }, [replayKey]);
   return <div ref={ref} data-sk="pending" className={className} style={style}>{children}</div>;
 }
