@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Scene, sceneCss } from "./ResourceScenes";
 import { Arrow, Close, Shell } from "./Pages";
 import Skel from "./Skel";
 import { delay, usePresence, useSlider, useTween } from "./motion";
@@ -71,6 +72,8 @@ function meta(i: Item): string {
 }
 
 export function Vis({ i }: { i: Item }) {
+  const scene = Scene({ i });
+  if (scene) return scene;
   if (i.k === "guide") {
     return (
       <span className="lb-vis v-guide" aria-hidden="true">
@@ -450,7 +453,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
   );
 }
 
-export const resourcesCss = `
+export const resourcesCss = sceneCss + `
 .lb-hero { padding-bottom: 72px; }
 .lb-hero .hx-wrap { text-align: center; }
 .lb-hero .hx-h1 { font-size: 52px; margin: 56px auto 0; max-width: 24ch; }
