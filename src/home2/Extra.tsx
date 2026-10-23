@@ -89,7 +89,7 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage: (i: number) => React.ReactNode }) {
+export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage: (i: number) => React.ReactNode }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
