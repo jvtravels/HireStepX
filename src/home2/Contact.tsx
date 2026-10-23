@@ -270,7 +270,8 @@ export function ContactPage() {
 }
 
 const contactCss = `
-.ct-wrap { display: grid; gap: 48px; max-width: 1560px; }
+.ct-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 48px; box-sizing: border-box; }
+.ct-wrap > *, .ct-grid > * { min-width: 0; }
 .ct-top { text-align: center; display: grid; justify-items: center; }
 .ct-top .cx-lede { margin-left: auto; margin-right: auto; max-width: 64ch; }
 .ct-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: stretch; width: 100%; }
