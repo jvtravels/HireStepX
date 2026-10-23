@@ -223,7 +223,7 @@ export function ContactPage() {
   const { ref, on } = useReveal<HTMLDivElement>();
 
   return (
-    <Shell active="talent">
+    <Shell>
       <style>{contactCss}</style>
       <section className="cx-hero">
         <div ref={ref} className={`hx-wrap ct-wrap hx-rv${on ? " on" : ""}`}>

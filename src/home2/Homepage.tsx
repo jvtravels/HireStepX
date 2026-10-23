@@ -30,7 +30,8 @@ function useNavX(active: string | undefined) {
   useLayoutEffect(() => {
     const nav = links.current, mark = x.current;
     const a = nav?.querySelector<HTMLElement>('a[aria-current="page"]');
-    if (!nav || !mark || !a) return;
+    if (!a) { try { sessionStorage.removeItem(NAV_X_KEY); } catch { /* storage blocked */ } return; }
+    if (!nav || !mark) return;
     const to = markX(a);
     let from: number | null = null;
     try { const v = sessionStorage.getItem(NAV_X_KEY); from = v === null ? null : Number(v); sessionStorage.setItem(NAV_X_KEY, String(to)); } catch { /* storage blocked */ }
@@ -54,7 +55,9 @@ function useNavX(active: string | undefined) {
   return { links, x, onClick };
 }
 
-export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies" | "resources"; talentHref?: string }) {
+export type NavKey = "talent" | "companies" | "pricing" | "resources" | "about";
+
+export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; talentHref?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -63,7 +66,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
   const navx = useNavX(active);
-  const cur = (k: "talent" | "companies" | "resources") => (active === k ? "page" : undefined);
+  const cur = (k: NavKey) => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
@@ -71,9 +74,9 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
         <nav ref={navx.links} className="hx-links" aria-label="Primary" onClick={navx.onClick}>
           <a data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</a>
           <a data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</a>
-          <a data-no-underline href="/pricing">Pricing</a>
+          <a data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</a>
           <a data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</a>
-          <a data-no-underline href="/about">About us</a>
+          <a data-no-underline data-navx href="/about" aria-current={cur("about")}>About us</a>
           <i ref={navx.x} className="hx-x" aria-hidden="true" />
         </nav>
         <div className="hx-nav-cta">
@@ -91,9 +94,9 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
           <nav aria-label="Mobile">
             <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
             <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
-            <a data-no-underline href="/pricing">Pricing</a>
+            <a data-no-underline href="/pricing" aria-current={cur("pricing")}>Pricing</a>
             <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
-            <a data-no-underline href="/about">About us</a>
+            <a data-no-underline href="/about" aria-current={cur("about")}>About us</a>
           </nav>
           <div className="hx-menu-cta">
             <a data-no-underline className="hx-btn alt" href="/login">Log in</a>

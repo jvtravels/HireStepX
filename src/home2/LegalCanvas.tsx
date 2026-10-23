@@ -254,7 +254,7 @@ export function LegalDocPage({ slug }: { slug: string }) {
   const Body = BODIES[slug];
   const others = LEGAL_META.filter((d) => d.slug !== slug);
   return (
-    <Shell active="talent">
+    <Shell>
       <style>{legalCss}</style>
       <section className="lg-hero">
         <div className="hx-wrap">
@@ -284,7 +284,7 @@ export function LegalDocPage({ slug }: { slug: string }) {
 export function LegalHubPage() {
   const groups = Array.from(new Set(LEGAL_META.map((d) => d.group)));
   return (
-    <Shell active="talent">
+    <Shell>
       <style>{legalCss}</style>
       <section className="lg-hero">
         <div className="hx-wrap">

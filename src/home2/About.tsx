@@ -347,7 +347,7 @@ export function AboutPage() {
   const nums = [counts.users, counts.sessions, counts.companies, counts.jobs];
 
   return (
-    <Shell active="talent">
+    <Shell active="about">
       <style>{aboutCss}</style>
       <section className="ab-hero">
         <div ref={hero.ref} className={`hx-wrap hx-rv${hero.on ? " on" : ""}`}>

@@ -94,7 +94,7 @@ export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
   const cand = aud === "cand";
   const segRef = useSlider<HTMLDivElement>(aud);
   return (
-    <Shell active={cand ? "talent" : "companies"}>
+    <Shell active="pricing">
       <style>{pricingCss}</style>
       <section className="hx-hero prc-hero">
         <div className="hx-wrap">

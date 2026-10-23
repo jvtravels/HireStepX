@@ -96,7 +96,7 @@ function Frame({ kicker, code, title, body, mode, children }: { kicker: string; 
 
 export function NotFoundPage() {
   return (
-    <Shell active="resources">
+    <Shell>
       <Frame kicker="404 · Page not found" code="404" mode="lost" title="That page dropped off the line." body="The link may be old or mistyped. Head home, or jump to one of the places people usually come for.">
         <div className="er-cta hx-ri" style={delay(4)}>
           <a data-no-underline className="hx-btn lg" href="/">Back to home <Arrow /></a>
@@ -119,7 +119,7 @@ export function ServerErrorPage({ digest = "1834920571", onRetry }: { digest?: s
     } catch { /* clipboard unavailable */ }
   };
   return (
-    <Shell active="resources">
+    <Shell>
       <Frame kicker="500 · Something broke" code="500" mode="broken" title="That one is on us." body="We hit an unexpected error. Trying again clears it most of the time. If it keeps happening, send us the reference below and we will look into it.">
         <div className="er-cta hx-ri" style={delay(4)}>
           <button type="button" className="hx-btn lg" onClick={onRetry}>Try again</button>
