@@ -114,6 +114,26 @@ const nextConfig = {
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/legal-next/:slug",
       },
+      {
+        source: "/about",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/about-next",
+      },
+      {
+        source: "/blog/:slug((?!category$|company$)[^/]+)",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/blog-next/:slug",
+      },
+      {
+        source: "/questions/:slug",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/questions-next/:slug",
+      },
+      {
+        source: "/salary/:company",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/salary-next/:company",
+      },
     ],
     afterFiles: [
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
@@ -184,6 +204,48 @@ const nextConfig = {
         source: "/legal-next/:slug",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/:slug",
+        permanent: false,
+      },
+      {
+        source: "/about-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/about",
+        permanent: false,
+      },
+      {
+        source: "/blog-next/:slug",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/blog/:slug",
+        permanent: false,
+      },
+      {
+        source: "/questions-next/:slug",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/questions/:slug",
+        permanent: false,
+      },
+      {
+        source: "/salary-next/:company",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/salary/:company",
+        permanent: false,
+      },
+      {
+        source: "/blog",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/resources",
+        permanent: false,
+      },
+      {
+        source: "/questions",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/resources",
+        permanent: false,
+      },
+      {
+        source: "/salary",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/resources",
         permanent: false,
       },
       // www → non-www 301. Vercel serves both by default; without this redirect
@@ -355,6 +417,13 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers,
+      },
+      {
+        // staging is an alias of the production deployment, so robots.ts
+        // cannot tell it apart; keep it out of search results by host.
+        source: "/(.*)",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
         // Unhashed public/ assets: cache a day at the edge and browser, serve stale

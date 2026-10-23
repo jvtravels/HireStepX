@@ -20,7 +20,7 @@ export type ResourcesInitial = {
   search?: boolean;
 };
 
-const KIND_LABEL: Record<Kind, string> = { guide: "Guide", question: "Question set", salary: "Salary", company: "Company", topic: "Topic" };
+export const KIND_LABEL: Record<Kind, string> = { guide: "Guide", question: "Question set", salary: "Salary", company: "Company", topic: "Topic" };
 const KIND_PLURAL: Record<Kind, string> = { guide: "Guides", question: "Questions", salary: "Salaries", company: "Companies", topic: "Topics" };
 const KIND_ORDER: Kind[] = ["guide", "question", "salary", "company", "topic"];
 
@@ -70,7 +70,7 @@ function meta(i: Item): string {
   return [i.co, i.tag, i.rt ? `${i.rt} min read` : ""].filter(Boolean).join(" · ");
 }
 
-function Vis({ i }: { i: Item }) {
+export function Vis({ i }: { i: Item }) {
   if (i.k === "guide") {
     return (
       <span className="lb-vis v-guide" aria-hidden="true">
@@ -441,7 +441,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
   );
 }
 
-const resourcesCss = `
+export const resourcesCss = `
 .lb-hero { padding-bottom: 72px; }
 .lb-hero .hx-wrap { text-align: center; }
 .lb-hero .hx-h1 { font-size: 52px; margin: 56px auto 0; max-width: 24ch; }
