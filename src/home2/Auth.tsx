@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HomeShell } from "./Homepage";
 
 export const authCss = `
@@ -206,6 +206,152 @@ export function SignupScreen() {
         <button type="submit" className="hx-btn">{talent ? "Create account" : "Create company account"}</button>
       </form>
       <p className="hx-legal">By continuing you agree to the <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.</p>
+    </Shell>
+  );
+}
+
+/* ── Password recovery ── */
+const recoverCss = `
+.hx-rc-ico { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; margin-bottom: 22px; background: linear-gradient(155deg, oklch(0.95 0.045 55), oklch(0.955 0.035 290)); color: var(--btn); }
+.hx-rc-ico svg { width: 24px; height: 24px; }
+.hx-rc-ico.bad { background: oklch(0.95 0.03 25); color: oklch(0.5 0.17 25); }
+.hx-rc-ico.ok { background: oklch(0.95 0.045 155); color: oklch(0.45 0.12 155); }
+.hx-au-main > p b { color: var(--ink); font-weight: 500; overflow-wrap: anywhere; }
+.hx-rc-cta { display: flex; flex-direction: column; gap: 10px; margin-top: 26px; }
+.hx-rc-cta .hx-btn { width: 100%; min-height: 48px; justify-content: center; border: 0; font: inherit; font-size: 15px; font-weight: 500; cursor: pointer; }
+.hx-rc-link { all: unset; box-sizing: border-box; cursor: pointer; text-align: center; padding: 10px 0; font-size: 14.5px; font-weight: 500; color: var(--btn); }
+.hx-rc-link:disabled { cursor: default; color: var(--ink-3); font-weight: 400; }
+.hx-rc-link:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; border-radius: 6px; }
+.hx-rc-note { margin-top: 22px; padding: 14px 16px; border-radius: 12px; background: var(--wash); font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+.hx-rc-meter { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-top: 8px; }
+.hx-rc-meter i { height: 4px; border-radius: 4px; background: var(--line); transition: background .25s; }
+.hx-rc-meter i.on { background: var(--btn); }
+.hx-rc-rules { display: grid; gap: 6px; margin: 2px 0 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink-3); }
+.hx-rc-rules li { display: flex; align-items: center; gap: 8px; }
+.hx-rc-rules li::before { content: ""; width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line); flex: none; }
+.hx-rc-rules li.ok { color: var(--ink-2); }
+.hx-rc-rules li.ok::before { border-color: var(--btn); background: var(--btn) center / 8px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M1.5 4.2l1.6 1.6L6.5 2.3' fill='none' stroke='white' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.hx-rc-err { margin-top: 6px; font-size: 13px; color: oklch(0.5 0.17 25); }
+.hx-rc-timer { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .02em; color: var(--ink-3); }
+`;
+
+const Icon = ({ d }: { d: string }) => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>
+);
+const MAIL = "M3 6.5A1.5 1.5 0 014.5 5h15A1.5 1.5 0 0121 6.5v11a1.5 1.5 0 01-1.5 1.5h-15A1.5 1.5 0 013 17.5zM3.5 7l8.5 6 8.5-6";
+const LOCK = "M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 017 0v3";
+const LINK_OFF = "M10 14a4 4 0 005.7 0l2.6-2.6a4 4 0 00-5.7-5.7l-.6.6M14 10a4 4 0 00-5.7 0l-2.6 2.6a4 4 0 005.7 5.7l.6-.6M4 4l16 16";
+const CHECK = "M5 12.5l4.5 4.5L19 7.5";
+
+const RECOVER_TOP = <>Remembered it?<a href="/login">Log in</a></>;
+const RECOVER_PANEL = { headline: <>Back in a minute.</>, sub: "We email you a link to set a new password. Your reports and scores stay exactly as they were." };
+
+export function ForgotPasswordScreen({ initialSent = false, email: seed = "" }: { initialSent?: boolean; email?: string }) {
+  const [sent, setSent] = useState(initialSent);
+  const [email, setEmail] = useState(seed);
+  const [left, setLeft] = useState(initialSent ? 42 : 0);
+  useEffect(() => {
+    if (left <= 0) return;
+    const id = setTimeout(() => setLeft((s) => s - 1), 1000);
+    return () => clearTimeout(id);
+  }, [left]);
+  const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  return (
+    <Shell top={RECOVER_TOP} {...RECOVER_PANEL} talent>
+      <style>{recoverCss}</style>
+      {sent ? (
+        <>
+          <div className="hx-rc-ico"><Icon d={MAIL} /></div>
+          <h1>Check your email</h1>
+          <p>If an account exists for <b>{email || "you@example.com"}</b>, a reset link is on its way. It expires in 30 minutes.</p>
+          <div className="hx-rc-cta">
+            <a data-no-underline className="hx-btn" href="https://mail.google.com" target="_blank" rel="noreferrer">Open Gmail</a>
+            <button type="button" className="hx-rc-link" disabled={left > 0} onClick={() => setLeft(60)}>{left > 0 ? `Resend email in ${left}s` : "Resend email"}</button>
+          </div>
+          <div className="hx-rc-note">Nothing in your inbox? Check spam, and make sure you used the email you signed up with. <button type="button" className="hx-rc-link" style={{ display: "inline", padding: 0, fontSize: "inherit" }} onClick={() => setSent(false)}>Use a different email</button></div>
+        </>
+      ) : (
+        <>
+          <div className="hx-rc-ico"><Icon d={LOCK} /></div>
+          <h1>Reset your password</h1>
+          <p>Enter the email on your account and we will send you a link.</p>
+          <form className="hx-form" onSubmit={(e) => { e.preventDefault(); if (valid) { setSent(true); setLeft(60); } }}>
+            <label className="hx-lab">Email<input className="hx-in" type="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} /></label>
+            <button type="submit" className="hx-btn" disabled={!valid} style={valid ? undefined : { opacity: 0.45, cursor: "not-allowed" }}>Send reset link</button>
+          </form>
+        </>
+      )}
+    </Shell>
+  );
+}
+
+type ResetState = "form" | "expired" | "used" | "done";
+
+function ruleSet(pw: string) {
+  return { len: pw.length >= 8, mix: /[a-zA-Z]/.test(pw) && /\d/.test(pw), long: pw.length >= 12 };
+}
+
+export function ResetPasswordScreen({ state = "form" }: { state?: ResetState }) {
+  const [view, setView] = useState<ResetState>(state);
+  const [pw, setPw] = useState("");
+  const [again, setAgain] = useState("");
+  const r = ruleSet(pw);
+  const score = pw.length === 0 ? 0 : (r.len ? 1 : 0) + (r.mix ? 1 : 0) + (r.long ? 1 : 0) + (r.len && /[^a-zA-Z0-9]/.test(pw) ? 1 : 0);
+  const match = again.length > 0 && pw === again;
+  const ok = r.len && match;
+  return (
+    <Shell top={RECOVER_TOP} headline={view === "done" ? <>You are all set.</> : RECOVER_PANEL.headline} sub={view === "done" ? "Log in with your new password. Your reports and scores are right where you left them." : RECOVER_PANEL.sub} talent>
+      <style>{recoverCss}</style>
+      {view === "form" && (
+        <>
+          <div className="hx-rc-ico"><Icon d={LOCK} /></div>
+          <h1>Choose a new password</h1>
+          <p>Pick something strong. You will use it on every login.</p>
+          <form className="hx-form" onSubmit={(e) => { e.preventDefault(); if (ok) setView("done"); }}>
+            <div>
+              <label className="hx-lab">
+                <span>New password</span>
+                <span className="hx-pw"><input className="hx-in" type="password" placeholder="••••••••" autoComplete="new-password" value={pw} onChange={(e) => setPw(e.target.value)} /></span>
+              </label>
+              <div className="hx-rc-meter" aria-hidden="true">{[0, 1, 2, 3].map((n) => <i key={n} className={n < score ? "on" : ""} />)}</div>
+            </div>
+            <ul className="hx-rc-rules">
+              <li className={r.len ? "ok" : ""}>At least 8 characters</li>
+              <li className={r.mix ? "ok" : ""}>A letter and a number</li>
+            </ul>
+            <span className="hx-hint" style={{ marginTop: -6 }}>We also check it against known data breaches.</span>
+            <div>
+              <label className="hx-lab">
+                <span>Confirm password</span>
+                <span className="hx-pw"><input className="hx-in" type="password" placeholder="Re-enter the password" autoComplete="new-password" value={again} onChange={(e) => setAgain(e.target.value)} /></span>
+              </label>
+              {again.length > 0 && !match && <div className="hx-rc-err">Passwords do not match.</div>}
+            </div>
+            <button type="submit" className="hx-btn" disabled={!ok} style={ok ? undefined : { opacity: 0.45, cursor: "not-allowed" }}>Update password</button>
+          </form>
+          <div className="hx-rc-timer"><span aria-hidden="true">◷</span> This link expires in 24:10</div>
+        </>
+      )}
+      {(view === "expired" || view === "used") && (
+        <>
+          <div className="hx-rc-ico bad"><Icon d={LINK_OFF} /></div>
+          <h1>{view === "expired" ? "This link has expired" : "This link was already used"}</h1>
+          <p>{view === "expired" ? "Reset links last 30 minutes. Request a new one and we will send it right away." : "Each reset link works once. Request a fresh one to change your password again."}</p>
+          <div className="hx-rc-cta">
+            <a data-no-underline className="hx-btn" href="/forgot-password">Send a new link</a>
+            <a data-no-underline className="hx-rc-link" href="/login">Back to log in</a>
+          </div>
+          {view === "used" && <div className="hx-rc-note">If you did not reset your password, secure your account now: request a new link and choose a password only you know, then email hello@hirestepx.com.</div>}
+        </>
+      )}
+      {view === "done" && (
+        <>
+          <div className="hx-rc-ico ok"><Icon d={CHECK} /></div>
+          <h1>Password updated</h1>
+          <p>You have been signed out everywhere else. Log in with your new password to continue.</p>
+          <div className="hx-rc-cta"><a data-no-underline className="hx-btn" href="/login">Log in</a></div>
+        </>
+      )}
     </Shell>
   );
 }

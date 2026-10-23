@@ -2,7 +2,8 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
-import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
+import { KIND_LABEL, resourcesCss } from "./Resources";
+import { SeoCover, coverCss } from "./SeoCover";
 import { delay, useReveal } from "./motion";
 import type { Item } from "./resourcesData";
 import { captureClientEvent } from "../posthogClient";
@@ -49,13 +50,13 @@ function Prose({ text, labels = false }: { text: string; labels?: boolean }) {
 function Related({ title, items }: { title: string; items: { item: Item; meta: string }[] }) {
   return (
     <section className="sx-rel">
-      <style>{resourcesCss}</style>
+      <style>{resourcesCss + coverCss + ".lb-card .lb-vis.lb-cov { display: block; position: relative; padding: 0; background: none; overflow: hidden; }"}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
         {items.map(({ item: i, meta }) => (
           <li key={i.h}>
             <article className={`lb-card k-${i.k}`}>
-              <Vis i={i} />
+              <span className="lb-vis lb-cov"><SeoCover item={i} /></span>
               <div className="lb-body">
                 <span className={`lb-chip k-${i.k}`}>{KIND_LABEL[i.k]}</span>
                 <b><a data-no-underline className="lb-link" href={i.h}>{i.t}</a></b>
@@ -239,7 +240,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
 
   return (
     <Shell active="resources">
-      <style>{sxCss}</style>
+      <style>{sxCss + coverCss}</style>
       <div className="sa-bar" ref={bar} aria-hidden="true"><i /></div>
       <header className="sx-hero sa-hero">
         <div className="hx-wrap">
@@ -252,6 +253,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
             <span>{post.readTime} read</span>
             <span>{post.sections.length} sections</span>
           </div>
+          <div className="sx-cover sa-in" style={delay(4)}><SeoCover hero item={{ k: "guide", t: post.title, co: post.company, tag: post.category }} /></div>
         </div>
       </header>
       <section className="sa-body">
@@ -274,7 +276,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
         <Faqs items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
         <Explore links={explore} />
         {related.length > 0 && (
-          <Related title="Continue reading" items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}` }, meta: `${b.category} · ${b.readTime}` }))} />
+          <Related title="Continue reading" items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, co: b.company, tag: b.category }, meta: `${b.category} · ${b.readTime}` }))} />
         )}
         <p className="sx-allposts"><a data-no-underline href="/blog">All posts <Arrow /></a></p>
       </div>
@@ -360,12 +362,13 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
   const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Reported");
   return (
     <Shell active="resources">
-      <style>{sxCss}</style>
+      <style>{sxCss + coverCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">Salary guide · India 2026 · verified {calibrationDate}</span>
           <h1 className="sx-h1">{label} salary in India</h1>
           <p className="sx-dek">{page.metaDescription}</p>
+          <div className="sx-cover"><SeoCover hero item={{ k: "salary", t: `${label} salary`, co: label }} /></div>
           <div className="sx-stats">
             {meta?.noticePeriodDays != null && <div><span className="sx-mono">Notice period</span><b>{meta.noticePeriodDays} <small>days</small></b></div>}
             {meta?.bondPenaltyLpa != null && <div><span className="sx-mono">Bond</span><b>{meta.bondPenaltyLpa} <small>LPA penalty</small></b></div>}
@@ -445,7 +448,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
       </section>
       <div className="hx-wrap sx-after">
         {related.length > 0 && (
-          <Related title={`Compare ${label} salary with similar companies`} items={related.map((r) => ({ item: { k: "salary", t: `${r.label} salary`, h: `/salary/${r.slug}` }, meta: groupLabel || "Compare pay" }))} />
+          <Related title={`Compare ${label} salary with similar companies`} items={related.map((r) => ({ item: { k: "salary", t: `${r.label} salary`, h: `/salary/${r.slug}`, co: r.label }, meta: groupLabel || "Compare pay" }))} />
         )}
       </div>
       <Hubs />
@@ -469,7 +472,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
   const rest = page.intro.slice(first.length).trim();
   return (
     <Shell active="resources">
-      <style>{sxCss}</style>
+      <style>{sxCss + coverCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">{focusLabel} · {companyLabel}</span>
@@ -612,6 +615,7 @@ const sxCss = `
 .sx-h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; margin: 0 auto; max-width: 960px; text-wrap: balance; }
 .sx-h2 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 500; margin: 0 0 14px; }
 .sx-dek { margin: 20px auto 0; max-width: 62ch; font-size: 19px; line-height: 1.55; color: var(--ink-2); }
+.sx-cover { position: relative; width: 100%; max-width: 920px; margin-top: 36px; }
 .sx-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin-top: 24px; font-size: 14px; color: var(--ink-3); }
 .sx-meta span + span::before { content: ''; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); margin-right: 24px; vertical-align: middle; }
 .sx-x { width: 100%; max-width: 1040px; margin: 44px auto 0; text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 1px 2px rgba(20,20,60,.04), 0 12px 32px -16px rgba(20,20,60,.12); }
@@ -684,6 +688,7 @@ const sxCss = `
 .sx-explore div { display: flex; flex-wrap: wrap; gap: 10px; }
 .sx-explore a { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink); }
 .sx-explore a:hover { border-color: var(--ink-2); }
+.sx-explore .hx-arr { width: 13px; flex: none; }
 .sx-hubs { display: flex; flex-wrap: wrap; gap: 8px 20px; max-width: 1040px; margin: 24px auto 0; padding: 0 24px; font-size: 14px; }
 .sx-hubs a { color: var(--ink-2); }
 .sx-hubs a:hover { color: var(--ink); }
