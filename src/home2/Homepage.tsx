@@ -4,6 +4,7 @@ import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals"
 import { Trust } from "./Extra";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
+import Link from "next/link";
 import Skel, { useSkel } from "./Skel";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
@@ -50,11 +51,9 @@ function useNavX(active: string | undefined) {
     const link = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-navx]");
     const mark = x.current, cur = links.current?.querySelector<HTMLElement>('a[aria-current="page"]');
     if (!link || !mark || !cur || link === cur || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || reduced() || !mark.animate) return;
-    e.preventDefault();
     const to = markX(link);
     try { sessionStorage.setItem(NAV_X_KEY, String(to)); } catch { /* storage blocked */ }
     mark.animate(rollKeys(markX(cur), to), rollOpts);
-    window.setTimeout(() => { window.location.assign(link.href); }, 420);
   };
   return { links, x, onClick };
 }
@@ -75,18 +74,18 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
-        <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
+        <Link data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></Link>
         <nav ref={navx.links} className="hx-links" aria-label="Primary" onClick={navx.onClick}>
-          <a data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</a>
-          <a data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</a>
-          <a data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</a>
-          <a data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</a>
-          <a data-no-underline data-navx href="/about" aria-current={cur("about")}>About us</a>
+          <Link data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</Link>
+          <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</Link>
+          <Link data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
+          <Link data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</Link>
+          <Link data-no-underline data-navx href="/about" aria-current={cur("about")}>About us</Link>
           <i ref={navx.x} className="hx-x" aria-hidden="true" />
         </nav>
         <div className="hx-nav-cta">
-          <a data-no-underline className="hx-ghost" href="/login">Log in</a>
-          <a data-no-underline className="hx-btn sm" href="/signup">Sign up free</a>
+          <Link data-no-underline className="hx-ghost" href="/login">Log in</Link>
+          <Link data-no-underline className="hx-btn sm" href="/signup">Sign up free</Link>
         </div>
         <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
           <svg className={open ? "hx-bsvg on" : "hx-bsvg"} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -97,15 +96,15 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
       {open && (
         <div className="hx-menu" id="hx-menu" onClick={() => setOpen(false)}>
           <nav aria-label="Mobile">
-            <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-            <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
-            <a data-no-underline href="/pricing" aria-current={cur("pricing")}>Pricing</a>
-            <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
-            <a data-no-underline href="/about" aria-current={cur("about")}>About us</a>
+            <Link data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</Link>
+            <Link data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</Link>
+            <Link data-no-underline href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
+            <Link data-no-underline href="/resources" aria-current={cur("resources")}>Resources</Link>
+            <Link data-no-underline href="/about" aria-current={cur("about")}>About us</Link>
           </nav>
           <div className="hx-menu-cta">
-            <a data-no-underline className="hx-btn alt" href="/login">Log in</a>
-            <a data-no-underline className="hx-btn" href="/signup">Sign up free</a>
+            <Link data-no-underline className="hx-btn alt" href="/login">Log in</Link>
+            <Link data-no-underline className="hx-btn" href="/signup">Sign up free</Link>
           </div>
         </div>
       )}
