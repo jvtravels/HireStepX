@@ -83,7 +83,7 @@ function PlanTable({ plans }: { plans: Plan[] }) {
           </div>
         ))}
       </div>
-      <ul className="prc-trust">{TRUST.map((t) => <li key={t}>{t}</li>)}<li><a href="/refund">Refund policy</a></li><li><a href="/terms">Terms</a></li><li><a href="/privacy">Privacy</a></li></ul>
+      <ul className="prc-trust">{TRUST.map((t) => <li key={t}>{t}</li>)}</ul>
     </>
   );
 }
