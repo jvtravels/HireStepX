@@ -94,6 +94,16 @@ const nextConfig = {
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/pricing-next",
       },
+      {
+        source: "/legal",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/legal-next",
+      },
+      {
+        source: "/:slug(privacy|terms|refund|grievance|cookies|retention|voice|ai-scoring|subprocessors|employer-terms)",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/legal-next/:slug",
+      },
     ],
     afterFiles: [
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
@@ -140,6 +150,18 @@ const nextConfig = {
         source: "/pricing-next",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/pricing",
+        permanent: false,
+      },
+      {
+        source: "/legal-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/legal-next/:slug",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/:slug",
         permanent: false,
       },
       // www → non-www 301. Vercel serves both by default; without this redirect

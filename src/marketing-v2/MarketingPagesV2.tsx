@@ -1763,7 +1763,7 @@ function LegalPage({
   );
 }
 
-const POLICY_UPDATED = "18 October 2026";
+export const POLICY_UPDATED = "18 October 2026";
 
 function LegalEntityList() {
   const lines = legalEntityLines();
@@ -1786,9 +1786,9 @@ function PolicyChanges({ history }: { history: string }) {
   );
 }
 
-export function PrivacyV2() {
+export function PrivacyBody() {
   return (
-    <LegalPage title="Privacy" accent="explained simply." updated={POLICY_UPDATED}>
+    <>
       <h2>What we collect</h2>
       <p>Account email and name, your resume (uploaded by you), your answers and the transcripts of your mock sessions, scores and reports, payment records (order and plan details; card or UPI details are handled by Razorpay and never reach us), and basic usage data (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained by us. We do not collect location or contacts, and we use the microphone only during an active interview round. If you choose to connect Google Calendar, we read and write the calendar events needed for interview scheduling.</p>
 
@@ -1851,13 +1851,37 @@ export function PrivacyV2() {
       <p>HireStepX is not directed at anyone under 18, the age of a child under the DPDP Act. We do not knowingly process the personal data of children. If you believe a minor has created an account, email <CopyEmailLink email="grievance@hirestepx.com" /> and we will remove it.</p>
 
       <PolicyChanges history="18 October 2026 (employer data and employer credit on deletion explained); 13 October 2026 (cookie banner now lets you choose analytics and advertising separately); 11 October 2026 (corrected processors, retention, deletion, cookie and age wording); 10 October 2026." />
+    </>
+  );
+}
+
+export function PrivacyV2() {
+  return (
+    <LegalPage title="Privacy" accent="explained simply." updated={POLICY_UPDATED}>
+      <PrivacyBody />
     </LegalPage>
   );
 }
 
-export function TermsV2() {
+export function EmployerTermsList() {
   return (
-    <LegalPage title="Terms of Service" accent="the rules." updated={POLICY_UPDATED}>
+    <ul>
+        <li><strong>What an unlock buys.</strong> Access to one candidate's name, email, phone, LinkedIn, portfolio links and original resume file (where uploaded), and the ability to message them through HireStepX. Resume detail and practice-answer excerpts are visible before you unlock, with the candidate's name and contact details removed. It is not a hire, a placement, or a guarantee that the candidate will respond.</li>
+        <li><strong>Fees.</strong> {unlockFeeSentence()} The price shown at checkout is the amount charged.</li>
+        <li><strong>GST.</strong> {GST_STATEMENT}</li>
+        <li><strong>Refunds.</strong> See the <a href="/refund#employers">employer section of the refund policy</a>. In short: if a candidate becomes unavailable after you pay, that portion is refunded; once a candidate's contact details have been delivered to you, the fee is not refundable except where the law requires.</li>
+        <li><strong>Account credit and deletion.</strong> {CREDIT_ON_DELETION_SENTENCE}</li>
+        <li><strong>No guarantee.</strong> We do not guarantee any number of candidates, responses, interviews, or hires, or the accuracy of what candidates say about themselves. Practice scores are not certified assessments.</li>
+        <li><strong>Use of candidate data.</strong> Use candidate details only to evaluate and contact that candidate about the role you registered. Do not resell, share, publish, or add them to marketing lists; do not send unrelated, bulk, or spam messages; do not discriminate unlawfully; keep the data secure and delete it when you no longer need it.</li>
+        <li><strong>Candidate withdrawal and opt-out.</strong> Candidates can turn discovery off, block, or report you at any time. If they do, you will not see anything new from them and, if they withdraw before your payment is fulfilled, that candidate is not unlocked and is refunded. You must stop contacting a candidate who asks you to.</li>
+        <li><strong>Suspension.</strong> We may suspend or remove an employer account for misuse of candidate data, misleading postings, or harassment, without refund of fees for already-delivered contacts.</li>
+      </ul>
+  );
+}
+
+export function TermsBody() {
+  return (
+    <>
       <LegalEntityList />
 
       <h2>Who can use HireStepX</h2>
@@ -1883,17 +1907,7 @@ export function TermsV2() {
 
       <h2 id="employers">For employers</h2>
       <p>These terms apply to anyone who registers an employer account or pays to unlock a candidate.</p>
-      <ul>
-        <li><strong>What an unlock buys.</strong> Access to one candidate's name, email, phone, LinkedIn, portfolio links and original resume file (where uploaded), and the ability to message them through HireStepX. Resume detail and practice-answer excerpts are visible before you unlock, with the candidate's name and contact details removed. It is not a hire, a placement, or a guarantee that the candidate will respond.</li>
-        <li><strong>Fees.</strong> {unlockFeeSentence()} The price shown at checkout is the amount charged.</li>
-        <li><strong>GST.</strong> {GST_STATEMENT}</li>
-        <li><strong>Refunds.</strong> See the <a href="/refund#employers">employer section of the refund policy</a>. In short: if a candidate becomes unavailable after you pay, that portion is refunded; once a candidate's contact details have been delivered to you, the fee is not refundable except where the law requires.</li>
-        <li><strong>Account credit and deletion.</strong> {CREDIT_ON_DELETION_SENTENCE}</li>
-        <li><strong>No guarantee.</strong> We do not guarantee any number of candidates, responses, interviews, or hires, or the accuracy of what candidates say about themselves. Practice scores are not certified assessments.</li>
-        <li><strong>Use of candidate data.</strong> Use candidate details only to evaluate and contact that candidate about the role you registered. Do not resell, share, publish, or add them to marketing lists; do not send unrelated, bulk, or spam messages; do not discriminate unlawfully; keep the data secure and delete it when you no longer need it.</li>
-        <li><strong>Candidate withdrawal and opt-out.</strong> Candidates can turn discovery off, block, or report you at any time. If they do, you will not see anything new from them and, if they withdraw before your payment is fulfilled, that candidate is not unlocked and is refunded. You must stop contacting a candidate who asks you to.</li>
-        <li><strong>Suspension.</strong> We may suspend or remove an employer account for misuse of candidate data, misleading postings, or harassment, without refund of fees for already-delivered contacts.</li>
-      </ul>
+      <EmployerTermsList />
 
       <h2>Disclaimers</h2>
       <p>HireStepX provides interview practice. We do not guarantee any specific employment outcome. AI-generated feedback is a tool for self-improvement, not a substitute for professional career counseling.</p>
@@ -1905,13 +1919,21 @@ export function TermsV2() {
       <p>Write to our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
 
       <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (minimum age 18, employer terms added, complaint timelines unified); 10 October 2026." />
+    </>
+  );
+}
+
+export function TermsV2() {
+  return (
+    <LegalPage title="Terms of Service" accent="the rules." updated={POLICY_UPDATED}>
+      <TermsBody />
     </LegalPage>
   );
 }
 
-export function RefundPolicyV2() {
+export function RefundBody() {
   return (
-    <LegalPage title="Refund" accent="policy." updated={POLICY_UPDATED}>
+    <>
       <h2>Free plan</h2>
       <p>Nothing to refund; you didn't pay anything.</p>
 
@@ -1940,13 +1962,21 @@ export function RefundPolicyV2() {
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours. For any other complaint, write to the <a href="/grievance">Grievance Officer</a>: we acknowledge within 24 hours and resolve within 15 days.</p>
 
       <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (employer unlock refunds added); 30 May 2026." />
+    </>
+  );
+}
+
+export function RefundPolicyV2() {
+  return (
+    <LegalPage title="Refund" accent="policy." updated={POLICY_UPDATED}>
+      <RefundBody />
     </LegalPage>
   );
 }
 
-export function GrievanceOfficerV2() {
+export function GrievanceBody() {
   return (
-    <LegalPage title="Grievance" accent="Officer." updated="11 October 2026">
+    <>
       <h2>Who is the Grievance Officer?</h2>
       <p>
         In compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021
@@ -2020,6 +2050,14 @@ export function GrievanceOfficerV2() {
         <a href="/refund">Refund Policy</a> or email{" "}
         <CopyEmailLink email="hello@hirestepx.com" />.
       </p>
+    </>
+  );
+}
+
+export function GrievanceOfficerV2() {
+  return (
+    <LegalPage title="Grievance" accent="Officer." updated={"11 October 2026"}>
+      <GrievanceBody />
     </LegalPage>
   );
 }

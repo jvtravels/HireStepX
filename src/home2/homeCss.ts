@@ -270,7 +270,8 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-foot-cols div { display: grid; gap: 12px; align-content: start; }
 .hx-foot-cols h3 { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
 .hx-foot-cols a { color: var(--ink); font-size: 15px; }
-.hx-foot-cols a:hover { color: var(--btn); }
+.hx-foot-cols a:hover, .hx-foot-btn:hover { color: var(--btn); }
+.hx-foot-btn { appearance: none; border: 0; background: none; padding: 0; font: inherit; font-size: 15px; color: var(--ink); text-align: left; cursor: pointer; }
 .hx-foot-bar { grid-column: 1 / -1; padding-top: 24px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 
 .hx-emp-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start; }
