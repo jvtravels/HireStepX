@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
 import { KIND_LABEL, resourcesCss } from "./Resources";
 import { SeoCover, coverCss } from "./SeoCover";
+import Skel from "./Skel";
 import { delay, useReveal } from "./motion";
 import type { Item } from "./resourcesData";
 import { captureClientEvent } from "../posthogClient";
@@ -50,7 +51,7 @@ function Prose({ text, labels = false }: { text: string; labels?: boolean }) {
 function Related({ title, items }: { title: string; items: { item: Item; meta: string }[] }) {
   return (
     <section className="sx-rel">
-      <style>{resourcesCss + coverCss + ".lb-card .lb-vis.lb-cov { display: block; position: relative; padding: 0; background: none; overflow: hidden; }"}</style>
+      <style>{resourcesCss + coverCss}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
         {items.map(({ item: i, meta }) => (
@@ -483,7 +484,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             {page.interviewRounds && <span>{page.interviewRounds.length} rounds</span>}
             <span>Framework: {page.framework.name}</span>
           </div>
-          <FlipDeck href={signup} questions={questions} framework={page.framework} company={companyLabel} />
+          <Skel><FlipDeck href={signup} questions={questions} framework={page.framework} company={companyLabel} /></Skel>
         </div>
       </header>
       <section className="sx-body">

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Close, Shell } from "./Pages";
+import Skel from "./Skel";
 import { delay, reduced, useReveal, useTween } from "./motion";
 import { FaqBlock } from "./Extra";
 
@@ -236,7 +237,7 @@ const aboutCss = `
 `;
 
 const HeroStage = () => (
-  <div className="ab-stage hx-ri" style={delay(3)} role="img" aria-label="Sample of a practice interview being scored, then a candidate getting shortlisted">
+  <Skel className="ab-stage hx-ri" style={delay(3)} role="img" aria-label="Sample of a practice interview being scored, then a candidate getting shortlisted">
     <div className="ab-card ab-q">
       <em>Sample question</em>
       <p>Tell me about a time you led without being the manager.</p>
@@ -251,7 +252,7 @@ const HeroStage = () => (
       <div><b>Shortlisted</b><span>A company saw your proof</span></div>
     </div>
     <span className="ab-tag">Illustration</span>
-  </div>
+  </Skel>
 );
 
 const STAT_LIVE = ["People practising", "Interviews practised", "Companies hiring", "Roles posted"];
@@ -313,7 +314,7 @@ function RemoteTeam() {
               </button>
             ))}
           </div>
-          <div className="ab-map">
+          <Skel className="ab-map">
             <svg viewBox="0 0 1000 800" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
               {[200, 400, 600].map((y) => <line key={`h${y}`} className="ab-grid-l" x1="0" x2="1000" y1={y} y2={y} />)}
               {[250, 500, 750].map((x) => <line key={`v${x}`} className="ab-grid-l" y1="0" y2="800" x1={x} x2={x} />)}
@@ -332,7 +333,7 @@ function RemoteTeam() {
               </button>
             ))}
             <span className="ab-live"><i />Working from {TEAM.length} cities</span>
-          </div>
+          </Skel>
         </div>
       </div>
     </section>
@@ -374,7 +375,7 @@ export function AboutPage() {
           <div className="ab-stats">
             {STAT_LIVE.map((label, i) => (
               <div className="ab-stat hx-ri" style={delay(2 + i)} key={label}>
-                <div className="ab-viz"><StatViz i={i} /></div>
+                <Skel className="ab-viz"><StatViz i={i} /></Skel>
                 <StatNumber n={nums[i]} on={st.on} />
                 <span>{label}</span>
               </div>

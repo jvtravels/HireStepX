@@ -672,6 +672,7 @@ const TABS: FeatureTab[] = [
 export function Features({ tabs, icons, kicker, title }: { tabs: FeatureTab[]; icons: React.ReactNode[]; kicker: string; title: string }) {
   const { ref: headRef, on } = useReveal<HTMLDivElement>();
   const { ref, stage, i, go } = useScrollStage<HTMLDivElement, HTMLDivElement>(tabs.length);
+  useSkel(stage);
   const [live, setLive] = useState(true);
   const [alt, setAlt] = useState(false);
   useEffect(() => {
@@ -717,7 +718,7 @@ export function Features({ tabs, icons, kicker, title }: { tabs: FeatureTab[]; i
       </section>
       <div ref={ref} className="ft">
         <div className="ft-stick">
-          <div ref={stage} className="ft-stage">
+          <div ref={stage} data-sk="pending" className="ft-stage">
             <div className="ft-bg" aria-hidden="true">{tabs.map((t, k) => <i key={t.name} style={{ opacity: `var(--b${k}, ${k === 0 ? 1 : 0})` }} />)}</div>
             <div className="ft-in">
             <div className="ft-tabs" role="group" aria-label={kicker}>

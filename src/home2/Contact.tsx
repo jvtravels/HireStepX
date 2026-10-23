@@ -1,4 +1,5 @@
 "use client";
+import Skel from "./Skel";
 import { useState } from "react";
 import { Arrow, Close, Shell } from "./Pages";
 import { delay, useReveal } from "./motion";
@@ -255,9 +256,9 @@ export function ContactPage() {
                 </div>
               </div>
             </div>
-            <div className="hx-stage cx-demo ct-stage hx-ri" style={delay(4)}>
+            <Skel className="hx-stage cx-demo ct-stage hx-ri" style={delay(4)}>
               <ContactForm topic={topic} />
-            </div>
+            </Skel>
           </div>
         </div>
       </section>

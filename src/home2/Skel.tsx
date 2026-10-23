@@ -21,7 +21,7 @@ export function useSkel(ref: RefObject<HTMLElement | null>) {
 }
 
 /* replayKey: when it changes after the first play, the swapped content redraws with a short skeleton (hidden before paint, so the new content never flashes). */
-export default function Skel({ className, style, children, replayKey }: { className?: string; style?: CSSProperties; children: ReactNode; replayKey?: number }) {
+export default function Skel({ className, style, children, replayKey, role, "aria-label": ariaLabel }: { className?: string; style?: CSSProperties; children: ReactNode; replayKey?: number; role?: string; "aria-label"?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const first = useRef(true);
   useSkel(ref);
@@ -32,5 +32,5 @@ export default function Skel({ className, style, children, replayKey }: { classN
     el.dataset.sk = "playing";
     generate(el, { mode: "skeleton", duration: 600, reveal: "fade", fadeDuration: 240, revealAt: 330, delay: 0, onDone: () => { el.dataset.sk = "done"; } });
   }, [replayKey]);
-  return <div ref={ref} data-sk="pending" className={className} style={style}>{children}</div>;
+  return <div ref={ref} data-sk="pending" className={className} style={style} role={role} aria-label={ariaLabel}>{children}</div>;
 }

@@ -1,4 +1,5 @@
 "use client";
+import Skel from "./Skel";
 import { useState } from "react";
 import { Arrow, Shell } from "./Pages";
 import { delay, useReveal } from "./motion";
@@ -86,7 +87,7 @@ function Frame({ kicker, code, title, body, mode, children }: { kicker: string; 
             <p className="er-lede hx-ri" style={delay(3)}>{body}</p>
             {children}
           </div>
-          <div className="er-stage hx-ri" style={delay(2)}><Line mode={mode} /></div>
+          <Skel className="er-stage hx-ri" style={delay(2)}><Line mode={mode} /></Skel>
         </div>
       </div>
     </section>

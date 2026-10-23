@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import Skel from "./Skel";
 
 export type CoverInput = { k: "guide" | "question" | "salary" | "company" | "city" | "topic"; t: string; co?: string; tag?: string; rt?: number; role?: string; focus?: string };
 
@@ -119,8 +120,8 @@ export function SeoCover({ item, hero = false }: { item: CoverInput; hero?: bool
   } as CSSProperties;
 
   return (
-    <span className={`sc sc-l${layout}${hero ? " sc-hero" : ""}`} style={style} aria-hidden="true">
-      <span className="sc-in">
+    <Skel className={`sc sc-l${layout}${hero ? " sc-hero" : ""}`} style={style}>
+      <span className="sc-in" aria-hidden="true">
         <span className="sc-bg" />
         <span className="sc-tile">
           {mono ? <b>{mono.charAt(0).toUpperCase()}</b> : <Glyph g={g1} />}
@@ -130,7 +131,7 @@ export function SeoCover({ item, hero = false }: { item: CoverInput; hero?: bool
         <span className="sc-chip sc-c2"><Glyph g={mono ? g2 : g3} /></span>
         <Mini c={item} seed={seed} />
       </span>
-    </span>
+    </Skel>
   );
 }
 
@@ -195,5 +196,6 @@ export const coverCss = `
 .sc-hero .sc-in { --u: min(1cqw, 2.4cqh); width: calc(var(--u) * 100); height: calc(var(--u) * 41.6); }
 .sc-hero .sc-in { transform: translate(-50%, -50%) scale(1); }
 
+.lb-card .lb-vis.lb-cov { display: block; position: relative; padding: 0; background: none; overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .sc-chip, .sc-wave i { animation: none; } }
 `;

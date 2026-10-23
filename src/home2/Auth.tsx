@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { HomeShell } from "./Homepage";
+import Skel from "./Skel";
 
 export const authCss = `
 .hx:has(> .hx-au) { height: 100%; }
@@ -101,7 +102,7 @@ const BARS = [8, 16, 24, 12, 20, 26, 14, 8, 18, 22, 10];
 
 export function Scene({ talent }: { talent: boolean }) {
   return (
-    <div className="hx-au-stage">
+    <Skel className="hx-au-stage">
       <div className="hx-au-scene">
         <div className="hx-au-tile a">
           <Photo src="/people/candidate.jpg" alt="A candidate smiling" fallback={<Person skin="#b9774f" hair="#2a1d1a" shirt="oklch(0.42 0.13 278)" bg="oklch(0.93 0.04 55)" />} />
@@ -117,7 +118,7 @@ export function Scene({ talent }: { talent: boolean }) {
           <strong>{talent ? "72" : "82"}</strong>
         </div>
       </div>
-    </div>
+    </Skel>
   );
 }
 
