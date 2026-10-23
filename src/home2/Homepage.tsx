@@ -3,6 +3,7 @@ import { homeCss } from "./homeCss";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { preload } from "react-dom";
 import Skel, { useSkel } from "./Skel";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
@@ -14,6 +15,9 @@ function Arrow() {
   );
 }
 
+
+const FONT_FILES = ["geist-sans-var", "bricolage-500", "bricolage-600"];
+const preloadFonts = () => FONT_FILES.forEach((f) => preload(`/fonts/${f}.woff2`, { as: "font", type: "font/woff2", crossOrigin: "anonymous" }));
 
 const NAV_X_KEY = "hx-nav-x";
 const rollKeys = (from: number, to: number) => {
@@ -58,6 +62,7 @@ function useNavX(active: string | undefined) {
 export type NavKey = "talent" | "companies" | "pricing" | "resources" | "about";
 
 export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; talentHref?: string }) {
+  preloadFonts();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;

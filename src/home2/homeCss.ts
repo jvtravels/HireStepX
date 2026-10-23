@@ -1,4 +1,7 @@
 export const homeCss = `
+@media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
+.hx-nav { view-transition-name: hx-nav; }
 @font-face { font-family: 'Geist'; src: url('/fonts/geist-sans-var.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Geist Mono'; src: url('/fonts/geist-mono-var.woff2') format('woff2'); font-weight: 100 900; font-display: swap; }
 @font-face { font-family: 'Bricolage Grotesque'; src: url('/fonts/bricolage-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
