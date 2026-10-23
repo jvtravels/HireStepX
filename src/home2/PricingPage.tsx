@@ -57,8 +57,8 @@ type Plan = { name: string; price: string; unit: string; blurb: string; points: 
 
 const CAND_PLANS: Plan[] = [
   { name: "Free", price: "₹0", unit: "for 2 sessions", blurb: "Try a real round before you pay anything.", points: ["Scored answers and feedback", "Every round type", "No card needed"], cta: "Start free", href: "/signup" },
-  { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", blurb: "About ₹8 a session, for a campus drive or a job switch.", points: ["Everything in Free", "Valid for 30 days", "Cheapest per session"], cta: "Get the pack", href: "/signup", best: true },
-  { name: "Single session", price: "₹9", unit: "per session", blurb: "Pay as you go and practise on your own schedule.", points: ["Everything in Free", "Credit never expires", "Buy one at a time"], cta: "Buy one", href: "/signup" },
+  { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", blurb: "About ₹8 a session, for a campus drive or a job switch.", points: ["Everything included", "Valid for 30 days", "Cheapest per session"], cta: "Get the pack", href: "/signup", best: true },
+  { name: "Single session", price: "₹9", unit: "per session", blurb: "Pay as you go and practise on your own schedule.", points: ["Everything included", "Credit never expires", "Buy one at a time"], cta: "Buy one", href: "/signup" },
 ];
 
 const EMP_PLANS: Plan[] = [
