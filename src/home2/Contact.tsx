@@ -272,8 +272,7 @@ export function ContactPage() {
 const contactCss = `
 .ct-wrap { display: grid; gap: 48px; max-width: 1560px; }
 .ct-top { text-align: center; display: grid; justify-items: center; }
-.ct-top .cx-h1 { margin-top: 0; font-size: 44px; line-height: 1.06; }
-.ct-top .cx-lede { margin-top: 12px; font-size: 16px; line-height: 1.5; margin-left: auto; margin-right: auto; max-width: 64ch; }
+.ct-top .cx-lede { margin-left: auto; margin-right: auto; max-width: 64ch; }
 .ct-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: stretch; width: 100%; }
 .ct-left { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .ct-left .ct-ans { flex: 1; align-content: start; }
@@ -358,8 +357,6 @@ const contactCss = `
   .ct-opt:hover { transform: none; }
 }
 @container (max-width: 900px) {
-    .ct-top .cx-h1 { font-size: 32px; }
-    .ct-top .cx-lede { font-size: 15px; }
     .hx-stage.cx-demo.ct-stage { padding: 14px; gap: 14px; }
     .ct-card, .ct-stage .ct-card { padding: 22px; }
     .ct-ans { padding: 22px; }

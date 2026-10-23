@@ -120,12 +120,12 @@ export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
 }
 
 const pricingCss = `
-.prc-hero { padding-bottom: 64px; }
-.prc-hero .hx-wrap { text-align: center; }
-.prc-hero .hx-h1 { font-size: 52px; margin: 56px auto 0; max-width: 24ch; text-wrap: balance; }
-.prc-hero .hx-lede { margin: 18px auto 0; max-width: 60ch; font-size: 19px; }
+.prc-hero { min-height: min(calc(100svh - 65px), 860px); display: flex; flex-direction: column; padding-bottom: 40px; }
+.prc-hero > .hx-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; text-align: center; }
+.prc-hero .hx-h1 { font-size: 44px; margin: clamp(32px, 6svh, 72px) auto 0; max-width: 26ch; text-wrap: balance; }
+.prc-hero .hx-lede { margin: 12px auto 0; max-width: 60ch; font-size: 16px; }
 .prc-hero .prc-seg { margin: 28px auto 0; }
-.prc-stage { max-width: 1120px; margin-left: auto; margin-right: auto; margin-top: 32px; }
+.prc-stage { max-width: 1120px; width: 100%; margin-left: auto; margin-right: auto; margin-top: 28px; }
 .prc-seg { display: flex; width: max-content; max-width: 100%; margin: 0 auto 40px; padding: 4px; gap: 4px; border-radius: 12px; background: var(--wash); border: 1px solid var(--line); }
 .prc-seg button { appearance: none; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-2); min-height: 44px; padding: 0 22px; border-radius: 9px; cursor: pointer; transition: background .15s, color .15s; }
 .prc-seg button:hover { color: var(--ink); }
@@ -155,8 +155,9 @@ const pricingCss = `
 .prc-trust { margin: 22px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 28px; font-size: 14px; color: var(--ink-2); }
 .prc-trust a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 @container (max-width: 900px) {
-  .prc-hero .hx-h1 { font-size: 38px; margin-top: 20px; }
-  .prc-hero .hx-lede { font-size: 18px; }
+  .prc-hero { min-height: 0; }
+  .prc-hero .hx-h1 { font-size: 32px; margin-top: 20px; }
+  .prc-hero .hx-lede { font-size: 15px; }
   .prc-seg { width: 100%; }
   .prc-seg button { flex: 1; padding: 0 12px; }
   .prc-grid { grid-template-columns: 1fr; }

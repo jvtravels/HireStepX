@@ -1,5 +1,4 @@
 "use client";
-import { openCookieSettings } from "../consent";
 import { homeCss } from "./homeCss";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
@@ -204,9 +203,9 @@ export function Footer() {
             <p className="hx-foot-rights">Your rights under India&apos;s DPDP Act: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a href="/signup">Practise free</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a><a href="/login">Log in</a></div>
+            <div><h3>Product</h3><a data-no-underline href="/candidates">For talent</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a></div>
             <div><h3>Company</h3><a href="/contact">Contact</a></div>
-            <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a><a href="/cookies">Cookie policy</a><a href="/legal">All legal documents</a><button type="button" className="hx-foot-btn" onClick={openCookieSettings}>Cookie settings</button></div>
+            <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>
           <div className="hx-foot-bar">
             <span>&copy; 2026 HireStepX</span>

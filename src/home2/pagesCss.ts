@@ -821,9 +821,9 @@ export const pagesCss = `
 .rw-step { min-height: 420px; }
 .cx-hero { padding: 72px 0 88px; }
 .cx-hero-in { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 56px; align-items: center; }
-.cx-h1 { margin: 16px 0 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 60px; line-height: 1.02; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; }
+.cx-h1 { margin: 16px 0 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 44px; line-height: 1.06; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; }
 .cx-h1 b { font-weight: inherit; }
-.cx-lede { margin: 22px 0 0; font-size: 19px; line-height: 1.5; color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
+.cx-lede { margin: 12px 0 0; font-size: 16px; line-height: 1.5; color: var(--ink-2); max-width: 46ch; text-wrap: pretty; }
 .cx-cta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 32px; }
 .cx-ghost { font-size: 16px; font-weight: 500; color: var(--ink); border-bottom: 1px solid var(--line-2); padding-bottom: 2px; }
 .cx-facts { list-style: none; display: flex; gap: 28px; flex-wrap: wrap; margin: 36px 0 0; padding: 22px 0 0; border-top: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
@@ -832,13 +832,18 @@ export const pagesCss = `
 @container (max-width: 900px) {
   .cx-hero { padding: 32px 0 56px; }
   .cx-hero-in { grid-template-columns: 1fr; gap: 32px; }
-  .cx-h1 { font-size: 38px; }
-  .cx-lede { font-size: 17px; }
+  .cx-h1 { font-size: 32px; }
+  .cx-lede { font-size: 15px; }
   .hx-stage.cx-demo { padding: 12px; }
   .cx-cta { flex-direction: column; align-items: stretch; gap: 14px; }
   .cx-cta .hx-btn { width: 100%; }
     .rw-step { min-height: 260px; }
 }
+
+.cx-close .hx-end { padding: 64px 40px 52px; border-radius: 24px; }
+.cx-close .hx-end .hx-h2 { margin-top: 12px; font-size: 36px; line-height: 1.1; }
+.cx-close .hx-end p { margin-top: 12px; font-size: 16px; }
+@container (max-width: 900px) { .cx-close .hx-end { padding: 48px 24px; } .cx-close .hx-end .hx-h2 { font-size: 28px; } }
 
 /* candidates: journey sections */
 .cb { position: relative; display: block; height: 8px; border-radius: 999px; background: var(--line); }
