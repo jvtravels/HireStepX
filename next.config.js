@@ -100,6 +100,11 @@ const nextConfig = {
         destination: "/resources-next",
       },
       {
+        source: "/contact",
+        has: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/contact-next",
+      },
+      {
         source: "/legal",
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/legal-next",
@@ -161,6 +166,12 @@ const nextConfig = {
         source: "/resources-next",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/contact-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/contact",
         permanent: false,
       },
       {
