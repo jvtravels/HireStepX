@@ -287,7 +287,7 @@ export function Scene({ i }: { i: Item }): ReactNode {
 }
 
 export const sceneCss = `
-.lb-card .lb-vis.sc { display: block; padding: 0; background-image: none; background-color: oklch(0.968 0.004 285); }
+.lb-card .lb-vis.sc { display: block; padding: 0; }
 .sc-c { position: absolute; display: flex; flex-direction: column; gap: 7px; background: #fff; border-radius: 12px; padding: 10px 12px; box-shadow: 0 0 0 1px oklch(0.2 0.03 280 / .06), 0 12px 26px oklch(0.3 0.1 280 / .13); font-size: 11px; line-height: 1.3; color: var(--ink); transition: transform .4s cubic-bezier(0.22, 1, 0.36, 1); box-sizing: border-box; }
 .sc-c.f2 { padding: 7px 10px; border-radius: 10px; }
 .lb-card:hover .sc-c.f, .lb-card:focus-within .sc-c.f { transform: translateY(-3px); }
