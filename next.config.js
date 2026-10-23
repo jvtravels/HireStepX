@@ -100,7 +100,7 @@ const nextConfig = {
         destination: "/legal-next",
       },
       {
-        source: "/:slug(privacy|terms|refund|grievance|cookies|retention|voice|ai-scoring|subprocessors|employer-terms)",
+        source: "/:slug(privacy|terms|refund|cookies)",
         has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/legal-next/:slug",
       },
