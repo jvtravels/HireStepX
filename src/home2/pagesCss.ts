@@ -229,7 +229,7 @@ export const pagesCss = `
 .hx-hero:has(.pg-hero-stage) .hx-cta { margin-top: 24px; }
 
 .hx-hero:has(.pg-hero-stage) { min-height: calc(100svh - 65px); display: flex; flex-direction: column; padding-bottom: 40px; }
-.hx-hero:has(.pg-hero-stage) > .hx-wrap { flex: 1; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; }
+.hx-hero:has(.pg-hero-stage) > .hx-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .hx-hero:has(.pg-hero-stage) .hx-h1 { margin-top: clamp(56px, 10svh, 112px); }
 .pg-hero-stage { margin-top: clamp(48px, 7svh, 80px); }
 .pg-hero-stage .hc-log { height: 330px; }
