@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useSlider } from "./motion";
 import { Arrow, Close, Shell } from "./Pages";
 import { FaqBlock } from "./Extra";
 import Skel from "./Skel";
@@ -91,14 +92,15 @@ function PlanTable({ plans }: { plans: Plan[] }) {
 export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
   const [aud, setAud] = useState<Audience>(initial);
   const cand = aud === "cand";
+  const segRef = useSlider<HTMLDivElement>(aud);
   return (
     <Shell active={cand ? "talent" : "companies"}>
       <style>{pricingCss}</style>
       <section className="hx-hero prc-hero">
         <div className="hx-wrap">
-          <h1 className="hx-h1">{cand ? <>Your first 2 sessions are <b>free</b>. After that, pay only for what you use.</> : <>Read every score for free. Pay only to <b>reach someone</b>.</>}</h1>
+          <h1 className="hx-h1"><span key={aud} className="prc-sw">{cand ? <>Your first 2 sessions are <b>free</b>. After that, pay only for what you use.</> : <>Read every score for free. Pay only to <b>reach someone</b>.</>}</span></h1>
           <p className="hx-lede">{cand ? "No subscription and no card to start. Buy a pack or single sessions when you need more." : "Post roles, see ranked matches and read the answers behind every score. You pay only to unlock the people you pick."}</p>
-          <div className="prc-seg" role="tablist" aria-label="Pricing for">
+          <div ref={segRef} className="prc-seg" role="tablist" aria-label="Pricing for">
             <button type="button" role="tab" aria-selected={cand} className={cand ? "on" : ""} onClick={() => setAud("cand")}>I am practising</button>
             <button type="button" role="tab" aria-selected={!cand} className={!cand ? "on" : ""} onClick={() => setAud("emp")}>I am hiring</button>
           </div>
@@ -127,7 +129,15 @@ const pricingCss = `
 .prc-seg { display: flex; width: max-content; max-width: 100%; margin: 0 auto 40px; padding: 4px; gap: 4px; border-radius: 12px; background: var(--wash); border: 1px solid var(--line); }
 .prc-seg button { appearance: none; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-2); min-height: 44px; padding: 0 22px; border-radius: 9px; cursor: pointer; transition: background .15s, color .15s; }
 .prc-seg button:hover { color: var(--ink); }
-.prc-seg button.on { background: var(--white); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.prc-seg { position: relative; }
+.prc-seg::before { content: ''; position: absolute; left: 0; top: 0; height: var(--sh, 0); width: var(--sw, 0); border-radius: 9px; background: var(--white); box-shadow: 0 0 0 1px var(--line); transform: translate(var(--sx, 0), var(--sy, 0)); opacity: 0; transition: transform .28s cubic-bezier(.22,1,.36,1), width .28s cubic-bezier(.22,1,.36,1); pointer-events: none; }
+.prc-seg[data-ready]::before { opacity: 1; }
+.prc-seg button { position: relative; }
+.prc-seg button.on { color: var(--ink); }
+.prc-seg:not([data-ready]) button.on { background: var(--white); box-shadow: 0 0 0 1px var(--line); }
+.prc-sw { display: block; animation: prc-sw .22s cubic-bezier(.22,1,.36,1); }
+@keyframes prc-sw { from { opacity: 0; transform: translateY(6px); filter: blur(3px); } to { opacity: 1; transform: none; filter: none; } }
+@media (prefers-reduced-motion: reduce) { .prc-seg::before { transition: none; } .prc-sw { animation: none; } }
 .prc-stage { padding: 24px; }
 .prc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; text-align: left; }
 .prc-plan { display: flex; flex-direction: column; gap: 14px; padding: 28px; border-radius: 18px; background: var(--white); border: 1px solid var(--line); }

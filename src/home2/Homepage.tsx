@@ -15,7 +15,7 @@ function Arrow() {
   );
 }
 
-export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies"; talentHref?: string }) {
+export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies" | "resources"; talentHref?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -23,7 +23,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
-  const cur = (k: "talent" | "companies") => (active === k ? "page" : undefined);
+  const cur = (k: "talent" | "companies" | "resources") => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
@@ -32,6 +32,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
           <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
           <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
           <a data-no-underline href="/pricing">Pricing</a>
+          <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
           <a data-no-underline href="/about">About us</a>
         </nav>
         <div className="hx-nav-cta">
@@ -39,8 +40,8 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
           <a data-no-underline className="hx-btn sm" href="/signup">Sign up free</a>
         </div>
         <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          <svg className={open ? "hx-bsvg on" : "hx-bsvg"} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path className="hx-b1" d="M4 7h16" /><path className="hx-b2" d="M4 12h16" /><path className="hx-b3" d="M4 17h16" />
           </svg>
         </button>
       </div>
@@ -50,6 +51,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
             <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
             <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
             <a data-no-underline href="/pricing">Pricing</a>
+            <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
             <a data-no-underline href="/about">About us</a>
           </nav>
           <div className="hx-menu-cta">
@@ -202,7 +204,7 @@ export function Footer() {
             <p className="hx-foot-rights">Your rights under India&apos;s DPDP Act: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a href="/signup">Practise free</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/login">Log in</a></div>
+            <div><h3>Product</h3><a href="/signup">Practise free</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a><a href="/login">Log in</a></div>
             <div><h3>Company</h3><a href="/contact">Contact</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a><a href="/cookies">Cookie policy</a><a href="/legal">All legal documents</a><button type="button" className="hx-foot-btn" onClick={openCookieSettings}>Cookie settings</button></div>
           </nav>

@@ -30,7 +30,7 @@ export const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
 );
 
-export function Shell({ active, children }: { active: "talent" | "companies"; children: React.ReactNode }) {
+export function Shell({ active, children }: { active: "talent" | "companies" | "resources"; children: React.ReactNode }) {
   return (
     <div className="hx">
       <style>{homeCss}</style>

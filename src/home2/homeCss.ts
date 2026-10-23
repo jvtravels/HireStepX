@@ -38,6 +38,11 @@ export const homeCss = `
 .hx-burger { display: none; width: 44px; height: 44px; margin-right: -10px; border: 0; background: none; color: var(--ink); border-radius: 10px; cursor: pointer; place-items: center; }
 .hx-burger:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .hx-menu { display: none; }
+.hx-bsvg path { transform-box: view-box; transform-origin: 12px 12px; transition: transform .3s cubic-bezier(.22,1,.36,1), opacity .2s; }
+.hx-bsvg.on .hx-b1 { transform: translateY(5px) rotate(45deg); }
+.hx-bsvg.on .hx-b2 { opacity: 0; transform: scaleX(.2); }
+.hx-bsvg.on .hx-b3 { transform: translateY(-5px) rotate(-45deg); }
+@media (prefers-reduced-motion: reduce) { .hx-bsvg path { transition: none; } }
 .hx-ghost { font-size: 15px; color: var(--ink-2); padding: 10px 12px; }
 
 .hx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 10px; font-size: 15px; font-weight: 500; background: var(--btn); color: var(--white); transition: background .15s, box-shadow .15s; box-shadow: 0 1px 2px oklch(0.257 0.086 281.288 / 0.2); }
