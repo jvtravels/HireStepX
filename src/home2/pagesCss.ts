@@ -577,11 +577,11 @@ export const pagesCss = `
 .hs-scene .pg-lockrow.open em { font-size: 15px; font-weight: 500; color: var(--ink); }
 .hs-scene .pg-lockrow span { padding: 12px 14px; font-size: 15px; }
 @media (max-width: 900px) { .hs-people { grid-template-columns: repeat(2, auto); } .hs-scene .pg-body { min-height: 0; } }
-.hx-links { gap: 4px; }
+.hx-links { gap: 4px; position: relative; }
 .hx-links a { padding: 7px 14px; border-radius: 99px; transition: color .2s, background-color .2s; }
 .hx-links a { position: relative; }
 .hx-links a[aria-current="page"] { color: var(--ink); font-weight: 500; }
-.hx-links a[aria-current="page"]::after { content: ""; position: absolute; left: 50%; bottom: -4px; width: 9px; height: 9px; margin-left: -4.5px; background: var(--accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+.hx-links .hx-x { position: absolute; left: 0; bottom: -4px; width: 9px; height: 9px; opacity: 0; pointer-events: none; will-change: transform; background: var(--accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
 @media (max-width: 900px) { .hx-links { gap: 0; } }
 .hs-act, .hs-rank li.hs-sel { position: relative; }
 .hs-cur { position: absolute; left: 52px; top: 16px; z-index: 3; display: flex; align-items: flex-start; color: var(--accent); pointer-events: none; opacity: 0; animation: hs-cur 2.2s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; filter: drop-shadow(0 2px 4px oklch(0.3 0.05 50 / 0.3)); }

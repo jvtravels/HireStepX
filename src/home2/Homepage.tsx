@@ -2,7 +2,7 @@
 import { homeCss } from "./homeCss";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Skel, { useSkel } from "./Skel";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
@@ -14,6 +14,46 @@ function Arrow() {
   );
 }
 
+
+const NAV_X_KEY = "hx-nav-x";
+const rollKeys = (from: number, to: number) => {
+  const turns = Math.max(1, Math.round(Math.abs(to - from) / 28));
+  const rot = Math.sign(to - from) * 360 * turns;
+  return [{ transform: `translateX(${from}px) rotate(0deg)` }, { transform: `translateX(${to}px) rotate(${rot}deg)` }];
+};
+const rollOpts: KeyframeAnimationOptions = { duration: 560, easing: "cubic-bezier(.22,.8,.24,1)", fill: "forwards" };
+const markX = (a: HTMLElement) => a.offsetLeft + a.offsetWidth / 2 - 4.5;
+
+function useNavX(active: string | undefined) {
+  const links = useRef<HTMLElement>(null);
+  const x = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    const nav = links.current, mark = x.current;
+    const a = nav?.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!nav || !mark || !a) return;
+    const to = markX(a);
+    let from: number | null = null;
+    try { const v = sessionStorage.getItem(NAV_X_KEY); from = v === null ? null : Number(v); sessionStorage.setItem(NAV_X_KEY, String(to)); } catch { /* storage blocked */ }
+    mark.style.opacity = "1";
+    mark.style.transform = `translateX(${to}px)`;
+    if (from !== null && Number.isFinite(from) && Math.abs(from - to) > 1 && !reduced() && mark.animate) mark.animate(rollKeys(from, to), rollOpts);
+    const fit = () => { mark.style.transform = `translateX(${markX(a)}px)`; };
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [active]);
+  const onClick = (e: React.MouseEvent<HTMLElement>) => {
+    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-navx]");
+    const mark = x.current, cur = links.current?.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (!link || !mark || !cur || link === cur || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || reduced() || !mark.animate) return;
+    e.preventDefault();
+    const to = markX(link);
+    try { sessionStorage.setItem(NAV_X_KEY, String(to)); } catch { /* storage blocked */ }
+    mark.animate(rollKeys(markX(cur), to), rollOpts);
+    window.setTimeout(() => { window.location.assign(link.href); }, 420);
+  };
+  return { links, x, onClick };
+}
+
 export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies" | "resources"; talentHref?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
@@ -22,17 +62,19 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
+  const navx = useNavX(active);
   const cur = (k: "talent" | "companies" | "resources") => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
         <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
-        <nav className="hx-links" aria-label="Primary">
-          <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-          <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
+        <nav ref={navx.links} className="hx-links" aria-label="Primary" onClick={navx.onClick}>
+          <a data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</a>
+          <a data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</a>
           <a data-no-underline href="/pricing">Pricing</a>
-          <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
+          <a data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</a>
           <a data-no-underline href="/about">About us</a>
+          <i ref={navx.x} className="hx-x" aria-hidden="true" />
         </nav>
         <div className="hx-nav-cta">
           <a data-no-underline className="hx-ghost" href="/login">Log in</a>
