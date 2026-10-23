@@ -14,11 +14,10 @@ const HUE: Record<string, number> = {
 const hue = (co: string | undefined, fallback: number) => (co && HUE[co]) || fallback;
 const nm = (co: string | undefined) => (co ? NAME[co] ?? co : "");
 
-function Stage({ h1, h2 = h1 + 70, children, bare }: { h1: number; h2?: number; children: ReactNode; bare?: boolean }) {
+function Stage({ h1, h2 = h1 + 70, children }: { h1: number; h2?: number; children: ReactNode; bare?: boolean }) {
   return (
     <span className="lb-vis sc" aria-hidden="true" style={{ ["--h1" as string]: h1, ["--h2" as string]: h2 % 360 }}>
-      {bare ? null : <><i className="sc-pill a" /><i className="sc-pill b" /></>}
-      {children}
+            {children}
     </span>
   );
 }
@@ -288,10 +287,7 @@ export function Scene({ i }: { i: Item }): ReactNode {
 }
 
 export const sceneCss = `
-.lb-card .lb-vis.sc { display: block; padding: 0; background-image: none; background-color: oklch(0.975 0.014 var(--h1)); }
-.sc-pill { position: absolute; border-radius: 999px; background: linear-gradient(180deg, oklch(0.87 0.09 var(--h1)), oklch(0.94 0.05 var(--h2))); opacity: .9; }
-.sc-pill.a { width: 80px; height: 126px; left: -24px; top: 52px; }
-.sc-pill.b { width: 92px; height: 138px; right: -28px; top: -26px; background: linear-gradient(180deg, oklch(0.92 0.06 var(--h2)), oklch(0.87 0.09 var(--h1))); }
+.lb-card .lb-vis.sc { display: block; padding: 0; background-image: none; background-color: oklch(0.968 0.004 285); }
 .sc-c { position: absolute; display: flex; flex-direction: column; gap: 7px; background: #fff; border-radius: 12px; padding: 10px 12px; box-shadow: 0 0 0 1px oklch(0.2 0.03 280 / .06), 0 12px 26px oklch(0.3 0.1 280 / .13); font-size: 11px; line-height: 1.3; color: var(--ink); transition: transform .4s cubic-bezier(0.22, 1, 0.36, 1); box-sizing: border-box; }
 .sc-c.f2 { padding: 7px 10px; border-radius: 10px; }
 .lb-card:hover .sc-c.f, .lb-card:focus-within .sc-c.f { transform: translateY(-3px); }
@@ -364,15 +360,15 @@ export const sceneCss = `
 .sc-cal { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; } .sc-cal i { display: block; aspect-ratio: 1; border-radius: 3px; background: oklch(0.93 0.01 285); } .sc-cal i.on { background: oklch(0.62 0.13 165); } .sc-cal i.now { background: var(--btn); }
 .sc-time { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; letter-spacing: .02em; text-align: center; color: var(--ink); }
 .sc-btn { font-style: normal; flex: 1; text-align: center; font-size: 9.5px; font-weight: 600; padding: 5px 0; border-radius: 99px; background: oklch(0.95 0.01 285); color: var(--ink-2); } .sc-btn.end { background: oklch(0.58 0.2 25); color: #fff; }
-.sc-frame { display: grid; place-items: center; height: 64px; border-radius: 8px; background: linear-gradient(180deg, oklch(0.9 0.04 var(--h1)), oklch(0.82 0.06 var(--h1))); }
+.sc-frame { display: grid; place-items: center; height: 64px; border-radius: 8px; background: oklch(0.93 0.005 285); }
 .sc-rec { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.58 0.22 25); margin-right: 5px; }
 .sc-news { display: flex; flex-direction: column; gap: 5px; } .sc-news b { font-size: 11px; font-weight: 700; letter-spacing: -.005em; color: var(--ink); line-height: 1.25; font-family: 'Bricolage Grotesque', serif; }
 .sc-cap { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 8px; background: oklch(0.94 0.04 var(--h1)); color: var(--btn); margin-right: 7px; }
 .sc-tiles { display: grid; grid-template-columns: repeat(3, 30px); gap: 6px; }
-.sc-breath { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -46px 0 0 -30px; } .sc-breath u { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid oklch(0.72 0.1 195); } .sc-breath u:nth-child(1) { inset: 34px; background: oklch(0.85 0.09 195); border: 0; } .sc-breath u:nth-child(2) { inset: 18px; background: oklch(0.9 0.06 195 / .6); border: 0; } .sc-breath u:nth-child(3) { inset: 0; background: oklch(0.94 0.04 195 / .55); border: 0; }
+.sc-breath { position: absolute; left: 50%; top: 50%; width: 120px; height: 120px; margin: -46px 0 0 -30px; } .sc-breath u { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid oklch(0.85 0.006 285); } .sc-breath u:nth-child(1) { inset: 34px; background: oklch(0.86 0.006 285); border: 0; } .sc-breath u:nth-child(2) { inset: 18px; background: oklch(0.91 0.005 285 / .7); border: 0; } .sc-breath u:nth-child(3) { inset: 0; background: oklch(0.94 0.004 285 / .7); border: 0; }
 .sc-pulse { width: 28px; height: 8px; background: linear-gradient(90deg, transparent 0 20%, oklch(0.6 0.15 160) 20% 25%, transparent 25% 35%, oklch(0.6 0.15 160) 35% 40%, transparent 40%); }
-.sc-sun { position: absolute; right: 18px; top: 12px; width: 44px; height: 44px; border-radius: 50%; background: oklch(0.9 0.08 var(--h1)); }
-.sc-sky { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 62px; color: oklch(0.55 0.1 var(--h1)); opacity: .55; }
+.sc-sun { position: absolute; right: 18px; top: 12px; width: 44px; height: 44px; border-radius: 50%; background: oklch(0.92 0.004 285); }
+.sc-sky { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 62px; color: oklch(0.7 0.01 285); opacity: .55; }
 .sc-pinb { width: 9px; height: 9px; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--btn); margin-right: 7px; flex: none; }
 .lb-card .lb-vis.sc[style*="--h1"] { transition: background-color .25s; }
 @media (prefers-reduced-motion: reduce) { .sc-c { transition: none; } }
