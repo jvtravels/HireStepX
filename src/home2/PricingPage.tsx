@@ -105,7 +105,6 @@ export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
           <Skel className="hx-stage prc-stage" replayKey={cand ? 0 : 1}>
             <PlanTable key={aud} plans={cand ? CAND_PLANS : EMP_PLANS} />
           </Skel>
-          <p className="pq-foot">{cand ? "Hiring instead? " : "Looking to practise? "}<a href="#" onClick={(e) => { e.preventDefault(); setAud(cand ? "emp" : "cand"); }}>{cand ? "See employer pricing" : "See candidate pricing"}</a>.</p>
         </div>
       </section>
       <FaqBlock key={aud} id="pricing-faq" title={<>Pricing, <b>answered plainly</b>.</>} qa={cand ? CAND_QA : EMP_QA} stage={(i) => <PriceStage stages={cand ? CAND_STAGE : EMP_STAGE} i={i} />} />
@@ -125,7 +124,6 @@ const pricingCss = `
 .prc-hero .hx-lede { margin: 18px auto 0; max-width: 60ch; font-size: 19px; }
 .prc-hero .prc-seg { margin: 28px auto 0; }
 .prc-stage { max-width: 1120px; margin-left: auto; margin-right: auto; margin-top: 32px; }
-.prc-hero .pq-foot { margin-top: 24px; }
 .prc-seg { display: flex; width: max-content; max-width: 100%; margin: 0 auto 40px; padding: 4px; gap: 4px; border-radius: 12px; background: var(--wash); border: 1px solid var(--line); }
 .prc-seg button { appearance: none; border: 0; background: transparent; font: inherit; font-size: 15px; font-weight: 500; color: var(--ink-2); min-height: 44px; padding: 0 22px; border-radius: 9px; cursor: pointer; transition: background .15s, color .15s; }
 .prc-seg button:hover { color: var(--ink); }
