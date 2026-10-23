@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AuthSkin } from "@/home2/AuthSkin";
 import ForgotPassword from "@/auth/ForgotPassword";
 
 export const metadata: Metadata = {
@@ -8,5 +9,9 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ForgotPassword />;
+  return (
+    <AuthSkin top={<>Remembered it?<a href="/login">Log in</a></>} headline={<>Back in a minute.</>} sub="We will email you a link to set a new password.">
+      <ForgotPassword />
+    </AuthSkin>
+  );
 }

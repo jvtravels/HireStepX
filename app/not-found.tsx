@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { NotFoundV2 } from "@/marketing-v2/MarketingPagesV2";
 import MarketingShell from "./(marketing)/MarketingShell";
+import NotFoundSwitch from "./NotFoundSwitch";
 
 export const metadata: Metadata = {
   title: "Page Not Found | HireStepX",
@@ -11,7 +12,9 @@ export const metadata: Metadata = {
 export default function NotFound() {
   return (
     <MarketingShell>
-      <NotFoundV2 />
+      <NotFoundSwitch>
+        <NotFoundV2 />
+      </NotFoundSwitch>
     </MarketingShell>
   );
 }

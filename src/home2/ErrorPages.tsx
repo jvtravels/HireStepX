@@ -111,7 +111,7 @@ export function NotFoundPage() {
   );
 }
 
-export function ServerErrorPage({ digest = "1834920571" }: { digest?: string }) {
+export function ServerErrorPage({ digest = "1834920571", onRetry }: { digest?: string; onRetry?: () => void }) {
   const [copied, setCopied] = useState(false);
   const copy = () => {
     try {
@@ -122,7 +122,7 @@ export function ServerErrorPage({ digest = "1834920571" }: { digest?: string }) 
     <Shell active="resources">
       <Frame kicker="500 · Something broke" code="500" mode="broken" title="That one is on us." body="We hit an unexpected error. Trying again clears it most of the time. If it keeps happening, send us the reference below and we will look into it.">
         <div className="er-cta hx-ri" style={delay(4)}>
-          <button type="button" className="hx-btn lg" onClick={() => undefined}>Try again</button>
+          <button type="button" className="hx-btn lg" onClick={onRetry}>Try again</button>
           <a data-no-underline className="hx-btn lg alt" href="/">Back to home</a>
           <a data-no-underline className="hx-btn lg alt" href={`mailto:${MAIL}?subject=Error%20${digest}`}>Contact support</a>
         </div>

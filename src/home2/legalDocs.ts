@@ -10,6 +10,7 @@ export const LEGAL_META: DocMeta[] = [
   { slug: "terms", title: "Terms of Service", blurb: "The rules for using HireStepX, payments, acceptable use and liability.", updated: POLICY, group: "Core policies" },
   { slug: "refund", title: "Refund Policy", blurb: "When credits are refunded, how to ask, and what is not refundable.", updated: POLICY, group: "Core policies" },
   { slug: "cookies", title: "Cookie Policy", blurb: "Which cookies we use, and how to change your choice at any time.", updated: NEW, group: "Core policies" },
+  { slug: "grievance", title: "Grievance Officer", blurb: "Who to write to with a complaint, and how fast we respond.", updated: "20 July 2026", group: "Help" },
 ];
 
 export const LEGAL_SLUGS = LEGAL_META.map((d) => d.slug);

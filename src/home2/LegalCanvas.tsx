@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Shell } from "./Pages";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { LEGAL_META } from "./legalDocs";
+import { openCookieSettings } from "../consent";
 
 
 function CookiesBody() {
@@ -24,8 +25,201 @@ function CookiesBody() {
   );
 }
 
+function PrivacyBody() {
+  return (
+    <>
+      <h2>What we collect</h2>
+      <p>Account email, your resume (uploaded by you), transcripts of your mock sessions, and basic usage telemetry (page views, session counts, plan type). We do not store audio or video recordings of your sessions: if you answer by voice, your speech is streamed to our speech-to-text provider for live transcription and is not retained. No location, no contacts, no microphone access outside of an active interview round.</p>
+
+      <h2>Why we collect it</h2>
+      <p>To run the product. The resume tunes the AI's questions to your background. The transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
+
+      <h2>How long we keep it</h2>
+      <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
+
+      <h2>Who we share with</h2>
+      <p>We do not sell your data, and we do not share your transcripts, scores, or resume with colleges, advertisers, or other third parties. The one exception is employers on HireStepX, covered in the next section. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>
+      <ul>
+        <li><strong>Supabase</strong>: database, authentication, and file storage (Ireland / US-East)</li>
+        <li><strong>Vercel</strong>: serverless hosting and edge functions (global CDN)</li>
+        <li><strong>Groq</strong>: primary AI inference for interview scoring and question generation (US)</li>
+        <li><strong>Google (Gemini)</strong>: secondary AI inference fallback (US)</li>
+        <li><strong>Deepgram</strong>: primary speech-to-text transcription of voice answers (US)</li>
+        <li><strong>Sarvam AI</strong>: Indian-English text-to-speech and speech-to-text fallback (India)</li>
+        <li><strong>Cartesia</strong>: secondary text-to-speech (US)</li>
+        <li><strong>Microsoft Azure</strong>: tertiary text-to-speech fallback (global)</li>
+        <li><strong>Resend</strong>: transactional email delivery (US)</li>
+        <li><strong>Razorpay</strong>: payment processing and subscription billing (India)</li>
+        <li><strong>PostHog</strong>: product analytics (US); only loaded after explicit cookie consent</li>
+        <li><strong>Upstash</strong>: Redis-based rate limiting and caching (US)</li>
+        <li><strong>Google AdSense</strong>: advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
+      </ul>
+      <p>Voice audio is streamed live to Deepgram or Sarvam for real-time transcription and is not stored by either provider beyond the duration of the API call. We do not send your resume or session transcripts to Razorpay, Resend, PostHog, or Upstash. Google AdSense is only active on public content pages and is never loaded inside authenticated product surfaces (dashboard, interview sessions, reports).</p>
+
+      <h2>Employer discovery</h2>
+      <p><strong>Purpose.</strong> HireStepX also lets employers find candidates for open roles. If employer discovery is on for your account, employers can find you by role and skills using the evidence from your practice sessions. This is separate from practising: you can use HireStepX fully with it switched off.</p>
+      <p><strong>What employers see before they unlock you.</strong> Your skill strengths and verified capabilities, readiness and answer-structure (STAR) indicators, a resume summary with your name, past employers, schools, phone and LinkedIn removed, your city, and when you last practised. They see you only as &ldquo;Candidate #&hellip;&rdquo;. Your scores come from your own practice sessions on HireStepX; they are not independently verified assessments.</p>
+      <p><strong>What an employer gets by unlocking.</strong> An employer pays to unlock a candidate. Unlocking releases your name, contact details, full resume detail, and short word-for-word excerpts from your practice answers to that employer. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care as any job approach.</p>
+      <p><strong>Your control and withdrawal.</strong> You can turn employer discovery off at any time in Settings &rarr; Employer visibility. You will stop appearing in employer searches and in matches no employer has unlocked yet. Withdrawing does not retroactively remove what an employer has already unlocked, but they cannot see anything new. We keep a record of when you gave and withdrew consent, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
+      <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention periods. Deleting your account removes you from employer discovery, and your data is purged within 30 days.</p>
+      <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
+
+      <h2>Your rights under DPDP Act 2023</h2>
+      <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
+      <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
+      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
+
+      <h2>Cookies</h2>
+      <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser's local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
+      <p><strong>Analytics (only after you opt in).</strong> PostHog, Google Analytics 4, and Vercel Analytics set identifiers to count visits and see which features are used. Vercel Speed Insights reports anonymised page-speed metrics without cookies.</p>
+      <p><strong>Advertising (only after you opt in).</strong> On public content pages (blog, interview questions, salary guides), Google AdSense may set advertising cookies to show relevant ads. None are used on signed-in pages. You can opt out of personalised ads at any time via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a> or by enabling "Do Not Track" in your browser.</p>
+      <p>The banner lets you accept all optional cookies, reject all of them, or choose analytics and advertising separately. Nothing optional is switched on by default. To change or withdraw consent at any time, <button type="button" className="lg-linkbtn" onClick={openCookieSettings}>open cookie settings</button>. Withdrawing stops analytics and advertising from loading on your next page view.</p>
+
+      <h2>Children</h2>
+      <p>HireStepX is not directed at users under 16. If you believe a minor has created an account, email us and we'll remove it.</p>
+
+      <h2>Changes</h2>
+      <p>We post updates here and, for material changes, email all account holders 14 days before they take effect. The diff between versions is published on this page.</p>
+    
+    </>
+  );
+}
+
+function TermsBody() {
+  return (
+    <>
+      <h2>Who can use HireStepX</h2>
+      <p>Anyone 16 or older with a valid email address. By signing up, you confirm you are 16+ and the information you provide is accurate.</p>
+
+      <h2>What you get</h2>
+      <p>Access to the platform's mock interview features, scoring, reports, and content libraries based on the plan you select. Plans are described on <a href="/pricing">/pricing</a>.</p>
+
+      <h2>What we expect</h2>
+      <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
+
+      <h2>Payment</h2>
+      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days — it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
+
+      <h2>Refunds</h2>
+      <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits and Sprint Pack purchases are both refundable within 7 days of purchase if unused.</p>
+
+      <h2>Acceptable use</h2>
+      <p>Don't upload illegal content. Don't use the platform to harass, defame, or harm others. Don't attempt to break our security controls. We may suspend or terminate accounts for serious or repeated violations.</p>
+
+      <h2>Employer discovery</h2>
+      <p>Employers on HireStepX can find candidates using practice evidence from sessions. Employers register themselves and are placed in verification tiers; we do not guarantee that any employer is vetted or that any job is genuine. Your name and contact details are released to an employer only after they unlock your profile, and you can turn discovery off, block, or report an employer from Settings, Jobs, or Messages. See the <a href="/privacy">Privacy Policy</a> for details. Practice scores reflect your performance in HireStepX sessions and are not a certified assessment.</p>
+
+      <h2>Disclaimers</h2>
+      <p>HireStepX provides interview practice. We do not guarantee any specific employment outcome. AI-generated feedback is a tool for self-improvement, not a substitute for professional career counseling.</p>
+
+      <h2>Liability</h2>
+      <p>To the maximum extent permitted by law, our total liability for any claim arising from your use of HireStepX is limited to the amount you paid us in the 12 months preceding the claim.</p>
+
+      <h2>Governing law</h2>
+      <p>These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
+    
+    </>
+  );
+}
+
+function RefundBody() {
+  return (
+    <>
+      <h2>Free plan</h2>
+      <p>Nothing to refund; you didn't pay anything.</p>
+
+      <h2>Per-session purchase (₹9)</h2>
+      <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
+
+      <h2>Sprint Pack (₹39 / 5 sessions)</h2>
+      <p>A one-time purchase, valid for 30 days — it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
+
+      <h2>How to request a refund</h2>
+      <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
+
+      <h2>Disputes</h2>
+      <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
+    
+    </>
+  );
+}
+
+function GrievanceBody() {
+  return (
+    <>
+      <h2>Who is the Grievance Officer?</h2>
+      <p>
+        In compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021
+        and the Digital Personal Data Protection Act, 2023, HireStepX has appointed a Grievance Officer to address
+        complaints and grievances of users.
+      </p>
+
+      <h2>Contact details</h2>
+      <ul>
+        <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
+        <li>
+          <strong>Email:</strong>{" "}
+          <CopyEmailLink email="hello@hirestepx.com" />
+        </li>
+      </ul>
+
+      <h2>How to file a grievance</h2>
+      <p>
+        Email your complaint to{" "}
+        <CopyEmailLink email="hello@hirestepx.com" />{" "}
+        with the subject line <em>"Grievance – [brief description]"</em>. Include:
+      </p>
+      <ul>
+        <li>Your registered account email address</li>
+        <li>A description of the issue or complaint</li>
+        <li>Any relevant screenshots or order IDs</li>
+      </ul>
+
+      <h2>Response timelines</h2>
+      <ul>
+        <li><strong>Acknowledgement:</strong> Within 24 hours of receiving your complaint</li>
+        <li><strong>Resolution:</strong> Within 15 days of acknowledgement, as required under the IT Rules 2021</li>
+        <li><strong>Data requests</strong> (access / correction / erasure under DPDP 2023): Within 7 working days</li>
+      </ul>
+
+      <h2>Your rights under DPDP Act 2023</h2>
+      <p>
+        India's Digital Personal Data Protection Act, 2023 gives you the right to:
+      </p>
+      <ul>
+        <li>Access the personal data we hold about you</li>
+        <li>Correct inaccurate or incomplete data</li>
+        <li>Erase your data (right to be forgotten)</li>
+        <li>Nominate another person to exercise these rights on your behalf</li>
+        <li>Grievance redressal through this Officer</li>
+      </ul>
+      <p>
+        If your grievance is not resolved to your satisfaction within 30 days, you may escalate to the{" "}
+        <strong>Data Protection Board of India</strong> once constituted under the DPDP Act 2023.
+      </p>
+
+      <h2>Other concerns</h2>
+      <p>
+        For content-related complaints under the IT Rules 2021 (unlawful content, misinformation, etc.),
+        please also write to the above email. We respond within 24 hours for urgent safety concerns and
+        within 15 days for all other complaints.
+      </p>
+      <p>
+        For general support, refunds, or billing questions, see our{" "}
+        <a href="/refund">Refund Policy</a> or email{" "}
+        <CopyEmailLink email="hello@hirestepx.com" />.
+      </p>
+    
+    </>
+  );
+}
+
 const BODIES: Record<string, () => ReactNode> = {
+  privacy: PrivacyBody,
+  terms: TermsBody,
+  refund: RefundBody,
   cookies: CookiesBody,
+  grievance: GrievanceBody,
 };
 
 function slugify(t: string) {
@@ -87,6 +281,33 @@ export function LegalDocPage({ slug }: { slug: string }) {
   );
 }
 
+export function LegalHubPage() {
+  const groups = Array.from(new Set(LEGAL_META.map((d) => d.group)));
+  return (
+    <Shell active="talent">
+      <style>{legalCss}</style>
+      <section className="lg-hero">
+        <div className="hx-wrap">
+          <h1>Legal</h1>
+          <p className="lg-meta">The rules, your rights and how we handle your data, in plain English. Questions: <CopyEmailLink email="hello@hirestepx.com" />.</p>
+        </div>
+      </section>
+      <section className="lg-body">
+        <div className="hx-wrap">
+          {groups.map((g) => (
+            <div key={g} className="lg-group">
+              <h2>{g}</h2>
+              <div className="lg-list">
+                {LEGAL_META.filter((d) => d.group === g).map((d) => <a key={d.slug} data-no-underline href={`/${d.slug}`}><b>{d.title}</b><span>{d.blurb}</span><em>Updated {d.updated}</em></a>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    </Shell>
+  );
+}
+
 const legalCss = `
 .lg-hero { padding: 72px 0 32px; border-bottom: 1px solid var(--line); background: var(--wash); }
 .lg-hero h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; margin: 12px 0 0; text-wrap: balance; }
@@ -109,6 +330,7 @@ const legalCss = `
 .lg-prose li::marker { color: var(--ink-3); }
 .lg-prose strong { font-weight: 600; }
 .lg-prose em { font-style: normal; font-weight: 500; }
+.lg-linkbtn { background: none; border: 0; padding: 0; font: inherit; color: var(--btn); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .lg-prose a { color: var(--btn); text-decoration: underline; text-underline-offset: 3px; }
 .lg-tablewrap { overflow-x: auto; margin: 0 0 24px; border: 1px solid var(--line); border-radius: 14px; }
 .lg-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 15px; line-height: 1.5; }

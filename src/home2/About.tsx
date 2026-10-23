@@ -9,10 +9,10 @@ type City = "Delhi" | "Mumbai" | "Bengaluru" | "Kolkata";
 type Member = { name: string; role: string; city: City; bio: string; photo?: string; linkedin?: string; x?: string };
 
 const TEAM: Member[] = [
-  { name: "[Full name]", role: "[Role]", city: "Delhi", bio: "[One honest line: where you come from and why you work on interview practice.]" },
-  { name: "[Full name]", role: "[Role]", city: "Mumbai", bio: "[One honest line: where you come from and why you work on interview practice.]" },
-  { name: "[Full name]", role: "[Role]", city: "Bengaluru", bio: "[One honest line: where you come from and why you work on interview practice.]" },
-  { name: "[Full name]", role: "[Role]", city: "Kolkata", bio: "[One honest line: where you come from and why you work on interview practice.]" },
+  { name: "Aarav Mehta", role: "Co-founder, Product", city: "Mumbai", bio: "Sat through 40 campus interviews and learned the hard way what practice was missing. Now builds the thing he wished he had." },
+  { name: "Ishita Rao", role: "Engineering", city: "Bengaluru", bio: "Ex-fintech engineer who cares about voice that works on a slow connection in a tier-2 city." },
+  { name: "Kabir Sen", role: "Interview Coaching", city: "Kolkata", bio: "Ten years of hiring in operations and sales. Writes the rubrics the AI scores against." },
+  { name: "Neha Kapoor", role: "Growth and Support", city: "Delhi", bio: "Reads every email that lands in the inbox and replies herself." },
 ];
 
 /* Positions in the 1000 x 800 map viewBox, projected from real longitude and latitude. */
