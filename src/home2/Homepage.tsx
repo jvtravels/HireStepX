@@ -29,7 +29,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
         <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
         <nav className="hx-links" aria-label="Primary">
           <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-          <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
+          <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
           <a data-no-underline href="/pricing">Pricing</a>
           <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
           <a data-no-underline href="/about">About us</a>
@@ -48,7 +48,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
         <div className="hx-menu" id="hx-menu" onClick={() => setOpen(false)}>
           <nav aria-label="Mobile">
             <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-            <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
+            <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
             <a data-no-underline href="/pricing">Pricing</a>
             <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
             <a data-no-underline href="/about">About us</a>
