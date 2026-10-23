@@ -31,7 +31,7 @@ function PrivacyBody() {
         <li><strong>Cartesia</strong>: secondary text-to-speech (US)</li>
         <li><strong>Microsoft Azure</strong>: tertiary text-to-speech fallback (global)</li>
         <li><strong>Resend</strong>: transactional email delivery (US)</li>
-        <li><strong>Razorpay</strong>: payment processing and subscription billing (India)</li>
+        <li><strong>Razorpay</strong>: one-time payment processing (India)</li>
         <li><strong>PostHog</strong>: product analytics (US); only loaded after explicit cookie consent</li>
         <li><strong>Upstash</strong>: Redis-based rate limiting and caching (US)</li>
         <li><strong>Google AdSense</strong>: advertising on public blog, interview questions, and salary pages (US); may use cookies to serve relevant ads. You can opt out via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</li>
@@ -46,7 +46,7 @@ function PrivacyBody() {
       <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention periods. Deleting your account removes you from employer discovery, and your data is purged within 30 days.</p>
       <p><strong>Questions or complaints.</strong> Contact our <a href="#grievance-officer">Grievance Officer</a>.</p>
 
-      <h2>Your rights under DPDP Act 2023</h2>
+      <h2 id="your-rights">Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
       <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="#grievance-officer">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
@@ -65,10 +65,10 @@ function PrivacyBody() {
       </ul>
       <p><strong>How to file.</strong> Email us with the subject line &ldquo;Grievance: [brief description]&rdquo;. Include your registered account email, a description of the issue, and any screenshots or order IDs.</p>
       <p><strong>Response times.</strong> We acknowledge within 24 hours and resolve within 15 days of acknowledgement, as the IT Rules 2021 require. Data requests (access, correction, erasure) are answered within 7 working days. Urgent safety concerns get a reply within 24 hours.</p>
-      <p><strong>Content complaints.</strong> For unlawful content or misinformation under the IT Rules 2021, write to the same address. If your complaint is not resolved to your satisfaction within 30 days, you may escalate to the Data Protection Board of India once it is constituted under the DPDP Act 2023.</p>
+      <p><strong>Content complaints.</strong> For unlawful content or misinformation under the IT Rules 2021, write to the same address. If your complaint is not resolved to your satisfaction within 30 days, you may escalate to the Data Protection Board of India under the DPDP Act 2023.</p>
 
       <h2>Children</h2>
-      <p>HireStepX is not directed at users under 16. If you believe a minor has created an account, email us and we'll remove it.</p>
+      <p>HireStepX is not directed at users under 18. If you believe a minor has created an account, email us and we'll remove it.</p>
 
       <h2>Changes</h2>
       <p>We post updates here and, for material changes, email all account holders 14 days before they take effect. The diff between versions is published on this page.</p>
@@ -90,7 +90,7 @@ function TermsBody() {
       <p>One account per person. Don't share login credentials. Don't scrape, reverse-engineer, or attempt to extract our scoring rubrics, question banks, or model outputs at scale. Don't use the platform to impersonate real candidates or train third-party AI systems.</p>
 
       <h2>Payment</h2>
-      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days — it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
+      <p>Billed in INR via Razorpay. Per-session credits (₹9) are charged immediately and never expire. Sprint Pack (₹39 for 5 sessions) is a one-time purchase valid for 30 days, it does not auto-renew, and we never store your card for recurring billing. Buy another pack any time you want more sessions. No plan currently sold on HireStepX auto-renews.</p>
 
       <h2>Refunds</h2>
       <p>See our <a href="/refund">refund policy</a>. Short version: per-session credits and Sprint Pack purchases are both refundable within 7 days of purchase if unused.</p>
@@ -130,7 +130,7 @@ function RefundBody() {
       <p>Refundable up to 7 days after purchase, as long as the session hasn't started. Once you begin a session, the AI has done the work; the credit is consumed.</p>
 
       <h2>Sprint Pack (₹39 / 5 sessions)</h2>
-      <p>A one-time purchase, valid for 30 days — it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
+      <p>A one-time purchase, valid for 30 days, it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
 
       <h2>How to request a refund</h2>
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>

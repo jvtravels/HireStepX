@@ -10,7 +10,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const doc = LEGAL_META.find((d) => d.slug === slug);
-  return { title: `${doc?.title ?? "Legal"} | HireStepX`, robots: "noindex, nofollow", alternates: { canonical: `/${slug}` } };
+  return { title: `${doc?.title ?? "Legal"} | HireStepX`, alternates: { canonical: `/${slug}` } };
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

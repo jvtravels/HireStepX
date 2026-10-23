@@ -10,7 +10,7 @@ import { buildBlogJsonLd } from "../../blog/[slug]/_jsonld";
 export const revalidate = 2592000;
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  return { ...(await prodMetadata(props)), robots: "noindex, nofollow" };
+  return prodMetadata(props);
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

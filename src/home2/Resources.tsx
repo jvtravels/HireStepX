@@ -47,7 +47,7 @@ const TOPICS: [string, string, string][] = [
   ["BPO interviews", "Common questions and voice round tips.", "/bpo-interview-questions"],
   ["Bank PO interviews", "Banking, current affairs and HR questions.", "/bank-po-interview-questions"],
   ["MBA personal interviews", "Prepare for the PI after your written test.", "/mba-personal-interview-preparation"],
-  ["For students", "Campus placement prep from first year.", "/for-students"],
+  ["For students", "Campus placement prep from first year.", "/candidates"],
 ];
 
 const NOT_CO = new Set(["Career Advice", "Role Guides", "Company Guides", "Fresher Guides"]);
@@ -448,7 +448,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
         </div>
       </section>
 
-      <Close kicker="Read, then rehearse" title={<>Reading helps. Saying it <b>out loud</b> helps more.</>} body="Take what you learned into a spoken session and see exactly what to fix. Your first 2 sessions are free." primary={["Practise free", "/signup"]} secondary={["How it works", "/how-it-works"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
+      <Close kicker="Read, then rehearse" title={<>Reading helps. Saying it <b>out loud</b> helps more.</>} body="Take what you learned into a spoken session and see exactly what to fix. Your first 2 sessions are free." primary={["Practise free", "/signup"]} secondary={["See pricing", "/pricing"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
     </Shell>
   );
 }

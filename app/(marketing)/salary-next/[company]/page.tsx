@@ -10,7 +10,7 @@ import { buildSalaryPageModel } from "../../salary/[company]/_jsonld";
 export const revalidate = 2592000;
 
 export async function generateMetadata(props: { params: Promise<{ company: string }> }): Promise<Metadata> {
-  return { ...(await prodMetadata(props)), robots: "noindex, nofollow" };
+  return prodMetadata(props);
 }
 
 export default async function Page({ params }: { params: Promise<{ company: string }> }) {

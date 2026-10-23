@@ -175,7 +175,7 @@ function sceneFor(i: Item): ReactNode {
       return <Stage h1={90}><C p={{ l: "8%", t: 12, w: "56%" }} cls="f"><span className="sc-news"><b>RBI holds repo rate</b><Ln /><Ln w="70%" /></span></C><C p={{ r: "7%", t: 58, w: "52%" }} cls="f2"><span className="sc-news"><b>Union Budget: banking</b><Ln /><Ln w="60%" /></span><Row g={4}><Ch>Banking</Ch><Ch t="o">Current affairs</Ch></Row></C></Stage>;
     case "/mba-personal-interview-preparation":
       return <Stage h1={300}><C p={{ l: "10%", t: 12, w: "62%" }} cls="f"><Row g={-4}><Av h={300} sz={24} /><Av h={20} sz={24} /><Av h={160} sz={24} /></Row><span className="sc-q">&ldquo;Why an MBA, and why now?&rdquo;</span></C><C p={{ r: "7%", b: 22 }} cls="f2"><Ch>PI panel of 3</Ch></C></Stage>;
-    case "/for-students":
+    case "/candidates":
       return <Stage h1={235}><C p={{ l: "9%", t: 14, w: "66%" }} cls="f"><Row><span className="sc-cap"><svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 9l10-5 10 5-10 5zM6 11.5V16c1.6 1.6 3.6 2.2 6 2.2s4.4-.6 6-2.2v-4.5" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" /></svg></span><T>Campus roadmap</T></Row><span className="sc-steps h">{["Year 1", "Year 2", "Year 3", "Placement"].map((x, n) => <span key={x} className={n < 2 ? "done" : n === 2 ? "now" : ""}><u />{x}</span>)}</span></C></Stage>;
     case "/interview-prep":
       return <Stage h1={278}><C p={{ l: "8%", t: 16, w: "70%" }} cls="f"><T>Prep framework</T><span className="sc-steps h">{["Resume", "Practise", "Mock", "Offer"].map((x, n) => <span key={x} className={n < 2 ? "done" : n === 2 ? "now" : ""}><u />{x}</span>)}</span></C><C p={{ r: "7%", b: 22 }} cls="f2"><Ring pct={64} label="64%" sz={38} /></C></Stage>;

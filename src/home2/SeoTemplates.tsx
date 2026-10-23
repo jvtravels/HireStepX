@@ -92,8 +92,8 @@ function Faqs({ items }: { items: { q: string; a: string }[] }) {
 
 const HUBS = [
   ["Interview questions", "/questions"], ["Company guides", "/companies"], ["Salary guides", "/salary"], ["Blog", "/blog"],
-  ["Interview preparation", "/interview-prep"], ["AI mock interview", "/ai-mock-interview"], ["How it works", "/how-it-works"],
-  ["Methodology", "/methodology"], ["Grievance officer", "/grievance"],
+  ["Interview preparation", "/interview-prep"], ["AI mock interview", "/ai-mock-interview"],
+  ["About", "/about"], ["Grievance officer", "/privacy#grievance-officer"],
 ];
 
 function Hubs() {

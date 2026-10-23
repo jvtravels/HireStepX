@@ -3,7 +3,6 @@ import Homepage2 from "@/home2/Homepage";
 
 export const metadata: Metadata = {
   title: "HireStepX",
-  robots: "noindex, nofollow",
   alternates: { canonical: "/" },
 };
 
