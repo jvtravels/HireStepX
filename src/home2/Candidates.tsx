@@ -1,129 +1,63 @@
 "use client";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Activity, AudioWaveform, BriefcaseBusiness, Code, Eye, FileText, GraduationCap, IndianRupee, Layers, Lock, MessageSquareText, Mic, Radar, ShieldCheck, Snowflake, Target, Timer, Users, type LucideIcon } from "lucide-react";
-import { CandFaq } from "./Extra";
+import { useEffect, useState, type ReactNode } from "react";
 import Skel from "./Skel";
-import { Arrow, Close, Dim, Shell, Win } from "./Pages";
+import { ArrowRight, BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, type LucideIcon } from "lucide-react";
+import { CandFaq } from "./Extra";
+import { Arrow, Close, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
 
-/* ── Hero: answer, see the gap, fix it ── */
+/* ── Hero: a live voice round ── */
 
-type Round = { q: string; base: string; add: string; miss: string; before: number; after: number; dims: [string, number, number][]; tip: string };
+const VR_Q = "Tell me about a time you improved something.";
+const VR_BEFORE = "I worked on checkout. It was, *um,* slow, so I *basically* changed how we loaded the payment step and it felt, *like,* a lot better after.".split(" ");
+const VR_AFTER = "Checkout was losing one in five buyers on slow phones. I moved the payment step to load on demand, and load time fell from 3.4s to 1.9s.".split(" ");
 
-const ROUNDS: Round[] = [
-  {
-    q: "Tell me about a time you made something faster.",
-    base: "I worked on checkout. It was slow, so I changed how we loaded the payment step and it felt a lot better after.",
-    add: " Checkout time fell from 1.8s to 1.1s, and held through both sale weekends.",
-    miss: "R",
-    before: 64,
-    after: 86,
-    dims: [["Clarity", 70, 84], ["Relevance", 72, 88], ["Depth", 52, 82], ["Confidence", 66, 80]],
-    tip: "Result is missing. Say what changed, with a number.",
-  },
-  {
-    q: "Tell me about a disagreement with a teammate.",
-    base: "We disagreed on when to ship. I showed them the failing tests and we shipped on Monday instead of Friday.",
-    add: " I owned the release, so the call was mine to defend, and I wrote up the risk for the team.",
-    miss: "T",
-    before: 61,
-    after: 84,
-    dims: [["Clarity", 68, 82], ["Relevance", 70, 86], ["Depth", 50, 80], ["Confidence", 62, 78]],
-    tip: "Task is missing. Say what you were responsible for.",
-  },
-];
-
-type Phase = "speak" | "score" | "scored" | "fix" | "fixed";
-
-function HeroCoach() {
-  const [round, setRound] = useState(0);
-  const [phase, setPhase] = useState<Phase>("speak");
-  const [n, setN] = useState(0);
-  const [m, setM] = useState(0);
-  const log = useRef<HTMLDivElement>(null);
-  const ids = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const R = ROUNDS[round];
-  const later = (fn: () => void, ms: number) => { ids.current.push(setTimeout(fn, ms)); };
+function VoiceRound() {
+  const [fixed, setFixed] = useState(false);
+  const [w, setW] = useState(0);
+  const words = fixed ? VR_AFTER : VR_BEFORE;
+  const done = w >= words.length;
 
   useEffect(() => {
-    setPhase("speak"); setN(0); setM(0);
-    if (reduced()) { setN(R.base.length); setPhase("scored"); return; }
-    let tick: ReturnType<typeof setInterval> | undefined;
-    later(() => {
-      let i = 0;
-      tick = setInterval(() => {
-        i += 1;
-        setN(i);
-        if (i < R.base.length) return;
-        clearInterval(tick);
-        later(() => { setPhase("score"); later(() => setPhase("scored"), 1000); }, 450);
-      }, 24);
-    }, 800);
-    return () => { clearInterval(tick); ids.current.forEach(clearTimeout); ids.current = []; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [round]);
-
-  useEffect(() => {
-    const el = log.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: reduced() ? "auto" : "smooth" });
-  }, [n, m, phase]);
-
-  const fix = () => {
-    if (phase !== "scored") return;
-    if (reduced()) { setM(R.add.length); setPhase("fixed"); return; }
-    setPhase("fix");
+    if (reduced()) { setW(words.length); return; }
+    setW(0);
     let i = 0;
-    const tick = setInterval(() => {
+    const id = setInterval(() => {
       i += 1;
-      setM(i);
-      if (i < R.add.length) return;
-      clearInterval(tick);
-      later(() => setPhase("fixed"), 500);
-    }, 22);
-  };
+      setW(i);
+      if (i >= words.length) clearInterval(id);
+    }, 130);
+    return () => clearInterval(id);
+  }, [words]);
 
-  const fixed = phase === "fixed";
-  const showRes = phase === "scored" || phase === "fix" || phase === "fixed";
-  const score = fixed ? R.after : R.before;
-  const last = round === ROUNDS.length - 1;
-
+  const fillers = words.slice(0, w).filter((x) => x.startsWith("*")).length;
+  const score = fixed ? 86 : 64;
   return (
-    <div className="hc cd">
-      <div className="hc-body">
-        <div className="hc-log" ref={log} role="log" aria-live="polite">
-          <div className="hc-m us"><span className="hc-x" aria-hidden="true">X</span><div className="hc-b">{R.q}</div></div>
-          {n > 0 && (
-            <div className="hc-m you">
-              <div className={`hc-b${phase === "speak" || phase === "fix" ? " hc-caret" : ""}`}>
-                {R.base.slice(0, n)}
-                {m > 0 && <mark className="cd-add">{R.add.slice(0, m)}</mark>}
-              </div>
-            </div>
-          )}
-          {phase === "score" && <div className="hc-m us" aria-hidden="true"><span className="hc-x">X</span><div className="hc-b hc-dots"><span /><span /><span /></div></div>}
-        </div>
-        <div className="hc-res">
-          {showRes ? (
-            <div key={`${round}-${fixed}`} className="cd-res">
-              <div className="hc-top">
-                <ul className="cd-star" aria-label="STAR breakdown">
-                  {["S", "T", "A", "R"].map((l) => <li key={l} className={!fixed && l === R.miss ? "miss" : undefined}>{l}</li>)}
-                </ul>
-                <span>Answer score</span>
-              </div>
-              <div className="cd-score"><b>{score}</b><span>out of 100</span></div>
-              <Dim items={R.dims.map(([k, a, b]): [string, number] => [k, fixed ? b : a])} />
-              <p className="cd-tip">{fixed ? "Every part of STAR is there." : R.tip}</p>
-            </div>
-          ) : (
-            <p className="hc-wait">{phase === "score" ? "Scoring your answer." : "Your score shows up here."}</p>
-          )}
+    <div className="vo">
+      <div className="vo-q"><span className="vo-qx" aria-hidden="true">X</span><p>{VR_Q}</p></div>
+      <div className={`vo-orb${done ? " done" : ""}${fixed ? " ok" : ""}`}>
+        <svg viewBox="0 0 176 176" aria-hidden="true">
+          <circle className="vo-track" cx="88" cy="88" r="76" />
+          <circle className="vo-arc" cx="88" cy="88" r="76" style={{ strokeDashoffset: 477.5 * (1 - (done ? score / 100 : 0)) }} />
+          <line className="vo-pass" x1="88" y1="2" x2="88" y2="18" transform="rotate(252 88 88)" />
+        </svg>
+        <i className="vo-ripple" /><i className="vo-ripple" style={{ animationDelay: "1s" }} />
+        <div className="vo-core">
+          {done
+            ? <><b>{score}</b><span>{fixed ? "ready" : "pass mark 70"}</span></>
+            : <><Mic size={26} strokeWidth={1.75} aria-hidden="true" /><span>Listening</span></>}
         </div>
       </div>
-      <div className="hc-foot">
-        {phase === "scored" && <><span className="hc-hint">Try it</span><button type="button" className="hc-chip" onClick={fix}>Add the {R.miss === "R" ? "result" : "task"}</button></>}
-        {fixed && !last && <button type="button" className="hc-chip" onClick={() => setRound((r) => r + 1)}>Try another question</button>}
-        {fixed && last && <button type="button" className="hc-chip" onClick={() => setRound(0)}>Play it again</button>}
+      <p className="vo-cap" aria-live="polite" key={String(fixed)}>
+        {words.slice(0, w).map((x, i) => x.startsWith("*")
+          ? <span key={i} className="vo-fill">{x.replace(/\*/g, "")} </span>
+          : fixed && /\d/.test(x) ? <mark key={i} className="cd-add">{x} </mark> : <span key={i}>{x} </span>)}
+        {!done && <span className="hc-caret" />}
+      </p>
+      <div className="vo-row">
+        <span className={`vo-chip${fillers ? " warn" : ""}`}>{fillers} filler {fillers === 1 ? "word" : "words"}</span>
+        <span className="vo-tip">{!done ? "Scoring as you speak" : fixed ? "Problem, action, number." : "Say what changed, with a number."}</span>
+        {done && <button type="button" className="hc-chip" onClick={() => setFixed(!fixed)}>{fixed ? "Play it again" : "Hear a stronger version"}</button>}
       </div>
     </div>
   );
@@ -135,20 +69,18 @@ function CandHero() {
     <section className="cx-hero">
       <div ref={ref} className={`hx-wrap cx-hero-in hx-rv${on ? " on" : ""}`}>
         <div className="cx-copy">
-          <span className="hx-kicker hx-ri" style={delay(0)}>Mock interviews for Indian job seekers</span>
-          <h1 className="cx-h1 hx-ri" style={delay(1)}>Say it out loud. Fix the sentence that <b>costs you</b>.</h1>
-          <p className="cx-lede hx-ri" style={delay(2)}>Practise HR, behavioural, technical, campus and salary rounds by voice. Get scored against the hire bar for your role, and hear what to say instead.</p>
+          <h1 className="cx-h1 hx-ri" style={delay(1)}>Practise the interview. <b>Get shortlisted</b> by recruiters.</h1>
+          <p className="cx-lede hx-ri" style={delay(2)}>Answer interview questions out loud and get a score with tips on what to say better. Then recruiters hiring for your skills can see your proof and shortlist you.</p>
           <div className="cx-cta hx-ri" style={delay(3)}>
-            <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-            <a data-no-underline className="cx-ghost" href="#rewrite">See an answer improve</a>
+            <a data-no-underline className="hx-btn lg" href="/signup">Get interview ready <Arrow /></a>
           </div>
           <ul className="cx-facts hx-ri" style={delay(4)}>
             <li><b>2</b> free sessions</li>
-            <li><b>UPI</b> for more</li>
+            <li><b>₹9</b> a session after</li>
             <li><b>No</b> card needed</li>
           </ul>
         </div>
-        <Skel className="hx-stage cx-demo" style={delay(2)}><HeroCoach /></Skel>
+        <Skel className="hx-stage cx-demo" style={delay(2)}><VoiceRound /></Skel>
       </div>
     </section>
   );
@@ -156,63 +88,70 @@ function CandHero() {
 
 /* ── The rewrite: one answer, four passes ── */
 
-type Pass = { kicker: string; title: string; body: string; score: number; lit: string[] };
-
-const PASSES: Pass[] = [
-  { kicker: "Pass 1", title: "Say it the way it comes out", body: "Most first answers describe the work and stop. It reads fine to you because you were there.", score: 58, lit: ["A"] },
-  { kicker: "Pass 2", title: "Give the listener the situation", body: "One sentence on why it mattered. Interviewers cannot score a problem they were never told about.", score: 70, lit: ["S", "A"] },
-  { kicker: "Pass 3", title: "Say what you did, not what we did", body: "Swap the team for yourself. The specific action is the part they write down.", score: 81, lit: ["S", "T", "A"] },
-  { kicker: "Pass 4", title: "Finish on a number", body: "A result with a figure is what gets repeated in the debrief. Land on it, then stop talking.", score: 91, lit: ["S", "T", "A", "R"] },
+type Fix = { title: string; body: string; score: number; lit: string[] };
+const BASE: Fix = { title: "Your first answer", body: "It says what you did, but not why it mattered.", score: 58, lit: ["A"] };
+const FIXES: Fix[] = [
+  { title: "Tell them why it mattered", body: "Add one line on the problem. Interviewers can't score a problem they never heard about.", score: 70, lit: ["S", "A"] },
+  { title: "Say \"I\", not \"we\"", body: "What you personally did is what they write down.", score: 81, lit: ["S", "T", "A"] },
+  { title: "End on a number", body: "A result with a figure sticks in their memory. Say it, then stop talking.", score: 91, lit: ["S", "T", "A", "R"] },
 ];
 
 function RewriteStory() {
-  const [at, setAt] = useState(0);
-  const steps = useRef<(HTMLElement | null)[]>([]);
+  const { ref, on } = useReveal<HTMLDivElement>();
+  const [n, setN] = useState(0);
+  const [touched, setTouched] = useState(false);
   useEffect(() => {
-    const io = new IntersectionObserver(
-      (es) => es.forEach((e) => { if (e.isIntersecting) setAt(Number((e.target as HTMLElement).dataset.i)); }),
-      { rootMargin: "-45% 0px -45% 0px" },
-    );
-    steps.current.forEach((el) => el && io.observe(el));
-    return () => io.disconnect();
-  }, []);
-  const P = PASSES[at];
+    if (!on || touched || reduced() || n >= FIXES.length) return;
+    const id = setTimeout(() => setN((v) => v + 1), n === 0 ? 1600 : 2200);
+    return () => clearTimeout(id);
+  }, [on, touched, n]);
+  const pick = (k: number) => { setTouched(true); setN(n === k + 1 ? k : k + 1); };
+  const P = n === 0 ? BASE : FIXES[n - 1];
   return (
-    <section className="pg-sec pg-band rw" id="rewrite">
-      <div className="hx-wrap">
-        <div className="em-head">
-          <span className="hx-kicker">One answer, four passes</span>
-          <h2 className="hx-h2">Watch a 58 become a 91 without changing the story.</h2>
-          <p>Same project, same person. Only what they said out loud changes.</p>
+    <section className="pg-sec ia" id="rewrite">
+      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
+        <div className="em-head ctr hx-ri" style={delay(0)}>
+          <span className="hx-kicker">Step 2: Find what to fix</span>
+          <h2 className="hx-h2">Same story, a much better answer.</h2>
+          <p>Three small fixes take one answer from 58 to 91 out of 100.</p>
         </div>
-        <div className="rw-grid">
-          <ol className="rw-steps">
-            {PASSES.map((p, i) => (
-              <li key={p.kicker} ref={(el) => { steps.current[i] = el; }} data-i={i} className={`rw-step${i === at ? " on" : ""}`}>
-                <span className="rw-k">{p.kicker}</span>
-                <h3>{p.title}</h3>
-                <p>{p.body}</p>
-              </li>
-            ))}
-          </ol>
-          <div className="rw-pane hx-stage-warm">
-            <Win left="Your answer" right={`Pass ${at + 1} of 4`} alt="An interview answer being rewritten in four passes while its score rises">
-              <div className="rw-card">
-                <p className="rw-q">Tell me about a time you made something faster.</p>
-                <p className="rw-a" aria-live="polite">
-                  {at >= 1 && <mark className="cd-add">Checkout was losing one in five buyers on slow phones, and I was asked to fix it. </mark>}
-                  {at >= 2 ? <mark className="cd-add">I moved the payment step to load on demand and cut two third-party scripts.</mark> : "I worked on our checkout page and made it load faster."}
-                  {at >= 3 && <mark className="cd-add"> Load time fell from 3.4s to 1.9s and completed orders rose 6% the next month.</mark>}
+        <div className="ia-grid hx-ri" style={delay(1)}>
+          <Skel className="ia-stage hx-stage-warm">
+            <Win left="Your answer" right={n === 0 ? "First draft" : `${n} of 3 fixes`} alt="An interview answer improving as three fixes are applied, with its score rising">
+              <div className="ia-card">
+                <p className="ia-q">Tell me about a time you improved something.</p>
+                <p className="ia-a" aria-live="polite">
+                  {n >= 1 && <mark className="cd-add">Customers waited two days for a reply and our rating had dropped to 3.8. </mark>}
+                  {n >= 2 ? <mark className="cd-add">I set up saved replies and sorted tickets by urgency each morning.</mark> : "I worked on our support team and made replies faster."}
+                  {n >= 3 && <mark className="cd-add"> Replies now take 6 hours instead of 48, and our rating rose to 4.5.</mark>}
                 </p>
-                <div className="rw-foot">
-                  <ul className="cd-star" aria-label="STAR parts present">
-                    {["S", "T", "A", "R"].map((l) => <li key={l} className={P.lit.includes(l) ? undefined : "miss"}>{l}</li>)}
+                <div className="ia-foot">
+                  <ul className="cd-star" aria-label="Which parts your answer has">
+                    {[["S", "The problem"], ["T", "Your job"], ["A", "What you did"], ["R", "The result"]].map(([l, w]) => <li key={l} className={P.lit.includes(l) ? undefined : "miss"}>{w}</li>)}
                   </ul>
-                  <div className="rw-score"><b key={P.score}>{P.score}</b><span>/ 100</span></div>
+                  <div className="ia-score"><b key={P.score}>{P.score}</b><span>out of 100</span></div>
                 </div>
-                <div className="rw-meter" aria-hidden="true"><i style={{ width: `${P.score}%` }} /></div>
+                <div className="ia-meter" aria-hidden="true"><i style={{ width: `${P.score}%` }} /></div>
               </div>
             </Win>
+          </Skel>
+          <div className="ia-fixes">
+            <p className="ia-hint">Tap a fix to try it</p>
+            <ol>
+              {FIXES.map((f, k) => {
+                const done = n > k;
+                return (
+                  <li key={f.title}>
+                    <button type="button" className={`ia-fix${done ? " done" : ""}`} aria-pressed={done} onClick={() => pick(k)}>
+                      <span className="ia-n" aria-hidden="true">{done ? <Check size={16} strokeWidth={2.5} /> : k + 1}</span>
+                      <span className="ia-t"><b>{f.title}</b><span>{f.body}</span></span>
+                      <em>+{f.score - (k === 0 ? BASE.score : FIXES[k - 1].score)}</em>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+            {n > 0 && <button type="button" className="ia-reset" onClick={() => { setTouched(true); setN(0); }}>Start over</button>}
           </div>
         </div>
       </div>
@@ -222,176 +161,36 @@ function RewriteStory() {
 
 /* ── Aim it at the job ── */
 
-type Aim = { role: string; qs: string[]; co: Record<string, string> };
-const COMPANY_KINDS = ["Product startup", "IT services", "Bank"] as const;
-const AIMS: Aim[] = [
-  { role: "Software engineer", qs: ["Walk me through a bug you chased for more than a day.", "How would you design a rate limiter for an API?", "Tell me about code you wish you had written differently."], co: { "Product startup": "Ownership. Did you decide, or did you wait to be told?", "IT services": "Fundamentals and how you work in a client team.", "Bank": "Care with data, testing and change control." } },
-  { role: "Product manager", qs: ["How did you decide what not to build?", "A metric dropped 8% overnight. What do you do first?", "Describe a launch that did not go to plan."], co: { "Product startup": "Speed of judgement with half the data.", "IT services": "Managing scope and a client who changes it.", "Bank": "Risk, compliance and stakeholder sign-off." } },
-  { role: "Data analyst", qs: ["Tell me about an insight that changed a decision.", "How do you check a number you do not trust?", "Explain a regression to a sales manager."], co: { "Product startup": "Whether you go from question to answer alone.", "IT services": "Clear reporting and clean hand-offs.", "Bank": "Accuracy, audit trail and definitions." } },
-  { role: "Sales", qs: ["Walk me through how you closed your hardest deal.", "A prospect says your price is too high. Now what?", "How do you plan your first week in a territory?"], co: { "Product startup": "Self-starting pipeline, not just closing.", "IT services": "Long cycles and relationship depth.", "Bank": "Trust, compliance and cross-selling with care." } },
-];
-
-function AimIt() {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  const [ri, setRi] = useState(0);
-  const [kind, setKind] = useState<(typeof COMPANY_KINDS)[number]>("Product startup");
-  const A = AIMS[ri];
-  return (
-    <section className="pg-sec pg-band" id="aim">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="em-head hx-ri" style={delay(0)}>
-          <span className="hx-kicker">Aimed at the job</span>
-          <h2 className="hx-h2">The questions change with the role and the company.</h2>
-        </div>
-        <div className="tg hx-ri" style={delay(1)}>
-          <div className="tg-ctl">
-            <h3 id="tg-role">Role</h3>
-            <div className="hv-chips" role="group" aria-labelledby="tg-role">
-              {AIMS.map((a, i) => <button key={a.role} type="button" className="jr-chip" aria-pressed={ri === i} onClick={() => setRi(i)}>{a.role}</button>)}
-            </div>
-            <h3 id="tg-co">Company</h3>
-            <div className="hv-chips" role="group" aria-labelledby="tg-co">
-              {COMPANY_KINDS.map((k) => <button key={k} type="button" className="jr-chip" aria-pressed={kind === k} onClick={() => setKind(k)}>{k}</button>)}
-            </div>
-          </div>
-          <div className="tg-out" key={`${ri}-${kind}`}>
-            <h3>Questions you could get</h3>
-            <ol>{A.qs.map((q) => <li key={q}>{q}</li>)}</ol>
-            <p className="tg-listen"><span>What a {kind.toLowerCase()} listens for</span>{A.co[kind]}</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Remembering what you practised ── */
-
-const WITHOUT = [100, 62, 44, 33, 27, 23, 20];
-const WITH = [100, 62, 44, 100, 70, 52, 100];
-const DAYS = ["Day 1", "2", "3", "4", "5", "6", "7"];
-
-function Memory() {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className="pg-sec" id="memory">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="em-head ctr hx-ri" style={delay(0)}>
-          <span className="hx-kicker">Why it sticks</span>
-          <h2 className="hx-h2">You forget most of what you practised within a week.</h2>
-          <p>We track the skills you were weakest on and nudge you to say them again just before they fade.</p>
-        </div>
-        <div className="mm hx-ri" style={delay(1)} role="img" aria-label="Chart: without a reminder, recall of a practised answer falls to about 20 percent by day seven; with reminders on days four and seven it resets to full.">
-          <div className="mm-key"><span><i className="a" />Practise once</span><span><i className="b" />Reminded on days 4 and 7</span></div>
-          <div className="mm-cols">
-            {DAYS.map((day, i) => (
-              <div className="mm-col" key={day}>
-                <div className="mm-bars">
-                  <i className="a" style={{ height: `${on ? WITHOUT[i] : 0}%`, transitionDelay: `${i * 60}ms` }} />
-                  <i className="b" style={{ height: `${on ? WITH[i] : 0}%`, transitionDelay: `${i * 60 + 30}ms` }} />
-                </div>
-                <span>{day}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ── Who sees what ── */
-
-const TRUST: [string, string][] = [
-  ["Employers see a code, not your name", "Until you say yes, your profile reads “Candidate #…” with no contact details or links."],
-  ["Discovery is a switch", "Turn it on when you want to be found. Turn it off and you drop out of every search."],
-  ["Delete it whenever you like", "Your data, your call. Access, correct or erase it under India's DPDP Act."],
-];
-
-function TrustStrip() {
-  const { ref, on } = useReveal<HTMLDivElement>();
-  return (
-    <section className="pg-sec tr" id="privacy">
-      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className="tr-row">
-          {TRUST.map(([t, b], i) => (
-            <div key={t} className="tr-item hx-ri" style={delay(i)}>
-              <h3>{t}</h3>
-              <p>{b}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ── Pricing ── */
 
-const FREE_LIST = ["Two full interview sessions", "A scored report for every answer", "Your profile, with discovery on or off"];
-const COUNTS = [3, 5, 8, 12];
-const FREE_SESSIONS = 2;
-
-function plan(sessions: number) {
-  const extra = Math.max(0, sessions - FREE_SESSIONS);
-  let best = { packs: 0, singles: extra, cost: extra * 9 };
-  for (let packs = 1; packs <= Math.ceil(extra / 5); packs++) {
-    const singles = Math.max(0, extra - packs * 5);
-    const cost = packs * 39 + singles * 9;
-    if (cost < best.cost) best = { packs, singles, cost };
-  }
-  return best;
-}
+const PLANS: { name: string; price: string; unit: string; sessions: string; note: string; feat?: boolean; cta: string }[] = [
+  { name: "Free", price: "₹0", unit: "to start", sessions: "2 sessions", note: "Every new account. No card needed.", cta: "Start free" },
+  { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", sessions: "About ₹8 a session", note: "Valid for 30 days. Built for a campus drive or a job switch.", feat: true, cta: "Get the pack" },
+  { name: "Single session", price: "₹9", unit: "a session", sessions: "Pay as you go", note: "Your credit never expires. Use it whenever you are ready.", cta: "Buy one" },
+];
 
 function CandPricing() {
   const { ref, on } = useReveal<HTMLDivElement>();
-  const [count, setCount] = useState(5);
-  const p = plan(count);
-  const lines: [string, string][] = [
-    [`Free sessions x ${Math.min(count, FREE_SESSIONS)}`, "₹0"],
-    ...(p.packs ? [[`Sprint Pack x ${p.packs}`, `₹${p.packs * 39}`] as [string, string]] : []),
-    ...(p.singles ? [[`Single sessions x ${p.singles}`, `₹${p.singles * 9}`] as [string, string]] : []),
-  ];
   return (
-    <section className="pg-sec pg-band" id="pricing">
+    <section className="pg-sec" id="pricing">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="em-head ctr hx-ri" style={delay(0)}>
           <span className="hx-kicker">Pricing</span>
-          <h2 className="hx-h2">Two sessions free. Then pay only as you practise.</h2>
+          <h2 className="hx-h2">Your first 2 sessions are <b>free</b>.</h2>
+          <p>After that, pay only for what you practise. No subscription.</p>
         </div>
-        <div className="pc">
-          <div className="pc-l hx-ri" style={delay(1)}>
-            <div className="pl-grp">
-              <h3><span>Free</span></h3>
-              <ul>{FREE_LIST.map((f) => <li key={f}><i />{f}</li>)}</ul>
+        <div className="pq hx-ri" style={delay(1)}>
+          {PLANS.map((pl) => (
+            <div key={pl.name} className={`pq-card${pl.feat ? " feat hx-stage" : ""}`}>
+              <span className="pq-name">{pl.name}{pl.feat && <i>Best value</i>}</span>
+              <p className="pq-price"><b>{pl.price}</b><span>{pl.unit}</span></p>
+              <p className="pq-sess">{pl.sessions}</p>
+              <p className="pq-note">{pl.note}</p>
+              <a data-no-underline className={`hx-btn lg${pl.feat ? "" : " alt"}`} href="/signup">{pl.cta} <Arrow /></a>
             </div>
-            <div className="pl-grp paid">
-              <h3><span>When you want more</span></h3>
-              <div className="pl-price">
-                <b>₹9</b>
-                <p>per session. The credit never expires.<br />Or ₹39 for five sessions, valid 30 days. <a href="/pricing">Full pricing</a></p>
-              </div>
-              <p className="cd-pay">No subscription. Pay by UPI, card or netbanking.</p>
-            </div>
-          </div>
-          <div className="pc-r hx-ri" style={delay(2)}>
-            <Skel className="pg-stage pc-stage">
-              <Win left="Your prep plan" alt="A cost estimate for the number of sessions you pick">
-                <div className="cd-plan">
-                  <h4 id="cd-count">How many sessions will you practise?</h4>
-                  <div className="hv-chips" role="group" aria-labelledby="cd-count">
-                    {COUNTS.map((c) => <button key={c} type="button" className="jr-chip" aria-pressed={count === c} onClick={() => setCount(c)}>{c} sessions</button>)}
-                  </div>
-                  <ul className="cd-lines" key={count}>
-                    {lines.map(([k, v]) => <li key={k}><span>{k}</span><b>{v}</b></li>)}
-                  </ul>
-                  <div className="cd-total"><span>Total</span><b>₹{p.cost}</b></div>
-                </div>
-                <div className="pg-ctl pc-ctl"><span>{p.cost === 0 ? "All free. No card needed." : `About ₹${(p.cost / count).toFixed(1).replace(/\.0$/, "")} per session, best price picked for you.`}</span><a data-no-underline className="hx-fakebtn pg-press" href="/signup">Start free</a></div>
-              </Win>
-            </Skel>
-          </div>
+          ))}
         </div>
+        <p className="pq-foot hx-ri" style={delay(2)}><a href="/pricing">See full pricing</a></p>
       </div>
     </section>
   );
@@ -401,12 +200,88 @@ function CandPricing() {
 
 const I = { size: 18, strokeWidth: 1.75, "aria-hidden": true } as const;
 
-function Sec({ id, band, kicker, title, lede, ctr, children }: { id?: string; band?: boolean; kicker: string; title: ReactNode; lede?: string; ctr?: boolean; children: ReactNode }) {
+const HOW: { t: string; d: string }[] = [
+  { t: "Practise out loud", d: "An AI interviewer asks the questions. You answer like the real thing." },
+  { t: "Find out what to fix", d: "Get a score out of 100 and simple tips. Try again until you are happy." },
+  { t: "Get seen by recruiters", d: "Your best skills show as verified proof. You choose who sees your name." },
+];
+
+function HowPanel({ i }: { i: number }) {
+  if (i === 0) return (
+    <div className="hi-p">
+      <p className="hi-q">Tell me about a time you improved something.</p>
+      <div className="hi-wave" aria-hidden="true">{[8, 16, 11, 24, 14, 28, 10, 20, 26, 12, 22, 9, 18, 13, 25, 11, 17, 8].map((h, k) => <i key={k} style={{ height: h, ["--d" as string]: `${k * 60}ms` }} />)}</div>
+      <p className="hi-hint"><Mic size={16} strokeWidth={1.75} aria-hidden="true" />Listening to your answer</p>
+    </div>
+  );
+  if (i === 1) return (
+    <div className="hi-p">
+      <div className="hi-sc">
+        <div><small>First try</small><b>64</b></div>
+        <ArrowRight size={22} strokeWidth={1.75} aria-hidden="true" />
+        <div><small>Second try</small><b className="up">86</b></div>
+      </div>
+      <ul className="hi-tips">
+        <li><Check size={16} strokeWidth={2.25} aria-hidden="true" />Say what changed, with a number.</li>
+        <li><Check size={16} strokeWidth={2.25} aria-hidden="true" />Cut filler words like "um" and "like".</li>
+      </ul>
+    </div>
+  );
+  return (
+    <div className="hi-p">
+      <p className="hi-q">Who can see what</p>
+      <ul className="hi-vis">
+        <li><span>Your verified skills</span><em className="on">Recruiters can see</em></li>
+        <li><span>Your name and contact</span><em>Hidden until you say yes</em></li>
+      </ul>
+      <p className="hi-hint"><Lock size={16} strokeWidth={1.75} aria-hidden="true" />You decide, every time.</p>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  const { ref, on } = useReveal<HTMLDivElement>();
+  const [cur, setCur] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const play = on && auto && !reduced();
+  return (
+    <section className="pg-sec" id="how">
+      <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
+        <div className="em-head ctr hx-ri" style={delay(0)}>
+          <span className="hx-kicker">How it works</span>
+          <h2 className="hx-h2">Practise, improve, <b>get shortlisted</b>.</h2>
+          <p>Three steps, about 10 to 25 minutes a round.</p>
+        </div>
+        <div className="hi hx-ri" style={delay(1)}>
+          <div className="hi-tabs" role="tablist" aria-label="How HireStepX works">
+            {HOW.map((x, i) => (
+              <button key={x.t} type="button" role="tab" id={`hi-t${i}`} aria-selected={cur === i} aria-controls="hi-panel" tabIndex={cur === i ? 0 : -1} className={`hi-tab${cur === i ? " on" : ""}`} onClick={() => { setAuto(false); setCur(i); }}>
+                <span className="hi-num" aria-hidden="true">{i + 1}</span>
+                <b>{x.t}</b>
+                <span className="hi-d">{x.d}</span>
+                <i className="hi-bar" aria-hidden="true">{cur === i && <u className={play ? "run" : "full"} onAnimationEnd={() => setCur((v) => (v + 1) % HOW.length)} />}</i>
+              </button>
+            ))}
+          </div>
+          <Skel className="hi-stage hx-stage-warm">
+            <div id="hi-panel" role="tabpanel" aria-labelledby={`hi-t${cur}`}>
+              <Win left={["Sample round", "Your score", "Your privacy"][cur]} alt={undefined}>
+                <HowPanel key={cur} i={cur} />
+              </Win>
+            </div>
+          </Skel>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Sec({ id, band, kicker, title, lede, children }: { id?: string; band?: boolean; kicker: string; title: ReactNode; lede?: string; children: ReactNode }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   return (
     <section className={`pg-sec${band ? " pg-band" : ""}`} id={id}>
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
-        <div className={`em-head${ctr ? " ctr" : ""} hx-ri`} style={delay(0)}>
+        <div className={"em-head ctr hx-ri"} style={delay(0)}>
           <span className="hx-kicker">{kicker}</span>
           <h2 className="hx-h2">{title}</h2>
           {lede ? <p>{lede}</p> : null}
@@ -417,142 +292,18 @@ function Sec({ id, band, kicker, title, lede, ctr, children }: { id?: string; ba
   );
 }
 
-const Bar = ({ v, floor }: { v: number; floor?: number }) => (
-  <i className={`cb${floor !== undefined && v < floor ? " low" : ""}`}><b style={{ width: `${v}%` }} />{floor !== undefined ? <u style={{ left: `${floor}%` }} /> : null}</i>
-);
-
-type RoundKind = { id: string; label: string; Icon: LucideIcon; blurb: string; gate: string; dims: [string, number][]; probe: string };
-const KINDS: RoundKind[] = [
-  { id: "hr", label: "HR round", Icon: Users, blurb: "Scored on eight things HR actually grades. Clear 60 on every one, because a single zero can sink the offer.", gate: "Pass mark 60 on all 8", dims: [["Logistics clarity", 90], ["Comp transparency", 85], ["Switch rationale", 75], ["Compliance readiness", 90], ["Commitment signal", 80], ["Policy literacy", 65], ["Self-awareness", 80], ["Motivation specificity", 70]], probe: "What about our roadmap caught your eye, compared to other SaaS platforms?" },
-  { id: "beh", label: "Behavioural", Icon: MessageSquareText, blurb: "Stories about ownership, conflict and impact. Checked for structure, real numbers and your own part in it.", gate: "STAR complete", dims: [["Structure", 82], ["Ownership", 74], ["Measurable impact", 58], ["Clarity", 80], ["Empathy", 78]], probe: "What would you do differently if you ran that project again?" },
-  { id: "tech", label: "Technical", Icon: Code, blurb: "Depth on the skills in your resume. Framing the problem, the trade-offs you weighed and how you explain it.", gate: "Depth vs role bar", dims: [["Technical depth", 60], ["Problem framing", 52], ["Trade-off reasoning", 56], ["Communication", 76], ["Ownership", 70]], probe: "Why did you pick that approach over the simpler one?" },
-  { id: "pay", label: "Salary negotiation", Icon: IndianRupee, blurb: "Practise the money conversation before it counts: anchoring, counter-offers and when to walk away.", gate: "Anchor and floor", dims: [["Anchor strength", 82], ["Counter-offer judgement", 56], ["Walk-away discipline", 52], ["Tactical composure", 72], ["Package literacy", 65]], probe: "We can do 18 LPA. How does that sit with you?" },
-  { id: "camp", label: "Campus placement", Icon: GraduationCap, blurb: "For freshers: introduce yourself, explain your projects and show why this company, with no experience to lean on.", gate: "Story completeness", dims: [["Background articulation", 55], ["Company fit", 50], ["Project stories", 62], ["Fundamentals", 70], ["Composure", 78]], probe: "Tell me about the project you are proudest of, and your part in it." },
-];
-
-function Rounds() {
-  const [k, setK] = useState(0);
-  const R = KINDS[k];
-  return (
-    <Sec id="rounds" kicker="Five round types" title={<>Every round has its <b>own scorecard</b>.</>} lede="Pick the round you are about to face. Each one is judged on the things that round actually tests.">
-      <div className="rd">
-        <div className="rd-tabs" role="group" aria-label="Round type">
-          {KINDS.map((x, i) => <button key={x.id} type="button" className="jr-chip" aria-pressed={k === i} onClick={() => setK(i)}><x.Icon {...I} size={16} />{x.label}</button>)}
-        </div>
-        <div className="rd-card hx-stage hx-stage-cool" key={R.id}>
-          <div className="rd-in">
-            <div className="rd-head"><span className="rd-ico"><R.Icon {...I} /></span><div><h3>{R.label}</h3><p>{R.blurb}</p></div></div>
-            <ul className="rd-dims">{R.dims.map(([n, v]) => <li key={n}><span>{n}</span><Bar v={v} floor={60} /><em>{v}</em></li>)}</ul>
-            <p className="rd-foot"><span><Target {...I} size={14} />{R.gate}</span><span>Sample report. Scores out of 100.</span></p>
-            <p className="rd-probe"><Mic {...I} size={14} /><span>Likely next question</span>{R.probe}</p>
-          </div>
-        </div>
-      </div>
-    </Sec>
-  );
-}
-
-const PILLARS: { n: string; d: string; w: number; v: number; Icon: LucideIcon; lever?: boolean }[] = [
-  { n: "Competence", d: "How deep your knowledge goes", w: 34, v: 63, Icon: Target },
-  { n: "Consistency", d: "How stable your scores are", w: 18, v: 43, Icon: Activity },
-  { n: "Coverage", d: "Round types and STAR completeness", w: 18, v: 32, Icon: Layers, lever: true },
-  { n: "Currency", d: "How fresh each skill is", w: 12, v: 85, Icon: Snowflake },
-  { n: "Composure", d: "Fillers, pace and energy under pressure", w: 18, v: 84, Icon: AudioWaveform },
-];
-
-function Readiness() {
-  return (
-    <Sec id="readiness" band kicker="Readiness index" title={<>Know how far you are from the <b>hire bar</b>.</>} lede="One number for your target role and round, built from five pillars, with the fastest way to move it.">
-      <div className="ri">
-        <Skel className="ri-main hx-stage hx-stage-warm">
-          <div className="ri-card">
-            <span className="hx-kicker">Senior product designer · behavioural loop</span>
-            <div className="ri-num"><strong>60</strong><span>/ 100</span><em>Building</em></div>
-            <div className="ri-track"><i style={{ width: "60%" }} /><u style={{ left: "70%" }}><span>Hire bar 70</span></u></div>
-            <p>About 4 focused sessions puts you over the bar. The biggest single gain is in coverage.</p>
-          </div>
-        </Skel>
-        <ul className="ri-pillars">
-          {PILLARS.map((p) => (
-            <li key={p.n} className={p.lever ? "lever" : ""}>
-              <span className="ri-ico"><p.Icon {...I} /></span>
-              <div><h3>{p.n}{p.lever ? <em>Biggest lever</em> : null}</h3><p>{p.d} · {p.w}% of the score</p></div>
-              <Bar v={p.v} /><strong>{p.v}</strong>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Sec>
-  );
-}
-
-const DELIVERY: { Icon: LucideIcon; n: string; v: string; u: string; note: string }[] = [
-  { Icon: AudioWaveform, n: "Filler words", v: "1.1", u: "per min", note: "Comfortable up to 5" },
-  { Icon: Timer, n: "Pace", v: "138", u: "wpm", note: "Ideal 120 to 160" },
-  { Icon: Users, n: "Ownership", v: "88", u: "% I vs we", note: "Shows your own part" },
-  { Icon: MessageSquareText, n: "Hedging", v: "0", u: "per min", note: "Fewer 'sort of', 'maybe'" },
-  { Icon: Activity, n: "Energy", v: "92", u: "/ 100", note: "Vocal variety" },
-  { Icon: Eye, n: "Attention", v: "3", u: "phases", note: "Tracking, probing, wrapping" },
-];
-
-function Delivery() {
-  return (
-    <Sec id="delivery" kicker="How you sound" title={<>It hears <b>how</b> you say it, not only what.</>} lede="Delivery is measured on every answer, and read the way an Indian interview panel hears it.">
-      <div className="dv">
-        <ul className="dv-grid">
-          {DELIVERY.map((d) => <li key={d.n}><span className="dv-ico"><d.Icon {...I} /></span><h3>{d.n}</h3><p><strong>{d.v}</strong><span>{d.u}</span></p><em>{d.note}</em></li>)}
-        </ul>
-        <Skel className="dv-att hx-stage hx-stage-cool">
-          <div className="dv-att-in">
-            <span className="hx-kicker">Interviewer attention, last session</span>
-            <ol>
-              <li><b>Tracking</b>Listening to your background and graduation details.</li>
-              <li><b>Probing</b>Checking how you measured the impact.</li>
-              <li><b>Wrapping</b>You repeated the same details, so move on to the next question.</li>
-            </ol>
-          </div>
-        </Skel>
-      </div>
-    </Sec>
-  );
-}
-
-const GAPS: { Icon: LucideIcon; t: string; d: string; rows: [string, string][] }[] = [
-  { Icon: Radar, t: "Blind spots", d: "Commonly asked in your role, never rehearsed by you.", rows: [["Communication", "90%"], ["Problem-solving", "90%"], ["Ownership", "85%"], ["Execution rigor", "85%"]] },
-  { Icon: Snowflake, t: "Skills going cold", d: "Idle skills fade, so they come back for a refresher.", rows: [["Problem framing", "98 days idle"], ["Technical depth", "98 days idle"], ["Trade-off reasoning", "98 days idle"]] },
-  { Icon: MessageSquareText, t: "Likely follow-ups", d: "What you would most likely be asked next, and why.", rows: [["Walk me through a technical challenge you solved.", "95%"], ["What drew you to large-scale products?", "95%"], ["What about our roadmap caught your eye?", "95%"]] },
-];
-
-function Gaps() {
-  return (
-    <Sec id="gaps" band kicker="What you have not prepared" title={<>See the holes <b>before the interviewer does</b>.</>} lede="It tracks what you skip, what you are forgetting and what you will probably be asked next.">
-      <div className="gp">
-        {GAPS.map((g) => (
-          <div key={g.t} className="gp-col">
-            <span className="gp-ico"><g.Icon {...I} /></span>
-            <h3>{g.t}</h3>
-            <p>{g.d}</p>
-            <ul>{g.rows.map(([a, b]) => <li key={a}><span>{a}</span><em>{b}</em></li>)}</ul>
-          </div>
-        ))}
-      </div>
-    </Sec>
-  );
-}
-
 const PROOF: { Icon: LucideIcon; t: string; d: string }[] = [
-  { Icon: FileText, t: "A resume score you can act on", d: "A score out of 100, an ATS readiness check and the four fixes that matter most." },
-  { Icon: ShieldCheck, t: "Evidence employers can trust", d: "Capabilities such as communication and problem solving are marked verified after you practise them." },
-  { Icon: BriefcaseBusiness, t: "Say it once, skip the screening call", d: "Add notice period, current pay and expected pay. Only employers who unlock your profile see them." },
-  { Icon: Lock, t: "Masked until you say yes", d: "Employers see a code, never your name, phone or email. Turn discovery off any time." },
+  { Icon: FileText, t: "Know where your resume stands", d: "Get a score out of 100, a check that hiring software can read it, and a rewrite for weak lines." },
+  { Icon: ShieldCheck, t: "Proof, not promises", d: "Skills like communication and problem solving show as verified once you have practised them." },
+  { Icon: BriefcaseBusiness, t: "Skip the repeat questions", d: "Add your notice period once. Only employers you accept can see it." },
 ];
 
 function Proof() {
   return (
-    <Sec id="proof" kicker="From practice to hired" title={<>Your practice becomes <b>proof</b> employers can find.</>} lede="Practise privately, then let matching employers see what you can do, on your terms.">
+    <Sec id="proof" band kicker="Step 3: Get seen" title={<>Practice that <b>gets you shortlisted</b>.</>} lede="Every session adds proof of what you can do. Recruiters hiring for your skills can see it, and you decide who gets your name.">
       <div className="pf">
         <ul className="pf-list">
-          {PROOF.map((p) => <li key={p.t}><span className="pf-ico"><p.Icon {...I} /></span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>)}
+          {PROOF.map((p, i) => <li key={p.t} style={delay(i)}><span className="pf-ico"><p.Icon {...I} /></span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>)}
         </ul>
         <Skel className="pf-card hx-stage hx-stage-warm">
           <div className="pf-in">
@@ -560,15 +311,16 @@ function Proof() {
             <h3>Candidate K7Q2</h3>
             <p className="pf-meta">Product designer · 5 years · Pune</p>
             <ul className="pf-ev">
-              <li><ShieldCheck {...I} size={16} />Communication<em>Verified</em></li>
-              <li><ShieldCheck {...I} size={16} />Problem solving<em>Verified</em></li>
-              <li><ShieldCheck {...I} size={16} />Leadership<em>Verified</em></li>
-              <li className="no"><ShieldCheck {...I} size={16} />Salary negotiation<em>Not yet</em></li>
+              <li style={delay(1)}><ShieldCheck {...I} size={16} />Communication<em>Verified</em></li>
+              <li style={delay(2)}><ShieldCheck {...I} size={16} />Problem solving<em>Verified</em></li>
+              <li style={delay(3)}><ShieldCheck {...I} size={16} />Leadership<em>Verified</em></li>
+              <li className="no" style={delay(4)}><ShieldCheck {...I} size={16} />Salary negotiation<em>Not yet</em></li>
             </ul>
-            <p className="pf-lock"><Lock {...I} size={14} />Name and contact stay hidden until you accept.</p>
+            <p className="pf-lock"><Lock {...I} size={14} />Your name and contact stay hidden until you say yes.</p>
           </div>
         </Skel>
       </div>
+      <p className="pf-cta"><a data-no-underline className="hx-btn lg" href="/signup">Start free, get shortlisted <Arrow /></a></p>
     </Sec>
   );
 }
@@ -577,25 +329,19 @@ export function CandidatesPage() {
   return (
     <Shell active="talent">
       <CandHero />
-      <Rounds />
+      <HowItWorks />
       <RewriteStory />
-      <Readiness />
-      <Delivery />
-      <Gaps />
-      <AimIt />
-      <Memory />
       <Proof />
-      <TrustStrip />
       <CandPricing />
       <CandFaq />
-      <Close
+      <div className="cx-close"><Close
         kicker="Ready when you are"
         title={<>Start with <b>one answer</b>.</>}
         body="Practise out loud, see exactly what to fix, and let employers find the proof."
         primary={["Practise free", "/signup"]}
         secondary={["Hire from proof", "/employers"]}
         notes={["2 free sessions", "No card needed", "Delete anytime"]}
-      />
+      /></div>
     </Shell>
   );
 }

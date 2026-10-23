@@ -14,7 +14,6 @@
  */
 
 import { useEffect, useRef, type CSSProperties } from "react";
-import { useStagingHost, Home2Footer } from "../home2/Chrome";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { openCookieSettings } from "../consent";
 import { copyrightHolder } from "../../data/legal-entity";
@@ -401,7 +400,7 @@ function FooterDomeMobile() {
 }
 
 /* ── Public export — drop-in replacement for FinalCTAFooterV2 ── */
-function FooterDomeLegacy({ employer = false }: { employer?: boolean } = {}) {
+export function FooterDome({ employer = false }: { employer?: boolean } = {}) {
   return (
     <footer aria-label="Site footer">
       <style>{`
@@ -412,11 +411,6 @@ function FooterDomeLegacy({ employer = false }: { employer?: boolean } = {}) {
       <div className="fd-mobile"><FooterDomeMobile /></div>
     </footer>
   );
-}
-
-export function FooterDome({ employer = false }: { employer?: boolean } = {}) {
-  const staging = useStagingHost();
-  return staging ? <Home2Footer /> : <FooterDomeLegacy employer={employer} />;
 }
 
 export default FooterDome;

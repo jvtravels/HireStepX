@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Script from "next/script";
 import { useConsentCategory } from "../src/useCookieConsent";
 import { initPostHog, shutdownPostHog } from "../src/posthogClient";
 import { updateGtagConsent } from "../src/_browser-api-guards";
-import { buildGa4InitScript } from "./_ga4-script";
+import { buildGa4InitScript, isGa4Host } from "./_ga4-script";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -27,6 +27,11 @@ const SpeedInsights = dynamic(() => import("@vercel/speed-insights/next").then(m
 export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: string; ga4?: boolean }) {
   const accepted = useConsentCategory("analytics");
   const advertising = useConsentCategory("advertising");
+  const [gaHost, setGaHost] = useState(false);
+
+  useEffect(() => {
+    setGaHost(isGa4Host(window.location.hostname));
+  }, []);
 
   useEffect(() => {
     if (!accepted) {
@@ -55,7 +60,7 @@ export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: s
     <>
       <Analytics />
       <SpeedInsights />
-      {ga4 && GA_ID && (
+      {ga4 && gaHost && GA_ID && (
         <>
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}

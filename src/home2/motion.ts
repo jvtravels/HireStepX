@@ -1,6 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
-
-const useIso = typeof window === "undefined" ? useEffect : useLayoutEffect;
+import { useEffect, useRef, useState } from "react";
 
 export const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -153,39 +151,4 @@ export function useScrollStage<T extends HTMLElement, S extends HTMLElement>(n: 
     window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - FT_TOP + s, behavior: reduced() ? "auto" : "smooth" });
   };
   return { ref, stage, i, go };
-}
-
-/* Keeps an element mounted for `ms` after `open` goes false so an exit animation can play. */
-export function usePresence(open: boolean, ms = 160) {
-  const [mounted, setMounted] = useState(open);
-  useEffect(() => {
-    if (open) { setMounted(true); return; }
-    if (reduced()) { setMounted(false); return; }
-    const t = setTimeout(() => setMounted(false), ms);
-    return () => clearTimeout(t);
-  }, [open, ms]);
-  return { mounted: open || mounted, closing: !open && mounted };
-}
-
-/* Sliding indicator: measures the selected tab and exposes --sx / --sw on the container. */
-export function useSlider<T extends HTMLElement>(dep: unknown) {
-  const ref = useRef<T>(null);
-  useIso(() => {
-    const el = ref.current;
-    if (!el) return;
-    const measure = () => {
-      const on = el.querySelector<HTMLElement>('[aria-selected="true"]');
-      if (!on) { el.removeAttribute("data-ready"); return; }
-      el.style.setProperty("--sx", on.offsetLeft + "px");
-      el.style.setProperty("--sy", on.offsetTop + "px");
-      el.style.setProperty("--sw", on.offsetWidth + "px");
-      el.style.setProperty("--sh", on.offsetHeight + "px");
-      el.setAttribute("data-ready", "");
-    };
-    measure();
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
-    ro?.observe(el);
-    return () => ro?.disconnect();
-  }, [dep]);
-  return ref;
 }

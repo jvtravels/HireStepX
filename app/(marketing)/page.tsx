@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
 import HomepageV2 from "@/marketing-v2/HomepageV2";
-import Homepage2 from "@/home2/Homepage";
-
-// Staging (any non-production Vercel build) previews the new homepage; production keeps V2 until promoted.
-const SHOW_NEW_HOMEPAGE = process.env.VERCEL_ENV !== "production";
 
 // Deliberately NOT titled "AI Mock Interview Practice ... | HireStepX" — that
 // phrase is /ai-mock-interview's exact-match title for the highest-volume
@@ -105,7 +101,7 @@ export default function Page() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(ORGANIZATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(APPLICATION_SCHEMA) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(WEBSITE_SCHEMA) }} />
-      {SHOW_NEW_HOMEPAGE ? <Homepage2 /> : <HomepageV2 />}
+      <HomepageV2 />
     </>
   );
 }
