@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Arrow, Close, Shell } from "./Pages";
 import Skel from "./Skel";
-import { SeoCover, coverCss } from "./SeoCover";
 import { delay, usePresence, useSlider, useTween } from "./motion";
 import { ITEMS, type Item } from "./resourcesData";
 
@@ -276,7 +275,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
 
   return (
     <Shell active="resources">
-      <style>{resourcesCss + coverCss}</style>
+      <style>{resourcesCss}</style>
 
       <section className="hx-hero lb-hero">
         <div className="hx-wrap">
@@ -424,7 +423,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                         return (
                           <li key={i.h} style={{ animationDelay: `${(n % 12) * 28}ms` }}>
                             <article className={`lb-card k-${i.k}`}>
-                              <span className="lb-vis lb-cov"><SeoCover item={i} /></span>
+                              <Vis i={i} />
                               <div className="lb-body">
                                 <span className={`lb-chip k-${i.k}`}>{KIND_LABEL[i.k]}</span>
                                 <b><a data-no-underline className="lb-link" href={i.h}>{i.t}</a></b>

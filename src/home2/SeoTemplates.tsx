@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
-import { KIND_LABEL, resourcesCss } from "./Resources";
+import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
 import { SeoCover, coverCss } from "./SeoCover";
 import Skel from "./Skel";
 import { delay, useReveal } from "./motion";
@@ -51,13 +51,13 @@ function Prose({ text, labels = false }: { text: string; labels?: boolean }) {
 function Related({ title, items }: { title: string; items: { item: Item; meta: string }[] }) {
   return (
     <section className="sx-rel">
-      <style>{resourcesCss + coverCss}</style>
+      <style>{resourcesCss}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
         {items.map(({ item: i, meta }) => (
           <li key={i.h}>
             <article className={`lb-card k-${i.k}`}>
-              <span className="lb-vis lb-cov"><SeoCover item={i} /></span>
+              <Vis i={i} />
               <div className="lb-body">
                 <span className={`lb-chip k-${i.k}`}>{KIND_LABEL[i.k]}</span>
                 <b><a data-no-underline className="lb-link" href={i.h}>{i.t}</a></b>
