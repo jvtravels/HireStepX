@@ -4,7 +4,7 @@
  * hirestepx.com         → marketing pages (/, /blog, /terms, /privacy, /page/*)
  * www.hirestepx.com     → marketing pages (currently pre-launch gated)
  * app.hirestepx.com     → product pages (currently pre-launch gated — same as www)
- * staging.hirestepx.com → full app, HTTP Basic Auth (STAGING_BASIC_AUTH="user:pass"; fails closed)
+ * staging.hirestepx.com → full app (team / pre-prod, never gated)
  * admin.hirestepx.com   → admin panel (server-side token-cookie gate)
  *
  * Pre-launch behavior: PRE_LAUNCH_HOSTS get every non-allowed path rewritten
@@ -29,7 +29,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
-import { isStagingHost, isStagingAuthorized } from "./src/stagingGate";
 
 /* ── Per-request CSP nonce ──────────────────────────────────────────────────
  *
@@ -264,15 +263,6 @@ export async function proxy(request: NextRequest) {
   // Skip routing logic in development — still inject CSP so local dev matches prod.
   if (hostname === "localhost" || hostname === "127.0.0.1") {
     return nextWithNonce();
-  }
-
-  // staging is an alias of the production deployment (same env, same backend),
-  // so it must not be open to the public. localhost returned above.
-  if (isStagingHost(hostname) && !isStagingAuthorized(request.headers.get("authorization"), process.env.STAGING_BASIC_AUTH)) {
-    return withCsp(new NextResponse("Authentication required", {
-      status: 401,
-      headers: { "WWW-Authenticate": 'Basic realm="HireStepX staging"', "Cache-Control": "no-store", "X-Robots-Tag": "noindex" },
-    }));
   }
 
   // ─── Pre-launch gate ─────────────────────────────────────────────
