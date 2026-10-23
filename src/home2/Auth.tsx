@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { HomeShell } from "./Homepage";
 
-const authCss = `
+export const authCss = `
 .hx:has(> .hx-au) { height: 100%; }
 .hx-au { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); height: 100%; background: var(--white); }
 .hx-au-l { display: flex; flex-direction: column; padding: 32px 56px; }
@@ -99,7 +99,7 @@ function Photo({ src, alt, fallback }: { src: string; alt: string; fallback: Rea
 
 const BARS = [8, 16, 24, 12, 20, 26, 14, 8, 18, 22, 10];
 
-function Scene({ talent }: { talent: boolean }) {
+export function Scene({ talent }: { talent: boolean }) {
   return (
     <div className="hx-au-stage">
       <div className="hx-au-scene">

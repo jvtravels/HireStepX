@@ -14,7 +14,7 @@ function Arrow() {
   );
 }
 
-export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies"; talentHref?: string }) {
+export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" | "companies" | "resources"; talentHref?: string }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -22,15 +22,16 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
     window.addEventListener("keydown", esc);
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
-  const cur = (k: "talent" | "companies") => (active === k ? "page" : undefined);
+  const cur = (k: "talent" | "companies" | "resources") => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
         <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
         <nav className="hx-links" aria-label="Primary">
           <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-          <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
+          <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
           <a data-no-underline href="/pricing">Pricing</a>
+          <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
           <a data-no-underline href="/about">About us</a>
         </nav>
         <div className="hx-nav-cta">
@@ -38,8 +39,8 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
           <a data-no-underline className="hx-btn sm" href="/signup">Sign up free</a>
         </div>
         <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-            {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+          <svg className={open ? "hx-bsvg on" : "hx-bsvg"} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+            <path className="hx-b1" d="M4 7h16" /><path className="hx-b2" d="M4 12h16" /><path className="hx-b3" d="M4 17h16" />
           </svg>
         </button>
       </div>
@@ -47,8 +48,9 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
         <div className="hx-menu" id="hx-menu" onClick={() => setOpen(false)}>
           <nav aria-label="Mobile">
             <a data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</a>
-            <a data-no-underline href="/employers" aria-current={cur("companies")}>For companies</a>
+            <a data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</a>
             <a data-no-underline href="/pricing">Pricing</a>
+            <a data-no-underline href="/resources" aria-current={cur("resources")}>Resources</a>
             <a data-no-underline href="/about">About us</a>
           </nav>
           <div className="hx-menu-cta">
@@ -198,15 +200,15 @@ export function Footer() {
           <div className="hx-foot-brand">
             <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
             <p>Practise interviews. Get hired on proof.</p>
-            <p className="hx-foot-rights">Your rights under India&apos;s DPDP Act: access, correct or erase your data. <a href="/grievance">Contact the grievance officer.</a></p>
+            <p className="hx-foot-rights">Your rights under India&apos;s DPDP Act: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a href="/signup">Practise free</a><a data-no-underline href="/employers">For employers</a><a href="/login">Log in</a></div>
-            <div><h3>Company</h3><a href="/contact">Contact</a><a href="/grievance">Grievance officer</a></div>
-            <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a></div>
+            <div><h3>Product</h3><a data-no-underline href="/candidates">For talent</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a></div>
+            <div><h3>Company</h3><a href="/contact">Contact</a></div>
+            <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>
           <div className="hx-foot-bar">
-            <span>&copy; 2026 HireStepX</span>
+            <span>&copy; 2026 HireStepX. Made in Mumbai, India.</span>
             <div className="hx-social">
               <a data-no-underline href="https://www.linkedin.com/company/hirestepx" target="_blank" rel="noopener noreferrer" aria-label="HireStepX on LinkedIn">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z" /></svg>
