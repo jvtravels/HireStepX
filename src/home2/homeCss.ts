@@ -543,5 +543,26 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-how-in { zoom: 1; }
 }
 @media (prefers-reduced-motion: reduce) { .hx-how-in, .hx-how-pg { animation: none; } .hx-how-d { transition: none; } }
+/* ── UI generation overlay (transitions.dev), tuned to the site's indigo ── */
+:root { --gen-line: oklch(0.62 0.1 278); --gen-strong: oklch(0.359 0.135 278.697); --gen-ink: oklch(0.45 0.12 278 / 0.35); --gen-surface: #fff; --gen-dot: 2.1px; --gen-font: 'Geist Mono', ui-monospace, monospace; }
+.t-gen { position: absolute; z-index: 2147483000; pointer-events: none; }
+.t-gen-svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.t-gen-dot { fill: var(--gen-ink); }
+.t-gen-dot.is-lit { fill: var(--gen-strong); }
+.t-gen-wireframe { stroke-width: var(--gen-dot); }
+.t-gen-wire { fill: none; stroke: var(--gen-line); stroke-linecap: round; stroke-linejoin: round; }
+.t-gen-guide { fill: none; stroke: var(--gen-line); stroke-width: 1.6; stroke-linecap: round; }
+.t-gen-guide--dashed, .t-gen-guide--scan { stroke-dasharray: 0 5; }
+.t-gen-head, .t-gen-flyer { fill: var(--gen-strong); }
+.t-gen-handle { fill: var(--gen-surface); stroke: var(--gen-strong); stroke-width: 1; }
+.t-gen-reticle { fill: none; stroke: var(--gen-strong); stroke-width: 1.2; stroke-linecap: round; }
+.t-gen-glow-stop { stop-color: var(--gen-line); }
+.t-gen-label { font-family: var(--gen-font); font-size: 9px; fill: var(--gen-line); letter-spacing: 0.02em; }
+.t-gen-label--small { font-size: 7.5px; fill: var(--gen-strong); }
+.t-gen-label--tag { font-size: 7.5px; fill: var(--gen-strong); letter-spacing: 0.05em; text-transform: uppercase; }
+.t-gen-label { display: none; }
+@media (prefers-reduced-motion: reduce) { .t-gen { display: none; } }
+
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) { [data-sk="pending"] { opacity: 0 !important; } }
 `;
 

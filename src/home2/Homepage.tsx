@@ -3,6 +3,7 @@ import { homeCss } from "./homeCss";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
 import { useEffect, useState } from "react";
+import Skel, { useSkel } from "./Skel";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
 function Arrow() {
@@ -62,6 +63,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: "talent" 
 
 export function Hero() {
   const tilt = useScrollTilt<HTMLDivElement>();
+  useSkel(tilt);
   return (
     <section className="hx-hero">
       <div className="hx-wrap">
@@ -72,7 +74,7 @@ export function Hero() {
           <a data-no-underline className="hx-btn lg alt" href="/employers">Hire from proof</a>
         </div>
         <div className="hx-tiltwrap">
-          <div ref={tilt} className="hx-stage hx-stage-hero hx-tilt">
+          <div ref={tilt} data-sk="pending" className="hx-stage hx-stage-hero hx-tilt">
             <HeroSurface />
           </div>
         </div>
@@ -116,9 +118,9 @@ export function Connection() {
               </li>
             ))}
           </ol>
-          <div className="hx-stage hx-how-vis">
+          <Skel className="hx-stage hx-how-vis">
             <div className="hx-how-in" key={active}><StepVisual n={active} play /></div>
-          </div>
+          </Skel>
         </div>
       </div>
     </section>
@@ -127,6 +129,7 @@ export function Connection() {
 
 export function Candidates() {
   const depth = useScrollDepth<HTMLDivElement>();
+  useSkel(depth);
   return (
     <section className="hx-sec" id="candidates">
       <div className="hx-wrap">
@@ -138,7 +141,7 @@ export function Candidates() {
           <div className="hx-head-cta">
             <a data-no-underline className="hx-btn" href="/signup">Practise free <Arrow /></a>          </div>
         </div>
-        <div ref={depth} className="hx-stage hx-stage-cool hx-stage-crop hx-depth"><ReportSurface /></div>
+        <div ref={depth} data-sk="pending" className="hx-stage hx-stage-cool hx-stage-crop hx-depth"><ReportSurface /></div>
       </div>
     </section>
   );
@@ -146,6 +149,7 @@ export function Candidates() {
 
 export function Employers() {
   const depth = useScrollDepth<HTMLDivElement>();
+  useSkel(depth);
   return (
     <section className="hx-sec" id="employers">
       <div className="hx-wrap">
@@ -158,7 +162,7 @@ export function Employers() {
             <a data-no-underline className="hx-btn" href="/employers">Hire from proof <Arrow /></a>
           </div>
         </div>
-        <div ref={depth} className="hx-stage hx-stage-warm hx-stage-crop hx-depth"><InboxSurface /></div>
+        <div ref={depth} data-sk="pending" className="hx-stage hx-stage-warm hx-stage-crop hx-depth"><InboxSurface /></div>
       </div>
     </section>
   );

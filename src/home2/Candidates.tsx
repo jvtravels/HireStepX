@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Activity, AudioWaveform, BriefcaseBusiness, Code, Eye, FileText, GraduationCap, IndianRupee, Layers, Lock, MessageSquareText, Mic, Radar, ShieldCheck, Snowflake, Target, Timer, Users, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
+import Skel from "./Skel";
 import { Arrow, Close, Dim, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
 
@@ -147,7 +148,7 @@ function CandHero() {
             <li><b>No</b> card needed</li>
           </ul>
         </div>
-        <div className="hx-stage cx-demo hx-ri" style={delay(2)}><HeroCoach /></div>
+        <Skel className="hx-stage cx-demo" style={delay(2)}><HeroCoach /></Skel>
       </div>
     </section>
   );
@@ -374,7 +375,7 @@ function CandPricing() {
             </div>
           </div>
           <div className="pc-r hx-ri" style={delay(2)}>
-            <div className="pg-stage pc-stage">
+            <Skel className="pg-stage pc-stage">
               <Win left="Your prep plan" alt="A cost estimate for the number of sessions you pick">
                 <div className="cd-plan">
                   <h4 id="cd-count">How many sessions will you practise?</h4>
@@ -388,7 +389,7 @@ function CandPricing() {
                 </div>
                 <div className="pg-ctl pc-ctl"><span>{p.cost === 0 ? "All free. No card needed." : `About ₹${(p.cost / count).toFixed(1).replace(/\.0$/, "")} per session, best price picked for you.`}</span><a data-no-underline className="hx-fakebtn pg-press" href="/signup">Start free</a></div>
               </Win>
-            </div>
+            </Skel>
           </div>
         </div>
       </div>
@@ -463,14 +464,14 @@ function Readiness() {
   return (
     <Sec id="readiness" band kicker="Readiness index" title={<>Know how far you are from the <b>hire bar</b>.</>} lede="One number for your target role and round, built from five pillars, with the fastest way to move it.">
       <div className="ri">
-        <div className="ri-main hx-stage hx-stage-warm">
+        <Skel className="ri-main hx-stage hx-stage-warm">
           <div className="ri-card">
             <span className="hx-kicker">Senior product designer · behavioural loop</span>
             <div className="ri-num"><strong>60</strong><span>/ 100</span><em>Building</em></div>
             <div className="ri-track"><i style={{ width: "60%" }} /><u style={{ left: "70%" }}><span>Hire bar 70</span></u></div>
             <p>About 4 focused sessions puts you over the bar. The biggest single gain is in coverage.</p>
           </div>
-        </div>
+        </Skel>
         <ul className="ri-pillars">
           {PILLARS.map((p) => (
             <li key={p.n} className={p.lever ? "lever" : ""}>
@@ -501,7 +502,7 @@ function Delivery() {
         <ul className="dv-grid">
           {DELIVERY.map((d) => <li key={d.n}><span className="dv-ico"><d.Icon {...I} /></span><h3>{d.n}</h3><p><strong>{d.v}</strong><span>{d.u}</span></p><em>{d.note}</em></li>)}
         </ul>
-        <div className="dv-att hx-stage hx-stage-cool">
+        <Skel className="dv-att hx-stage hx-stage-cool">
           <div className="dv-att-in">
             <span className="hx-kicker">Interviewer attention, last session</span>
             <ol>
@@ -510,7 +511,7 @@ function Delivery() {
               <li><b>Wrapping</b>You repeated the same details, so move on to the next question.</li>
             </ol>
           </div>
-        </div>
+        </Skel>
       </div>
     </Sec>
   );
@@ -553,7 +554,7 @@ function Proof() {
         <ul className="pf-list">
           {PROOF.map((p) => <li key={p.t}><span className="pf-ico"><p.Icon {...I} /></span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>)}
         </ul>
-        <div className="pf-card hx-stage hx-stage-warm">
+        <Skel className="pf-card hx-stage hx-stage-warm">
           <div className="pf-in">
             <span className="hx-kicker">What an employer sees</span>
             <h3>Candidate K7Q2</h3>
@@ -566,7 +567,7 @@ function Proof() {
             </ul>
             <p className="pf-lock"><Lock {...I} size={14} />Name and contact stay hidden until you accept.</p>
           </div>
-        </div>
+        </Skel>
       </div>
     </Sec>
   );
