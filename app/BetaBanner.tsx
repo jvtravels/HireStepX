@@ -2,11 +2,13 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyEmailLink } from "../src/_CopyEmailLink";
+import { useStagingHost } from "../src/home2/Chrome";
 
 const STORAGE_KEY = "hsx_beta_banner_dismissed";
 
 export function BetaBanner() {
   const [visible, setVisible] = useState(false);
+  const staging = useStagingHost();
 
   useEffect(() => {
     if (!localStorage.getItem(STORAGE_KEY)) {
@@ -19,7 +21,7 @@ export function BetaBanner() {
     setVisible(false);
   }
 
-  if (!visible) return null;
+  if (!visible || staging) return null;
 
   return (
     <div
