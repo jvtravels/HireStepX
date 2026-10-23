@@ -102,8 +102,6 @@ const nextConfig = {
       { source: "/privacy", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next/privacy" },
       { source: "/terms", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next/terms" },
       { source: "/refund", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next/refund" },
-      { source: "/cookies", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next/cookies" },
-      { source: "/grievance", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next/grievance" },
       { source: "/legal", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/legal-next" },
       { source: "/how-it-works", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/staging-not-found" },
       { source: "/methodology", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/staging-not-found" },
@@ -175,6 +173,8 @@ const nextConfig = {
         destination: "/",
         permanent: false,
       },
+      { source: "/cookies", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/privacy#cookies", permanent: false },
+      { source: "/grievance", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/privacy#grievance-officer", permanent: false },
       {
         source: "/legal-next/:path*",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],

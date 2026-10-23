@@ -7,24 +7,6 @@ import { LEGAL_META } from "./legalDocs";
 import { openCookieSettings } from "../consent";
 
 
-function CookiesBody() {
-  return (
-    <>
-      <h2>What we use</h2>
-      <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser&apos;s local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
-      <p><strong>Analytics (only after you opt in).</strong> PostHog, Google Analytics 4, and Vercel Analytics set identifiers to count visits and see which features are used. Vercel Speed Insights reports anonymised page-speed metrics without cookies.</p>
-      <p><strong>Advertising (only after you opt in).</strong> Google AdSense may set advertising cookies on public content pages (blog, interview questions, salary guides) to show relevant ads. None are used on signed-in pages.</p>
-
-      <h2>Your choice</h2>
-      <p>The banner lets you accept all optional cookies, reject all of them, or choose analytics and advertising separately. Rejecting is as easy as accepting, and nothing optional is switched on by default.</p>
-      <p>To change or withdraw consent at any time, use the &ldquo;Cookie settings&rdquo; link in the site footer (or the account menu when signed in). Withdrawing stops analytics and advertising from loading on your next page view. You can also clear site data in your browser and manage ads in <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a>.</p>
-
-      <h2>More detail</h2>
-      <p>How we handle the data these cookies collect is in the <a href="/privacy">Privacy Policy</a>.</p>
-    </>
-  );
-}
-
 function PrivacyBody() {
   return (
     <>
@@ -62,18 +44,28 @@ function PrivacyBody() {
       <p><strong>What an employer gets by unlocking.</strong> An employer pays to unlock a candidate. Unlocking releases your name, contact details, full resume detail, and short word-for-word excerpts from your practice answers to that employer. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care as any job approach.</p>
       <p><strong>Your control and withdrawal.</strong> You can turn employer discovery off at any time in Settings &rarr; Employer visibility. You will stop appearing in employer searches and in matches no employer has unlocked yet. Withdrawing does not retroactively remove what an employer has already unlocked, but they cannot see anything new. We keep a record of when you gave and withdrew consent, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
       <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention periods. Deleting your account removes you from employer discovery, and your data is purged within 30 days.</p>
-      <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
+      <p><strong>Questions or complaints.</strong> Contact our <a href="#grievance-officer">Grievance Officer</a>.</p>
 
       <h2>Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
+      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="#grievance-officer">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
 
-      <h2>Cookies</h2>
+      <h2 id="cookies">Cookies</h2>
       <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser's local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
       <p><strong>Analytics (only after you opt in).</strong> PostHog, Google Analytics 4, and Vercel Analytics set identifiers to count visits and see which features are used. Vercel Speed Insights reports anonymised page-speed metrics without cookies.</p>
       <p><strong>Advertising (only after you opt in).</strong> On public content pages (blog, interview questions, salary guides), Google AdSense may set advertising cookies to show relevant ads. None are used on signed-in pages. You can opt out of personalised ads at any time via <a href="https://www.google.com/settings/ads" target="_blank" rel="noopener noreferrer">Google Ad Settings</a> or by enabling "Do Not Track" in your browser.</p>
       <p>The banner lets you accept all optional cookies, reject all of them, or choose analytics and advertising separately. Nothing optional is switched on by default. To change or withdraw consent at any time, <button type="button" className="lg-linkbtn" onClick={openCookieSettings}>open cookie settings</button>. Withdrawing stops analytics and advertising from loading on your next page view.</p>
+
+      <h2 id="grievance-officer">Grievance Officer</h2>
+      <p>In line with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021 and the Digital Personal Data Protection Act, 2023, HireStepX has a Grievance Officer for complaints from users.</p>
+      <ul>
+        <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
+        <li><strong>Email:</strong> <CopyEmailLink email="hello@hirestepx.com" /></li>
+      </ul>
+      <p><strong>How to file.</strong> Email us with the subject line &ldquo;Grievance: [brief description]&rdquo;. Include your registered account email, a description of the issue, and any screenshots or order IDs.</p>
+      <p><strong>Response times.</strong> We acknowledge within 24 hours and resolve within 15 days of acknowledgement, as the IT Rules 2021 require. Data requests (access, correction, erasure) are answered within 7 working days. Urgent safety concerns get a reply within 24 hours.</p>
+      <p><strong>Content complaints.</strong> For unlawful content or misinformation under the IT Rules 2021, write to the same address. If your complaint is not resolved to your satisfaction within 30 days, you may escalate to the Data Protection Board of India once it is constituted under the DPDP Act 2023.</p>
 
       <h2>Children</h2>
       <p>HireStepX is not directed at users under 16. If you believe a minor has created an account, email us and we'll remove it.</p>
@@ -115,6 +107,12 @@ function TermsBody() {
       <h2>Liability</h2>
       <p>To the maximum extent permitted by law, our total liability for any claim arising from your use of HireStepX is limited to the amount you paid us in the 12 months preceding the claim.</p>
 
+      <h2>Cookies</h2>
+      <p>We use essential cookies to keep you signed in, and analytics and advertising cookies only if you opt in. You can change your choice at any time, and the full list is in the <a href="/privacy#cookies">cookies section of the Privacy Policy</a>.</p>
+
+      <h2>Complaints and grievances</h2>
+      <p>If something goes wrong, write to our Grievance Officer at <CopyEmailLink email="hello@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. Contact details and the escalation route are in the <a href="/privacy#grievance-officer">Privacy Policy</a>.</p>
+
       <h2>Governing law</h2>
       <p>These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
     
@@ -137,78 +135,11 @@ function RefundBody() {
       <h2>How to request a refund</h2>
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
 
+      <h2>Complaints</h2>
+      <p>If a refund request is not resolved, write to our Grievance Officer at <CopyEmailLink email="hello@hirestepx.com" /> with the subject &ldquo;Grievance: refund&rdquo;. We acknowledge within 24 hours and resolve within 15 days. See the <a href="/privacy#grievance-officer">Privacy Policy</a> for the full process.</p>
+
       <h2>Disputes</h2>
       <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours.</p>
-    
-    </>
-  );
-}
-
-function GrievanceBody() {
-  return (
-    <>
-      <h2>Who is the Grievance Officer?</h2>
-      <p>
-        In compliance with the Information Technology (Intermediary Guidelines and Digital Media Ethics Code) Rules, 2021
-        and the Digital Personal Data Protection Act, 2023, HireStepX has appointed a Grievance Officer to address
-        complaints and grievances of users.
-      </p>
-
-      <h2>Contact details</h2>
-      <ul>
-        <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
-        <li>
-          <strong>Email:</strong>{" "}
-          <CopyEmailLink email="hello@hirestepx.com" />
-        </li>
-      </ul>
-
-      <h2>How to file a grievance</h2>
-      <p>
-        Email your complaint to{" "}
-        <CopyEmailLink email="hello@hirestepx.com" />{" "}
-        with the subject line <em>"Grievance – [brief description]"</em>. Include:
-      </p>
-      <ul>
-        <li>Your registered account email address</li>
-        <li>A description of the issue or complaint</li>
-        <li>Any relevant screenshots or order IDs</li>
-      </ul>
-
-      <h2>Response timelines</h2>
-      <ul>
-        <li><strong>Acknowledgement:</strong> Within 24 hours of receiving your complaint</li>
-        <li><strong>Resolution:</strong> Within 15 days of acknowledgement, as required under the IT Rules 2021</li>
-        <li><strong>Data requests</strong> (access / correction / erasure under DPDP 2023): Within 7 working days</li>
-      </ul>
-
-      <h2>Your rights under DPDP Act 2023</h2>
-      <p>
-        India's Digital Personal Data Protection Act, 2023 gives you the right to:
-      </p>
-      <ul>
-        <li>Access the personal data we hold about you</li>
-        <li>Correct inaccurate or incomplete data</li>
-        <li>Erase your data (right to be forgotten)</li>
-        <li>Nominate another person to exercise these rights on your behalf</li>
-        <li>Grievance redressal through this Officer</li>
-      </ul>
-      <p>
-        If your grievance is not resolved to your satisfaction within 30 days, you may escalate to the{" "}
-        <strong>Data Protection Board of India</strong> once constituted under the DPDP Act 2023.
-      </p>
-
-      <h2>Other concerns</h2>
-      <p>
-        For content-related complaints under the IT Rules 2021 (unlawful content, misinformation, etc.),
-        please also write to the above email. We respond within 24 hours for urgent safety concerns and
-        within 15 days for all other complaints.
-      </p>
-      <p>
-        For general support, refunds, or billing questions, see our{" "}
-        <a href="/refund">Refund Policy</a> or email{" "}
-        <CopyEmailLink email="hello@hirestepx.com" />.
-      </p>
     
     </>
   );
@@ -218,8 +149,6 @@ const BODIES: Record<string, () => ReactNode> = {
   privacy: PrivacyBody,
   terms: TermsBody,
   refund: RefundBody,
-  cookies: CookiesBody,
-  grievance: GrievanceBody,
 };
 
 function slugify(t: string) {
