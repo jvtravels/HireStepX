@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ResourcesPage } from "@/home2/Resources";
+import { buildResourceItems } from "@/home2/resourcesBuild";
 
 export const metadata: Metadata = {
   title: "HireStepX resources",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ResourcesPage />;
+  return <ResourcesPage items={buildResourceItems()} />;
 }

@@ -27,15 +27,14 @@ const KIND_ORDER: Kind[] = ["guide", "question", "salary", "company", "topic"];
 const ROLE_LABEL: Record<string, string> = {
   swe: "Software engineering", pm: "Product management", data: "Data", ml: "Machine learning", campus: "Campus",
   behavioral: "Behavioural", consultant: "Consulting", quant: "Quant", design: "Design", finance: "Finance",
+  em: "Engineering management", sales: "Sales", marketing: "Marketing", legal: "Legal", healthcare: "Healthcare", ops: "Operations", hr: "HR", "bfsi-sales": "Banking sales", "civil-services": "Civil services", defence: "Defence", "psu-engineer": "PSU engineering", scientist: "Scientist", writer: "Writing", "ds-research": "Research", "designer-senior": "Senior design", salary: "Salary",
 };
 const FOCUS_LABEL: Record<string, string> = {
+  panel: "Panel", leadership: "Leadership", management: "Management", general: "General", "salary-negotiation": "Salary negotiation",
   technical: "Technical", "system-design": "System design", behavioral: "Behavioural", "case-study": "Case study",
   "campus-placement": "Campus placement", hr: "HR round", "government-psu": "Government and PSU",
 };
 
-const ROUND_COUNTS: [string, number][] = [
-  ["technical", 167], ["system-design", 64], ["behavioral", 31], ["case-study", 25], ["campus-placement", 16], ["hr", 9], ["government-psu", 5],
-];
 
 const TOPICS: [string, string, string][] = [
   ["AI mock interview", "How an AI round works and what it scores.", "/ai-mock-interview"],
@@ -51,7 +50,7 @@ const TOPICS: [string, string, string][] = [
 ];
 
 const NOT_CO = new Set(["Career Advice", "Role Guides", "Company Guides", "Fresher Guides"]);
-const ALL: Item[] = [...ITEMS, ...TOPICS.map(([t, d, h]): Item => ({ k: "topic", t, d, h }))];
+const withTopics = (items: Item[]): Item[] => [...items, ...TOPICS.map(([t, d, h]): Item => ({ k: "topic", t, d, h }))];
 
 const INTENTS: { label: string; hint: string; ic: string; kinds?: Kind[]; focuses?: string[]; roles?: string[]; q?: string }[] = [
   { label: "Prepare for a company", hint: "Company guides and question sets", ic: "M3 14V3h7v11M10 7h3v7M5.5 5.5h2M5.5 8h2M5.5 10.5h2", kinds: ["company", "guide"] },
@@ -156,7 +155,13 @@ function Menu({ label, value, options, onChange, defaultOpen = false }: { label:
   );
 }
 
-export function ResourcesPage({ initial = {} }: { initial?: ResourcesInitial }) {
+export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInitial; items?: Item[] }) {
+  const ALL = useMemo(() => withTopics(items ?? ITEMS), [items]);
+  const roundCounts = useMemo(() => {
+    const n = new Map<string, number>();
+    ALL.forEach((i) => i.k === "question" && i.focus && i.focus in FOCUS_LABEL && n.set(i.focus, (n.get(i.focus) ?? 0) + 1));
+    return [...n.entries()].sort((a, b) => b[1] - a[1]);
+  }, [ALL]);
   const [q, setQ] = useState(initial.q ?? "");
   const [kinds, setKinds] = useState<Kind[]>(initial.kinds ?? []);
   const [companies, setCompanies] = useState<string[]>(initial.companies ?? []);
@@ -178,12 +183,12 @@ export function ResourcesPage({ initial = {} }: { initial?: ResourcesInitial }) 
     const n = new Map<string, number>();
     ALL.forEach((i) => i.co && !NOT_CO.has(i.co) && n.set(i.co, (n.get(i.co) ?? 0) + 1));
     return [...n.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-  }, []);
+  }, [ALL]);
   const roleCounts = useMemo(() => {
     const n = new Map<string, number>();
     ALL.forEach((i) => i.role && i.role in ROLE_LABEL && n.set(i.role, (n.get(i.role) ?? 0) + 1));
     return [...n.entries()].sort((a, b) => b[1] - a[1]);
-  }, []);
+  }, [ALL]);
   const companyShown = useMemo(() => {
     const t = coQ.trim().toLowerCase();
     if (t) return companyCounts.filter(([c]) => c.toLowerCase().includes(t));
@@ -378,7 +383,7 @@ export function ResourcesPage({ initial = {} }: { initial?: ResourcesInitial }) 
                       </div>
                       <div className="lb-grp">
                         <h4>Round{focuses.length > 0 && <em>{focuses.length} selected</em>}</h4>
-                        <div className="lb-chips">{ROUND_COUNTS.map(([f, n]) => <button key={f} type="button" aria-pressed={focuses.includes(f)} className={`lb-fc${focuses.includes(f) ? " on" : ""}`} onClick={() => setFocuses((p) => toggle(p, f))}>{FOCUS_LABEL[f]}<small>{n}</small></button>)}</div>
+                        <div className="lb-chips">{roundCounts.map(([f, n]) => <button key={f} type="button" aria-pressed={focuses.includes(f)} className={`lb-fc${focuses.includes(f) ? " on" : ""}`} onClick={() => setFocuses((p) => toggle(p, f))}>{FOCUS_LABEL[f]}<small>{n}</small></button>)}</div>
                       </div>
                       <div className="lb-grp">
                         <h4>Read time</h4>
