@@ -125,7 +125,7 @@ export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
 const pricingCss = `
 .prc-hero { padding-bottom: 16px; }
 .prc-hero > .hx-wrap { text-align: center; }
-.prc-hero .hx-h1 { font-size: 44px; margin: 48px auto 0; max-width: 26ch; text-wrap: balance; }
+.prc-hero .hx-h1 { font-size: 52px; margin: 48px auto 0; max-width: 26ch; text-wrap: balance; }
 .prc-hero .hx-lede { margin: 12px auto 0; max-width: 60ch; font-size: 16px; }
 .prc-hero .prc-seg { margin: 28px auto 0; }
 .prc-stage { max-width: 1120px; width: 100%; margin-left: auto; margin-right: auto; margin-top: 28px; }
@@ -159,7 +159,7 @@ const pricingCss = `
 .prc-trust a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 @container (max-width: 900px) {
   .prc-hero { padding-bottom: 48px; }
-  .prc-hero .hx-h1 { font-size: 32px; margin-top: 20px; }
+  .prc-hero .hx-h1 { font-size: 34px; margin-top: 20px; }
   .prc-hero .hx-lede { font-size: 15px; }
   .prc-seg { width: 100%; }
   .prc-seg button { flex: 1; padding: 0 12px; }

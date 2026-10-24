@@ -766,7 +766,7 @@ const sxCss = `
 .sx-linkcard:hover { border-color: var(--btn); box-shadow: 0 8px 24px oklch(0.4 0.12 280 / 0.1); }
 @media (max-width: 900px) {
   .sx-hero { padding: 40px 0 32px; }
-  .sx-h1 { font-size: 36px; }
+  .sx-h1 { font-size: 34px; }
   .sx-dek { font-size: 17px; }
   .sx-x { margin-top: 28px; border-radius: 16px; }
   .sx-deck, .sx-lvl { padding: 18px; }

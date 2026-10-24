@@ -278,7 +278,7 @@ const legalCss = `
 .lg-list em { font-style: normal; font-size: 13px; color: var(--ink-3); margin-top: 4px; }
 @media (max-width: 900px) {
   .lg-hero { padding: 40px 0 24px; }
-  .lg-hero h1 { font-size: 38px; }
+  .lg-hero h1 { font-size: 34px; }
   .lg-grid { grid-template-columns: 1fr; gap: 0; }
   .lg-toc { display: none; }
   .lg-prose { grid-column: 1; font-size: 16px; }

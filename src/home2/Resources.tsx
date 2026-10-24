@@ -672,7 +672,7 @@ export const resourcesCss = sceneCss + `
 @media (prefers-reduced-motion: reduce) { .lb-hero .hx-h1, .lb-ddmenu, .lb-panel, .lb-num, .lb-grid li, .lb-fill, .lb-pill, .lb-drop, .lb-eq i { animation: none !important; } .lb-tabs::before, .lb-tab, .lb-swap svg, .lb-ddbtn svg, .lb-card, .lb-go, .lb-doc i, .lb-range i, .lb-range u, .lb-path, .lb-steps i, .v-question b { transition: none; } }
 @container (max-width: 900px) {
   .lb-hero { padding-bottom: 48px; }
-  .lb-hero .hx-h1 { font-size: 38px; margin-top: 20px; }
+  .lb-hero .hx-h1 { font-size: 34px; margin-top: 20px; }
   .lb-hero .hx-lede { font-size: 18px; }
   
   .lb-search { height: 48px; }

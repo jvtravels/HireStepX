@@ -297,7 +297,7 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-menu nav a { padding: 14px 0; font-size: 17px; color: var(--ink); border-bottom: 1px solid var(--line); }
   .hx-menu nav a[aria-current="page"] { color: var(--btn); font-weight: 500; }
   .hx-menu-cta { display: grid; gap: 10px; margin-top: 16px; }
-    .hx-h1 { font-size: 30px; margin-top: 20px; }
+    .hx-h1 { font-size: 34px; margin-top: 20px; }
     .hx-cta { flex-direction: column; align-items: stretch; }
   .hx-cta .hx-btn { width: 100%; }
   .hx-fix { width: 100%; justify-content: center; }
