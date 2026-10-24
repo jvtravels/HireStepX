@@ -587,7 +587,6 @@ const sxCss = `
 .sa-tools button:hover { border-color: var(--btn); color: var(--btn); }
 .sa-card { border: 1px solid var(--line); border-radius: 20px; background: var(--white); scroll-margin-top: 96px; transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1), box-shadow .25s, border-color .25s; }
 .sa-card[data-on="0"] { opacity: 0; transform: translateY(24px); }
-.sa-card:hover { border-color: var(--line-2); box-shadow: 0 1px 2px rgba(20,20,60,.04), 0 12px 32px -16px rgba(20,20,60,.12); }
 .sa-head { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 16px; padding: 22px 28px; cursor: pointer; border-radius: 20px; }
 .sa-head:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .sa-num { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: var(--btn); padding: 4px 9px; border-radius: 8px; background: var(--wash); }

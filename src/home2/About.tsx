@@ -126,7 +126,6 @@ const aboutCss = `
 .ab-stats { margin-top: 44px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .ab-stats > * { min-width: 0; }
 .ab-stat { position: relative; display: grid; grid-template-rows: 120px auto auto; gap: 14px; padding: 22px 22px 24px; border-radius: 22px; border: 1px solid var(--line); background: var(--white); overflow: hidden; transition: transform .35s cubic-bezier(.2,.7,.2,1), box-shadow .35s; }
-.ab-stat:hover { transform: translateY(-4px); box-shadow: 0 18px 32px -14px oklch(0.2 0.03 280 / 0.16); }
 .ab-stat:nth-child(1) { background: linear-gradient(160deg, oklch(0.97 0.025 55), var(--white) 70%); }
 .ab-stat:nth-child(2) { background: linear-gradient(160deg, oklch(0.97 0.025 320), var(--white) 70%); }
 .ab-stat:nth-child(3) { background: linear-gradient(160deg, oklch(0.97 0.025 285), var(--white) 70%); }

@@ -385,7 +385,6 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-rk-lg { flex: 1; margin: 20px 28px 0 0; }
 .hx-rk-lg li { display: block; padding: 0; }
 .hx-rk-lg li button { all: unset; box-sizing: border-box; cursor: pointer; width: 100%; height: 100%; display: grid; grid-template-columns: 20px minmax(0, auto) 1fr auto; align-items: center; gap: 10px; padding: 0 12px; }
-.hx-rk-lg li:hover { box-shadow: 0 2px 4px oklch(0.2 0.03 280 / 0.05), 0 8px 16px -6px oklch(0.2 0.03 280 / 0.08); }
 .hx-rk-lg li.hx-sel { border-color: var(--btn); box-shadow: 0 0 0 1px var(--btn); }
 .hx-float { position: absolute; z-index: 2; background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; font-size: 13px; box-shadow: 0 1px 2px oklch(0.3 0.08 285 / 0.05), 0 12px 24px -10px oklch(0.4 0.1 285 / 0.14); }
 .hx-float > span:first-child { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
