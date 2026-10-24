@@ -1,5 +1,6 @@
 "use client";
 import type { ReactNode } from "react";
+import { useSearchParams } from "next/navigation";
 import { homeCss } from "./homeCss";
 import { authCss, Scene } from "./Auth";
 import { useStagingHost } from "./stagingHost";
@@ -28,8 +29,10 @@ const skinCss = `
 }
 `;
 
-export function AuthSkin({ children, top, headline, sub, talent = true }: { children: ReactNode; top: ReactNode; headline: ReactNode; sub: string; talent?: boolean }) {
+export function AuthSkin({ children, top, headline, sub, talent = true, employer }: { children: ReactNode; top: ReactNode; headline: ReactNode; sub: string; talent?: boolean; employer?: { headline: ReactNode; sub: string } }) {
   const staging = useStagingHost();
+  const next = useSearchParams()?.get("next");
+  const isEmployer = !!employer && !!next?.startsWith("/employer");
   if (!staging) return <>{children}</>;
   return (
     <div className="hx hx-auth-skin">
@@ -46,9 +49,9 @@ export function AuthSkin({ children, top, headline, sub, talent = true }: { chil
         </div>
         <div className="hx-au-r">
           <div className="hx-au-panel">
-            <Scene talent={talent} />
-            <h2>{headline}</h2>
-            <p>{sub}</p>
+            <Scene talent={talent && !isEmployer} />
+            <h2>{isEmployer && employer ? employer.headline : headline}</h2>
+            <p>{isEmployer && employer ? employer.sub : sub}</p>
           </div>
         </div>
       </div>

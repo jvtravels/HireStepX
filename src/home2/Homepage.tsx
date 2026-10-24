@@ -114,7 +114,7 @@ export function Hero() {
         <p className="hx-lede">Practise a mock interview and get scored on every answer. Employers read the answers behind the score.</p>
         <div className="hx-cta">
           <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-          <a data-no-underline className="hx-btn lg alt" href="/employers">Hire from proof</a>
+          <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
         </div>
         <div className="hx-tiltwrap">
           <div ref={tilt} data-sk="pending" className="hx-stage hx-stage-hero hx-tilt">
@@ -202,7 +202,7 @@ export function Employers() {
             <h2 className="hx-h2">Know how they <b>think</b> before you call.</h2>
           </div>
           <div className="hx-head-cta">
-            <a data-no-underline className="hx-btn" href="/employers">Hire from proof <Arrow /></a>
+            <a data-no-underline className="hx-btn" href="/signup?next=/employer">Hire from proof <Arrow /></a>
           </div>
         </div>
         <div ref={depth} data-sk="pending" className="hx-stage hx-stage-warm hx-stage-crop hx-depth"><InboxSurface /></div>
@@ -221,7 +221,7 @@ export function Closing() {
           <p>Practise out loud, see exactly what to fix, and let employers find the proof.</p>
           <div className="hx-cta">
             <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-            <a data-no-underline className="hx-btn lg alt" href="/employers">Hire from proof</a>
+            <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
           </div>
           <ul className="hx-endnote">
             <li>2 free sessions</li>
