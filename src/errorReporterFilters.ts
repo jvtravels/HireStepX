@@ -23,3 +23,23 @@ export function shouldReportRejection(reason: unknown): boolean {
   if (message.includes("The user aborted a request")) return false;
   return true;
 }
+
+const EXTENSION_URL = /(chrome|moz|safari|safari-web)-extension:\/\//;
+const INJECTED_PROVIDER = /\bwindow\.(ethereum|solana|tronWeb)\b/;
+
+/**
+ * Whether a window "error" event is worth reporting.
+ *
+ * Drops errors we can't act on: the opaque "Script error." browsers emit for
+ * cross-origin scripts (no message, file or stack), anything thrown from a
+ * browser extension, and wallet extensions poking `window.ethereum` on every
+ * page (evaluated in the page context, so no extension URL is attached).
+ */
+export function shouldReportWindowError(message: string, filename?: string, error?: unknown): boolean {
+  const hasStack = error instanceof Error && !!error.stack;
+  if (/^Script error\.?$/i.test(message.trim()) && !hasStack) return false;
+  if (filename && EXTENSION_URL.test(filename)) return false;
+  if (error instanceof Error && error.stack && EXTENSION_URL.test(error.stack)) return false;
+  if (INJECTED_PROVIDER.test(message)) return false;
+  return true;
+}

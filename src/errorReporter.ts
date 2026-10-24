@@ -3,9 +3,9 @@
 /* Also forwards to Sentry if NEXT_PUBLIC_SENTRY_DSN is configured. */
 /* Falls back silently if neither endpoint is available */
 
-import { shouldReportRejection } from "./errorReporterFilters";
+import { shouldReportRejection, shouldReportWindowError } from "./errorReporterFilters";
 
-export { shouldReportRejection };
+export { shouldReportRejection, shouldReportWindowError };
 
 const MAX_ERRORS_PER_SESSION = 20;
 let errorCount = 0;
@@ -120,6 +120,7 @@ export function initErrorReporter() {
   _initialized = true;
   // Unhandled errors
   window.addEventListener("error", (event) => {
+    if (!shouldReportWindowError(event.message || "", event.filename, event.error)) return;
     sendError(buildReport(
       event.message || "Unknown error",
       event.error?.stack,
