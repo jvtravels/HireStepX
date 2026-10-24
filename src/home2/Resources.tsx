@@ -195,6 +195,11 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
   const panelP = usePresence(more, 180);
   const palP = usePresence(searchOpen && !q.trim(), 140);
   const tabsRef = useSlider<HTMLDivElement>(kinds.join());
+  useEffect(() => {
+    const row = tabsRef.current;
+    const on = row?.querySelector<HTMLElement>(".lb-tab.on");
+    if (row && on && row.scrollWidth > row.clientWidth) row.scrollTo({ left: on.offsetLeft - 16, behavior: "smooth" });
+  }, [kinds, tabsRef]);
   const [shown, setShown] = useState(12);
   const inputRef = useRef<HTMLInputElement>(null);
   const [coQ, setCoQ] = useState("");
@@ -317,7 +322,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                 <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); setSearchOpen(false); }}>
                   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                   <input
-                    ref={inputRef} type="search" value={q} aria-label="Search the library" aria-expanded={searchOpen} aria-haspopup="listbox" placeholder="Search a company, role or question"
+                    ref={inputRef} type="search" value={q} aria-label="Search the library" aria-expanded={searchOpen} aria-haspopup="listbox" placeholder="Search guides, companies, roles"
                     onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
                     onClick={() => setSearchOpen(true)}
