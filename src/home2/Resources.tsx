@@ -322,7 +322,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                 <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); setSearchOpen(false); }}>
                   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                   <input
-                    ref={inputRef} type="search" value={q} aria-label="Search the library" aria-expanded={searchOpen} aria-haspopup="listbox" placeholder="Search guides, companies, roles"
+                    ref={inputRef} type="search" value={q} aria-label="Search the library" aria-expanded={searchOpen} aria-haspopup="listbox" placeholder="Search resources"
                     onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
                     onClick={() => setSearchOpen(true)}
