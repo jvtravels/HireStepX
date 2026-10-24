@@ -13,13 +13,16 @@ export function displaySessionCount(n: number): number | null {
   return Math.floor(n / 10) * 10;
 }
 
-/** Companies and roles are small by nature, so they use a lower bar than
-    sessions. Still floored, never inflated; null hides the card's number. */
-export const MIN_PUBLIC_EMPLOYER_COUNT = 10;
+/** Companies and roles are small by nature, so they use lower bars than
+    sessions. Still never inflated; below the bar the card shows a dash. */
+export const MIN_PUBLIC_COMPANY_COUNT = 2;
+export const MIN_PUBLIC_ROLE_COUNT = 3;
 
+/** Single digits are shown exactly ("8+"); from 10 up they floor to the
+    nearest 10 so a live total does not flicker on every signup. */
 export function displayCount(n: number, min: number): number | null {
   if (!Number.isFinite(n) || n < min) return null;
-  return Math.floor(n / 10) * 10;
+  return n < 10 ? n : Math.floor(n / 10) * 10;
 }
 
 export interface RawPlatformCounts {
@@ -40,8 +43,8 @@ export function toPublicStats(raw: RawPlatformCounts): PublicPlatformStats {
   return {
     userCount: displayCount(raw.users, MIN_PUBLIC_SESSION_COUNT),
     sessionCount: displaySessionCount(raw.sessions),
-    companyCount: displayCount(raw.companies, MIN_PUBLIC_EMPLOYER_COUNT),
-    jobCount: displayCount(raw.jobs, MIN_PUBLIC_EMPLOYER_COUNT),
+    companyCount: displayCount(raw.companies, MIN_PUBLIC_COMPANY_COUNT),
+    jobCount: displayCount(raw.jobs, MIN_PUBLIC_ROLE_COUNT),
   };
 }
 

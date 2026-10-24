@@ -21,16 +21,21 @@ import { displayCount, parseRawCounts, toPublicStats } from "../../server-handle
 describe("toPublicStats", () => {
   it("floors each stat against its own display bar", () => {
     expect(toPublicStats({ users: 131, sessions: 192, companies: 2, jobs: 8 })).toEqual({
-      userCount: 130, sessionCount: 190, companyCount: null, jobCount: null,
+      userCount: 130, sessionCount: 190, companyCount: 2, jobCount: 8,
     });
     expect(toPublicStats({ users: 1234, sessions: 5678, companies: 47, jobs: 312 })).toEqual({
       userCount: 1230, sessionCount: 5670, companyCount: 40, jobCount: 310,
     });
   });
-  it("displayCount never inflates and rejects bad input", () => {
-    expect(displayCount(9, 10)).toBeNull();
-    expect(displayCount(10, 10)).toBe(10);
-    expect(displayCount(NaN, 10)).toBeNull();
+  it("hides companies below 2 and roles below 3", () => {
+    expect(toPublicStats({ users: 0, sessions: 0, companies: 1, jobs: 2 })).toMatchObject({ companyCount: null, jobCount: null });
+    expect(toPublicStats({ users: 0, sessions: 0, companies: 2, jobs: 3 })).toMatchObject({ companyCount: 2, jobCount: 3 });
+  });
+  it("displayCount is exact under 10, floors above, never inflates, rejects bad input", () => {
+    expect(displayCount(9, 3)).toBe(9);
+    expect(displayCount(19, 3)).toBe(10);
+    expect(displayCount(2, 3)).toBeNull();
+    expect(displayCount(NaN, 3)).toBeNull();
   });
 });
 
