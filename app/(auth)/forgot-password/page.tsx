@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <AuthSkin top={<>Remembered it?<a href="/login">Log in</a></>}>
+    <AuthSkin>
       <ForgotPassword />
     </AuthSkin>
   );

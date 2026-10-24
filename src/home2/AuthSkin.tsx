@@ -3,12 +3,14 @@ import type { ReactNode } from "react";
 import { homeCss } from "./homeCss";
 import { authCss } from "./Auth";
 import { useStagingHost } from "./stagingHost";
+import { Home2Nav } from "./Chrome";
 
 const skinCss = `
-.hx.hx-auth-skin { background: var(--wash); min-height: 100dvh; }
-.hx-auth-skin .hx-au { display: block; height: auto; min-height: 100dvh; background: transparent; }
-.hx-auth-skin .hx-au-l { min-height: 100dvh; padding: 24px 40px; display: flex; flex-direction: column; background: transparent; }
-.hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 460px; padding: 36px 36px 32px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 24px 48px -24px oklch(0.4 0.1 280 / 0.14); }
+.hx.hx-auth-skin { background: var(--wash); min-height: 100dvh; display: flex; flex-direction: column; }
+.hx-auth-skin .hx-au { flex: 1; }
+.hx-auth-skin .hx-au { display: flex; flex-direction: column; height: auto; background: transparent; }
+.hx-auth-skin .hx-au-l { flex: 1; padding: 24px 40px; display: flex; flex-direction: column; background: transparent; }
+.hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 920px; padding: 44px 56px 40px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 24px 48px -24px oklch(0.4 0.1 280 / 0.14); }
 .hx-auth-skin .hx-au-l::after { content: ""; flex: 0 0 64px; }
 .hx-auth-skin .hx-au-main > div { background: transparent !important; min-height: 0 !important; padding: 0 !important; }
 .hx-auth-skin .hsx-login-topbar { display: none !important; }
@@ -23,6 +25,12 @@ const skinCss = `
 .hx-auth-skin .hx-au-main input:not([type="checkbox"]):focus { outline: none; border-color: var(--btn) !important; box-shadow: 0 0 0 3px oklch(0.359 0.135 278.697 / 0.14) !important; }
 .hx-auth-skin .hsx-login-google { border-radius: 10px !important; min-height: 46px; }
 .hx-auth-skin .hsx-login-cta { border-radius: 99px !important; min-height: 48px; background: var(--btn) !important; }
+.hx-auth-skin .hx-au-main > div { max-width: 600px; margin: 0 auto; }
+.hx-auth-skin .hx-au-main :is(label, span, a, p, li, button) { font-size: 14px !important; line-height: 1.5; }
+.hx-auth-skin .hx-au-main input:not([type="checkbox"]) { font-size: 16px !important; }
+.hx-auth-skin .hx-au-main .hsx-login-google, .hx-auth-skin .hx-au-main .hsx-login-cta, .hx-auth-skin .hx-au-main button[type="submit"] { font-size: 16px !important; }
+.hx-auth-skin .hx-au-main main [class*="-subtitle"] { font-size: 16px !important; }
+.hx-auth-skin .hx-au-main footer, .hx-auth-skin .hx-au-main footer * { font-size: 13px !important; }
 @media (max-width: 600px) {
   .hx.hx-auth-skin { background: var(--white); }
   .hx-auth-skin .hx-au-l { padding: 20px; }
@@ -32,7 +40,7 @@ const skinCss = `
 }
 `;
 
-export function AuthSkin({ children, top }: { children: ReactNode; top: ReactNode }) {
+export function AuthSkin({ children }: { children: ReactNode }) {
   const staging = useStagingHost();
   if (!staging) return <>{children}</>;
   return (
@@ -40,12 +48,9 @@ export function AuthSkin({ children, top }: { children: ReactNode; top: ReactNod
       <style>{homeCss}</style>
       <style>{authCss}</style>
       <style>{skinCss}</style>
+      <Home2Nav />
       <div className="hx-au">
         <div className="hx-au-l">
-          <div className="hx-au-top">
-            <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
-            <span>{top}</span>
-          </div>
           <div className="hx-au-main">{children}</div>
         </div>
       </div>
