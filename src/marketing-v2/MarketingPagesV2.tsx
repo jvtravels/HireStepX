@@ -1956,7 +1956,6 @@ export function GrievanceOfficerV2() {
 
       <h2>Contact details</h2>
       <ul>
-        <li><strong>Name:</strong> Jay Vyas</li>
         <li><strong>Designation:</strong> Grievance Officer, HireStepX</li>
         <li>
           <strong>Email:</strong>{" "}
@@ -1964,14 +1963,6 @@ export function GrievanceOfficerV2() {
           {" "}(also reachable at{" "}
           <CopyEmailLink email="hello@hirestepx.com" />)
         </li>
-        {legalEntityLines().length === 0 && (
-          <li>
-            <strong>Registered address:</strong> HireStepX (Hirloop), India
-          </li>
-        )}
-        {legalEntityLines().map((l) => (
-          <li key={l.label}><strong>{l.label}:</strong> {l.value}</li>
-        ))}
       </ul>
 
       <h2>How to file a grievance</h2>
