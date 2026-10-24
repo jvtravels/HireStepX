@@ -639,15 +639,11 @@ export default function Signup() {
             >
               {isEmployerFlow ? (
                 <>
-                  Hire on{" "}
-                  proof
-                  , not promises.
+                  Hire on proof, not promises.
                 </>
               ) : (
                 <>
-                  Practise like the{" "}
-                  real thing
-                  .
+                  Practise like the real thing.
                 </>
               )}
             </h1>

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <AuthSkin top={<>New here?<a href="/signup">Sign up free</a></>} headline={<>Pick up where you left off.</>} sub="Your reports and scores are waiting. Candidates and companies log in here.">
+    <AuthSkin top={<>New here?<a href="/signup">Sign up free</a></>}>
       <Login />
     </AuthSkin>
   );
