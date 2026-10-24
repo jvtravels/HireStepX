@@ -47,15 +47,7 @@ function useNavX(active: string | undefined) {
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
   }, [active]);
-  const onClick = (e: React.MouseEvent<HTMLElement>) => {
-    const link = (e.target as HTMLElement).closest<HTMLAnchorElement>("a[data-navx]");
-    const mark = x.current, cur = links.current?.querySelector<HTMLElement>('a[aria-current="page"]');
-    if (!link || !mark || !cur || link === cur || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || reduced() || !mark.animate) return;
-    const to = markX(link);
-    try { sessionStorage.setItem(NAV_X_KEY, String(to)); } catch { /* storage blocked */ }
-    mark.animate(rollKeys(markX(cur), to), rollOpts);
-  };
-  return { links, x, onClick };
+  return { links, x };
 }
 
 export type NavKey = "talent" | "companies" | "pricing" | "resources" | "about";
@@ -75,7 +67,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
         <Link data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></Link>
-        <nav ref={navx.links} className="hx-links" aria-label="Primary" onClick={navx.onClick}>
+        <nav ref={navx.links} className="hx-links" aria-label="Primary">
           <Link data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</Link>
           <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</Link>
           <Link data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
