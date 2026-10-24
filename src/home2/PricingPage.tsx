@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSlider } from "./motion";
 import { Arrow, Close, Shell } from "./Pages";
 import { FaqBlock } from "./Extra";
@@ -91,6 +91,9 @@ function PlanTable({ plans }: { plans: Plan[] }) {
 
 export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
   const [aud, setAud] = useState<Audience>(initial);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("for") === "hiring") setAud("emp");
+  }, []);
   const cand = aud === "cand";
   const segRef = useSlider<HTMLDivElement>(aud);
   return (

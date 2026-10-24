@@ -573,5 +573,9 @@ p.hx-swap, div.hx-swap { display: block; }
 @media (prefers-reduced-motion: reduce) { .t-gen { display: none; } }
 
 @media (scripting: enabled) and (prefers-reduced-motion: no-preference) { [data-sk="pending"] { opacity: 0 !important; } }
+@media (pointer: coarse) {
+  .hx .hx-foot a, .hx .hx-foot-rights a { display: inline-flex; align-items: center; min-height: 44px; }
+  .hx .hx-btn.sm, .hx .lb-tab, .hx .prc-seg button, .hx .lb-more { min-height: 44px; }
+}
 `;
 

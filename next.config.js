@@ -394,6 +394,11 @@ const nextConfig = {
         headers,
       },
       {
+        // HTML pages only (no file extension, not API or OG image routes).
+        source: "/((?!api|_next|opengraph-image|twitter-image)[^.]*)",
+        headers: [{ key: "Cross-Origin-Resource-Policy", value: "same-site" }],
+      },
+      {
         // Unhashed public/ assets: cache a day at the edge and browser, serve stale
         // for a week while revalidating. /_next/static is already immutable.
         source: "/:path*.(png|jpg|jpeg|webp|avif|svg|ico|woff2)",
