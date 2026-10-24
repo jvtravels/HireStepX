@@ -332,7 +332,7 @@ export const pagesCss = `
 
 
 .pc { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 72px; align-items: start; }
-.pc-l { display: grid; gap: 32px; align-self: center; }
+.pc-l { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; align-self: center; min-width: 0; }
 .pl-grp h3 { margin: 0; padding-bottom: 14px; display: flex; justify-content: space-between; align-items: baseline; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); border-bottom: 1.5px solid var(--ink); }
 .pl-grp.paid h3 span:last-child { color: var(--btn); }
 .pl-grp ul { margin: 0; padding: 0; list-style: none; }
