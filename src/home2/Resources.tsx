@@ -168,7 +168,7 @@ function Menu({ label, value, options, onChange, defaultOpen = false }: { label:
 }
 
 const HERO_COPY: Record<string, { h: [string, string, string]; p: string }> = {
-  guide: { h: ["Interview prep guides, ", "written to be used", "."], p: "Long-form guides on answering, structuring and rehearsing. Read one, then practice it out loud." },
+  guide: { h: ["Interview prep guides, ", "written to be used", "."], p: "Long-form guides on answering, structuring and rehearsing. Read one, then practise it out loud." },
   question: { h: ["Real interview questions, ", "company by company", "."], p: "What top Indian employers actually ask, why they ask it, and how to answer without rambling." },
   salary: { h: ["What roles actually pay ", "in India", "."], p: "Salary ranges by company and level, so you can negotiate with numbers instead of guesses." },
   company: { h: ["How each company ", "runs its interviews", "."], p: "The rounds, the focus areas and the prep that matters for each company." },

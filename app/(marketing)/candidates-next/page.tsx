@@ -3,7 +3,7 @@ import { CandidatesPage } from "@/home2/Candidates";
 
 export const metadata: Metadata = {
   title: "AI Mock Interviews for Candidates | HireStepX",
-  description: "Practice spoken interviews with an AI interviewer, get a scored STAR report and a coached model answer, and build proof recruiters can see.",
+  description: "Practise spoken interviews with an AI interviewer, get a scored STAR report and a coached model answer, and build proof recruiters can see.",
   alternates: { canonical: "/candidates" },
 };
 
