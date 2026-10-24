@@ -443,7 +443,7 @@ export const pagesCss = `
   .wy-diff { gap: 28px; margin-top: 40px; }
   .wy-q { font-size: 20px; }
   .wy-claim, .wy-proof { padding: 22px; }
-  .pc { grid-template-columns: 1fr; gap: 36px; }
+  .pc { grid-template-columns: minmax(0, 1fr); gap: 36px; }
   .pc-r { order: -1; }
   .pl-price b { font-size: 52px; }
   .pc-ctl { padding: 14px 16px 16px; flex-direction: column; align-items: flex-start; }

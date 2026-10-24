@@ -487,7 +487,7 @@ export const resourcesCss = sceneCss + `
 @keyframes lb-txt { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
 .lb-hero .hx-lede { margin: 18px auto 0; max-width: 60ch; font-size: 19px; }
 .lb-main { max-width: 1120px; margin: 48px auto 0; text-align: left; }
-.lb-top { display: grid; gap: 18px; justify-items: center; }
+.lb-top { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; justify-items: center; }
 .lb-top .lb-searchwrap { width: 100%; max-width: 680px; }
 .lb-searchwrap { position: relative; z-index: 5; }
 .lb-search { display: flex; align-items: center; gap: 12px; height: 60px; box-shadow: none; padding: 0 16px; border-radius: 12px; background: var(--white); border: 1px solid var(--line-2); color: var(--ink-3); transition: border-color .15s, box-shadow .15s; }

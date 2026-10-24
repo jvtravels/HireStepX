@@ -342,6 +342,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-rec-on { margin-top: 12px; padding: 14px 16px; border-radius: 10px; background: var(--white); border: 1px solid var(--line); display: grid; gap: 8px; }
 .hx-rec-on p { font-size: 13px; line-height: 1.6; color: var(--ink); }
 .hx-stage-hero { padding: 48px 48px 0; height: 640px; overflow: hidden; position: relative; }
+html:has(.hx-tiltwrap) { overflow-x: clip; }
 .hx-tiltwrap { perspective: 1600px; margin-top: 64px; }
 .hx-tilt { --t: 0; margin-top: 0; transform-origin: 50% 0; transform: rotateX(calc(var(--t) * 24deg)) scale(calc(1 - var(--t) * 0.05)); will-change: transform; }
 .hx-depth { background-size: 170% 170%; background-position: calc(var(--p, 0.5) * 100%) calc(var(--p, 0.5) * 100%); }
