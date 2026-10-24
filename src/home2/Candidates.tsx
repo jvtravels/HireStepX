@@ -165,7 +165,7 @@ function RewriteStory() {
 
 const PLANS: { name: string; price: string; unit: string; sessions: string; note: string; feat?: boolean; cta: string }[] = [
   { name: "Free", price: "₹0", unit: "to start", sessions: "2 sessions", note: "Every new account. No card needed.", cta: "Start free" },
-  { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", sessions: "About ₹8 a session", note: "Valid for 30 days. Built for a campus drive or a job switch.", feat: true, cta: "Get the pack" },
+  { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", sessions: "₹7.80 a session", note: "Valid for 30 days. Built for a campus drive or a job switch.", feat: true, cta: "Get the pack" },
   { name: "Single session", price: "₹9", unit: "a session", sessions: "Pay as you go", note: "Your credit never expires. Use it whenever you are ready.", cta: "Buy one" },
 ];
 

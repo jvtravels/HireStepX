@@ -44,7 +44,7 @@ export function Shell({ active, children }: { active?: NavKey; children: React.R
 
 export function Win({ left, right, alt, children }: { left: string; right?: React.ReactNode; alt?: string; children: React.ReactNode }) {
   return (
-    <div className="pg-win" role={alt ? "img" : undefined} aria-label={alt}>
+    <div className="pg-win" role={alt ? "group" : undefined} aria-label={alt}>
       <header className="hx-ah">
         <span className="hx-dots" aria-hidden="true"><i /><i /><i /></span>
         <span>{left}</span>

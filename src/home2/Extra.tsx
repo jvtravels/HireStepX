@@ -105,11 +105,11 @@ export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.R
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
             {qa.map(([q, a], i) => (
               <div key={q} className="hx-fi" data-open={open === i}>
-                <button type="button" className="hx-fq" aria-expanded={open === i} aria-controls={`${id ?? "hx"}-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
+                <button type="button" className="hx-fq" id={`${id ?? "hx"}-fq-${i}`} aria-expanded={open === i} aria-controls={`${id ?? "hx"}-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
                   <span className="hx-ft"><i className="hx-gdot" />{q}</span>
                   <span className="hx-fchev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2.5v11M2.5 8h11" /></svg></span>
                 </button>
-                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region"><div><p>{a}</p></div></div>
+                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region" aria-labelledby={`${id ?? "hx"}-fq-${i}`}><div><p>{a}</p></div></div>
               </div>
             ))}
           </div>

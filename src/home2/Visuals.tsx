@@ -220,12 +220,12 @@ export function InboxSurface() {
       <div className="hx-win hx-ri" style={delay(0)}>
         <Header left="Candidates / Backend Engineer" right={<span className="hx-samp"><i />Shortlist {short.length}</span>} />
         <div className="hx-inbox">
-          <aside className="hx-side">
+          <div className="hx-side">
             <p className="hx-pl"><span>Role</span><em>Open</em></p>
             <b>Backend Engineer</b>
             <div className="hx-chips"><SkillTag>3 years</SkillTag><SkillTag>Node.js</SkillTag><SkillTag>PostgreSQL</SkillTag></div>
             <p className="hx-pl hx-pl-gap"><span>Matched</span><em className="hx-num">6</em></p>
-          </aside>
+          </div>
           <ul className="hx-rk hx-rk-lg hx-rk-in" style={{ height: ROW * CANDS.length }}>
             {CANDS.map((c, i) => (
               <li key={c.id} className={c.id === sel ? "hx-sel" : undefined} style={{ transform: `translateY(${i * ROW}px)` }}>
@@ -240,7 +240,7 @@ export function InboxSurface() {
           </ul>
           <section className="hx-evd" aria-label="Answer evidence">
             <p className="hx-pl"><span>Their answer</span><em>Question 3 of 6</em></p>
-            <h4 className="hx-evq">Tell me about a time you made something faster.</h4>
+            <p className="hx-evq">Tell me about a time you made something faster.</p>
             <div className="hx-cmp" data-two={cmp}>
               {shown.map((c) => (
                 <blockquote key={c.id} className="hx-swap">

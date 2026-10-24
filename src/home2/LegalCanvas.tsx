@@ -49,7 +49,7 @@ function PrivacyBody() {
       <h2 id="your-rights">Your rights under DPDP Act 2023</h2>
       <p>India's Digital Personal Data Protection Act, 2023 gives you the right to access, correct, and erase the data we hold on you, to nominate another person to exercise these rights on your behalf, and to a grievance redressal process. Lawful basis for processing is performance of contract (delivering the service you signed up for) for everything except optional analytics, which run on explicit consent only.</p>
       <p>Cross-border transfers: we process data within India and the United States, governed by standard contractual clauses with each sub-processor. If a grievance isn't resolved to your satisfaction, you may escalate to the Data Protection Board of India.</p>
-      <p>We respond to any request within 7 working days. For data requests, complaints, or privacy questions, contact our <a href="#grievance-officer">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
+      <p>We respond to any request within 7 business days. For data requests, complaints, or privacy questions, contact our <a href="#grievance-officer">Grievance Officer</a> at <CopyEmailLink email="hello@hirestepx.com" />.</p>
 
       <h2 id="cookies">Cookies</h2>
       <p><strong>Essential (always on).</strong> Your sign-in session and device token (stored in your browser's local storage), security and rate-limiting tokens, and a record of your cookie choice. The product cannot work without these.</p>
@@ -64,7 +64,7 @@ function PrivacyBody() {
         <li><strong>Email:</strong> <CopyEmailLink email="hello@hirestepx.com" /></li>
       </ul>
       <p><strong>How to file.</strong> Email us with the subject line &ldquo;Grievance: [brief description]&rdquo;. Include your registered account email, a description of the issue, and any screenshots or order IDs.</p>
-      <p><strong>Response times.</strong> We acknowledge within 24 hours and resolve within 15 days of acknowledgement, as the IT Rules 2021 require. Data requests (access, correction, erasure) are answered within 7 working days. Urgent safety concerns get a reply within 24 hours.</p>
+      <p><strong>Response times.</strong> We acknowledge within 24 hours and resolve within 15 days of acknowledgement, as the IT Rules 2021 require. Data requests (access, correction, erasure) are answered within 7 business days. Urgent safety concerns get a reply within 24 hours.</p>
       <p><strong>Content complaints.</strong> For unlawful content or misinformation under the IT Rules 2021, write to the same address. If your complaint is not resolved to your satisfaction within 30 days, you may escalate to the Data Protection Board of India under the DPDP Act 2023.</p>
 
       <h2>Children</h2>
@@ -133,7 +133,7 @@ function RefundBody() {
       <p>A one-time purchase, valid for 30 days, it does not auto-renew, so there's no recurring charge to cancel. Full refund within 7 days of purchase if zero sessions have been used. After that, no refund for that pack; your remaining sessions stay active until the 30-day window ends. Want more sessions after that? Buy another pack any time.</p>
 
       <h2>How to request a refund</h2>
-      <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3–7 working days to reflect the credit on your bank statement.</p>
+      <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 business days to the original payment method. Razorpay typically takes another 3–7 business days to reflect the credit on your bank statement.</p>
 
       <h2>Complaints</h2>
       <p>If a refund request is not resolved, write to our Grievance Officer at <CopyEmailLink email="hello@hirestepx.com" /> with the subject &ldquo;Grievance: refund&rdquo;. We acknowledge within 24 hours and resolve within 15 days. See the <a href="/privacy#grievance-officer">Privacy Policy</a> for the full process.</p>

@@ -322,7 +322,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                 <form className="lb-search" role="search" onSubmit={(e) => { e.preventDefault(); setSearchOpen(false); }}>
                   <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
                   <input
-                    ref={inputRef} type="search" value={q} aria-label="Search the library" aria-expanded={searchOpen} aria-haspopup="listbox" placeholder="Search resources"
+                    ref={inputRef} type="search" value={q} aria-label="Search the library" placeholder="Search resources"
                     onChange={(e) => { setQ(e.target.value); setSearchOpen(true); }}
                     onFocus={() => setSearchOpen(true)}
                     onClick={() => setSearchOpen(true)}
@@ -467,7 +467,6 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
               {results.length > shown && (
                 <button type="button" className="hx-btn sm alt lb-more" onClick={() => setShown((v) => v + 12)}>Show 12 more ({results.length - shown} left)</button>
               )}
-              <p className="lb-note">This preview shows a sample of the library. The live page searches every guide, question set, salary page, salary report, company page and city page.</p>
             </div>
           </div>
 
@@ -502,7 +501,8 @@ export const resourcesCss = sceneCss + `
 .lb-ph { margin: 0 0 6px; padding: 0 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
 .lb-intents { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .lb-intent { width: 100%; display: flex; align-items: center; gap: 14px; text-align: left; font: inherit; color: var(--ink); background: transparent; border: 0; border-radius: 12px; padding: 10px 12px; cursor: pointer; transition: background .15s; }
-.lb-intent:hover, .lb-intent:focus-visible { background: var(--wash); outline: 0; }
+.lb-intent:hover, .lb-intent:focus-visible { background: var(--wash); }
+.lb-intent:focus-visible { outline: 2px solid var(--btn); outline-offset: -2px; }
 .lb-ic { flex: none; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px; background: oklch(0.359 0.135 278.697 / 0.08); color: var(--btn); transition: background .15s, color .15s; }
 .lb-ic svg { width: 18px; height: 18px; }
 .lb-intent:hover .lb-ic, .lb-intent:focus-visible .lb-ic { background: var(--btn); color: var(--white); }

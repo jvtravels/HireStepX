@@ -39,7 +39,7 @@ const TOPICS: Topic[] = [
     id: "billing",
     label: "Payment or refund",
     hint: "Charges, failed payments, refunds",
-    answer: "Refund requests are processed within 5 working days.",
+    answer: "Refund requests are processed within 5 business days.",
     steps: ["Write to us from your account email", "Mention the payment date and amount", "We confirm the refund in writing"],
     reply: "Within 1 business day",
     placeholder: "What did you pay for, and what went wrong?",
@@ -147,6 +147,7 @@ function ContactForm({ topic }: { topic: Topic }) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: f.get("name") ?? "", email: f.get("email") ?? "", topic: topic.label, message }),
+          signal: AbortSignal.timeout(20000),
         })
           .then((r) => r.json())
           .then((d: { ok?: boolean; ref?: string }) => {
@@ -187,7 +188,7 @@ function ContactForm({ topic }: { topic: Topic }) {
 const CONTACT_QA: [string, string][] = [
   ["How fast will I hear back?", "Within 1 business day, India time. Privacy requests are acknowledged within 24 hours and resolved within 15 days."],
   ["How do I dispute a score?", "Open the session report and choose Dispute score. We review it within 24 hours."],
-  ["How do refunds work?", "Write to us from your account email with the payment date and amount. Refunds are processed within 5 working days."],
+  ["How do refunds work?", "Write to us from your account email with the payment date and amount. Refunds are processed within 5 business days."],
   ["How do I delete my account?", "Do it from Settings. Your profile is hidden from employers right away, and your data is permanently erased within 7 days."],
   ["Is there a phone number or live chat?", "No. The form on this page goes to the inbox a person reads, and you get a reference number to follow up with."],
 ];
@@ -195,7 +196,7 @@ const CONTACT_QA: [string, string][] = [
 const CONTACT_STAGE: { cap: string; rows: [string, string][] }[] = [
   { cap: "Reply times", rows: [["Most questions", "1 business day"], ["Privacy requests", "Acknowledged in 24 hours"], ["Full resolution", "Within 15 days"]] },
   { cap: "Score disputes", rows: [["1. Open the report", "From your dashboard"], ["2. Dispute score", "Pick the answer you question"], ["3. We review", "Within 24 hours"]] },
-  { cap: "Refunds", rows: [["1. Write to us", "From your account email"], ["2. Share the payment", "Date and amount"], ["3. Refund issued", "Within 5 working days"]] },
+  { cap: "Refunds", rows: [["1. Write to us", "From your account email"], ["2. Share the payment", "Date and amount"], ["3. Refund issued", "Within 5 business days"]] },
   { cap: "When you delete", rows: [["Right away", "Profile hidden from employers"], ["Within 7 days", "Resume, answers and scores erased"]] },
   { cap: "Where messages go", rows: [["The form", "Read by a person"], ["Your reference", "Quote it when you follow up"]] },
 ];

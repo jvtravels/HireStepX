@@ -586,7 +586,7 @@ const sxCss = `
 .sa-tools button { font: inherit; font-size: 14px; font-weight: 500; padding: 7px 14px; border: 1px solid var(--line-2); border-radius: 99px; background: var(--white); color: var(--ink); cursor: pointer; transition: border-color .15s, color .15s; }
 .sa-tools button:hover { border-color: var(--btn); color: var(--btn); }
 .sa-card { border: 1px solid var(--line); border-radius: 20px; background: var(--white); scroll-margin-top: 96px; transition: opacity .6s cubic-bezier(.22,1,.36,1), transform .6s cubic-bezier(.22,1,.36,1), box-shadow .25s, border-color .25s; }
-.sa-card[data-on="0"] { opacity: 0; transform: translateY(24px); }
+@media (scripting: enabled) { .sa-card[data-on="0"] { opacity: 0; transform: translateY(24px); } }
 .sa-head { all: unset; box-sizing: border-box; width: 100%; display: flex; align-items: center; gap: 16px; padding: 22px 28px; cursor: pointer; border-radius: 20px; }
 .sa-head:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .sa-num { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 500; color: var(--btn); padding: 4px 9px; border-radius: 8px; background: var(--wash); }
@@ -664,7 +664,8 @@ const sxCss = `
 .sx-toc, .sx-side { position: sticky; top: 96px; display: grid; gap: 2px; }
 .sx-toc .sx-mono, .sx-side .sx-mono { margin-bottom: 8px; }
 .sx-toc a { padding: 6px 0; font-size: 14px; line-height: 1.35; color: var(--ink-2); text-decoration: none; }
-.sx-toc a:hover, .sx-toc a:focus-visible { color: var(--btn); outline: none; }
+.sx-toc a:hover, .sx-toc a:focus-visible { color: var(--btn); }
+.sx-toc a:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; border-radius: 4px; }
 .sx-toc a[aria-current="true"] { color: var(--btn); font-weight: 500; }
 .sx-prose { min-width: 0; max-width: 960px; font-size: 17px; line-height: 1.7; color: var(--ink); }
 .sx-grid-q .sx-prose { max-width: none; }

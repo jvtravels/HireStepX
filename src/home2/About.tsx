@@ -198,7 +198,7 @@ const aboutCss = `
 .ab-live i { width: 8px; height: 8px; border-radius: 50%; background: oklch(0.65 0.17 155); animation: ab-blink 1.8s ease-in-out infinite; }
 @keyframes ab-blink { 50% { opacity: .35; } }
 
-.hx-rv:not(.on) .ab-node, .hx-rv:not(.on) .ab-map svg { opacity: 0; }
+@media (scripting: enabled) { .hx-rv:not(.on) .ab-node, .hx-rv:not(.on) .ab-map svg { opacity: 0; } }
 .ab-node, .ab-map svg { transition: opacity .8s ease; }
 
 
@@ -356,7 +356,7 @@ export function AboutPage() {
               <h1 className="ab-h1 hx-ri" style={delay(1)}>Helping India get <b>hired on proof</b>.</h1>
               <p className="ab-lede hx-ri" style={delay(2)}>HireStepX is where candidates practise interviews out loud, and where companies find people who have already shown what they can do.</p>
               <div className="ab-cta hx-ri" style={delay(3)}>
-                <a data-no-underline className="hx-btn lg" href="/signup">Start for free</a>
+                <a data-no-underline className="hx-btn lg" href="/signup">Practise free</a>
                 <a data-no-underline className="hx-btn lg alt" href="/contact">Book a demo with a founder</a>
               </div>
             </div>
@@ -395,7 +395,7 @@ export function AboutPage() {
           kicker="Talk to us"
           title={<>Meet the founders, or <b>start on your own</b>.</>}
           body="Book a demo with a founder and we will walk you through HireStepX, or create a free account and run your first interview today."
-          primary={["Start for free", "/signup"]}
+          primary={["Practise free", "/signup"]}
           secondary={["Book a demo with a founder", "/contact"]}
           notes={["2 free sessions", "No card needed"]}
         />

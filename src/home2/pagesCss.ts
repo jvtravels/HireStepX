@@ -82,13 +82,13 @@ export const pagesCss = `
 .pg-status li.on { background: var(--btn); border-color: var(--btn); color: var(--white); font-weight: 500; }
 .pg-sec { scroll-margin-top: 72px; }
 .hx-rv .pg-matches li, .hx-rv .pg-after > * { transition: opacity .5s cubic-bezier(0.22, 1, 0.36, 1), transform .5s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(var(--k, 0) * 90ms + 350ms); }
-.hx-rv:not(.on) .pg-matches li, .hx-rv:not(.on) .pg-after > :not(h4) { opacity: 0; transform: translateY(8px); }
+@media (scripting: enabled) { .hx-rv:not(.on) .pg-matches li, .hx-rv:not(.on) .pg-after > :not(h4) { opacity: 0; transform: translateY(8px); } }
 @media (prefers-reduced-motion: reduce) { .hx-rv .pg-matches li, .hx-rv .pg-after > * { transition: none; } }
 
 
 
 .pg-bar i { transition: width .9s cubic-bezier(0.22, 1, 0.36, 1) .5s; }
-.hx-rv:not(.on):not(.ft-p) .pg-bar i { width: 0 !important; }
+@media (scripting: enabled) { .hx-rv:not(.on):not(.ft-p) .pg-bar i { width: 0 !important; } }
 @media (prefers-reduced-motion: reduce) { .pg-bar i, .pg-steps::after { transition: none; } }
 @keyframes pg-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
@@ -389,7 +389,7 @@ export const pagesCss = `
 .ft-p { grid-area: 1 / 1; display: grid; pointer-events: none; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 40px; align-items: center; will-change: opacity, transform; }
 .ft-p.act { pointer-events: auto; }
 .ft-vis { transition: opacity .35s ease; }
-@container (min-width: 901px) { .ft-p:not(.on) .ft-vis { opacity: 0; } .ft-p:not(.on) .pg-bar i { width: 0 !important; } }
+@container (min-width: 901px) { @media (scripting: enabled) { .ft-p:not(.on) .ft-vis { opacity: 0; } .ft-p:not(.on) .pg-bar i { width: 0 !important; } } }
 .ft-name { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--btn); }
 .ft-p .hx-h2 { max-width: none; text-wrap: balance; margin-top: 14px; font-size: 32px; }
 .ft-vis { min-width: 0; padding: 14px; border-radius: 20px; background: var(--wash); border: 1px solid var(--line); display: grid; align-items: center; }
@@ -701,7 +701,7 @@ export const pagesCss = `
 .ri-main.hx-stage { margin: 0; padding: 28px; }
 @container (max-width: 900px) { .dv-pow { flex-wrap: wrap; gap: 12px 16px; } }
 .hx-rv .cb b, .hx-rv .ri-track i { transition: width 1s cubic-bezier(0.22, 1, 0.36, 1) .25s; }
-.hx-rv:not(.on) .cb b, .hx-rv:not(.on) .ri-track i { width: 0 !important; }
+@media (scripting: enabled) { .hx-rv:not(.on) .cb b, .hx-rv:not(.on) .ri-track i { width: 0 !important; } }
 @media (prefers-reduced-motion: reduce) { .hx-rv .cb b, .hx-rv .ri-track i { transition: none; } }
 .cx-dark .hx-end { background: radial-gradient(90% 120% at 15% 0%, oklch(0.34 0.12 285) 0%, transparent 60%), oklch(0.22 0.06 285); border-color: oklch(0.3 0.06 285); }
 .cx-dark .hx-end .hx-kicker { color: oklch(0.82 0.08 285); }
@@ -720,9 +720,9 @@ export const pagesCss = `
 .dg-track .zone { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: color-mix(in oklab, var(--btn) 14%, white); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--btn) 45%, white); }
 .dg-track .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 99px; background: var(--btn); opacity: .35; }
 .hx-rv .hw li, .hx-rv .vs-col li, .hx-rv .dg li, .hx-rv .pf-list li, .hx-rv .pf-ev li { transition: opacity .6s cubic-bezier(0.22, 1, 0.36, 1), transform .6s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(var(--i, 0) * 110ms + 150ms); }
-.hx-rv:not(.on) .hw li, .hx-rv:not(.on) .vs-col li, .hx-rv:not(.on) .dg li, .hx-rv:not(.on) .pf-list li, .hx-rv:not(.on) .pf-ev li { opacity: 0; transform: translateY(14px); }
+@media (scripting: enabled) { .hx-rv:not(.on) .hw li, .hx-rv:not(.on) .vs-col li, .hx-rv:not(.on) .dg li, .hx-rv:not(.on) .pf-list li, .hx-rv:not(.on) .pf-ev li { opacity: 0; transform: translateY(14px); } }
 .hx-rv .dg-track u { transition: left 1s cubic-bezier(0.22, 1, 0.36, 1) .4s; }
-.hx-rv:not(.on) .dg-track u { left: 0 !important; }
+@media (scripting: enabled) { .hx-rv:not(.on) .dg-track u { left: 0 !important; } }
 .pf-list { position: relative; }
 .pf-list::before { content: ""; position: absolute; left: 19px; top: 20px; bottom: 20px; border-left: 2px solid var(--line); }
 .pf-ico { position: relative; background: var(--paper); }
