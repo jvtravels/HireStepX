@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthSkin } from "@/home2/AuthSkin";
+import { StagingSignupForm } from "@/home2/AuthForms";
 import Signup from "@/auth/Signup";
 
 export const metadata: Metadata = {
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <AuthSkin top={<>Have an account?<a href="/login">Log in</a></>}>
+    <AuthSkin staging={<StagingSignupForm />} top={<>Have an account?<a href="/login">Log in</a></>}>
       <Signup />
     </AuthSkin>
   );

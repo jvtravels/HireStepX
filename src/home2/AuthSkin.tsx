@@ -42,7 +42,7 @@ const skinCss = `
 }
 `;
 
-export function AuthSkin({ children, top }: { children: ReactNode; top: ReactNode }) {
+export function AuthSkin({ children, top, staging: stagingForm }: { children: ReactNode; top: ReactNode; staging?: ReactNode }) {
   const staging = useStagingHost();
   if (!staging) return <>{children}</>;
   return (
@@ -56,7 +56,7 @@ export function AuthSkin({ children, top }: { children: ReactNode; top: ReactNod
             <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
             <span>{top}</span>
           </div>
-          <div className="hx-au-main">{children}</div>
+          <div className="hx-au-main">{stagingForm ?? children}</div>
         </div>
       </div>
     </div>
