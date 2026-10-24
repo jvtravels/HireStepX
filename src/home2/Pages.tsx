@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ScoreChip } from "../employer/_atoms";
+import { ScoreChip } from "./Score";
 import { homeCss } from "./homeCss";
 import { pagesCss } from "./pagesCss";
 import { Footer, Nav, type NavKey } from "./Homepage";

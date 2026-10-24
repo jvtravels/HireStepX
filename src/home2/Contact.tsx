@@ -298,7 +298,7 @@ const contactCss = `
 .ct-opt[data-on] .ct-check::after { transform: rotate(-45deg) scale(1); }
 .ct-ans { padding: 28px; border-radius: 16px; background: var(--white); border: 1px solid var(--line); display: grid; gap: 16px; animation: ct-in .42s cubic-bezier(.22,1,.36,1) both; }
 @keyframes ct-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.ct-who { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--btn); }
+.ct-who { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--btn); }
 .ct-lead { margin: 0; font-size: 17px; line-height: 1.45; font-weight: 500; color: var(--ink); }
 .ct-steps { list-style: none; counter-reset: s; margin: 0; padding: 0; display: grid; gap: 12px; }
 .ct-steps li { counter-increment: s; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; font-size: 15px; line-height: 1.5; color: var(--ink-2); animation: ct-in .4s cubic-bezier(.22,1,.36,1) both; animation-delay: calc(var(--i, 0) * 70ms + 90ms); }
@@ -309,7 +309,7 @@ const contactCss = `
 .ct-meta small { font-size: 13px; color: var(--ink-3); }
 .ct-card { max-width: 720px; margin: 0 auto; display: grid; gap: 16px; padding: 36px; border-radius: 20px; background: var(--white); border: 1px solid var(--line); box-shadow: 0 12px 32px oklch(0.4 0.12 280 / 0.08); }
 .ct-head { display: flex; align-items: center; justify-content: flex-start; gap: 12px; flex-wrap: wrap; }
-.ct-h { margin: 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
+.ct-h { margin: 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 28px; line-height: 1.15; font-weight: 600; letter-spacing: -0.02em; color: var(--ink); }
 .ct-chip { padding: 5px 12px; border-radius: 99px; background: oklch(0.955 0.025 280); color: var(--btn); font-size: 13px; font-weight: 500; animation: ct-pop .35s cubic-bezier(.22,1,.36,1) both; }
 @keyframes ct-pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: none; } }
 .ct-about { font-size: 14px; color: var(--ink-2); }

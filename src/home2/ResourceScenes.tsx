@@ -332,7 +332,7 @@ export const sceneCss = `
 .sc-arch.big { gap: 4px; }
 .sc-tree { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 .sc-tree > span { display: flex; gap: 5px; }
-.sc-code { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 9.5px; line-height: 1.6; white-space: pre; color: var(--ink-2); }
+.sc-code { font-family: var(--font-mono), ui-monospace, monospace; font-size: 9.5px; line-height: 1.6; white-space: pre; color: var(--ink-2); }
 .ck-k { color: oklch(0.5 0.17 300); } .ck-f { color: oklch(0.5 0.14 250); } .ck-s { color: oklch(0.55 0.13 150); } .ck-c { color: var(--ink-3); } .ck-n { color: oklch(0.55 0.15 50); }
 .sc-dots { display: inline-flex; gap: 3px; } .sc-dots i { width: 6px; height: 6px; border-radius: 50%; background: oklch(0.86 0.02 285); }
 .sc-big { font-size: 20px; font-weight: 700; letter-spacing: -.02em; color: var(--ink); line-height: 1; }
@@ -358,7 +358,7 @@ export const sceneCss = `
 .sc-sign { font-family: 'Bricolage Grotesque', cursive; font-style: italic; font-size: 13px; color: oklch(0.45 0.12 262); border-top: 1px solid var(--line); padding-top: 3px; }
 .sc-dd { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; } .sc-dd span { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 7px; background: oklch(0.96 0.04 160); } .sc-dd span.no { background: oklch(0.96 0.03 25); } .sc-dd b { font-size: 11px; color: var(--ink); }
 .sc-cal { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; } .sc-cal i { display: block; aspect-ratio: 1; border-radius: 3px; background: oklch(0.93 0.01 285); } .sc-cal i.on { background: oklch(0.62 0.13 165); } .sc-cal i.now { background: var(--btn); }
-.sc-time { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600; letter-spacing: .02em; text-align: center; color: var(--ink); }
+.sc-time { font-family: var(--font-mono), ui-monospace, monospace; font-size: 18px; font-weight: 600; letter-spacing: .02em; text-align: center; color: var(--ink); }
 .sc-btn { font-style: normal; flex: 1; text-align: center; font-size: 9.5px; font-weight: 600; padding: 5px 0; border-radius: 99px; background: oklch(0.95 0.01 285); color: var(--ink-2); } .sc-btn.end { background: oklch(0.58 0.2 25); color: #fff; }
 .sc-frame { display: grid; place-items: center; height: 64px; border-radius: 8px; background: oklch(0.93 0.005 285); }
 .sc-rec { width: 7px; height: 7px; border-radius: 50%; background: oklch(0.58 0.22 25); margin-right: 5px; }

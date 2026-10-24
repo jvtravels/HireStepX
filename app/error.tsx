@@ -16,9 +16,11 @@ import { c, font } from "@/tokens";
 import { Button } from "@/components/ui/button";
 import { tokens as T } from "@/auth/_tokens";
 import { CopyEmailLink } from "@/_CopyEmailLink";
-import { ServerErrorPage } from "@/home2/ErrorPages";
-import { useStagingHost } from "@/home2/Chrome";
+import dynamic from "next/dynamic";
+import { useStagingHost } from "@/home2/stagingHost";
 import { captureClientEvent } from "@/posthogClient";
+
+const ServerErrorPage = dynamic(() => import("@/home2/ErrorPages").then((m) => m.ServerErrorPage), { ssr: false });
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
 

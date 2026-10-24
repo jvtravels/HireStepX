@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 import { homeCss } from "./homeCss";
 import { authCss, Scene } from "./Auth";
-import { useStagingHost } from "./Chrome";
+import { useStagingHost } from "./stagingHost";
 
 const skinCss = `
 .hx.hx-auth-skin { background: var(--white); min-height: 100dvh; }
@@ -11,7 +11,7 @@ const skinCss = `
 .hx-auth-skin .hx-au-main { max-width: 420px; padding: 24px 0 40px; }
 .hx-auth-skin .hx-au-main > div { background: transparent !important; min-height: 0 !important; padding: 0 !important; }
 .hx-auth-skin .hsx-login-topbar { display: none !important; }
-.hx-auth-skin .hx-au-main h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif !important; font-size: 40px !important; line-height: 1.1 !important; font-weight: 500 !important; letter-spacing: -0.025em !important; white-space: normal !important; color: var(--ink) !important; text-wrap: balance; }
+.hx-auth-skin .hx-au-main h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif !important; font-size: 40px !important; line-height: 1.1 !important; font-weight: 500 !important; letter-spacing: -0.025em !important; white-space: normal !important; color: var(--ink) !important; text-wrap: balance; }
 .hx-auth-skin .hx-au-main [class*="-hero"], .hx-auth-skin .hx-au-main h1 { text-align: left !important; }
 .hx-auth-skin .hx-au-main [class*="-hero"] { margin-bottom: 24px !important; }
 .hx-auth-skin .hx-au-main [class*="-subtitle"] { text-align: left !important; font-size: 16px !important; margin-top: 12px !important; color: var(--ink-2) !important; }

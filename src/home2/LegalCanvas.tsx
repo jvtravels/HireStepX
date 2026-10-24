@@ -239,7 +239,7 @@ export function LegalHubPage() {
 
 const legalCss = `
 .lg-hero { padding: 72px 0 32px; border-bottom: 1px solid var(--line); background: var(--wash); }
-.lg-hero h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; margin: 12px 0 0; text-wrap: balance; }
+.lg-hero h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; margin: 12px 0 0; text-wrap: balance; }
 .lg-back { display: inline-block; font-size: 15px; color: var(--ink-2); }
 .lg-back::before { content: '\\2190'; margin-right: 8px; }
 .lg-back:hover { color: var(--ink); }
@@ -248,12 +248,12 @@ const legalCss = `
 .lg-body { padding: 48px 0 72px; }
 .lg-grid { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 64px; align-items: start; }
 .lg-toc { position: sticky; top: 96px; display: grid; gap: 4px; padding-right: 8px; }
-.lg-toc h2 { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
+.lg-toc h2 { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); margin: 0 0 8px; }
 .lg-toc a { display: block; padding: 6px 0; font-size: 14px; line-height: 1.35; color: var(--ink-2); text-decoration: none; }
 .lg-toc a:hover { color: var(--btn); }
 .lg-prose { grid-column: 2; min-width: 0; max-width: 72ch; font-size: 17px; line-height: 1.7; color: var(--ink); }
 .lg-prose > :first-child { margin-top: 0; }
-.lg-prose h2 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 28px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 500; margin: 48px 0 12px; scroll-margin-top: 96px; }
+.lg-prose h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 28px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 500; margin: 48px 0 12px; scroll-margin-top: 96px; }
 .lg-prose p, .lg-prose ul { margin: 0 0 16px; }
 .lg-prose ul { padding-left: 22px; display: grid; gap: 10px; }
 .lg-prose li::marker { color: var(--ink-3); }
@@ -268,7 +268,7 @@ const legalCss = `
 .lg-table tbody th { font-weight: 600; white-space: nowrap; }
 .lg-table tbody tr:last-child th, .lg-table tbody tr:last-child td { border-bottom: 0; }
 .lg-more { padding: 0 0 72px; }
-.lg-more h2, .lg-group h2 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 24px; letter-spacing: -0.02em; font-weight: 500; margin: 0 0 16px; }
+.lg-more h2, .lg-group h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 24px; letter-spacing: -0.02em; font-weight: 500; margin: 0 0 16px; }
 .lg-group { margin-bottom: 40px; }
 .lg-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .lg-list a { display: grid; gap: 6px; align-content: start; padding: 22px 24px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); color: var(--ink); transition: border-color .15s, box-shadow .15s; }

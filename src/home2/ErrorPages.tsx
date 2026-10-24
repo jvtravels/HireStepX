@@ -39,15 +39,15 @@ const errorCss = `
 .er-hero { padding: 88px 0 120px; }
 .er-g { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 64px; align-items: center; }
 .er-g > * { min-width: 0; }
-.er-code { display: block; margin: 20px 0 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 120px; line-height: .9; font-weight: 600; letter-spacing: -0.05em; color: var(--btn); font-variant-numeric: tabular-nums; }
-.er-h1 { margin: 20px 0 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; color: var(--ink); }
+.er-code { display: block; margin: 20px 0 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 120px; line-height: .9; font-weight: 600; letter-spacing: -0.05em; color: var(--btn); font-variant-numeric: tabular-nums; }
+.er-h1 { margin: 20px 0 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; color: var(--ink); }
 .er-lede { margin: 16px 0 0; max-width: 46ch; font-size: 18px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
 .er-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.er-ref { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; padding: 8px 8px 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--wash); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .02em; color: var(--ink-2); }
+.er-ref { display: inline-flex; align-items: center; gap: 10px; margin-top: 24px; padding: 8px 8px 8px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--wash); font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .02em; color: var(--ink-2); }
 .er-ref button { font: inherit; font-family: inherit; color: var(--btn); background: var(--white); border: 1px solid var(--line); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
 .er-ref button:hover { border-color: var(--btn); }
 .er-try { margin-top: 40px; }
-.er-try h2 { margin: 0; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.er-try h2 { margin: 0; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .er-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .er-chips a { display: inline-flex; align-items: center; padding: 8px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--white); font-size: 14px; font-weight: 500; color: var(--ink); transition: border-color .15s, color .15s; }
 .er-chips a:hover { border-color: var(--btn); color: var(--btn); }

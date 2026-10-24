@@ -11,7 +11,7 @@ export const authCss = `
 .hx-au-top > span { font-size: 14px; color: var(--ink-2); }
 .hx-au-top a:not(.hx-logo) { color: var(--btn); font-weight: 500; margin-left: 6px; }
 .hx-au-main { margin: auto 0; width: 100%; max-width: 400px; align-self: center; padding: 40px 0; }
-.hx-au-main h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 40px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
+.hx-au-main h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 40px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.1; }
 .hx-au-main > p { margin-top: 12px; color: var(--ink-2); font-size: 16px; }
 .hx-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--wash); margin-top: 28px; }
 .hx-seg button { all: unset; box-sizing: border-box; text-align: center; cursor: pointer; padding: 9px 0; border-radius: 9px; font-size: 14.5px; font-weight: 500; color: var(--ink-2); transition: background .25s, color .25s; }
@@ -42,7 +42,7 @@ export const authCss = `
 .hx-legal a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .hx-au-r { position: relative; padding: 16px 16px 16px 0; }
 .hx-au-panel { height: 100%; border-radius: 28px; padding: 56px; display: flex; flex-direction: column; justify-content: flex-end; background: linear-gradient(155deg, oklch(0.95 0.045 55), oklch(0.955 0.035 290) 70%); }
-.hx-au-panel h2 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 44px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; max-width: 14ch; }
+.hx-au-panel h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 44px; font-weight: 500; letter-spacing: -0.025em; line-height: 1.08; max-width: 14ch; }
 .hx-au-panel > p { margin-top: 16px; color: var(--ink-2); font-size: 17px; max-width: 36ch; }
 .hx-au-stage { position: relative; flex: 1; min-height: 340px; display: grid; place-items: center; }
 .hx-au-scene { position: relative; width: 460px; height: 380px; zoom: 1.2; }
@@ -52,10 +52,10 @@ export const authCss = `
 .hx-au-tile.b { right: 14px; top: 96px; transform: rotate(2.5deg); }
 .hx-au-tag { position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 99px; background: var(--white); font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .hx-au-bub { position: absolute; padding: 12px 16px; border-radius: 18px; background: var(--white); font-size: 14.5px; line-height: 1.35; color: var(--ink); max-width: 230px; border: 1px solid var(--line-2); }
-.hx-au-bub small { display: block; margin-bottom: 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.hx-au-bub small { display: block; margin-bottom: 4px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .hx-au-bub.q { left: 120px; top: 0; border-bottom-left-radius: 6px; transform: translateY(-4px); }
 .hx-au-bub.r { left: 30px; top: 290px; border-bottom-right-radius: 6px; display: flex; align-items: center; gap: 12px; }
-.hx-au-bub.r strong { font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500; font-size: 20px; color: var(--btn); }
+.hx-au-bub.r strong { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 500; font-size: 20px; color: var(--btn); }
 .hx-au-wave { display: flex; align-items: center; gap: 3px; height: 26px; }
 .hx-au-wave i { width: 3px; border-radius: 2px; background: var(--btn); opacity: .85; }
 @container (max-width: 900px) {
@@ -233,7 +233,7 @@ const recoverCss = `
 .hx-rc-rules li.ok { color: var(--ink-2); }
 .hx-rc-rules li.ok::before { border-color: var(--btn); background: var(--btn) center / 8px no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3E%3Cpath d='M1.5 4.2l1.6 1.6L6.5 2.3' fill='none' stroke='white' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); }
 .hx-rc-err { margin-top: 6px; font-size: 13px; color: oklch(0.5 0.17 25); }
-.hx-rc-timer { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .02em; color: var(--ink-3); }
+.hx-rc-timer { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .02em; color: var(--ink-3); }
 `;
 
 const Icon = ({ d }: { d: string }) => (

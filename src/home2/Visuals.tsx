@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ScoreChip } from "../employer/_atoms";
+import { ScoreChip } from "./Score";
 import { tokens as t, fonts as f } from "../auth/_tokens";
-import { ScoreGauge } from "../sessionReport/panels/sr-HeroMetrics";
+import { ScoreGauge } from "./Score";
 import { delay, useReveal, useTween } from "./motion";
 
 const SkillTag = ({ children }: { children: React.ReactNode }) => (

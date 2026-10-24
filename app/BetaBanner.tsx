@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CopyEmailLink } from "../src/_CopyEmailLink";
-import { useStagingHost } from "../src/home2/Chrome";
+import { useStagingHost } from "../src/home2/stagingHost";
 
 const STORAGE_KEY = "hsx_beta_banner_dismissed";
 

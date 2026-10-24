@@ -148,7 +148,7 @@ const pricingCss = `
 .prc-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 16px; font-weight: 600; color: var(--ink); }
 .prc-name i { font-style: normal; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 99px; color: var(--white); background: var(--btn); }
 .prc-cost { margin: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
-.prc-cost b { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -0.04em; color: var(--ink); }
+.prc-cost b { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 56px; line-height: 1; font-weight: 600; letter-spacing: -0.04em; color: var(--ink); }
 .prc-cost span { font-size: 15px; color: var(--ink-2); }
 .prc-blurb { margin: 0; font-size: 16px; line-height: 1.5; color: var(--ink-2); min-height: 48px; }
 .prc-pts { margin: 4px 0 8px; padding: 18px 0 0; border-top: 1px solid var(--line); list-style: none; display: grid; gap: 10px; flex: 1; align-content: start; font-size: 15px; line-height: 1.45; color: var(--ink); }

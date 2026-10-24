@@ -17,7 +17,7 @@ function Arrow() {
 }
 
 
-const FONT_FILES = ["geist-sans-var", "bricolage-500", "bricolage-600"];
+const FONT_FILES = ["bricolage-500", "bricolage-600"];
 const preloadFonts = () => FONT_FILES.forEach((f) => preload(`/fonts/${f}.woff2`, { as: "font", type: "font/woff2", crossOrigin: "anonymous" }));
 
 const NAV_X_KEY = "hx-nav-x";
