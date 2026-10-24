@@ -18,6 +18,7 @@
 
 import type { PostHog } from "posthog-js";
 import { hasConsentFor } from "./consent";
+import { clearGa4User, forwardToGa4, setGa4User } from "./ga4Events";
 
 /** Active (consented) instance; null before consent, while loading, or after withdrawal. */
 let _instance: PostHog | null = null;
@@ -187,7 +188,12 @@ const INTERNAL_TEST_USER_IDS = new Set<string>([
 
 type Props = Record<string, string | number | boolean | null | undefined>;
 
+export function isInternalTestUser(userId: string): boolean {
+  return INTERNAL_TEST_USER_IDS.has(userId);
+}
+
 export function captureClientEvent(event: string, properties: Props = {}): void {
+  forwardToGa4(event, properties);
   try {
     if (_instance) {
       _instance.capture(event, properties);
@@ -208,6 +214,7 @@ export function captureClientEvent(event: string, properties: Props = {}): void 
 export function identifyClient(distinctId: string, properties: Props = {}): void {
   try {
     const safe = sanitizePersonProps(properties);
+    setGa4User(distinctId, INTERNAL_TEST_USER_IDS.has(distinctId));
     if (!hasConsent()) { _queuedIdentity = { id: distinctId, properties: safe }; return; }
     if (!_instance) { _queuedIdentity = { id: distinctId, properties: safe }; return; }
     _instance.identify(distinctId, {
@@ -222,6 +229,7 @@ export function identifyClient(distinctId: string, properties: Props = {}): void
 export function resetClient(): void {
   try {
     _queuedIdentity = null;
+    clearGa4User();
     _instance?.reset();
   } catch {
     /* never throw from telemetry */

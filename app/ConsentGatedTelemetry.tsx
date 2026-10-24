@@ -6,6 +6,7 @@ import Script from "next/script";
 import { useConsentCategory } from "../src/useCookieConsent";
 import { initPostHog, shutdownPostHog } from "../src/posthogClient";
 import { updateGtagConsent } from "../src/_browser-api-guards";
+import { discardGa4Buffer, flushGa4 } from "../src/ga4Events";
 import { buildGa4InitScript, isGa4Host } from "./_ga4-script";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
@@ -37,6 +38,7 @@ export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: s
     if (!accepted) {
       // Covers withdrawal mid-session; harmless no-ops when nothing was ever started.
       updateGtagConsent(false, GA_ID);
+      discardGa4Buffer();
       shutdownPostHog();
       return;
     }
@@ -66,8 +68,9 @@ export default function ConsentGatedTelemetry({ nonce, ga4 = true }: { nonce?: s
             src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
             strategy="lazyOnload"
             nonce={nonce}
+            onReady={flushGa4}
           />
-          <Script id="ga4-init" strategy="lazyOnload" nonce={nonce}>{buildGa4InitScript(GA_ID)}</Script>
+          <Script id="ga4-init" strategy="lazyOnload" nonce={nonce} onReady={flushGa4}>{buildGa4InitScript(GA_ID)}</Script>
         </>
       )}
     </>

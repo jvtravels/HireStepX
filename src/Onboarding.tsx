@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
+import { captureClientEvent } from "./posthogClient";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { font } from "./tokens";
@@ -23,6 +24,19 @@ import LoadingScreen from "./_LoadingScreen";
 
 const OB_STEP_KEY = "hirestepx_ob_step";
 const OB_FORM_KEY = "hirestepx_ob_form";
+function onboardingStep(aiPhase: "idle" | "analyzing" | "done", resumeParsing: boolean, resumeParsed: boolean): 1 | 2 | 3 {
+  if (aiPhase === "analyzing" || resumeParsing) return 2;
+  return resumeParsed && aiPhase === "done" ? 3 : 1;
+}
+
+/* One event per step reached, so the funnel shows where candidates stall before finishing onboarding. */
+function ObStepBeacon({ step }: { step: 1 | 2 | 3 }) {
+  useEffect(() => {
+    captureClientEvent("onboarding_step_viewed", { step, step_name: ["upload", "analyse", "review"][step - 1] });
+  }, [step]);
+  return null;
+}
+
 function clearObStep() { try { localStorage.removeItem(OB_STEP_KEY); localStorage.removeItem(OB_FORM_KEY); } catch { /* expected */ } }
 
 /**
@@ -888,15 +902,10 @@ export default function Onboarding() {
         }
       `}</style>
 
+      <ObStepBeacon step={onboardingStep(aiPhase, resumeParsing, !!resumeParsed)} />
       <TopBar
         // 1 = upload, 2 = analyse, 3 = review. Drives the Stepper highlight.
-        step={
-          aiPhase === "analyzing" || resumeParsing
-            ? 2
-            : resumeParsed && aiPhase === "done"
-              ? 3
-              : 1
-        }
+        step={onboardingStep(aiPhase, resumeParsing, !!resumeParsed)}
         emailUnverified={!!(user && !user.emailVerified)}
         onNavigateHome={() => router.push("/")}
         onStepClick={() => {}}

@@ -6,6 +6,7 @@ import { apiFetch } from "@/apiClient";
 import type { CandidateRequestDto, CreateRequestBody } from "./_candidateRequestTypes";
 import { getNetworkInfo, isSlowConnection } from "@/_browser-api-guards";
 import { captureClientEvent } from "@/posthogClient";
+import { setGa4UserProperties } from "@/ga4Events";
 import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
 import type { InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
@@ -471,6 +472,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     const tier = parseTier(data.verificationTier);
     statusRef.current = status;
     tierRef.current = tier;
+    setGa4UserProperties({ has_employer_account: status === "approved", employer_tier: tier });
     setCompanyStatus(status);
     setCompanyLogoUrl(typeof data.logoUrl === "string" ? data.logoUrl : null);
     setCompanyName(typeof data.companyName === "string" ? data.companyName : fallback?.companyName ?? "");

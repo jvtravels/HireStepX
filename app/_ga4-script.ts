@@ -13,11 +13,15 @@ import { CONSENT_KEY } from "../src/consent";
 
    The text is identical for every visitor (no per-user values), which keeps it
    compatible with proxy.ts's inline-script allowance on the marketing routes. */
+/* app.hirestepx.com is the signed-in product (signup, onboarding, interviews,
+   checkout, employer console); leaving it off meant GA4 only ever saw the
+   marketing site. The _ga cookie is set on hirestepx.com, so one visitor
+   keeps one client id across both hosts. */
 /* staging.hirestepx.com is an alias of the production deployment, so it ships
    the same GA measurement ID; without a host check its traffic lands in the
    production property. Allowlist (not a staging blocklist) so previews and
    localhost stay out too. */
-const GA4_HOSTS = new Set(["hirestepx.com", "www.hirestepx.com"]);
+const GA4_HOSTS = new Set(["hirestepx.com", "www.hirestepx.com", "app.hirestepx.com"]);
 
 export function isGa4Host(hostname: string): boolean {
   return GA4_HOSTS.has(hostname.toLowerCase());
