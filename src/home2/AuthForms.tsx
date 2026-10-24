@@ -370,7 +370,7 @@ export function StagingLoginForm() {
   const errorParam = searchParams?.get("error") ?? null;
   const errorParamMessage = errorParam
     ? errorParam === "verification-failed" || errorParam === "config"
-      ? "We couldn't verify your email just now. Open the link in your email again in a minute; it still works. If it keeps failing, contact hello@hirestepx.com."
+      ? "We couldn't verify your email just now. Open the link again in a minute; it still works. If it keeps failing, contact hello@hirestepx.com."
       : errorParam === "link-expired" || errorParam === "verification-expired"
         ? "Your verification link has expired. Enter your email below and request a new one."
         : errorParam === "invalid-token"
@@ -402,7 +402,7 @@ export function StagingLoginForm() {
       <style>{authFormsCss}</style>
       <h1 id="login-heading">Welcome back</h1>
       <p className="hx-sub">
-        {isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to continue."}
+        {isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to pick up your practice."}
       </p>
       <button
         type="button"
@@ -478,14 +478,14 @@ export function StagingLoginForm() {
         />
         <label className="hx-chk">
           <input type="checkbox" checked={staySignedIn} onChange={(e) => setStaySignedIn(e.target.checked)} />
-          <span>Stay signed in for 30 days. Leave unchecked on shared devices.</span>
+          <span>Keep me signed in for 30 days. Not for shared devices.</span>
         </label>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
           {loading ? "Signing in…" : isEmployerFlow ? "Continue to your roster" : "Log in"}
         </button>
       </form>
       <p className="hx-legal">
-        By continuing you confirm you are 18 or older and agree to the{" "}
+        By logging in you agree to our{" "}
         <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and{" "}
         <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
       </p>
@@ -689,7 +689,7 @@ export function StagingSignupForm() {
         <style>{authFormsCss}</style>
         <h1>Check your email</h1>
         <p className="hx-sub">
-          We sent a verification link to <b>{sanitizeEmail(email)}</b>. Click it to finish creating your account.
+          We sent a verification link to <b>{sanitizeEmail(email)}</b>. Click it to finish setting up your account.
         </p>
         <div className="hx-sent">
           {provider && (
@@ -708,9 +708,9 @@ export function StagingSignupForm() {
           </button>
           <ResendStatus message={resend.message} />
           <button type="button" className="hx-link" onClick={() => setSignupSent(false)}>
-            Wrong email? Change it
+            Wrong email? Use a different one
           </button>
-          <p className="hx-note">Didn&apos;t see it? Check your spam folder.</p>
+          <p className="hx-note">Didn&apos;t see it? Check your spam or promotions folder.</p>
         </div>
       </div>
     );
@@ -720,7 +720,7 @@ export function StagingSignupForm() {
     <div className="hx-au-inner">
       <style>{authFormsCss}</style>
       <h1 id="signup-heading">{isEmployerFlow ? "Create a company account" : "Create your account"}</h1>
-      <p className="hx-sub">{isEmployerFlow ? "Find candidates who have practised." : "Start practising in a minute."}</p>
+      <p className="hx-sub">{isEmployerFlow ? "Find candidates who have practised." : "Practise with an AI interviewer and get a scored report."}</p>
       <div className="hx-seg" role="group" aria-label="Account type">
         <button type="button" aria-pressed={!isEmployerFlow} onClick={() => switchWho(false)}>I&apos;m a candidate</button>
         <button type="button" aria-pressed={isEmployerFlow} onClick={() => switchWho(true)}>I&apos;m hiring</button>
@@ -872,12 +872,12 @@ export function StagingSignupForm() {
               }}
             />
             <span>
-              I am 18 or older and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> and{" "}
+              I&apos;m 18 or older and agree to the <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> and{" "}
               <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
             </span>
           </label>
           {termsAttempted && !termsAccepted && (
-            <p className="hx-err" role="alert" style={{ marginTop: 6 }}>Please accept the Terms to continue.</p>
+            <p className="hx-err" role="alert" style={{ marginTop: 6 }}>Tick the box to accept the Terms and continue.</p>
           )}
         </div>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
