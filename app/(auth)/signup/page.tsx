@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function Page() {
   return (
-    <AuthSkin>
+    <AuthSkin top={<>Have an account?<a href="/login">Log in</a></>}>
       <Signup />
     </AuthSkin>
   );

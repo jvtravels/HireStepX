@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 import { homeCss } from "./homeCss";
 import { authCss } from "./Auth";
 import { useStagingHost } from "./stagingHost";
-import { Home2Nav } from "./Chrome";
 
 const skinCss = `
 .hx.hx-auth-skin { background: var(--wash); min-height: 100dvh; display: flex; flex-direction: column; }
@@ -41,7 +40,7 @@ const skinCss = `
 }
 `;
 
-export function AuthSkin({ children }: { children: ReactNode }) {
+export function AuthSkin({ children, top }: { children: ReactNode; top: ReactNode }) {
   const staging = useStagingHost();
   if (!staging) return <>{children}</>;
   return (
@@ -49,9 +48,12 @@ export function AuthSkin({ children }: { children: ReactNode }) {
       <style>{homeCss}</style>
       <style>{authCss}</style>
       <style>{skinCss}</style>
-      <Home2Nav />
       <div className="hx-au">
         <div className="hx-au-l">
+          <div className="hx-au-top">
+            <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
+            <span>{top}</span>
+          </div>
           <div className="hx-au-main">{children}</div>
         </div>
       </div>
