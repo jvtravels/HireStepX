@@ -505,7 +505,7 @@ export const resourcesCss = sceneCss + `
 .lb-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .lb-grid li { animation: lb-up .4s cubic-bezier(.22,1,.36,1) both; }
 .lb-card { position: relative; height: 100%; display: flex; flex-direction: column; border-radius: 14px; background: var(--white); border: 1px solid var(--line); overflow: hidden; transition: border-color .15s, box-shadow .2s, transform .2s; }
-.lb-card:hover, .lb-card:focus-within { border-color: var(--btn); box-shadow: 0 12px 28px oklch(0.4 0.12 280 / 0.1); transform: translateY(-2px); }
+.lb-card:hover, .lb-card:focus-within { border-color: var(--btn); transform: translateY(-2px); }
 .lb-body { display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 22px; flex: 1; }
 .lb-body b { font-size: 17px; font-weight: 600; line-height: 1.35; letter-spacing: -0.005em; padding-right: 22px; color: var(--ink); }
 .lb-link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
