@@ -12,3 +12,49 @@ export function displaySessionCount(n: number): number | null {
   if (!Number.isFinite(n) || n < MIN_PUBLIC_SESSION_COUNT) return null;
   return Math.floor(n / 10) * 10;
 }
+
+/** Companies and roles are small by nature, so they use a lower bar than
+    sessions. Still floored, never inflated; null hides the card's number. */
+export const MIN_PUBLIC_EMPLOYER_COUNT = 10;
+
+export function displayCount(n: number, min: number): number | null {
+  if (!Number.isFinite(n) || n < min) return null;
+  return Math.floor(n / 10) * 10;
+}
+
+export interface RawPlatformCounts {
+  users: number;
+  sessions: number;
+  companies: number;
+  jobs: number;
+}
+
+export interface PublicPlatformStats {
+  userCount: number | null;
+  sessionCount: number | null;
+  companyCount: number | null;
+  jobCount: number | null;
+}
+
+export function toPublicStats(raw: RawPlatformCounts): PublicPlatformStats {
+  return {
+    userCount: displayCount(raw.users, MIN_PUBLIC_SESSION_COUNT),
+    sessionCount: displaySessionCount(raw.sessions),
+    companyCount: displayCount(raw.companies, MIN_PUBLIC_EMPLOYER_COUNT),
+    jobCount: displayCount(raw.jobs, MIN_PUBLIC_EMPLOYER_COUNT),
+  };
+}
+
+export function parseRawCounts(json: string | null): RawPlatformCounts | null {
+  if (!json) return null;
+  try {
+    const v: unknown = JSON.parse(json);
+    if (typeof v !== "object" || v === null) return null;
+    const o = v as Record<string, unknown>;
+    const keys = ["users", "sessions", "companies", "jobs"] as const;
+    if (!keys.every((k) => typeof o[k] === "number" && Number.isFinite(o[k] as number))) return null;
+    return { users: o.users as number, sessions: o.sessions as number, companies: o.companies as number, jobs: o.jobs as number };
+  } catch {
+    return null;
+  }
+}
