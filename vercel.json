@@ -1,6 +1,7 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
+  "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] || [ \"$VERCEL_GIT_COMMIT_REF\" = \"staging\" ]; test $? -ne 0",
   "regions": [
     "bom1"
   ],
