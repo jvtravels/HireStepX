@@ -35,7 +35,7 @@ export const ORGANIZATION = {
   logo: `${SITE}/wordmark.png`,
   image: `${SITE}/opengraph-image`,
   description: "AI mock interview platform for Indian job seekers. Speak your answers, get a scored report and a coached model answer.",
-  sameAs: ["https://www.linkedin.com/company/hirestepx", "https://twitter.com/hirestepx"],
+  sameAs: ["https://www.linkedin.com/company/hirestepx"],
   contactPoint: { "@type": "ContactPoint", email: "hello@hirestepx.com", contactType: "Customer Support", availableLanguage: ["English"] },
 };
 
