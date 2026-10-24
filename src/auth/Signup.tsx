@@ -954,7 +954,7 @@ export default function Signup() {
                   description="Required. You can review them in the footer."
                 />
                 {!isEmployerFlow && (
-                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
+                  <p data-employer-discovery-notice style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
                     {EMPLOYER_DISCOVERY_NOTICE}
                   </p>
                 )}

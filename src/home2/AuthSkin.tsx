@@ -31,6 +31,7 @@ const skinCss = `
 .hx-auth-skin .hx-au-main .hsx-login-google, .hx-auth-skin .hx-au-main .hsx-login-cta, .hx-auth-skin .hx-au-main button[type="submit"] { font-size: 16px !important; }
 .hx-auth-skin .hx-au-main main [class*="-subtitle"] { font-size: 16px !important; }
 .hx-auth-skin .hx-au-main footer, .hx-auth-skin .hx-au-main footer * { font-size: 13px !important; }
+.hx-auth-skin [data-employer-discovery-notice] { display: none !important; }
 @media (max-width: 600px) {
   .hx.hx-auth-skin { background: var(--white); }
   .hx-auth-skin .hx-au-l { padding: 20px; }
