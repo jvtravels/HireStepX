@@ -57,7 +57,7 @@ export function HeroSurface() {
           <section className="hx-pane" aria-label="Candidate view">
             <p className="hx-pl"><span>Candidate view</span><em>Q3 of 6 · 0:42</em></p>
             <ol className="hx-prog" aria-label="Question 3 of 6">{[0, 1, 2, 3, 4, 5].map((i) => <li key={i} className={i < 2 ? "done" : i === 2 ? "now" : undefined} />)}</ol>
-            <h3 className="hx-pq">Tell me about a time you made something faster.</h3>
+            <p className="hx-pq">Tell me about a time you made something faster.</p>
             <p className="hx-tx">
               <span className="hx-ts">0:31</span>
               {fixed ? <>{ANSWER} <ins key="f">{FIX}</ins></> : <>We timed checkout on the UPI path <mark>before and after</mark>, and watched it for two sale weekends. <span className="hx-miss">Result missing</span></>}

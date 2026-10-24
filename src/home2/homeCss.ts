@@ -573,7 +573,11 @@ html:has(.hx-tiltwrap) { overflow-x: clip; }
 .t-gen-label { display: none; }
 @media (prefers-reduced-motion: reduce) { .t-gen { display: none; } }
 
-@media (scripting: enabled) and (prefers-reduced-motion: no-preference) { [data-sk="pending"] { opacity: 0 !important; } }
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  [data-sk="pending"] { opacity: 0; }
+  html:not([data-hx-hyd]) [data-sk="pending"] { animation: hx-sk-failsafe 0s 5s forwards; }
+}
+@keyframes hx-sk-failsafe { to { opacity: 1; } }
 @media (pointer: coarse) {
   .hx .hx-foot a, .hx .hx-foot-rights a { display: inline-flex; align-items: center; min-height: 44px; }
   .hx .hx-btn.sm, .hx .lb-tab, .hx .prc-seg button, .hx .lb-more { min-height: 44px; }

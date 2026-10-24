@@ -6,6 +6,7 @@ export function useSkel(ref: RefObject<HTMLElement | null>) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    document.documentElement.dataset.hxHyd = "1";
     const done = () => { el.dataset.sk = "done"; };
     if (!("IntersectionObserver" in window)) return done();
     let run: { cancel: () => void } | null = null;
