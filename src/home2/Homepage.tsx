@@ -66,7 +66,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
   return (
     <header className="hx-nav">
       <div className="hx-wrap hx-nav-in">
-        <Link data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></Link>
+        <Link data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></Link>
         <nav ref={navx.links} className="hx-links" aria-label="Primary">
           <Link data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</Link>
           <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</Link>
@@ -239,7 +239,7 @@ export function Footer() {
     <div className="hx-wrap hx-footwrap">
       <footer className="hx-foot">
           <div className="hx-foot-brand">
-            <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
+            <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
             <p>Practise interviews. Get hired on proof.</p>
             <p className="hx-foot-rights"><a href="/privacy#your-rights">Your rights under India&apos;s DPDP Act</a>: access, correct or erase your data.</p>
           </div>

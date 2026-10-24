@@ -39,7 +39,7 @@ export function AuthSkin({ children, top, headline, sub, talent = true }: { chil
       <div className="hx-au">
         <div className="hx-au-l">
           <div className="hx-au-top">
-            <a data-no-underline className="hx-logo" href="/"><img src="/wordmark.png" alt="HireStepX" /></a>
+            <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
             <span>{top}</span>
           </div>
           <div className="hx-au-main">{children}</div>
