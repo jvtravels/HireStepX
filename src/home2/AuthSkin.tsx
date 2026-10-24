@@ -5,11 +5,11 @@ import { authCss } from "./Auth";
 import { useStagingHost } from "./stagingHost";
 
 const skinCss = `
-.hx.hx-auth-skin { background: var(--wash); min-height: 100dvh; display: flex; flex-direction: column; }
+.hx.hx-auth-skin { background: var(--white); min-height: 100dvh; display: flex; flex-direction: column; }
 .hx-auth-skin .hx-au { flex: 1; }
 .hx-auth-skin .hx-au { display: flex; flex-direction: column; height: auto; background: transparent; }
 .hx-auth-skin .hx-au-l { flex: 1; padding: 24px 40px; display: flex; flex-direction: column; background: transparent; }
-.hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 920px; padding: 44px 56px 40px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 24px 48px -24px oklch(0.4 0.1 280 / 0.14); }
+.hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 920px; padding: 44px 56px 40px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: none; }
 .hx-auth-skin .hx-au-l::after { content: ""; flex: 0 0 64px; }
 .hx-auth-skin .hx-au-main > div { background: transparent !important; min-height: 0 !important; padding: 0 !important; }
 .hx-auth-skin .hsx-login-topbar { display: none !important; }
