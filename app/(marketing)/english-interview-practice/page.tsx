@@ -266,7 +266,7 @@ export default async function EnglishInterviewPracticePage() {
                 { label: "One-Way Video Interview Practice", href: "/one-way-video-interview-practice" },
                 { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers-india" },
+                { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers" },
                 { label: "Campus Placement Preparation Guide", href: "/for-students" },
                 { label: "How It Works: 5 Steps", href: "/how-it-works" },
               ].map((link) => (
