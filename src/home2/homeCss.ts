@@ -32,7 +32,7 @@ export const homeCss = `
 .hx a:focus-visible, .hx button:focus-visible, .hx summary:focus-visible { outline: 2px solid var(--btn); outline-offset: 3px; border-radius: 6px; }
 .hx-wrap { max-width: 1240px; margin: 0 auto; padding: 0 40px; }
 
-.hx-nav { position: sticky; top: 0; z-index: 5; background: oklch(1 0 0 / 0.92); border-bottom: 1px solid var(--line); }
+.hx-nav { position: sticky; top: 0; z-index: 40; background: oklch(1 0 0 / 0.92); border-bottom: 1px solid var(--line); }
 .hx-nav-in { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .hx-logo img { height: 24px; width: auto; display: block; }
 .hx-links { display: flex; gap: 32px; font-size: 15px; color: var(--ink-2); }
