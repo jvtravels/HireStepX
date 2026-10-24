@@ -675,7 +675,7 @@ export const pagesCss = `
 .cb u { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--ink-3); }
 .rd { display: grid; gap: 28px; }
 .rv { width: 100%; }
-.rv small { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.rv small { font-family: 'Geist Mono', monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .rv-hr-grid li.bad { background: var(--accent-tint); border-color: var(--accent); }
 .rv-hr-grid li.bad em, .rv-hr-grid li.bad small { color: var(--accent-ink); }
 .rv-hr-grid li.bad i b { background: var(--accent); }

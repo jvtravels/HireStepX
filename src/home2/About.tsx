@@ -102,7 +102,7 @@ const aboutCss = `
 .ab-stage { position: relative; display: grid; align-content: start; gap: 0; padding: 40px 36px 44px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); overflow: hidden; min-height: 460px; }
 .ab-card { background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 18px 32px -12px oklch(0.2 0.03 280 / 0.14); }
 .ab-q { padding: 20px 22px 22px; display: grid; gap: 14px; max-width: 360px; }
-.ab-q em { font-style: normal; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ab-q em { font-style: normal; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .ab-q p { margin: 0; font-size: 17px; line-height: 1.4; font-weight: 500; color: var(--ink); }
 .ab-wave { display: flex; align-items: center; gap: 4px; height: 40px; }
 .ab-wave i { flex: 1; min-width: 3px; border-radius: 3px; background: linear-gradient(180deg, oklch(0.72 0.12 285), oklch(0.78 0.1 55)); height: var(--h); transform-origin: center; animation: ab-wave 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * -0.13s); }
@@ -119,7 +119,7 @@ const aboutCss = `
 .ab-hired svg { width: 36px; height: 36px; flex: none; padding: 9px; border-radius: 50%; background: oklch(0.94 0.06 160); color: oklch(0.45 0.12 160); }
 .ab-hired b { font-size: 14px; font-weight: 600; color: var(--ink); }
 .ab-hired span { display: block; font-size: 12.5px; color: var(--ink-2); margin-top: 1px; }
-.ab-tag { position: absolute; right: 36px; bottom: 44px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.ab-tag { position: absolute; right: 36px; bottom: 44px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 @keyframes ab-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
 
 /* stats */
@@ -166,7 +166,7 @@ const aboutCss = `
 .ab-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ab-pic b { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 500; color: var(--ink-3); }
 .ab-pick h3 { margin: 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: 19px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }
-.ab-meta { display: block; margin-top: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.ab-meta { display: block; margin-top: 3px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .ab-bio { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .4s cubic-bezier(.2,.7,.2,1); grid-column: 2; }
 .ab-bio > span { display: block; overflow: hidden; min-height: 0; }
 .ab-bio p { margin: 10px 0 0; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
@@ -192,7 +192,7 @@ const aboutCss = `
 .ab-node[data-on="true"] .ab-av { transform: scale(1.22); }
 .ab-node:hover .ab-av { transform: scale(1.12); }
 .ab-node[data-on="true"]:hover .ab-av { transform: scale(1.22); }
-.ab-city { padding: 4px 10px; border-radius: 999px; background: var(--white); border: 1px solid var(--line); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; transition: background .3s, color .3s; }
+.ab-city { padding: 4px 10px; border-radius: 999px; background: var(--white); border: 1px solid var(--line); font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); white-space: nowrap; transition: background .3s, color .3s; }
 .ab-node[data-on="true"] .ab-city { background: var(--ink); color: var(--white); border-color: var(--ink); }
 .ab-live { position: absolute; left: 20px; top: 20px; display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; background: var(--white); border: 1px solid var(--line); font-size: 12.5px; color: var(--ink-2); }
 .ab-live i { width: 8px; height: 8px; border-radius: 50%; background: oklch(0.65 0.17 155); animation: ab-blink 1.8s ease-in-out infinite; }
@@ -223,15 +223,15 @@ const aboutCss = `
   .ab-stats { gap: 10px; margin-top: 32px; }
   .ab-stat { padding: 16px 14px 18px; grid-template-rows: 84px auto auto; border-radius: 18px; }
   .ab-stat b { font-size: 34px; }
-  .ab-stat span { font-size: 10.5px; }
+  .ab-stat span { font-size: 12px; }
   .ab-orbs i { width: 38px; height: 38px; top: calc(50% - 19px + var(--y)); }
   .ab-team-g { grid-template-columns: minmax(0, 1fr); gap: 28px; margin-top: 32px; }
   .ab-map { order: -1; }
   .ab-av { width: 42px; height: 42px; border-width: 2px; }
   .ab-av b { font-size: 14px; }
   .ab-node::before { width: 42px; height: 42px; top: 21px; margin: -21px 0 0 -21px; }
-  .ab-city { font-size: 9.5px; padding: 3px 7px; }
-  .ab-live { left: 12px; top: 12px; font-size: 11.5px; }
+  .ab-city { font-size: 12px; padding: 3px 7px; }
+  .ab-live { left: 12px; top: 12px; font-size: 12px; }
 }
 `;
 

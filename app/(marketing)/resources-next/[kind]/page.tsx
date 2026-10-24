@@ -4,12 +4,12 @@ import { ResourcesPage } from "@/home2/Resources";
 import { buildResourceItems } from "@/home2/resourcesBuild";
 
 const KIND_META: Record<string, { path: string; title: string; description: string }> = {
-  guide: { path: "/blog", title: "Interview prep blog | HireStepX", description: "Long-form guides on answering, structuring and rehearsing interviews." },
-  question: { path: "/questions", title: "Interview questions by company | HireStepX", description: "Real interview questions asked at top Indian companies, with how to answer them." },
-  salary: { path: "/salary", title: "Salary guides | HireStepX", description: "What roles actually pay in India, by company and level." },
-  company: { path: "/resources/company", title: "Company interview guides | HireStepX", description: "What each company's interview loop looks like and how to prepare." },
-  city: { path: "/resources/city", title: "City interview playbooks | HireStepX", description: "Hiring markets and interview prep by city." },
-  topic: { path: "/resources/topic", title: "Interview topics | HireStepX", description: "Prep by topic: from students to career switchers." },
+  guide: { path: "/blog", title: "Interview Prep Blog: Guides for Indian Job Seekers | HireStepX", description: "Long-form guides on answering, structuring and rehearsing interviews. Written for Indian job seekers, with examples you can practice out loud." },
+  question: { path: "/questions", title: "Interview Questions by Company, with Answers | HireStepX", description: "Real interview questions asked at top Indian companies, why interviewers ask them and how to answer without rambling. Practice them with AI." },
+  salary: { path: "/salary", title: "Salary Guides for India by Company and Level | HireStepX", description: "What roles actually pay in India, by company and level. Use real ranges to negotiate your offer with confidence instead of guesses." },
+  company: { path: "/resources/company", title: "Company Interview Guides | HireStepX", description: "What each company's interview loop looks like, which rounds to expect and how to prepare for every stage, from screening to final." },
+  city: { path: "/resources/city", title: "City Interview Playbooks for India | HireStepX", description: "Hiring markets and interview prep by city. See what employers in each city look for and how to prepare for local interview styles." },
+  topic: { path: "/resources/topic", title: "Interview Prep by Topic | HireStepX", description: "Prep by topic, from freshers and students to career switchers. Pick your situation and start with guides written for it." },
 };
 
 export async function generateMetadata({ params }: { params: Promise<{ kind: string }> }): Promise<Metadata> {

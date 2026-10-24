@@ -52,7 +52,7 @@ export const authCss = `
 .hx-au-tile.b { right: 14px; top: 96px; transform: rotate(2.5deg); }
 .hx-au-tag { position: absolute; left: 10px; bottom: 10px; padding: 3px 10px; border-radius: 99px; background: var(--white); font-size: 12px; font-weight: 500; color: var(--ink-2); }
 .hx-au-bub { position: absolute; padding: 12px 16px; border-radius: 18px; background: var(--white); font-size: 14.5px; line-height: 1.35; color: var(--ink); max-width: 230px; border: 1px solid var(--line-2); }
-.hx-au-bub small { display: block; margin-bottom: 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.hx-au-bub small { display: block; margin-bottom: 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .hx-au-bub.q { left: 120px; top: 0; border-bottom-left-radius: 6px; transform: translateY(-4px); }
 .hx-au-bub.r { left: 30px; top: 290px; border-bottom-right-radius: 6px; display: flex; align-items: center; gap: 12px; }
 .hx-au-bub.r strong { font-family: 'Geist Mono', ui-monospace, monospace; font-weight: 500; font-size: 20px; color: var(--btn); }

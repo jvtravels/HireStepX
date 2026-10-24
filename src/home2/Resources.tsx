@@ -167,6 +167,15 @@ function Menu({ label, value, options, onChange, defaultOpen = false }: { label:
   );
 }
 
+const HERO_COPY: Record<string, { h: [string, string, string]; p: string }> = {
+  guide: { h: ["Interview prep guides, ", "written to be used", "."], p: "Long-form guides on answering, structuring and rehearsing. Read one, then practice it out loud." },
+  question: { h: ["Real interview questions, ", "company by company", "."], p: "What top Indian employers actually ask, why they ask it, and how to answer without rambling." },
+  salary: { h: ["What roles actually pay ", "in India", "."], p: "Salary ranges by company and level, so you can negotiate with numbers instead of guesses." },
+  company: { h: ["How each company ", "runs its interviews", "."], p: "The rounds, the focus areas and the prep that matters for each company." },
+  city: { h: ["Hiring markets, ", "city by city", "."], p: "Where the jobs are, what employers in each city look for, and how to prepare." },
+  topic: { h: ["Prep by topic, ", "from freshers to career switchers", "."], p: "Pick the situation you are in and start from the guides written for it." },
+};
+
 export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInitial; items?: Item[] }) {
   const ALL = useMemo(() => withTopics(items ?? ITEMS), [items]);
   const roundCounts = useMemo(() => {
@@ -282,8 +291,20 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
 
       <section className="hx-hero lb-hero">
         <div className="hx-wrap">
-          <h1 className="hx-h1">Everything you need <b>before the interview</b>.</h1>
-          <p className="hx-lede">Guides, question sets, salary pages and company pages in one library. Search it, or narrow it down until you find exactly what you need.</p>
+          {(() => {
+            const hc = initial.kinds?.length === 1 ? HERO_COPY[initial.kinds[0]] : undefined;
+            return hc ? (
+              <>
+                <h1 className="hx-h1">{hc.h[0]}<b>{hc.h[1]}</b>{hc.h[2]}</h1>
+                <p className="hx-lede">{hc.p}</p>
+              </>
+            ) : (
+              <>
+                <h1 className="hx-h1">Everything you need <b>before the interview</b>.</h1>
+                <p className="hx-lede">Guides, question sets, salary pages and company pages in one library. Search it, or narrow it down until you find exactly what you need.</p>
+              </>
+            );
+          })()}
 
           <div className="lb-main">
             <Skel className="hx-stage lb-stage">
@@ -512,7 +533,7 @@ export const resourcesCss = sceneCss + `
 .lb-link:focus-visible { outline: none !important; }
 .lb-card:focus-within { outline: 2px solid var(--btn); outline-offset: 2px; }
 .lb-body small { font-size: 13px; line-height: 1.5; color: var(--ink-3); }
-.lb-chip { align-self: flex-start; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; flex: none; }
+.lb-chip { align-self: flex-start; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; flex: none; }
 .lb-chip.k-guide { color: oklch(0.36 0.135 278); background: oklch(0.945 0.03 285); }
 .lb-chip.k-question { color: oklch(0.42 0.12 320); background: oklch(0.955 0.03 320); }
 .lb-chip.k-salary { color: oklch(0.44 0.1 55); background: oklch(0.955 0.035 55); }
@@ -581,7 +602,7 @@ export const resourcesCss = sceneCss + `
 .lb-ddmenu button small { font-size: 13px; color: var(--ink-3); }
 .lb-ddmenu button svg { flex: none; color: var(--btn); }
 .lb-fc { font: inherit; font-size: 14px; color: var(--ink-2); background: var(--white); border: 1px solid var(--line-2); border-radius: 99px; padding: 6px 14px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; transition: all .15s; }
-.lb-fc small { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; color: var(--ink-3); }
+.lb-fc small { font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; color: var(--ink-3); }
 .lb-fc:hover { border-color: var(--btn); color: var(--btn); }
 .lb-fc.on { background: oklch(0.359 0.135 278.697 / 0.1); border-color: var(--btn); color: var(--btn); font-weight: 500; }
 .lb-bar { padding: 28px 0 14px; }
@@ -609,7 +630,7 @@ export const resourcesCss = sceneCss + `
 .lb-card:hover .lb-go, .lb-card:focus-within .lb-go { background: var(--btn); transform: translateX(2px); }
 .lb-card:hover .lb-go svg, .lb-card:focus-within .lb-go svg { color: var(--white); }
 .lb-vis { position: relative; height: 176px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; overflow: hidden; background-image: radial-gradient(oklch(0.2 0.05 280 / 0.07) 1px, transparent 1px); background-size: 14px 14px; }
-.lb-vtag { position: absolute; left: 14px; bottom: 12px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.02em; color: var(--ink-2); background: var(--white); border-radius: 99px; padding: 3px 10px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.1); }
+.lb-vtag { position: absolute; left: 14px; bottom: 12px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12px; letter-spacing: 0.02em; color: var(--ink-2); background: var(--white); border-radius: 99px; padding: 3px 10px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.1); }
 .lb-doc { width: 148px; padding: 16px 16px 18px; border-radius: 10px; background: var(--white); display: grid; gap: 7px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.08), 0 14px 28px -10px oklch(0.4 0.12 285 / 0.3); transform: rotate(-2deg); transition: transform .4s cubic-bezier(.22,1,.36,1); }
 .lb-doc i { display: block; height: 5px; border-radius: 3px; background: var(--ink); opacity: .14; transform-origin: left; transition: transform .5s cubic-bezier(.22,1,.36,1), opacity .3s; }
 .lb-doc i.h { height: 9px; width: 64%; background: var(--btn); opacity: .85; margin-bottom: 4px; }
