@@ -22,8 +22,10 @@ const skinCss = `
 .hx-auth-skin .hx-au-main h1 em { font-style: normal !important; color: inherit !important; }
 .hx-auth-skin .hx-au-main input:not([type="checkbox"]) { min-height: 46px; border-radius: 10px !important; background: var(--white) !important; font-size: 15px; }
 .hx-auth-skin .hx-au-main input:not([type="checkbox"]):focus { outline: none; border-color: var(--btn) !important; box-shadow: 0 0 0 3px oklch(0.359 0.135 278.697 / 0.14) !important; }
-.hx-auth-skin .hsx-login-google { border-radius: 10px !important; min-height: 46px; }
-.hx-auth-skin .hsx-login-cta { border-radius: 99px !important; min-height: 48px; background: var(--btn) !important; }
+.hx-auth-skin .hx-au-main .hsx-login-google { border-radius: 12px !important; min-height: 54px; padding-top: 0 !important; padding-bottom: 0 !important; font-weight: 500 !important; }
+.hx-auth-skin .hx-au-main .hsx-login-cta { border-radius: 12px !important; min-height: 54px; padding: 0 28px !important; font-weight: 500 !important; letter-spacing: 0 !important; background: var(--btn) !important; color: var(--white) !important; box-shadow: 0 1px 2px oklch(0.257 0.086 281.288 / 0.2) !important; transition: background .15s, box-shadow .15s; }
+.hx-auth-skin .hx-au-main .hsx-login-cta:hover:not(:disabled) { background: var(--btn-hover) !important; }
+.hx-auth-skin .hx-au-main .hsx-login-cta:disabled { opacity: 0.5; cursor: not-allowed; }
 .hx-auth-skin .hx-au-main > div { max-width: 600px; margin: 0 auto; }
 .hx-auth-skin .hx-au-main :is(label, span, a, p, li, button) { font-size: 14px !important; line-height: 1.5; }
 .hx-auth-skin .hx-au-main input:not([type="checkbox"]) { font-size: 16px !important; }
