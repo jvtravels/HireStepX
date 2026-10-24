@@ -292,6 +292,7 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-links, .hx-nav-cta { display: none; }
   .hx-burger { display: grid; }
   .hx-menu { display: block; position: absolute; left: 0; right: 0; top: 100%; padding: 8px 20px 20px; background: var(--white); border-bottom: 1px solid var(--line); box-shadow: 0 20px 24px -20px oklch(0.2 0.03 280 / 0.2); }
+  .hx-menu::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 100vh; background: oklch(0.2 0.03 280 / 0.28); }
   .hx-menu nav { display: grid; }
   .hx-menu nav a { padding: 14px 0; font-size: 17px; color: var(--ink); border-bottom: 1px solid var(--line); }
   .hx-menu nav a[aria-current="page"] { color: var(--btn); font-weight: 500; }
