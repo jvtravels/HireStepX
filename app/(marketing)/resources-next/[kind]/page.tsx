@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResourcesPage } from "@/home2/Resources";
 import { buildResourceItems } from "@/home2/resourcesBuild";
+import { JsonLd, breadcrumbs } from "@/home2/jsonld";
 
 const KIND_META: Record<string, { path: string; title: string; description: string }> = {
   guide: { path: "/blog", title: "Interview Prep Blog: Guides for Indian Job Seekers | HireStepX", description: "Long-form guides on answering, structuring and rehearsing interviews. Written for Indian job seekers, with examples you can practise out loud." },
@@ -29,5 +30,11 @@ export default async function Page({ params }: { params: Promise<{ kind: string 
   const { kind } = await params;
   const k = KINDS.find((x) => x === kind);
   if (!k) notFound();
-  return <ResourcesPage items={buildResourceItems()} initial={{ kinds: [k] }} />;
+  const m = KIND_META[k];
+  return (
+    <>
+      <JsonLd data={breadcrumbs([["Resources", "/resources"], [m.title.split(":")[0].split(" | ")[0], m.path]])} />
+      <ResourcesPage items={buildResourceItems()} initial={{ kinds: [k] }} />
+    </>
+  );
 }

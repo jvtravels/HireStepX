@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CandidatesPage } from "@/home2/Candidates";
+import { JsonLd, breadcrumbs } from "@/home2/jsonld";
 
 export const metadata: Metadata = {
   title: "AI Mock Interviews for Candidates | HireStepX",
@@ -8,5 +9,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <CandidatesPage />;
+  return (
+    <>
+      <JsonLd data={breadcrumbs([["For candidates", "/candidates"]])} />
+      <CandidatesPage />
+    </>
+  );
 }

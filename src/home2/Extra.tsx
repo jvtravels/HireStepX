@@ -2,6 +2,7 @@
 import Skel from "./Skel";
 import { useState } from "react";
 import { useReveal } from "./motion";
+import { JsonLd, faqPage } from "./jsonld";
 
 const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
@@ -95,6 +96,7 @@ export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.R
   const shown = open < 0 ? 0 : open;
   return (
     <section className="hx-sec hx-privacy" id={id}>
+      <JsonLd data={faqPage(qa)} />
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="hx-tr">
           <div className="hx-tr-l">
