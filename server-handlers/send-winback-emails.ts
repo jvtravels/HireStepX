@@ -14,7 +14,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { fetchAllPages, mapPool, timeBudget } from "./_batch";
-import { emailShell, hero, actions, note, data, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, actions, note, data, signoff, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -96,21 +96,26 @@ function buildWinbackEmail(
   ];
 
   return {
-    subject: `${safeName}, your HireStepX progress is still here`,
+    subject: bestScore != null
+      ? `${safeName}, your best score was ${bestScore}/100`
+      : `${safeName}, your HireStepX progress is still here`,
     html: emailShell({
       footer,
       preview: "Everything is exactly as you left it.",
       body:
         hero({
           title: `Your progress is still here, ${safeName}`,
-          lede: "Your resume, past sessions and score history are exactly as you left them. Nothing was deleted when your plan ended.",
+          lede: bestScore != null
+            ? `Your best score is ${bestScore}/100, and it is still saved with your resume and past sessions. Nothing was deleted when your plan ended. One more session could beat it.`
+            : "Your resume and past sessions are exactly as you left them. Nothing was deleted when your plan ended. Pick up whenever you are ready.",
         }) +
         data(cardRows) +
         actions([
           { label: "Continue where I left off", href: sessionUrl },
           { label: "See plans", href: pricingUrl, ghost: true },
         ]) +
-        note("Plans start at ₹9 for a single session, with no commitment."),
+        note("Plans start at ₹9 for a single session, with no commitment.") +
+        signoff({ name: "The HireStepX team", role: "" }),
     }),
   };
 }

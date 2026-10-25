@@ -474,7 +474,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
-                subject: `${tier} plan renewed`,
+                subject: `Your ${tier} plan is renewed`,
                 html: emailShell({
                   preview: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
                   body:
@@ -484,7 +484,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       title: `Hi ${safeName}, you're renewed`,
                       lede: `Your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. There's nothing you need to do.`,
                     }) +
-                    button("Continue practising", `${APP_URL}/dashboard`),
+                    button("Continue practicing", `${APP_URL}/dashboard`),
                 }),
               }),
             });
@@ -554,7 +554,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profileEmail],
-                subject: "Payment failed, your plan is paused",
+                subject: "Your payment didn't go through",
                 html: emailShell({
                   preview: "Update your payment method to restore your plan.",
                   body:
@@ -704,7 +704,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       title: `Hi ${safeName}, we've received a dispute`,
                       lede: "We've been notified of a payment dispute on your HireStepX account. Your account has been moved to the free plan while it's under review.",
                     }) +
-                    para("If this was a mistake or you'd like to sort it out, just reply to this email or write to us at support@hirestepx.com.") +
+                    para("If this was a mistake or you'd like to sort it out, just reply to this email or write to us at hello@hirestepx.com.") +
                     button("Contact support", "mailto:support@hirestepx.com"),
                 }),
               }),
@@ -731,7 +731,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     hero({
                       eyebrow: "Payment dispute",
                       title: `Hi ${safeName}, the dispute is resolved`,
-                      lede: "The payment dispute on your account has been closed in our favour.",
+                      lede: "The payment dispute on your account has been closed in our favor.",
                     }) +
                     para("If you'd like to keep using HireStepX, you're welcome to subscribe again from your dashboard whenever you're ready.") +
                     button("View my account", `${APP_URL}/settings`),
@@ -822,7 +822,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               method: "POST",
               headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
               body: JSON.stringify({
-                from: FROM_EMAIL, to: [prof.email], subject: "Refund initiated",
+                from: FROM_EMAIL, to: [prof.email], subject: "Your refund is on its way",
                 html: emailShell({
                   preview: `Your refund of ${refundAmountStr} is being processed.`,
                   body:
@@ -871,7 +871,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               method: "POST",
               headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
               body: JSON.stringify({
-                from: FROM_EMAIL, to: [prof.email], subject: "Refund processed",
+                from: FROM_EMAIL, to: [prof.email], subject: "Your refund has been processed",
                 html: emailShell({
                   preview: `Your refund of ${refundAmountStr} has been processed.`,
                   body:
@@ -879,7 +879,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                       tone: "success",
                       eyebrow: "Refund",
                       title: `Hi ${safeName}, your refund is done`,
-                      lede: `Your refund of ${b(refundAmountStr)} has been processed and should appear in your original payment method within 1–3 business days.`,
+                      lede: `Your refund of ${b(refundAmountStr)} has been processed and should appear in your original payment method within 5–7 business days, depending on your bank.`,
                     }) +
                     data([["Amount", refundAmountStr], ["Status", "Processed"]]) +
                     para("Your account has been moved to the free plan. You're welcome to subscribe again whenever you're ready.") +
@@ -1022,7 +1022,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             body: JSON.stringify({
               from: FROM_EMAIL,
               to: [notes.email],
-              subject: `${quantity} session credit${quantity > 1 ? "s" : ""} added`,
+              subject: `Your ${quantity} session credit${quantity > 1 ? "s are" : " is"} ready`,
               html: emailShell({
                 preview: `Your ${quantity} session credit${quantity > 1 ? "s are" : " is"} ready.`,
                 body:
@@ -1032,7 +1032,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     title: `Hi ${safeName}, you're all set`,
                     lede: `${b(`${quantity} session credit${quantity > 1 ? "s" : ""}`)} ${quantity > 1 ? "have" : "has"} been added to your HireStepX account. Jump back in whenever you're ready.`,
                   }) +
-                  button("Start practising", `${APP_URL}/dashboard`),
+                  button("Start practicing", `${APP_URL}/dashboard`),
               }),
             }),
           });
@@ -1128,7 +1128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [notes.email],
-            subject: `${tier} plan activated`,
+            subject: `Your ${tier} plan is live`,
             html: emailShell({
               preview: `Your ${tier} plan is live until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
               body:
@@ -1138,8 +1138,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   title: `Hi ${safeName}, ${tier} is live`,
                   lede: `Your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}.`,
                 }) +
-                para("This is a one-time purchase, so it won't auto-renew. You can buy again anytime to keep practising after it ends.") +
-                button("Start practising", `${APP_URL}/dashboard`),
+                para("This is a one-time purchase, so it won't auto-renew. You can buy again anytime to keep practicing after it ends.") +
+                button("Start practicing", `${APP_URL}/dashboard`),
             }),
           }),
         });

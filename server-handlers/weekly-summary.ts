@@ -109,7 +109,19 @@ function buildDigest(
   // Show Google Review ask for users with ≥3 total sessions and latest score ≥75
   const showReviewAsk = GOOGLE_REVIEW_URL && totalSessions >= 3 && score >= 75;
 
-  const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
+  const lede = !prev
+    ? `You finished ${sessionCount} recently and scored ${score}. That is your starting line. One more session will show you how far you have come.`
+    : delta > 0
+      ? `Your latest score is ${score}, up ${delta} from your previous session. That is real progress. Keep the momentum going.`
+      : delta < 0
+        ? `Your latest score is ${score}, down ${Math.abs(delta)} from your previous session. That happens, and one more session is the fastest way to bounce back.`
+        : `Your latest score is ${score}, level with your previous session. A small push on one weak spot could move it.`;
+  const name = (profile.name ?? "").trim().split(/\s+/)[0];
+  const subject = !prev
+    ? `${name ? `${name}, you` : "You"} scored ${score} this week`
+    : delta > 0
+      ? `${name ? `${name}, your` : "Your"} score is up ${delta} points`
+      : `${name ? `${name}, here's` : "Here's"} your week: score ${score}`;
   const html = emailShell({
     footer,
     preview: `${sessionCount} this week, latest score ${score}.`,
@@ -117,18 +129,18 @@ function buildDigest(
       hero({
         eyebrow: "This week",
         title: `Here's your week${nameSuffix(profile.name)}`,
-        lede: "Thanks for showing up. Here's how your practice went.",
+        lede,
       }) +
       data([
         ["Sessions", String(sessions.length)],
         ["Latest score", String(score)],
         ["Band", band || "Uncalibrated"],
-        ["Change from prior", deltaStr],
+        ["Change from previous session", prev ? deltaStr : "First score"],
       ]) +
       button("View your latest report", `${APP_URL}/sessions`) +
       (showReviewAsk
         ? para(
-            `One small favour: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
+            `One small favor: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
           ) +
           button("Leave a Google review", GOOGLE_REVIEW_URL, { tone: "ghost" })
         : "") +

@@ -35,7 +35,7 @@ export function buildErasureEmail(name: string, appUrl: string): { subject: stri
         ]) +
         para(`Payment records are retained in anonymised form because tax law requires us to keep them. Copies of your data in our database backups are overwritten within 30 days.`, { muted: true }) +
         para(`Thank you for giving HireStepX a try. If you ever want to come back, you can start fresh anytime at ${link(appUrl.replace(/^https?:\/\//, ""), appUrl)}.`, { muted: true }) +
-        para(`Didn't expect this? Contact us at ${link("support@hirestepx.com", "mailto:support@hirestepx.com")} immediately so we can investigate.`, { small: true, muted: true }),
+        para(`Didn't expect this? Contact us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")} immediately so we can investigate.`, { small: true, muted: true }),
     }),
   };
 }

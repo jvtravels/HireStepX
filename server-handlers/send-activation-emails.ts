@@ -12,7 +12,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import { escapeHtml } from "./_shared";
-import { emailShell, hero, button, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, button, signoff, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -64,10 +64,10 @@ function buildActivationEmail(user: ProfileRow, footer?: EmailFooterOptions): { 
   const body =
     hero({
       title: `Your 2 free sessions are waiting, ${safeName}`,
-      lede: "A session takes about 15 minutes. We'll score your STAR delivery, technical accuracy and communication, so you know exactly what to work on.",
-    }) + button("Start your free session", sessionUrl);
+      lede: "You signed up, but you haven't tried a session yet. It takes about 15 minutes, and you'll get a score for your STAR delivery, technical accuracy and communication, so you know exactly what to work on.",
+    }) + button("Start my free session", sessionUrl) + signoff({ name: "The HireStepX team", role: "" });
 
-  const html = emailShell({ preview: "A session takes about 15 minutes.", body, footer });
+  const html = emailShell({ preview: "About 15 minutes, and you get a score and feedback.", body, footer });
 
   return { subject, html };
 }

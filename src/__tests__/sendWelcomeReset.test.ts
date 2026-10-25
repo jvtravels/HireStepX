@@ -60,14 +60,14 @@ describe("send-welcome reset: exact email lookup", () => {
     ]);
     expect(await reset("Bob@Example.com")).toEqual({ status: 200, body: { ok: true } });
     expect(generateLinkCalls).toEqual([expect.objectContaining({ type: "recovery", email: "bob@example.com" })]);
-    expect(emails.map((e) => e.subject)).toEqual(["Reset link, as requested"]);
+    expect(emails.map((e) => e.subject)).toEqual(["Your password reset link"]);
   });
 
   it("treats a substring-only hit as no account (courtesy email, no recovery link)", async () => {
     const { generateLinkCalls, emails } = setup([{ id: "1", email: "abob2@example.com" }]);
     expect(await reset("bob2@example.com")).toEqual({ status: 200, body: { ok: true } });
     expect(generateLinkCalls).toHaveLength(0);
-    expect(emails.map((e) => e.subject)).toEqual(["We couldn't find your account"]);
+    expect(emails.map((e) => e.subject)).toEqual(["We couldn't find an account for this email"]);
   });
 
   it("sends OAuth-only accounts a sign-in-with-Google note instead of a reset link", async () => {
@@ -76,7 +76,7 @@ describe("send-welcome reset: exact email lookup", () => {
     ]);
     expect(await reset("gina@example.com")).toEqual({ status: 200, body: { ok: true } });
     expect(generateLinkCalls).toHaveLength(0);
-    expect(emails.map((e) => e.subject)).toEqual(["Sign in with Google"]);
+    expect(emails.map((e) => e.subject)).toEqual(["Your account signs in with Google"]);
     expect(emails[0].to).toEqual(["gina@example.com"]);
   });
 });

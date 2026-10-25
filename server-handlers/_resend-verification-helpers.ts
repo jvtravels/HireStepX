@@ -40,7 +40,7 @@ function verificationEmailHtml(name: string, verifyUrl: string): string {
     body:
       hero({
         title: `Here's a fresh link${nameSuffix(name)}`,
-        lede: "The last one may have expired. This one works for the next 24 hours.",
+        lede: "The last link may have expired, so here is a new one. It works for the next 24 hours. One tap and your 2 free mock interviews are ready.",
       }) +
       button("Verify my email", verifyUrl) +
       note(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`),
@@ -75,7 +75,7 @@ export async function processResendVerification(
       body: JSON.stringify({
         from: deps.fromEmail,
         to: [email],
-        subject: "Still need to verify your email",
+        subject: `${name === "there" ? "Hi" : name.split(/\s+/)[0]}, here is a fresh verification link`,
         html: verificationEmailHtml(name, verifyUrl),
       }),
     });

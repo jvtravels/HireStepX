@@ -179,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({
             from: FROM_EMAIL,
             to: [profile.email],
-            subject: "Your subscription is reactivated",
+            subject: "Good to have you back, your plan is active",
             html: emailShell({
               preview: "Everything is right where you left it.",
               body:

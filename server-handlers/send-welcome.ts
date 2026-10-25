@@ -19,6 +19,7 @@ import {
   note,
   data,
   firstNameOf,
+  signoff,
 } from "./_email-theme";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
@@ -216,7 +217,7 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "New device sign-in",
+        subject: "Was this you? New sign-in on your account",
         html: emailShell({
           preview: "Your account was just signed in on a new device.",
           body:
@@ -224,7 +225,7 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
               tone: "error",
               eyebrow: "Security notice",
               title: "New sign-in on your account",
-              lede: "We noticed a sign-in from a new device. HireStepX allows one active device at a time, so any other session was signed out.",
+              lede: "Someone just signed in to your account on a new device. HireStepX allows one active device at a time, so any other session was signed out.",
             }) +
             data([
               ["When", when],
@@ -268,12 +269,12 @@ async function sendNoAccountFoundEmail(email: string): Promise<void> {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "We couldn't find your account",
+        subject: "We couldn't find an account for this email",
         html: emailShell({
           preview: "No account exists for this address. Here's what to do.",
           body:
             hero({
-              title: "No account for this email yet",
+              title: "We don't have an account for this email",
               lede: `Someone just asked us to reset a HireStepX password for ${b(safeEmail)}, but we don't have an account on file for this address.`,
             }) +
             para(`If that was you, you may have signed up with a different email, or you haven't created an account yet.`) +
@@ -306,7 +307,7 @@ async function sendOAuthOnlyResetEmail(email: string): Promise<void> {
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "Sign in with Google",
+        subject: "Your account signs in with Google",
         html: emailShell({
           preview: "This account uses Google to sign in, so there's no password to reset.",
           body:
@@ -463,13 +464,13 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [normalizedEmail],
-        subject: "Reset link, as requested",
+        subject: "Your password reset link",
         html: emailShell({
           preview: "Valid for 60 minutes. Didn't ask? Nothing changes.",
           body:
             hero({
-              title: "Let's get you a new password",
-              lede: `Tap the button to choose one. The link works once and expires in 60 minutes.`,
+              title: "Let's get you back in",
+              lede: `Tap the button to choose a new password. The link works once and expires in 60 minutes.`,
             }) +
             button("Choose a new password", resetUrl) +
             note(
@@ -524,17 +525,18 @@ async function sendVerificationEmail(email: string, name?: string, ref?: string)
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "Verify your email to get started",
+        subject: `${(name ?? "").trim().split(/\s+/)[0] || "there"}, confirm your email to get started`,
         html: emailShell({
-          preview: "One click and your 2 free mock interviews are yours.",
+          preview: "One tap and your 2 free mock interviews are ready.",
           body:
             hero({
               eyebrow: "Welcome to HireStepX",
               title: `Hi ${safeName}, let's get you started`,
-              lede: "Tap the button to confirm your email. Your 2 free mock interviews are waiting right after.",
+              lede: "Tap the button to confirm your email. Your 2 free mock interviews are ready right after.",
             }) +
             button("Verify my email", verifyUrl) +
             para("Once you're in, upload your resume, pick the company and role you're aiming for, and start your first interview. It takes about 15 minutes.") +
+            signoff({ name: "The HireStepX team", role: "" }) +
             note(
               `This link works for 24 hours. If you didn't sign up, just ignore this email and nothing will happen.`,
             ) +
@@ -1025,7 +1027,7 @@ async function sendExistingAccountEmail(email: string, name?: string): Promise<v
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [email],
-        subject: "You already have an account",
+        subject: `${(name ?? "").trim().split(/\s+/)[0] || "there"}, you already have an account`,
         html: emailShell({
           preview: "Sign in instead, or reset your password if you're stuck.",
           body:

@@ -113,8 +113,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const safeName = escapeHtml(profile.name || "there");
       const safeTier = escapeHtml(profile.subscription_tier || "Starter");
       const subject = action === "pause"
-        ? "Your subscription is paused"
-        : "Welcome back to your plan";
+        ? "Your plan is paused. Nothing is lost"
+        : "Welcome back, your plan is active again";
       const html = action === "pause"
         ? emailShell({
             preview: "Billing is on hold. Resume whenever you're ready.",
@@ -136,7 +136,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 title: `Hi ${safeName}, welcome back`,
                 lede: `Your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`,
               }) +
-              button("Continue practising", `${APP_URL}/dashboard`),
+              button("Continue practicing", `${APP_URL}/dashboard`),
           });
       try {
         await fetch("https://api.resend.com/emails", {

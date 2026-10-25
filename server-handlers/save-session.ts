@@ -329,17 +329,17 @@ async function sendSessionReportEmail(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [userEmail],
-        subject: "Your HireStepX interview report is ready",
+        subject: `${userName ? userName.trim().split(/\s+/)[0] + ", your" : "Your"} interview report is ready`,
         html: emailShell({
-          preview: "Your score and feedback are ready.",
+          preview: "Your score, STAR breakdown and model answer are inside.",
           body:
             hero({
               tone: "success",
               eyebrow: "Interview report",
               title: `Your report is ready${nameSuffix(userName)}`,
-              lede: "See your score, a STAR breakdown and a coached model answer.",
+              lede: "Nice work finishing that interview. Your score, a STAR breakdown and a coached model answer are waiting for you.",
             }) +
-            button("View report", reportUrl) +
+            button("See my report", reportUrl) +
             note("If you didn't take this interview or have questions, reply to this email and we'll help."),
         }),
       }),
@@ -397,11 +397,11 @@ async function sendFirstSessionCompletedEmail(
               tone: "success",
               eyebrow: "First session complete",
               title: `Great start${nameSuffix(userName)}`,
-              lede: "You've finished your first session and you have 1 free session left. Want to keep the momentum going?",
+              lede: "You finished your first session, and you still have 1 free session left. Want to use it while it is fresh?",
             }) +
             actions([
-              { label: "Start session 2", href: nextUrl },
-              { label: "View report", href: reportUrl, ghost: true },
+              { label: "Start my second session", href: nextUrl },
+              { label: "Read my report", href: reportUrl, ghost: true },
             ]),
         }),
       }),
@@ -444,7 +444,7 @@ async function sendFreeLimitReachedEmail(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [userEmail],
-        subject: "You've finished your 2 free sessions — keep the momentum going",
+        subject: `${userName ? userName.trim().split(/\s+/)[0] + ", you" : "You"}'ve used both free sessions`,
         ...parts.resend,
         html: emailShell({
           footer: parts.footer,
@@ -455,7 +455,7 @@ async function sendFreeLimitReachedEmail(
               eyebrow: "Free sessions complete",
               title: "Both free sessions done",
             }) +
-            para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready — you've already built muscle memory that candidates who don't practice at all don't have.`) +
+            para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready, and you are already ahead of candidates who don't practice at all.`) +
             para(`To keep going, get the Sprint Pack (₹39 · 5 sessions) or grab a single session for ₹9. No subscription required.`) +
             button("View report", reportUrl) +
             button("Upgrade to keep practicing", upgradeUrl) +

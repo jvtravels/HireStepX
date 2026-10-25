@@ -83,20 +83,20 @@ function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subje
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
-    subject: "You're one step away",
+    subject: `Your ${intent.planName} is still waiting`,
     html: emailShell({
       footer,
       preview: "Your checkout is still open. Finish whenever you're ready.",
       body:
         hero({
-          title: "You're one step away",
-          lede: "You started checking out but didn't finish. No rush, your plan is still waiting whenever you're ready.",
+          title: "You're one step from your plan",
+          lede: `You started checking out ${safePlan} but didn't finish. No rush. It is still waiting whenever you're ready.`,
         }) +
         data([
           ["Plan", safePlan],
           ["Amount", mono(amount)],
         ]) +
-        button("Complete your purchase", pricingUrl) +
+        button("Finish my purchase", pricingUrl) +
         note("The free tier stays open too. This is the only reminder we'll send about this."),
     }),
   };

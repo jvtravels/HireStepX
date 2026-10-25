@@ -105,7 +105,7 @@ function buildEmail(
 
   if (tier === "employer_interest" && employerInterest) {
     const interestedRole = employerInterest.roleTitle ? escapeHtml(employerInterest.roleTitle) : "a role";
-    const subject = `Employers are checking you out, ${user.name?.split(" ")[0] || "there"} — here's how to stand out`;
+    const subject = `${user.name?.split(" ")[0] || "Hey"}, employers are looking at your profile`;
     const heroCopy =
       employerInterest.count === 1
         ? `An employer is considering you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
@@ -120,7 +120,7 @@ function buildEmail(
           title: `Employers are looking, ${name}`,
           lede: heroCopy,
         }) +
-        button("Start practising", sessionUrl) +
+        button("Start practicing", sessionUrl) +
         para(footerLine, { small: true, muted: true }),
     });
     return { subject, html };
@@ -141,11 +141,11 @@ function buildEmail(
 
   const subjects: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: `${user.name?.split(" ")[0] || "Hey"}, your next practice session is ready`,
-    day3: `Your ${weakest || "interview"} skills need a refresh`,
-    day7: "Your practice sessions are still here",
-    paid14: "Two weeks since your last session",
-    paid30: "Your Sprint Pack is active and ready when you are",
-    winback: "We saved your progress — come back whenever you're ready",
+    day3: weakest ? `${user.name?.split(" ")[0] || "Hey"}, your ${weakest} could use a refresh` : `${user.name?.split(" ")[0] || "Hey"}, ten minutes keeps you sharp`,
+    day7: `${user.name?.split(" ")[0] || "Hey"}, your practice sessions are still here`,
+    paid14: `${user.name?.split(" ")[0] || "Hey"}, ready for a quick drill?`,
+    paid30: `${user.name?.split(" ")[0] || "Hey"}, it has been a month. Ready for a drill?`,
+    winback: `${user.name?.split(" ")[0] || "Hey"}, we saved your progress`,
   };
 
   const titles: Record<Exclude<EmailTier, "employer_interest">, string> = {
@@ -158,22 +158,22 @@ function buildEmail(
   };
 
   const heroText: Record<Exclude<EmailTier, "employer_interest">, string> = {
-    day1: `Your personalised ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
+    day1: `Your personalized ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
     day3: safeWeakest
       ? `Your ${b(safeWeakest)} score has room to grow. A focused 10-minute session is a good way to work on it.`
       : `Ten focused minutes keeps your momentum from fading. One more session is all it takes.`,
     day7: score
       ? `You scored ${b(`${score}/100`)} last time. That is a solid start, and skills stay sharp with practice. One short session is all it takes to keep your edge.`
       : `Interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
-    paid14: `It has been two weeks since your last session. Your Sprint Pack still has sessions on it, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
-    paid30: `It has been about a month. Your ${role} skills are still in there, and your Sprint Pack is ready when you are. A focused 15-minute drill brings it all back.`,
+    paid14: `It has been two weeks since your last session. Check your dashboard to see what is left on your Sprint Pack. A 10-minute drill today rebuilds the muscle memory that got you this far.`,
+    paid30: `It has been about a month. Your ${role} skills are still in there. Check your dashboard to see what is left on your Sprint Pack. A focused 15-minute drill brings it all back.`,
     winback: `It has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
   };
 
   const ctaText: Record<Exclude<EmailTier, "employer_interest">, string> = {
-    day1: hitFreeLimit ? "See upgrade options" : "Continue practising",
-    day3: hitFreeLimit ? "Upgrade from ₹9" : (weakest ? `Practise ${weakest}` : "Start a session"),
-    day7: "Start practising",
+    day1: hitFreeLimit ? "See upgrade options" : "Continue practicing",
+    day3: hitFreeLimit ? "Upgrade from ₹9" : (weakest ? `Practice ${weakest}` : "Start a session"),
+    day7: "Start practicing",
     paid14: "Start a quick session",
     paid30: "Start a focused drill",
     winback: "Pick up where you left off",
@@ -181,14 +181,14 @@ function buildEmail(
 
   const footerText: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: hitFreeLimit
-      ? "You've used both free sessions. Plans start at ₹9 per session — no subscription required."
+      ? "You've used both free sessions. Plans start at ₹9 per session, and no subscription is required."
       : "You still have free sessions remaining, no card needed.",
     day3: hitFreeLimit
       ? "Plans start at ₹9 per session, and your history stays intact."
       : "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
     day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
-    paid14: "You are on the Sprint Pack — check your dashboard for sessions remaining.",
-    paid30: "Pause or cancel anytime from your settings. We want you practising only when it helps.",
+    paid14: "You are on the Sprint Pack. Check your dashboard for sessions remaining.",
+    paid30: "No pressure. Your progress is saved, and your dashboard shows what is left on your Sprint Pack.",
     winback: "No pressure. Your practice history and resume are saved. Come back whenever it suits you.",
   };
 

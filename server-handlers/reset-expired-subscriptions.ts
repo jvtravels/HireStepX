@@ -123,7 +123,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               body: JSON.stringify({
                 from: FROM_EMAIL,
                 to: [profile.email],
-                subject: "Your HireStepX subscription has expired",
+                subject: `${(profile.name ?? "").trim().split(/\s+/)[0] || "Hi"}, your plan has ended. Your progress is safe`,
                 html: emailHtml,
               }),
             });

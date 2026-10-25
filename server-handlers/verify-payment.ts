@@ -151,8 +151,8 @@ async function sendPaymentEmail(
               title: `You're in${nameSuffix(name)}`,
               lede:
                 plan === "single"
-                  ? "Your session credit is ready. Head to your dashboard whenever you want to start."
-                  : `Your ${planLabel} is live: 5 interview sessions with every question type, detailed feedback and resume analysis, all unlocked.`,
+                  ? "Thanks for your payment. Your session credit is ready, so head to your dashboard whenever you want to start."
+                  : `Thanks for your payment. Your ${planLabel} is live: 5 interview sessions to use before ${end}, with every question type, detailed feedback and resume analysis.`,
             }) +
             data(
               plan === "single"
@@ -169,7 +169,7 @@ async function sendPaymentEmail(
                     ["Payment ID", mono(paymentId)],
                   ],
             ) +
-            button("Start practising", `${APP_URL}/dashboard`) +
+            button("Start practicing", `${APP_URL}/dashboard`) +
             note("This is your payment confirmation. If you didn't make this purchase, please write to us right away."),
         }),
       }),

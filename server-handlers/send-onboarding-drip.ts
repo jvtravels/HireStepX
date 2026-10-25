@@ -81,16 +81,16 @@ function buildDay2Email(
   const sessionUrl = `${APP_URL}/session/new`;
 
   return {
-    subject: `What's unlocked on your Sprint Pack`,
+    subject: `${safeName}, your Sprint Pack is ready to use`,
     html: emailShell({
       footer,
-      preview: "Here's the fastest way to get value from it.",
+      preview: "Here is the fastest way to get value from your 5 sessions.",
       body:
         hero({
           tone: "success",
           eyebrow: "Your Sprint Pack",
           title: `You're in, ${safeName}`,
-          lede: `Your plan is active. Here's the fastest way to get value from it before your ${rolePhrase} prep window closes.`,
+          lede: `Your Sprint Pack is active: 5 sessions over 30 days. Here's the fastest way to get value from it for your ${rolePhrase} prep.`,
         }) +
         data([
           ["Sessions", "5 per Sprint Pack"],
@@ -99,7 +99,7 @@ function buildDay2Email(
           ["Coaching feedback", "STAR breakdown and model answer"],
         ]) +
         para(`Start with one session now. Pick ${safeRole} as your focus and do a 10-minute behavioral round. The AI will show you your weakest dimension, and that becomes your target for the week.`) +
-        button("Start your first session", sessionUrl) +
+        button("Start my first session", sessionUrl) +
         note("Have a specific company or role in mind? Just reply and we'll suggest the best session to start with."),
     }),
   };
@@ -116,15 +116,15 @@ function buildDay5Email(
   const reportUrl = `${APP_URL}/dashboard`;
 
   return {
-    subject: `${safeName}, a quick check-in on your ${rolePhrase} prep`,
+    subject: `${safeName}, how is your ${rolePhrase} prep going?`,
     html: emailShell({
       footer,
-      preview: "A few things that make the next weeks count.",
+      preview: "Three habits that make the rest of your pack count.",
       body:
         hero({
           eyebrow: "Day 5",
-          title: `Five days in, ${safeName}`,
-          lede: "Here are a few things that will make your next few weeks count.",
+          title: `A few days in, ${safeName}`,
+          lede: "By now you have had a first taste of the AI interviewer. Here are three habits that help candidates get the most out of the rest of their Sprint Pack.",
         }) +
         data([
           ["Practice aloud", "Say your answers, don't just think them"],
@@ -133,7 +133,7 @@ function buildDay5Email(
         ]) +
         para("Coach Notes inside your report is the most useful feature nobody uses. After every session the AI writes a specific list of what to change next time. It takes about 2 minutes to read.") +
         actions([
-          { label: "Start a session and read your Coach Notes", href: sessionUrl },
+          { label: "Start a session", href: sessionUrl },
           { label: "View my dashboard", href: reportUrl, ghost: true },
         ]),
     }),
