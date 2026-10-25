@@ -711,7 +711,7 @@ export const resourcesCss = sceneCss + `
   .lb-dd { margin-left: auto; }
   .lb-ddbtn span { display: none; }
   .lb-ddmenu { width: 240px; }
-  .lb-tabs { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; margin-right: -16px; padding-bottom: 4px; scrollbar-width: none; }
+  .lb-tabs { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; margin-right: -16px; padding-bottom: 4px; scrollbar-width: none; -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 48px), transparent); padding-right: 40px; }
   .lb-tab { flex: none; }
   .lb-cols { grid-template-columns: 1fr; }
   .lb-cols > * { padding: 18px 16px; }

@@ -1146,4 +1146,22 @@ export const pagesCss = `
   .sx-h1, .lg-hero h1, .er-h1, .lb-hero .hx-h1 { font-size: 30px !important; line-height: 1.1; }
   .sx-prose h2, .lg-prose h2 { font-size: 22px !important; }
 }
+/* ── Compare table: row labels stack above two candidate columns on phones ── */
+@media (max-width: 600px) {
+  .pg-tbl, .ft-vis .pg-tbl { max-width: 100%; }
+  .pg-tbl thead, .pg-tbl tbody { display: block; }
+  .pg-tbl tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pg-tbl thead td { display: none; }
+  .pg-tbl tbody th, .ft-vis .pg-tbl tbody th { grid-column: 1 / -1; width: auto; padding: 14px 12px 0 !important; border-bottom: 0; font-size: 11px; }
+  .pg-tbl tbody td, .ft-vis .pg-tbl tbody td { padding: 8px 12px 14px !important; }
+  .pg-tbl thead th, .ft-vis .pg-tbl thead th { padding: 12px !important; }
+  .pg-tbl th, .pg-tbl td { overflow-wrap: normal !important; word-break: normal; }
+  .pg-ch, .ft-vis .pg-ch { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .pg-ch b, .ft-vis .pg-ch b { font-size: 14px; }
+  .pg-nm { flex-direction: column; align-items: flex-start; gap: 2px; }
+  .pg-chip { white-space: nowrap; }
+  .pg-fit > span, .ft-vis .pg-fit > span { grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; }
+  .pg-fit > span > :nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+  .pg-fit b { font-size: 12px; }
+}
 `;
