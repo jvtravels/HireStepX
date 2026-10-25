@@ -1077,4 +1077,29 @@ export const pagesCss = `
 .hs-tab { min-height: 44px; }
 .pc-ctl .hx-fakebtn, .hx-pv-opt { min-height: 44px; }
 .pc-l p a, .hx-foot-rights a { display: inline-block; padding: 12px 0; margin: -12px 0; }
+/* Talent hero: centred headline over a wide practice stage (matches the employers hero) */
+.cxp .cx-hero { min-height: 0; display: block; padding: 48px 0 96px; }
+.cxp .cx-hero-in { display: flex; flex-direction: column; align-items: center; gap: 40px; }
+.cxp .cx-copy { max-width: 760px; text-align: center; }
+.cxp .cx-h1 { font-size: 48px; line-height: 1.08; text-wrap: balance; }
+.cxp .cx-lede { margin: 16px auto 0; max-width: 52ch; }
+.cxp .cx-copy .cx-cta { margin-top: 24px; }
+.cxp .cx-copy .cx-fine { margin-top: 12px; }
+.cxp .cx-cta { justify-content: center; }
+.cxp .hx-stage.cx-demo { width: 100%; padding: 40px 48px; }
+.cxp .cx-demo .pd { max-width: 960px; margin: 0 auto; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto 1fr; grid-template-areas: "top top" "q res" "ans res"; gap: 16px 24px; }
+.cxp .cx-demo .pd-top { grid-area: top; }
+.cxp .cx-demo .pd-q { grid-area: q; }
+.cxp .cx-demo .pd-ans { grid-area: ans; }
+.cxp .cx-demo .pd-res { grid-area: res; align-content: center; padding: 28px; border-radius: 12px; background: var(--white); gap: 20px; }
+@container (max-width: 900px) {
+  .cxp .cx-hero { padding: 32px 0 64px; }
+  .cxp .cx-hero-in { gap: 32px; }
+  .cxp .cx-h1 { font-size: 36px; }
+  .cxp .cx-lede { margin-top: 16px; }
+  .cxp .cx-cta { justify-content: stretch; }
+  .cxp .hx-stage.cx-demo { padding: 16px; }
+  .cxp .cx-demo .pd { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "top" "q" "ans" "res"; }
+  .cxp .cx-demo .pd-res { padding: 20px; }
+}
 `;
