@@ -885,9 +885,9 @@ export const pagesCss = `
 .cxp .cx-fine { margin: 16px 0 0; font-size: 14px; color: var(--ink-3); }
 .cxp .hx-stage.cx-demo { margin: 0; padding: 40px; }
 .cxp .pg-sec, .cxp .hx-sec.hx-privacy { padding: 96px 0; }
-.cxp .cx-head { max-width: 640px; margin: 0 0 48px; text-align: left; }
+.cxp .cx-head { max-width: 720px; margin: 0 auto 48px; text-align: center; }
 .cxp .cx-head .hx-h2 { margin: 16px 0 0; font-size: 40px; line-height: 1.08; }
-.cxp .cx-head p { margin: 16px 0 0; max-width: 48ch; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
+.cxp .cx-head p { margin: 16px auto 0; max-width: 48ch; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
 .cxp .hx-tr-l .hx-h2 { font-size: 40px; margin-top: 16px; }
 .cxp .hx-tr { gap: 64px; }
 .cxp .hx-faq { min-height: 560px; }
