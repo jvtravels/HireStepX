@@ -13,11 +13,13 @@ export const metadata: Metadata = {
     description: "Read scored interview answers and compare candidates side by side. Reading is free. You pay only to reach someone.",
     siteName: "HireStepX",
     locale: "en_IN",
+    images: [{ url: "https://hirestepx.com/opengraph-image", width: 1200, height: 630, alt: "HireStepX for employers" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "Hire Interview-Ready Candidates | HireStepX",
     description: "Read scored interview answers and compare candidates side by side. Reading is free. You pay only to reach someone.",
+    images: ["https://hirestepx.com/opengraph-image"],
   },
 };
 
