@@ -94,7 +94,6 @@ const Person = ({ skin, hair, shirt, bg, long }: { skin: string; hair: string; s
 function Photo({ src, alt, fallback }: { src: string; alt: string; fallback: React.ReactNode }) {
   const [bad, setBad] = useState(false);
   if (bad) return <>{fallback}</>;
-  // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} onError={() => setBad(true)} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />;
 }
 

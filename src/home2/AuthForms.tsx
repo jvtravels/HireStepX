@@ -464,6 +464,7 @@ export function StagingLoginForm() {
           maxLength={254}
           error={emailError}
           invalid={!!error || (emailTouched && !!emailV.message)}
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- only focuses when the tab is visible (useAutoFocus)
           autoFocus={autoFocus}
         />
         <PasswordField
@@ -784,6 +785,7 @@ export function StagingSignupForm() {
             maxLength={200}
             error={companyNameError}
             invalid={!!error || (companyNameTouched && !companyNameValid)}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- only focuses when the tab is visible (useAutoFocus)
             autoFocus={autoFocus}
           />
         ) : (
@@ -801,6 +803,7 @@ export function StagingSignupForm() {
             maxLength={40}
             error={nameError}
             invalid={!!error || (nameTouched && !!nameV.message)}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- only focuses when the tab is visible (useAutoFocus)
             autoFocus={autoFocus}
           />
         )}

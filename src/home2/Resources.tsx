@@ -316,6 +316,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
             <div className="lb-top">
               <div
                 className="lb-searchwrap"
+                role="presentation"
                 onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setSearchOpen(false); }}
                 onKeyDown={(e) => { if (e.key === "Escape") { setSearchOpen(false); inputRef.current?.blur(); } }}
               >
@@ -330,7 +331,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                   <kbd className="lb-kbd" aria-hidden="true">/</kbd>
                 </form>
                 {palP.mounted && (
-                  <div className="lb-drop lb-pal" data-state={palP.closing ? "closing" : undefined} onMouseDown={(e) => e.preventDefault()}>
+                  <div className="lb-drop lb-pal" role="presentation" data-state={palP.closing ? "closing" : undefined} onMouseDown={(e) => e.preventDefault()}>
                     <p className="lb-ph">I want to</p>
                     <ul className="lb-intents">
                       {INTENTS.map((n) => (

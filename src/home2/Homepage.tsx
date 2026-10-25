@@ -86,7 +86,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
         </button>
       </div>
       {open && (
-        <div className="hx-menu" id="hx-menu" onClick={() => setOpen(false)}>
+        <div className="hx-menu" id="hx-menu" role="presentation" onClick={() => setOpen(false)}>
           <nav aria-label="Mobile">
             <Link data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</Link>
             <Link data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</Link>
