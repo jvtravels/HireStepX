@@ -99,7 +99,7 @@ const aboutCss = `
 .ab-h1 { margin: 16px 0 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; color: var(--ink); }
 .ab-lede { margin: 20px 0 0; max-width: 46ch; font-size: 18px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
 .ab-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.ab-stage { position: relative; display: grid; align-content: start; gap: 0; padding: 40px 36px 44px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); overflow: hidden; min-height: 460px; }
+.ab-stage { position: relative; display: grid; align-content: center; gap: 20px; padding: 40px 36px 44px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); overflow: hidden; min-height: 460px; }
 .ab-card { background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 18px 32px -12px oklch(0.2 0.03 280 / 0.14); }
 .ab-q { padding: 20px 22px 22px; display: grid; gap: 14px; max-width: 360px; }
 .ab-q em { font-style: normal; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
@@ -107,7 +107,7 @@ const aboutCss = `
 .ab-wave { display: flex; align-items: center; gap: 4px; height: 40px; }
 .ab-wave i { flex: 1; min-width: 3px; border-radius: 3px; background: linear-gradient(180deg, oklch(0.72 0.12 285), oklch(0.78 0.1 55)); height: var(--h); transform-origin: center; animation: ab-wave 1.6s ease-in-out infinite; animation-delay: calc(var(--n) * -0.13s); }
 @keyframes ab-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(0.35); } }
-.ab-score { position: relative; justify-self: end; margin: -14px 0 0; padding: 16px 18px; display: flex; align-items: center; gap: 14px; animation: ab-float 7s ease-in-out infinite; }
+.ab-score { position: relative; justify-self: end; margin: 0; padding: 16px 18px; display: flex; align-items: center; gap: 14px; animation: ab-float 7s ease-in-out infinite; }
 .ab-ring { width: 54px; height: 54px; flex: none; }
 .ab-ring circle { fill: none; stroke-width: 6; }
 .ab-ring .bg { stroke: oklch(0.93 0.01 285); }

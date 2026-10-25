@@ -180,7 +180,7 @@ function sceneFor(i: Item): ReactNode {
     case "/interview-prep":
       return <Stage h1={278}><C p={{ l: "8%", t: 16, w: "70%" }} cls="f"><T>Prep framework</T><span className="sc-steps h">{["Resume", "Practise", "Mock", "Offer"].map((x, n) => <span key={x} className={n < 2 ? "done" : n === 2 ? "now" : ""}><u />{x}</span>)}</span></C><C p={{ r: "7%", b: 22 }} cls="f2"><Ring pct={64} label="64%" sz={38} /></C></Stage>;
     case "/companies":
-      return <Stage h1={250}><C p={{ l: "9%", t: 14, w: "70%" }} cls="f"><T>Company library</T><span className="sc-tiles">{["Flipkart", "Razorpay", "Swiggy", "Tcs", "Google", "Amazon"].map((c) => <Mono key={c} co={c} h={hue(c, 270)} sz={30} />)}</span></C></Stage>;
+      return <Stage h1={250}><C p={{ l: "9%", t: 14, w: "70%" }} cls="f"><T>Company library</T><span className="sc-tiles">{["Flipkart", "Razorpay", "Swiggy", "Tcs", "Google", "Amazon"].map((c) => <Mono key={c} co={c} h={hue(c, 270)} sz={30} />)}</span></C><C p={{ r: "7%", b: 18 }} cls="f2"><Ch>Rounds and tips</Ch></C></Stage>;
     case "/salary-report-2026":
       return <Stage h1={70}><C p={{ l: "9%", t: 14, w: "70%" }} cls="f"><Row><T>CTC bands</T><Ch t="o">2026</Ch></Row>{[["Startup", 62], ["Product", 88], ["Services", 40], ["Fintech", 74]].map(([x, v]) => <span key={String(x)} className="sc-meter"><S>{x}</S><u><i style={{ width: `${v}%`, background: "oklch(0.7 0.13 60)" }} /></u></span>)}</C><C p={{ r: "6%", b: 18 }} cls="f2"><Ch>Sources cited</Ch></C></Stage>;
 
@@ -247,7 +247,7 @@ function sceneFor(i: Item): ReactNode {
     case "/blog/wipro-interview-questions-answers":
       return <Stage h1={305}><C p={{ l: "9%", t: 12, w: "62%" }} cls="f"><Row><Mono co="Wipro" h={305} sz={22} /><T>Wipro hiring</T></Row><Row g={5}><Ch t="d">Elite NTH</Ch><Ch>Turbo</Ch></Row><Ln w="78%" /><Ln w="54%" /></C><C p={{ r: "6%", b: 16 }} cls="f2"><Ch t="g">Q&amp;A</Ch></C></Stage>;
     case "/blog/top-10-google-interview-questions":
-      return <Stage h1={145}><C p={{ l: "9%", t: 12, w: "70%" }} cls="f"><Row><Mono co="Google" h={145} sz={22} /><T>Top 10 questions</T></Row><span className="sc-nums">{Array.from({ length: 10 }, (_, n) => <i key={n} className={n === 3 ? "on" : ""}>{n + 1}</i>)}</span></C></Stage>;
+      return <Stage h1={145}><C p={{ l: "9%", t: 12, w: "70%" }} cls="f"><Row><Mono co="Google" h={145} sz={22} /><T>Top 10 questions</T></Row><span className="sc-nums">{Array.from({ length: 10 }, (_, n) => <i key={n} className={n === 3 ? "on" : ""}>{n + 1}</i>)}</span></C><C p={{ r: "7%", b: 18 }} cls="f2"><Ch t="g">Most asked</Ch></C></Stage>;
     case "/blog/hr-interview-questions-answers-india":
       return <Stage h1={320}><C p={{ l: "9%", t: 12, w: "66%" }} cls="f"><Row><b className="sc-big">30</b><T>HR questions</T></Row>{["Why this company?", "Where in 5 years?", "Notice period?"].map((x, n) => <Row key={x} g={6}><Check on={n < 2} /><S>{x}</S></Row>)}</C></Stage>;
     case "/blog/amazon-leadership-principles-interview":

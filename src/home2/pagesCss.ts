@@ -891,7 +891,7 @@ export const pagesCss = `
 .cxp .hx-tr-l .hx-h2 { font-size: 40px; margin-top: 16px; }
 .cxp .hx-tr { gap: 64px; }
 .cxp .hx-faq { min-height: 620px; }
-.cxp .hx-priv-stage { min-height: 430px; }
+.cxp .hx-priv-stage { min-height: 440px; }
 .cxp .cx-close .hx-closing { padding: 0 0 96px; }
 .cxp .cx-close .hx-end .hx-h2 { font-size: 40px; }
 
@@ -929,7 +929,7 @@ export const pagesCss = `
   .cxp .cx-head p { font-size: 16px; }
   .cxp .hx-tr { gap: 32px; }
   .cxp .hx-faq { min-height: 0; }
-  .cxp .hx-priv-stage { min-height: 430px; }
+  .cxp .hx-priv-stage { min-height: 440px; }
   .cxp .cx-close .hx-closing { padding-bottom: 64px; }
   .cx-steps { grid-template-columns: minmax(0, 1fr); gap: 32px; }
 }
@@ -1102,4 +1102,13 @@ export const pagesCss = `
   .cxp .cx-demo .pd { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "top" "q" "ans" "res"; }
   .cxp .cx-demo .pd-res { padding: 20px; }
 }
+/* ── Visual polish: even stage padding, no dead space ── */
+.cxp .cx-demo .pd { max-width: none; }
+.ia-stage { display: flex; flex-direction: column; justify-content: center; }
+.hs-scene .pg-win { width: min(100%, 600px); }
+.hs-cur { left: 44px; top: 24px; }
+@media (max-width: 900px) { .ft-vis .pg-ch { flex-direction: column; align-items: flex-start; gap: 6px; } .ft-vis .pg-ch b, .ft-vis .pg-ch small { white-space: normal; overflow-wrap: normal; word-break: normal; } }
+.cxp .hx-priv-stage { justify-content: center; }
+.cxp .hx-priv-body { flex: none; }
+@media (max-width: 900px) { .ft-vis .pg-tbl tbody th, .ft-vis .pg-tbl thead td { padding-inline: 8px; font-size: 11px; letter-spacing: 0; overflow-wrap: normal; } }
 `;
