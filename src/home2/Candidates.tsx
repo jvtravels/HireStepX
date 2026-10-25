@@ -293,12 +293,19 @@ function HowItWorks() {
       <div className="hi" ref={ref}>
         <div className="hi-tabs" role="tablist" aria-label="How HireStepX works">
           {HOW.map((x, i) => (
-            <button key={x.t} type="button" role="tab" id={`hi-t${i}`} aria-selected={cur === i} aria-controls="hi-panel" tabIndex={cur === i ? 0 : -1} className={`hi-tab${cur === i ? " on" : ""}`} onClick={() => { setAuto(false); setCur(i); }}>
-              <span className="hi-num" aria-hidden="true">{i + 1}</span>
-              <b>{x.t}</b>
-              <span className="hi-d">{x.d}</span>
-              <i className="hi-bar" aria-hidden="true">{cur === i && <u className={play ? "run" : "full"} onAnimationEnd={() => setCur((v) => (v + 1) % HOW.length)} />}</i>
-            </button>
+            <div key={x.t} className="hi-item">
+              <button type="button" role="tab" id={`hi-t${i}`} aria-selected={cur === i} aria-controls="hi-panel" tabIndex={cur === i ? 0 : -1} className={`hi-tab${cur === i ? " on" : ""}`} onClick={() => { setAuto(false); setCur(i); }}>
+                <span className="hi-num" aria-hidden="true">{i + 1}</span>
+                <b>{x.t}</b>
+                <span className="hi-d">{x.d}</span>
+                <i className="hi-bar" aria-hidden="true">{cur === i && <u className={play ? "run" : "full"} onAnimationEnd={() => setCur((v) => (v + 1) % HOW.length)} />}</i>
+              </button>
+              <div className="hi-mv" aria-hidden="true">
+                <Win left={["Sample round", "Your score", "Your privacy"][i]} alt={undefined}>
+                  <HowPanel i={i} on />
+                </Win>
+              </div>
+            </div>
           ))}
         </div>
         <Skel className="hi-stage hx-stage-warm">

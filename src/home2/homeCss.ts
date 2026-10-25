@@ -600,5 +600,18 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx .hx-foot a, .hx .hx-foot-rights a { display: inline-flex; align-items: center; min-height: 44px; }
   .hx .hx-btn.sm, .hx .lb-tab, .hx .prc-seg button, .hx .lb-more { min-height: 44px; }
 }
+/* ── Phone type scale: headings 30/24, card titles 18, body 15-16 ── */
+@media (max-width: 600px) {
+  .hx-h1, .hx-hero:has(.pg-hero-stage) .hx-h1 { font-size: 30px !important; line-height: 1.1; }
+  .hx-h2, .hx-end .hx-h2, .hx-tr-l .hx-h2 { font-size: 24px !important; line-height: 1.15; }
+  .hx-h1 b, .hx-h2 b { font-size: inherit; }
+  .hx-pq, h3.hx-pq { font-size: 18px !important; line-height: 1.35; }
+  .hx-evq { font-size: 16px !important; }
+  .hx-how-list button span { font-size: 18px !important; }
+  .hx-how-d p { font-size: 15px !important; }
+  .hx-ft { font-size: 17px !important; }
+  .hx-mini-score { font-size: 18px !important; }
+  .hx-side b { font-size: 20px !important; }
+}
 `;
 

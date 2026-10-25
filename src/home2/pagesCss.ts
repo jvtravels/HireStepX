@@ -1102,6 +1102,22 @@ export const pagesCss = `
   .cxp .cx-demo .pd { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "top" "q" "ans" "res"; }
   .cxp .cx-demo .pd-res { padding: 20px; }
 }
+/* ── How it works: each pointer carries its own visual on mobile ── */
+.hi-mv { display: none; }
+.hi-item { display: flex; flex-direction: column; }
+.hi-tab { width: 100%; box-sizing: border-box; flex: 1; }
+.hi-mv { flex: none; }
+@container (max-width: 900px) {
+  .hi-stage { display: none; }
+  .hi-item { padding-bottom: 24px; }
+  .hi-tab { flex: none; }
+  .hi-tab { padding-bottom: 16px; opacity: 1; }
+  .hi-mv { display: block; margin-top: 8px; }
+  .hi-mv .pg-win { max-width: 100%; }
+  .hi-mv .hi-p { min-height: 0; padding: 24px 16px; animation: none; }
+  .hi-bar { display: none; }
+  .pf-card { order: -1; }
+}
 /* ── Visual polish: even stage padding, no dead space ── */
 .cxp .cx-demo .pd { max-width: none; }
 .ia-stage { display: flex; flex-direction: column; justify-content: center; }
@@ -1111,4 +1127,23 @@ export const pagesCss = `
 .cxp .hx-priv-stage { justify-content: center; }
 .cxp .hx-priv-body { flex: none; }
 @media (max-width: 900px) { .ft-vis .pg-tbl tbody th, .ft-vis .pg-tbl thead td { padding-inline: 8px; font-size: 11px; letter-spacing: 0; overflow-wrap: normal; } }
+/* ── Phone type scale: card titles sit clearly below section headings ── */
+@media (max-width: 600px) {
+  .cx-h1, .ab-h1, .pg-h1, .prc-sw { font-size: 30px !important; line-height: 1.1; }
+  .cx-h1 b, .ab-h1 b, .prc-sw b { font-size: inherit; }
+  .hi-tab b, .ia-t b, .pf-in h3, .pf-list h3, .hw b, .rw-step h3, .wy-diff h3 { font-size: 18px !important; line-height: 1.25; }
+  .hi-q { font-size: 18px !important; }
+  .wy-q { font-size: 17px !important; }
+  .wy-q mark { font-size: inherit; }
+  .hx-ft { font-size: 17px !important; }
+  .sx-x-q { font-size: 17px !important; }
+  .hi-sc b, .ia-score b, .pq-price b { font-size: 36px !important; }
+  .prc-cost { font-size: 40px !important; }
+  .pl-price b, .pl-price > b { font-size: 52px !important; }
+  .pg-nm { font-size: 20px !important; }
+  .pd-num { font-size: 32px !important; }
+  .hi-tab .hi-d, .pf-list p, .hw p, .rw-step p { font-size: 15px !important; }
+  .sx-h1, .lg-hero h1, .er-h1, .lb-hero .hx-h1 { font-size: 30px !important; line-height: 1.1; }
+  .sx-prose h2, .lg-prose h2 { font-size: 22px !important; }
+}
 `;
