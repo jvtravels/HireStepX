@@ -2,7 +2,6 @@
 import type { ReactNode } from "react";
 import { homeCss } from "./homeCss";
 import { authCss } from "./Auth";
-import { useStagingHost } from "./stagingHost";
 
 const skinCss = `
 .hx.hx-auth-skin { background: var(--white); min-height: 100dvh; display: flex; flex-direction: column; }
@@ -33,7 +32,6 @@ const skinCss = `
 .hx-auth-skin .hx-au-main main [class*="-subtitle"] { font-size: 16px !important; }
 .hx-auth-skin .hx-au-main footer, .hx-auth-skin .hx-au-main footer * { font-size: 13px !important; }
 .hx-auth-skin .hx-au-main [style*="max-width: 440px"] { max-width: 600px !important; }
-.hx-auth-skin [data-employer-discovery-notice] { display: none !important; }
 @media (max-width: 600px) {
   .hx.hx-auth-skin { background: var(--white); }
   .hx-auth-skin .hx-au-l { padding: 20px; }
@@ -44,8 +42,6 @@ const skinCss = `
 `;
 
 export function AuthSkin({ children, top, staging: stagingForm }: { children: ReactNode; top: ReactNode; staging?: ReactNode }) {
-  const staging = useStagingHost();
-  if (!staging) return <>{children}</>;
   return (
     <div className="hx hx-auth-skin">
       <style>{homeCss}</style>

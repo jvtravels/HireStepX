@@ -33,8 +33,7 @@ import {
   readStaySignedInPref,
   suggestEmailCorrection,
   UNVERIFIED_EMAIL_MESSAGE,
-  useIsMounted,
-} from "../auth/_shell";
+  useIsMounted, buildAuthLink, EMPLOYER_DISCOVERY_NOTICE } from "../auth/_shell";
 import { Google } from "./Auth";
 
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -501,7 +500,7 @@ export function StagingLoginForm() {
         </button>
       </form>
       <p className="hx-legal">
-        By logging in you agree to our{" "}
+        By logging in you confirm you are 18 or older and agree to our{" "}
         <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and{" "}
         <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
       </p>
@@ -753,6 +752,11 @@ export function StagingSignupForm() {
             <Google />
             {googleInFlight ? "Opening Google…" : "Continue with Google"}
           </button>
+          <p className="hx-legal" style={{ marginTop: 10 }}>
+            By continuing with Google you confirm you are 18 or older and agree to our{" "}
+            <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> and{" "}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+          </p>
           <div className="hx-or">or use your email</div>
         </>
       )}
@@ -895,6 +899,9 @@ export function StagingSignupForm() {
           {termsAttempted && !termsAccepted && (
             <p className="hx-err" role="alert" style={{ marginTop: 6 }}>Tick the box to accept the Terms and continue.</p>
           )}
+          {!isEmployerFlow && (
+            <p data-employer-discovery-notice className="hx-note" style={{ marginTop: 8 }}>{EMPLOYER_DISCOVERY_NOTICE}</p>
+          )}
         </div>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
           {loading ? "Creating your account…" : isEmployerFlow ? "Create company account" : "Create account"}
@@ -902,5 +909,15 @@ export function StagingSignupForm() {
         {!isEmployerFlow && <p className="hx-note hx-trial">2 sessions free · No card needed</p>}
       </form>
     </div>
+  );
+}
+
+export function AuthSwitchLink({ to, lead, label }: { to: "/login" | "/signup"; lead: string; label: string }) {
+  const searchParams = useSearchParams();
+  return (
+    <>
+      {lead}
+      <a href={buildAuthLink(to, searchParams)} onClick={to === "/signup" ? () => trackAuth({ type: "login_signup_clicked" }) : undefined}>{label}</a>
+    </>
   );
 }

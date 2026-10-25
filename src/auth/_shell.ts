@@ -341,3 +341,7 @@ export function useSafeAsync<T extends (...args: never[]) => Promise<unknown>>(
     [fn, isMounted],
   );
 }
+
+// Shown next to the signup affirmation; covered by the same consent version (data/legal-versions.ts).
+export const EMPLOYER_DISCOVERY_NOTICE =
+  "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";
