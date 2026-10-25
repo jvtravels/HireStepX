@@ -266,7 +266,7 @@ export function ContactPage() {
 
       <FaqBlock id="contact-faq" title={<>Quick answers, <b>before you write</b>.</>} qa={CONTACT_QA} stage={(i) => <ContactStage i={i} />} />
 
-      <div className="cx-close"><Close kicker="Not ready to write?" title={<>Try one answer <b>first</b>.</>} body="Your first 2 sessions are free, with no card on file." primary={["Practise free", "/signup"]} secondary={["See pricing", "/pricing"]} notes={["2 free sessions", "No card needed", "No subscription"]} /></div>
+      <div className="cx-close"><Close kicker="Not ready to write?" title={<>Try one answer <b>first</b>.</>} body="Your first 2 sessions are free, with no card on file." primary={["Start practising", "/signup"]} secondary={["See pricing", "/pricing"]} notes={["2 free sessions", "No card needed", "No subscription"]} /></div>
     </Shell>
   );
 }

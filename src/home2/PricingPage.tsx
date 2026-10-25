@@ -57,7 +57,7 @@ function PriceStage({ stages, i }: { stages: Stage[]; i: number }) {
 type Plan = { name: string; price: string; unit: string; blurb: string; points: string[]; cta: string; href: string; best?: boolean };
 
 const CAND_PLANS: Plan[] = [
-  { name: "Free", price: "₹0", unit: "for 2 sessions", blurb: "Try a real round before you pay anything.", points: ["Scored answers and feedback", "Every round type", "No card needed"], cta: "Practise free", href: "/signup" },
+  { name: "Free", price: "₹0", unit: "for 2 sessions", blurb: "Try a real round before you pay anything.", points: ["Scored answers and feedback", "Every round type", "No card needed"], cta: "Start practising", href: "/signup" },
   { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", blurb: "Works out to ₹7.80 a session, for a campus drive or a job switch.", points: ["Everything included", "Valid for 30 days", "Cheapest per session"], cta: "Get the pack", href: "/signup", best: true },
   { name: "Single session", price: "₹9", unit: "per session", blurb: "Pay as you go and practise on your own schedule.", points: ["Everything included", "Credit never expires", "Buy one at a time"], cta: "Buy one", href: "/signup" },
 ];
@@ -114,7 +114,7 @@ export function PricingPage({ initial = "cand" }: { initial?: Audience }) {
       </section>
       <FaqBlock key={aud} id="pricing-faq" title={<>Pricing, <b>answered plainly</b>.</>} qa={cand ? CAND_QA : EMP_QA} stage={(i) => <PriceStage stages={cand ? CAND_STAGE : EMP_STAGE} i={i} />} />
       {cand ? (
-        <Close kicker="Ready when you are" title={<>Start with <b>one answer</b>.</>} body="Practise out loud, see exactly what to fix, and pay nothing for your first 2 sessions." primary={["Practise free", "/signup"]} secondary={["Hire from proof", "/employers"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
+        <Close kicker="Ready when you are" title={<>Start with <b>one answer</b>.</>} body="Practise out loud, see exactly what to fix, and pay nothing for your first 2 sessions." primary={["Start practising", "/signup"]} secondary={["Hire from proof", "/employers"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
       ) : (
         <Close kicker="Ready when you are" title={<>See who fits before you spend a rupee.</>} body="Post a role, read the ranking, and pay only for the people you want to meet." primary={["Start hiring", "/signup"]} secondary={["Talk to us", "/contact"]} notes={["Posting is free", "Scores are free to read", "Pay only to contact"]} />
       )}

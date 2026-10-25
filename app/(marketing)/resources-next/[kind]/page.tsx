@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/home2/pageMeta";
 import { notFound } from "next/navigation";
 import { ResourcesPage } from "@/home2/Resources";
 import { buildResourceItems } from "@/home2/resourcesBuild";
@@ -15,7 +16,7 @@ const KIND_META: Record<string, { path: string; title: string; description: stri
 
 export async function generateMetadata({ params }: { params: Promise<{ kind: string }> }): Promise<Metadata> {
   const m = KIND_META[(await params).kind];
-  return m ? { title: m.title, description: m.description, alternates: { canonical: m.path } } : {};
+  return m ? pageMeta({ title: m.title, description: m.description, path: m.path }) : {};
 }
 
 const KINDS = ["guide", "question", "salary", "company", "city", "topic"] as const;

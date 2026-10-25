@@ -473,7 +473,7 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
         </div>
       </section>
 
-      <Close kicker="Read, then rehearse" title={<>Reading helps. Saying it <b>out loud</b> helps more.</>} body="Take what you learned into a spoken session and see exactly what to fix. Your first 2 sessions are free." primary={["Practise free", "/signup"]} secondary={["See pricing", "/pricing"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
+      <Close kicker="Read, then rehearse" title={<>Reading helps. Saying it <b>out loud</b> helps more.</>} body="Take what you learned into a spoken session and see exactly what to fix. Your first 2 sessions are free." primary={["Start practising", "/signup"]} secondary={["See pricing", "/pricing"]} notes={["2 free sessions", "No card needed", "No subscription"]} />
     </Shell>
   );
 }
