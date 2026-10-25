@@ -640,10 +640,17 @@ const useRedis = !!(UPSTASH_URL && UPSTASH_TOKEN);
 // Each cold start gets a fresh map, so limits are per-instance only. Use Redis (Upstash) in production.
 const rateLimitMaps = new Map<string, Map<string, { count: number; reset: number }>>();
 
+const RATE_LIMIT_MAP_MAX = 5_000;
+
 function inMemoryRateLimit(ip: string, bucket: string, limit: number, windowMs: number): boolean {
   if (!rateLimitMaps.has(bucket)) rateLimitMaps.set(bucket, new Map());
   const map = rateLimitMaps.get(bucket)!;
   const now = Date.now();
+  // Bound memory: an attacker rotating IPs must not grow the map without limit.
+  if (map.size >= RATE_LIMIT_MAP_MAX) {
+    for (const [k, v] of map) if (now > v.reset) map.delete(k);
+    if (map.size >= RATE_LIMIT_MAP_MAX) map.clear();
+  }
   const entry = map.get(ip);
   if (!entry || now > entry.reset) {
     map.set(ip, { count: 1, reset: now + windowMs });
@@ -651,6 +658,28 @@ function inMemoryRateLimit(ip: string, bucket: string, limit: number, windowMs: 
   }
   entry.count++;
   return entry.count > limit;
+}
+
+let lastFallbackLogAt = 0;
+
+/** Redis was unavailable for a rate-limit check. Logs a greppable line at most every 30s per instance. */
+function onRedisLimiterFallback(bucket: string, reason: string): void {
+  const now = Date.now();
+  if (now - lastFallbackLogAt < 30_000) return;
+  lastFallbackLogAt = now;
+  console.error(`[ratelimit] CRITICAL: Redis limiter unavailable (${reason}) — per-instance fallback, bucket=${bucket}`);
+}
+
+/** Buckets (comma-separated in RATE_LIMIT_FAIL_CLOSED_BUCKETS) that reject instead of using the weak per-instance fallback. */
+export function isFailClosedBucket(bucket: string, env: string | undefined = process.env.RATE_LIMIT_FAIL_CLOSED_BUCKETS): boolean {
+  if (!env) return false;
+  return env.split(",").map(s => s.trim()).filter(Boolean).includes(bucket);
+}
+
+function limiterFallback(ip: string, bucket: string, limit: number, windowMs: number, reason: string): boolean {
+  onRedisLimiterFallback(bucket, reason);
+  if (isFailClosedBucket(bucket)) return true;
+  return inMemoryRateLimit(ip, bucket, limit, windowMs);
 }
 
 async function redisRateLimit(ip: string, bucket: string, limit: number, windowSec: number): Promise<boolean> {
@@ -670,13 +699,12 @@ async function redisRateLimit(ip: string, bucket: string, limit: number, windowS
       body: JSON.stringify([["INCR", key], ["EXPIRE", key, windowSec, "NX"]]),
       signal: AbortSignal.timeout(1500),
     });
-    if (!res.ok) return inMemoryRateLimit(ip, bucket, limit, windowSec * 1000);
+    if (!res.ok) return limiterFallback(ip, bucket, limit, windowSec * 1000, `HTTP ${res.status}`);
     const results = await res.json();
     const count = results[0]?.result ?? 1;
     return count > limit;
-  } catch {
-    // Redis down — fall back to in-memory
-    return inMemoryRateLimit(ip, bucket, limit, windowSec * 1000);
+  } catch (err) {
+    return limiterFallback(ip, bucket, limit, windowSec * 1000, err instanceof Error ? err.name : "error");
   }
 }
 
