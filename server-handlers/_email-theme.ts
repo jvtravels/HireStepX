@@ -211,8 +211,8 @@ export function hero(opts: {
     ? `<p style="margin:16px 0 0;font-family:${SANS};font-size:16px;line-height:1.6;color:${C.indigoGray};">${opts.lede}</p>`
     : "";
   return block(
-    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:16px;"><tr><td bgcolor="${frameBg}" style="padding:16px;border-radius:16px;background-color:${frameBg};${frameImg}">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="${C.white}" style="padding:24px;border-radius:12px;background:${C.white};">
+    `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:16px;"><tr><td class="hsx-hero-frame${tone === "error" ? " hsx-hero-frame-error" : ""}" bgcolor="${frameBg}" style="padding:16px;border-radius:16px;background-color:${frameBg};${frameImg}">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hsx-hero-card" bgcolor="${C.white}" style="padding:24px;border-radius:12px;background:${C.white};">
         ${eyebrow}<h1 style="margin:0;font-family:${SANS};font-size:28px;font-weight:600;line-height:1.2;letter-spacing:-0.03em;color:${C.coal};">${opts.title}</h1>${lede}
       </td></tr></table>
     </td></tr></table>`,
@@ -304,18 +304,16 @@ const D = {
   raised: "#1F1E26",
   line: "#2B2A35",
   lineStrong: "#3A3948",
-  text: "#F4F3F8",
-  body: "#C9C6DD",
-  soft: "#A3A0B3",
-  faint: "#8E8B9D",
+  text: "#FFFFFF",
+  body: "#FFFFFF",
+  soft: "#E4E2EC",
+  faint: "#CFCCDA",
   link: "#A9A5FF",
   button: "#5B56D6",
   indigoTint: "#26244A",
   successTint: "#13291B",
   warningTint: "#2E2410",
   errorTint: "#301718",
-  stage: "#221E30",
-  stageGradient: "linear-gradient(135deg,#2E2230 0%,#2A2036 50%,#1F1E3C 100%)",
 } as const;
 
 const bgRule = (hex: string, to: string) =>
@@ -335,7 +333,6 @@ const DARK_CSS = [
   bgRule(C.warning100, D.warningTint),
   bgRule(C.error100, D.errorTint),
   `[bgcolor="${C.indigo}"], [style*="background:${C.indigo}"] { background-color:${D.button} !important; border-color:${D.button} !important; }`,
-  `[bgcolor="${STAGE_FALLBACK}"], [style*="${STAGE_GRADIENT}"] { background-color:${D.stage} !important; background-image:${D.stageGradient} !important; }`,
   fgRule(C.coal, D.text),
   fgRule(C.indigoGray, D.body),
   fgRule(C.inkSoft, D.soft),
@@ -350,6 +347,11 @@ const DARK_CSS = [
   `[style*="border-radius:99px;background:${C.error}"] { background-color:#F87171 !important; }`,
   `[style*="border-radius:99px;background:${C.success}"] { background-color:#4ADE80 !important; }`,
   `td[bgcolor="${C.indigo}"] a { color:#FFFFFF !important; }`,
+  `.hsx-hero-frame { background-color:${STAGE_FALLBACK} !important; background-image:${STAGE_GRADIENT} !important; }`,
+  `.hsx-hero-frame-error { background-color:${C.error100} !important; background-image:none !important; }`,
+  `td.hsx-hero-card { background-color:${C.white} !important; }`,
+  `td.hsx-hero-card h1, td.hsx-hero-card div { color:${C.coal} !important; }`,
+  `td.hsx-hero-card p { color:${C.indigoGray} !important; }`,
   `.hsx-logo-light { display:none !important; }`,
   `.hsx-logo-dark { display:block !important; }`,
 ]
