@@ -44,7 +44,7 @@ export function toPublicStats(raw: RawPlatformCounts): PublicPlatformStats {
     userCount: displayCount(raw.users, MIN_PUBLIC_SESSION_COUNT),
     sessionCount: displaySessionCount(raw.sessions),
     companyCount: displayCount(raw.companies, MIN_PUBLIC_COMPANY_COUNT),
-    jobCount: displayCount(raw.jobs, MIN_PUBLIC_ROLE_COUNT),
+    jobCount: raw.jobs >= MIN_PUBLIC_ROLE_COUNT ? MIN_PUBLIC_ROLE_COUNT : null,
   };
 }
 
