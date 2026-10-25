@@ -613,5 +613,16 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-mini-score { font-size: 18px !important; }
   .hx-side b { font-size: 20px !important; }
 }
+
+/* ── FAQ: on mobile each visual lives inside its own open question ── */
+.hx-fs { display: none; }
+@media (max-width: 900px) {
+  .hx-fst { display: none; }
+  .hx-fs { display: block; padding: 0 0 24px; }
+  .hx-fs .hx-priv-stage, .cxp .hx-fs .hx-priv-stage { min-height: 0; margin-top: 0; }
+  .hx-fs .hx-priv-lab { display: none; }
+  .hx-fs .hx-priv-top { justify-content: flex-end; }
+  .hx-fs .hx-priv-top:not(:has(.hx-sw)) { display: none; }
+}
 `;
 

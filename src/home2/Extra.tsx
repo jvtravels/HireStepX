@@ -102,7 +102,7 @@ export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.R
           <div className="hx-tr-l">
             <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
             <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
-            {stage && <Skel replayKey={shown}>{stage(shown)}</Skel>}
+            {stage && <div className="hx-fst"><Skel replayKey={shown}>{stage(shown)}</Skel></div>}
           </div>
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
             {qa.map(([q, a], i) => (
@@ -111,7 +111,7 @@ export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.R
                   <span className="hx-ft"><i className="hx-gdot" />{q}</span>
                   <span className="hx-fchev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2.5v11M2.5 8h11" /></svg></span>
                 </button>
-                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region" aria-labelledby={`${id ?? "hx"}-fq-${i}`}><div><p>{a}</p></div></div>
+                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region" aria-labelledby={`${id ?? "hx"}-fq-${i}`}><div><p>{a}</p>{stage && open === i && <div className="hx-fs" aria-hidden="true"><Skel>{stage(i)}</Skel></div>}</div></div>
               </div>
             ))}
           </div>
