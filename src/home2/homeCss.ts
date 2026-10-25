@@ -554,7 +554,12 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-how-pg { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: var(--btn); transform-origin: left; animation: hx-how-pg linear both; z-index: 1; }
 @keyframes hx-how-pg { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .hx-how-vis { margin-top: 0; min-height: 440px; padding: 32px; display: grid; place-items: center; }
-.hx-how-in { width: 100%; display: grid; place-items: center; zoom: 1.7; animation: hx-how-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hx-how-in { width: 100%; display: grid; place-items: center; zoom: 1.35; animation: hx-how-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hx-cap { margin: 0; max-width: 260px; text-align: center; font-size: 12px; line-height: 1.45; color: var(--muted, oklch(0.5 0.02 280)); }
+.hx-fix.alt { background: var(--white); color: var(--ink); border-color: var(--line); }
+.hx-fix.alt:hover { background: var(--cream-soft, oklch(0.97 0.01 285)); }
+.hx-priv-stage { min-height: 200px; }
+@media (hover: hover) and (pointer: fine) { .hx-foot a, .hx-fakebtn, .hx-fix { min-height: 32px; } }
 @keyframes hx-how-in { from { opacity: 0; transform: translateY(12px); } }
 @media (max-width: 900px) {
   .hx-how { grid-template-columns: 1fr; gap: 24px; margin-top: 40px; }

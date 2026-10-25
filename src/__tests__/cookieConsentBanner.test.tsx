@@ -84,7 +84,7 @@ describe("CookieConsent banner", () => {
     expect(screen.getByRole("switch", { name: "Analytics" }).getAttribute("aria-checked")).toBe("true");
     expect(screen.getByRole("switch", { name: "Advertising" }).getAttribute("aria-checked")).toBe("false");
     expect(screen.getByText(/Last saved/)).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("heading", { name: "Cookies on HireStepX" }));
+    expect(document.activeElement).toBe(screen.getByText("Cookies on HireStepX"));
     fireEvent.keyDown(document, { key: "Escape" });
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(getConsentCategories()).toEqual({ analytics: true, advertising: false });

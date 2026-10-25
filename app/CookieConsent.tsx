@@ -33,7 +33,7 @@ export default function CookieConsent() {
   const [analytics, setAnalytics] = useState(false);
   const [advertising, setAdvertising] = useState(false);
   const [savedAt, setSavedAt] = useState<string | null>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
   const bannerRef = useRef<HTMLDivElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   const uid = useId();
@@ -126,7 +126,7 @@ export default function CookieConsent() {
     >
       <div className="hsx-cookie__scroll">
         <div className="hsx-cookie__head">
-          <h2 id={titleId} ref={titleRef} tabIndex={-1} className="hsx-cookie__title">Cookies on HireStepX</h2>
+          <div id={titleId} ref={titleRef} tabIndex={-1} className="hsx-cookie__title">Cookies on HireStepX</div>
           {reopened && (
             <Button
               type="button"

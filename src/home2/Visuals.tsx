@@ -44,7 +44,7 @@ export function HeroSurface() {
   const people = [
     { id: "a41f", s: fixed ? 86 : 72, note: fixed ? "Names the metric and the result" : "Names the metric, no result" },
     { id: "c92d", s: 78, note: "Strong trade-offs, thin Result" },
-    { id: "e07b", s: 64, note: "Solid basics, light on ownership" },
+    { id: "e07b", s: 64, note: "Good basics, low ownership" },
     { id: "f19a", s: 59, note: "Clear answers, limited depth" },
   ];
   const rank = [...people].sort((a, b) => b.s - a.s).map((p) => p.id);
@@ -91,7 +91,7 @@ export function HeroSurface() {
       </div>
       <div className="hx-float hx-fl-b hx-ri" style={delay(4)}>
         <span className="hx-who-row">
-          <Avatar id="a41f" />
+          <Avatar id="a41f" /><AnonName id="a41f" />
         </span>
         <span className="hx-num">Rank {rank.indexOf("a41f") + 1} of 4</span>
         <button type="button" className="hx-fakebtn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Unlock to contact"}</button>
@@ -122,6 +122,7 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
       <div className="hx-sd" data-rec={rec}>
         <button type="button" className="hx-rec" aria-pressed={rec} onClick={() => setRec((v) => !v)}><i />{rec ? "Recording" : "Tap to record"} <span className="hx-num">0:42</span></button>
         <div className="hx-wv">{[10, 22, 14, 30, 18, 36, 24, 12, 28, 16, 32, 20, 10, 26, 14, 22].map((h, i) => <b key={i} style={{ height: h, ["--d" as string]: `${i * 60}ms` }} />)}</div>
+        <p className="hx-cap">Q3 of 6: Tell me about a time you made something faster.</p>
       </div>
     );
   }
@@ -140,6 +141,7 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
           <span>{open ? "Employers can find me" : "Hidden from search"}</span>
           <i className={open ? "hx-switch on" : "hx-switch"} />
         </button>
+        <p className="hx-cap">Your name stays hidden until you share it.</p>
       </div>
     );
   }
@@ -149,7 +151,7 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
         <span className="hx-who-row"><Avatar id="a41f" /><span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span></span>
         <button type="button" className="hx-fakebtn" aria-pressed={revealed} onClick={() => setRevealed((v) => !v)}>{revealed ? "Sent" : "Say hello"}</button>
       </div>
-      {revealed && <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p>}
+      {revealed ? <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p> : <p className="hx-cap">Replies show up here.</p>}
     </div>
   );
 }
@@ -176,7 +178,7 @@ export function ReportSurface() {
             <p className="hx-tx hx-tx-lg">
               {fix ? <ins>{FIX}</ins> : <>We made it <mark>a lot</mark> better after the change. <span className="hx-miss">Result missing</span></>}
             </p>
-            <button type="button" className="hx-fix hx-fix-q" aria-pressed={fix} onClick={() => setFix((v) => !v)}>{fix ? "Show my answer" : "See a stronger answer"}</button>
+            <button type="button" className="hx-fix hx-fix-q alt" aria-pressed={fix} onClick={() => setFix((v) => !v)}>{fix ? "Show my answer" : "See a stronger answer"}</button>
             <ul className="hx-bars">
               {skills.map(([n, v, d]) => (
                 <li key={n}><span>{n}</span><div className="hx-bar"><i style={{ width: on ? `${v}%` : 0 }} /></div><b className="hx-num">{v}</b><em>{d}</em></li>
