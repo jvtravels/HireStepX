@@ -293,6 +293,69 @@ function footer(opts: EmailFooterOptions = {}): string {
   </table>`;
 }
 
+/* ─── Dark mode ───
+   Clients that honour prefers-color-scheme (Apple Mail, Outlook.com, Samsung
+   Mail) get this palette. Gmail ignores it and auto-inverts on mobile, so the
+   default wordmark carries a white halo to stay readable there. Selectors key
+   off the inline palette values so handler-level raw colours are covered. */
+const D = {
+  page: "#0E0D12",
+  sheet: "#17161C",
+  raised: "#1F1E26",
+  line: "#2B2A35",
+  lineStrong: "#3A3948",
+  text: "#F4F3F8",
+  body: "#C9C6DD",
+  soft: "#A3A0B3",
+  faint: "#8E8B9D",
+  link: "#A9A5FF",
+  button: "#5B56D6",
+  indigoTint: "#26244A",
+  successTint: "#13291B",
+  warningTint: "#2E2410",
+  errorTint: "#301718",
+  stage: "#221E30",
+  stageGradient: "linear-gradient(135deg,#2E2230 0%,#2A2036 50%,#1F1E3C 100%)",
+} as const;
+
+const bgRule = (hex: string, to: string) =>
+  `[bgcolor="${hex}"], [style*="background:${hex}"], [style*="background-color:${hex}"] { background-color:${to} !important; background-image:none !important; }`;
+const fgRule = (hex: string, to: string) =>
+  `[style*=" color:${hex}"], [style*=";color:${hex}"], [style^="color:${hex}"] { color:${to} !important; }`;
+const edgeRule = (hex: string, to: string) =>
+  `[style*="border:1px solid ${hex}"], [style*="border-top:1px solid ${hex}"], [style*="border-bottom:1px solid ${hex}"] { border-color:${to} !important; }`;
+
+const DARK_CSS = [
+  `body, .hsx-page { background:${D.page} !important; }`,
+  bgRule(C.cream, D.page),
+  bgRule(C.white, D.sheet),
+  bgRule(C.creamSoft, D.raised),
+  bgRule(C.indigo100, D.indigoTint),
+  bgRule(C.success100, D.successTint),
+  bgRule(C.warning100, D.warningTint),
+  bgRule(C.error100, D.errorTint),
+  `[bgcolor="${C.indigo}"], [style*="background:${C.indigo}"] { background-color:${D.button} !important; border-color:${D.button} !important; }`,
+  `[bgcolor="${STAGE_FALLBACK}"], [style*="${STAGE_GRADIENT}"] { background-color:${D.stage} !important; background-image:${D.stageGradient} !important; }`,
+  fgRule(C.coal, D.text),
+  fgRule(C.indigoGray, D.body),
+  fgRule(C.inkSoft, D.soft),
+  fgRule(C.inkFaint, D.faint),
+  fgRule(C.indigo, D.link),
+  fgRule(C.success, "#4ADE80"),
+  fgRule(C.error, "#F87171"),
+  fgRule(C.warning, "#FACC15"),
+  edgeRule(C.line, D.line),
+  edgeRule(C.lineStrong, D.lineStrong),
+  `[style*="border-bottom:2px solid ${C.coal}"] { border-color:${D.text} !important; }`,
+  `[style*="border-radius:99px;background:${C.error}"] { background-color:#F87171 !important; }`,
+  `[style*="border-radius:99px;background:${C.success}"] { background-color:#4ADE80 !important; }`,
+  `td[bgcolor="${C.indigo}"] a { color:#FFFFFF !important; }`,
+  `.hsx-logo-light { display:none !important; }`,
+  `.hsx-logo-dark { display:block !important; }`,
+]
+  .map((r) => `    ${r}`)
+  .join("\n");
+
 /** Hidden preheader text (inbox preview line). */
 function preheader(text: string): string {
   return `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;height:0;width:0;">${text}</div>`;
@@ -313,11 +376,15 @@ export function emailShell(opts: {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="color-scheme" content="light">
-<meta name="supported-color-schemes" content="light">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <style>
   body { margin:0; padding:0; background:${C.cream}; }
   a { color:${C.indigo}; }
+  .hsx-logo-dark { display:none; }
+  @media (prefers-color-scheme: dark) {
+${DARK_CSS}
+  }
   @media (max-width:480px) {
     .hsx-page { padding:16px 12px !important; }
     .hsx-sheet { padding:28px 20px 24px !important; }
@@ -330,7 +397,8 @@ ${preheader(escapeHtml(opts.preview))}
   <tr><td align="center">
     <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="${C.white}" style="max-width:600px;width:100%;background:${C.white};border:1px solid ${C.line};border-radius:12px;">
       <tr><td class="hsx-sheet" style="padding:40px 40px 32px;">
-        <img src="https://hirestepx.com/wordmark.png" alt="HireStepX" height="22" style="display:block;height:22px;width:auto;border:0;outline:none;margin:0 0 32px;" />
+        <img class="hsx-logo-light" src="https://hirestepx.com/wordmark-email.png" alt="HireStepX" height="18" style="display:block;height:18px;width:auto;border:0;outline:none;margin:0 0 32px;" />
+        <!--[if !mso]><!--><img class="hsx-logo-dark" src="https://hirestepx.com/wordmark-email-dark.png" alt="" height="18" style="display:none;height:18px;width:auto;border:0;outline:none;margin:0 0 32px;mso-hide:all;" /><!--<![endif]-->
         ${opts.body}
         ${footer(opts.footer)}
       </td></tr>

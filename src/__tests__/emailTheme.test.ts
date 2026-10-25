@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as theme from "../../server-handlers/_email-theme";
 
@@ -37,7 +37,7 @@ describe("emailShell footer ownership", () => {
 
   it("shows the wordmark image and sender line, not the old favicon header", () => {
     const html = theme.emailShell({ preview: "p", body: "" });
-    expect(html).toContain("https://hirestepx.com/wordmark.png");
+    expect(html).toContain("https://hirestepx.com/wordmark-email.png");
     expect(html).not.toContain("favicon.svg");
     expect(html).toContain("HireStepX &middot; hello@hirestepx.com");
   });
@@ -153,5 +153,20 @@ describe("2.0 building blocks", () => {
       .filter((f) => f.endsWith(".ts"))
       .filter((f) => /accentWord|\bemailTitle\(/.test(readFileSync(join(dir, f), "utf8")));
     expect(offenders).toEqual([]);
+  });
+
+  it("ships a dark palette and a swappable wordmark", () => {
+    const html = theme.emailShell({ preview: "p", body: theme.hero({ title: "T" }) });
+    expect(html).toContain('content="light dark"');
+    expect(html).toContain("@media (prefers-color-scheme: dark)");
+    expect(html).toContain("https://hirestepx.com/wordmark-email-dark.png");
+    expect(html).toContain(".hsx-logo-dark { display:block !important; }");
+    expect(html).toContain(`[bgcolor="${theme.C.white}"]`);
+  });
+
+  it("both wordmark files exist in public/", () => {
+    for (const f of ["wordmark-email.png", "wordmark-email-dark.png"]) {
+      expect(existsSync(join(__dirname, "../../public", f))).toBe(true);
+    }
   });
 });
