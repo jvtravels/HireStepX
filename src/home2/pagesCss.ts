@@ -895,7 +895,8 @@ export const pagesCss = `
 
 /* ── Talent page: one rhythm ──
    Sections 96 (64 mobile), header to body 48 (32), left-aligned heads, 40px h2, fixed-height visuals. */
-.cxp .cx-hero { padding: 64px 0 96px; }
+.cxp .cx-hero { padding: 64px 0; min-height: calc(100svh - 65px); display: flex; align-items: center; box-sizing: border-box; }
+.cxp .cx-hero-in { width: 100%; }
 .cxp .cx-hero-in { grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: 64px; align-items: center; }
 .cxp .cx-copy .hx-kicker { display: block; }
 .cxp .cx-h1 { margin: 16px 0 0; font-size: 48px; line-height: 1.08; max-width: none; }
@@ -947,7 +948,7 @@ export const pagesCss = `
 .cxp .pf-card .pf-lock { margin-top: 16px; }
 
 @container (max-width: 900px) {
-  .cxp .cx-hero { padding: 32px 0 64px; }
+  .cxp .cx-hero { padding: 32px 0 64px; min-height: 0; display: block; }
   .cxp .cx-hero-in { grid-template-columns: minmax(0, 1fr); gap: 40px; }
   .cxp .cx-h1 { font-size: 36px; max-width: none; }
   .cxp .cx-lede { margin-top: 16px; font-size: 16px; }
