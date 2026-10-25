@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import Skel from "./Skel";
-import { BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, X, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
 import { Arrow, Close, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
@@ -250,14 +250,65 @@ function Sec({ id, band, kicker, title, lede, children }: { id?: string; band?: 
   );
 }
 
+function HowPanel({ i, on }: { i: number; on: boolean }) {
+  if (i === 0) return (
+    <div className={`hi-p${on ? " on" : ""}`} aria-hidden={!on}>
+      <p className="hi-q">Tell me about a time you improved something.</p>
+      <div className="hi-wave" aria-hidden="true">{[8, 16, 11, 24, 14, 28, 10, 20, 26, 12, 22, 9, 18, 13, 25, 11, 17, 8].map((h, k) => <i key={k} style={{ height: h, ["--d" as string]: `${k * 60}ms` }} />)}</div>
+      <p className="hi-hint"><Mic size={16} strokeWidth={1.75} aria-hidden="true" />Listening to your answer</p>
+    </div>
+  );
+  if (i === 1) return (
+    <div className={`hi-p${on ? " on" : ""}`} aria-hidden={!on}>
+      <div className="hi-sc">
+        <div><small>First try</small><b>64</b></div>
+        <ArrowRight size={22} strokeWidth={1.75} aria-hidden="true" />
+        <div><small>Second try</small><b className="up">86</b></div>
+      </div>
+      <ul className="hi-tips">
+        <li><Check size={16} strokeWidth={2.25} aria-hidden="true" />Say what changed, with a number.</li>
+        <li><Check size={16} strokeWidth={2.25} aria-hidden="true" />Cut filler words like "um" and "like".</li>
+      </ul>
+    </div>
+  );
+  return (
+    <div className={`hi-p${on ? " on" : ""}`} aria-hidden={!on}>
+      <p className="hi-q">Who can see what</p>
+      <ul className="hi-vis">
+        <li><span>Your verified skills</span><em className="on">Recruiters can see</em></li>
+        <li><span>Your name and contact</span><em>Hidden until you say yes</em></li>
+      </ul>
+      <p className="hi-hint"><Lock size={16} strokeWidth={1.75} aria-hidden="true" />You decide, every time.</p>
+    </div>
+  );
+}
+
 function HowItWorks() {
+  const { ref, on } = useReveal<HTMLDivElement>();
+  const [cur, setCur] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const play = on && auto && !reduced();
   return (
     <Sec id="how" kicker="How it works" title={<>Practise, improve, <b>get shortlisted</b>.</>}>
-      <ol className="cx-steps">
-        {HOW.map((x, i) => (
-          <li key={x.t}><span className="cx-n" aria-hidden="true">{i + 1}</span><h3>{x.t}</h3><p>{x.d}</p></li>
-        ))}
-      </ol>
+      <div className="hi" ref={ref}>
+        <div className="hi-tabs" role="tablist" aria-label="How HireStepX works">
+          {HOW.map((x, i) => (
+            <button key={x.t} type="button" role="tab" id={`hi-t${i}`} aria-selected={cur === i} aria-controls="hi-panel" tabIndex={cur === i ? 0 : -1} className={`hi-tab${cur === i ? " on" : ""}`} onClick={() => { setAuto(false); setCur(i); }}>
+              <span className="hi-num" aria-hidden="true">{i + 1}</span>
+              <b>{x.t}</b>
+              <span className="hi-d">{x.d}</span>
+              <i className="hi-bar" aria-hidden="true">{cur === i && <u className={play ? "run" : "full"} onAnimationEnd={() => setCur((v) => (v + 1) % HOW.length)} />}</i>
+            </button>
+          ))}
+        </div>
+        <Skel className="hi-stage hx-stage-warm">
+          <div id="hi-panel" role="tabpanel" aria-labelledby={`hi-t${cur}`}>
+            <Win left={["Sample round", "Your score", "Your privacy"][cur]} alt={undefined}>
+              <div className="hi-stack">{HOW.map((_, i) => <HowPanel key={i} i={i} on={cur === i} />)}</div>
+            </Win>
+          </div>
+        </Skel>
+      </div>
     </Sec>
   );
 }
