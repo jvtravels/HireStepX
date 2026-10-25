@@ -781,23 +781,23 @@ function EmpPricing() {
           <div className="pc-r hx-ri" style={delay(2)}>
             <Skel className="pg-stage pc-stage">
               <Win left="Candidate profile" alt="A candidate profile with scores open and name and contact locked">
-                <div className="pf">
-                  <div className="pf-head">
+                <div className="ep">
+                  <div className="ep-head">
                     <Av id="a41f" size={72} />
-                    <div className="pf-id">
-                      {open ? <b>Priya S.</b> : <span className="pf-lock"><Lock />Name</span>}
+                    <div className="ep-id">
+                      {open ? <b>Priya S.</b> : <span className="ep-lock"><Lock />Name</span>}
                       <span>Backend Engineer, Bengaluru</span>
                     </div>
-                    <span className="pf-ready"><small>Readiness</small><b>Hire</b></span>
+                    <span className="ep-ready"><small>Readiness</small><b>Hire</b></span>
                   </div>
-                  <div className={`pf-contact${open ? " open" : ""}`}>{open ? <>Phone, email</> : <><Lock />Phone and email</>}</div>
+                  <div className={`ep-contact${open ? " open" : ""}`}>{open ? <>Phone, email</> : <><Lock />Phone and email</>}</div>
                   <h4>Skill scores</h4>
                   <ul className="fl-open">
                     {OPEN_SKILLS.map(([s, v]) => (
                       <li key={s}><span>{s}</span><i style={{ ["--w" as string]: `${v}%` }} /><ScoreChip score={v} /></li>
                     ))}
                   </ul>
-                  <dl className="pf-facts">
+                  <dl className="ep-facts">
                     <div><dt>Practice sessions</dt><dd>12</dd></div>
                     <div><dt>Resume and answers</dt><dd>Open</dd></div>
                   </dl>
