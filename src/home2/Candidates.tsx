@@ -106,27 +106,31 @@ function CandHero() {
 
 /* ── The rewrite: one answer, four passes ── */
 
-type Fix = { title: string; body: string; score: number; lit: string[] };
-const BASE: Fix = { title: "Your first answer", body: "It says what you did, but not why it mattered.", score: 58, lit: ["A"] };
+type Fix = { title: string; body: string; gain: number; letter: string };
+const BASE_SCORE = 58;
 const FIXES: Fix[] = [
-  { title: "Tell them why it mattered", body: "Add one line on the problem. Interviewers can't score a problem they never heard about.", score: 70, lit: ["S", "A"] },
-  { title: "Say \"I\", not \"we\"", body: "What you personally did is what they write down.", score: 81, lit: ["S", "T", "A"] },
-  { title: "End on a number", body: "A result with a figure sticks in their memory. Say it, then stop talking.", score: 91, lit: ["S", "T", "A", "R"] },
+  { title: "Tell them why it mattered", body: "Add one line on the problem. Interviewers can't score a problem they never heard about.", gain: 12, letter: "S" },
+  { title: "Say \"I\", not \"we\"", body: "What you personally did is what they write down.", gain: 11, letter: "T" },
+  { title: "End on a number", body: "A result with a figure sticks in their memory. Say it, then stop talking.", gain: 10, letter: "R" },
 ];
 
 const FULL_ANSWER = "Customers waited two days for a reply and our rating had dropped to 3.8. I set up saved replies and sorted tickets by urgency each morning. Replies now take 6 hours instead of 48, and our rating rose to 4.5.";
 
 function RewriteStory() {
-  const [n, setN] = useState(0);
+  const [applied, setApplied] = useState<boolean[]>(() => FIXES.map(() => false));
   const [touched, setTouched] = useState(false);
   const { ref, on } = useReveal<HTMLDivElement>();
+  const n = applied.filter(Boolean).length;
   useEffect(() => {
-    if (!on || touched || reduced() || n >= FIXES.length) return;
-    const id = setTimeout(() => setN((v) => v + 1), n === 0 ? 1600 : 2200);
+    if (!on || touched || reduced()) return;
+    const next = applied.indexOf(false);
+    if (next === -1) return;
+    const id = setTimeout(() => setApplied((a) => a.map((v, k) => v || k === next)), n === 0 ? 1600 : 2200);
     return () => clearTimeout(id);
-  }, [on, touched, n]);
-  const pick = (k: number) => { setTouched(true); setN(n === k + 1 ? k : k + 1); };
-  const P = n === 0 ? BASE : FIXES[n - 1];
+  }, [on, touched, applied, n]);
+  const pick = (k: number) => { setTouched(true); setApplied((a) => a.map((v, j) => (j === k ? !v : v))); };
+  const score = BASE_SCORE + FIXES.reduce((t, f, k) => t + (applied[k] ? f.gain : 0), 0);
+  const lit = ["A", ...FIXES.filter((_, k) => applied[k]).map((f) => f.letter)];
   return (
     <section className="pg-sec ia" id="rewrite">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
@@ -138,38 +142,38 @@ function RewriteStory() {
                 <p className="ia-q">Tell me about a time you improved something.</p>
                 <div className="ia-a">
                   <p aria-live="polite">
-                    {n >= 1 && <mark className="cd-add">Customers waited two days for a reply and our rating had dropped to 3.8. </mark>}
-                    {n >= 2 ? <mark className="cd-add">I set up saved replies and sorted tickets by urgency each morning.</mark> : "I worked on our support team and made replies faster."}
-                    {n >= 3 && <mark className="cd-add"> Replies now take 6 hours instead of 48, and our rating rose to 4.5.</mark>}
+                    {applied[0] && <mark className="cd-add">Customers waited two days for a reply and our rating had dropped to 3.8. </mark>}
+                    {applied[1] ? <mark className="cd-add">I set up saved replies and sorted tickets by urgency each morning.</mark> : "I worked on our support team and made replies faster."}
+                    {applied[2] && <mark className="cd-add"> Replies now take 6 hours instead of 48, and our rating rose to 4.5.</mark>}
                   </p>
                   <p className="ia-sz" aria-hidden="true">{FULL_ANSWER}</p>
                 </div>
                 <div className="ia-foot">
                   <ul className="cd-star" aria-label="Which parts your answer has">
-                    {[["S", "The problem"], ["T", "Your job"], ["A", "What you did"], ["R", "The result"]].map(([l, w]) => <li key={l} className={P.lit.includes(l) ? undefined : "miss"}>{w}</li>)}
+                    {[["S", "The problem"], ["T", "Your job"], ["A", "What you did"], ["R", "The result"]].map(([l, w]) => <li key={l} className={lit.includes(l) ? undefined : "miss"}>{w}</li>)}
                   </ul>
-                  <div className="ia-score"><b key={P.score}>{P.score}</b><span>out of 100</span></div>
+                  <div className="ia-score"><b key={score}>{score}</b><span>out of 100</span></div>
                 </div>
-                <div className="ia-meter" aria-hidden="true"><i style={{ width: `${P.score}%` }} /></div>
+                <div className="ia-meter" aria-hidden="true"><i style={{ width: `${score}%` }} /></div>
               </div>
             </Win>
           </Skel>
           <div className="ia-fixes">
             <ol>
               {FIXES.map((f, k) => {
-                const done = n > k;
+                const done = applied[k];
                 return (
                   <li key={f.title}>
                     <button type="button" className={`ia-fix${done ? " done" : ""}`} aria-pressed={done} onClick={() => pick(k)}>
                       <span className="ia-n" aria-hidden="true">{done ? <Check size={16} strokeWidth={2.5} /> : k + 1}</span>
                       <span className="ia-t"><b>{f.title}</b><span>{f.body}</span></span>
-                      <em>+{f.score - (k === 0 ? BASE.score : FIXES[k - 1].score)} points</em>
+                      <em>+{f.gain} points</em>
                     </button>
                   </li>
                 );
               })}
             </ol>
-            <button type="button" className={`ia-reset${n === 0 ? " off" : ""}`} disabled={n === 0} onClick={() => { setTouched(true); setN(0); }}>Start over</button>
+            <button type="button" className={`ia-reset${n === 0 ? " off" : ""}`} disabled={n === 0} onClick={() => { setTouched(true); setApplied(FIXES.map(() => false)); }}>Start over</button>
           </div>
         </div>
       </div>
