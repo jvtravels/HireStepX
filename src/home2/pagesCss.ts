@@ -1078,8 +1078,8 @@ export const pagesCss = `
 .pc-ctl .hx-fakebtn, .hx-pv-opt { min-height: 44px; }
 .pc-l p a, .hx-foot-rights a { display: inline-block; padding: 12px 0; margin: -12px 0; }
 /* Talent hero: centred headline over a wide practice stage (matches the employers hero) */
-.cxp .cx-hero { min-height: 0; display: block; padding: 48px 0 96px; }
-.cxp .cx-hero-in { display: flex; flex-direction: column; align-items: center; gap: 40px; }
+.cxp .cx-hero { min-height: calc(100svh - 65px); display: flex; align-items: center; box-sizing: border-box; padding: 48px 0; }
+.cxp .cx-hero-in { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 40px; }
 .cxp .cx-copy { max-width: 760px; text-align: center; }
 .cxp .cx-h1 { font-size: 48px; line-height: 1.08; text-wrap: balance; }
 .cxp .cx-lede { margin: 16px auto 0; max-width: 52ch; }
@@ -1093,7 +1093,7 @@ export const pagesCss = `
 .cxp .cx-demo .pd-ans { grid-area: ans; }
 .cxp .cx-demo .pd-res { grid-area: res; align-content: center; padding: 28px; border-radius: 12px; background: var(--white); gap: 20px; }
 @container (max-width: 900px) {
-  .cxp .cx-hero { padding: 32px 0 64px; }
+  .cxp .cx-hero { padding: 32px 0 64px; min-height: 0; display: block; }
   .cxp .cx-hero-in { gap: 32px; }
   .cxp .cx-h1 { font-size: 36px; }
   .cxp .cx-lede { margin-top: 16px; }
