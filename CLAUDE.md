@@ -230,6 +230,20 @@ batch lifts the measured numbers.
   marked `_fallback: "static"`. PostHog events `gq_cache_hit` and
   `gq_static_fallback` track each path.
 
+## HireStepX 2.0 go-live: About stays on staging
+
+The 2.0 marketing pages (`src/home2/*`, `app/(marketing)/*-next`) are served on
+`staging.hirestepx.com` only, via host-gated rewrites in `next.config.js`.
+**The 2.0 About page (`about-next`) is NOT going to production** until the owner
+says it is finished (placeholder names still need replacing). When the other
+2.0 pages go live:
+
+- Keep the staging-only `/about` rewrite to `/about-next` and its `/about-next`
+  redirect for other hosts. Production keeps serving the existing `/about`.
+- Do not repoint production links (nav, footer, close sections) at the 2.0
+  About page, and leave the sitemap's `/about` entry as it is.
+- Remove this section once About is approved for production.
+
 ## Deploy
 
 ```sh
