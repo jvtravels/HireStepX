@@ -59,7 +59,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${baseUrl}/bank-po-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${baseUrl}/mba-personal-interview-preparation`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
     { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
-    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
     { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     { url: `${baseUrl}/login`, lastModified: now, changeFrequency: "yearly", priority: 0.4 },

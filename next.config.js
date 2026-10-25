@@ -143,6 +143,12 @@ const nextConfig = {
         permanent: false,
       },
       {
+        source: "/about",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
         source: "/about-next",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/about",
