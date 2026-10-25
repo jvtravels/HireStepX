@@ -961,4 +961,5 @@ export const pagesCss = `
 .pd-checks .no svg { background: #fbe3dc; color: #a2321f; }
 @media (prefers-reduced-motion: reduce) { .pd-panel, .pd-tab { transition: none; } }
 @container (max-width: 900px) { .pd-q p { font-size: 17px; } .pd-tab { font-size: 14px; padding: 0 6px; gap: 6px; } }
+.cxp .pf { padding: 0; }
 `;
