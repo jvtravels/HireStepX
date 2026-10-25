@@ -1,67 +1,83 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import Skel from "./Skel";
-import { BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, type LucideIcon } from "lucide-react";
+import { BriefcaseBusiness, Check, FileText, Lock, ShieldCheck, X, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
 import { Arrow, Close, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
 
-/* ── Hero: a live voice round ── */
+/* ── Hero: a practice round, before and after ── */
 
-const VR_Q = "Tell me about a time you improved something.";
-const VR_BEFORE = "I worked on checkout. It was, *um,* slow, so I *basically* changed how we loaded the payment step and it felt, *like,* a lot better after.".split(" ");
-const VR_AFTER = "Checkout was losing one in five buyers on slow phones. I moved the payment step to load on demand, and load time fell from 3.4s to 1.9s.".split(" ");
+type Take = { tab: string; score: number; answer: ReactNode; checks: { ok: boolean; text: string }[] };
+const Fill = ({ children }: { children: string }) => <span className="pd-fill">{children}</span>;
+const TAKES: Take[] = [
+  {
+    tab: "Your first try",
+    score: 64,
+    answer: <>I worked on checkout. It was, <Fill>um,</Fill> slow, so I <Fill>basically</Fill> changed how we loaded the payment step and it felt, <Fill>like,</Fill> a lot better after.</>,
+    checks: [
+      { ok: true, text: "Picked a clear example" },
+      { ok: false, text: "3 filler words: um, basically, like" },
+      { ok: false, text: "No numbers to show the result" },
+    ],
+  },
+  {
+    tab: "After the tips",
+    score: 86,
+    answer: <>Checkout was losing one in five buyers on slow phones. I moved the payment step to load on demand, and load time fell from <mark className="cd-add">3.4s</mark> to <mark className="cd-add">1.9s</mark>.</>,
+    checks: [
+      { ok: true, text: "Picked a clear example" },
+      { ok: true, text: "No filler words" },
+      { ok: true, text: "Result shown with numbers" },
+    ],
+  },
+];
 
-const plain = (a: string[]) => a.join(" ").replace(/\*/g, "");
-
-function VoiceRound() {
-  const [fixed, setFixed] = useState(false);
-  const [w, setW] = useState(0);
-  const words = fixed ? VR_AFTER : VR_BEFORE;
-  const done = w >= words.length;
+function PracticeDemo() {
+  const [i, setI] = useState(0);
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
-    if (reduced()) { setW(words.length); return; }
-    setW(0);
-    let i = 0;
-    const id = setInterval(() => {
-      i += 1;
-      setW(i);
-      if (i >= words.length) clearInterval(id);
-    }, 130);
-    return () => clearInterval(id);
-  }, [words]);
+    if (touched || reduced()) return;
+    const id = setTimeout(() => setI(1), 4200);
+    return () => clearTimeout(id);
+  }, [touched]);
 
-  const fillers = words.slice(0, w).filter((x) => x.startsWith("*")).length;
-  const score = fixed ? 86 : 64;
+  const pick = (n: number) => { setTouched(true); setI(n); };
   return (
-    <div className="vo">
-      <div className="vo-q"><span className="hx-kicker">Interview question</span><p>{VR_Q}</p></div>
-      <div className={`vo-orb${done ? " done" : ""}${fixed ? " ok" : ""}`}>
-        <svg viewBox="0 0 176 176" aria-hidden="true">
-          <circle className="vo-track" cx="88" cy="88" r="76" />
-          <circle className="vo-arc" cx="88" cy="88" r="76" style={{ strokeDashoffset: 477.5 * (1 - (done ? score / 100 : 0)) }} />
-        </svg>
-        <i className="vo-ripple" /><i className="vo-ripple" style={{ animationDelay: "1s" }} />
-        <div className="vo-core">
-          {done
-            ? <><b>{score}</b><span>out of 100</span></>
-            : <><Mic size={26} strokeWidth={1.75} aria-hidden="true" /><span>Listening</span></>}
-        </div>
+    <div className="pd">
+      <div className="pd-q">
+        <span className="pd-lab">The interviewer asks</span>
+        <p>Tell me about a time you improved something.</p>
       </div>
-      <div className="vo-capw">
-        <p className="vo-cap" aria-live="polite" key={String(fixed)}>
-          {words.slice(0, w).map((x, i) => x.startsWith("*")
-            ? <span key={i} className="vo-fill">{x.replace(/\*/g, "")} </span>
-            : fixed && /\d/.test(x) ? <mark key={i} className="cd-add">{x} </mark> : <span key={i}>{x} </span>)}
-          {!done && <span className="hc-caret" />}
-        </p>
-        <span className="vo-cap vo-sz" aria-hidden="true">{plain(VR_BEFORE)}</span>
-        <span className="vo-cap vo-sz" aria-hidden="true">{plain(VR_AFTER)}</span>
+      <div className="pd-tabs" role="tablist" aria-label="Compare two answers">
+        {TAKES.map((t, n) => (
+          <button key={t.tab} type="button" role="tab" id={`pd-t${n}`} aria-selected={i === n} aria-controls={`pd-p${n}`} className={`pd-tab${i === n ? " on" : ""}`} onClick={() => pick(n)}>
+            {t.tab}<b>{t.score}</b>
+          </button>
+        ))}
       </div>
-      <div className="vo-row">
-        <span className={`vo-chip${fillers ? " warn" : ""}`}>{fillers} filler {fillers === 1 ? "word" : "words"}</span>
-        <button type="button" className={`hc-chip${done ? "" : " vo-hide"}`} onClick={() => setFixed(!fixed)}>{fixed ? "Play it again" : "Hear a stronger version"}</button>
+      <div className="pd-panels">
+        {TAKES.map((t, n) => (
+          <div key={t.tab} role="tabpanel" id={`pd-p${n}`} aria-labelledby={`pd-t${n}`} aria-hidden={i !== n} className={`pd-panel${i === n ? " on" : ""}`}>
+            <div className="pd-ans">
+              <span className="pd-lab">You said</span>
+              <p>{t.answer}</p>
+            </div>
+            <div className="pd-score">
+              <div className="pd-num"><b>{t.score}</b><span>out of 100</span></div>
+              <div className="pd-bar"><i style={{ width: `${t.score}%` }} /></div>
+            </div>
+            <ul className="pd-checks">
+              {t.checks.map((c) => (
+                <li key={c.text} className={c.ok ? "ok" : "no"}>
+                  {c.ok ? <Check size={16} strokeWidth={2.5} aria-label="Good" /> : <X size={16} strokeWidth={2.5} aria-label="Needs work" />}
+                  {c.text}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -82,7 +98,7 @@ function CandHero() {
           </div>
           <p className="cx-fine hx-ri" style={delay(4)}>2 free sessions, then ₹9 a session. No card needed.</p>
         </div>
-        <Skel className="hx-stage cx-demo" style={delay(2)}><VoiceRound /></Skel>
+        <Skel className="hx-stage cx-demo" style={delay(2)}><PracticeDemo /></Skel>
       </div>
     </section>
   );
