@@ -890,7 +890,8 @@ export const pagesCss = `
 .cxp .cx-head p { margin: 16px auto 0; max-width: 48ch; font-size: 18px; line-height: 1.5; color: var(--ink-2); }
 .cxp .hx-tr-l .hx-h2 { font-size: 40px; margin-top: 16px; }
 .cxp .hx-tr { gap: 64px; }
-.cxp .hx-faq { min-height: 560px; }
+.cxp .hx-faq { min-height: 620px; }
+.cxp .hx-priv-stage { min-height: 430px; }
 .cxp .cx-close .hx-closing { padding: 0 0 96px; }
 .cxp .cx-close .hx-end .hx-h2 { font-size: 40px; }
 
@@ -928,6 +929,7 @@ export const pagesCss = `
   .cxp .cx-head p { font-size: 16px; }
   .cxp .hx-tr { gap: 32px; }
   .cxp .hx-faq { min-height: 0; }
+  .cxp .hx-priv-stage { min-height: 430px; }
   .cxp .cx-close .hx-closing { padding-bottom: 64px; }
   .cx-steps { grid-template-columns: minmax(0, 1fr); gap: 32px; }
 }
