@@ -90,7 +90,7 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage: (i: number) => React.ReactNode }) {
+export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
@@ -102,7 +102,7 @@ export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.R
           <div className="hx-tr-l">
             <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
             <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
-            <Skel replayKey={shown}>{stage(shown)}</Skel>
+            {stage && <Skel replayKey={shown}>{stage(shown)}</Skel>}
           </div>
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
             {qa.map(([q, a], i) => (
@@ -227,36 +227,6 @@ const CAND_QA: [string, string][] = [
   QA[4],
 ];
 
-const SAMPLE_Q: [string, string[]][] = [
-  ["Backend Engineer", ["How would you design a rate limiter?", "Tell me about a time you made something faster.", "How do you debug a slow query?"]],
-  ["Product Analyst", ["How would you size the market for a new feature?", "A metric dropped 8% overnight. What do you check first?", "Tell me about a time data changed your mind."]],
-  ["Sales Executive", ["Sell me this pen.", "Tell me about a deal you almost lost.", "How do you handle a client who says it costs too much?"]],
-];
-
-function CandStage({ i }: { i: number }) {
-  const [role, setRole] = useState(0);
-  if (i !== 1) return <PrivStage i={i === 0 ? 0 : i === 2 ? 1 : i - 1} />;
-  return (
-    <div className="hx-priv-stage" aria-live="polite">
-      <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[1][0]}</span></div>
-      <div className="hx-priv-body" key={role}>
-        <div className="hx-priv-card">
-          <p className="hx-mini-cap">Pick a role</p>
-          <div className="hx-pv-row" style={{ flexWrap: "wrap", justifyContent: "flex-start" }}>
-            {SAMPLE_Q.map(([r], k) => (
-              <button key={r} type="button" className="hx-pv-opt" aria-pressed={role === k} onClick={() => setRole(k)}>{r}</button>
-            ))}
-          </div>
-          <ol className="hx-pv-steps">
-            {SAMPLE_Q[role][1].map((q) => <li key={q}><span>{q}</span></li>)}
-          </ol>
-          <p className="hx-pv-note">Samples. Yours are written from your resume.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function CandFaq() {
-  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={CAND_QA} stage={(i) => <CandStage i={i} />} />;
+  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={CAND_QA} />;
 }
