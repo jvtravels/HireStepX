@@ -77,7 +77,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
         </nav>
         <div className="hx-nav-cta">
           <Link data-no-underline className="hx-ghost" href="/login">Log in</Link>
-          <Link data-no-underline className="hx-btn sm" href="/signup">Practise free</Link>
+          <Link data-no-underline className="hx-btn sm" href="/signup">Start practising <Arrow /></Link>
         </div>
         <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
           <svg className={open ? "hx-bsvg on" : "hx-bsvg"} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -96,7 +96,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
           </nav>
           <div className="hx-menu-cta">
             <Link data-no-underline className="hx-btn alt" href="/login">Log in</Link>
-            <Link data-no-underline className="hx-btn" href="/signup">Practise free</Link>
+            <Link data-no-underline className="hx-btn" href="/signup">Start practising <Arrow /></Link>
           </div>
         </div>
       )}
@@ -113,8 +113,8 @@ export function Hero() {
         <h1 className="hx-h1">Prepare to be <b>hired</b>.<br />Hire the <b>prepared</b>.</h1>
         <p className="hx-lede">Practise a mock interview and get scored on every answer. Employers read the answers behind the score.</p>
         <div className="hx-cta">
-          <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-          <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
+          <a data-no-underline className="hx-btn lg" href="/signup">Start practising <Arrow /></a>
+          <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof <Arrow /></a>
         </div>
         <div className="hx-tiltwrap">
           <div ref={tilt} data-sk="pending" className="hx-stage hx-stage-hero hx-tilt">
@@ -182,7 +182,7 @@ export function Candidates() {
             <h2 className="hx-h2">The report points at the sentence that <b>cost you</b>.</h2>
           </div>
           <div className="hx-head-cta">
-            <a data-no-underline className="hx-btn" href="/signup">Practise free <Arrow /></a>          </div>
+            <a data-no-underline className="hx-btn" href="/signup">Start practising <Arrow /></a>          </div>
         </div>
         <div ref={depth} data-sk="pending" className="hx-stage hx-stage-cool hx-stage-crop hx-depth"><ReportSurface /></div>
       </div>
@@ -220,8 +220,8 @@ export function Closing() {
           <h2 className="hx-h2">Start with <b>one answer</b>.</h2>
           <p>Practise out loud, see exactly what to fix, and let employers find the proof.</p>
           <div className="hx-cta">
-            <a data-no-underline className="hx-btn lg" href="/signup">Practise free <Arrow /></a>
-            <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
+            <a data-no-underline className="hx-btn lg" href="/signup">Start practising <Arrow /></a>
+            <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof <Arrow /></a>
           </div>
           <ul className="hx-endnote">
             <li>2 free sessions</li>
