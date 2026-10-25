@@ -24,7 +24,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
 import { resolveActiveResumeVersionId } from "./_resume-versioning";
 import { captureServerEvent, distinctIdFrom } from "./_posthog";
 import { kickoffEagerGrade, resolveBaseUrl } from "./_eager-grade";
-import { emailShell, title, para, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, actions, para, button, note, nameSuffix, firstNameOf } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { groundNoCounterSkillScores, groundGapClosureSkillScores } from "../src/sessionReport/progressTracking";
 import { computeStreakReward } from "./_streak-reward";
@@ -312,8 +312,6 @@ async function sendSessionReportEmail(
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(userEmail)) return;
 
   const reportUrl = `${APP_URL}/session/${sessionId}`;
-  const greeting = escapeHtml(userName || "there");
-  const typeLabel = escapeHtml(interviewType || "interview");
 
   try {
     const ac = new AbortController();
@@ -331,17 +329,18 @@ async function sendSessionReportEmail(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [userEmail],
-        subject: "Your HireStepX interview report is ready 🎯",
+        subject: "Your HireStepX interview report is ready",
         html: emailShell({
-          preview: `Your ${typeLabel} report is ready. Tap to see your score and feedback.`,
+          preview: "Your score and feedback are ready.",
           body:
-            title("Your report is", { accentWord: "ready." }) +
-            para(`Hi ${greeting}, your ${typeLabel} session has been graded. Your AI feedback, STAR breakdown, and skill scores are waiting for you.`) +
-            button("View my report", reportUrl) +
-            para(
-              "If you didn't take this interview or have questions, reply to this email and we'll help.",
-              { small: true, muted: true },
-            ),
+            hero({
+              tone: "success",
+              eyebrow: "Interview report",
+              title: `Your report is ready${nameSuffix(userName)}`,
+              lede: "See your score, a STAR breakdown and a coached model answer.",
+            }) +
+            button("View report", reportUrl) +
+            note("If you didn't take this interview or have questions, reply to this email and we'll help."),
         }),
       }),
     });
@@ -371,7 +370,6 @@ async function sendFirstSessionCompletedEmail(
   if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
   const parts = await marketingEmailParts(userId, "marketing");
 
-  const greeting = escapeHtml(userName || "there");
   const reportUrl = `${APP_URL}/session/${sessionId}`;
   const nextUrl = `${APP_URL}/session/new`;
 
@@ -393,17 +391,18 @@ async function sendFirstSessionCompletedEmail(
         ...parts.resend,
         html: emailShell({
           footer: parts.footer,
-          preview: "First session done. One more free session left — make it count.",
+          preview: "You have 1 free session left.",
           body:
-            title("First session", { accentWord: "done." }) +
-            para(`Hi ${greeting}, your report is ready — scores, STAR breakdown, and the exact phrases that'll sharpen your next attempt.`) +
-            para(`You have <strong>1 free session left</strong>. Use it on your hardest target company or a round you've been avoiding.`) +
-            button("View report", reportUrl) +
-            button("Start session 2", nextUrl) +
-            para(
-              "After your second session you can upgrade to keep practicing — ₹9 per session or ₹39 for 5 sessions (Sprint Pack).",
-              { small: true, muted: true },
-            ),
+            hero({
+              tone: "success",
+              eyebrow: "First session complete",
+              title: `Great start${nameSuffix(userName)}`,
+              lede: "You've finished your first session and you have 1 free session left. Want to keep the momentum going?",
+            }) +
+            actions([
+              { label: "Start session 2", href: nextUrl },
+              { label: "View report", href: reportUrl, ghost: true },
+            ]),
         }),
       }),
     });
@@ -427,7 +426,7 @@ async function sendFreeLimitReachedEmail(
   if (await isSuppressed(preferenceDepsFromEnv(), userId, "marketing")) return;
   const parts = await marketingEmailParts(userId, "marketing");
 
-  const greeting = escapeHtml(userName || "there");
+  const greeting = firstNameOf(userName);
   const reportUrl = `${APP_URL}/session/${sessionId}`;
   const upgradeUrl = `${APP_URL}/dashboard?upgrade=1`;
 
@@ -451,15 +450,16 @@ async function sendFreeLimitReachedEmail(
           footer: parts.footer,
           preview: "Both free sessions used. Upgrade to keep practicing before your interview.",
           body:
-            title("Both free sessions", { accentWord: "done." }) +
+            hero({
+              tone: "success",
+              eyebrow: "Free sessions complete",
+              title: "Both free sessions done",
+            }) +
             para(`Hi ${greeting}, you've completed both of your free mock interviews. Your report is ready — you've already built muscle memory that candidates who don't practice at all don't have.`) +
             para(`To keep going, get the Sprint Pack (₹39 · 5 sessions) or grab a single session for ₹9. No subscription required.`) +
             button("View report", reportUrl) +
             button("Upgrade to keep practicing", upgradeUrl) +
-            para(
-              "Questions? Reply to this email and we'll help you choose the right plan.",
-              { small: true, muted: true },
-            ),
+            note("Questions? Reply to this email and we'll help you choose the right plan."),
         }),
       }),
     });

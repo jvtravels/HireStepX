@@ -9,7 +9,7 @@ import { escapeHtml } from "./_shared";
 import { handleEmployerUnlockWebhook } from "./_employer-unlock-webhook";
 import { alertUnlockProblem } from "./_unlock-fulfillment";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, title, para, b, button, dataCard, hero, note, data } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
 import { notify } from "./_notify";
@@ -479,7 +479,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   preview: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
                   body:
                     title("Renewed,", { accentWord: "nothing to do." }) +
-                    para(`Hi ${safeName}, your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Keep practising, your unlimited sessions roll right on.`) +
+                    para(`Hi ${safeName}, your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Keep practising, your sessions carry straight on.`) +
                     button("Continue practising", `${APP_URL}/dashboard`),
                 }),
               }),
@@ -514,7 +514,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
         const profileRows = await profileRes.json();
         const profileEmail = Array.isArray(profileRows) && profileRows[0]?.email;
-        const profileName = Array.isArray(profileRows) && profileRows[0]?.name;
         const previousTier: string = (Array.isArray(profileRows) && profileRows[0]?.subscription_tier) || "starter";
 
         const haltRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(userId)}`, {
@@ -533,12 +532,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Send payment-failed notification email (best-effort, non-blocking)
         if (RESEND_API_KEY && profileEmail) {
-          const safeName = escapeHtml(profileName || "there");
           const lostRows: [string, string][] = [
-            ["5 sessions per Sprint Pack", "Removed"],
-            ["All question types", "Removed"],
-            ["Detailed feedback", "Removed"],
-            ["Resume analysis", "Removed"],
+            ["5 sessions per Sprint Pack", "Paused"],
+            ["All question types", "Paused"],
+            ["Detailed feedback", "Paused"],
+            ["Resume analysis", "Paused"],
           ];
 
           try {
@@ -556,13 +554,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: "Update your payment method to restore your plan.",
                   body:
-                    title("We couldn't", { accentWord: "renew." }) +
-                    para(`Hi ${safeName}, your recent payment attempt was unsuccessful, so your subscription has been moved to the ${b("free tier")} for now. Your previous ${b(previousTier)} plan benefits have been paused. Your data and history are safe.`) +
-                    dataCard("Features paused", lostRows, { tone: "error" }) +
+                    hero({
+                      tone: "error",
+                      eyebrow: "Payment failed",
+                      title: "We couldn't process your payment",
+                      lede: "Your plan is paused and you're on the free tier for now. Your data and history are safe.",
+                    }) +
+                    dataCard("Features paused", lostRows) +
                     button("Update payment method", `${APP_URL}/dashboard?tab=settings`) +
-                    para(
-                      `We'll restore everything as soon as your payment goes through. If you believe this is an error, contact us at ${`<a href="mailto:support@hirestepx.com" style="color:#312E81;text-decoration:none;border-bottom:1px solid #312E81;">support@hirestepx.com</a>`}.`,
-                      { small: true, muted: true },
+                    note(
+                      `Update it and we'll restore everything as soon as the payment goes through. If you believe this is an error, write to us at <a href="mailto:hello@hirestepx.com" style="color:#312E81;text-decoration:underline;">hello@hirestepx.com</a>.`,
                     ),
                 }),
               }),
@@ -800,7 +801,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({ cancel_at_period_end: true }),
         });
         if (RESEND_API_KEY && prof?.email) {
-          const safeName = escapeHtml(prof.name || "there");
           try {
             await fetch("https://api.resend.com/emails", {
               method: "POST",
@@ -810,14 +810,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: `Your refund of ${refundAmountStr} is being processed.`,
                   body:
-                    title("Refund", { accentWord: "initiated." }) +
-                    para(`Hi ${safeName}, we've initiated a refund of ${b(refundAmountStr)} to your original payment method. Please allow 5–7 business days for it to appear. Your account access continues until your current billing period ends.`) +
-                    dataCard("Refund details", [
+                    hero({
+                      eyebrow: "Refund",
+                      title: "Your refund is on its way",
+                      lede: `We've started a refund of ${b(refundAmountStr)} to your original payment method. It usually shows up within 5 to 7 business days.`,
+                    }) +
+                    data([
                       ["Amount", refundAmountStr],
                       ["Status", "Processing"],
                       ["Timeline", "5–7 business days"],
                     ]) +
-                    button("View account", `${APP_URL}/settings`),
+                    button("View account", `${APP_URL}/settings`) +
+                    note("Your account access continues until your current billing period ends."),
                 }),
               }),
             });

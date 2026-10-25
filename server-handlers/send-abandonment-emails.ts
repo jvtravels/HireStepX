@@ -10,7 +10,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { mapPool, timeBudget } from "./_batch";
-import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, button, note, data, mono, type EmailFooterOptions } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
@@ -83,19 +83,21 @@ function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subje
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
-    subject: "You're one step away from Pro",
+    subject: "You're one step away",
     html: emailShell({
       footer,
       preview: "Your checkout is still open. Finish whenever you're ready.",
       body:
-        title("One step", { accentWord: "away." }) +
-        para(`You started checkout for ${b(safePlan)} and didn't quite finish. No rush, your plan is still waiting and you can pick it back up whenever it suits you.`) +
-        dataCard("Your plan", [
+        hero({
+          title: "You're one step away",
+          lede: "You started checking out but didn't finish. No rush, your plan is still waiting whenever you're ready.",
+        }) +
+        data([
           ["Plan", safePlan],
           ["Amount", mono(amount)],
         ]) +
         button("Complete your purchase", pricingUrl) +
-        para(`No pressure at all, the free tier stays open too. This is the only reminder we'll send about this.`, { small: true, muted: true }),
+        note("The free tier stays open too. This is the only reminder we'll send about this."),
     }),
   };
 }

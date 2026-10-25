@@ -11,7 +11,7 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, hero, button, data, firstNameOf } from "./_email-theme";
 import { fetchAllPages, mapPool, timeBudget } from "./_batch";
 import { dueReminders, leadLabel, type ReminderEvent } from "./_reminder-dispatch";
 
@@ -140,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
       const lead = leadLabel(d.minutesBefore);
       const when = fmtWhen(d.event.start_utc, d.event.timezone || "Asia/Kolkata");
-      const heading = d.event.company ? `${d.event.company} interview` : "Your interview";
+      const heading = d.event.company ? `${d.event.company} interview` : "interview";
       const calUrl = `${APP_URL}/calendar`;
 
       const emailBody = JSON.stringify({
@@ -148,11 +148,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         to: [recipient.email],
         subject: `In ${lead}: ${d.event.title}`,
         html: emailShell({
-          preview: `Your interview is in ${lead}. A quick prep run now pays off.`,
+          preview: "A quick prep run now pays off.",
           body:
-            title("Your interview", { accentWord: `in ${lead}.` }) +
-            para(`Hi ${escapeHtml(recipient.name)}, this is your reminder that ${b(escapeHtml(heading))} is coming up. Block a few minutes to review your notes and run a quick mock so you walk in warm.`) +
-            dataCard("Interview", [
+            hero({
+              eyebrow: "Interview reminder",
+              title: `Your interview is in ${lead}`,
+              lede: `Hi ${firstNameOf(recipient.name)}, your ${escapeHtml(heading)} is coming up. Take a few minutes to review your notes and run a quick mock so you walk in warm.`,
+            }) +
+            data([
               ["What", escapeHtml(d.event.title)],
               ["When", escapeHtml(when)],
               ["Lead time", lead],

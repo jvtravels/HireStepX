@@ -1,8 +1,7 @@
 /* Referral lifecycle emails + in-app notifications. Best-effort: callers
    fire these after the reward is already committed and ignore failures. */
 
-import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button } from "./_email-theme";
+import { emailShell, hero, button, note, nameSuffix, firstNameOf } from "./_email-theme";
 import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -21,8 +20,6 @@ async function send(to: string, subject: string, html: string): Promise<void> {
   }).catch((err) => console.warn("[referral] email failed:", err?.message));
 }
 
-const firstName = (name: string | null | undefined) => escapeHtml(name?.split(" ")[0] || "there");
-
 /** Referred friend: credit landed at signup. */
 export async function notifyReferredWelcome(userId: string, email: string | null, name: string | null): Promise<void> {
   void notify({
@@ -35,14 +32,18 @@ export async function notifyReferredWelcome(userId: string, email: string | null
   if (!email) return;
   await send(
     email,
-    "Your invite reward is here — one free session added",
+    "Your invite reward is here: one free session added",
     emailShell({
-      preview: "Your referral credit is in. Start a free session now.",
+      preview: "Your referral credit is in.",
       body:
-        title("One free session", { accentWord: "added." }) +
-        para(`Hi ${firstName(name)}, a free practice session has been added to your account because a friend invited you. ${b("Finish your first interview and they earn one too.")}`) +
+        hero({
+          tone: "success",
+          eyebrow: "Welcome bonus",
+          title: "One free session, added",
+          lede: `Hi ${firstNameOf(name)}, a free practice session is now in your account because a friend invited you. Finish your first interview and they earn one too.`,
+        }) +
         button("Start your free session", `${APP_URL}/session/new`) +
-        para("You can invite friends of your own from the Referrals page.", { small: true, muted: true }),
+        note("You can invite friends of your own from the Referrals page."),
     }),
   );
 }
@@ -70,14 +71,18 @@ export async function notifyReferrerPaid(referrerId: string, email: string | nul
   if (!email) return;
   await send(
     email,
-    "Your invite worked — a free session is yours",
+    "Your invite worked: a free session is yours",
     emailShell({
-      preview: "A friend you invited finished their first interview.",
+      preview: "A friend you invited just finished their first interview.",
       body:
-        title("Your invite", { accentWord: "worked." }) +
-        para(`Hi ${firstName(name)}, a friend you invited just finished their first interview on HireStepX. ${b("A free practice session has been added to your account.")}`) +
+        hero({
+          tone: "success",
+          eyebrow: "Referral reward",
+          title: `Your invite worked${nameSuffix(name)}`,
+          lede: "A friend you invited just finished their first interview on HireStepX, so a free practice session has been added to your account.",
+        }) +
         button("Start your free session", `${APP_URL}/session/new`) +
-        para("Keep sharing your link from the Referrals page.", { small: true, muted: true }),
+        note("Keep sharing your link from the Referrals page."),
     }),
   );
 }

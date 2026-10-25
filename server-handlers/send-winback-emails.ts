@@ -14,7 +14,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { fetchAllPages, mapPool, timeBudget } from "./_batch";
-import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, actions, note, data, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -99,26 +99,18 @@ function buildWinbackEmail(
     subject: `${safeName}, your HireStepX progress is still here`,
     html: emailShell({
       footer,
-      preview: "Your resume, sessions, and score history are exactly as you left them.",
+      preview: "Everything is exactly as you left it.",
       body:
-        title("Still here,", { accentWord: "waiting for you." }) +
-        para(
-          `Hi ${safeName}, your ${b(safeRole)} prep — your resume, your past sessions, your score history — is exactly as you left it. Nothing was deleted when your plan ended.`,
-        ) +
-        dataCard("Your account", cardRows) +
-        para(
-          `If the timing wasn't right, no problem. When you're ready to practice again, everything picks up from where you stopped.`,
-        ) +
-        button("Continue where I left off", sessionUrl) +
-        para(
-          `If you want to pick up a plan again, prices start at ₹9 for a single session — no commitment.`,
-          { small: true, muted: true },
-        ) +
-        button("See plans", pricingUrl) +
-        para(
-          `If something wasn't working or the product didn't meet your expectations, reply and tell us — we read every response.`,
-          { small: true, muted: true },
-        ),
+        hero({
+          title: `Your progress is still here, ${safeName}`,
+          lede: "Your resume, past sessions and score history are exactly as you left them. Nothing was deleted when your plan ended.",
+        }) +
+        data(cardRows) +
+        actions([
+          { label: "Continue where I left off", href: sessionUrl },
+          { label: "See plans", href: pricingUrl, ghost: true },
+        ]) +
+        note("Plans start at ₹9 for a single session, with no commitment."),
     }),
   };
 }

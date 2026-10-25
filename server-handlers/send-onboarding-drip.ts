@@ -17,7 +17,7 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, actions, para, button, note, data, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -77,25 +77,30 @@ function buildDay2Email(
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
+  const rolePhrase = escapeHtml(role || "target role");
   const sessionUrl = `${APP_URL}/session/new`;
 
   return {
     subject: `What's unlocked on your Sprint Pack`,
     html: emailShell({
       footer,
-      preview: `Your Sprint Pack is active. Here's the fastest way to get value from it.`,
+      preview: "Here's the fastest way to get value from it.",
       body:
-        title("You're in.", { accentWord: "Here's what that means." }) +
-        para(`Hi ${safeName}, your plan is active. Here is the fastest way to get value from it before your ${safeRole} prep window closes.`) +
-        dataCard(`What's unlocked`, [
+        hero({
+          tone: "success",
+          eyebrow: "Your Sprint Pack",
+          title: `You're in, ${safeName}`,
+          lede: `Your plan is active. Here's the fastest way to get value from it before your ${rolePhrase} prep window closes.`,
+        }) +
+        data([
           ["Sessions", "5 per Sprint Pack"],
           ["Question types", "Behavioral, Technical, Case Study, HR"],
-          ["Resume tailoring", "Questions matched to your uploaded resume"],
-          ["Coaching feedback", "STAR breakdown + model answer after every session"],
+          ["Resume tailoring", "Matched to your uploaded resume"],
+          ["Coaching feedback", "STAR breakdown and model answer"],
         ]) +
-        para(`${b("Start with one session now.")} Pick ${b(safeRole)} as your focus and do a 10-minute behavioral round. The AI will tell you your weakest dimension — that becomes your practice target for the week.`) +
+        para(`Start with one session now. Pick ${safeRole} as your focus and do a 10-minute behavioral round. The AI will show you your weakest dimension, and that becomes your target for the week.`) +
         button("Start your first session", sessionUrl) +
-        para("Reply to this email if you have a specific company or role in mind — we can suggest the best session type to start with.", { small: true, muted: true }),
+        note("Have a specific company or role in mind? Just reply and we'll suggest the best session to start with."),
     }),
   };
 }
@@ -106,28 +111,31 @@ function buildDay5Email(
   footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
-  const safeRole = escapeHtml(role || "your target role");
+  const rolePhrase = escapeHtml(role || "target role");
   const sessionUrl = `${APP_URL}/session/new`;
   const reportUrl = `${APP_URL}/dashboard`;
 
   return {
-    subject: `${safeName}, a quick check-in on your ${safeRole} prep`,
+    subject: `${safeName}, a quick check-in on your ${rolePhrase} prep`,
     html: emailShell({
       footer,
-      preview: "Three things worth knowing after your first week on the plan.",
+      preview: "A few things that make the next weeks count.",
       body:
-        title("Five days", { accentWord: "in." }) +
-        para(`Hi ${safeName}, five days into your plan. A few things that will make the next few weeks materially better:`) +
-        dataCard("Tips from high-scorers", [
-          ["Practice aloud", "Not in your head. Aloud. Scoring is 22 pts higher on average."],
-          ["3 sessions per week", "Consistency beats marathon cramming every time."],
-          ["Coach Notes tab", "After every session — the tab most users skip."],
+        hero({
+          eyebrow: "Day 5",
+          title: `Five days in, ${safeName}`,
+          lede: "Here are a few things that will make your next few weeks count.",
+        }) +
+        data([
+          ["Practice aloud", "Say your answers, don't just think them"],
+          ["3 sessions a week", "Steady beats cramming"],
+          ["Coach Notes tab", "The tab most people skip"],
         ]) +
-        para(`${b("The Coach Notes tab")} inside your session report is the most important feature nobody uses. After every session the AI writes a specific, personalised list of what to change in your next session. It takes 2 minutes to read and it's why candidates who use it consistently see noticeably sharper answers within a few sessions.`) +
-        button("Start a session and read your Coach Notes", sessionUrl) +
-        para(`Your ${b(safeRole)} sessions and all past reports are in your dashboard whenever you need them.`) +
-        button("View my dashboard", reportUrl) +
-        para("5 sessions per Sprint Pack — your plan covers you through placement season.", { small: true, muted: true }),
+        para("Coach Notes inside your report is the most useful feature nobody uses. After every session the AI writes a specific list of what to change next time. It takes about 2 minutes to read.") +
+        actions([
+          { label: "Start a session and read your Coach Notes", href: sessionUrl },
+          { label: "View my dashboard", href: reportUrl, ghost: true },
+        ]),
     }),
   };
 }

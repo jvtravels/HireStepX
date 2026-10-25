@@ -6,7 +6,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { fetchAllPages, mapPool, timeBudget } from "./_batch";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, hero, button, note, data, nameSuffix } from "./_email-theme";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -83,22 +83,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const tier = profile.subscription_tier;
       const renewUrl = `${APP_URL}/dashboard?plan=weekly`;
 
+      const tierLabel = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : "paid";
+      const endText = endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      const daysText = `${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
+
       const emailBody = JSON.stringify({
         from: FROM_EMAIL,
         to: [profile.email],
-        subject: `Your ${tier} plan expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
+        subject: `Your ${tierLabel} plan expires in ${daysText}`,
         html: emailShell({
-          preview: "Renew to keep unlimited practice without a gap.",
+          preview: "Renew to keep your sessions running without a gap.",
           body:
-            title(`${daysLeft} day${daysLeft !== 1 ? "s" : ""}`, { accentWord: "left." }) +
-            para(`Hi ${escapeHtml(profile.name || "there")}, your HireStepX ${b(tier)} plan expires on ${b(endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Renew before then to keep unlimited sessions, AI coaching and analytics running without a break.`) +
-            dataCard("Current plan", [
-              ["Plan", tier],
-              ["Expires", endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })],
+            hero({
+              eyebrow: "Plan reminder",
+              title: `${daysText} left${nameSuffix(profile.name)}`,
+              lede: `Your HireStepX plan ends on ${endText}. Renew before then and your sessions, AI coaching and analytics keep running without a break.`,
+            }) +
+            data([
+              ["Plan", escapeHtml(tierLabel)],
+              ["Expires", endText],
               ["Days left", String(daysLeft)],
             ]) +
             button("Renew now", renewUrl) +
-            para(`Not renewing? You'll move to the free plan automatically, your history and reports stay exactly where they are.`, { small: true, muted: true }),
+            note("Not renewing? You'll move to the free plan automatically, and your history and reports stay exactly where they are."),
         }),
       });
 

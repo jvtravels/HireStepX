@@ -12,7 +12,7 @@ import {
   rateLimitResponse,
 } from "./_shared";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title, para, button, dataCard } from "./_email-theme";
+import { emailShell, hero, button, note, data, nameSuffix } from "./_email-theme";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -171,7 +171,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const nextBilling = profile.subscription_end
         ? new Date(profile.subscription_end).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })
         : "your next billing date";
-      const safeName = escapeHtml(profile.name || "there");
       const tier = profile.subscription_tier || "paid";
       try {
         await fetch("https://api.resend.com/emails", {
@@ -182,20 +181,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             to: [profile.email],
             subject: "Your subscription is reactivated",
             html: emailShell({
-              preview: "Everything's restored and running again.",
+              preview: "Everything is right where you left it.",
               body:
-                title("Good to have you", { accentWord: "back." }) +
-                para(`Hi ${safeName}, your HireStepX ${tier} plan is active again. Everything you had is right where you left it, and your sessions are open again.`) +
-                dataCard(
-                  "You're all set",
-                  [
-                    ["Plan", tier.charAt(0).toUpperCase() + tier.slice(1)],
-                    ["Next billing date", nextBilling],
-                  ],
-                  { tone: "success" },
-                ) +
+                hero({
+                  tone: "success",
+                  eyebrow: "You're all set",
+                  title: `Good to have you back${nameSuffix(profile.name)}`,
+                  lede: "Your plan is active again. Everything you had is right where you left it, and your sessions are open again.",
+                }) +
+                data([
+                  ["Plan", escapeHtml(tier.charAt(0).toUpperCase() + tier.slice(1))],
+                  ["Next billing date", nextBilling],
+                ]) +
                 button("Pick up where you left off", `${APP_URL}/dashboard`) +
-                para(`Your subscription renews automatically. Manage it anytime from your dashboard settings.`, { small: true, muted: true }),
+                note("Your subscription renews automatically. You can manage it anytime from your dashboard settings."),
             }),
           }),
         });

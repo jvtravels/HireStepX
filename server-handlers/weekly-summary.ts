@@ -19,7 +19,7 @@ export const config = { runtime: "edge" };
 
 import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
-import { emailShell, title, para, b, button, dataCard, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, para, button, data, note, nameSuffix, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts } from "./_unsubscribe";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -99,13 +99,11 @@ function buildDigest(
   const latestReport = (latest.report_json || {}) as Record<string, unknown>;
   const score = latest.score || (latestReport.overallScore as number) || 0;
   const band = (latestReport.band as string) || "";
-  const firstName = (profile.name || "").split(" ")[0] || "there";
 
   const prev = sessions[1];
   const delta = prev ? score - prev.score : 0;
   const deltaStr = delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "No change";
 
-  const safeName = escapeHtml(firstName);
   const sessionCount = `${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
 
   // Show Google Review ask for users with ≥3 total sessions and latest score ≥75
@@ -116,9 +114,12 @@ function buildDigest(
     footer,
     preview: `${sessionCount} this week, latest score ${score}.`,
     body:
-      title("Your week,", { accentWord: "in review." }) +
-      para(`Hi ${safeName}, here's how your practice went this week. You ran ${b(`${sessions.length} mock interview${sessions.length === 1 ? "" : "s"}`)} and kept the momentum going.`) +
-      dataCard("This week", [
+      hero({
+        eyebrow: "This week",
+        title: `Here's your week${nameSuffix(profile.name)}`,
+        lede: "Thanks for showing up. Here's how your practice went.",
+      }) +
+      data([
         ["Sessions", String(sessions.length)],
         ["Latest score", String(score)],
         ["Band", band || "Uncalibrated"],
@@ -129,9 +130,9 @@ function buildDigest(
         ? para(
             `One small favour: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
           ) +
-          button("Leave a Google review", GOOGLE_REVIEW_URL)
+          button("Leave a Google review", GOOGLE_REVIEW_URL, { tone: "ghost" })
         : "") +
-      para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
+      note("Don't want these? You can turn them off anytime in your settings."),
   });
   return { subject, html };
 }

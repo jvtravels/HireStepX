@@ -11,13 +11,14 @@ import { createUnconfirmedUser, validateSignupFields } from "./_signup-account";
 import { CONSENT_METADATA_KEY, currentSignupConsent } from "../src/_consent-record";
 import {
   emailShell,
-  title,
+  hero,
   para,
   b,
   link,
   button,
-  dataCard,
-  orderedList,
+  note,
+  data,
+  firstNameOf,
 } from "./_email-theme";
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
@@ -168,17 +169,21 @@ async function handlePasswordChanged(req: VercelRequest, res: VercelResponse, no
         to: [normalizedEmail],
         subject: "Your password was changed",
         html: emailShell({
-          preview: "If this was you, no action needed.",
+          preview: "If this was you, there's nothing to do.",
           body:
-            title("Password", { accentWord: "updated." }) +
-            para(`Your HireStepX password was just changed. If that was you, you're done, nothing else to do.`) +
-            dataCard("Change details", [
+            hero({
+              tone: "success",
+              eyebrow: "All set",
+              title: "Your password was changed",
+              lede: "Just letting you know your HireStepX password was updated. If that was you, there's nothing more to do.",
+            }) +
+            data([
               ["When", whenStr],
               ["Account", safeEmail],
             ]) +
-            para(
-              `Didn't change it? ${link("Secure your account", `${APP_URL}/login`)} right away, then contact ${link("support@hirestepx.com", "mailto:support@hirestepx.com")}. We'll lock things down.`,
-              { small: true, muted: true },
+            note(
+              `Wasn't you? Please ${link("secure your account", `${APP_URL}/login`)} right away and write to us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")}.`,
+              { tone: "warn" },
             ),
         }),
       }),
@@ -199,7 +204,6 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
   if (await checkRateLimit(req, "new-device", 5)) {
     return res.status(200).json({ ok: true });
   }
-  const safeEmail = escapeHtml(normalizedEmail);
   const ua = typeof req.body?.userAgent === "string" ? escapeHtml(req.body.userAgent.slice(0, 200)) : "Unknown browser";
   const when = new Date().toLocaleString("en-US", { month: "long", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
   try {
@@ -214,21 +218,21 @@ async function handleNewDeviceLogin(req: VercelRequest, res: VercelResponse, nor
         to: [normalizedEmail],
         subject: "New device sign-in",
         html: emailShell({
-          preview: "A new device signed in to your account.",
+          preview: "Your account was just signed in on a new device.",
           body:
-            title("A new", { accentWord: "sign-in." }) +
-            para(`Your account ${b(safeEmail)} was just signed in on a new device at ${when}. HireStepX allows one active device at a time, so any other session was signed out.`) +
-            dataCard(
-              "Sign-in details",
-              [
-                ["When", when],
-                ["Device", ua],
-              ],
-              { tone: "warning" },
-            ) +
-            para(
-              `If this was you, you can ignore this email. If not, ${link("reset your password", `${APP_URL}/login`)} immediately and contact ${link("support@hirestepx.com", "mailto:support@hirestepx.com")}. Someone else may have your credentials.`,
-              { small: true, muted: true },
+            hero({
+              tone: "error",
+              eyebrow: "Security notice",
+              title: "New sign-in on your account",
+              lede: "We noticed a sign-in from a new device. HireStepX allows one active device at a time, so any other session was signed out.",
+            }) +
+            data([
+              ["When", when],
+              ["Device", ua],
+            ]) +
+            note(
+              `If this was you, you're all good. If not, ${link("reset your password", `${APP_URL}/login`)} now and write to us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")}.`,
+              { tone: "warn" },
             ),
         }),
       }),
@@ -268,13 +272,14 @@ async function sendNoAccountFoundEmail(email: string): Promise<void> {
         html: emailShell({
           preview: "No account exists for this address. Here's what to do.",
           body:
-            title("No account", { accentWord: "yet." }) +
-            para(`Someone just asked us to reset a HireStepX password for ${b(safeEmail)}, but we don't have an account on file for this address.`) +
-            para(`If that was you, you may have signed up with a different email, or you haven't created an account yet.`, { muted: true }) +
+            hero({
+              title: "No account for this email yet",
+              lede: `Someone just asked us to reset a HireStepX password for ${b(safeEmail)}, but we don't have an account on file for this address.`,
+            }) +
+            para(`If that was you, you may have signed up with a different email, or you haven't created an account yet.`) +
             button("Create an account", `${APP_URL}/signup`) +
-            para(
+            note(
               `Have an account under a different address? ${link("Try the reset there", `${APP_URL}/forgot-password`)}. If you didn't request anything, you can safely ignore this email, nothing has changed.`,
-              { small: true, muted: true },
             ),
         }),
       }),
@@ -305,10 +310,12 @@ async function sendOAuthOnlyResetEmail(email: string): Promise<void> {
         html: emailShell({
           preview: "This account uses Google to sign in, so there's no password to reset.",
           body:
-            title("Use Google to", { accentWord: "sign in." }) +
-            para(`Someone asked to reset the HireStepX password for ${b(safeEmail)}. This account signs in with Google, so there's no password to reset.`) +
+            hero({
+              title: "Use Google to sign in",
+              lede: `Someone asked to reset the HireStepX password for ${b(safeEmail)}. This account signs in with Google, so there's no password to reset.`,
+            }) +
             button("Go to sign in", `${APP_URL}/login`) +
-            para(`Choose "Continue with Google" with this address. If you didn't request this, ignore it, nothing has changed.`, { small: true, muted: true }),
+            note(`Choose "Continue with Google" with this address. If you didn't request this, ignore it, nothing has changed.`),
         }),
       }),
     });
@@ -442,7 +449,6 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
     const linkUrl = new URL(actionLink);
     linkUrl.searchParams.set("redirect_to", `${APP_URL}/reset-password`);
     resetUrl = linkUrl.toString();
-    const safeEmail = escapeHtml(normalizedEmail);
 
     // Send reset email via Resend
     const ac = new AbortController();
@@ -461,17 +467,15 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
         html: emailShell({
           preview: "Valid for 60 minutes. Didn't ask? Nothing changes.",
           body:
-            title("Reset your", { accentWord: "password." }) +
-            para(`You asked to reset the HireStepX password for ${b(safeEmail)}. Pick a new one, this is the only link you'll need.`) +
+            hero({
+              title: "Let's get you a new password",
+              lede: `Tap the button to choose one. The link works once and expires in 60 minutes.`,
+            }) +
             button("Choose a new password", resetUrl) +
-            para(
-              `The link works for ${b("60 minutes")}, then expires, and can only be used once. If you didn't request this, ignore it, your password stays exactly as it is.`,
-              { small: true, muted: true },
+            note(
+              `Didn't ask for this? You can ignore this email and your password stays exactly as it is.`,
             ) +
-            para(`Button not working? Copy this link:<br>${link(resetUrl, resetUrl)}`, {
-              small: true,
-              muted: true,
-            }),
+            note(`Button not working? Copy this link:<br>${link(resetUrl, resetUrl)}`),
         }),
       }),
     });
@@ -505,7 +509,7 @@ async function sendVerificationEmail(email: string, name?: string, ref?: string)
   const token = generateVerifyToken(email);
   const safeRef = typeof ref === "string" && /^HSX-[A-Z0-9]{4,8}$/.test(ref) ? ref : "";
   const verifyUrl = `${APP_URL}/api/verify-email?email=${encodeURIComponent(email)}&token=${token}${safeRef ? `&ref=${safeRef}` : ""}`;
-  const safeName = escapeHtml(name || "there");
+  const safeName = firstNameOf(name);
 
   try {
     const ac = new AbortController();
@@ -522,25 +526,19 @@ async function sendVerificationEmail(email: string, name?: string, ref?: string)
         to: [email],
         subject: "Verify your email to get started",
         html: emailShell({
-          preview: "One click to confirm it's you and unlock your free sessions.",
+          preview: "One click and your 2 free mock interviews are yours.",
           body:
-            title("Welcome,", { accentWord: `${safeName}.` }) +
-            para(`Glad you're here. One quick step before you start: confirm this is your email. Your ${b("2 free mock interviews")} are waiting on the other side.`) +
+            hero({
+              eyebrow: "Welcome to HireStepX",
+              title: `Hi ${safeName}, let's get you started`,
+              lede: "Tap the button to confirm your email. Your 2 free mock interviews are waiting right after.",
+            }) +
             button("Verify my email", verifyUrl) +
-            para(`Once you're verified, here's how to get going:`) +
-            orderedList([
-              "Upload your resume so the questions match your real experience.",
-              "Pick your target company and role.",
-              "Start your first mock interview, about 15 minutes.",
-            ]) +
-            para(
-              `This link expires in ${b("24 hours")}. If you didn't create this account, you can safely ignore this email.`,
-              { small: true, muted: true },
+            para("Once you're in, upload your resume, pick the company and role you're aiming for, and start your first interview. It takes about 15 minutes.") +
+            note(
+              `This link works for 24 hours. If you didn't sign up, just ignore this email and nothing will happen.`,
             ) +
-            para(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`, {
-              small: true,
-              muted: true,
-            }),
+            note(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`),
         }),
       }),
     });
@@ -1013,7 +1011,7 @@ async function handleSignupAttemptedExisting(
 
 async function sendExistingAccountEmail(email: string, name?: string): Promise<void> {
   if (!RESEND_API_KEY) return;
-  const safeName = escapeHtml(name || "there");
+  const safeName = firstNameOf(name);
   try {
     const ac = new AbortController();
     const t = setTimeout(() => ac.abort(), 10_000);
@@ -1031,12 +1029,13 @@ async function sendExistingAccountEmail(email: string, name?: string): Promise<v
         html: emailShell({
           preview: "Sign in instead, or reset your password if you're stuck.",
           body:
-            title("Welcome", { accentWord: "back." }) +
-            para(`Hi ${safeName}, someone (probably you) just tried to sign up at HireStepX with this email, but you already have an account here. No need to create another, just sign in.`) +
+            hero({
+              title: `Welcome back, ${safeName}`,
+              lede: "Someone (probably you) just tried to sign up at HireStepX with this email, but you already have an account here. No need to create another, just sign in.",
+            }) +
             button("Sign in", `${APP_URL}/login`) +
-            para(
+            note(
               `Forgot your password? ${link("Reset it here", `${APP_URL}/forgot-password`)}. If this wasn't you, no account was created and nothing changed.`,
-              { small: true, muted: true },
             ),
         }),
       }),

@@ -103,7 +103,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 ["Question types", "Behavioural"],
                 ["Your data", "Fully preserved"],
               ]) +
-              para(`Renew anytime to unlock unlimited sessions, every question type and full AI coaching:`) +
+              para(`Renew anytime to pick up where you left off, with every question type and full AI coaching:`) +
               orderedList([
                 "Open your dashboard settings",
                 "Pick the plan that fits",

@@ -12,7 +12,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, button, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, button, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -58,19 +58,16 @@ async function redisSet(key: string, value: string): Promise<void> {
 
 function buildActivationEmail(user: ProfileRow, footer?: EmailFooterOptions): { subject: string; html: string } {
   const safeName = escapeHtml(user.name?.split(" ")[0] || "there");
-  const safeRole = escapeHtml(user.target_role || "your target role");
   const sessionUrl = `${APP_URL}/session/new`;
 
   const subject = `${safeName}, your 2 free sessions are waiting`;
   const body =
-    title(`Ready when you are, ${safeName}`) +
-    para(`You signed up for HireStepX yesterday — but haven't started your first session yet. That's fine. Interview prep is easy to put off.`) +
-    para(`Here's the thing: ${safeRole.length > 1 ? `you picked <strong>${safeRole}</strong> as your target role.` : "you've already picked a target role."} Two free mock sessions are already unlocked on your account. No card, no payment, no catch.`) +
-    para(`A session takes 15 minutes. You get scored on STAR delivery, technical accuracy, and communication — with a breakdown sent to your inbox right after.`) +
-    button("Start your free session", sessionUrl) +
-    para(`No pressure. But the longer you wait, the harder it gets to start.`);
+    hero({
+      title: `Your 2 free sessions are waiting, ${safeName}`,
+      lede: "A session takes about 15 minutes. We'll score your STAR delivery, technical accuracy and communication, so you know exactly what to work on.",
+    }) + button("Start your free session", sessionUrl);
 
-  const html = emailShell({ preview: subject, body, footer });
+  const html = emailShell({ preview: "A session takes about 15 minutes.", body, footer });
 
   return { subject, html };
 }
