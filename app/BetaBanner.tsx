@@ -7,12 +7,14 @@ import { useStagingHost } from "../src/home2/stagingHost";
 const STORAGE_KEY = "hsx_beta_banner_dismissed";
 
 export function BetaBanner() {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
   const staging = useStagingHost();
 
   useEffect(() => {
-    if (!localStorage.getItem(STORAGE_KEY)) {
-      setVisible(true);
+    try {
+      if (localStorage.getItem(STORAGE_KEY)) setVisible(false);
+    } catch {
+      /* storage blocked: keep the banner */
     }
   }, []);
 
