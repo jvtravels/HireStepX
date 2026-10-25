@@ -559,6 +559,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-fix.alt { background: var(--white); color: var(--ink); border-color: var(--line); }
 .hx-fix.alt:hover { background: var(--wash); }
 .hx-priv-stage { min-height: 200px; }
+@media (pointer: coarse) { .hx-fix, .hx-rec, .hx-fakebtn { min-height: 44px; } }
 @media (hover: hover) and (pointer: fine) { .hx-foot a, .hx-fakebtn, .hx-fix { min-height: 32px; } }
 @keyframes hx-how-in { from { opacity: 0; transform: translateY(12px); } }
 @media (max-width: 900px) {
