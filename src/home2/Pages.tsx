@@ -1,9 +1,9 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { ScoreChip } from "../employer/_atoms";
+import { ScoreChip } from "./Score";
 import { homeCss } from "./homeCss";
 import { pagesCss } from "./pagesCss";
-import { Footer, Nav } from "./Homepage";
+import { Footer, Nav, type NavKey } from "./Homepage";
 import { EmpFaq } from "./Extra";
 import Skel, { useSkel } from "./Skel";
 import { delay, reduced, useReveal, useScrollStage } from "./motion";
@@ -30,7 +30,7 @@ export const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
 );
 
-export function Shell({ active, children }: { active: "talent" | "companies"; children: React.ReactNode }) {
+export function Shell({ active, children }: { active?: NavKey; children: React.ReactNode }) {
   return (
     <div className="hx">
       <style>{homeCss}</style>
@@ -44,7 +44,7 @@ export function Shell({ active, children }: { active: "talent" | "companies"; ch
 
 export function Win({ left, right, alt, children }: { left: string; right?: React.ReactNode; alt?: string; children: React.ReactNode }) {
   return (
-    <div className="pg-win" role={alt ? "img" : undefined} aria-label={alt}>
+    <div className="pg-win" role={alt ? "group" : undefined} aria-label={alt}>
       <header className="hx-ah">
         <span className="hx-dots" aria-hidden="true"><i /><i /><i /></span>
         <span>{left}</span>
@@ -423,7 +423,7 @@ function HowScene({ n }: { n: number }) {
     </Win>
   );
   if (n === 2) return (
-    <Win left="Backend Engineer" right="Ranked on 3 skills" alt="Four candidates reordered with the best fit first">
+    <Win left="Backend Engineer" right="Sample · Ranked on 3 skills" alt="Four candidates reordered with the best fit first">
       <div className="pg-body">
         <ul className="hs-rank">
           {HS_RANK.map(([id, score, from], i) => (
@@ -441,7 +441,7 @@ function HowScene({ n }: { n: number }) {
     </Win>
   );
   if (n === 3) return (
-    <Win left="Backend Engineer" right="Compare" alt="Two candidates opened side by side with their skill scores">
+    <Win left="Backend Engineer" right="Sample · Compare" alt="Two candidates opened side by side with their skill scores">
       <div className="pg-body hs-two">
         <div className="hs-col">
           <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Hire</span></div><span className="sc"><ScoreChip score={97} /></span></div>
@@ -589,7 +589,7 @@ const OPEN_SKILLS: [string, number][] = [["Node.js", 88], ["PostgreSQL", 84], ["
 
 function EvidenceView() {
   return (
-    <Win left="Candidate #a41f" right="Backend Engineer, Bengaluru" alt="A candidate's skill scores, readiness and practice sessions">
+    <Win left="Candidate #a41f" right="Sample · Backend Engineer, Bengaluru" alt="A candidate's skill scores, readiness and practice sessions">
       <div className="pg-body">
         <ul className="fl-open">
           {OPEN_SKILLS.map(([s, v]) => (
@@ -612,7 +612,7 @@ const PIPE: [string, string, string][] = [
 
 function DecideView() {
   return (
-    <Win left="Backend Engineer" right="3 in your pipeline" alt="Candidates with a hiring status each, and a conversation with one of them">
+    <Win left="Backend Engineer" right="Sample · 3 in your pipeline" alt="Candidates with a hiring status each, and a conversation with one of them">
       <ul className="pl">
         {PIPE.slice(0, 3).map(([id, name, st]) => (
           <li key={id}>
@@ -647,7 +647,7 @@ const TABS: FeatureTab[] = [
     title: "Best fit first, every time.",
     body: "Each candidate is scored against the role, skills and location you posted, plus how much they have practised.",
     points: ["Matching reruns when you edit the role", "And when a candidate updates their resume", "And every night, so new people appear"],
-    view: (alt) => { const picked = alt ? ["Node.js", "PostgreSQL"] : HERO_SKILLS; return <Win left="Backend Engineer" right={`Ranked on ${picked.length} skills`} alt="Candidates ranked for a Backend Engineer role"><div className="pg-body"><RankList picked={picked} /></div></Win>; },
+    view: (alt) => { const picked = alt ? ["Node.js", "PostgreSQL"] : HERO_SKILLS; return <Win left="Backend Engineer" right={`Sample · Ranked on ${picked.length} skills`} alt="Candidates ranked for a Backend Engineer role"><div className="pg-body"><RankList picked={picked} /></div></Win>; },
   },
   {
     name: "Evidence",
@@ -672,6 +672,7 @@ const TABS: FeatureTab[] = [
 export function Features({ tabs, icons, kicker, title }: { tabs: FeatureTab[]; icons: React.ReactNode[]; kicker: string; title: string }) {
   const { ref: headRef, on } = useReveal<HTMLDivElement>();
   const { ref, stage, i, go } = useScrollStage<HTMLDivElement, HTMLDivElement>(tabs.length);
+  useSkel(stage);
   const [live, setLive] = useState(true);
   const [alt, setAlt] = useState(false);
   useEffect(() => {
@@ -717,7 +718,7 @@ export function Features({ tabs, icons, kicker, title }: { tabs: FeatureTab[]; i
       </section>
       <div ref={ref} className="ft">
         <div className="ft-stick">
-          <div ref={stage} className="ft-stage">
+          <div ref={stage} data-sk="pending" className="ft-stage">
             <div className="ft-bg" aria-hidden="true">{tabs.map((t, k) => <i key={t.name} style={{ opacity: `var(--b${k}, ${k === 0 ? 1 : 0})` }} />)}</div>
             <div className="ft-in">
             <div className="ft-tabs" role="group" aria-label={kicker}>
@@ -779,24 +780,24 @@ function EmpPricing() {
           </div>
           <div className="pc-r hx-ri" style={delay(2)}>
             <Skel className="pg-stage pc-stage">
-              <Win left="Candidate profile" alt="A candidate profile with scores open and name and contact locked">
-                <div className="pf">
-                  <div className="pf-head">
+              <Win left="Candidate profile" right="Sample" alt="A candidate profile with scores open and name and contact locked">
+                <div className="ep">
+                  <div className="ep-head">
                     <Av id="a41f" size={72} />
-                    <div className="pf-id">
-                      {open ? <b>Priya S.</b> : <span className="pf-lock"><Lock />Name</span>}
+                    <div className="ep-id">
+                      {open ? <b>Priya S.</b> : <span className="ep-lock"><Lock />Name</span>}
                       <span>Backend Engineer, Bengaluru</span>
                     </div>
-                    <span className="pf-ready"><small>Readiness</small><b>Hire</b></span>
+                    <span className="ep-ready"><small>Readiness</small><b>Hire</b></span>
                   </div>
-                  <div className={`pf-contact${open ? " open" : ""}`}>{open ? <>Phone, email</> : <><Lock />Phone and email</>}</div>
+                  <div className={`ep-contact${open ? " open" : ""}`}>{open ? <>Phone, email</> : <><Lock />Phone and email</>}</div>
                   <h4>Skill scores</h4>
                   <ul className="fl-open">
                     {OPEN_SKILLS.map(([s, v]) => (
                       <li key={s}><span>{s}</span><i style={{ ["--w" as string]: `${v}%` }} /><ScoreChip score={v} /></li>
                     ))}
                   </ul>
-                  <dl className="pf-facts">
+                  <dl className="ep-facts">
                     <div><dt>Practice sessions</dt><dd>12</dd></div>
                     <div><dt>Resume and answers</dt><dd>Open</dd></div>
                   </dl>

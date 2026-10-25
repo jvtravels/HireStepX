@@ -1,0 +1,19 @@
+import type { Metadata } from "next";
+import { pageMeta } from "@/home2/pageMeta";
+import { ContactPage } from "@/home2/Contact";
+import { JsonLd, breadcrumbs } from "@/home2/jsonld";
+
+export const metadata: Metadata = pageMeta({
+  title: "Contact HireStepX: Support, Employers and Partnerships",
+  description: "Questions, feedback, employer enquiries or partnership ideas? Write to the HireStepX team and we will reply within one business day.",
+  path: "/contact",
+});
+
+export default function Page() {
+  return (
+    <>
+      <JsonLd data={breadcrumbs([["Contact", "/contact"]])} />
+      <ContactPage />
+    </>
+  );
+}

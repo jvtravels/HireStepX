@@ -76,19 +76,30 @@ const nextConfig = {
       // VERCEL_ENV can't tell the two apart; gate the new homepage by host.
       {
         source: "/",
-        has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/home-next",
       },
       {
         source: "/employers",
-        has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/employers-next",
       },
       {
         source: "/candidates",
-        has: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/candidates-next",
       },
+      { source: "/about", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/about-next" },
+      { source: "/pricing", destination: "/pricing-next" },
+      { source: "/contact", destination: "/contact-next" },
+      { source: "/resources", destination: "/resources-next" },
+      { source: "/blog", destination: "/resources-next/guide" },
+      { source: "/questions", destination: "/resources-next/question" },
+      { source: "/salary", destination: "/resources-next/salary" },
+      { source: "/blog/:slug((?!category$|company$)[^/]+)", destination: "/blog-next/:slug" },
+      { source: "/questions/:slug", destination: "/questions-next/:slug" },
+      { source: "/salary/:company", destination: "/salary-next/:company" },
+      { source: "/privacy", destination: "/legal-next/privacy" },
+      { source: "/terms", destination: "/legal-next/terms" },
+      { source: "/refund", destination: "/legal-next/refund" },
+      { source: "/legal", destination: "/legal-next" },
     ],
     afterFiles: [
       // app/(marketing)/questions/[slug]/opengraph-image.tsx collides with the
@@ -127,6 +138,84 @@ const nextConfig = {
       },
       {
         source: "/candidates-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/candidates",
+        permanent: false,
+      },
+      {
+        source: "/about-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/about",
+        permanent: false,
+      },
+      {
+        source: "/pricing-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/pricing",
+        permanent: false,
+      },
+      {
+        source: "/contact-next",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/contact",
+        permanent: false,
+      },
+      {
+        source: "/resources-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/resources",
+        permanent: false,
+      },
+      { source: "/how-it-works", destination: "/", permanent: true },
+      { source: "/methodology", has: [{ type: "host", value: "staging.hirestepx.com" }], destination: "/about", permanent: true },
+      { source: "/for-students", destination: "/candidates", permanent: true },
+      { source: "/payment-failed", destination: "/pricing", permanent: true },
+      {
+        source: "/blog-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/questions-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/salary-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/pricing-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/about-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/contact-next/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/staging-not-found/:path*",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      { source: "/cookies", destination: "/privacy#cookies", permanent: true },
+      { source: "/grievance", destination: "/privacy#grievance-officer", permanent: true },
+      {
+        source: "/legal-next/:path*",
         missing: [{ type: "host", value: "staging.hirestepx.com" }],
         destination: "/",
         permanent: false,
@@ -300,6 +389,11 @@ const nextConfig = {
       {
         source: "/(.*)",
         headers,
+      },
+      {
+        // HTML pages only (no file extension, not API or OG image routes).
+        source: "/((?!api|_next|opengraph-image|twitter-image)[^.]*)",
+        headers: [{ key: "Cross-Origin-Resource-Policy", value: "same-site" }],
       },
       {
         // Unhashed public/ assets: cache a day at the edge and browser, serve stale

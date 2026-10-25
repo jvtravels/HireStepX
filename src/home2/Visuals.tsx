@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
-import { ScoreChip } from "../employer/_atoms";
+import { ScoreChip } from "./Score";
 import { tokens as t, fonts as f } from "../auth/_tokens";
-import { ScoreGauge } from "../sessionReport/panels/sr-HeroMetrics";
+import { ScoreGauge } from "./Score";
 import { delay, useReveal, useTween } from "./motion";
 
 const SkillTag = ({ children }: { children: React.ReactNode }) => (
@@ -44,7 +44,7 @@ export function HeroSurface() {
   const people = [
     { id: "a41f", s: fixed ? 86 : 72, note: fixed ? "Names the metric and the result" : "Names the metric, no result" },
     { id: "c92d", s: 78, note: "Strong trade-offs, thin Result" },
-    { id: "e07b", s: 64, note: "Solid basics, light on ownership" },
+    { id: "e07b", s: 64, note: "Good basics, low ownership" },
     { id: "f19a", s: 59, note: "Clear answers, limited depth" },
   ];
   const rank = [...people].sort((a, b) => b.s - a.s).map((p) => p.id);
@@ -52,12 +52,12 @@ export function HeroSurface() {
   return (
     <div className={on ? "hx-hs hx-rv on" : "hx-hs hx-rv"} ref={ref}>
       <div className="hx-win hx-ri" style={delay(0)}>
-        <Header left="HireStepX / Mock interview / Backend Engineer" right={<span className="hx-samp"><i />Sample, try it</span>} />
+        <Header left="HireStepX / Mock interview / Backend Engineer" right={<span className="hx-samp"><i />Interactive sample</span>} />
         <div className="hx-split">
           <section className="hx-pane" aria-label="Candidate view">
             <p className="hx-pl"><span>Candidate view</span><em>Q3 of 6 · 0:42</em></p>
             <ol className="hx-prog" aria-label="Question 3 of 6">{[0, 1, 2, 3, 4, 5].map((i) => <li key={i} className={i < 2 ? "done" : i === 2 ? "now" : undefined} />)}</ol>
-            <h3 className="hx-pq">Tell me about a time you made something faster.</h3>
+            <p className="hx-pq">Tell me about a time you made something faster.</p>
             <p className="hx-tx">
               <span className="hx-ts">0:31</span>
               {fixed ? <>{ANSWER} <ins key="f">{FIX}</ins></> : <>We timed checkout on the UPI path <mark>before and after</mark>, and watched it for two sale weekends. <span className="hx-miss">Result missing</span></>}
@@ -91,7 +91,7 @@ export function HeroSurface() {
       </div>
       <div className="hx-float hx-fl-b hx-ri" style={delay(4)}>
         <span className="hx-who-row">
-          <Avatar id="a41f" />
+          <Avatar id="a41f" /><AnonName id="a41f" />
         </span>
         <span className="hx-num">Rank {rank.indexOf("a41f") + 1} of 4</span>
         <button type="button" className="hx-fakebtn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Unlock to contact"}</button>
@@ -122,6 +122,7 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
       <div className="hx-sd" data-rec={rec}>
         <button type="button" className="hx-rec" aria-pressed={rec} onClick={() => setRec((v) => !v)}><i />{rec ? "Recording" : "Tap to record"} <span className="hx-num">0:42</span></button>
         <div className="hx-wv">{[10, 22, 14, 30, 18, 36, 24, 12, 28, 16, 32, 20, 10, 26, 14, 22].map((h, i) => <b key={i} style={{ height: h, ["--d" as string]: `${i * 60}ms` }} />)}</div>
+        <p className="hx-cap">Q3 of 6: Tell me about a time you made something faster.</p>
       </div>
     );
   }
@@ -140,16 +141,17 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
           <span>{open ? "Employers can find me" : "Hidden from search"}</span>
           <i className={open ? "hx-switch on" : "hx-switch"} />
         </button>
+        <p className="hx-cap">Your name stays hidden until you share it.</p>
       </div>
     );
   }
   return (
     <div className="hx-sd">
       <div className="hx-uk">
-        <span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span>
+        <span className="hx-who-row"><Avatar id="a41f" /><span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span></span>
         <button type="button" className="hx-fakebtn" aria-pressed={revealed} onClick={() => setRevealed((v) => !v)}>{revealed ? "Sent" : "Say hello"}</button>
       </div>
-      {revealed && <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p>}
+      {revealed ? <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p> : <p className="hx-cap">Replies show up here.</p>}
     </div>
   );
 }
@@ -176,7 +178,7 @@ export function ReportSurface() {
             <p className="hx-tx hx-tx-lg">
               {fix ? <ins>{FIX}</ins> : <>We made it <mark>a lot</mark> better after the change. <span className="hx-miss">Result missing</span></>}
             </p>
-            <button type="button" className="hx-fix hx-fix-q" aria-pressed={fix} onClick={() => setFix((v) => !v)}>{fix ? "Show my answer" : "See a stronger answer"}</button>
+            <button type="button" className="hx-fix hx-fix-q alt" aria-pressed={fix} onClick={() => setFix((v) => !v)}>{fix ? "Show my answer" : "See a stronger answer"}</button>
             <ul className="hx-bars">
               {skills.map(([n, v, d]) => (
                 <li key={n}><span>{n}</span><div className="hx-bar"><i style={{ width: on ? `${v}%` : 0 }} /></div><b className="hx-num">{v}</b><em>{d}</em></li>
@@ -220,18 +222,18 @@ export function InboxSurface() {
       <div className="hx-win hx-ri" style={delay(0)}>
         <Header left="Candidates / Backend Engineer" right={<span className="hx-samp"><i />Shortlist {short.length}</span>} />
         <div className="hx-inbox">
-          <aside className="hx-side">
+          <div className="hx-side">
             <p className="hx-pl"><span>Role</span><em>Open</em></p>
             <b>Backend Engineer</b>
             <div className="hx-chips"><SkillTag>3 years</SkillTag><SkillTag>Node.js</SkillTag><SkillTag>PostgreSQL</SkillTag></div>
             <p className="hx-pl hx-pl-gap"><span>Matched</span><em className="hx-num">6</em></p>
-          </aside>
+          </div>
           <ul className="hx-rk hx-rk-lg hx-rk-in" style={{ height: ROW * CANDS.length }}>
             {CANDS.map((c, i) => (
               <li key={c.id} className={c.id === sel ? "hx-sel" : undefined} style={{ transform: `translateY(${i * ROW}px)` }}>
                 <button type="button" onClick={() => setSel(c.id)} aria-pressed={c.id === sel}>
                   <span className="hx-n">{i + 1}</span>
-                  <AnonName id={c.id} />
+                  <span className="hx-who-row"><Avatar id={c.id} /><AnonName id={c.id} /></span>
                   <em>{isShort(c.id) ? "Shortlisted" : c.role}</em>
                   <ScoreChip score={c.s} />
                 </button>
@@ -240,11 +242,11 @@ export function InboxSurface() {
           </ul>
           <section className="hx-evd" aria-label="Answer evidence">
             <p className="hx-pl"><span>Their answer</span><em>Question 3 of 6</em></p>
-            <h4 className="hx-evq">Tell me about a time you made something faster.</h4>
+            <p className="hx-evq">Tell me about a time you made something faster.</p>
             <div className="hx-cmp" data-two={cmp}>
               {shown.map((c) => (
                 <blockquote key={c.id} className="hx-swap">
-                  <span className="hx-evh"><b>#{c.id}</b><ScoreChip score={c.s} /></span>
+                  <span className="hx-evh"><span className="hx-who-row"><Avatar id={c.id} /><b>#{c.id}</b></span><ScoreChip score={c.s} /></span>
                   <p>{c.a}</p>
                   <ul className="hx-evt">{c.t.map(([t, good]) => <li key={t} className={good ? "good" : "gap"}>{t}</li>)}</ul>
                 </blockquote>

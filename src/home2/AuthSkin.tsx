@@ -1,55 +1,60 @@
 "use client";
 import type { ReactNode } from "react";
 import { homeCss } from "./homeCss";
-import { Home2Nav, useStagingHost } from "./Chrome";
+import { authCss } from "./Auth";
 
 const skinCss = `
-.hx-auth { background: oklch(0.972 0.008 285); min-height: 100dvh; }
-.hx-auth-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); min-height: calc(100dvh - 72px); }
-.hx-auth-side { position: sticky; top: 72px; align-self: start; height: calc(100dvh - 72px); padding: 64px 56px; display: flex; flex-direction: column; justify-content: center; gap: 28px; background: oklch(0.257 0.086 281.288); color: oklch(0.97 0.01 285); }
-.hx-auth-side h2 { margin: 0; font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif; font-size: clamp(28px, 3vw, 40px); line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; max-width: 16ch; }
-.hx-auth-card { background: oklch(0.31 0.1 280); border: 1px solid oklch(0.45 0.08 280); border-radius: 18px; padding: 22px; display: grid; gap: 14px; max-width: 420px; }
-.hx-auth-card q { font-size: 15px; line-height: 1.5; quotes: none; color: oklch(0.9 0.02 285); }
-.hx-auth-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.hx-auth-row b { font-size: 44px; line-height: 1; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-.hx-auth-row span { font-size: 13px; color: oklch(0.8 0.03 285); }
-.hx-auth-bar { height: 6px; border-radius: 99px; background: oklch(0.42 0.08 280); overflow: hidden; }
-.hx-auth-bar i { display: block; height: 100%; width: 91%; background: oklch(0.82 0.12 60); border-radius: inherit; }
-.hx-auth-side ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; font-size: 15px; color: oklch(0.88 0.02 285); }
-.hx-auth-main > div { background: transparent !important; min-height: calc(100dvh - 72px) !important; }
-.hx-auth-main .hsx-login-topbar { display: none !important; }
-.hx-auth-main h1 { font-family: 'Bricolage Grotesque', 'Geist', ui-sans-serif, system-ui, sans-serif !important; font-size: clamp(2rem, 3.4vw, 2.75rem) !important; line-height: 1.08 !important; font-weight: 600 !important; letter-spacing: -0.025em !important; white-space: normal !important; color: oklch(0.2 0.03 280) !important; text-wrap: balance; }
-.hx-auth-main h1 em { font-style: normal !important; color: oklch(0.359 0.135 278.697) !important; }
-.hx-auth-main input:not([type="checkbox"]) { background: oklch(1 0 0) !important; }
-@media (max-width: 900px) {
-  .hx-auth-grid { grid-template-columns: 1fr; }
-  .hx-auth-side { display: none; }
+.hx.hx-auth-skin { background: var(--white); min-height: 100dvh; display: flex; flex-direction: column; }
+.hx-auth-skin .hx-au { flex: 1; }
+.hx-auth-skin .hx-au { display: flex; flex-direction: column; height: auto; background: transparent; }
+.hx-auth-skin .hx-au-l { flex: 1; padding: 24px 40px; display: flex; flex-direction: column; background: transparent; }
+.hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 920px; padding: 44px 56px 40px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: none; }
+.hx-auth-skin .hx-au-l::after { content: ""; flex: 0 0 64px; }
+.hx-auth-skin .hx-au-main > div { background: transparent !important; min-height: 0 !important; padding: 0 !important; }
+.hx-auth-skin .hsx-login-topbar { display: none !important; }
+.hx-auth-skin .hx-au-main > div > main { padding: 0 !important; }
+.hx-auth-skin .hx-au-main > div > footer { padding: 20px 0 0 !important; }
+.hx-auth-skin .hx-au-main h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif !important; font-size: 40px !important; line-height: 1.1 !important; font-weight: 500 !important; letter-spacing: -0.025em !important; white-space: normal !important; color: var(--ink) !important; text-wrap: balance; }
+.hx-auth-skin .hx-au-main [class*="-hero"], .hx-auth-skin .hx-au-main h1 { text-align: center !important; }
+.hx-auth-skin .hx-au-main [class*="-hero"] { margin-bottom: 24px !important; }
+.hx-auth-skin .hx-au-main [class*="-subtitle"] { text-align: center !important; font-size: 16px !important; margin-top: 12px !important; color: var(--ink-2) !important; }
+.hx-auth-skin .hx-au-main h1 em { font-style: normal !important; color: inherit !important; }
+.hx-auth-skin .hx-au-main input:not([type="checkbox"]) { min-height: 46px; border-radius: 10px !important; background: var(--white) !important; font-size: 15px; }
+.hx-auth-skin .hx-au-main input:not([type="checkbox"]):focus { outline: none; border-color: var(--btn) !important; box-shadow: 0 0 0 3px oklch(0.359 0.135 278.697 / 0.14) !important; }
+.hx-auth-skin .hx-au-main .hsx-login-google { border-radius: 10px !important; min-height: 46px; padding-top: 0 !important; padding-bottom: 0 !important; font-weight: 500 !important; }
+.hx-auth-skin .hx-au-main .hsx-login-cta { border-radius: 10px !important; min-height: 48px; padding: 0 28px !important; font-weight: 500 !important; letter-spacing: 0 !important; background: var(--btn) !important; color: var(--white) !important; box-shadow: 0 1px 2px oklch(0.257 0.086 281.288 / 0.2) !important; transition: background .15s, box-shadow .15s; }
+.hx-auth-skin .hx-au-main .hsx-login-cta:hover:not(:disabled) { background: var(--btn-hover) !important; }
+.hx-auth-skin .hx-au-main .hsx-login-cta:disabled { opacity: 0.5; cursor: not-allowed; }
+.hx-auth-skin .hx-au-main > div { max-width: 600px; margin: 0 auto; }
+.hx-auth-skin .hx-au-main :is(label, span, a, p, li, button) { font-size: 14px !important; line-height: 1.5; }
+.hx-auth-skin .hx-au-main input:not([type="checkbox"]) { font-size: 15px !important; }
+.hx-auth-skin .hx-au-main .hsx-login-google, .hx-auth-skin .hx-au-main .hsx-login-cta, .hx-auth-skin .hx-au-main button[type="submit"] { font-size: 15px !important; }
+.hx-auth-skin .hx-au-main main [class*="-subtitle"] { font-size: 16px !important; }
+.hx-auth-skin .hx-au-main footer, .hx-auth-skin .hx-au-main footer * { font-size: 13px !important; }
+.hx-auth-skin .hx-au-main [style*="max-width: 440px"] { max-width: 600px !important; }
+@media (max-width: 600px) {
+  .hx.hx-auth-skin { background: var(--white); }
+  .hx-auth-skin .hx-au-l { padding: 20px; }
+  .hx-auth-skin .hx-au-main { padding: 24px 0; border: 0; border-radius: 0; box-shadow: none; }
+  .hx-auth-skin .hx-au-l::after { flex-basis: 0; }
+  .hx-auth-skin .hx-au-main h1 { font-size: 32px !important; }
 }
 `;
 
-export function AuthSkin({ children }: { children: ReactNode }) {
-  const staging = useStagingHost();
-  if (!staging) return <>{children}</>;
+export function AuthSkin({ children, top, staging: stagingForm }: { children: ReactNode; top: ReactNode; staging?: ReactNode }) {
   return (
-    <div className="hx hx-auth">
+    <div className="hx hx-auth-skin">
       <style>{homeCss}</style>
+      <style>{authCss}</style>
       <style>{skinCss}</style>
-      <Home2Nav />
-      <div className="hx-auth-grid">
-        <aside className="hx-auth-side" aria-hidden="true">
-          <h2>Say it out loud before it counts.</h2>
-          <div className="hx-auth-card">
-            <q>I worked on our checkout page and cut load time from 3.4s to 1.9s.</q>
-            <div className="hx-auth-row"><b>91</b><span>STAR score after coaching</span></div>
-            <div className="hx-auth-bar"><i /></div>
+      <div className="hx-au">
+        <div className="hx-au-l">
+          <div className="hx-au-top">
+            <a data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></a>
+            <span>{top}</span>
           </div>
-          <ul>
-            <li>2 free sessions, no card needed</li>
-            <li>Pay with UPI when you want more</li>
-            <li>Delete your data any time</li>
-          </ul>
-        </aside>
-        <div className="hx-auth-main">{children}</div>
+          <div className="hx-au-main">{stagingForm ?? children}</div>
+        </div>
       </div>
     </div>
   );

@@ -1,18 +1,6 @@
 "use client";
-import { useSyncExternalStore } from "react";
 import { homeCss } from "./homeCss";
 import { Nav, Closing, Footer } from "./Homepage";
-
-const STAGING_HOST = "staging.hirestepx.com";
-const noopSubscribe = () => () => {};
-
-export function useStagingHost(): boolean {
-  return useSyncExternalStore(
-    noopSubscribe,
-    () => window.location.hostname === STAGING_HOST,
-    () => false,
-  );
-}
 
 const chromeCss = `
 .hx-chrome-nav { position: sticky; top: 0; z-index: 50; }

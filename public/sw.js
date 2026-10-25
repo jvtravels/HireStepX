@@ -2,7 +2,7 @@
 
 // Bump this string on intentional SW changes to force clients to swap in the new version
 // (Vercel doesn't substitute __BUILD_TS__, so we version manually.)
-const SW_VERSION = "v6-2026-10-17";
+const SW_VERSION = "v7-2026-10-25-golive";
 const OFFLINE_ASSETS = ["/offline.html", "/offline.css", "/offline.js"];
 const CACHE_NAME = `hirestepx-${SW_VERSION}`;
 

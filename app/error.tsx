@@ -16,7 +16,11 @@ import { c, font } from "@/tokens";
 import { Button } from "@/components/ui/button";
 import { tokens as T } from "@/auth/_tokens";
 import { CopyEmailLink } from "@/_CopyEmailLink";
+import dynamic from "next/dynamic";
+import { useStagingHost } from "@/home2/stagingHost";
 import { captureClientEvent } from "@/posthogClient";
+
+const ServerErrorPage = dynamic(() => import("@/home2/ErrorPages").then((m) => m.ServerErrorPage), { ssr: false });
 
 const SUPPORT_EMAIL = "hello@hirestepx.com";
 
@@ -27,6 +31,7 @@ export default function GlobalRouteError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const staging = useStagingHost();
   useEffect(() => {
     // Best-effort error reporting — don't block the surface on it.
     // Sentry / errorReporter will pick it up if configured.
@@ -39,6 +44,8 @@ export default function GlobalRouteError({
       /* noop */
     }
   }, [error]);
+
+  if (staging) return <ServerErrorPage digest={error.digest ?? ""} onRetry={reset} />;
 
   return (
     <div

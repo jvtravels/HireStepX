@@ -2,13 +2,14 @@
 import Skel from "./Skel";
 import { useState } from "react";
 import { useReveal } from "./motion";
+import { JsonLd, faqPage } from "./jsonld";
 
 const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
 );
 
 const QA: [string, string][] = [
-  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round\'s own scorecard, tracks your readiness against the hire bar, and shows the exact sentence to fix."],
+  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round's own scorecard, tracks your progress, and shows the exact sentence to fix."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed."],
   ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search."],
   ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram in the US, Sarvam in India) to be turned into text, and they do not keep it. We save only the written transcript."],
@@ -89,27 +90,28 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage: (i: number) => React.ReactNode }) {
+export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
   return (
     <section className="hx-sec hx-privacy" id={id}>
+      <JsonLd data={faqPage(qa)} />
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="hx-tr">
           <div className="hx-tr-l">
             <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
             <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
-            <Skel replayKey={shown}>{stage(shown)}</Skel>
+            {stage && <div className="hx-fst"><Skel replayKey={shown}>{stage(shown)}</Skel></div>}
           </div>
           <div className="hx-faq hx-ri" style={{ ["--i" as string]: 3 }}>
             {qa.map(([q, a], i) => (
               <div key={q} className="hx-fi" data-open={open === i}>
-                <button type="button" className="hx-fq" aria-expanded={open === i} aria-controls={`${id ?? "hx"}-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
+                <button type="button" className="hx-fq" id={`${id ?? "hx"}-fq-${i}`} aria-expanded={open === i} aria-controls={`${id ?? "hx"}-fa-${i}`} onClick={() => setOpen(open === i ? -1 : i)}>
                   <span className="hx-ft"><i className="hx-gdot" />{q}</span>
                   <span className="hx-fchev" aria-hidden="true"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2.5v11M2.5 8h11" /></svg></span>
                 </button>
-                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region"><div><p>{a}</p></div></div>
+                <div className="hx-fp" id={`${id ?? "hx"}-fa-${i}`} role="region" aria-labelledby={`${id ?? "hx"}-fq-${i}`}><div><p>{a}</p>{stage && open === i && <div className="hx-fs" aria-hidden="true"><Skel>{stage(i)}</Skel></div>}</div></div>
               </div>
             ))}
           </div>

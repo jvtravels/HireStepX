@@ -1,0 +1,26 @@
+# HireStepX
+
+> HireStepX is an AI mock interview platform for candidates in India. Upload a resume, pick a role, practise a spoken interview with an AI interviewer and get a scored report with feedback. Employers can also review candidates by their practice evidence and pay per unlock.
+
+The first 2 practice sessions are free with no card. Pricing is in INR with UPI support and no subscription.
+
+## Main pages
+
+- [For candidates](https://hirestepx.com/candidates): practise interviews and get scored feedback
+- [For employers](https://hirestepx.com/employers): hire from practice evidence, pay per unlock
+- [Pricing](https://hirestepx.com/pricing): free sessions, session packs and employer unlocks
+- [About](https://hirestepx.com/about)
+- [Contact](https://hirestepx.com/contact)
+
+## Free resources
+
+- [Resources](https://hirestepx.com/resources)
+- [Interview questions by role and company](https://hirestepx.com/questions)
+- [Salary guides](https://hirestepx.com/salary)
+- [Blog](https://hirestepx.com/blog)
+
+## Policies
+
+- [Privacy](https://hirestepx.com/privacy)
+- [Terms](https://hirestepx.com/terms)
+- [Refunds](https://hirestepx.com/refund)

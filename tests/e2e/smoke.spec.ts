@@ -11,7 +11,7 @@ test.describe("@smoke production", () => {
   test("homepage renders hero and primary CTA", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/HireStepX/i);
-    await expect(page.locator("h1#hd-hero")).toBeVisible();
+    await expect(page.locator("h1").first()).toContainText(/Prepare to be hired/i);
     await expect(page.locator('a[href="/signup"]').first()).toBeVisible();
   });
 

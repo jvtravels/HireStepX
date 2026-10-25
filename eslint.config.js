@@ -29,6 +29,8 @@ export default tseslint.config(
       // Mobile audit screenshot spec — work-in-progress file with explicit
       // `any` casts in CDP mock helpers; excluded until properly typed.
       "tests/e2e/mobile-audit-screenshots.spec.ts",
+      // Vendored third-party browser script (transitions.dev); not ours to restyle.
+      "src/home2/ui-generation.js",
     ],
   },
   js.configs.recommended,

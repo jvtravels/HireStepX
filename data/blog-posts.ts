@@ -3408,7 +3408,7 @@ export const BLOG_POSTS: BlogPost[] = [
     practicePageSlugs: [{ label: "Tcs Nqt Interview Questions", slug: "tcs-nqt-interview-questions" }],
     cta: "TCS NQT clears the aptitude gate: but the technical and HR rounds after that are where prepared candidates stand out. HireStepX gives you a voice-based mock for the TCS technical round (OOP, DBMS, resume project questions) so you're ready for both halves of the process.",
     relatedLinks: [
-      { label: "TCS Interview Questions India 2026", href: "/blog/tcs-interview-questions-india-2026" },
+      { label: "TCS Interview Questions for Freshers 2026", href: "/blog/tcs-interview-questions-freshers-2026" },
       { label: "Aptitude Questions for IT Companies 2026", href: "/blog/aptitude-questions-it-companies-india-2026" },
     ],
   },
@@ -4163,7 +4163,7 @@ export const BLOG_POSTS: BlogPost[] = [
     practicePageSlugs: [{ label: "Hr Interview Questions", slug: "common-hr-interview-questions-freshers-india" }],
     cta: "The biggest gap in most Indian candidates' interview preparation is not knowing what they sound like: they prepare technical answers in their head but never speak them under pressure. HireStepX's voice mock interviews simulate the entire experience: DSA problems you narrate out loud, STAR questions you answer in English, and AI feedback that tells you exactly what to improve before your real interview.",
     relatedLinks: [
-      { label: "STAR Method Interview India 2026", href: "/blog/star-method-interview-india-2026" },
+      { label: "STAR Method Interview India 2026", href: "/blog/star-method-interview-answers-india-2026" },
       { label: "DSA Interview Preparation Guide India 2026", href: "/blog/dsa-interview-preparation-guide-india-2026" },
     ],
   },

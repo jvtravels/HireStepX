@@ -34,6 +34,7 @@ import { trackAuth, loginViewedEvent } from "./_analytics";
 import { ResendStatus, resendButtonLabel, useResendVerification } from "./ResendVerification";
 import {
   buildAuthLink,
+  EMPLOYER_DISCOVERY_NOTICE,
   computeAuthRedirect,
   detectEmailProvider,
   isResetInProgress,
@@ -70,9 +71,6 @@ const RESEND_BUTTON_BASE_STYLE: React.CSSProperties = {
 };
 const RESEND_BUTTON_SECONDARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 500, boxShadow: shadows.card };
 const RESEND_BUTTON_PRIMARY_STYLE: React.CSSProperties = { ...RESEND_BUTTON_BASE_STYLE, fontWeight: 600, boxShadow: shadows.cta };
-// Shown next to the affirmation; covered by the same consent version (data/legal-versions.ts).
-const EMPLOYER_DISCOVERY_NOTICE =
-  "Employers can find a masked version of your practice profile (skills and scores, with no name) and can pay to unlock your contact details. You can switch this off any time in Settings.";
 
 export default function Signup() {
   const router = useRouter();
@@ -639,15 +637,11 @@ export default function Signup() {
             >
               {isEmployerFlow ? (
                 <>
-                  Hire on{" "}
-                  proof
-                  , not promises.
+                  Hire on proof, not promises.
                 </>
               ) : (
                 <>
-                  Practise like the{" "}
-                  real thing
-                  .
+                  Practise like the real thing.
                 </>
               )}
             </h1>
@@ -958,7 +952,7 @@ export default function Signup() {
                   description="Required. You can review them in the footer."
                 />
                 {!isEmployerFlow && (
-                  <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
+                  <p data-employer-discovery-notice style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 26px 0", lineHeight: 1.45 }}>
                     {EMPLOYER_DISCOVERY_NOTICE}
                   </p>
                 )}

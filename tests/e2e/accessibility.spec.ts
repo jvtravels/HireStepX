@@ -7,10 +7,16 @@ import { installMocks } from "./_authed-helpers";
  * Checks WCAG 2.1 AA compliance on key pages.
  */
 
+const settled = (page: import("@playwright/test").Page) =>
+  page.waitForFunction(() =>
+    document.getAnimations().every((a) => a.effect?.getTiming().iterations === Infinity || a.playState !== "running"),
+  );
+
 test.describe("Accessibility — Landing Page", () => {
   test("landing page has no critical or serious a11y violations", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("h1")).toBeVisible({ timeout: 5000 });
+    await settled(page);
 
     // Bar raised from critical-only to critical+serious, matching the
     // signup/login bar — every structural / ARIA / name-role-value rule now
@@ -42,8 +48,7 @@ test.describe("Accessibility — Landing Page", () => {
 
   test("navigation has aria-label", async ({ page }) => {
     await page.goto("/");
-    const nav = page.locator("nav[aria-label]");
-    await expect(nav).toBeAttached();
+    await expect(page.locator("nav[aria-label]").first()).toBeAttached();
   });
 
   test("images have alt text or aria-hidden", async ({ page }) => {
@@ -81,6 +86,7 @@ test.describe("Accessibility — Signup Page", () => {
   test("signup form has no critical a11y violations", async ({ page }) => {
     await page.goto("/signup");
     await expect(page.locator("form")).toBeVisible({ timeout: 5000 });
+    await settled(page);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
@@ -91,8 +97,8 @@ test.describe("Accessibility — Signup Page", () => {
 
   test("form inputs have associated labels", async ({ page }) => {
     await page.goto("/signup");
-    await expect(page.locator("label[for='signup-name']")).toBeAttached();
-    await expect(page.locator("label[for='signup-email']")).toBeAttached();
+    await expect(page.getByLabel(/name/i).first()).toBeVisible();
+    await expect(page.getByLabel(/email/i).first()).toBeVisible();
   });
 
   test("submit button is accessible", async ({ page }) => {
@@ -109,6 +115,7 @@ test.describe("Accessibility — Login Page", () => {
   test("login form has no critical a11y violations", async ({ page }) => {
     await page.goto("/login");
     await expect(page.locator("form")).toBeVisible({ timeout: 5000 });
+    await settled(page);
 
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
@@ -178,14 +185,14 @@ test.describe("Accessibility — Mobile Navigation", () => {
     // HomepageV2 nav uses a labelled hamburger button (not a modal dialog).
     await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible();
     await page.getByRole("button", { name: "Open menu" }).click();
-    await expect(page.locator("#mv2-mobile-menu")).toBeVisible();
+    await expect(page.locator("#hx-menu")).toBeVisible();
   });
 
   test("mobile menu toggle has aria-expanded and aria-controls", async ({ page }) => {
     await page.goto("/");
     const toggle = page.getByRole("button", { name: "Open menu" });
     await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    await expect(toggle).toHaveAttribute("aria-controls", "mv2-mobile-menu");
+    await expect(toggle).toHaveAttribute("aria-controls", "hx-menu");
     await toggle.click();
     // Label flips to "Close menu" once open; assert expanded state on it.
     await expect(page.getByRole("button", { name: "Close menu" })).toHaveAttribute("aria-expanded", "true");
@@ -194,9 +201,9 @@ test.describe("Accessibility — Mobile Navigation", () => {
   test("Escape key closes mobile menu", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "Open menu" }).click();
-    await expect(page.locator("#mv2-mobile-menu")).toBeVisible();
+    await expect(page.locator("#hx-menu")).toBeVisible();
     await page.keyboard.press("Escape");
-    await expect(page.locator("#mv2-mobile-menu")).toHaveCount(0);
+    await expect(page.locator("#hx-menu")).toHaveCount(0);
   });
 });
 
@@ -222,17 +229,15 @@ test.describe("Accessibility — Keyboard Navigation", () => {
 
   test("signup form is navigable with Tab", async ({ page }) => {
     await page.goto("/signup");
-    const nameInput = page.locator("#signup-name");
-    await nameInput.focus();
+    await page.locator('input[type="email"]').focus();
     await page.keyboard.press("Tab");
-    const focused = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName);
-    expect(focused).toBeTruthy();
+    const focused = await page.evaluate(() => document.activeElement?.tagName);
+    expect(["INPUT", "BUTTON", "A"]).toContain(focused);
   });
 
   test("login form is navigable with Tab", async ({ page }) => {
     await page.goto("/login");
-    const emailInput = page.locator("#signup-email");
-    await emailInput.focus();
+    await page.locator('input[type="email"]').focus();
     await page.keyboard.press("Tab");
     const focused = await page.evaluate(() => document.activeElement?.tagName);
     expect(["INPUT", "BUTTON", "A", "LABEL"]).toContain(focused);
@@ -240,12 +245,10 @@ test.describe("Accessibility — Keyboard Navigation", () => {
 
   test("focus is visible on interactive elements", async ({ page }) => {
     await page.goto("/signup");
-    const nameInput = page.locator("#signup-name");
-    await nameInput.focus();
-    // Verify the element has focus
-    await expect(nameInput).toBeFocused();
-    // Check that there is some visual focus indicator (border change, outline, etc.)
-    const borderColor = await nameInput.evaluate(el => getComputedStyle(el).borderColor);
+    const input = page.locator('input[type="email"]').first();
+    await input.focus();
+    await expect(input).toBeFocused();
+    const borderColor = await input.evaluate(el => getComputedStyle(el).borderColor);
     expect(borderColor).toBeTruthy();
   });
 });
@@ -253,27 +256,22 @@ test.describe("Accessibility — Keyboard Navigation", () => {
 test.describe("Accessibility — FAQ Section", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/");
-    const faq = page.locator("#faq");
-    await faq.scrollIntoViewIfNeeded();
-    await expect(page.getByRole("heading", { name: /Things you'd ask/ })).toBeVisible({ timeout: 10000 });
+    await page.locator("#faq").scrollIntoViewIfNeeded();
+    await expect(page.getByRole("heading", { name: /answered plainly/i })).toBeVisible({ timeout: 10000 });
   });
 
-  test("FAQ category tabs expose aria-selected", async ({ page }) => {
-    const tablist = page.getByRole("tablist", { name: "FAQ categories" });
-    const tabs = tablist.getByRole("tab");
-    const count = await tabs.count();
-    expect(count).toBeGreaterThan(0);
-    // Exactly one tab is selected at a time.
-    await expect(tablist.locator('[role="tab"][aria-selected="true"]')).toHaveCount(1);
+  test("FAQ questions are buttons that expose aria-expanded and aria-controls", async ({ page }) => {
+    const first = page.locator("#faq-fq-0");
+    await expect(first).toHaveAttribute("aria-expanded", "true");
+    await expect(first).toHaveAttribute("aria-controls", "faq-fa-0");
+    await expect(page.locator("#faq-fa-0")).toHaveAttribute("role", "region");
   });
 
-  test("FAQ items use native details and are keyboard-operable", async ({ page }) => {
-    // A collapsed item: open the auto-renew question via keyboard.
-    const item = page.locator("details.mv2p-faq").filter({ hasText: "Do plans auto-renew?" });
-    const summary = item.locator("summary");
-    await summary.scrollIntoViewIfNeeded();
-    await summary.focus();
+  test("a collapsed FAQ item opens from the keyboard", async ({ page }) => {
+    const second = page.locator("#faq-fq-1");
+    await second.scrollIntoViewIfNeeded();
+    await second.focus();
     await page.keyboard.press("Enter");
-    await expect(item).toHaveJSProperty("open", true);
+    await expect(second).toHaveAttribute("aria-expanded", "true");
   });
 });
