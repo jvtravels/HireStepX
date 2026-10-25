@@ -4,6 +4,7 @@ import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../data/salary-seo";
 import { COMPANY_LABEL } from "../../data/company-labels";
 import { seoHubItems } from "./seoHubItems";
 import type { Item } from "./resourcesData";
+import { CARD_REDIRECTS } from "./cardRedirects";
 
 const label = (slug: string) => COMPANY_LABEL[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
 
@@ -25,5 +26,8 @@ export function buildResourceItems(): Item[] {
   const companies: Item[] = [...new Set(SEO_PAGES.map((p) => p.company))].map((c) => ({
     k: "company", t: `${label(c)} interview guide`, h: `/companies/${c}`, co: label(c),
   }));
-  return [...guides, ...salaries, ...questions, ...companies, ...seoHubItems()];
+  const seen = new Set<string>();
+  return [...guides, ...salaries, ...questions, ...companies, ...seoHubItems()]
+    .map((i) => ({ ...i, h: CARD_REDIRECTS[i.h] ?? i.h }))
+    .filter((i) => (seen.has(`${i.k}|${i.h}`) ? false : (seen.add(`${i.k}|${i.h}`), true)));
 }
