@@ -534,7 +534,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             <div className="sx-card sx-dark">
               <b>Practise this loop</b>
               <span>An AI interviewer asks the {companyLabel} questions and scores each answer.</span>
-              <a data-no-underline className="hx-btn" href={signup}>Start free <Arrow /></a>
+              <a data-no-underline className="hx-btn" href={signup}>Practise free <Arrow /></a>
             </div>
             <div className="sx-card">
               <span className="sx-mono">Framework</span>

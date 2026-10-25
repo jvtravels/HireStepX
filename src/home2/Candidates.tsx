@@ -164,7 +164,7 @@ function RewriteStory() {
 /* ── Pricing ── */
 
 const PLANS: { name: string; price: string; unit: string; sessions: string; note: string; feat?: boolean; cta: string }[] = [
-  { name: "Free", price: "₹0", unit: "to start", sessions: "2 sessions", note: "Every new account. No card needed.", cta: "Start free" },
+  { name: "Free", price: "₹0", unit: "to start", sessions: "2 sessions", note: "Every new account. No card needed.", cta: "Practise free" },
   { name: "Sprint Pack", price: "₹39", unit: "for 5 sessions", sessions: "₹7.80 a session", note: "Valid for 30 days. Built for a campus drive or a job switch.", feat: true, cta: "Get the pack" },
   { name: "Single session", price: "₹9", unit: "a session", sessions: "Pay as you go", note: "Your credit never expires. Use it whenever you are ready.", cta: "Buy one" },
 ];
@@ -320,7 +320,7 @@ function Proof() {
           </div>
         </Skel>
       </div>
-      <p className="pf-cta"><a data-no-underline className="hx-btn lg" href="/signup">Start free, get shortlisted <Arrow /></a></p>
+      <p className="pf-cta"><a data-no-underline className="hx-btn lg" href="/signup">Practise free, get shortlisted <Arrow /></a></p>
     </Sec>
   );
 }
