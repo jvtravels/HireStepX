@@ -94,6 +94,8 @@ export const homeCss = `
 .hx-star .miss span { color: var(--accent-ink); }
 .hx-fix { min-height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--btn); background: var(--btn); color: var(--white); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background .15s; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .hx-ah { display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 20px; border-bottom: 1px solid var(--line); background: var(--wash); font-size: 13px; font-weight: 500; color: var(--ink); }
+.hx-ah > span:not(.hx-dots) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hx-ah em, .hx-ah kbd { flex: none; white-space: nowrap; }
 .hx-ah i { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); }
 .hx-ah span:nth-of-type(2) { color: var(--ink-2); font-weight: 400; }
 .hx-ah em { margin-left: auto; font-style: normal; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 400; color: var(--ink-3); }
@@ -103,7 +105,7 @@ export const homeCss = `
 .hx-fix:hover { background: var(--btn-hover); }
 .hx-note { margin-top: 16px; font-size: 14px !important; color: var(--ink-3); }
 
-.hx-hero { padding-bottom: 96px; }
+.hx-hero { padding-bottom: 112px; }
 
 .hx-h2.hx-wide { margin-top: 14px; }
 .hx-wave { display: grid; gap: 14px; justify-items: center; }
@@ -190,6 +192,14 @@ export const homeCss = `
 .hx-pv-score strong { margin-left: auto; font-family: var(--font-mono), ui-monospace, monospace; font-size: 22px; font-weight: 500; color: var(--btn); }
 .hx-pv-opt { all: unset; box-sizing: border-box; cursor: pointer; padding: 7px 14px; border-radius: 99px; font-size: 14px; border: 1px solid var(--line-2); color: var(--ink-2); }
 .hx-pv-opt[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
+@media (hover: hover) {
+  .hx-ghost { transition: color .2s; }
+  .hx-ghost:hover { color: var(--ink); }
+  .hx-links a, .hx-foot-cols a { transition: color .2s; }
+  .hx-pv-opt { transition: border-color .2s, color .2s; }
+  .hx-pv-opt:not([aria-pressed="true"]):hover { border-color: var(--ink-3); color: var(--ink); }
+  .hx-rk-lg li:not(.hx-sel):hover { border-color: var(--ink-3); }
+}
 .hx-pv-opt:focus-visible { outline: 2px solid var(--btn) !important; outline-offset: 2px; border-color: var(--btn); }
 .hx-pv-note .hx-pv-tag { margin-left: 6px; }
 .hx-vis-open { font-weight: 500; color: var(--btn); }
@@ -311,7 +321,7 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-score .hx-star { width: 100%; }
   .hx-score { grid-template-columns: 1fr; justify-items: center; }
   .hx-sec { padding: 64px 0; }
-  .hx-hero { padding-bottom: 56px; }
+  .hx-hero { padding-bottom: 64px; }
   .hx-head { flex-direction: column; align-items: flex-start; gap: 24px; }
   .hx-points { grid-template-columns: 1fr; gap: 28px; }
   .hx-wgrid, .hx-egrid { grid-template-columns: 1fr; }
@@ -378,7 +388,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-sr-col li.miss span { color: var(--accent-ink); }
 .hx-pane .hx-fix, .hx-rep-r .hx-fix { align-self: flex-start; margin-top: 4px; }
 .hx-rk { list-style: none; padding: 0; margin: 0; position: relative; }
-.hx-rk li { position: absolute; inset: 0 0 auto 0; height: 52px; display: grid; grid-template-columns: 20px minmax(0, auto) 1fr auto; align-items: center; gap: 10px; padding: 0 12px; background: var(--white); border: 1px solid var(--line); border-radius: 10px; transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .2s; font-size: 13px; }
+.hx-rk li { position: absolute; inset: 0 0 auto 0; height: 52px; display: grid; grid-template-columns: 20px minmax(0, auto) 1fr auto; align-items: center; gap: 10px; padding: 0 12px; background: var(--white); border: 1px solid var(--line); border-radius: 10px; transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow .2s, border-color .2s; font-size: 13px; }
 .hx-rk li em { font-style: normal; color: var(--ink-3); font-size: 12px; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .hx-rk li.hx-me { box-shadow: 0 0 0 1px var(--btn); border-color: var(--btn); }
 .hx-n { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
@@ -434,7 +444,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-rep-l svg { width: 160px; height: auto; }
 .hx-rep-r { padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; min-width: 0; padding-right: 336px; }
 .hx-rep-r .hx-bars { margin-top: 8px; }
-.hx-inbox { min-height: 560px; display: grid; grid-template-columns: 220px 320px 1fr; }
+.hx-inbox { min-height: 560px; display: grid; grid-template-columns: 220px 344px 1fr; }
 .hx-side { padding: 24px; background: var(--wash); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 14px; }
 .hx-side > b { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 24px; font-weight: 600; letter-spacing: -0.02em; }
 .hx-pl-gap { margin-top: 12px; }
@@ -496,6 +506,8 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-stage-hero, .hx-stage-crop { height: auto; padding: 16px 16px 0; }
   .hx-win { min-height: 0; }
   .hx-split, .hx-rep, .hx-inbox { grid-template-columns: 1fr; }
+  .hx-ah { padding: 0 14px; }
+  .hx-ah .hx-dots { display: none; }
   .hx-pane { padding: 20px; }
   .hx-pane-r, .hx-rep-l, .hx-side { border-left: 0; border-right: 0; border-top: 1px solid var(--line); }
   .hx-rep-l { flex-direction: row; justify-content: space-between; flex-wrap: wrap; }
@@ -524,7 +536,7 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-tx ins, .hx-who { animation: none; }
 }
 
-.hx-how { margin-top: 56px; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px; align-items: center; }
+.hx-how { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px; align-items: center; }
 .hx-how-list { list-style: none; margin: 0; padding: 0; position: relative; }
 .hx-how-list li { position: relative; padding: 4px 0; }
 .hx-how-list button { all: unset; box-sizing: border-box; display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 14px 0; cursor: pointer; border-radius: 8px; }

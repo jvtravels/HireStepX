@@ -146,7 +146,7 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
   return (
     <div className="hx-sd">
       <div className="hx-uk">
-        <span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span>
+        <span className="hx-who-row"><Avatar id="a41f" /><span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span></span>
         <button type="button" className="hx-fakebtn" aria-pressed={revealed} onClick={() => setRevealed((v) => !v)}>{revealed ? "Sent" : "Say hello"}</button>
       </div>
       {revealed && <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p>}
@@ -231,7 +231,7 @@ export function InboxSurface() {
               <li key={c.id} className={c.id === sel ? "hx-sel" : undefined} style={{ transform: `translateY(${i * ROW}px)` }}>
                 <button type="button" onClick={() => setSel(c.id)} aria-pressed={c.id === sel}>
                   <span className="hx-n">{i + 1}</span>
-                  <AnonName id={c.id} />
+                  <span className="hx-who-row"><Avatar id={c.id} /><AnonName id={c.id} /></span>
                   <em>{isShort(c.id) ? "Shortlisted" : c.role}</em>
                   <ScoreChip score={c.s} />
                 </button>
@@ -244,7 +244,7 @@ export function InboxSurface() {
             <div className="hx-cmp" data-two={cmp}>
               {shown.map((c) => (
                 <blockquote key={c.id} className="hx-swap">
-                  <span className="hx-evh"><b>#{c.id}</b><ScoreChip score={c.s} /></span>
+                  <span className="hx-evh"><span className="hx-who-row"><Avatar id={c.id} /><b>#{c.id}</b></span><ScoreChip score={c.s} /></span>
                   <p>{c.a}</p>
                   <ul className="hx-evt">{c.t.map(([t, good]) => <li key={t} className={good ? "good" : "gap"}>{t}</li>)}</ul>
                 </blockquote>

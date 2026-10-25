@@ -93,7 +93,7 @@ function Faqs({ items }: { items: { q: string; a: string }[] }) {
 const HUBS = [
   ["Interview questions", "/questions"], ["Company guides", "/companies"], ["Salary guides", "/salary"], ["Blog", "/blog"],
   ["Interview preparation", "/interview-prep"], ["AI mock interview", "/ai-mock-interview"],
-  ["About", "/about"], ["Grievance officer", "/privacy#grievance-officer"],
+  ["About", "/about"],
 ];
 
 function Hubs() {

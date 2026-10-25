@@ -245,7 +245,7 @@ export function Footer() {
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
             <div><h3>Product</h3><a data-no-underline href="/candidates">For talent</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a></div>
-            <div><h3>Company</h3><a href="/about">About</a><a href="/contact">Contact</a><a href="/privacy#grievance-officer">Grievance officer</a></div>
+            <div><h3>Company</h3><a href="/about">About</a><a href="/contact">Contact</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>
           <div className="hx-foot-bar">
