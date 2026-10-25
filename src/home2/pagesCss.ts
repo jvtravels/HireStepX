@@ -1027,4 +1027,5 @@ export const pagesCss = `
   .hi-p { padding: 24px 16px; min-height: 200px; }
   .hi-sc b { font-size: 44px; }
 }
+.pg-sec.ft-head { padding-bottom: 0; }
 `;
