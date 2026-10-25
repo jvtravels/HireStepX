@@ -81,7 +81,7 @@ describe("2.0 building blocks", () => {
         theme.actions([{ label: "Go", href: "https://x.test/a" }, { label: "Other", href: "https://x.test/b", ghost: true }]) +
         theme.note("fine print") +
         theme.note("careful", { tone: "warn" }) +
-        theme.title("T", { accentWord: "accent" }) +
+        theme.title("T") +
         theme.signoff({ note: "n" }),
     });
 
@@ -145,5 +145,13 @@ describe("2.0 building blocks", () => {
   it("dataCard keeps the optional label and header row", () => {
     expect(theme.dataCard("Receipt", [["A", "1"]])).toContain("Receipt");
     expect(theme.dataCard("", [["A", "1"]])).not.toContain("text-transform:uppercase");
+  });
+
+  it("no production email file brings back the split accentWord headline", () => {
+    const dir = join(__dirname, "../../server-handlers");
+    const offenders = readdirSync(dir)
+      .filter((f) => f.endsWith(".ts"))
+      .filter((f) => /accentWord|\bemailTitle\(/.test(readFileSync(join(dir, f), "utf8")));
+    expect(offenders).toEqual([]);
   });
 });

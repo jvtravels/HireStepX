@@ -3,7 +3,7 @@
  * employer-profile handler and the Node nudge cron share one small module.
  * Deliberately imports only _email-theme (no _shared) to keep edge bundles small. */
 
-import { emailShell, title, para, button, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, para, b, button, escapeHtml, type EmailFooterOptions } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -22,8 +22,12 @@ export function buildEmployerWelcomeEmail(companyName: string): BuiltEmail {
   const company = escapeHtml(plain);
   const subject = `Welcome to HireStepX, ${plain}`;
   const body =
-    title(`Welcome, ${company}`) +
-    para("Your company profile is live. The fastest way to see what HireStepX does is to post your first role.") +
+    hero({
+      tone: "success",
+      eyebrow: "Welcome",
+      title: `Welcome, ${company}`,
+      lede: "Your company profile is live. The fastest way to see what HireStepX does is to post your first role.",
+    }) +
     para("Tell us the title, skills and experience you need. We match it against candidates who have completed real mock interviews, and rank them on evidence from those sessions, not a keyword-stuffed resume.") +
     para("Browsing matches is free. You pay only when you unlock a candidate's contact details, so there is nothing to commit to up front.") +
     button("Post your first role", `${appUrl()}/employer/requirements/new`);
@@ -100,16 +104,22 @@ export function buildNudgeEmail(c: NudgeCandidate, footer?: EmailFooterOptions):
     const n = c.matchCount;
     const subject = `${n} ${n === 1 ? "candidate is" : "candidates are"} waiting for your ${c.requirement.title.trim().slice(0, 60)} role`;
     const body =
-      title(`${n} ${n === 1 ? "match is" : "matches are"} waiting`) +
-      para(`We matched ${n} ${n === 1 ? "candidate" : "candidates"} to <strong>${role}</strong>, but you haven't unlocked anyone yet.`) +
+      hero({
+        eyebrow: "Matches waiting",
+        title: `${n} ${n === 1 ? "match is" : "matches are"} waiting for you`,
+        lede: `We matched ${n} ${n === 1 ? "candidate" : "candidates"} to ${b(role)}, but you haven't unlocked anyone yet.`,
+      }) +
       para("Open the matches to see each candidate's interview evidence and how they scored. You only pay when you unlock someone's contact details.") +
       button("Review your matches", link);
     return { subject, html: emailShell({ preview: subject, body, footer }) };
   }
   const subject = `Is your ${c.requirement.title.trim().slice(0, 60)} role still open?`;
   const body =
-    title("Still hiring for this role?") +
-    para(`<strong>${role}</strong> has been open for a couple of weeks without an unlock.`) +
+    hero({
+      eyebrow: "Quick check-in",
+      title: "Still hiring for this role?",
+      lede: `${b(role)} has been open for a couple of weeks without an unlock.`,
+    }) +
     para("If you are still hiring, re-run matching or loosen a requirement to widen the pool. If you have filled it, close the role so we stop matching.") +
     button("Review the role", link);
   return { subject, html: emailShell({ preview: subject, body, footer }) };

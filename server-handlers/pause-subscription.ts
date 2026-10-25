@@ -2,7 +2,7 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl, escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button } from "./_email-theme";
+import { emailShell, hero, para, b, button } from "./_email-theme";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -119,16 +119,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ? emailShell({
             preview: "Billing is on hold. Resume whenever you're ready.",
             body:
-              title("Paused,", { accentWord: "not gone." }) +
-              para(`Hi ${safeName}, we've paused your HireStepX ${b(safeTier)} plan. You won't be billed while it's paused, and everything (sessions, reports, streaks) stays exactly as you left it.`) +
+              hero({
+                eyebrow: "Plan paused",
+                title: `Hi ${safeName}, your plan is paused`,
+                lede: `We've paused your HireStepX ${b(safeTier)} plan. You won't be billed while it's paused, and everything (sessions, reports, streaks) stays exactly as you left it.`,
+              }) +
               button("Resume anytime", `${APP_URL}/dashboard/settings`, { tone: "ghost" }) +
               para(`Your features switch back on the moment you resume.`, { small: true, muted: true }),
           })
         : emailShell({
             preview: "Your subscription is active again.",
             body:
-              title("Back", { accentWord: "on." }) +
-              para(`Hi ${safeName}, your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`) +
+              hero({
+                tone: "success",
+                eyebrow: "Plan resumed",
+                title: `Hi ${safeName}, welcome back`,
+                lede: `Your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`,
+              }) +
               button("Continue practising", `${APP_URL}/dashboard`),
           });
       try {

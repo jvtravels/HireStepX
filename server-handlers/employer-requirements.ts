@@ -40,7 +40,7 @@ import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title as emailTitle, para, button, dataCard, escapeHtml } from "./_email-theme";
+import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
@@ -158,8 +158,12 @@ async function sendStrongMatchEmail(opts: {
       footer,
       preview: headline,
       body:
-        emailTitle("Strong match", { accentWord: "updated" }) +
-        para(escapeHtml(headline)) +
+        hero({
+          tone: "success",
+          eyebrow: "Strong match",
+          title: "You have a strong match",
+          lede: escapeHtml(headline),
+        }) +
         dataCard("Requirement", [
           ["Role", escapeHtml(reqTitle)],
           ["Candidates", String(opts.matchCount)],

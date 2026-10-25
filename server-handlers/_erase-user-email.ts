@@ -3,7 +3,7 @@
  * edited, they are overwritten on their normal cycle, and payment records are kept
  * (anonymised) because tax law requires it. */
 
-import { emailShell, title, para, link, dataCard, graveEyebrow } from "./_email-theme";
+import { emailShell, hero, para, link, dataCard } from "./_email-theme";
 import { escapeHtml } from "./_shared";
 
 export interface ErasureEmailEnv {
@@ -19,9 +19,11 @@ export function buildErasureEmail(name: string, appUrl: string): { subject: stri
     html: emailShell({
       preview: "Your account and personal data have been deleted. Here's exactly what that covers.",
       body:
-        graveEyebrow("Permanent &middot; Irreversible") +
-        title("Deleted, as requested.") +
-        para(`Hi ${safeName}, your HireStepX account and the personal data attached to it have been permanently deleted. This can't be undone.`) +
+        hero({
+          eyebrow: "Permanent and irreversible",
+          title: `Your account is deleted, ${safeName}`,
+          lede: "Your HireStepX account and the personal data attached to it have been permanently deleted, as you asked. This can't be undone.",
+        }) +
         dataCard("Removed", [
           ["Profile & login", "Deleted"],
           ["Sessions, transcripts & evaluations", "Deleted"],

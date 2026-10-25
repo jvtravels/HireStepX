@@ -9,7 +9,7 @@ import { escapeHtml } from "./_shared";
 import { handleEmployerUnlockWebhook } from "./_employer-unlock-webhook";
 import { alertUnlockProblem } from "./_unlock-fulfillment";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title, para, b, button, dataCard, hero, note, data } from "./_email-theme";
+import { emailShell, para, b, button, dataCard, hero, note, data } from "./_email-theme";
 import { grantSessionCredits, revokeSessionCredits } from "./_session-credits";
 import { resolveCapturedPayment } from "./_webhook-payment-helpers";
 import { notify } from "./_notify";
@@ -478,8 +478,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: `Auto-renewed and active until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
                   body:
-                    title("Renewed,", { accentWord: "nothing to do." }) +
-                    para(`Hi ${safeName}, your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Keep practising, your sessions carry straight on.`) +
+                    hero({
+                      tone: "success",
+                      eyebrow: "Plan renewed",
+                      title: `Hi ${safeName}, you're renewed`,
+                      lede: `Your HireStepX ${b(tier)} plan auto-renewed and is active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. There's nothing you need to do.`,
+                    }) +
                     button("Continue practising", `${APP_URL}/dashboard`),
                 }),
               }),
@@ -695,8 +699,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: "We've received a payment dispute on your account.",
                   body:
-                    title("Dispute", { accentWord: "received." }) +
-                    para(`Hi ${safeName}, we've been notified of a payment dispute on your HireStepX account. Your account has been moved to the free plan while it's under review. If this was a mistake or you'd like to resolve it, please reply to this email or contact us at support@hirestepx.com.`) +
+                    hero({
+                      eyebrow: "Payment dispute",
+                      title: `Hi ${safeName}, we've received a dispute`,
+                      lede: "We've been notified of a payment dispute on your HireStepX account. Your account has been moved to the free plan while it's under review.",
+                    }) +
+                    para("If this was a mistake or you'd like to sort it out, just reply to this email or write to us at support@hirestepx.com.") +
                     button("Contact support", "mailto:support@hirestepx.com"),
                 }),
               }),
@@ -720,9 +728,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: "The dispute on your account has been closed.",
                   body:
-                    title("Dispute", { accentWord: "resolved." }) +
-                    para(`Hi ${safeName}, the payment dispute on your account has been resolved in our favour. If you'd like to continue using HireStepX, you're welcome to re-subscribe from your dashboard.`) +
-                    button("View plans", `${APP_URL}/dashboard`),
+                    hero({
+                      eyebrow: "Payment dispute",
+                      title: `Hi ${safeName}, the dispute is resolved`,
+                      lede: "The payment dispute on your account has been closed in our favour.",
+                    }) +
+                    para("If you'd like to keep using HireStepX, you're welcome to subscribe again from your dashboard whenever you're ready.") +
+                    button("View my account", `${APP_URL}/settings`),
                 }),
               }),
             });
@@ -745,9 +757,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: "Your account status update.",
                   body:
-                    title("Account", { accentWord: "update." }) +
-                    para(`Hi ${safeName}, the payment dispute on your account has been closed. Your account is currently on the free plan. You're welcome to re-subscribe from your dashboard whenever you're ready.`) +
-                    button("View plans", `${APP_URL}/dashboard`),
+                    hero({
+                      eyebrow: "Account update",
+                      title: `Hi ${safeName}, your dispute is closed`,
+                      lede: "The payment dispute on your account has been closed. Your account is currently on the free plan.",
+                    }) +
+                    para("You're welcome to subscribe again from your dashboard whenever you're ready.") +
+                    button("View my account", `${APP_URL}/settings`),
                 }),
               }),
             });
@@ -859,10 +875,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 html: emailShell({
                   preview: `Your refund of ${refundAmountStr} has been processed.`,
                   body:
-                    title("Refund", { accentWord: "processed." }) +
-                    para(`Hi ${safeName}, your refund of ${b(refundAmountStr)} has been successfully processed and should appear in your original payment method within 1–3 business days. Your account has been moved to the free plan. You're welcome to subscribe again whenever you're ready.`) +
-                    dataCard("Refund confirmed", [["Amount", refundAmountStr], ["Status", "Processed"]]) +
-                    button("View plans", `${APP_URL}/dashboard`),
+                    hero({
+                      tone: "success",
+                      eyebrow: "Refund",
+                      title: `Hi ${safeName}, your refund is done`,
+                      lede: `Your refund of ${b(refundAmountStr)} has been processed and should appear in your original payment method within 1–3 business days.`,
+                    }) +
+                    data([["Amount", refundAmountStr], ["Status", "Processed"]]) +
+                    para("Your account has been moved to the free plan. You're welcome to subscribe again whenever you're ready.") +
+                    button("View my account", `${APP_URL}/settings`),
                 }),
               }),
             });
@@ -1005,8 +1026,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               html: emailShell({
                 preview: `Your ${quantity} session credit${quantity > 1 ? "s are" : " is"} ready.`,
                 body:
-                  title("Credits", { accentWord: "added." }) +
-                  para(`Hi ${safeName}, ${b(`${quantity} session credit${quantity > 1 ? "s" : ""}`)} ${quantity > 1 ? "have" : "has"} been added to your HireStepX account. Jump back in whenever you're ready.`) +
+                  hero({
+                    tone: "success",
+                    eyebrow: "Credits added",
+                    title: `Hi ${safeName}, you're all set`,
+                    lede: `${b(`${quantity} session credit${quantity > 1 ? "s" : ""}`)} ${quantity > 1 ? "have" : "has"} been added to your HireStepX account. Jump back in whenever you're ready.`,
+                  }) +
                   button("Start practising", `${APP_URL}/dashboard`),
               }),
             }),
@@ -1107,8 +1132,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             html: emailShell({
               preview: `Your ${tier} plan is live until ${end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}.`,
               body:
-                title(`${tier} is`, { accentWord: "live." }) +
-                para(`Hi ${safeName}, your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. This is a one-time purchase — it won't auto-renew, so buy again anytime to keep practising after it ends.`) +
+                hero({
+                  tone: "success",
+                  eyebrow: "Plan activated",
+                  title: `Hi ${safeName}, ${tier} is live`,
+                  lede: `Your HireStepX ${b(tier)} plan is now active until ${b(end.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}.`,
+                }) +
+                para("This is a one-time purchase, so it won't auto-renew. You can buy again anytime to keep practising after it ends.") +
                 button("Start practising", `${APP_URL}/dashboard`),
             }),
           }),

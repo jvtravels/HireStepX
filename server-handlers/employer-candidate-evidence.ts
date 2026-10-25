@@ -41,7 +41,7 @@ import {
 } from "./_employer-candidate-evidence-helpers";
 import { notify } from "./_notify";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, contactReleasable, DENIED_STATUS } from "./_entitlements";
 import { after } from "next/server";
@@ -95,8 +95,12 @@ async function sendProfileViewedEmail(opts: { candidateUserId: string }): Promis
       footer: parts.footer,
       preview: headline,
       body:
-        emailTitle("An employer viewed", { accentWord: "your profile" }) +
-        para(`Hi ${firstName}, ${headline} Your name and contact details stay hidden unless you choose to respond. You can switch employer visibility off any time in Settings.`) +
+        hero({
+          eyebrow: "Profile view",
+          title: `Hi ${firstName}, an employer viewed your profile`,
+          lede: headline,
+        }) +
+        para("Your name and contact details stay hidden unless you choose to respond. You can switch employer visibility off any time in Settings.") +
         button("View your matches", link),
     });
 

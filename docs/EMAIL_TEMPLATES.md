@@ -4,13 +4,13 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 
 **Sender identity (all emails)**
 
-- **From**: `HireStepX <hello@hirestepx.com>` (fallback: `onboarding@resend.dev`)
-- **Reply-To**: `support@hirestepx.com`
-- **Brand color**: `#4F46E5` (indigo) primary, `#10B981` (emerald) success, `#EF4444` (red) security/alert
-- **Logo**: HireStepX wordmark, top-left, 32px height
-- **Footer (every email)**: address line + unsubscribe link (lifecycle/marketing only — not transactional/security) + "You're receiving this because you have a HireStepX account."
-- **Width**: 600px max, mobile-first single column, 16px base font, system stack
-- **CTA buttons**: rounded 8px, 14px 24px padding, white text on `#4F46E5`
+- **From**: `process.env.FROM_EMAIL`, defaulting to `HireStepX <noreply@hirestepx.com>`. Replies to a few emails go to `support@hirestepx.com` or `hello@hirestepx.com` (set per handler).
+- **Colors** (tokens in `server-handlers/_email-theme.ts`): indigo `#312E81` primary (buttons, links), success green `#15803D`, error red `#B91C1C` (security/failure hero dot and light-red frame), neutral page background `#FAFAFA`, white sheet.
+- **Header**: HireStepX wordmark image (`https://hirestepx.com/wordmark.png`, 22px high), top-left.
+- **Hero**: every email opens with a `hero()` block: a white card (eyebrow with status dot, 28px headline, optional lede) on a rounded 16px frame with the site's soft gradient (light red for `tone: "error"`).
+- **Footer (every email)**: "You're receiving this because you have an account at hirestepx.com." plus "Manage notifications"; marketing/lifecycle emails (`marketing: true`) also carry a signed "Unsubscribe" link, transactional ones never do. Sender line is `HireStepX · hello@hirestepx.com`; a postal address renders only if `LEGAL_POSTAL_ADDRESS` is configured, never invented.
+- **Width**: 600px max, single column, 15px body text, Geist/system sans stack, no italics.
+- **CTA buttons**: 10px radius, 12px 22px padding, white text on indigo (ghost variant is outlined).
 
 **Voice**: confident, warm, India-aware (₹ for amounts, IST for times where relevant), no emoji-heavy fluff. Short sentences. One clear action per email.
 
@@ -25,7 +25,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Transactional (no unsubscribe) |
 | Rate limit | 3 / IP / hour |
 
-**Subject**: `Verify your email — HireStepX`**Preheader**: `One click to unlock 3 free mock interviews.`
+**Subject**: `Verify your email to get started`**Preheader**: `One click and your 2 free mock interviews are yours.`
 
 **Body**
 
@@ -50,12 +50,12 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Lifecycle (unsubscribe ok) |
 | Rate limit | 2 / IP / day |
 
-**Subject**: `Still there? Verify your email and start practicing`**Preheader**: `Your 3 free interviews are waiting.`
+**Subject**: `Still there? Verify your email and start practicing`**Preheader**: `Your 2 free interviews are waiting.`
 
 **Body**
 
 - **H1**: One step left, {firstName}.
-- **Body**: We saved your spot. Verify your email to unlock 3 free mock interviews — no card required.
+- **Body**: We saved your spot. Verify your email to unlock 2 free mock interviews — no card required.
 - **CTA**: `Verify email`
 - **Soft urgency**: "This link expires in 24 hours."
 - **Tiny**: "Need a new link? Sign in and we'll resend."
@@ -287,7 +287,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 
 - **H1**: Your {tier} plan expired
 - **Body**: You've been moved to the free tier. **All your sessions, scores, and progress are preserved.**
-- **Free tier card**: 3 free interviews · behavioral questions · skill tracking
+- **Free plan data**: 2 free mock interviews · your data fully preserved
 - **Primary CTA**: `Renew {tier}` → `/pricing`
 - **Secondary CTA**: `Continue on free tier` → `/dashboard`
 

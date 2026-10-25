@@ -11,6 +11,7 @@
 export const config = { runtime: "edge" };
 
 import { corsHeaders, withRequestId, isRateLimited, getClientIp } from "./_shared";
+import { emailShell, hero, para, b, note, escapeHtml, firstNameOf } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
@@ -105,14 +106,18 @@ export default async function handler(req: Request): Promise<Response> {
     from: FROM_EMAIL,
     to: [email],
     subject: `We got your message (${ref}) — HireStepX Support`,
-    html: `
-      <p>Hi ${safeText(name)},</p>
-      <p>Thanks for reaching out. We've received your message and will reply within 1 business day.</p>
-      <p>Your reference number is <strong>${ref}</strong> — quote it if you follow up.</p>
-      <p>— HireStepX Support Team</p>
-      <hr/>
-      <p style="color:#888;font-size:12px;">Your message: ${safeText(message).replace(/\n/g, "<br/>")}</p>
-    `,
+    html: emailShell({
+      preview: `We've received your message. Your reference is ${ref}.`,
+      body:
+        hero({
+          tone: "success",
+          eyebrow: "Message received",
+          title: `Thanks for reaching out, ${firstNameOf(name)}`,
+          lede: "We've received your message and will reply within 1 business day.",
+        }) +
+        para(`Your reference number is ${b(ref)}. Quote it if you follow up.`) +
+        note(`Your message: ${escapeHtml(message.slice(0, 2000)).replace(/\n/g, "<br/>")}`),
+    }),
   });
 
   return new Response(JSON.stringify({ ok: true, ref }), { status: 200, headers });

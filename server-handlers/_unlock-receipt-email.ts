@@ -6,7 +6,7 @@
 
 import { slog } from "./_shared";
 import { readLegalEntity } from "../data/legal-entity";
-import { emailShell, title, para, b, dataCard, mono, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, para, b, data, mono, button, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 
@@ -41,9 +41,13 @@ export function buildReceiptEmail(r: UnlockReceipt, opts: { company: string | nu
   if (r.creditPaise > 0) rows.push(["Account credit applied", mono(rupees(r.creditPaise))]);
   rows.push(["Payment ID", mono(escapeHtml(r.paymentId))]);
   const body =
-    title("Contacts", { accentWord: "unlocked." }) +
-    para(`${opts.company ? `Hi ${escapeHtml(opts.company)}, ` : ""}your payment went through and ${b(`${r.candidates} candidate contact${r.candidates === 1 ? "" : "s"}`)} ${r.candidates === 1 ? "is" : "are"} ready.`) +
-    dataCard("Receipt", rows) +
+    hero({
+      tone: "success",
+      eyebrow: opts.taxInvoice ? "Tax invoice" : "Receipt",
+      title: opts.company ? `Thanks, ${escapeHtml(opts.company)}` : "Thanks, your payment went through",
+      lede: `Your payment went through and ${b(`${r.candidates} candidate contact${r.candidates === 1 ? "" : "s"}`)} ${r.candidates === 1 ? "is" : "are"} ready.`,
+    }) +
+    data(rows) +
     button("Open your requirements", `${opts.appUrl}/employer`) +
     para(
       opts.taxInvoice

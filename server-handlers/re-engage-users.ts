@@ -10,7 +10,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { fetchAllPages, timeBudget } from "./_batch";
-import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, getSuppressedUserIds, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -106,18 +106,21 @@ function buildEmail(
   if (tier === "employer_interest" && employerInterest) {
     const interestedRole = employerInterest.roleTitle ? escapeHtml(employerInterest.roleTitle) : "a role";
     const subject = `Employers are checking you out, ${user.name?.split(" ")[0] || "there"} — here's how to stand out`;
-    const hero =
+    const heroCopy =
       employerInterest.count === 1
-        ? `Hi ${name}, an employer is considering you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
-        : `Hi ${name}, ${employerInterest.count} employers are considering you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
+        ? `An employer is considering you for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`
+        : `${employerInterest.count} employers are considering you, including one for ${interestedRole}. Your profile is thin on evidence though, just ${b(`${user.practice_timestamps?.length ?? 0} session${(user.practice_timestamps?.length ?? 0) === 1 ? "" : "s"}`)} so far. A few more mock interviews sharpen the skill scores and sample answers employers see on your profile.`;
     const footerLine = "More sessions, stronger evidence, better odds of an interview invite.";
     const html = emailShell({
       footer,
       preview: footerLine,
       body:
-        title("Employers are", { accentWord: "looking." }) +
-        para(hero) +
-        button("Practice now", sessionUrl) +
+        hero({
+          eyebrow: "Employer interest",
+          title: `Employers are looking, ${name}`,
+          lede: heroCopy,
+        }) +
+        button("Start practising", sessionUrl) +
         para(footerLine, { small: true, muted: true }),
     });
     return { subject, html };
@@ -146,39 +149,31 @@ function buildEmail(
   };
 
   const titles: Record<Exclude<EmailTier, "employer_interest">, string> = {
-    day1: "Pick up",
-    day3: "Worth a",
-    day7: "Still",
-    paid14: "Two weeks,",
-    paid30: "Right here,",
-    winback: "Still in",
-  };
-  const accents: Record<Exclude<EmailTier, "employer_interest">, string> = {
-    day1: "where you left off.",
-    day3: "ten minutes.",
-    day7: "right here.",
-    paid14: "still waiting.",
-    paid30: "whenever you are.",
-    winback: "your corner.",
+    day1: `Pick up where you left off, ${name}`,
+    day3: `Worth ten minutes, ${name}`,
+    day7: `Your sessions are still here, ${name}`,
+    paid14: `Two weeks on, ${name}`,
+    paid30: `Right here when you're ready, ${name}`,
+    winback: `Still in your corner, ${name}`,
   };
 
   const heroText: Record<Exclude<EmailTier, "employer_interest">, string> = {
-    day1: `Hi ${name}, your personalised ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
+    day1: `Your personalised ${role} session is ready and waiting. Pick up exactly where you left off, your resume-tailored questions are already lined up.`,
     day3: safeWeakest
-      ? `Hi ${name}, your ${b(safeWeakest)} score has room to grow. A focused 10-minute session can lift it by 15 points or more, and that is often the difference in a real interview.`
-      : `Hi ${name}, most candidates see a 15-point lift with just one more session. Ten focused minutes keeps your momentum from fading.`,
+      ? `Your ${b(safeWeakest)} score has room to grow. A focused 10-minute session is a good way to work on it.`
+      : `Ten focused minutes keeps your momentum from fading. One more session is all it takes.`,
     day7: score
-      ? `Hi ${name}, you scored ${b(`${score}/100`)} last time. That is a solid start, and skills stay sharp with practice. One short session is all it takes to keep your edge.`
-      : `Hi ${name}, interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
-    paid14: `Hi ${name}, it has been two weeks since your last session. Your Sprint Pack still has sessions on it, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
-    paid30: `Hi ${name}, it has been about a month. Your ${role} skills are still in there, and your Sprint Pack is ready when you are. A focused 15-minute drill brings it all back.`,
-    winback: `Hi ${name}, it has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
+      ? `You scored ${b(`${score}/100`)} last time. That is a solid start, and skills stay sharp with practice. One short session is all it takes to keep your edge.`
+      : `Interview skills fade quietly without practice. A quick 10-minute session keeps your edge sharp and your answers ready.`,
+    paid14: `It has been two weeks since your last session. Your Sprint Pack still has sessions on it, and a 10-minute drill today rebuilds the muscle memory that got you this far.`,
+    paid30: `It has been about a month. Your ${role} skills are still in there, and your Sprint Pack is ready when you are. A focused 15-minute drill brings it all back.`,
+    winback: `It has been a while. Your resume, your target role, and everything you built is still saved exactly as you left it. Whenever you are ready to start again, we are here.`,
   };
 
   const ctaText: Record<Exclude<EmailTier, "employer_interest">, string> = {
     day1: hitFreeLimit ? "See upgrade options" : "Continue practising",
     day3: hitFreeLimit ? "Upgrade from ₹9" : (weakest ? `Practise ${weakest}` : "Start a session"),
-    day7: "Practise now",
+    day7: "Start practising",
     paid14: "Start a quick session",
     paid30: "Start a focused drill",
     winback: "Pick up where you left off",
@@ -189,7 +184,7 @@ function buildEmail(
       ? "You've used both free sessions. Plans start at ₹9 per session — no subscription required."
       : "You still have free sessions remaining, no card needed.",
     day3: hitFreeLimit
-      ? "Plans start at ₹9 per session — less than a coffee, and your history stays intact."
+      ? "Plans start at ₹9 per session, and your history stays intact."
       : "Ten minutes is all it takes. Your resume-personalised questions are waiting.",
     day7: "This is our last reminder. We will stop emailing, and your practice sessions will always be here when you are ready.",
     paid14: "You are on the Sprint Pack — check your dashboard for sessions remaining.",
@@ -219,10 +214,15 @@ function buildEmail(
       day3: `Your ${role} questions are still waiting`,
       day7: "Your free sessions haven't been used yet",
     };
+    const firstSessionTitles: Record<"day1" | "day3" | "day7", string> = {
+      day1: `Ready for your first session, ${name}?`,
+      day3: `Your first mock interview is waiting, ${name}`,
+      day7: `Your free sessions are still here, ${name}`,
+    };
     const firstSessionHero: Record<"day1" | "day3" | "day7", string> = {
-      day1: `Hi ${name}, you're all set up but haven't started a session yet. Your resume-tailored ${role} questions are ready whenever you are, it takes about 15 minutes.`,
-      day3: `Hi ${name}, your first mock interview is still waiting. Most candidates see the value after just one 15-minute session.`,
-      day7: `Hi ${name}, your ${b("2 free mock interviews")} haven't been used yet. No card needed, just pick a time and start.`,
+      day1: `You're all set up but haven't started a session yet. Your resume-tailored ${role} questions are ready whenever you are, it takes about 15 minutes.`,
+      day3: `Your first mock interview is still waiting. It only takes one session to see how it works.`,
+      day7: `Your ${b("2 free mock interviews")} haven't been used yet. No card needed, just pick a time and start.`,
     };
     const firstSessionFooter: Record<"day1" | "day3" | "day7", string> = {
       day1: "Two free sessions are waiting, no card needed.",
@@ -233,8 +233,7 @@ function buildEmail(
       footer,
       preview: firstSessionFooter[tier],
       body:
-        title(titles[tier], { accentWord: accents[tier] }) +
-        para(firstSessionHero[tier]) +
+        hero({ eyebrow: "Your first session", title: firstSessionTitles[tier], lede: firstSessionHero[tier] }) +
         button("Start my first session", sessionUrl) +
         para(firstSessionFooter[tier], { small: true, muted: true }),
     });
@@ -245,8 +244,7 @@ function buildEmail(
     footer,
     preview: footerText[genericTier],
     body:
-      title(titles[genericTier], { accentWord: accents[genericTier] }) +
-      para(heroText[genericTier]) +
+      hero({ eyebrow: "A quick nudge", title: titles[genericTier], lede: heroText[genericTier] }) +
       (showCard ? dataCard("Where you stand", cardRows) : "") +
       button(ctaText[genericTier], ctaUrl) +
       para(footerText[genericTier], { small: true, muted: true }),

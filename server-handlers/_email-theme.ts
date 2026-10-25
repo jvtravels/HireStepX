@@ -88,17 +88,10 @@ function toneBg(tone: Tone): string {
   }
 }
 
-/** Sans headline. `accentWord`, when given, is appended in copper (no
-    italics). Pass already-escaped text. Prefer hero() for the top block. */
-export function title(
-  text: string,
-  opts: { accentWord?: string; size?: number } = {},
-): string {
+/** Sans headline. Pass already-escaped text. Prefer hero() for the top block. */
+export function title(text: string, opts: { size?: number } = {}): string {
   const size = opts.size ?? 28;
-  const accent = opts.accentWord
-    ? ` <span style="color:${C.copper};">${opts.accentWord}</span>`
-    : "";
-  return `<h1 style="margin:0 0 16px;font-family:${SANS};font-size:${size}px;font-weight:600;line-height:1.2;letter-spacing:-0.03em;color:${C.coal};">${text}${accent}</h1>`;
+  return `<h1 style="margin:0 0 16px;font-family:${SANS};font-size:${size}px;font-weight:600;line-height:1.2;letter-spacing:-0.03em;color:${C.coal};">${text}</h1>`;
 }
 
 /** Body paragraph. `muted` softens to inkSoft; `small` is 13px fine print. */

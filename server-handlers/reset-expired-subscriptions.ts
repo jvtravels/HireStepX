@@ -7,7 +7,7 @@ import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { mapPool, timeBudget } from "./_batch";
-import { emailShell, title, para, b, button, dataCard, orderedList } from "./_email-theme";
+import { emailShell, hero, para, b, button, data } from "./_email-theme";
 import { captureServerEvent } from "./_posthog";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
@@ -96,20 +96,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const emailHtml = emailShell({
             preview: "You're on the free plan now. Your history is safe.",
             body:
-              title("Your plan", { accentWord: "has ended." }) +
-              para(`Hi ${safeName}, your HireStepX ${b(safeTier)} subscription has ended and your account has moved to the free plan. Nothing is lost, your session history and saved data are exactly where you left them.`) +
-              dataCard("Still on the free plan", [
-                ["AI mock interviews", "3 included"],
-                ["Question types", "Behavioural"],
+              hero({
+                eyebrow: "Plan ended",
+                title: `Hi ${safeName}, your plan has ended`,
+                lede: `Your HireStepX ${b(safeTier)} subscription has ended and your account has moved to the free plan. Nothing is lost. Your session history and saved data are exactly where you left them.`,
+              }) +
+              data([
+                ["Free mock interviews", "2 included"],
                 ["Your data", "Fully preserved"],
               ]) +
-              para(`Renew anytime to pick up where you left off, with every question type and full AI coaching:`) +
-              orderedList([
-                "Open your dashboard settings",
-                "Pick the plan that fits",
-                "Pick up right where you left off",
-              ]) +
-              button("Renew subscription", renewUrl) +
+              para("Whenever you're ready, you can pick up where you left off from your dashboard settings.") +
+              button("Renew my plan", renewUrl) +
               para(`Questions about your billing? Just reply to this email and we'll help.`, { small: true, muted: true }),
           });
 
