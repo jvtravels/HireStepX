@@ -939,14 +939,6 @@ export const pagesCss = `
 .pd-lab { display: block; font-size: 13px; font-weight: 600; color: var(--ink-3); }
 .pd-q { padding: 16px 20px; border-radius: 12px; background: var(--white); }
 .pd-q p { margin: 4px 0 0; font-size: 18px; line-height: 1.35; font-weight: 600; color: var(--ink); }
-.pd-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 99px; background: color-mix(in oklab, var(--btn) 10%, white); }
-.pd-tab { font: inherit; font-size: 15px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 12px; border: 0; border-radius: 99px; background: transparent; color: var(--ink-2); cursor: pointer; transition: background .2s, color .2s; }
-.pd-tab b { font-weight: 700; font-size: 14px; padding: 2px 8px; border-radius: 99px; background: color-mix(in oklab, var(--btn) 12%, white); color: var(--btn); }
-.pd-tab.on { background: var(--white); color: var(--ink); box-shadow: 0 1px 3px rgba(20, 20, 40, .12); }
-.pd-tab:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
-.pd-panels { display: grid; }
-.pd-panel { grid-area: 1 / 1; display: grid; gap: 16px; align-content: start; visibility: hidden; opacity: 0; transition: opacity .25s; }
-.pd-panel.on { visibility: visible; opacity: 1; }
 .pd-ans { padding: 16px 20px; border-radius: 12px; background: var(--white); }
 .pd-ans p { margin: 4px 0 0; font-size: 17px; line-height: 1.55; color: var(--ink); }
 .pd-fill { background: #fbe3dc; color: #a2321f; border-radius: 4px; padding: 0 3px; box-shadow: inset 0 -2px 0 #d4452f; }
@@ -961,7 +953,32 @@ export const pagesCss = `
 .pd-checks svg { flex: none; width: 24px; height: 24px; padding: 4px; border-radius: 50%; box-sizing: border-box; }
 .pd-checks .ok svg { background: color-mix(in oklab, var(--btn) 14%, white); color: var(--btn); }
 .pd-checks .no svg { background: #fbe3dc; color: #a2321f; }
-@media (prefers-reduced-motion: reduce) { .pd-panel, .pd-tab { transition: none; } }
-@container (max-width: 900px) { .pd-q p { font-size: 17px; } .pd-tab { font-size: 14px; padding: 0 6px; gap: 6px; } }
+.pd { gap: 16px; }
+.pd-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-status { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.pd-status i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+.pd-status.live i { background: #d4452f; animation: pdPulse 1s ease-in-out infinite; }
+.pd-ans { transition: opacity .3s; opacity: .45; }
+.pd-ans.on { opacity: 1; }
+.pd-res { display: grid; gap: 16px; }
+.pd-res .pd-checks, .pd-res .pd-act { visibility: hidden; opacity: 0; transition: opacity .3s, visibility .3s; }
+.pd-res.on .pd-checks, .pd-res.on .pd-act { visibility: visible; opacity: 1; }
+.pd-bar i { transition: width .5s cubic-bezier(.22, 1, .36, 1); }
+.pd-lab svg { display: inline-block; vertical-align: -2px; margin-right: 6px; }
+.pd-ans-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-wave { display: inline-flex; align-items: center; gap: 2px; height: 20px; }
+.pd-wave i { width: 3px; height: 100%; border-radius: 2px; background: color-mix(in oklab, var(--btn) 35%, white); transform: scaleY(.18); transform-origin: center; }
+.pd-wave.live i { background: var(--btn); animation: pdWave .9s ease-in-out infinite alternate; animation-delay: var(--d); }
+.pd-stack { display: grid; }
+.pd-stack p { grid-area: 1 / 1; transition: opacity .25s; }
+.pd-stack p.off { opacity: 0; visibility: hidden; }
+.pd-w { opacity: 0; transition: opacity .15s; }
+.pd-w.on { opacity: 1; }
+.pd-act { font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; border-radius: 99px; border: 1px solid color-mix(in oklab, var(--btn) 30%, white); background: var(--white); color: var(--btn); cursor: pointer; transition: background .2s; }
+.pd-act:hover { background: color-mix(in oklab, var(--btn) 8%, white); }
+.pd-act:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
+@keyframes pdWave { from { transform: scaleY(.18); } to { transform: scaleY(var(--h)); } }
+@keyframes pdPulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .pd-ans, .pd-res .pd-checks, .pd-res .pd-act, .pd-bar i, .pd-stack p, .pd-w { transition: none; } .pd-wave.live i, .pd-status.live i { animation: none; } }
 .cxp .pf { padding: 0; }
 `;

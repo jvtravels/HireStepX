@@ -1,83 +1,91 @@
 "use client";
 import { useEffect, useState, type ReactNode } from "react";
 import Skel from "./Skel";
-import { BriefcaseBusiness, Check, FileText, Lock, ShieldCheck, X, type LucideIcon } from "lucide-react";
+import { BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, X, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
 import { Arrow, Close, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
 
 /* ── Hero: a practice round, before and after ── */
 
-type Take = { tab: string; score: number; answer: ReactNode; checks: { ok: boolean; text: string }[] };
-const Fill = ({ children }: { children: string }) => <span className="pd-fill">{children}</span>;
-const TAKES: Take[] = [
-  {
-    tab: "Your first try",
-    score: 64,
-    answer: <>I worked on checkout. It was, <Fill>um,</Fill> slow, so I <Fill>basically</Fill> changed how we loaded the payment step and it felt, <Fill>like,</Fill> a lot better after.</>,
-    checks: [
-      { ok: true, text: "Picked a clear example" },
-      { ok: false, text: "3 filler words: um, basically, like" },
-      { ok: false, text: "No numbers to show the result" },
-    ],
-  },
-  {
-    tab: "After the tips",
-    score: 86,
-    answer: <>Checkout was losing one in five buyers on slow phones. I moved the payment step to load on demand, and load time fell from <mark className="cd-add">3.4s</mark> to <mark className="cd-add">1.9s</mark>.</>,
-    checks: [
-      { ok: true, text: "Picked a clear example" },
-      { ok: true, text: "No filler words" },
-      { ok: true, text: "Result shown with numbers" },
-    ],
-  },
+const FILLERS = new Set(["um,", "basically", "like,"]);
+const SPOKEN = "I worked on checkout. It was, um, slow, so I basically changed how we loaded the payment step and it felt, like, a lot better after.".split(" ");
+const BARS = [30, 55, 40, 80, 60, 95, 45, 70, 35, 85, 50, 75, 40, 90, 55, 65, 30, 80, 45, 60];
+const CHECKS_FIRST = [
+  { ok: true, text: "Picked a clear example" },
+  { ok: false, text: "3 filler words: um, basically, like" },
+  { ok: false, text: "No numbers to show the result" },
 ];
+const CHECKS_AFTER = [
+  { ok: true, text: "Picked a clear example" },
+  { ok: true, text: "No filler words" },
+  { ok: true, text: "Result shown with numbers" },
+];
+const STATUS = ["Question asked", "Listening", "Scored", "Scored again"];
 
 function PracticeDemo() {
-  const [i, setI] = useState(0);
-  const [touched, setTouched] = useState(false);
+  const [phase, setPhase] = useState(0);
+  const [words, setWords] = useState(0);
+  const [run, setRun] = useState(0);
 
   useEffect(() => {
-    if (touched || reduced()) return;
-    const id = setTimeout(() => setI(1), 4200);
-    return () => clearTimeout(id);
-  }, [touched]);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    if (reduced()) {
+      timers.push(setTimeout(() => { setWords(SPOKEN.length); setPhase(2); }, 0));
+    } else {
+      timers.push(setTimeout(() => {
+        setPhase(1);
+        SPOKEN.forEach((_, k) => timers.push(setTimeout(() => setWords(k + 1), 120 * (k + 1))));
+        timers.push(setTimeout(() => setPhase(2), 120 * SPOKEN.length + 700));
+      }, 1000));
+    }
+    return () => timers.forEach(clearTimeout);
+  }, [run]);
 
-  const pick = (n: number) => { setTouched(true); setI(n); };
+  const restart = () => { setPhase(0); setWords(0); setRun((r) => r + 1); };
+  const improved = phase === 3;
+  const score = improved ? 86 : 64;
+  const checks = improved ? CHECKS_AFTER : CHECKS_FIRST;
   return (
     <div className="pd">
+      <div className="pd-top">
+        <span className="pd-lab">Practice round</span>
+        <span className={`pd-status${phase === 1 ? " live" : ""}`} aria-live="polite"><i aria-hidden="true" />{STATUS[phase]}</span>
+      </div>
       <div className="pd-q">
         <span className="pd-lab">The interviewer asks</span>
         <p>Tell me about a time you improved something.</p>
       </div>
-      <div className="pd-tabs" role="tablist" aria-label="Compare two answers">
-        {TAKES.map((t, n) => (
-          <button key={t.tab} type="button" role="tab" id={`pd-t${n}`} aria-selected={i === n} aria-controls={`pd-p${n}`} className={`pd-tab${i === n ? " on" : ""}`} onClick={() => pick(n)}>
-            {t.tab}<b>{t.score}</b>
-          </button>
-        ))}
+      <div className={`pd-ans${phase >= 1 ? " on" : ""}`}>
+        <div className="pd-ans-top">
+          <span className="pd-lab"><Mic size={14} strokeWidth={2} aria-hidden="true" />You said</span>
+          <span className={`pd-wave${phase === 1 ? " live" : ""}`} aria-hidden="true">
+            {BARS.map((h, k) => <i key={k} style={{ ["--h" as string]: `${h}%`, ["--d" as string]: `${(k % 7) * 90}ms` }} />)}
+          </span>
+        </div>
+        <div className="pd-stack">
+          <p className={improved ? "off" : ""}>
+            {SPOKEN.map((w, k) => <span key={k}><span className={`pd-w${k < words ? " on" : ""}${FILLERS.has(w) ? " pd-fill" : ""}`}>{w}</span>{" "}</span>)}
+          </p>
+          <p className={improved ? "" : "off"}>Checkout was losing one in five buyers on slow phones. I moved the payment step to load on demand, and load time fell from <mark className="cd-add">3.4s</mark> to <mark className="cd-add">1.9s</mark>.</p>
+        </div>
       </div>
-      <div className="pd-panels">
-        {TAKES.map((t, n) => (
-          <div key={t.tab} role="tabpanel" id={`pd-p${n}`} aria-labelledby={`pd-t${n}`} aria-hidden={i !== n} className={`pd-panel${i === n ? " on" : ""}`}>
-            <div className="pd-ans">
-              <span className="pd-lab">You said</span>
-              <p>{t.answer}</p>
-            </div>
-            <div className="pd-score">
-              <div className="pd-num"><b>{t.score}</b><span>out of 100</span></div>
-              <div className="pd-bar"><i style={{ width: `${t.score}%` }} /></div>
-            </div>
-            <ul className="pd-checks">
-              {t.checks.map((c) => (
-                <li key={c.text} className={c.ok ? "ok" : "no"}>
-                  {c.ok ? <Check size={16} strokeWidth={2.5} aria-label="Good" /> : <X size={16} strokeWidth={2.5} aria-label="Needs work" />}
-                  {c.text}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className={`pd-res${phase >= 2 ? " on" : ""}`}>
+        <div className="pd-score">
+          <div className="pd-num"><b>{phase >= 2 ? score : "\u2013"}</b><span>out of 100</span></div>
+          <div className="pd-bar"><i style={{ width: phase >= 2 ? `${score}%` : "0%" }} /></div>
+        </div>
+        <ul className="pd-checks">
+          {checks.map((c) => (
+            <li key={c.text} className={c.ok ? "ok" : "no"}>
+              {c.ok ? <Check size={16} strokeWidth={2.5} aria-label="Good" /> : <X size={16} strokeWidth={2.5} aria-label="Needs work" />}
+              {c.text}
+            </li>
+          ))}
+        </ul>
+        <button type="button" className="pd-act" onClick={improved ? restart : () => setPhase(3)} tabIndex={phase >= 2 ? 0 : -1}>
+          {improved ? "Start over" : "Answer again with the tips"}
+        </button>
       </div>
     </div>
   );
