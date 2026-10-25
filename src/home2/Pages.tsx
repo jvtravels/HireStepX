@@ -423,7 +423,7 @@ function HowScene({ n }: { n: number }) {
     </Win>
   );
   if (n === 2) return (
-    <Win left="Backend Engineer" right="Ranked on 3 skills" alt="Four candidates reordered with the best fit first">
+    <Win left="Backend Engineer" right="Sample · Ranked on 3 skills" alt="Four candidates reordered with the best fit first">
       <div className="pg-body">
         <ul className="hs-rank">
           {HS_RANK.map(([id, score, from], i) => (
@@ -441,7 +441,7 @@ function HowScene({ n }: { n: number }) {
     </Win>
   );
   if (n === 3) return (
-    <Win left="Backend Engineer" right="Compare" alt="Two candidates opened side by side with their skill scores">
+    <Win left="Backend Engineer" right="Sample · Compare" alt="Two candidates opened side by side with their skill scores">
       <div className="pg-body hs-two">
         <div className="hs-col">
           <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Hire</span></div><span className="sc"><ScoreChip score={97} /></span></div>
@@ -589,7 +589,7 @@ const OPEN_SKILLS: [string, number][] = [["Node.js", 88], ["PostgreSQL", 84], ["
 
 function EvidenceView() {
   return (
-    <Win left="Candidate #a41f" right="Backend Engineer, Bengaluru" alt="A candidate's skill scores, readiness and practice sessions">
+    <Win left="Candidate #a41f" right="Sample · Backend Engineer, Bengaluru" alt="A candidate's skill scores, readiness and practice sessions">
       <div className="pg-body">
         <ul className="fl-open">
           {OPEN_SKILLS.map(([s, v]) => (
@@ -612,7 +612,7 @@ const PIPE: [string, string, string][] = [
 
 function DecideView() {
   return (
-    <Win left="Backend Engineer" right="3 in your pipeline" alt="Candidates with a hiring status each, and a conversation with one of them">
+    <Win left="Backend Engineer" right="Sample · 3 in your pipeline" alt="Candidates with a hiring status each, and a conversation with one of them">
       <ul className="pl">
         {PIPE.slice(0, 3).map(([id, name, st]) => (
           <li key={id}>
@@ -647,7 +647,7 @@ const TABS: FeatureTab[] = [
     title: "Best fit first, every time.",
     body: "Each candidate is scored against the role, skills and location you posted, plus how much they have practised.",
     points: ["Matching reruns when you edit the role", "And when a candidate updates their resume", "And every night, so new people appear"],
-    view: (alt) => { const picked = alt ? ["Node.js", "PostgreSQL"] : HERO_SKILLS; return <Win left="Backend Engineer" right={`Ranked on ${picked.length} skills`} alt="Candidates ranked for a Backend Engineer role"><div className="pg-body"><RankList picked={picked} /></div></Win>; },
+    view: (alt) => { const picked = alt ? ["Node.js", "PostgreSQL"] : HERO_SKILLS; return <Win left="Backend Engineer" right={`Sample · Ranked on ${picked.length} skills`} alt="Candidates ranked for a Backend Engineer role"><div className="pg-body"><RankList picked={picked} /></div></Win>; },
   },
   {
     name: "Evidence",
@@ -780,7 +780,7 @@ function EmpPricing() {
           </div>
           <div className="pc-r hx-ri" style={delay(2)}>
             <Skel className="pg-stage pc-stage">
-              <Win left="Candidate profile" alt="A candidate profile with scores open and name and contact locked">
+              <Win left="Candidate profile" right="Sample" alt="A candidate profile with scores open and name and contact locked">
                 <div className="ep">
                   <div className="ep-head">
                     <Av id="a41f" size={72} />

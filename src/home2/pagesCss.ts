@@ -1066,4 +1066,15 @@ export const pagesCss = `
   .ep .fl-open li { grid-template-columns: 104px minmax(0, 1fr) 44px; gap: 10px; font-size: 14px; }
   .pc-ctl { padding: 14px 16px 16px; }
 }
+/* 44px tap targets for nav and footer links */
+.hx-links a { display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box; }
+.hx-btn.sm { min-height: 44px; }
+.hx-foot-cols div { gap: 0; }
+.hx-foot-cols h3 { margin-bottom: 8px; }
+.hx-foot-cols a, .hx-foot-btn { display: inline-flex; align-items: center; min-height: 44px; }
+.hx-ghost { display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box; }
+.hx-logo { display: inline-flex; align-items: center; min-height: 44px; }
+.hs-tab { min-height: 44px; }
+.pc-ctl .hx-fakebtn, .hx-pv-opt { min-height: 44px; }
+.pc-l p a, .hx-foot-rights a { display: inline-block; padding: 12px 0; margin: -12px 0; }
 `;
