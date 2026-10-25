@@ -73,7 +73,7 @@ export default async function handler(req: Request): Promise<Response> {
           supabaseUrl: process.env.SUPABASE_URL || "",
           serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "",
           resendApiKey: (process.env.RESEND_API_KEY || "").trim(),
-          fromEmail: process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>",
+          fromEmail: process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>",
           appUrl: (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, ""),
           canIssueTokens: assertEmailSecret(),
           makeToken: generateVerifyToken,

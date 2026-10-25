@@ -8,8 +8,13 @@ describe("isGa4Host", () => {
     expect(isGa4Host("HireStepX.com")).toBe(true);
   });
 
+  it("allows the signed-in product host so signups, interviews and checkout are measured", () => {
+    expect(isGa4Host("app.hirestepx.com")).toBe(true);
+  });
+
   it("blocks staging, previews, localhost and lookalike hosts", () => {
     expect(isGa4Host("staging.hirestepx.com")).toBe(false);
+    expect(isGa4Host("admin.hirestepx.com")).toBe(false);
     expect(isGa4Host("hirestepx-git-main-jvtravels.vercel.app")).toBe(false);
     expect(isGa4Host("localhost")).toBe(false);
     expect(isGa4Host("hirestepx.com.evil.example")).toBe(false);

@@ -4,13 +4,13 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 
 **Sender identity (all emails)**
 
-- **From**: `HireStepX <hello@hirestepx.com>` (fallback: `onboarding@resend.dev`)
-- **Reply-To**: `support@hirestepx.com`
-- **Brand color**: `#4F46E5` (indigo) primary, `#10B981` (emerald) success, `#EF4444` (red) security/alert
-- **Logo**: HireStepX wordmark, top-left, 32px height
-- **Footer (every email)**: address line + unsubscribe link (lifecycle/marketing only — not transactional/security) + "You're receiving this because you have a HireStepX account."
-- **Width**: 600px max, mobile-first single column, 16px base font, system stack
-- **CTA buttons**: rounded 8px, 14px 24px padding, white text on `#4F46E5`
+- **From**: `process.env.FROM_EMAIL`, defaulting to `HireStepX <noreply@hirestepx.com>`. Replies to a few emails go to `support@hirestepx.com` or `hello@hirestepx.com` (set per handler).
+- **Colors** (tokens in `server-handlers/_email-theme.ts`): indigo `#312E81` primary (buttons, links), success green `#15803D`, error red `#B91C1C` (security/failure hero dot and light-red frame), neutral page background `#FAFAFA`, white sheet.
+- **Header**: HireStepX wordmark image (`https://hirestepx.com/wordmark.png`, 22px high), top-left.
+- **Hero**: every email opens with a `hero()` block: a white card (eyebrow with status dot, 28px headline, optional lede) on a rounded 16px frame with the site's soft gradient (light red for `tone: "error"`).
+- **Footer (every email)**: "You're receiving this because you have an account at hirestepx.com." plus "Manage notifications"; marketing/lifecycle emails (`marketing: true`) also carry a signed "Unsubscribe" link, transactional ones never do. Sender line is `HireStepX · hello@hirestepx.com`; a postal address renders only if `LEGAL_POSTAL_ADDRESS` is configured, never invented.
+- **Width**: 600px max, single column, 15px body text, Geist/system sans stack, no italics.
+- **CTA buttons**: 10px radius, 12px 22px padding, white text on indigo (ghost variant is outlined).
 
 **Voice**: confident, warm, India-aware (₹ for amounts, IST for times where relevant), no emoji-heavy fluff. Short sentences. One clear action per email.
 
@@ -25,7 +25,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Transactional (no unsubscribe) |
 | Rate limit | 3 / IP / hour |
 
-**Subject**: `Verify your email — HireStepX`**Preheader**: `One click to unlock 3 free mock interviews.`
+**Subject**: `{firstName}, confirm your email to get started`**Preheader**: `One tap and your 2 free mock interviews are ready.`
 
 **Body**
 
@@ -38,6 +38,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
   3. Run a mock interview — get scored in minutes
 - **Fallback link**: "Button not working? Paste this in your browser: {verifyLink}"
 - **Security line**: "If you didn't create a HireStepX account, ignore this email."
+- **Sign-off**: `The HireStepX team` (via `signoff()`)
 
 ---
 
@@ -50,12 +51,12 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Lifecycle (unsubscribe ok) |
 | Rate limit | 2 / IP / day |
 
-**Subject**: `Still there? Verify your email and start practicing`**Preheader**: `Your 3 free interviews are waiting.`
+**Subject**: `{firstName}, here is a fresh verification link`**Preheader**: `Here's a fresh link, good for 24 hours.`
 
 **Body**
 
 - **H1**: One step left, {firstName}.
-- **Body**: We saved your spot. Verify your email to unlock 3 free mock interviews — no card required.
+- **Body**: We saved your spot. The last link may have expired, so here is a new one (valid 24 hours). One tap and your 2 free mock interviews are ready.
 - **CTA**: `Verify email`
 - **Soft urgency**: "This link expires in 24 hours."
 - **Tiny**: "Need a new link? Sign in and we'll resend."
@@ -71,7 +72,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Security (no unsubscribe) |
 | Rate limit | 3 / IP / hour |
 
-**Subject**: `Reset your HireStepX password`**Preheader**: `Link expires in 1 hour.`
+**Subject**: `Your password reset link`**Preheader**: `Valid for 60 minutes. Didn't ask? Nothing changes.`
 
 **Body**
 
@@ -93,7 +94,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `send-welcome.ts:99` |
 | Category | Security (no unsubscribe) |
 
-**Subject**: `Your HireStepX password was changed`**Preheader**: `If this wasn't you, act now.`
+**Subject**: `Your password was changed`**Preheader**: `If this was you, there's nothing to do.`
 
 **Body**
 
@@ -114,7 +115,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | Category | Security |
 | Rate limit | 5 / IP / hour |
 
-**Subject**: `New sign-in to your HireStepX account`**Preheader**: `{Browser} on {OS} · {City, Country}`
+**Subject**: `Was this you? New sign-in on your account`**Preheader**: `{Browser} on {OS} · {City, Country}`
 
 **Body**
 
@@ -136,7 +137,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `verify-payment.ts:53` |
 | Category | Transactional |
 
-**Subject**: `Payment confirmed — {planName} activated`**Preheader**: `Receipt for ₹{amount} · Payment ID {short}`
+**Subject**: `{amount} received, {planLabel} is live`**Preheader**: `Receipt for ₹{amount} · Payment ID {short}`
 
 **Body**
 
@@ -160,7 +161,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `razorpay-webhook.ts:278` |
 | Category | Transactional |
 
-**Subject**: `Renewed — your {tier} plan is extended`**Preheader**: `Next billing: {nextDate}`
+**Subject**: `Your {tier} plan is renewed`**Preheader**: `Next billing: {nextDate}`
 
 **Body**
 
@@ -179,13 +180,13 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `send-renewal-reminders.ts` |
 | Category | Lifecycle |
 
-**Subject**: `Your {tier} plan expires in {N} day(s)`**Preheader**: `Renew in one click to keep your unlimited access.`
+**Subject**: `Your {tier} plan expires in {N} day(s)`**Preheader**: `Renew to keep your sessions running without a gap.`
 
 **Body**
 
 - **H1**: {N} day{s} left on your {tier} plan
 - **Countdown banner**: "{N} days remaining"
-- **Body**: Renew now and keep: unlimited interviews, advanced focus areas, full skill-decay tracking.
+- **Body**: Renew before the end date and your sessions, AI coaching and analytics keep running without a break.
 - **CTA**: `Renew now` → `/pricing?renew=1`
 - **Soft fallback**: "If you don't renew, your account moves to free tier — your sessions and progress stay safe."
 
@@ -199,7 +200,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `send-abandonment-emails.ts` |
 | Category | Lifecycle |
 
-**Subject**: `You're one step away from {planName}`**Preheader**: `Your checkout is still open — finish in 30 seconds.`
+**Subject**: `Your {planName} is still waiting`**Preheader**: `Your checkout is still open. Finish whenever you're ready.`
 
 **Body**
 
@@ -219,7 +220,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `cancel-subscription.ts:106` |
 | Category | Transactional |
 
-**Subject**: `Your subscription is cancelled`**Preheader**: `You still have access until {endDate}.`
+**Subject**: `Subscription cancellation confirmed`**Preheader**: `You still have access until {endDate}.`
 
 **Body**
 
@@ -238,7 +239,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `pause-subscription.ts:119` |
 | Category | Transactional |
 
-**Subject (pause)**: `Subscription paused — we'll see you soon`**Subject (resume)**: `Welcome back — your subscription is active`
+**Subject (pause)**: `Your plan is paused. Nothing is lost`**Subject (resume)**: `Welcome back, your plan is active again`
 
 **Body (pause)**
 
@@ -262,7 +263,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `reactivate-subscription.ts:112` |
 | Category | Transactional |
 
-**Subject**: `Welcome back — your HireStepX subscription is active`
+**Subject**: `Good to have you back, your plan is active`
 
 **Body**
 
@@ -281,13 +282,13 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `reset-expired-subscriptions.ts:71` |
 | Category | Lifecycle |
 
-**Subject**: `Your HireStepX subscription has expired`**Preheader**: `Your data is safe — pick up where you left off.`
+**Subject**: `{firstName}, your plan has ended. Your progress is safe`**Preheader**: `Your data is safe — pick up where you left off.`
 
 **Body**
 
 - **H1**: Your {tier} plan expired
 - **Body**: You've been moved to the free tier. **All your sessions, scores, and progress are preserved.**
-- **Free tier card**: 3 free interviews · behavioral questions · skill tracking
+- **Free plan data**: 2 free mock interviews · your data fully preserved
 - **Primary CTA**: `Renew {tier}` → `/pricing`
 - **Secondary CTA**: `Continue on free tier` → `/dashboard`
 
@@ -301,13 +302,13 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `razorpay-webhook.ts:301` |
 | Category | Transactional / Security |
 
-**Subject**: `Payment failed — your HireStepX subscription is paused`**Preheader**: `Update your payment method to restore access.`
+**Subject**: `Your payment didn't go through`**Preheader**: `Update your payment method to restore access.`
 
 **Body**
 
 - **H1**: We couldn't process your payment
 - **Body**: After several retries, your **{tier}** payment didn't go through. You've been moved to free tier.
-- **What you lost** (compact 2-col table): feature → status (e.g. Unlimited interviews → Limited to 3/month)
+- **What you lost** (compact 2-col table): feature → status (the paused features listed in the email; free plan includes 2 free sessions)
 - **Primary CTA**: `Update payment method` → settings deep link
 - **Tiny**: "Common fixes: insufficient funds, expired card, bank-side block on autopay."
 
@@ -323,38 +324,38 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 
 ### 15a. Day 1–3 (Free)
 
-**Subject**: `Your personalized {role} session is ready`**Body**: One sentence on weakest skill from last session, single CTA `Start session` (3 questions, 10 min).
+**Subject**: `{firstName}, your next practice session is ready` (first-session variant: `{firstName}, your first practice session is ready`)**Body**: One sentence on weakest skill from last session, single CTA `Start session` (3 questions, 10 min).
 
 ### 15b. Day 3–7 (Free)
 
-**Subject**: `Your {skill} skills need a refresh`**Body**: Skill-decay framing — "Your {skill} score drops \~12% after 7 days of no practice." CTA `Refresh now`.
+**Subject**: `{firstName}, your {skill} could use a refresh`**Body**: Names the weakest skill from the last session. CTA `Practice {skill}` (or `Upgrade from ₹9` once both free sessions are used).
 
 ### 15c. Day 7–14 (Free) — Last chance
 
-**Subject**: `Don't lose your progress`**Body**: Mild urgency. Show streak/score they'll lose if they don't return. CTA `Practice now`.
+**Subject**: `{firstName}, your practice sessions are still here`**Body**: Last reminder. Shows last score when known. CTA `Start practicing`.
 
 ### 15d. Paid 14+ days
 
-**Subject**: `You're paying for unlimited — let's use it`**Body**: Value-justification frame. ROI on plan price. CTA `Start a session`.
+**Subject**: `{firstName}, ready for a quick drill?`**Body**: Two weeks since the last session; points to the dashboard for Sprint Pack sessions remaining. CTA `Start a quick session`.
 
 ### 15e. Paid 30+ days
 
-**Subject**: `Brush up before your next interview`**Body**: Soft, no guilt. "When's your next interview? Run a 10-min warm-up." CTA `Quick session`.
+**Subject**: `{firstName}, it has been a month. Ready for a drill?`**Body**: Soft, no guilt. Footer: "No pressure. Your progress is saved, and your dashboard shows what is left on your Sprint Pack." (No pause/cancel line: the Sprint Pack is a one-time purchase.) CTA `Start a focused drill`.
 
 **All re-engagement footers**: prominent unsubscribe + "Pause emails for 30 days" link.
 
 ---
 
-## 16. Weekly Progress Digest *(scaffold — disabled)*
+## 16. Weekly Progress Digest
 
 | Field | Value |
 | --- | --- |
 | Trigger | Weekly cron on user's signup-weekday |
 | File | `weekly-summary.ts` |
 | Category | Lifecycle |
-| Status | **Not yet shipped** — `sendEmail()` returns false |
+| Status | Live (marketing opt-out honored) |
 
-**Subject**: `Your HireStepX week: {N} sessions, score {avgScore}`**Preheader**: `+{delta} from last week`
+**Subject** (varies): `{firstName}, your score is up {delta} points` / `{firstName}, here's your week: score {score}` / `{firstName}, you scored {score} this week` (first score)**Preheader**: `{N} sessions this week, latest score {score}.`
 
 **Body**
 
@@ -375,7 +376,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 | File | `delete-account.ts:144` |
 | Category | Transactional / Security |
 
-**Subject**: `Your HireStepX account has been deleted`
+**Subject**: `Your account has been deleted`
 
 **Body**
 
@@ -383,7 +384,7 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 - **Body**: We've removed your HireStepX account and the data associated with it.
 - **What was deleted** list: profile · sessions · payment history · resume · audit logs
 - **Body**: "You can create a new account anytime."
-- **Support line**: "Questions? Email support@hirestepx.com — we keep deletion-confirmation records for 30 days for compliance."
+- **Support line**: "Questions? Email hello@hirestepx.com. We keep deletion-confirmation records for 30 days for compliance."
 
 ---
 
@@ -430,3 +431,23 @@ Details: {raw json}
 3. Add a unit test for the template in `src/__tests__/emailTemplates.test.ts` (snapshot the HTML)
 4. If lifecycle/marketing: gate behind user `email_preferences` column in `profiles`
 5. Log via `service_usage` (fire-and-forget) for cost/volume tracking
+
+---
+
+## Additional lifecycle and billing emails
+
+| Email | File | Subject |
+| --- | --- | --- |
+| Day 1 activation (never started) | `send-activation-emails.ts` | `{firstName}, your 2 free sessions are waiting` (signed `The HireStepX team`) |
+| Win-back (paid plan lapsed 10-21 days) | `send-winback-emails.ts` | `{firstName}, your best score was {score}/100` or `{firstName}, your HireStepX progress is still here` (signed `The HireStepX team`) |
+| Sprint Pack day 2 | `send-onboarding-drip.ts` | `{firstName}, your Sprint Pack is ready to use` |
+| Sprint Pack day 5 | `send-onboarding-drip.ts` | `{firstName}, how is your {role} prep going?` |
+| Report ready | `save-session.ts` | `{firstName}, your interview report is ready` |
+| First session done | `save-session.ts` | `{firstName}, you've completed your first HireStepX session` |
+| Both free sessions used | `save-session.ts` | `{firstName}, you've used both free sessions` |
+| Account exists | `send-welcome.ts` | `{firstName}, you already have an account` |
+| Employer interest nudge | `re-engage-users.ts` | `{firstName}, employers are looking at your profile` |
+| Refund started | `razorpay-webhook.ts` | `Your refund is on its way` (5-7 business days) |
+| Refund done | `razorpay-webhook.ts` | `Your refund has been processed` (5-7 business days) |
+
+Facts every email must keep true: Single session ₹9; Sprint Pack ₹39 for 5 sessions over 30 days; no Pro tier; never "unlimited"; 2 free sessions; verify link valid 24 hours; reset link valid 60 minutes. Use US spelling ("practice", "practicing").

@@ -19,14 +19,14 @@ export const config = { runtime: "edge" };
 
 import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
-import { emailShell, title, para, b, button, dataCard, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, para, button, data, note, nameSuffix, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts } from "./_unsubscribe";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const MAX_EMAILS_PER_RUN = 50;
 // Opted-out users are filtered after the query; over-fetch so they can't crowd out the 50 sendable slots.
@@ -99,39 +99,52 @@ function buildDigest(
   const latestReport = (latest.report_json || {}) as Record<string, unknown>;
   const score = latest.score || (latestReport.overallScore as number) || 0;
   const band = (latestReport.band as string) || "";
-  const firstName = (profile.name || "").split(" ")[0] || "there";
 
   const prev = sessions[1];
   const delta = prev ? score - prev.score : 0;
   const deltaStr = delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "No change";
 
-  const safeName = escapeHtml(firstName);
   const sessionCount = `${sessions.length} session${sessions.length === 1 ? "" : "s"}`;
 
   // Show Google Review ask for users with ≥3 total sessions and latest score ≥75
   const showReviewAsk = GOOGLE_REVIEW_URL && totalSessions >= 3 && score >= 75;
 
-  const subject = `Your HireStepX week: ${sessionCount}, score ${score}`;
+  const lede = !prev
+    ? `You finished ${sessionCount} recently and scored ${score}. That is your starting line. One more session will show you how far you have come.`
+    : delta > 0
+      ? `Your latest score is ${score}, up ${delta} from your previous session. That is real progress. Keep the momentum going.`
+      : delta < 0
+        ? `Your latest score is ${score}, down ${Math.abs(delta)} from your previous session. That happens, and one more session is the fastest way to bounce back.`
+        : `Your latest score is ${score}, level with your previous session. A small push on one weak spot could move it.`;
+  const name = (profile.name ?? "").trim().split(/\s+/)[0];
+  const subject = !prev
+    ? `${name ? `${name}, you` : "You"} scored ${score} this week`
+    : delta > 0
+      ? `${name ? `${name}, your` : "Your"} score is up ${delta} points`
+      : `${name ? `${name}, here's` : "Here's"} your week: score ${score}`;
   const html = emailShell({
     footer,
     preview: `${sessionCount} this week, latest score ${score}.`,
     body:
-      title("Your week,", { accentWord: "in review." }) +
-      para(`Hi ${safeName}, here's how your practice went this week. You ran ${b(`${sessions.length} mock interview${sessions.length === 1 ? "" : "s"}`)} and kept the momentum going.`) +
-      dataCard("This week", [
+      hero({
+        eyebrow: "This week",
+        title: `Here's your week${nameSuffix(profile.name)}`,
+        lede,
+      }) +
+      data([
         ["Sessions", String(sessions.length)],
         ["Latest score", String(score)],
         ["Band", band || "Uncalibrated"],
-        ["Change from prior", deltaStr],
+        ["Change from previous session", prev ? deltaStr : "First score"],
       ]) +
       button("View your latest report", `${APP_URL}/sessions`) +
       (showReviewAsk
         ? para(
-            `One small favour: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
+            `One small favor: if HireStepX has been useful in your prep, a quick Google review helps other candidates find us. Takes about 60 seconds and makes a real difference.`,
           ) +
-          button("Leave a Google review", GOOGLE_REVIEW_URL)
+          button("Leave a Google review", GOOGLE_REVIEW_URL, { tone: "ghost" })
         : "") +
-      para(`Not useful? You can turn these off anytime from your settings.`, { small: true, muted: true }),
+      note("Don't want these? You can turn them off anytime in your settings."),
   });
   return { subject, html };
 }

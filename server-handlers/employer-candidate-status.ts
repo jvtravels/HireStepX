@@ -39,7 +39,7 @@ import {
 import { notify } from "./_notify";
 import { untouchedMatchFilter } from "./_employer-matching-helpers";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
-import { emailShell, title as emailTitle, para, b, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, para, b, button, escapeHtml } from "./_email-theme";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 import { formatInterviewWhen } from "../src/interviewWhen";
 
@@ -48,7 +48,7 @@ import { formatInterviewWhen } from "../src/interviewWhen";
 const CONTACT_STATUSES = new Set(["interview_invited", "interviewing", "hired"]);
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
@@ -103,8 +103,12 @@ async function sendInterviewInviteEmail(opts: {
     const html = emailShell({
       preview: headline,
       body:
-        emailTitle("You're invited to", { accentWord: "interview" }) +
-        para(`Hi ${firstName}, ${headline}`) +
+        hero({
+          tone: "success",
+          eyebrow: "Interview invite",
+          title: `Hi ${firstName}, you're invited to interview`,
+          lede: headline,
+        }) +
         (when ? para(`They've suggested ${b(when)}. Check your dashboard to confirm or message them directly.`) : para("Check your dashboard for next steps and to message them directly.")) +
         button("View invite", link),
     });

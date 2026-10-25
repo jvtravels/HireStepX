@@ -101,6 +101,23 @@ export function sendGtagEvent(name: string, params?: Record<string, unknown>): v
   w.gtag?.("event", name, params);
 }
 
+export function isGtagReady(): boolean {
+  if (typeof window === "undefined") return false;
+  return typeof (window as Window & { gtag?: GtagFn }).gtag === "function";
+}
+
+export function setGtagFields(fields: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  w.gtag?.("set", fields);
+}
+
+export function setGtagUserProperties(props: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  const w = window as Window & { gtag?: GtagFn };
+  w.gtag?.("set", "user_properties", props);
+}
+
 export function updateGtagConsent(granted: boolean, gaId?: string, advertising: boolean = granted): void {
   if (typeof window === "undefined") return;
   const w = window as Window & { gtag?: GtagFn };

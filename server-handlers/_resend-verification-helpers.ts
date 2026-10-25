@@ -2,7 +2,7 @@
    (always identical) response first and then runs processResendVerification
    in the background, so nothing here can change what the caller sees. */
 
-import { emailShell, title, para, b, link, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, link, button, note, nameSuffix } from "./_email-theme";
 import { findAuthUserByEmail, isEmailVerified, isOAuthOnlyUser } from "./_auth-user-lookup";
 
 export const RESEND_GENERIC_MESSAGE =
@@ -36,16 +36,14 @@ export type ResendOutcome =
 
 function verificationEmailHtml(name: string, verifyUrl: string): string {
   return emailShell({
-    preview: "A fresh link to confirm your email. Valid for 24 hours.",
+    preview: "Here's a fresh link, good for 24 hours.",
     body:
-      title("Here's your new", { accentWord: "link." }) +
-      para(`Hi ${escapeHtml(name)}, you asked for another verification link. Confirm your email and your ${b("2 free mock interviews")} are ready.`) +
+      hero({
+        title: `Here's a fresh link${nameSuffix(name)}`,
+        lede: "The last link may have expired, so here is a new one. It works for the next 24 hours. One tap and your 2 free mock interviews are ready.",
+      }) +
       button("Verify my email", verifyUrl) +
-      para(
-        `This link works for ${b("24 hours")}. Older links may stop working. If you didn't ask for this, you can safely ignore this email.`,
-        { small: true, muted: true },
-      ) +
-      para(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`, { small: true, muted: true }),
+      note(`Button not working? Copy this link:<br>${link(verifyUrl, verifyUrl)}`),
   });
 }
 
@@ -77,7 +75,7 @@ export async function processResendVerification(
       body: JSON.stringify({
         from: deps.fromEmail,
         to: [email],
-        subject: "Your new verification link",
+        subject: `${name === "there" ? "Hi" : name.split(/\s+/)[0]}, here is a fresh verification link`,
         html: verificationEmailHtml(name, verifyUrl),
       }),
     });

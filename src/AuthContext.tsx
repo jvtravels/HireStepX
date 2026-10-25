@@ -1312,7 +1312,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signup = useCallback(async (email: string, name: string, password: string, _redirectPath?: string, employer?: { companyName: string; website?: string }): Promise<{ success: boolean; error?: string; userId?: string }> => {
-    track("signup_started");
+    track("signup_started"); captureClientEvent("signup_started", { account: employer ? "employer" : "candidate" });
     if (!supabaseConfigured) {
       // localStorage fallback
       const newUser: User = { id: Date.now().toString(36), name, email, targetRole: "", resumeFileName: null, hasCompletedOnboarding: false, emailVerified: false };

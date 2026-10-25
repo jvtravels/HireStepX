@@ -45,4 +45,28 @@ test.describe("@smoke production", () => {
     const res = await request.post("/api/sessions/save", { data: {} });
     expect([401, 403]).toContain(res.status());
   });
+
+  // The revenue and interview path: a 5xx here means a handler is broken or a
+  // dependency (env var, schema column) vanished in this deploy. Unauthenticated
+  // calls must be rejected cleanly, never crash.
+  for (const endpoint of [
+    "create-order",
+    "verify-payment",
+    "generate-questions",
+    "evaluate",
+    "tts-token",
+    "stt-token",
+    "record-session-start",
+    "employer-create-unlock-order",
+  ]) {
+    test(`critical API /api/${endpoint} rejects unauthenticated calls cleanly`, async ({ request }) => {
+      const res = await request.post(`/api/${endpoint}`, { data: {} });
+      expect([401, 403]).toContain(res.status());
+    });
+  }
+
+  test("signup page renders", async ({ page }) => {
+    await page.goto("/signup");
+    await expect(page.locator('input[type="email"]').first()).toBeVisible();
+  });
 });

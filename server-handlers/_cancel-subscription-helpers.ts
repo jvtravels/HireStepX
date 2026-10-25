@@ -13,7 +13,7 @@
  */
 
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, hero, button, note, data, nameSuffix } from "./_email-theme";
 
 export const CANCELLATION_BODY_BYTE_LIMIT = 1_048_576;
 
@@ -68,24 +68,22 @@ export interface CancellationEmailParams {
  * practice — but we guard anyway.
  */
 export function buildCancellationEmailHtml(params: CancellationEmailParams): string {
-  const safeName = escapeHtml(params.userName || "there");
-  const safeTier = escapeHtml(params.tier || "paid");
   const safeEnd = escapeHtml(params.endDateText);
   const safeUrl = params.appUrl.replace(/\/$/, "");
   return emailShell({
     preview: "Your access stays active until the end of your billing period.",
     body:
-      title("Cancelled,", { accentWord: "no hard feelings." }) +
-      para(`Hi ${safeName}, your HireStepX ${b(safeTier)} plan has been cancelled and won't renew. You'll keep full access until ${b(safeEnd)}, then move to the free plan.`) +
-      dataCard("What happens next", [
+      hero({
+        eyebrow: "Cancellation",
+        title: `Your plan is cancelled${nameSuffix(params.userName)}`,
+        lede: `It won't renew, and you keep full access until ${safeEnd}. After that you move to the free plan.`,
+      }) +
+      data([
         ["Access until", safeEnd],
         ["Then", "Free plan"],
         ["Your data", "Kept, nothing deleted"],
       ]) +
       button("Reactivate anytime", `${safeUrl}/dashboard/settings`, { tone: "ghost" }) +
-      para(
-        `Changed your mind? You can reactivate any time before that date and nothing changes. We'd love a line on what we could do better, just reply.`,
-        { small: true, muted: true },
-      ),
+      note("Changed your mind? Reactivate before that date and nothing changes. And if there's something we could do better, just reply and tell us."),
   });
 }

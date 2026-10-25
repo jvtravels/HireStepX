@@ -8,7 +8,7 @@
  *   inactive  - has unlocked before, but no unlock or new requirement for 30-180 days
  * Marketing-category mail: the cron honours the employer_notifications opt-out. */
 
-import { emailShell, title, para, button, escapeHtml, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, para, b, button, escapeHtml, type EmailFooterOptions } from "./_email-theme";
 import { isSuspended } from "./_employer-trust";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -132,16 +132,22 @@ export function buildWinbackEmail(kind: WinbackKind, companyName: string, footer
   if (kind === "no_unlock") {
     const subject = "Your HireStepX matches are still waiting";
     const body =
-      title("Your candidates are waiting") +
-      para(`You posted a role for <strong>${company}</strong> on HireStepX, but you have not unlocked a candidate yet.`) +
+      hero({
+        eyebrow: "Matches waiting",
+        title: "Your candidates are waiting",
+        lede: `You posted a role for ${b(company)} on HireStepX, but you have not unlocked a candidate yet.`,
+      }) +
       para("Every match comes with interview evidence: how they scored and where they were strong or weak. You pay only when you unlock contact details, and you get the amount back as credit if a candidate declines or does not reply.") +
       button("Review your matches", `${appUrl}/employer`);
     return { subject, html: emailShell({ preview: subject, body, footer }) };
   }
   const subject = "New candidates are ready for your roles";
   const body =
-    title("It has been a while") +
-    para(`It has been over a month since <strong>${company}</strong> last hired through HireStepX.`) +
+    hero({
+      eyebrow: "Checking in",
+      title: "It has been a while",
+      lede: `It has been over a month since ${b(company)} last hired through HireStepX.`,
+    }) +
     para("New candidates finish mock interviews every day, and your open roles are matched against them each night. Take a look at who is new.") +
     button("See new matches", `${appUrl}/employer`);
   return { subject, html: emailShell({ preview: subject, body, footer }) };

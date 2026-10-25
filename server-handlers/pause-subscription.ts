@@ -2,14 +2,14 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { withNodeAuthAndRateLimit, supabaseUrl, escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button } from "./_email-theme";
+import { emailShell, hero, para, b, button } from "./_email-theme";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -113,23 +113,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const safeName = escapeHtml(profile.name || "there");
       const safeTier = escapeHtml(profile.subscription_tier || "Starter");
       const subject = action === "pause"
-        ? "Your subscription is paused"
-        : "Welcome back to your plan";
+        ? "Your plan is paused. Nothing is lost"
+        : "Welcome back, your plan is active again";
       const html = action === "pause"
         ? emailShell({
             preview: "Billing is on hold. Resume whenever you're ready.",
             body:
-              title("Paused,", { accentWord: "not gone." }) +
-              para(`Hi ${safeName}, we've paused your HireStepX ${b(safeTier)} plan. You won't be billed while it's paused, and everything (sessions, reports, streaks) stays exactly as you left it.`) +
+              hero({
+                eyebrow: "Plan paused",
+                title: `Hi ${safeName}, your plan is paused`,
+                lede: `We've paused your HireStepX ${b(safeTier)} plan. You won't be billed while it's paused, and everything (sessions, reports, streaks) stays exactly as you left it.`,
+              }) +
               button("Resume anytime", `${APP_URL}/dashboard/settings`, { tone: "ghost" }) +
               para(`Your features switch back on the moment you resume.`, { small: true, muted: true }),
           })
         : emailShell({
             preview: "Your subscription is active again.",
             body:
-              title("Back", { accentWord: "on." }) +
-              para(`Hi ${safeName}, your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`) +
-              button("Continue practising", `${APP_URL}/dashboard`),
+              hero({
+                tone: "success",
+                eyebrow: "Plan resumed",
+                title: `Hi ${safeName}, welcome back`,
+                lede: `Your HireStepX ${b(safeTier)} plan is active again. Auto-renewal is back on and your full features are switched on.`,
+              }) +
+              button("Continue practicing", `${APP_URL}/dashboard`),
           });
       try {
         await fetch("https://api.resend.com/emails", {

@@ -17,13 +17,13 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { emailShell, hero, actions, para, button, note, data, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -77,25 +77,30 @@ function buildDay2Email(
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
   const safeRole = escapeHtml(role || "your target role");
+  const rolePhrase = escapeHtml(role || "target role");
   const sessionUrl = `${APP_URL}/session/new`;
 
   return {
-    subject: `What's unlocked on your Sprint Pack`,
+    subject: `${safeName}, your Sprint Pack is ready to use`,
     html: emailShell({
       footer,
-      preview: `Your Sprint Pack is active. Here's the fastest way to get value from it.`,
+      preview: "Here is the fastest way to get value from your 5 sessions.",
       body:
-        title("You're in.", { accentWord: "Here's what that means." }) +
-        para(`Hi ${safeName}, your plan is active. Here is the fastest way to get value from it before your ${safeRole} prep window closes.`) +
-        dataCard(`What's unlocked`, [
+        hero({
+          tone: "success",
+          eyebrow: "Your Sprint Pack",
+          title: `You're in, ${safeName}`,
+          lede: `Your Sprint Pack is active: 5 sessions over 30 days. Here's the fastest way to get value from it for your ${rolePhrase} prep.`,
+        }) +
+        data([
           ["Sessions", "5 per Sprint Pack"],
           ["Question types", "Behavioral, Technical, Case Study, HR"],
-          ["Resume tailoring", "Questions matched to your uploaded resume"],
-          ["Coaching feedback", "STAR breakdown + model answer after every session"],
+          ["Resume tailoring", "Matched to your uploaded resume"],
+          ["Coaching feedback", "STAR breakdown and model answer"],
         ]) +
-        para(`${b("Start with one session now.")} Pick ${b(safeRole)} as your focus and do a 10-minute behavioral round. The AI will tell you your weakest dimension — that becomes your practice target for the week.`) +
-        button("Start your first session", sessionUrl) +
-        para("Reply to this email if you have a specific company or role in mind — we can suggest the best session type to start with.", { small: true, muted: true }),
+        para(`Start with one session now. Pick ${safeRole} as your focus and do a 10-minute behavioral round. The AI will show you your weakest dimension, and that becomes your target for the week.`) +
+        button("Start my first session", sessionUrl) +
+        note("Have a specific company or role in mind? Just reply and we'll suggest the best session to start with."),
     }),
   };
 }
@@ -106,28 +111,31 @@ function buildDay5Email(
   footer?: EmailFooterOptions,
 ): { subject: string; html: string } {
   const safeName = escapeHtml(name.split(" ")[0] || "there");
-  const safeRole = escapeHtml(role || "your target role");
+  const rolePhrase = escapeHtml(role || "target role");
   const sessionUrl = `${APP_URL}/session/new`;
   const reportUrl = `${APP_URL}/dashboard`;
 
   return {
-    subject: `${safeName}, a quick check-in on your ${safeRole} prep`,
+    subject: `${safeName}, how is your ${rolePhrase} prep going?`,
     html: emailShell({
       footer,
-      preview: "Three things worth knowing after your first week on the plan.",
+      preview: "Three habits that make the rest of your pack count.",
       body:
-        title("Five days", { accentWord: "in." }) +
-        para(`Hi ${safeName}, five days into your plan. A few things that will make the next few weeks materially better:`) +
-        dataCard("Tips from high-scorers", [
-          ["Practice aloud", "Not in your head. Aloud. Scoring is 22 pts higher on average."],
-          ["3 sessions per week", "Consistency beats marathon cramming every time."],
-          ["Coach Notes tab", "After every session — the tab most users skip."],
+        hero({
+          eyebrow: "Day 5",
+          title: `A few days in, ${safeName}`,
+          lede: "By now you have had a first taste of the AI interviewer. Here are three habits that help candidates get the most out of the rest of their Sprint Pack.",
+        }) +
+        data([
+          ["Practice aloud", "Say your answers, don't just think them"],
+          ["3 sessions a week", "Steady beats cramming"],
+          ["Coach Notes tab", "The tab most people skip"],
         ]) +
-        para(`${b("The Coach Notes tab")} inside your session report is the most important feature nobody uses. After every session the AI writes a specific, personalised list of what to change in your next session. It takes 2 minutes to read and it's why candidates who use it consistently see noticeably sharper answers within a few sessions.`) +
-        button("Start a session and read your Coach Notes", sessionUrl) +
-        para(`Your ${b(safeRole)} sessions and all past reports are in your dashboard whenever you need them.`) +
-        button("View my dashboard", reportUrl) +
-        para("5 sessions per Sprint Pack — your plan covers you through placement season.", { small: true, muted: true }),
+        para("Coach Notes inside your report is the most useful feature nobody uses. After every session the AI writes a specific list of what to change next time. It takes about 2 minutes to read.") +
+        actions([
+          { label: "Start a session", href: sessionUrl },
+          { label: "View my dashboard", href: reportUrl, ghost: true },
+        ]),
     }),
   };
 }

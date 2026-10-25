@@ -40,7 +40,7 @@ import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
 import { captureServerEvent } from "./_posthog";
-import { emailShell, title as emailTitle, para, button, dataCard, escapeHtml } from "./_email-theme";
+import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
@@ -114,7 +114,7 @@ declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 function serviceHeaders(): Record<string, string> {
@@ -158,8 +158,12 @@ async function sendStrongMatchEmail(opts: {
       footer,
       preview: headline,
       body:
-        emailTitle("Strong match", { accentWord: "updated" }) +
-        para(escapeHtml(headline)) +
+        hero({
+          tone: "success",
+          eyebrow: "Strong match",
+          title: "You have a strong match",
+          lede: escapeHtml(headline),
+        }) +
         dataCard("Requirement", [
           ["Role", escapeHtml(reqTitle)],
           ["Candidates", String(opts.matchCount)],

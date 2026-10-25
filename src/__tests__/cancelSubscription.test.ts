@@ -83,10 +83,9 @@ describe("buildCancellationEmailHtml", () => {
     appUrl: "https://hirestepx.vercel.app",
   };
 
-  it("includes name, tier and end date", () => {
+  it("includes name and end date", () => {
     const html = buildCancellationEmailHtml(baseParams);
     expect(html).toContain("Aarti");
-    expect(html).toContain("starter");
     expect(html).toContain("1 June 2026");
   });
 
@@ -101,12 +100,13 @@ describe("buildCancellationEmailHtml", () => {
 
   it("falls back to 'there' when name is missing", () => {
     const html = buildCancellationEmailHtml({ ...baseParams, userName: null });
-    expect(html).toContain("Hi there,");
+    expect(html).toContain("Your plan is cancelled</");
+    expect(html).not.toContain("Your plan is cancelled,");
   });
 
-  it("falls back to 'paid' when tier is missing", () => {
+  it("renders without a tier and always states the free-plan fallback", () => {
     const html = buildCancellationEmailHtml({ ...baseParams, tier: null });
-    expect(html).toContain("paid");
+    expect(html).toContain("Free plan");
   });
 
   it("strips trailing slash from appUrl in the reactivate link", () => {

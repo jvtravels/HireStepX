@@ -8,7 +8,6 @@ import {
   handlePreflightAndMethod,
   isRateLimited,
   getVercelClientIp,
-  escapeHtml,
   supabaseUrl,
   supabaseAnonKey,
   slog,
@@ -47,7 +46,7 @@ const RAZORPAY_PLAN_ID_MAP: Record<string, string> = Object.fromEntries(
 );
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -58,7 +57,7 @@ const PAYMENT_ID_HASH_SECRET = (process.env.PAYMENT_ID_HASH_SECRET || "").trim()
 
 import { captureServerEvent, captureServerException } from "./_posthog";
 import { recordSlo } from "./_slo";
-import { emailShell, title, para, b, button, dataCard, mono } from "./_email-theme";
+import { emailShell, hero, button, note, data, mono, nameSuffix } from "./_email-theme";
 
 /** Hash a Razorpay payment id before sending it to analytics. The full id
  * is a financial identifier (DPDP-sensitive) — we never want it to leave
@@ -120,7 +119,7 @@ async function sendPaymentEmail(
     slog.error("verify-payment: invalid email format, skipping payment email", {});
     return;
   }
-  const planLabel = PLAN_LABEL[plan] || tier;
+  const planLabel = plan === "single" ? "Single session" : plan === "weekly" ? "Sprint Pack" : PLAN_LABEL[plan] || tier;
   const start = new Date(startDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const end = new Date(endDate).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const amountMap: Record<string, string> = { single: "₹9", weekly: "₹39" };
@@ -144,22 +143,34 @@ async function sendPaymentEmail(
         to: [email],
         subject: `${amount} received, ${planLabel} is live`,
         html: emailShell({
-          preview: `${planLabel} starts now. Valid until ${end}.`,
+          preview: plan === "single" ? "Your session credit is ready." : `Your ${planLabel} starts now. Valid until ${end}.`,
           body:
-            title("You're", { accentWord: "in." }) +
-            para(`Hi ${escapeHtml(name || "there")}, your payment went through and ${b(planLabel)} is active. ${plan === "single" ? "Your session credit is ready — head to your dashboard to start your mock interview." : "5 interview sessions, all question types, detailed feedback, and resume analysis, all unlocked."}`) +
-            dataCard("Receipt", [
-              ["Plan", planLabel],
-              ["Amount paid", mono(amount)],
-              ["Valid from", start],
-              ["Valid until", end],
-              ["Payment ID", mono(paymentId)],
-            ]) +
-            button("Start practising", `${APP_URL}/dashboard`) +
-            para(
-              `This is your payment confirmation. If you didn't make this purchase, contact us immediately.`,
-              { small: true, muted: true },
-            ),
+            hero({
+              tone: "success",
+              eyebrow: "Payment received",
+              title: `You're in${nameSuffix(name)}`,
+              lede:
+                plan === "single"
+                  ? "Thanks for your payment. Your session credit is ready, so head to your dashboard whenever you want to start."
+                  : `Thanks for your payment. Your ${planLabel} is live: 5 interview sessions to use before ${end}, with every question type, detailed feedback and resume analysis.`,
+            }) +
+            data(
+              plan === "single"
+                ? [
+                    ["Plan", planLabel],
+                    ["Amount paid", mono(amount)],
+                    ["Payment ID", mono(paymentId)],
+                  ]
+                : [
+                    ["Plan", planLabel],
+                    ["Amount paid", mono(amount)],
+                    ["Valid from", start],
+                    ["Valid until", end],
+                    ["Payment ID", mono(paymentId)],
+                  ],
+            ) +
+            button("Start practicing", `${APP_URL}/dashboard`) +
+            note("This is your payment confirmation. If you didn't make this purchase, please write to us right away."),
         }),
       }),
     });
@@ -590,7 +601,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         body: JSON.stringify({ razorpay_payment_id }),
       }).catch(() => {});
       if (userEmail) {
-        try { await sendPaymentEmail(userEmail, userName || "Customer", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString(), `₹${purchaseAmount / 100}`); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
+        try { await sendPaymentEmail(userEmail, userName || "", "single", "free", razorpay_payment_id, nowSingle.toISOString(), nowSingle.toISOString(), `₹${purchaseAmount / 100}`); } catch (e) { console.warn("[verify-payment] single email failed:", e); }
       }
       if (razorpay_order_id) await clearPaymentIntent(razorpay_order_id);
       void notify({

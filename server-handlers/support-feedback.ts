@@ -14,6 +14,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId } from "./_shared";
+import { emailShell, hero, para, link, note, escapeHtml } from "./_email-theme";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
@@ -170,7 +171,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Admin notification
     await sendResendEmail({
-      from: "HireStepX Support <noreply@hirestepx.com>",
+      from: "HireStepX Support <hello@hirestepx.com>",
       to: ["hello@hirestepx.com"],
       replyTo: email || undefined,
       subject: `[Support][${type.toUpperCase()}] New message from ${email || auth.userId}`,
@@ -181,24 +182,29 @@ export default async function handler(req: Request): Promise<Response> {
         <p><strong>Received:</strong> ${timestamp}</p>
         <hr/>
         <p><strong>Message:</strong></p>
-        <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.replace(/\n/g, "<br/>")}</blockquote>
+        <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${escapeHtml(message).replace(/\n/g, "<br/>")}</blockquote>
       `,
     });
 
     // Auto-reply to user — only when email is available
     if (email) {
       await sendResendEmail({
-        from: "HireStepX Support <noreply@hirestepx.com>",
+        from: "HireStepX Support <hello@hirestepx.com>",
         to: [email],
         subject: "We received your message — HireStepX Support",
-        html: `
-          <p>Hi,</p>
-          <p>We've received your message and will get back to you within 1 business day.</p>
-          <p>Here's what you sent:</p>
-          <blockquote style="border-left:3px solid #ccc;padding-left:12px;color:#444">${message.slice(0, 500).replace(/\n/g, "<br/>")}${message.length > 500 ? "…" : ""}</blockquote>
-          <p>Reply to this email or reach us at <a href="mailto:hello@hirestepx.com">hello@hirestepx.com</a>.</p>
-          <p>— The HireStepX Team</p>
-        `,
+        html: emailShell({
+          preview: "We've received your message and will get back to you within 1 business day.",
+          body:
+            hero({
+              tone: "success",
+              eyebrow: "Message received",
+              title: "We've got your message",
+              lede: "We'll get back to you within 1 business day.",
+            }) +
+            para("Here's what you sent:") +
+            note(`${escapeHtml(message.slice(0, 500)).replace(/\n/g, "<br/>")}${message.length > 500 ? "…" : ""}`) +
+            para(`Reply to this email or reach us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")}.`),
+        }),
       });
     }
 

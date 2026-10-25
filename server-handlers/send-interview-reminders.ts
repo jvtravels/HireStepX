@@ -11,16 +11,22 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { emailShell, hero, button, data, firstNameOf } from "./_email-theme";
+import { fetchAllPages, mapPool, timeBudget } from "./_batch";
 import { dueReminders, leadLabel, type ReminderEvent } from "./_reminder-dispatch";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
 
 const HORIZON_DAYS = 8; // furthest out an in-window reminder can reference
+const PAGE_SIZE = 500;
+const MAX_PAGES = 10;
+const LOOKUP_CHUNK = 50;
+const SEND_CONCURRENCY = 4;
+const RUN_BUDGET_MS = 45_000;
 
 function svcHeaders(extra?: Record<string, string>): Record<string, string> {
   return {
@@ -54,37 +60,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const now = new Date();
     const horizon = new Date(now.getTime() + HORIZON_DAYS * 86_400_000);
 
-    // Upcoming events with at least one reminder configured, in the horizon.
-    const eventsRes = await fetch(
+    // Ordered + paginated so a busy window never silently drops events past a fixed cap.
+    const eventsBase =
       `${SUPABASE_URL}/rest/v1/calendar_events?status=eq.upcoming` +
-        `&start_utc=gte.${now.toISOString()}&start_utc=lte.${horizon.toISOString()}` +
-        `&reminders=neq.[]` +
-        `&select=id,user_id,title,company,start_utc,timezone,status,reminders&limit=500`,
-      { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) },
-    );
-    if (!eventsRes.ok) {
-      console.error(`[cron:interview-reminders] event query failed (${eventsRes.status})`);
+      `&start_utc=gte.${now.toISOString()}&start_utc=lte.${horizon.toISOString()}` +
+      `&reminders=neq.[]` +
+      `&select=id,user_id,title,company,start_utc,timezone,status,reminders&order=start_utc.asc,id.asc`;
+    let firstPageFailed = false;
+    const { rows: events, complete: eventsComplete } = await fetchAllPages<ReminderEvent>(async (offset, limit) => {
+      const r = await fetch(`${eventsBase}&limit=${limit}&offset=${offset}`, { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) }).catch(() => null);
+      if (!r || !r.ok) {
+        if (offset === 0) { firstPageFailed = true; console.error(`[cron:interview-reminders] event query failed (${r?.status ?? "network"})`); }
+        return null;
+      }
+      const json = await r.json().catch(() => null);
+      return Array.isArray(json) ? json : null;
+    }, PAGE_SIZE, MAX_PAGES);
+    if (firstPageFailed) {
       return res.status(500).json({ error: "Failed to query events" });
     }
-    const events: ReminderEvent[] = await eventsRes.json();
-    if (!Array.isArray(events) || events.length === 0) {
+    if (!eventsComplete) console.error(`[cron:interview-reminders] WARNING: event scan incomplete (${events.length} loaded)`);
+    if (events.length === 0) {
       await recordCronResult("send-interview-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No upcoming events with reminders" });
     }
 
-    // Pull the already-sent log for just these events to build the dedup set.
-    const eventIds = events.map((e) => e.id);
+    // Chunked lookups: one giant in.(...) list exceeds URL limits and the response row cap.
     const sentKeys = new Set<string>();
-    const logRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/calendar_reminder_log?event_id=in.(${eventIds.map(encodeURIComponent).join(",")})` +
-        `&select=event_id,channel,minutes_before`,
-      { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) },
-    );
-    if (logRes.ok) {
-      const rows = await logRes.json().catch(() => []);
-      if (Array.isArray(rows)) {
-        for (const r of rows) sentKeys.add(`${r.event_id}:${r.channel}:${r.minutes_before}`);
-      }
+    for (let i = 0; i < events.length; i += LOOKUP_CHUNK) {
+      const ids = events.slice(i, i + LOOKUP_CHUNK).map((e) => encodeURIComponent(e.id)).join(",");
+      try {
+        const logRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/calendar_reminder_log?event_id=in.(${ids})&select=event_id,channel,minutes_before`,
+          { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) },
+        );
+        if (logRes.ok) {
+          const rows = await logRes.json().catch(() => []);
+          if (Array.isArray(rows)) for (const r of rows) sentKeys.add(`${r.event_id}:${r.channel}:${r.minutes_before}`);
+        }
+      } catch { /* a missed dedup row only risks a resend */ }
     }
 
     const due = dueReminders(events, { now: now.toISOString(), sentKeys });
@@ -96,29 +110,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Resolve recipient emails for the users involved.
     const userIds = Array.from(new Set(due.map((d) => d.userId)));
     const emailByUser = new Map<string, { email: string; name: string }>();
-    const profRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?id=in.(${userIds.map(encodeURIComponent).join(",")})&select=id,email,name`,
-      { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) },
-    );
-    if (profRes.ok) {
-      const profs = await profRes.json().catch(() => []);
-      if (Array.isArray(profs)) {
-        for (const p of profs) if (p.email) emailByUser.set(p.id, { email: p.email, name: p.name || "there" });
-      }
+    for (let i = 0; i < userIds.length; i += LOOKUP_CHUNK) {
+      const ids = userIds.slice(i, i + LOOKUP_CHUNK).map(encodeURIComponent).join(",");
+      try {
+        const profRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?id=in.(${ids})&select=id,email,name`,
+          { headers: svcHeaders(), signal: AbortSignal.timeout(10_000) },
+        );
+        if (profRes.ok) {
+          const profs = await profRes.json().catch(() => []);
+          if (Array.isArray(profs)) {
+            for (const p of profs) if (p.email) emailByUser.set(p.id, { email: p.email, name: p.name || "there" });
+          }
+        }
+      } catch { /* those users are skipped this run and retried next */ }
     }
 
     let sent = 0;
     let failed = 0;
     let skipped = 0;
-    for (const d of due) {
+    let skippedForTime = 0;
+    const budget = timeBudget(RUN_BUDGET_MS);
+    await mapPool(due, SEND_CONCURRENCY, async (d) => {
+      if (budget.expired()) { skippedForTime++; return; }
       const recipient = emailByUser.get(d.userId);
       if (!recipient || !d.event.start_utc) {
         skipped++;
-        continue;
+        return;
       }
       const lead = leadLabel(d.minutesBefore);
       const when = fmtWhen(d.event.start_utc, d.event.timezone || "Asia/Kolkata");
-      const heading = d.event.company ? `${d.event.company} interview` : "Your interview";
+      const heading = d.event.company ? `${d.event.company} interview` : "interview";
       const calUrl = `${APP_URL}/calendar`;
 
       const emailBody = JSON.stringify({
@@ -126,11 +148,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         to: [recipient.email],
         subject: `In ${lead}: ${d.event.title}`,
         html: emailShell({
-          preview: `Your interview is in ${lead}. A quick prep run now pays off.`,
+          preview: "A quick prep run now pays off.",
           body:
-            title("Your interview", { accentWord: `in ${lead}.` }) +
-            para(`Hi ${escapeHtml(recipient.name)}, this is your reminder that ${b(escapeHtml(heading))} is coming up. Block a few minutes to review your notes and run a quick mock so you walk in warm.`) +
-            dataCard("Interview", [
+            hero({
+              eyebrow: "Interview reminder",
+              title: `Your interview is in ${lead}`,
+              lede: `Hi ${firstNameOf(recipient.name)}, your ${escapeHtml(heading)} is coming up. Take a few minutes to review your notes and run a quick mock so you walk in warm.`,
+            }) +
+            data([
               ["What", escapeHtml(d.event.title)],
               ["When", escapeHtml(when)],
               ["Lead time", lead],
@@ -164,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!ok) {
           failed++;
           console.error(`[cron:interview-reminders] send failed for event ${d.eventId}`);
-          continue;
+          return;
         }
         // Record the send. ignore-duplicates makes a concurrent run a no-op
         // rather than a double-send; a log write failure only risks a resend.
@@ -184,11 +209,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         failed++;
         console.error(`[cron:interview-reminders] error for event ${d.eventId}:`, err);
       }
-    }
+    });
 
     // Only a run where every send failed counts as unhealthy; one bad address must not page.
     await recordCronResult("send-interview-reminders", { errors: sent === 0 ? failed : 0 });
-    return res.status(200).json({ sent, failed, skipped, due: due.length, scanned: events.length });
+    return res.status(200).json({ sent, failed, skipped, skippedForTime, due: due.length, scanned: events.length, complete: eventsComplete });
   } catch (err) {
     console.error("[cron:interview-reminders] fatal:", err);
     return res.status(500).json({ error: "Internal error" });

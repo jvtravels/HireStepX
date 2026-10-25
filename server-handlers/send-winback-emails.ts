@@ -13,13 +13,14 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
+import { fetchAllPages, mapPool, timeBudget } from "./_batch";
+import { emailShell, hero, actions, note, data, signoff, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
@@ -41,16 +42,29 @@ interface SessionRow {
   created_at: string;
 }
 
-async function redisGet(key: string): Promise<string | null> {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) return null;
-  try {
-    const res = await fetch(`${UPSTASH_URL}/GET/${encodeURIComponent(key)}`, {
-      headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (!res.ok) return null;
-    return ((await res.json()) as { result: string | null }).result;
-  } catch { return null; }
+const PAGE_SIZE = 500;
+const MAX_PAGES = 10;
+const SESSION_CHUNK = 25;
+const SEND_CONCURRENCY = 4;
+const RUN_BUDGET_MS = 45_000;
+
+/** Which of `keys` already exist. One round trip per chunk instead of one GET per user. */
+async function redisExistingKeys(keys: string[]): Promise<Set<string>> {
+  const found = new Set<string>();
+  if (!UPSTASH_URL || !UPSTASH_TOKEN) return found;
+  for (let i = 0; i < keys.length; i += 100) {
+    const chunk = keys.slice(i, i + 100);
+    try {
+      const res = await fetch(`${UPSTASH_URL}/mget/${chunk.map(encodeURIComponent).join("/")}`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (!res.ok) continue;
+      const { result } = (await res.json()) as { result: (string | null)[] };
+      result.forEach((v, idx) => { if (v) found.add(chunk[idx]); });
+    } catch { /* treat as unsent; Idempotency-Key still prevents a duplicate email */ }
+  }
+  return found;
 }
 
 async function redisSet(key: string, value: string): Promise<void> {
@@ -82,29 +96,26 @@ function buildWinbackEmail(
   ];
 
   return {
-    subject: `${safeName}, your HireStepX progress is still here`,
+    subject: bestScore != null
+      ? `${safeName}, your best score was ${bestScore}/100`
+      : `${safeName}, your HireStepX progress is still here`,
     html: emailShell({
       footer,
-      preview: "Your resume, sessions, and score history are exactly as you left them.",
+      preview: "Everything is exactly as you left it.",
       body:
-        title("Still here,", { accentWord: "waiting for you." }) +
-        para(
-          `Hi ${safeName}, your ${b(safeRole)} prep — your resume, your past sessions, your score history — is exactly as you left it. Nothing was deleted when your plan ended.`,
-        ) +
-        dataCard("Your account", cardRows) +
-        para(
-          `If the timing wasn't right, no problem. When you're ready to practice again, everything picks up from where you stopped.`,
-        ) +
-        button("Continue where I left off", sessionUrl) +
-        para(
-          `If you want to pick up a plan again, prices start at ₹9 for a single session — no commitment.`,
-          { small: true, muted: true },
-        ) +
-        button("See plans", pricingUrl) +
-        para(
-          `If something wasn't working or the product didn't meet your expectations, reply and tell us — we read every response.`,
-          { small: true, muted: true },
-        ),
+        hero({
+          title: `Your progress is still here, ${safeName}`,
+          lede: bestScore != null
+            ? `Your best score is ${bestScore}/100, and it is still saved with your resume and past sessions. Nothing was deleted when your plan ended. One more session could beat it.`
+            : "Your resume and past sessions are exactly as you left them. Nothing was deleted when your plan ended. Pick up whenever you are ready.",
+        }) +
+        data(cardRows) +
+        actions([
+          { label: "Continue where I left off", href: sessionUrl },
+          { label: "See plans", href: pricingUrl, ghost: true },
+        ]) +
+        note("Plans start at ₹9 for a single session, with no commitment.") +
+        signoff({ name: "The HireStepX team", role: "" }),
     }),
   };
 }
@@ -127,33 +138,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
   };
 
-  const profilesRes = await fetch(
+  // Ordered + paginated: the window spans ~11 daily runs, so a fixed unordered slice would starve everyone past it.
+  const profilesBase =
     `${SUPABASE_URL}/rest/v1/profiles` +
     `?subscription_tier=eq.free` +
     `&subscription_end=gte.${encodeURIComponent(windowStart)}` +
     `&subscription_end=lte.${encodeURIComponent(windowEnd)}` +
     `&select=id,name,email,subscription_tier,subscription_end,target_role,session_credits` +
-    `&limit=100`,
-    { headers: dbHeaders, signal: AbortSignal.timeout(10_000) },
-  );
+    `&order=id`;
+  let firstPageFailed = false;
+  const { rows: allProfiles, complete: profilesComplete } = await fetchAllPages<ProfileRow>(async (offset, limit) => {
+    const r = await fetch(`${profilesBase}&limit=${limit}&offset=${offset}`, { headers: dbHeaders, signal: AbortSignal.timeout(10_000) }).catch(() => null);
+    if (!r || !r.ok) { if (offset === 0) firstPageFailed = true; return null; }
+    const json = await r.json();
+    return Array.isArray(json) ? json : null;
+  }, PAGE_SIZE, MAX_PAGES);
 
-  if (!profilesRes.ok) {
+  if (firstPageFailed) {
     return res.status(500).json({ error: "Failed to query profiles" });
   }
+  if (!profilesComplete) console.error(`[send-winback] WARNING: candidate scan incomplete (${allProfiles.length} loaded)`);
 
-  const allProfiles: ProfileRow[] = await profilesRes.json();
-  const profiles = Array.isArray(allProfiles)
-    ? await filterSuppressed(preferenceDepsFromEnv(), allProfiles, "marketing")
-    : [];
+  const suppressionFiltered = await filterSuppressed(preferenceDepsFromEnv(), allProfiles, "marketing");
+  // Drop already-emailed users up front so the time budget is spent on new ones.
+  const alreadySentKeys = await redisExistingKeys(suppressionFiltered.map(p => `winback:${p.id}`));
+  const profiles = suppressionFiltered.filter(p => !alreadySentKeys.has(`winback:${p.id}`));
   if (profiles.length === 0) {
     await recordCronResult("send-winback-emails", { errors: 0 });
-    return res.status(200).json({ sent: 0, skipped: 0, message: "No candidates" });
+    return res.status(200).json({ sent: 0, skipped: allProfiles.length - profiles.length, message: "No candidates", complete: profilesComplete });
   }
 
-  // Batch-fetch session stats for all candidates
+  // Chunked: one giant in.(...) list exceeds URL limits, and a single response is row-capped.
   const sessionStatsByUser = new Map<string, { bestScore: number; count: number }>();
-  if (profiles.length > 0) {
-    const ids = profiles.map(p => encodeURIComponent(p.id)).join(",");
+  for (let i = 0; i < profiles.length; i += SESSION_CHUNK) {
+    const ids = profiles.slice(i, i + SESSION_CHUNK).map(p => encodeURIComponent(p.id)).join(",");
     try {
       const sessRes = await fetch(
         `${SUPABASE_URL}/rest/v1/sessions?user_id=in.(${ids})&select=user_id,score,created_at&order=score.desc`,
@@ -171,22 +189,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
       }
-    } catch { /* proceed without session data */ }
+    } catch { /* proceed without session data for this chunk */ }
   }
 
   let sent = 0;
-  let skipped = 0;
+  let skipped = allProfiles.length - profiles.length;
+  let skippedForTime = 0;
+  const budget = timeBudget(RUN_BUDGET_MS);
 
-  for (const user of profiles) {
-    if (!user.email) { skipped++; continue; }
+  await mapPool(profiles, SEND_CONCURRENCY, async (user) => {
+    if (!user.email) { skipped++; return; }
+    if (budget.expired()) { skippedForTime++; return; }
 
     const redisKey = `winback:${user.id}`;
-    const alreadySent = await redisGet(redisKey);
-    if (alreadySent) { skipped++; continue; }
-
     const stats = sessionStatsByUser.get(user.id);
     // Only send to users who actually practiced (had at least 1 session)
-    if (!stats || stats.count === 0) { skipped++; continue; }
+    if (!stats || stats.count === 0) { skipped++; return; }
 
     const parts = await marketingEmailParts(user.id, "marketing");
     const { subject, html } = buildWinbackEmail(user, stats.bestScore, stats.count, parts.footer);
@@ -212,8 +230,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch {
       skipped++;
     }
-  }
+  });
 
+  if (skippedForTime > 0) console.error(`[send-winback] time budget hit; ${skippedForTime} users deferred to the next run`);
   await recordCronResult("send-winback-emails", { errors: 0 });
-  return res.status(200).json({ sent, skipped, total: profiles.length });
+  return res.status(200).json({ sent, skipped, skippedForTime, total: allProfiles.length, complete: profilesComplete });
 }

@@ -148,7 +148,7 @@ describe("send-welcome create-account action", () => {
     expect(creates()).toHaveLength(1);
     expect(creates()[0].body?.email_confirm).toBe(false);
     expect(mails()).toHaveLength(1);
-    expect(mails()[0].body?.subject).toBe("Verify your email to get started");
+    expect(mails()[0].body?.subject).toBe("Asha, confirm your email to get started");
     expect(String(mails()[0].body?.html)).toContain("ref=HSX-ABC123");
   });
 
@@ -156,7 +156,7 @@ describe("send-welcome create-account action", () => {
     const out = await run({}, { createStatus: 422, createBody: { error_code: "email_exists" } });
     expect(out).toEqual({ status: 200, body: { ok: true } });
     expect(mails()).toHaveLength(1);
-    expect(mails()[0].body?.subject).toBe("You already have an account");
+    expect(mails()[0].body?.subject).toBe("Asha, you already have an account");
   });
 
   it("rejects a weak password before touching Supabase", async () => {

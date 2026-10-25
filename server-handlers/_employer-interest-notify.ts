@@ -3,7 +3,7 @@
    email: no company name, so it cannot be used to identify or pressure the
    candidate before they respond. Never throws. */
 import { slog } from "./_shared";
-import { emailShell, title as emailTitle, para, button, escapeHtml } from "./_email-theme";
+import { emailShell, hero, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import type { NotifyInput } from "./_notify";
 
@@ -40,15 +40,20 @@ async function sendInterestEmail(t: InterestTarget, fetchImpl: typeof fetch): Pr
     footer: parts.footer,
     preview: headline,
     body:
-      emailTitle("An employer is", { accentWord: "interested" }) +
-      para(`Hi ${firstName}, ${headline} They can now contact you directly, so keep an eye on your inbox. You can switch employer visibility off any time in Settings.`) +
+      hero({
+        tone: "success",
+        eyebrow: "Employer interest",
+        title: `Good news, ${firstName}`,
+        lede: headline,
+      }) +
+      para("They can now contact you directly, so keep an eye on your inbox. You can switch employer visibility off any time in Settings.") +
       button("View the role", `${appUrl}/jobs/${encodeURIComponent(t.matchId)}`),
   });
   const res = await fetchImpl("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>",
+      from: process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>",
       to: [t.email],
       subject: "An employer is interested in your profile - HireStepX",
       html,

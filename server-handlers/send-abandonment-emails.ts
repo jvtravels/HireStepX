@@ -9,14 +9,18 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard, mono, type EmailFooterOptions } from "./_email-theme";
+import { mapPool, timeBudget } from "./_batch";
+import { emailShell, hero, button, note, data, mono, type EmailFooterOptions } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const RUN_BUDGET_MS = 45_000;
+const SEND_CONCURRENCY = 4;
 
 interface PaymentIntent {
   userId: string;
@@ -79,19 +83,21 @@ function buildEmail(intent: PaymentIntent, footer?: EmailFooterOptions): { subje
   const amount = (intent.amount / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 });
   const pricingUrl = `${APP_URL}/pricing`;
   return {
-    subject: "You're one step away from Pro",
+    subject: `Your ${intent.planName} is still waiting`,
     html: emailShell({
       footer,
       preview: "Your checkout is still open. Finish whenever you're ready.",
       body:
-        title("One step", { accentWord: "away." }) +
-        para(`You started checkout for ${b(safePlan)} and didn't quite finish. No rush, your plan is still waiting and you can pick it back up whenever it suits you.`) +
-        dataCard("Your plan", [
+        hero({
+          title: "You're one step from your plan",
+          lede: `You started checking out ${safePlan} but didn't finish. No rush. It is still waiting whenever you're ready.`,
+        }) +
+        data([
           ["Plan", safePlan],
           ["Amount", mono(amount)],
         ]) +
-        button("Complete your purchase", pricingUrl) +
-        para(`No pressure at all, the free tier stays open too. This is the only reminder we'll send about this.`, { small: true, muted: true }),
+        button("Finish my purchase", pricingUrl) +
+        note("The free tier stays open too. This is the only reminder we'll send about this."),
     }),
   };
 }
@@ -125,34 +131,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   let sent = 0, skipped = 0, scanned = 0;
   let cursor = "0";
+  let truncated = false;
+  const budget = timeBudget(RUN_BUDGET_MS);
+
+  const processKey = async (key: string) => {
+    scanned++;
+    const raw = await redisGet(key);
+    if (!raw) return;
+    let intent: PaymentIntent;
+    try { intent = JSON.parse(raw); } catch { await redisDel(key); return; }
+    const age = now - (intent.createdAt || 0);
+    if (age < MIN_AGE_MS) { skipped++; return; } // too fresh
+    if (age > MAX_AGE_MS) { await redisDel(key); skipped++; return; } // stale — forget
+    if (!intent.email) { await redisDel(key); return; }
+    // Left in place (not deleted) when suppressed: a transient lookup failure must not lose the intent.
+    if (await isSuppressed(preferenceDepsFromEnv(), intent.userId, "marketing")) { skipped++; return; }
+    if (!(await redisClaim(key))) { skipped++; return; }
+    const ok = await sendEmail(intent);
+    if (ok) { sent++; await redisDel(key); } else { await redisDel(`claim:${key}`); }
+  };
 
   try {
-    // Use SCAN to iterate over all pay_intent:* keys safely
-    for (let i = 0; i < 50; i++) { // cap iterations to protect runtime
+    // SCAN until finished or the time budget runs out; a truncated run is reported, not silent.
+    for (;;) {
       const result = await redisScan(cursor, "pay_intent:*");
       if (!result) break;
       cursor = result[0];
-      const keys = result[1] || [];
-      for (const key of keys) {
-        scanned++;
-        const raw = await redisGet(key);
-        if (!raw) continue;
-        let intent: PaymentIntent;
-        try { intent = JSON.parse(raw); } catch { await redisDel(key); continue; }
-        const age = now - (intent.createdAt || 0);
-        if (age < MIN_AGE_MS) { skipped++; continue; } // too fresh
-        if (age > MAX_AGE_MS) { await redisDel(key); skipped++; continue; } // stale — forget
-        if (!intent.email) { await redisDel(key); continue; }
-        // Left in place (not deleted) when suppressed: a transient lookup failure must not lose the intent.
-        if (await isSuppressed(preferenceDepsFromEnv(), intent.userId, "marketing")) { skipped++; continue; }
-        if (!(await redisClaim(key))) { skipped++; continue; }
-        const ok = await sendEmail(intent);
-        if (ok) { sent++; await redisDel(key); } else { await redisDel(`claim:${key}`); }
-      }
+      await mapPool(result[1] || [], SEND_CONCURRENCY, processKey);
       if (cursor === "0") break; // SCAN finished
+      if (budget.expired()) { truncated = true; break; }
     }
+    if (truncated) console.error(`[send-abandonment-emails] time budget hit before SCAN finished (scanned=${scanned}, sent=${sent}); remaining intents are picked up next run`);
     await recordCronResult("send-abandonment-emails", { errors: 0 });
-    return res.status(200).json({ sent, skipped, scanned });
+    return res.status(200).json({ sent, skipped, scanned, truncated });
   } catch (err) {
     console.error("[send-abandonment-emails] Error:", err);
     return res.status(500).json({ error: "Internal error", sent, scanned });

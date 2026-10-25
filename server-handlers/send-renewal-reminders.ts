@@ -5,13 +5,21 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
-import { emailShell, title, para, b, button, dataCard } from "./_email-theme";
+import { fetchAllPages, mapPool, timeBudget } from "./_batch";
+import { emailShell, hero, button, note, data, nameSuffix } from "./_email-theme";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const PAGE_SIZE = 200;
+const MAX_PAGES = 25;
+const SEND_CONCURRENCY = 4;
+const RUN_BUDGET_MS = 45_000;
+
+interface RenewalProfile { id: string; name: string | null; email: string | null; subscription_tier: string; subscription_end: string }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!verifyCronAuth(req)) {
@@ -35,9 +43,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const threeDaysLater = new Date(now);
     threeDaysLater.setDate(threeDaysLater.getDate() + 3);
 
-    const profilesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=gte.${twoDaysLater.toISOString()}&subscription_end=lt.${threeDaysLater.toISOString()}&select=id,name,email,subscription_tier,subscription_end&limit=200`,
-      {
+    let queryFailedStatus = 0;
+    const base = `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=gte.${twoDaysLater.toISOString()}&subscription_end=lt.${threeDaysLater.toISOString()}&select=id,name,email,subscription_tier,subscription_end&order=id`;
+    const { rows: profiles, complete } = await fetchAllPages<RenewalProfile>(async (offset, limit) => {
+      const profilesRes = await fetch(`${base}&limit=${limit}&offset=${offset}`, {
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
@@ -45,46 +54,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // 10s timeout — without this, an unresponsive Supabase hangs the cron
         // until Vercel's function timeout (60s+), wasting the run window.
         signal: AbortSignal.timeout(10_000),
-      },
-    );
+      }).catch(() => null);
+      if (!profilesRes || !profilesRes.ok) { queryFailedStatus = profilesRes?.status ?? -1; return null; }
+      const json = await profilesRes.json();
+      return Array.isArray(json) ? json : null;
+    }, PAGE_SIZE, MAX_PAGES);
 
-    if (!profilesRes.ok) {
-      console.error(`[cron:renewal-reminders] CRITICAL: profile query failed (${profilesRes.status})`);
+    if (profiles.length === 0 && queryFailedStatus !== 0) {
+      console.error(`[cron:renewal-reminders] CRITICAL: profile query failed (${queryFailedStatus})`);
       return res.status(500).json({ error: "Failed to query profiles" });
     }
-
-    const profiles = await profilesRes.json();
-    if (!Array.isArray(profiles) || profiles.length === 0) {
+    if (profiles.length === 0) {
       await recordCronResult("send-renewal-reminders", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No expiring subscriptions" });
     }
+    if (!complete) console.error(`[cron:renewal-reminders] WARNING: user list incomplete (${profiles.length} loaded, status ${queryFailedStatus}); some reminders may be missed today`);
 
     let sent = 0;
     let failed = 0;
-    for (const profile of profiles) {
-      if (!profile.email) continue;
+    let skippedForTime = 0;
+    const budget = timeBudget(RUN_BUDGET_MS);
+    await mapPool(profiles, SEND_CONCURRENCY, async (profile) => {
+      if (!profile.email) return;
+      if (budget.expired()) { skippedForTime++; return; }
 
       const endDate = new Date(profile.subscription_end);
       const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / 86400000);
       const tier = profile.subscription_tier;
       const renewUrl = `${APP_URL}/dashboard?plan=weekly`;
 
+      const tierLabel = tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : "paid";
+      const endText = endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      const daysText = `${daysLeft} day${daysLeft !== 1 ? "s" : ""}`;
+
       const emailBody = JSON.stringify({
         from: FROM_EMAIL,
         to: [profile.email],
-        subject: `Your ${tier} plan expires in ${daysLeft} day${daysLeft !== 1 ? "s" : ""}`,
+        subject: `Your ${tierLabel} plan expires in ${daysText}`,
         html: emailShell({
-          preview: "Renew to keep unlimited practice without a gap.",
+          preview: "Renew to keep your sessions running without a gap.",
           body:
-            title(`${daysLeft} day${daysLeft !== 1 ? "s" : ""}`, { accentWord: "left." }) +
-            para(`Hi ${escapeHtml(profile.name || "there")}, your HireStepX ${b(tier)} plan expires on ${b(endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" }))}. Renew before then to keep unlimited sessions, AI coaching and analytics running without a break.`) +
-            dataCard("Current plan", [
-              ["Plan", tier],
-              ["Expires", endDate.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })],
+            hero({
+              eyebrow: "Plan reminder",
+              title: `${daysText} left${nameSuffix(profile.name)}`,
+              lede: `Your HireStepX plan ends on ${endText}. Renew before then and your sessions, AI coaching and analytics keep running without a break.`,
+            }) +
+            data([
+              ["Plan", escapeHtml(tierLabel)],
+              ["Expires", endText],
               ["Days left", String(daysLeft)],
             ]) +
             button("Renew now", renewUrl) +
-            para(`Not renewing? You'll move to the free plan automatically, your history and reports stay exactly where they are.`, { small: true, muted: true }),
+            note("Not renewing? You'll move to the free plan automatically, and your history and reports stay exactly where they are."),
         }),
       });
 
@@ -124,10 +145,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         failed++;
         console.error(`Failed to send reminder to ${profile.email}:`, err);
       }
-    }
+    });
 
-    await recordCronResult("send-renewal-reminders", { errors: failed });
-    return res.status(200).json({ sent, failed, total: profiles.length });
+    if (skippedForTime > 0) console.error(`[cron:renewal-reminders] time budget hit; ${skippedForTime} reminders not sent`);
+    await recordCronResult("send-renewal-reminders", { errors: failed + skippedForTime });
+    return res.status(200).json({ sent, failed, skippedForTime, total: profiles.length, complete });
   } catch (err) {
     console.error("Renewal reminder error:", err);
     return res.status(500).json({ error: "Internal error" });
