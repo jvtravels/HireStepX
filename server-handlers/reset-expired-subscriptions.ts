@@ -6,6 +6,7 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { mapPool, timeBudget } from "./_batch";
 import { emailShell, title, para, b, button, dataCard, orderedList } from "./_email-theme";
 import { captureServerEvent } from "./_posthog";
 
@@ -14,6 +15,13 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const PAGE_SIZE = 200;
+const MAX_PAGES = 25;
+const CONCURRENCY = 4;
+const RUN_BUDGET_MS = 45_000;
+
+interface ExpiredProfile { id: string; name: string | null; email: string | null; subscription_tier: string; subscription_end: string }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!verifyCronAuth(req)) {
@@ -27,26 +35,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const now = new Date().toISOString();
 
-    // Find all non-free profiles where subscription_end is in the past
-    const expiredRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=lt.${now}&select=id,name,email,subscription_tier,subscription_end`,
-      {
-        headers: {
-          apikey: SUPABASE_SERVICE_ROLE_KEY,
-          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    // Downgraded users leave this result set, so re-querying the first page walks the backlog.
+    const fetchExpiredPage = async (): Promise<{ ok: true; rows: ExpiredProfile[] } | { ok: false; status: number }> => {
+      const expiredRes = await fetch(
+        `${SUPABASE_URL}/rest/v1/profiles?subscription_tier=neq.free&subscription_end=lt.${now}&select=id,name,email,subscription_tier,subscription_end&order=id&limit=${PAGE_SIZE}`,
+        {
+          headers: {
+            apikey: SUPABASE_SERVICE_ROLE_KEY,
+            Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          signal: AbortSignal.timeout(10_000),
         },
-        signal: AbortSignal.timeout(10_000),
-      },
-    );
+      ).catch(() => null);
+      if (!expiredRes || !expiredRes.ok) return { ok: false, status: expiredRes?.status ?? -1 };
+      const json = await expiredRes.json();
+      return { ok: true, rows: Array.isArray(json) ? json : [] };
+    };
 
-    if (!expiredRes.ok) {
-      console.error(`[cron:reset-expired] CRITICAL: expired-query failed (${expiredRes.status}) — paid users may not be downgraded today`);
-      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "query", status: expiredRes.status });
+    const firstPage = await fetchExpiredPage();
+    if (!firstPage.ok) {
+      console.error(`[cron:reset-expired] CRITICAL: expired-query failed (${firstPage.status}) — paid users may not be downgraded today`);
+      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "query", status: firstPage.status });
       return res.status(500).json({ error: "Failed to query expired subscriptions" });
     }
-
-    const expired = await expiredRes.json();
-    if (!Array.isArray(expired) || expired.length === 0) {
+    if (firstPage.rows.length === 0) {
       await recordCronResult("reset-expired-subscriptions", { errors: 0 });
       return res.status(200).json({ downgraded: 0, message: "No expired subscriptions" });
     }
@@ -55,8 +67,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let failed = 0;
     let emailsSent = 0;
     let emailsFailed = 0;
+    const failedIds = new Set<string>();
 
-    for (const profile of expired) {
+    const processProfile = async (profile: ExpiredProfile) => {
       const updateRes = await fetch(
         `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(profile.id)}`,
         {
@@ -132,15 +145,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       } else {
         failed++;
+        failedIds.add(profile.id);
         console.error(`[cron] Failed to downgrade ${profile.id.slice(0, 8)}...`);
       }
+    };
+
+    const budget = timeBudget(RUN_BUDGET_MS);
+    let total = 0;
+    let truncated = false;
+    let page: ExpiredProfile[] = firstPage.rows;
+    for (let i = 0; i < MAX_PAGES; i++) {
+      total += page.length;
+      await mapPool(page, CONCURRENCY, processProfile);
+      if (page.length < PAGE_SIZE) break;
+      if (budget.expired() || i === MAX_PAGES - 1) { truncated = true; break; }
+      const next = await fetchExpiredPage();
+      if (!next.ok) { truncated = true; break; }
+      // Only users that failed to downgrade can reappear; stop rather than spin on them.
+      page = next.rows.filter(r => !failedIds.has(r.id));
+      if (page.length === 0) break;
     }
 
+    if (truncated) console.error(`[cron:reset-expired] WARNING: stopped early (downgraded=${downgraded}); remaining expired users are handled next run`);
     if (failed > 0) {
-      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "downgrade", failed, downgraded, total: expired.length });
+      void captureServerEvent("cron_reset_expired_failed", undefined, { step: "downgrade", failed, downgraded, total });
     }
     await recordCronResult("reset-expired-subscriptions", { errors: failed });
-    return res.status(200).json({ downgraded, failed, emailsSent, emailsFailed, total: expired.length });
+    return res.status(200).json({ downgraded, failed, emailsSent, emailsFailed, total, truncated });
   } catch (err) {
     console.error("Reset expired subscriptions error:", err);
     void captureServerEvent("cron_reset_expired_failed", undefined, { step: "unhandled_exception" });

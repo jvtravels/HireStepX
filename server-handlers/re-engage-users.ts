@@ -9,6 +9,7 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
+import { fetchAllPages, timeBudget } from "./_batch";
 import { emailShell, title, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
 import { filterSuppressed, getSuppressedUserIds, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
@@ -17,6 +18,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+
+const PROFILE_PAGE_SIZE = 1000;
+const PROFILE_MAX_PAGES = 20;
+const SEND_BUDGET_MS = 45_000;
 
 interface UserRow {
   id: string;
@@ -267,22 +272,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Target free AND paid users who haven't practiced recently. Paid users
     // get different copy (see buildEmail) since they need value-justification,
     // not upgrade prompts.
-    const profilesRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent,has_completed_onboarding,created_at&limit=500`,
-      {
+    // Ordered + paginated: an unordered fixed-size read would pick the same
+    // arbitrary rows every day and never reach users beyond it.
+    const profilesBase = `${SUPABASE_URL}/rest/v1/profiles?or=(subscription_tier.eq.free,subscription_tier.eq.starter)&select=id,name,email,subscription_tier,practice_timestamps,target_role,re_engage_sent,has_completed_onboarding,created_at&order=id`;
+    let firstPageFailed = false;
+    const { rows: profiles, complete: profilesComplete } = await fetchAllPages<UserRow>(async (offset, limit) => {
+      const r = await fetch(`${profilesBase}&limit=${limit}&offset=${offset}`, {
         headers: {
           apikey: SUPABASE_SERVICE_ROLE_KEY,
           Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
-      },
-    );
+        signal: AbortSignal.timeout(15_000),
+      }).catch(() => null);
+      if (!r || !r.ok) { if (offset === 0) firstPageFailed = true; return null; }
+      const json = await r.json();
+      return Array.isArray(json) ? json : null;
+    }, PROFILE_PAGE_SIZE, PROFILE_MAX_PAGES);
 
-    if (!profilesRes.ok) {
+    if (firstPageFailed) {
       return res.status(500).json({ error: "Failed to query profiles" });
     }
+    if (!profilesComplete) console.error(`[re-engage] WARNING: user scan incomplete (${profiles.length} loaded); some users skipped today`);
 
-    const profiles: UserRow[] = await profilesRes.json();
-    if (!Array.isArray(profiles) || profiles.length === 0) {
+    if (profiles.length === 0) {
       await recordCronResult("re-engage-users", { errors: 0 });
       return res.status(200).json({ sent: 0, message: "No users to re-engage" });
     }
@@ -455,11 +467,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const BATCH_SIZE = 5;
+    const sendBudget = timeBudget(SEND_BUDGET_MS);
+    let truncated = false;
     for (let i = 0; i < eligible.length; i += BATCH_SIZE) {
+      if (sendBudget.expired()) { truncated = true; break; }
       const batch = eligible.slice(i, i + BATCH_SIZE);
       const results = await Promise.all(batch.map(sendOne));
       for (const r of results) { if (r === "sent") sent++; else failed++; }
     }
+    if (truncated) console.error(`[re-engage] send budget hit after ${sent + failed}/${eligible.length}; the rest wait for tomorrow`);
 
     // Only a run where every send failed counts as unhealthy; one bad address must not page.
     await recordCronResult("re-engage-users", { errors: sent === 0 ? failed : 0 });
@@ -469,6 +485,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       failed,
       candidates: candidates.length,
       total: profiles.length,
+      truncated,
+      complete: profilesComplete,
     });
   } catch (err) {
     console.error("Re-engage users error:", err);

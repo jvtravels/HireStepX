@@ -41,3 +41,35 @@ describe("timeBudget", () => {
     expect(b.expired()).toBe(true);
   });
 });
+
+import { fetchAllPages } from "../../server-handlers/_batch";
+
+describe("fetchAllPages", () => {
+  const source = (n: number) => async (offset: number, limit: number) =>
+    Array.from({ length: Math.max(0, Math.min(limit, n - offset)) }, (_, i) => offset + i);
+
+  it("walks pages until a short page and reports complete", async () => {
+    const { rows, complete } = await fetchAllPages(source(450), 200, 10);
+    expect(rows).toHaveLength(450);
+    expect(complete).toBe(true);
+  });
+
+  it("treats an exact multiple as complete once an empty page arrives", async () => {
+    const { rows, complete } = await fetchAllPages(source(400), 200, 10);
+    expect(rows).toHaveLength(400);
+    expect(complete).toBe(true);
+  });
+
+  it("reports incomplete when maxPages is hit", async () => {
+    const { rows, complete } = await fetchAllPages(source(1000), 100, 3);
+    expect(rows).toHaveLength(300);
+    expect(complete).toBe(false);
+  });
+
+  it("keeps rows already read and reports incomplete when a page fails", async () => {
+    let calls = 0;
+    const { rows, complete } = await fetchAllPages(async (o, l) => (++calls === 2 ? null : source(1000)(o, l)), 100, 10);
+    expect(rows).toHaveLength(100);
+    expect(complete).toBe(false);
+  });
+});
