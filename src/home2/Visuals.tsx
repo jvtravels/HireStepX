@@ -52,7 +52,7 @@ export function HeroSurface() {
   return (
     <div className={on ? "hx-hs hx-rv on" : "hx-hs hx-rv"} ref={ref}>
       <div className="hx-win hx-ri" style={delay(0)}>
-        <Header left="HireStepX / Mock interview / Backend Engineer" right={<span className="hx-samp"><i />Sample, try it</span>} />
+        <Header left="HireStepX / Mock interview / Backend Engineer" right={<span className="hx-samp"><i />Interactive sample</span>} />
         <div className="hx-split">
           <section className="hx-pane" aria-label="Candidate view">
             <p className="hx-pl"><span>Candidate view</span><em>Q3 of 6 · 0:42</em></p>

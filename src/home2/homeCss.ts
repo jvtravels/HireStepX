@@ -407,7 +407,8 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-fl-b .hx-who { min-height: 38px; align-content: center; }
 .hx-fl-c .hx-fl-row { align-items: center; gap: 12px; }
 .hx-float { box-shadow: 0 1px 2px oklch(0.3 0.08 285 / 0.05), 0 12px 24px -10px oklch(0.4 0.1 285 / 0.14); }
-.hx-samp { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: 0.02em; color: var(--ink-2); padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); }
+.hx-samp { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; color: var(--ink-2); padding: 3px 9px; border: 1px solid var(--line); border-radius: 999px; background: var(--white); }
+.hx-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .hx-samp i { width: 6px; height: 6px; border-radius: 50%; background: var(--btn); }
 .hx-rk li.hx-hit { animation: hx-hit 900ms cubic-bezier(0.22, 1, 0.36, 1) 1; }
 .hx-hit .hx-chipw { display: inline-flex; animation: hx-chip 700ms cubic-bezier(0.22, 1, 0.36, 1) 1; }

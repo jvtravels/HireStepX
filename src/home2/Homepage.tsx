@@ -77,7 +77,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
         </nav>
         <div className="hx-nav-cta">
           <Link data-no-underline className="hx-ghost" href="/login">Log in</Link>
-          <Link data-no-underline className="hx-btn sm" href="/signup">Sign up free</Link>
+          <Link data-no-underline className="hx-btn sm" href="/signup">Practise free</Link>
         </div>
         <button type="button" className="hx-burger" aria-label={open ? "Close menu" : "Open menu"} aria-expanded={open} aria-controls="hx-menu" onClick={() => setOpen((o) => !o)}>
           <svg className={open ? "hx-bsvg on" : "hx-bsvg"} viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
@@ -96,7 +96,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
           </nav>
           <div className="hx-menu-cta">
             <Link data-no-underline className="hx-btn alt" href="/login">Log in</Link>
-            <Link data-no-underline className="hx-btn" href="/signup">Sign up free</Link>
+            <Link data-no-underline className="hx-btn" href="/signup">Practise free</Link>
           </div>
         </div>
       )}

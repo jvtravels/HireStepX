@@ -9,7 +9,7 @@ const Lock = () => (
 );
 
 const QA: [string, string][] = [
-  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round\'s own scorecard, tracks your readiness against the hire bar, and shows the exact sentence to fix."],
+  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round\'s own scorecard, tracks your progress, and shows the exact sentence to fix."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed."],
   ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search."],
   ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram in the US, Sarvam in India) to be turned into text, and they do not keep it. We save only the written transcript."],

@@ -61,7 +61,7 @@ const TOPICS: Topic[] = [
     id: "privacy",
     label: "Privacy or my data",
     hint: "Deletion, data requests, formal complaints",
-    answer: "You can delete your account from Settings, or write to the Grievance Officer.",
+    answer: "You can delete your account from Settings, or write to us for any other data request.",
     steps: ["Say what you want done with your data", "We acknowledge in 24 hours", "We resolve it within 15 days"],
     reply: "Acknowledged in 24 hours, resolved in 15 days",
     placeholder: "What would you like us to do with your data?",
