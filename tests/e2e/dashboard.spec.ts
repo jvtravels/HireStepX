@@ -126,7 +126,7 @@ test.describe("Legal Pages — Public", () => {
 test.describe("404 Page", () => {
   test("unknown route shows not found", async ({ page }) => {
     await page.goto("/this-page-does-not-exist");
-    await expect(page.getByRole("heading", { name: /not found/i })).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("heading", { name: /dropped off the line/i })).toBeVisible({ timeout: 5000 });
   });
 });
 
