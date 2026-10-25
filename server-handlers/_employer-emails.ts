@@ -147,7 +147,7 @@ export interface SendInput {
 export async function sendEmployerEmail(input: SendInput, deps: SendDeps = {}): Promise<boolean> {
   const apiKey = deps.apiKey ?? (process.env.RESEND_API_KEY || "").trim();
   if (!apiKey || !input.to) return false;
-  const from = deps.from ?? (process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>");
+  const from = deps.from ?? (process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>");
   const doFetch = deps.fetchImpl ?? fetch;
   const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
   for (let attempt = 0; attempt < 2; attempt++) {

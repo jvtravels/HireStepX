@@ -117,7 +117,7 @@ export async function sendUnlockReceiptEmail(p: {
           "Idempotency-Key": `unlock-receipt-${p.receipt.paymentId}`,
         },
         signal: ac.signal,
-        body: JSON.stringify({ from: process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>", to: [to], subject, html }),
+        body: JSON.stringify({ from: process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>", to: [to], subject, html }),
       });
       if (!res.ok) {
         slog.error("unlock receipt email failed", { status: res.status, orderId: p.receipt.orderId });

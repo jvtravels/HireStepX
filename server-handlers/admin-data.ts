@@ -257,7 +257,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             method: "POST",
             headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
             body: JSON.stringify({
-              from: "HireStepX <noreply@hirestepx.com>",
+              from: "HireStepX <hello@hirestepx.com>",
               to: [toEmail],
               subject: subjectStr,
               html: htmlStr,

@@ -15,7 +15,7 @@ import { emailShell, hero, para, b, note, escapeHtml, firstNameOf } from "./_ema
 
 declare const process: { env: Record<string, string | undefined> };
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 
 interface ContactBody {
   name: string;

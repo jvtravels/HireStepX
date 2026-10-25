@@ -6,7 +6,7 @@ import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 async function send(to: string, subject: string, html: string): Promise<void> {

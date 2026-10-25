@@ -20,7 +20,7 @@ declare const process: { env: Record<string, string | undefined> };
 
 const RESEND_API_KEY  = (process.env.RESEND_API_KEY  || "").trim();
 const WEBHOOK_SECRET  = (process.env.SUPABASE_WEBHOOK_SECRET || "").trim();
-const FROM_EMAIL      = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL      = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 const FOUNDER_EMAIL   = "vyasjay85@gmail.com";
 
 interface SupabaseWebhookBody {

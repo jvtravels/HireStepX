@@ -171,7 +171,7 @@ export default async function handler(req: Request): Promise<Response> {
 
     // Admin notification
     await sendResendEmail({
-      from: "HireStepX Support <noreply@hirestepx.com>",
+      from: "HireStepX Support <hello@hirestepx.com>",
       to: ["hello@hirestepx.com"],
       replyTo: email || undefined,
       subject: `[Support][${type.toUpperCase()}] New message from ${email || auth.userId}`,
@@ -189,7 +189,7 @@ export default async function handler(req: Request): Promise<Response> {
     // Auto-reply to user — only when email is available
     if (email) {
       await sendResendEmail({
-        from: "HireStepX Support <noreply@hirestepx.com>",
+        from: "HireStepX Support <hello@hirestepx.com>",
         to: [email],
         subject: "We received your message — HireStepX Support",
         html: emailShell({

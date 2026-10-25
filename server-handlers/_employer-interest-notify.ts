@@ -53,7 +53,7 @@ async function sendInterestEmail(t: InterestTarget, fetchImpl: typeof fetch): Pr
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>",
+      from: process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>",
       to: [t.email],
       subject: "An employer is interested in your profile - HireStepX",
       html,
