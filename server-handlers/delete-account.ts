@@ -11,6 +11,7 @@ import {
 import { captureServerEvent } from "./_posthog";
 import { eraseUserData, posthogConfigFromEnv, pseudonymousId, sha256Hex } from "./_erase-user";
 import { sendErasureEmail } from "./_erase-user-email";
+import { ACCOUNT_EXIT_BLOCKED_MESSAGE, companyDyingWith, employerErasureOptions, planErasureExit, type AccountExit } from "./_employer-team-helpers";
 import { RESTORE_EMPLOYER_FILTER, deletionPendingPatch, restoreEmployerPatch } from "./_delete-account-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -113,17 +114,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           body: JSON.stringify({ deleted_at: null }),
         });
         if (!restoreRes.ok) return res.status(500).json({ error: "Failed to restore account" });
-        // Lift only the block the soft delete placed on an employer row; an admin or
-        // report-threshold suspension carries a different reason and stays in force.
-        const unblock = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&${RESTORE_EMPLOYER_FILTER}`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify(restoreEmployerPatch()),
-        });
-        if (!unblock.ok) {
-          // Leaving an employer blocked after a "successful" restore would strand them; surface it.
-          slog.error("delete-account: employer unblock failed on restore", { code: "delete_account_employer_unblock_failed", httpStatus: unblock.status });
-          return res.status(500).json({ error: "Failed to restore account" });
+        // Only the company that died with this account was blocked; a member who left one that
+        // goes on never blocked it, so there is nothing to lift for them.
+        const blockedCompany = companyDyingWith(await planErasureExit(SUPABASE_URL, headers, userId), userId);
+        if (blockedCompany) {
+          // Lift only the block the soft delete placed on an employer row; an admin or
+          // report-threshold suspension carries a different reason and stays in force.
+          const unblock = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(blockedCompany)}&${RESTORE_EMPLOYER_FILTER}`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify(restoreEmployerPatch()),
+          });
+          if (!unblock.ok) {
+            // Leaving an employer blocked after a "successful" restore would strand them; surface it.
+            slog.error("delete-account: employer unblock failed on restore", { code: "delete_account_employer_unblock_failed", httpStatus: unblock.status });
+            return res.status(500).json({ error: "Failed to restore account" });
+          }
         }
         return res.status(200).json({ success: true, restored: true });
       } catch (err) {
@@ -131,6 +137,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: "Failed to restore account" });
       }
     }
+
+    // A company can have several users: leaving one is not deleting the company,
+    // and a sole owner can't walk away from a team that still has members. Checked
+    // before either delete path so a blocked owner is never scheduled for deletion.
+    let exit: AccountExit;
+    try {
+      exit = await planErasureExit(SUPABASE_URL, headers, userId);
+    } catch (exitErr) {
+      slog.error("delete-account: employer membership lookup failed", { error: exitErr instanceof Error ? exitErr.message : String(exitErr) });
+      return res.status(500).json({ error: "Failed to process employer data. Account not deleted. Please try again or contact support." });
+    }
+    if (exit.kind === "blocked") {
+      return res.status(409).json({ error: ACCOUNT_EXIT_BLOCKED_MESSAGE, code: "transfer_ownership_first" });
+    }
+    const dyingCompany = companyDyingWith(exit, userId);
 
     // Soft-delete path: mark profile with deleted_at (scheduled for permanent removal in 7 days)
     if (!hardDelete) {
@@ -148,13 +169,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
         // An employer must stop being live NOW, not in 7 days: block them through the
         // suspension gate every employer handler already enforces. No-op for candidates
-        // (no employers row) and for an already-suspended employer.
-        const block = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodedId}&suspended_at=is.null`, {
-          method: "PATCH",
-          headers,
-          body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
-        });
-        if (!block.ok) {
+        // (no employers row) and for an already-suspended employer. A member leaving a
+        // company that goes on must not take it down with them.
+        const block = dyingCompany
+          ? await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(dyingCompany)}&suspended_at=is.null`, {
+            method: "PATCH",
+            headers,
+            body: JSON.stringify(deletionPendingPatch(new Date().toISOString())),
+          })
+          : null;
+        if (block && !block.ok) {
           slog.error("delete-account: employer block failed on soft delete", { code: "delete_account_employer_block_failed", httpStatus: block.status });
           await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodedId}`, {
             method: "PATCH", headers, body: JSON.stringify({ deleted_at: null }),
@@ -196,6 +220,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         posthog: posthogConfigFromEnv(process.env),
         notify: (contact) => sendErasureEmail(fetch, { resendApiKey: RESEND_API_KEY, fromEmail: FROM_EMAIL, appUrl: APP_URL }, contact),
         log: (msg, fields) => slog.info(msg, fields),
+        ...employerErasureOptions(SUPABASE_URL, headers, userId, exit),
       },
       userId,
     );

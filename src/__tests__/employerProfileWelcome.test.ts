@@ -8,6 +8,14 @@ const loadAuthIdentity = vi.fn();
 const captureServerEvent = vi.fn();
 const sendEmployerEmail = vi.fn();
 
+const resolveCtx = vi.hoisted(() => vi.fn());
+vi.mock("../../server-handlers/_employer-team-helpers", async (orig) => ({
+  ...(await orig<typeof import("../../server-handlers/_employer-team-helpers")>()),
+  resolveEmployerContext: (...args: unknown[]) => resolveCtx(...args),
+}));
+vi.mock("../../server-handlers/_employer-team-gate", () => ({ teamsEnabledFor: async () => false }));
+const ownerCtx = { employerId: "emp-1", userId: "emp-1", role: "owner", email: "priya@acme.com", name: null };
+
 vi.mock("../../server-handlers/_shared", () => ({
   withAuthAndRateLimit: (...a: unknown[]) => withAuthAndRateLimit(...a),
   corsHeaders: () => ({}),
@@ -28,6 +36,7 @@ const row = { id: "emp-1", company_name: "Acme", website: "acme.com", logo_path:
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
+  resolveCtx.mockReset().mockResolvedValue(ownerCtx);
   withAuthAndRateLimit.mockReset().mockResolvedValue({ auth: { userId: "emp-1" }, headers: {} });
   loadAuthIdentity.mockReset().mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
   captureServerEvent.mockReset();
@@ -36,6 +45,7 @@ beforeEach(() => {
 
 describe("employer-profile POST analytics + welcome email", () => {
   it("first save: captures employer_profile_saved (first=true) and sends one idempotent welcome email", async () => {
+    resolveCtx.mockResolvedValue(null);
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
       .mockResolvedValueOnce({ ok: true, json: async () => [row] })
@@ -50,6 +60,7 @@ describe("employer-profile POST analytics + welcome email", () => {
   });
 
   it("emits employer_welcome_sent only when the welcome email was actually sent", async () => {
+    resolveCtx.mockResolvedValue(null);
     sendEmployerEmail.mockResolvedValue(false);
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
@@ -74,6 +85,7 @@ describe("employer-profile POST analytics + welcome email", () => {
   });
 
   it("a failed save emits neither the event nor the email", async () => {
+    resolveCtx.mockResolvedValue(null);
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })
       .mockResolvedValueOnce({ ok: false, status: 500, text: async () => "boom", json: async () => [] })
@@ -86,6 +98,7 @@ describe("employer-profile POST analytics + welcome email", () => {
   });
 
   it("a throwing email sender never fails the save", async () => {
+    resolveCtx.mockResolvedValue(null);
     sendEmployerEmail.mockRejectedValue(new Error("resend down"));
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })

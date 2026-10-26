@@ -35,6 +35,8 @@ import { loadAuthIdentity } from "./_entitlements";
 import { parseBillingNameInput, parseGstinInput } from "./_gstin";
 import { sniffLogoType } from "./_employer-logo-helpers";
 import { deriveEmployerTier, emailDomain, isAcceptableCompanyWebsite, isDeletionPending, isEmployerTier, isFreeMailDomain, isSuspended, TIER_LIMITS, tierAtLeast, type EmployerTier } from "./_employer-trust";
+import { teamsEnabledFor } from "./_employer-team-gate";
+import { can, resolveEmployerContext, ROLE_PERMISSIONS, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -222,13 +224,18 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
   }
 
-  if (req.method === "GET") {
-    return handleGet(auth.userId, headers);
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
   }
-  if (req.method === "POST") {
-    return handlePost(req, auth.userId, headers);
+  try {
+    const ctx = await resolveEmployerContext(SUPABASE_URL, serviceHeaders(), auth.userId);
+    if (req.method === "GET") return await handleGet(auth.userId, ctx, headers);
+    return await handlePost(req, auth.userId, ctx, headers);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-profile threw", { code: "employer_profile_unexpected_error", error: msg.slice(0, 200), userId: auth.userId });
+    return new Response(JSON.stringify({ error: "Failed to load employer profile" }), { status: 500, headers });
   }
-  return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
 }
 
 const EMPLOYER_COLUMNS = "id,company_name,website,logo_path,status,submitted_at,approved_at,verification_tier,suspended_at,suspended_reason";
@@ -265,9 +272,12 @@ async function resolveTier(row: EmployerRow, userId: string): Promise<EmployerTi
   return tier;
 }
 
-function profileResponse(row: EmployerRow, tier: EmployerTier) {
+async function profileResponse(row: EmployerRow, tier: EmployerTier, ctx: EmployerContext) {
   return {
     status: "approved" as const,
+    companyId: row.id,
+    role: ctx.role,
+    permissions: [...ROLE_PERMISSIONS[ctx.role]],
     companyName: row.company_name,
     website: row.website,
     logoUrl: logoUrl(row.logo_path),
@@ -277,14 +287,28 @@ function profileResponse(row: EmployerRow, tier: EmployerTier) {
     deletionPending: isDeletionPending(row),
     gstin: row.gstin ?? null,
     billingName: row.billing_name ?? null,
+    features: { teams: await teamsEnabledFor(ctx.employerId) },
   };
 }
 
-async function handleGet(userId: string, headers: Record<string, string>): Promise<Response> {
+/** Founds a company for an account that has none: the account becomes its owner.
+    Best-effort on the member row: until the team migration is applied, the
+    legacy owner-by-id fallback in resolveEmployerContext still recognises it. */
+async function ensureOwnerMember(userId: string, companyId: string): Promise<EmployerContext> {
+  const email = (await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId)).email?.toLowerCase() ?? "";
+  await fetch(`${SUPABASE_URL}/rest/v1/employer_members?on_conflict=employer_id,user_id`, {
+    method: "POST",
+    headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "resolution=ignore-duplicates,return=minimal" },
+    body: JSON.stringify([{ employer_id: companyId, user_id: userId, role: "owner", email, name: null }]),
+  }).catch(() => {});
+  return { employerId: companyId, userId, role: "owner", email, name: null };
+}
+
+async function handleGet(userId: string, ctx: EmployerContext | null, headers: Record<string, string>): Promise<Response> {
   try {
-    const row = await fetchEmployer(userId);
-    if (!row) return new Response(JSON.stringify({ status: "none" }), { status: 200, headers });
-    return new Response(JSON.stringify(profileResponse(row, await resolveTier(row, userId))), { status: 200, headers });
+    const row = ctx ? await fetchEmployer(ctx.employerId) : null;
+    if (!ctx || !row) return new Response(JSON.stringify({ status: "none" }), { status: 200, headers });
+    return new Response(JSON.stringify(await profileResponse(row, await resolveTier(row, row.id), ctx)), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile GET threw", { code: "employer_profile_get_unexpected_error", error: msg.slice(0, 200), userId });
@@ -305,7 +329,11 @@ function suspendedProfileResponse(row: EmployerRow | null, headers: Record<strin
   ), { status: 403, headers });
 }
 
-async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
+async function handlePost(req: Request, userId: string, existingCtx: EmployerContext | null, headers: Record<string, string>): Promise<Response> {
+  if (existingCtx && !can(existingCtx.role, "company.edit")) {
+    return new Response(JSON.stringify({ error: "Your role doesn't allow this. Ask a company admin." }), { status: 403, headers });
+  }
+  const companyId = existingCtx?.employerId ?? userId;
   let body: SubmitBody;
   try {
     body = await req.json();
@@ -336,13 +364,13 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
   if (!billingName.ok) return new Response(JSON.stringify({ error: billingName.error, code: "invalid_billing_name" }), { status: 400, headers });
 
   try {
-    const existing = await fetchEmployer(userId);
+    const existing = await fetchEmployer(companyId);
     // A suspended (or soft-deleted) employer can read but not change their profile.
     // Checked before the logo upload so a rejected save never leaves an orphaned object.
     if (isSuspended(existing)) {
       return suspendedProfileResponse(existing, headers);
     }
-    const upload = await uploadLogoIfPresent(userId, body);
+    const upload = await uploadLogoIfPresent(companyId, body);
     if (upload.kind === "error") {
       return new Response(JSON.stringify({ error: upload.message, code: "logo_upload_failed" }), { status: 422, headers });
     }
@@ -360,7 +388,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     const logoPath = uploadedLogoPath ?? (removeLogo ? null : existing?.logo_path ?? null);
     const now = new Date().toISOString();
     const baseRow = {
-      id: userId,
+      id: companyId,
       company_name: companyName,
       website,
       logo_path: logoPath,
@@ -389,16 +417,33 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       return new Response(JSON.stringify({ error: "Failed to submit company profile" }), { status: 500, headers });
     }
 
-    if (uploadedLogoPath) await deleteLogoIfDifferent(userId, existing?.logo_path ?? null, uploadedLogoPath);
-    else if (removeLogo && existing?.logo_path) await deleteLogoIfDifferent(userId, existing.logo_path, "");
+    if (uploadedLogoPath) await deleteLogoIfDifferent(companyId, existing?.logo_path ?? null, uploadedLogoPath);
+    else if (removeLogo && existing?.logo_path) await deleteLogoIfDifferent(companyId, existing.logo_path, "");
 
     const saved = (await upsertRes.json().catch(() => [])) as EmployerRow[];
-    const row: EmployerRow = saved[0] ?? { ...(existing ?? { id: userId, status: "approved", submitted_at: now, approved_at: now, logo_path: logoPath }), company_name: companyName, website, logo_path: logoPath, ...(gstinProvided ? { gstin: gstin.value } : {}), ...(billingNameProvided ? { billing_name: billingName.value } : {}) };
-    const tier = await resolveTier(row, userId);
+    const row: EmployerRow = saved[0] ?? { ...(existing ?? { id: companyId, status: "approved", submitted_at: now, approved_at: now, logo_path: logoPath }), company_name: companyName, website, logo_path: logoPath, ...(gstinProvided ? { gstin: gstin.value } : {}), ...(billingNameProvided ? { billing_name: billingName.value } : {}) };
+    const tier = await resolveTier(row, companyId);
     // Names are self-asserted and not verified against the sign-in domain, so a rename of an
     // existing profile is a trust signal worth an audit trail (not a block: legal renames happen).
     if (existing && renamed(existing.company_name, companyName)) {
       slog.warn("employer-profile company renamed", { code: "employer_profile_company_renamed", userId, from: existing.company_name.slice(0, 200), to: companyName.slice(0, 200), tier });
+    }
+    let ctx = existingCtx;
+    if (!ctx) {
+      ctx = await ensureOwnerMember(userId, companyId);
+    } else if (existing) {
+      const changed = [
+        renamed(existing.company_name, companyName) && "name",
+        existing.website !== website && "website",
+        (uploadedLogoPath || (removeLogo && existing.logo_path)) && "logo",
+        ((gstinProvided && (existing.gstin ?? null) !== gstin.value) || (billingNameProvided && (existing.billing_name ?? null) !== billingName.value)) && "billing",
+      ].filter(Boolean);
+      if (changed.length > 0) {
+        await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+          employerId: companyId, actorUserId: userId, actorEmail: ctx.email || null,
+          action: "company.profile_updated", entityType: "company", entityId: companyId, meta: { changed },
+        });
+      }
     }
     // Analytics + welcome mail run after the response so they can never delay or fail the save.
     const afterSave = async () => {
@@ -414,7 +459,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
     };
     const background = afterSave().catch(() => {});
     try { after(background); } catch { /* outside a request scope (tests): already running */ }
-    return new Response(JSON.stringify(profileResponse(row, tier)), { status: 200, headers });
+    return new Response(JSON.stringify(await profileResponse(row, tier, ctx)), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("employer-profile POST threw", { code: "employer_profile_post_unexpected_error", error: msg.slice(0, 200), userId });

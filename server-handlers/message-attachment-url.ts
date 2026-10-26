@@ -15,8 +15,9 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { resolveRole, employerAttachmentBlock, isSafeAttachmentPath, attachmentUploaderRole, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
+import { employerAttachmentBlock, isSafeAttachmentPath, attachmentUploaderRole, MESSAGE_ID_RE, type MessageSenderRole } from "./_messages-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { resolveConversationSide } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -76,7 +77,11 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
     }
     const message = msgRows[0];
-    const role = resolveRole(auth.userId, message.employer_id, message.candidate_user_id);
+    const { side: role } = await resolveConversationSide(
+      SUPABASE_URL, serviceHeaders(), auth.userId,
+      { employerId: message.employer_id, candidateUserId: message.candidate_user_id },
+      "candidates.read",
+    );
     // Same answer as a missing row, so a stranger cannot probe which ids exist.
     if (!role) {
       return new Response(JSON.stringify({ error: "Message not found" }), { status: 404, headers });
@@ -90,7 +95,7 @@ export default async function handler(req: Request): Promise<Response> {
       const decision = await loadEmployerMatchAccess({
         supabaseUrl: SUPABASE_URL,
         headers: serviceHeaders(),
-        employerId: auth.userId,
+        employerId: message.employer_id,
         matchId,
         authEmail: identity.email,
         emailConfirmed: identity.emailConfirmed,

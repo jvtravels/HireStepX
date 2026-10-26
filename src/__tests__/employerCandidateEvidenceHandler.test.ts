@@ -32,6 +32,7 @@ function installFetch(o: Opts) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
+    if (u.includes("/rest/v1/employer_members")) return { ok: true, json: async () => (u.includes(`user_id=eq.emp-1`) ? [{ employer_id: "emp-1", user_id: "emp-1", role: "owner", email: "a@acme.com", name: null, last_active_at: new Date().toISOString() }] : []) };
     if (u.includes("/rest/v1/requirement_matches") && init?.method === "PATCH") return { ok: true, json: async () => [] };
     if (u.includes("/rest/v1/requirement_matches")) {
       return {
@@ -109,5 +110,27 @@ describe("employer-candidate-evidence contact withholding", () => {
     expect(body.questions[0]).not.toHaveProperty("explanation");
     expect(JSON.stringify(body)).not.toMatch(/priya@example\.com|Acme Corp/);
     expect(body.skills.length).toBeGreaterThan(0);
+  });
+});
+
+describe("employer-candidate-evidence team permissions", () => {
+  it("lets a read-only viewer on the company open evidence", async () => {
+    withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "viewer-1" }, headers: {} });
+    const f = installFetch({ unlocked: true });
+    const base = global.fetch as unknown as (u: string, init?: RequestInit) => Promise<unknown>;
+    global.fetch = vi.fn(async (u: string, init?: RequestInit) => {
+      if (String(u).includes("/rest/v1/employer_members") && String(u).includes("user_id=eq.viewer-1")) {
+        return { ok: true, json: async () => [{ employer_id: "emp-1", user_id: "viewer-1", role: "viewer", email: "v@acme.com", name: null, last_active_at: new Date().toISOString() }] };
+      }
+      return base(u, init);
+    }) as unknown as typeof fetch;
+    expect((await get()).status).toBe(200);
+    expect(f).toHaveBeenCalled();
+  });
+
+  it("404s an account that belongs to no company", async () => {
+    withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "nobody" }, headers: {} });
+    installFetch({ unlocked: true });
+    expect((await get()).status).toBe(404);
   });
 });

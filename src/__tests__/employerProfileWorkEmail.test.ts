@@ -6,6 +6,13 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
 const withAuthAndRateLimit = vi.fn();
 const loadAuthIdentity = vi.fn();
 
+const resolveCtx = vi.hoisted(() => vi.fn());
+vi.mock("../../server-handlers/_employer-team-helpers", async (orig) => ({
+  ...(await orig<typeof import("../../server-handlers/_employer-team-helpers")>()),
+  resolveEmployerContext: (...args: unknown[]) => resolveCtx(...args),
+}));
+const ownerCtx = { employerId: "emp-1", userId: "emp-1", role: "owner", email: "priya@acme.com", name: null };
+
 vi.mock("../../server-handlers/_shared", () => ({
   withAuthAndRateLimit: (...args: unknown[]) => withAuthAndRateLimit(...args),
   corsHeaders: () => ({}),
@@ -26,11 +33,13 @@ const existingRow = { id: "emp-1", company_name: "Acme", website: "", logo_path:
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  resolveCtx.mockResolvedValue(ownerCtx);
   withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "emp-1" }, headers: {} });
 });
 
 describe("employer-profile POST work-email rule", () => {
   it("rejects a new company registered with a free-mail address", async () => {
+    resolveCtx.mockResolvedValue(null);
     loadAuthIdentity.mockResolvedValue({ email: "someone@gmail.com", emailConfirmed: true });
     const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => [] });
     global.fetch = fetchMock;
@@ -44,6 +53,7 @@ describe("employer-profile POST work-email rule", () => {
   });
 
   it("lets a new company with a company-domain email register", async () => {
+    resolveCtx.mockResolvedValue(null);
     loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
     global.fetch = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => [] })

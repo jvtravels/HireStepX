@@ -50,6 +50,7 @@ beforeEach(() => {
 describe("erasure entry points share eraseUserData", () => {
   it("delete-account (hard) calls it with trigger user_hard and the caller's id", async () => {
     withNodeAuthAndRateLimit.mockResolvedValue({ handled: false, userId: "u-1", userEmail: "a@b.c", userData: { app_metadata: { provider: "google", providers: ["google"] } } });
+    global.fetch = vi.fn(async () => new Response("[]", { status: 200 })) as unknown as typeof fetch;
     const res = mockRes();
     await deleteAccount({ method: "POST", headers: {}, body: { hard: true } } as unknown as VercelRequest, res);
     expect(res.statusCode).toBe(200);
@@ -59,7 +60,7 @@ describe("erasure entry points share eraseUserData", () => {
   });
 
   it("the cron calls it once per due account with trigger scheduled", async () => {
-    global.fetch = vi.fn(async () => new Response(JSON.stringify([{ id: "u-1" }, { id: "u-2" }]), { status: 200 })) as unknown as typeof fetch;
+    global.fetch = vi.fn(async (url: string) => new Response(String(url).includes("employer_members") ? "[]" : JSON.stringify([{ id: "u-1" }, { id: "u-2" }]), { status: 200 })) as unknown as typeof fetch;
     const res = mockRes();
     await cleanup({ method: "GET", headers: { authorization: "Bearer cron-secret" } } as unknown as VercelRequest, res);
     expect(res.statusCode).toBe(200);
@@ -70,7 +71,7 @@ describe("erasure entry points share eraseUserData", () => {
 
   it("the cron keeps going after a failed account and reports it (retried next run)", async () => {
     eraseUserData.mockResolvedValueOnce({ ...okResult, ok: false, failedSteps: ["sessions"], auth: "not_attempted" });
-    global.fetch = vi.fn(async () => new Response(JSON.stringify([{ id: "u-1" }, { id: "u-2" }]), { status: 200 })) as unknown as typeof fetch;
+    global.fetch = vi.fn(async (url: string) => new Response(String(url).includes("employer_members") ? "[]" : JSON.stringify([{ id: "u-1" }, { id: "u-2" }]), { status: 200 })) as unknown as typeof fetch;
     const res = mockRes();
     await cleanup({ method: "GET", headers: { authorization: "Bearer cron-secret" } } as unknown as VercelRequest, res);
     expect(eraseUserData).toHaveBeenCalledTimes(2);

@@ -22,6 +22,15 @@ vi.mock("../../server-handlers/_requirement-match-llm", () => ({
 }));
 vi.mock("../../server-handlers/_notify", () => ({ notify: vi.fn() }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { default: detailHandler } = await import("../../server-handlers/employer-requirement-detail");
 const { default: listHandler } = await import("../../server-handlers/employer-requirements");
 

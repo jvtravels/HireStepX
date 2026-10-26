@@ -117,7 +117,10 @@ export default function Signup() {
   // its own copy swap. Collecting the company name (+ website) right here
   // means a new employer lands on an already-approved dashboard instead of
   // the separate CompanyOnboarding step after signup.
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  // A teammate joining an existing company signs up as a person, not as a new
+  // company: no company-name field and no pending company profile.
+  const isInviteFlow = !!nextParam?.startsWith("/employer/join");
+  const isEmployerFlow = !!nextParam?.startsWith("/employer") && !isInviteFlow;
 
   // Validation
   // Employers don't give a personal name — the company name (below) doubles
@@ -323,7 +326,7 @@ export default function Signup() {
           cleanEmail,
           isEmployerFlow ? companyName.trim() : name.trim(),
           password,
-          isEmployerFlow ? "/employer" : undefined,
+          isInviteFlow && nextParam ? nextParam : isEmployerFlow ? "/employer" : undefined,
           isEmployerFlow ? { companyName, website } : undefined,
         );
         if (!isMounted.current) return;
@@ -354,7 +357,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, website],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, isInviteFlow, nextParam, companyName, website],
   );
 
   const handlePasswordVisibility = () => {

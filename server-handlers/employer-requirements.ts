@@ -44,6 +44,7 @@ import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
+import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
 import {
   MAX_POOL_SCAN,
   POOL_PAGE_SIZE,
@@ -202,12 +203,13 @@ export async function logRequirementActivity(
   employerId: string,
   action: "created" | "updated" | "archived" | "reopened" | "stage_changed",
   detail?: string,
+  actorUserId?: string | null,
 ): Promise<void> {
   try {
     await fetch(`${SUPABASE_URL}/rest/v1/employer_requirement_activity`, {
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify([{ requirement_id: requirementId, employer_id: employerId, action, detail: detail ?? null }]),
+      body: JSON.stringify([{ requirement_id: requirementId, employer_id: employerId, action, detail: detail ?? null, actor_user_id: actorUserId ?? null }]),
     });
   } catch (err) {
     slog.error("requirement activity log failed", { code: "requirement_activity_log_failed", error: err instanceof Error ? err.message : String(err), requirementId, action });
@@ -240,9 +242,14 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers });
   }
 
-  if (req.method === "GET") return handleGet(auth.userId, headers);
-  if (req.method === "POST") return handlePost(req, auth.userId, headers);
-  return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+  if (req.method !== "GET" && req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+  }
+  const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, req.method === "GET" ? "jobs.read" : "jobs.write");
+  if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+
+  if (req.method === "GET") return handleGet(gate.ctx.employerId, headers);
+  return handlePost(req, gate.ctx, headers);
 }
 
 /** Most requirements one list response carries; `truncated` flags any beyond it. */
@@ -358,7 +365,8 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
   }
 }
 
-async function handlePost(req: Request, userId: string, headers: Record<string, string>): Promise<Response> {
+async function handlePost(req: Request, ctx: EmployerContext, headers: Record<string, string>): Promise<Response> {
+  const userId = ctx.employerId;
   let body: {
     title?: unknown; location?: unknown; department?: unknown; noticePeriodPref?: unknown; description?: unknown;
     experienceMin?: unknown; experienceMax?: unknown; dueDate?: unknown;
@@ -457,7 +465,7 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       method: "POST",
       headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" },
       body: JSON.stringify([{
-        employer_id: userId, title, location, department, notice_period_pref: noticePeriodPref, description, status: "generating",
+        employer_id: userId, created_by: ctx.userId, title, location, department, notice_period_pref: noticePeriodPref, description, status: "generating",
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,
@@ -497,7 +505,11 @@ async function handlePost(req: Request, userId: string, headers: Record<string, 
       },
       userId,
     );
-    await logRequirementActivity(requirement.id, userId, "created");
+    await logRequirementActivity(requirement.id, userId, "created", undefined, ctx.userId);
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId: userId, actorUserId: ctx.userId, actorEmail: ctx.email, action: "job.created",
+      entityType: "job", entityId: requirement.id, meta: { title },
+    });
     // Counts and enums only: nothing the employer typed (title, description,
     // skills) or any candidate identity leaves in an analytics event.
     await captureServerEvent("employer_requirement_created", userId, {

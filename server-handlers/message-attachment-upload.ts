@@ -19,7 +19,7 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { base64ToBytes } from "./_resume-upload-helpers";
-import { inferAttachmentExtension, attachmentBytesMatchType, conversationExists, resolveRole, employerSendBlock, candidateSendBlock, attachmentObjectName, sanitizeAttachmentName, MATCH_ID_RE, type MessageRole } from "./_messages-helpers";
+import { inferAttachmentExtension, attachmentBytesMatchType, conversationExists, employerSendBlock, candidateSendBlock, attachmentObjectName, sanitizeAttachmentName, MATCH_ID_RE, type MessageRole } from "./_messages-helpers";
 import {
   fetchMatchAccessRow,
   isBlockedByCandidate,
@@ -27,6 +27,7 @@ import {
   loadAuthIdentity,
   DENIED_STATUS,
 } from "./_entitlements";
+import { resolveConversationSide } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -106,7 +107,11 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
     }
     const employerId = row.employer_requirements.employer_id;
-    const role = resolveRole(auth.userId, employerId, row.candidate_user_id);
+    const { side: role } = await resolveConversationSide(
+      SUPABASE_URL, serviceHeaders(), auth.userId,
+      { employerId, candidateUserId: row.candidate_user_id },
+      "messages.send",
+    );
     // Same answer as a missing row, so a stranger cannot probe which ids exist.
     if (!role) {
       return new Response(JSON.stringify({ error: "Candidate match not found" }), { status: 404, headers });
@@ -119,7 +124,7 @@ export default async function handler(req: Request): Promise<Response> {
         return new Response(JSON.stringify({ error: "Match lookup error" }), { status: 502, headers });
       }
       const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
-      const decision = decideEmployerMatchAccess(row, auth.userId, {
+      const decision = decideEmployerMatchAccess(row, employerId, {
         blockedByCandidate: blocked,
         authEmail: identity.email,
         emailConfirmed: identity.emailConfirmed,

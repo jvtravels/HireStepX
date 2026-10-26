@@ -268,6 +268,8 @@ interface EmployerDataContextValue {
   suspended: boolean;
   /** Part of `suspended`: the account is in its 7-day deletion grace period (restore by logging in again). */
   deletionPending: boolean;
+  /** Server-decided rollout of team management for this company; false until the profile says otherwise. */
+  teamsEnabled: boolean;
   requirements: RequirementSummary[];
   requirementsLoading: boolean;
   requirementsError: boolean;
@@ -456,6 +458,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [limits, setLimits] = useState<EmployerLimits>(DEFAULT_TIER_LIMITS.basic);
   const [suspended, setSuspended] = useState(false);
   const [deletionPending, setDeletionPending] = useState(false);
+  const [teamsEnabled, setTeamsEnabled] = useState(false);
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoaded, setRequirementsLoaded] = useState(false);
   const [requirementsError, setRequirementsError] = useState(false);
@@ -483,6 +486,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     setLimits(parseLimits(data.limits, tier));
     setSuspended(data.suspended === true);
     setDeletionPending(data.deletionPending === true);
+    setTeamsEnabled(isRecord(data.features) && data.features.teams === true);
   }, []);
 
   const refreshCompanyStatus = useCallback(async () => {
@@ -885,6 +889,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     limits,
     suspended,
     deletionPending,
+    teamsEnabled,
     requirements,
     requirementsLoading,
     requirementsError,
@@ -922,7 +927,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     fetchMessageAttachmentUrl,
   }), [
     companyStatus, companyStatusLoading, companyStatusError, companyLogoUrl, companyName, companyWebsite, companyGstin, companyBillingName,
-    verificationTier, limits, suspended, deletionPending, requirements, requirementsLoading, requirementsError,
+    verificationTier, limits, suspended, deletionPending, teamsEnabled, requirements, requirementsLoading, requirementsError,
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, prefetchRequirementDetail, archiveRequirement, archiveRequirementResult, restoreArchivedMatches,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,

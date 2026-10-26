@@ -54,6 +54,12 @@ export interface EraseDeps {
   notify?: (contact: { email: string; name: string }) => Promise<void>;
   log?: (msg: string, fields: Record<string, unknown>) => void;
   now?: () => Date;
+  /** The company whose data dies with this user. Defaults to the user's own id (a company
+   *  was once keyed by its owner); null when the user only leaves a company that goes on. */
+  employerId?: string | null;
+  /** Runs after every row delete and before the auth user goes; a throw aborts the erasure
+   *  (retried by the cron) so the company row is never removed once the login is gone. */
+  beforeAuth?: (state: { isEmployer: boolean; retainEmployer: boolean }) => Promise<void>;
 }
 
 export type AuthOutcome = "deleted" | "deactivated" | "failed" | "not_attempted";
@@ -165,6 +171,8 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   const { fetchImpl, supabaseUrl, serviceKey } = deps;
   const log = deps.log ?? (() => undefined);
   const enc = encodeURIComponent(userId);
+  const employerId = deps.employerId === undefined ? userId : deps.employerId;
+  const empEnc = employerId ? encodeURIComponent(employerId) : null;
   const baseHeaders: Record<string, string> = {
     apikey: serviceKey,
     Authorization: `Bearer ${serviceKey}`,
@@ -244,11 +252,11 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   }
 
   /** Delete every object under `${userId}/` (+ any known pointer paths), then re-list to verify. */
-  async function eraseBucketPrefix(bucket: string, extraPaths: string[]): Promise<number> {
-    const listed = await listObjects(bucket, userId);
+  async function eraseBucketPrefix(bucket: string, extraPaths: string[], prefix = userId): Promise<number> {
+    const listed = await listObjects(bucket, prefix);
     const paths = [...new Set([...listed, ...extraPaths])];
     if (paths.length > 0) await removeObjects(bucket, paths);
-    if (listed.length > 0 && (await listObjects(bucket, userId)).length > 0) throw new Error(`${bucket} objects remain after delete`);
+    if (listed.length > 0 && (await listObjects(bucket, prefix)).length > 0) throw new Error(`${bucket} objects remain after delete`);
     return paths.length;
   }
 
@@ -259,14 +267,14 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   let isEmployer = false;
   let retainEmployer = false;
   try {
-    const empRes = await sb(`/rest/v1/employers?id=eq.${enc}&select=id,logo_path&limit=1`, { method: "GET" });
-    if (!empRes.ok && !(empRes.status === 404)) throw new Error(`employers lookup HTTP ${empRes.status}`);
-    const empRows = empRes.ok ? ((await readRows(empRes)) as Array<{ id?: string; logo_path?: string | null }>) : [];
+    const empRes = empEnc ? await sb(`/rest/v1/employers?id=eq.${empEnc}&select=id,logo_path&limit=1`, { method: "GET" }) : null;
+    if (empRes && !empRes.ok && !(empRes.status === 404)) throw new Error(`employers lookup HTTP ${empRes.status}`);
+    const empRows = empRes?.ok ? ((await readRows(empRes)) as Array<{ id?: string; logo_path?: string | null }>) : [];
     if (empRows[0]?.id) {
       isEmployer = true;
       employerLogoPath = empRows[0].logo_path ?? null;
       const countRows = async (table: string): Promise<number> => {
-        const r = await sb(`/rest/v1/${table}?employer_id=eq.${enc}&select=id&limit=1`, { method: "GET" });
+        const r = await sb(`/rest/v1/${table}?employer_id=eq.${empEnc}&select=id&limit=1`, { method: "GET" });
         if (r.status === 404 && OPTIONAL_TABLES.has(table)) return 0;
         if (!r.ok) throw new Error(`${table} lookup HTTP ${r.status}`);
         return (await readRows(r)).length;
@@ -283,7 +291,7 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   // `${userId}/` prefix, so orphaned files (version row already gone) are still found.
   try {
     const attRes = await sb(
-      `/rest/v1/conversation_messages?or=(candidate_user_id.eq.${enc},employer_id.eq.${enc})&attachment_path=not.is.null&select=attachment_path&limit=1000`,
+      `/rest/v1/conversation_messages?or=(candidate_user_id.eq.${enc}${empEnc ? `,employer_id.eq.${empEnc}` : ""})&attachment_path=not.is.null&select=attachment_path&limit=1000`,
       { method: "GET" },
     );
     if (!attRes.ok && attRes.status !== 404) throw new Error(`attachment lookup HTTP ${attRes.status}`);
@@ -306,8 +314,10 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
     fail(RESUME_FILE_BUCKET, e);
   }
   try {
-    const logo = employerLogoPath && !employerLogoPath.includes("..") ? [employerLogoPath] : [];
-    counts[EMPLOYER_LOGO_BUCKET] = await eraseBucketPrefix(EMPLOYER_LOGO_BUCKET, logo);
+    if (employerId) {
+      const logo = employerLogoPath && !employerLogoPath.includes("..") ? [employerLogoPath] : [];
+      counts[EMPLOYER_LOGO_BUCKET] = await eraseBucketPrefix(EMPLOYER_LOGO_BUCKET, logo, employerId);
+    }
   } catch (e) {
     fail(EMPLOYER_LOGO_BUCKET, e);
   }
@@ -348,7 +358,7 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   await anonymise("payment_dedup", `/rest/v1/payment_dedup?user_id=eq.${enc}`, { user_id: null });
   await anonymise("referrals", `/rest/v1/referrals?referred_id=eq.${enc}`, { referred_id: null, referred_email: null });
   if (retainEmployer) {
-    await anonymise("employers", `/rest/v1/employers?id=eq.${enc}`, anonymisedEmployerPatch((deps.now ?? (() => new Date()))().toISOString()));
+    await anonymise("employers", `/rest/v1/employers?id=eq.${empEnc}`, anonymisedEmployerPatch((deps.now ?? (() => new Date()))().toISOString()));
   }
 
   if (failed.length > 0) return result({ retainedFinancialRecords: retainEmployer });
@@ -356,7 +366,7 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   /* ── Phase B: row deletes ── */
   const tableSteps: Array<{ name: string; path: string }> = USER_TABLE_DELETES
     .filter((s) => s.scope === "user" || isEmployer)
-    .map((s) => ({ name: s.table, path: `/rest/v1/${s.table}?${s.column}=eq.${enc}` }));
+    .map((s) => ({ name: s.table, path: `/rest/v1/${s.table}?${s.column}=eq.${s.scope === "employer" ? empEnc : enc}` }));
   if (contact.email) {
     tableSteps.push({ name: "used_verification_tokens", path: `/rest/v1/used_verification_tokens?email=eq.${encodeURIComponent(contact.email)}` });
   }
@@ -386,6 +396,15 @@ export async function eraseUserData(deps: EraseDeps, userId: string): Promise<Er
   }
 
   if (failed.length > 0) return result({ retainedFinancialRecords: retainEmployer, processors });
+
+  if (deps.beforeAuth) {
+    try {
+      await deps.beforeAuth({ isEmployer, retainEmployer });
+    } catch (e) {
+      fail("employer", e);
+      return result({ retainedFinancialRecords: retainEmployer, processors });
+    }
+  }
 
   /* ── Phase D: auth (last) ── */
   let auth: AuthOutcome;

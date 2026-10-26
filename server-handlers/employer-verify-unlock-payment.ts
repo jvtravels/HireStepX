@@ -48,7 +48,11 @@ import {
   backfillLegacyUnlockOrder,
   alertUnlockProblem,
   type CapturedPayment,
+  type FulfillResult,
 } from "./_unlock-fulfillment";
+import { isUuid } from "./_employer-unlock-order";
+import { requireEmployerPermission, writeAuditLog } from "./_employer-team-helpers";
+import { notify } from "./_notify";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -62,6 +66,68 @@ async function fetchPaymentWithCaptureRetry(paymentId: string): Promise<Captured
     payment = (await fetchRazorpayPayment(paymentId, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)) ?? payment;
   }
   return payment;
+}
+
+type FulfilledResult = Extract<FulfillResult, { kind: "fulfilled" | "partial" }>;
+
+/** Who paid is attribution, never a precondition: fulfilment (shared with the webhook and reconciler) has
+ *  already recorded the captured payment and unlocked the matches, so every write here is best-effort and a
+ *  missing paid_by / unlocked_by column (migration 0061) can never un-record a payment. */
+async function attributeFirstFulfilment(p: {
+  supabaseUrl: string; headers: Record<string, string>; employerId: string; actorId: string;
+  orderId: string; paymentId: string; startedAt: string; result: FulfilledResult;
+}): Promise<void> {
+  const { supabaseUrl: base, headers, employerId, result } = p;
+  const rzpOrder = await fetchRazorpayOrder(p.orderId, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET).catch(() => null);
+  const createdBy = rzpOrder?.notes.createdBy;
+  const paidBy = typeof createdBy === "string" && isUuid(createdBy) ? createdBy : p.actorId;
+  const patch = (path: string, body: Record<string, unknown>) =>
+    fetch(`${base}/rest/v1/${path}`, {
+      method: "PATCH",
+      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(4_000),
+    }).catch(() => null);
+
+  await patch(`employer_unlock_payments?razorpay_payment_id=eq.${encodeURIComponent(p.paymentId)}&paid_by=is.null`, { paid_by: paidBy });
+  if (result.unlockedMatchIds.length > 0) {
+    // unlocked_at >= startedAt limits this to matches this verification flipped, not ones unlocked earlier.
+    await patch(
+      `requirement_matches?id=in.(${result.unlockedMatchIds.map(encodeURIComponent).join(",")})&unlocked_by=is.null&unlocked_at=gte.${encodeURIComponent(p.startedAt)}`,
+      { unlocked_by: paidBy },
+    );
+  }
+
+  const nameByMatchId = new Map(result.candidates.map((c) => [c.matchId, c.name]));
+  await Promise.all(result.unlockedMatchIds.map((matchId) =>
+    writeAuditLog(base, headers, {
+      employerId,
+      actorUserId: paidBy,
+      action: "candidate.unlocked",
+      entityType: "match",
+      entityId: matchId,
+      meta: {
+        candidateName: nameByMatchId.get(matchId) ?? null,
+        jobId: result.requirementId,
+        orderId: p.orderId,
+        mode: result.order.mode,
+      },
+    }),
+  ));
+
+  // Fulfilment already notifies the company account; the member who paid is told as well when that is someone else.
+  if (paidBy !== employerId && result.unlockedMatchIds.length > 0) {
+    const n = result.unlockedMatchIds.length;
+    void notify({
+      userId: paidBy,
+      type: "unlock_confirmed",
+      title: result.order.mode === "batch" ? "Candidate contacts unlocked" : "Candidate contact unlocked",
+      body: result.order.mode === "batch"
+        ? `Payment confirmed — ${n} candidate contact${n === 1 ? "" : "s"} unlocked.`
+        : "Payment confirmed — the candidate's contact details are ready.",
+      link: result.requirementId ? `/employer/requirements/${result.requirementId}` : undefined,
+    });
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -93,15 +159,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const SUPABASE_URL = supabaseUrl();
   const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let employerId: string | undefined;
+  let actorId: string | undefined;
   const authToken = (req.headers.authorization || "").replace("Bearer ", "");
   if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
     const authResult = await verifyEmployerAuthToken(authToken, SUPABASE_URL, SUPABASE_ANON_KEY);
     if (authResult.kind === "auth-fail") return res.status(401).json({ error: "Unauthorized" });
     if (authResult.kind === "transient") return res.status(401).json({ error: "Auth verification failed" });
-    employerId = authResult.employerId;
+    actorId = authResult.employerId;
   }
-  if (!employerId) {
+  if (!actorId) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
@@ -109,12 +175,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // IPs, exceed the intended per-account cap on payment verification — pair
   // it with a per-employer bucket the same way every edge-runtime endpoint
   // does via withAuthAndRateLimit.
-  if (await isRateLimited(`user:${employerId}`, "employer-verify-unlock-payment", 15, 60_000)) {
+  if (await isRateLimited(`user:${actorId}`, "employer-verify-unlock-payment", 15, 60_000)) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
   }
 
   try {
+    const gate = await requireEmployerPermission(SUPABASE_URL, supabaseServiceHeaders(), actorId, "candidates.unlock");
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    const employerId = gate.ctx.employerId;
+
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
 
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
@@ -172,6 +242,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    const startedAt = new Date().toISOString();
     const result = await fulfillUnlockOrder({
       supabaseUrl: SUPABASE_URL,
       headers: sh,
@@ -186,6 +257,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case "partial": {
         // Fulfilment already masks the name and drops the email for a candidate who has since withdrawn, declined or
         // blocked this employer (or when the employer is suspended); an empty contact is what the client sees.
+        if (result.firstFulfilment) {
+          await attributeFirstFulfilment({
+            supabaseUrl: SUPABASE_URL, headers: sh, employerId, actorId,
+            orderId: razorpay_order_id, paymentId: razorpay_payment_id, startedAt, result,
+          }).catch(() => null);
+        }
         const profileByMatchId = new Map(result.candidates.map((c) => [c.matchId, { name: c.name, email: c.email }]));
         const payload = buildBatchUnlockResponsePayload({ matchIds: result.unlockedMatchIds, profileByMatchId });
         const base = { ...payload, orderId: razorpay_order_id, orderStatus: result.kind, invoiceNo: result.invoiceNo };
@@ -241,7 +318,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: "Payment received but the unlock could not be completed yet. It will be retried automatically.", orderId: razorpay_order_id });
     }
   } catch (err) {
-    slog.error("employer-verify-unlock-payment threw", { code: "unlock_verify_unexpected_error", requestId, employerId, err: err instanceof Error ? err.message : String(err) });
+    slog.error("employer-verify-unlock-payment threw", { code: "unlock_verify_unexpected_error", requestId, actorId, err: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   }
 }

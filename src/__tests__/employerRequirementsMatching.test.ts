@@ -23,6 +23,15 @@ vi.mock("../../server-handlers/_requirement-match-llm", () => ({
 const notify = vi.fn();
 vi.mock("../../server-handlers/_notify", () => ({ notify: (...a: unknown[]) => notify(...a) }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { runMatching, default: requirementsHandler } = await import("../../server-handlers/employer-requirements");
 const { withAuthAndRateLimit } = await import("../../server-handlers/_shared");
 

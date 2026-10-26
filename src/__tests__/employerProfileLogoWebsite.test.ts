@@ -7,6 +7,13 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
 const withAuthAndRateLimit = vi.fn();
 const loadAuthIdentity = vi.fn();
 
+const resolveCtx = vi.hoisted(() => vi.fn());
+vi.mock("../../server-handlers/_employer-team-helpers", async (orig) => ({
+  ...(await orig<typeof import("../../server-handlers/_employer-team-helpers")>()),
+  resolveEmployerContext: (...args: unknown[]) => resolveCtx(...args),
+}));
+const ownerCtx = { employerId: "emp-1", userId: "emp-1", role: "owner", email: "priya@acme.com", name: null };
+
 vi.mock("../../server-handlers/_shared", () => ({
   withAuthAndRateLimit: (...args: unknown[]) => withAuthAndRateLimit(...args),
   corsHeaders: () => ({}),
@@ -46,6 +53,7 @@ describe("sniffLogoType", () => {
 
 beforeEach(() => {
   vi.restoreAllMocks();
+  resolveCtx.mockResolvedValue(ownerCtx);
   withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "emp-1" }, headers: {} });
   loadAuthIdentity.mockResolvedValue({ email: "priya@acme.com", emailConfirmed: true });
 });

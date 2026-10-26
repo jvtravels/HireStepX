@@ -81,6 +81,7 @@ function fullSuccessFetch() {
   return vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/token?grant_type=password")) return { ok: true } as Response;
+    if (u.includes("/rest/v1/employer_members")) return { ok: true, status: 200, json: async () => [] } as unknown as Response;
     if (u.includes("/rest/v1/profiles") && u.includes("select=email,name")) {
       return { ok: true, json: async () => [{ email: "candidate@example.com", name: "Priya" }] } as unknown as Response;
     }
@@ -179,7 +180,7 @@ describe("delete-account — re-auth gate", () => {
 
 describe("delete-account — restore", () => {
   it("clears deleted_at and returns restored:true", async () => {
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true }) as Response);
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, status: 200, json: async () => [] }) as unknown as Response);
     global.fetch = fetchMock as unknown as typeof fetch;
     const res = mockRes();
     await handler(mockReq({ restore: true }), res);
@@ -276,6 +277,7 @@ describe("delete-account — hard delete", () => {
     const fetchMock = vi.fn(async (url: string) => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("/rest/v1/employer_members")) return { ok: true, status: 200, json: async () => [] } as unknown as Response;
       if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
       if (u.includes("/rest/v1/service_usage")) return { ok: false, status: 409, text: async () => "fk violation" } as unknown as Response;
       return { ok: true } as unknown as Response;
@@ -294,6 +296,7 @@ describe("delete-account — hard delete", () => {
     const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("/rest/v1/employer_members")) return { ok: true, status: 200, json: async () => [] } as unknown as Response;
       if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
       if (u.includes("api.resend.com")) return { ok: true } as Response;
       if (u.includes("/rest/v1/service_usage")) return { ok: true } as unknown as Response;
@@ -342,6 +345,7 @@ describe("delete-account — hard delete", () => {
     const fetchMock = vi.fn(async (url: string) => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("/rest/v1/employer_members")) return { ok: true, status: 200, json: async () => [] } as unknown as Response;
       if (u.includes("select=email,name")) return { ok: true, json: async () => [] } as unknown as Response;
       if (u.includes("/auth/v1/admin/users/")) return { ok: false, status: 500 } as unknown as Response;
       return { ok: true } as unknown as Response;
@@ -358,6 +362,7 @@ describe("delete-account — hard delete", () => {
     const fetchMock = vi.fn(async (url: string) => {
       const u = String(url);
       if (u.includes("grant_type=password")) return { ok: true } as Response;
+      if (u.includes("/rest/v1/employer_members")) return { ok: true, status: 200, json: async () => [] } as unknown as Response;
       if (u.includes("select=email,name")) return { ok: true, json: async () => [{ email: "candidate@example.com" }] } as unknown as Response;
       if (u.includes("api.resend.com")) throw new Error("resend down");
       return { ok: true } as unknown as Response;
@@ -538,7 +543,7 @@ describe("delete-account — employer block and restore", () => {
   });
 
   it("restore lifts only the deletion-pending block", async () => {
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true }) as Response);
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, status: 200, json: async () => [] }) as unknown as Response);
     global.fetch = fetchMock as unknown as typeof fetch;
     const res = mockRes();
     await handler(mockReq({ restore: true }), res);
@@ -549,9 +554,208 @@ describe("delete-account — employer block and restore", () => {
   });
 
   it("500s when the employer unblock fails", async () => {
-    global.fetch = vi.fn(async (url: string) => (String(url).includes("/rest/v1/employers") ? { ok: false, status: 500 } : { ok: true })) as unknown as typeof fetch;
+    global.fetch = vi.fn(async (url: string) => (String(url).includes("/rest/v1/employers?") ? { ok: false, status: 500 } : { ok: true, status: 200, json: async () => [] })) as unknown as typeof fetch;
     const res = mockRes();
     await handler(mockReq({ restore: true }), res);
     expect(res.statusCode).toBe(500);
+  });
+});
+
+describe("delete-account — employer teams", () => {
+  type Call = { url: string; method: string; body?: string };
+  const COMPANY_ROW = (id: string, extra: Record<string, unknown> = {}) => [{ id, logo_path: null, ...extra }];
+
+  /** `mine`/`roster` answer planAccountExit; `company` answers the employers lookup. */
+  function teamScenario(mine: unknown[], roster: unknown[], opts: { company?: string; payments?: boolean; others?: unknown[] } = {}) {
+    const calls: Call[] = [];
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      const c: Call = { url: String(url), method: init?.method ?? "GET", body: init?.body as string | undefined };
+      calls.push(c);
+      const ok = (rows: unknown[]) => ({ ok: true, status: 200, json: async () => rows }) as unknown as Response;
+      if (c.url.includes("grant_type=password")) return { ok: true } as Response;
+      if (c.url.includes("employer_members") && c.url.includes("select=employer_id,role")) return ok(mine);
+      if (c.url.includes("employer_members") && c.url.includes("select=user_id,role")) return ok(roster);
+      if (c.url.includes("employer_members") && c.url.includes("select=user_id&limit=1")) return ok(opts.others ?? []);
+      if (c.url.includes("select=email,name")) return ok([]);
+      if (opts.company && c.method === "GET" && c.url.includes("/rest/v1/employers?id=eq.")) return ok(COMPANY_ROW(opts.company));
+      if (opts.payments && c.url.includes("/rest/v1/employer_unlock_payments?employer_id")) return ok([{ id: "p1" }]);
+      if (c.url.includes("/rest/v1/employers?id=eq.") && c.method === "PATCH") return { ok: true, status: 200 } as unknown as Response;
+      return ok([]);
+    }) as unknown as typeof fetch;
+    return calls;
+  }
+
+  it("409s a sole owner whose company still has members, before any delete or email", async () => {
+    const calls = teamScenario(
+      [{ employer_id: USER_ID, role: "owner" }],
+      [{ user_id: USER_ID, role: "owner" }, { user_id: "m2", role: "member" }],
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(409);
+    expect((res.body as { code: string }).code).toBe("transfer_ownership_first");
+    expect(calls.some((c) => c.method === "DELETE" || c.method === "PATCH" || c.url.includes("api.resend.com"))).toBe(false);
+  });
+
+  it("also blocks the soft-delete path so a blocked owner is never scheduled", async () => {
+    const calls = teamScenario(
+      [{ employer_id: USER_ID, role: "owner" }],
+      [{ user_id: USER_ID, role: "owner" }, { user_id: "m2", role: "admin" }],
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(409);
+    expect(calls.some((c) => c.method === "PATCH")).toBe(false);
+  });
+
+  it("a non-owner member leaving only drops their membership; the company is neither touched nor erased", async () => {
+    const calls = teamScenario(
+      [{ employer_id: "co-1", role: "member" }],
+      [{ user_id: "owner-1", role: "owner" }, { user_id: USER_ID, role: "member" }],
+      { company: "co-1" },
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_members?employer_id=eq.co-1&user_id=eq.user-123"))).toBe(true);
+    expect(calls.some((c) => c.url.includes("/rest/v1/employers?id="))).toBe(false);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("employer_requirements"))).toBe(false);
+    const audit = calls.find((c) => c.method === "POST" && c.url.includes("/rest/v1/employer_audit_log"));
+    expect(JSON.parse(audit!.body!)).toMatchObject({ employer_id: "co-1", action: "member.left", actor_user_id: null });
+    const memberIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_members?employer_id"));
+    const authIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"));
+    expect(memberIdx).toBeLessThan(authIdx);
+  });
+
+  it("an original owner who leaves does not erase the company that carries their user id", async () => {
+    const calls = teamScenario(
+      [{ employer_id: USER_ID, role: "owner" }],
+      [{ user_id: "owner-2", role: "owner" }, { user_id: USER_ID, role: "owner" }],
+      { company: USER_ID },
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.url.includes("/rest/v1/employers?id="))).toBe(false);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("employer_requirements"))).toBe(false);
+    expect(calls.some((c) => c.url.includes("/storage/v1/object/list/employer-logos"))).toBe(false);
+  });
+
+  it("does not suspend the company when a member schedules deletion", async () => {
+    const calls = teamScenario(
+      [{ employer_id: "co-1", role: "member" }],
+      [{ user_id: "owner-1", role: "owner" }, { user_id: USER_ID, role: "member" }],
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.url.includes("/rest/v1/employers"))).toBe(false);
+  });
+
+  it("the last member suspends their company at soft delete and restore lifts it", async () => {
+    const soft = teamScenario([{ employer_id: "co-1", role: "owner" }], [{ user_id: USER_ID, role: "owner" }]);
+    const res = mockRes();
+    await handler(mockReq({ password: "correct" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(soft.some((c) => c.method === "PATCH" && c.url.includes("/rest/v1/employers?id=eq.co-1&suspended_at=is.null"))).toBe(true);
+
+    const restore = teamScenario([{ employer_id: "co-1", role: "owner" }], [{ user_id: USER_ID, role: "owner" }]);
+    const res2 = mockRes();
+    await handler(mockReq({ restore: true }), res2);
+    expect(res2.statusCode).toBe(200);
+    expect(restore.some((c) => c.method === "PATCH" && c.url.includes("/rest/v1/employers?id=eq.co-1&") && c.url.includes("suspended_reason=eq.account_deletion_pending"))).toBe(true);
+  });
+
+  it("restore leaves a company that went on without the member untouched", async () => {
+    const calls = teamScenario(
+      [{ employer_id: "co-1", role: "member" }],
+      [{ user_id: "owner-1", role: "owner" }, { user_id: USER_ID, role: "member" }],
+    );
+    const res = mockRes();
+    await handler(mockReq({ restore: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.url.includes("/rest/v1/employers"))).toBe(false);
+  });
+
+  it("a co-owner can leave without transferring ownership", async () => {
+    teamScenario(
+      [{ employer_id: "co-1", role: "owner" }],
+      [{ user_id: "owner-2", role: "owner" }, { user_id: USER_ID, role: "owner" }],
+    );
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("the last member explicitly deletes the company before the auth user, erasing company data under the company id", async () => {
+    const calls = teamScenario([{ employer_id: "co-1", role: "owner" }], [{ user_id: USER_ID, role: "owner" }], { company: "co-1" });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true });
+    const companyIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employers?id=eq.co-1"));
+    const authIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"));
+    expect(companyIdx).toBeGreaterThan(-1);
+    expect(companyIdx).toBeLessThan(authIdx);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_requirements?employer_id=eq.co-1"))).toBe(true);
+    const profileIdx = calls.findIndex((c) => c.method === "DELETE" && c.url.includes("/rest/v1/profiles?id=eq."));
+    expect(companyIdx).toBeLessThan(profileIdx);
+  });
+
+  it("keeps a company with unlock payments (anonymised) when its last member leaves: drops the member row, never deletes the company", async () => {
+    const calls = teamScenario([{ employer_id: "co-1", role: "owner" }], [{ user_id: USER_ID, role: "owner" }], { company: "co-1", payments: true });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toEqual({ success: true, retainedFinancialRecords: true });
+    expect(calls.some((c) => c.method === "PATCH" && c.url.includes("/rest/v1/employers?id=eq.co-1"))).toBe(true);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employers?id="))).toBe(false);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employer_members?employer_id=eq.co-1&user_id=eq.user-123"))).toBe(true);
+    expect(calls.some((c) => c.method === "PUT" && c.url.includes("/auth/v1/admin/users/"))).toBe(true);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/auth/v1/admin/users/"))).toBe(false);
+  });
+
+  it("deletes the legacy company keyed by the user id when no member row exists", async () => {
+    const calls = teamScenario([], [], { company: USER_ID });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes(`/rest/v1/employers?id=eq.${USER_ID}`))).toBe(true);
+  });
+
+  it("treats a retry after the membership was already removed as leaving, not as owning the surviving company", async () => {
+    const calls = teamScenario([], [], { company: USER_ID, others: [{ user_id: "owner-2" }] });
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(200);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("/rest/v1/employers?id="))).toBe(false);
+    expect(calls.some((c) => c.method === "DELETE" && c.url.includes("employer_requirements"))).toBe(false);
+  });
+
+  it("fails closed with 500 and deletes nothing when the membership lookup errors", async () => {
+    const calls: Call[] = [];
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url: String(url), method: init?.method ?? "GET" });
+      if (String(url).includes("select=employer_id,role")) return { ok: false, status: 500 } as unknown as Response;
+      return { ok: true, status: 200, json: async () => [] } as unknown as Response;
+    }) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(500);
+    expect(calls.some((c) => c.method === "DELETE")).toBe(false);
+  });
+
+  it("500s without deleting the auth user when the company delete fails, and leaves the account for the cron", async () => {
+    const calls = teamScenario([{ employer_id: "co-1", role: "owner" }], [{ user_id: USER_ID, role: "owner" }], { company: "co-1" });
+    const base = global.fetch;
+    global.fetch = vi.fn(async (url: string, init?: RequestInit) =>
+      String(url).includes("/rest/v1/employers?id=") && init?.method === "DELETE"
+        ? ({ ok: false, status: 500 } as unknown as Response)
+        : base(url, init)) as unknown as typeof fetch;
+    const res = mockRes();
+    await handler(mockReq({ password: "correct", hard: true }), res);
+    expect(res.statusCode).toBe(500);
+    expect(calls.some((c) => c.url.includes("/auth/v1/admin/users/"))).toBe(false);
+    expect(calls.some((c) => c.method === "PATCH" && c.url.includes("/rest/v1/profiles?id=eq.") && c.url.includes("deleted_at=is.null"))).toBe(true);
   });
 });

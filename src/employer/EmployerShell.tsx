@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { LayoutDashboardIcon, BriefcaseIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
+import { LayoutDashboardIcon, BriefcaseIcon, UsersIcon, SettingsIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
 import AppShellFrame, { type ShellNavItem } from "../AppShellFrame";
 
 export type BreadcrumbCrumb = { label: string; path?: string };
@@ -60,6 +60,7 @@ export function EmployerHeaderAction({ children }: { children: React.ReactNode }
 const navItems: ShellNavItem[] = [
   { id: "dashboard", label: "Dashboard", path: "/employer", icon: <LayoutDashboardIcon size={18} aria-hidden="true" /> },
   { id: "jobs", label: "Jobs", path: "/employer/jobs", icon: <BriefcaseIcon size={18} aria-hidden="true" /> },
+  { id: "team", label: "Team", path: "/employer/team", icon: <UsersIcon size={18} aria-hidden="true" /> },
 ];
 
 /* Messages and Settings are deliberately not in the sidebar (messages is the
@@ -93,7 +94,7 @@ function CreditChip({ balancePaise }: { balancePaise: number }) {
    themselves a single full-bleed card (a table shell, the settings stack, the
    messages split pane, the requirement form) are listed here so they are not
    double-carded; the shell wraps everything else. */
-const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages"];
+const SELF_CARDED_ROUTES = ["/employer", "/employer/jobs", "/employer/requirements/new", "/employer/settings", "/employer/messages", "/employer/team"];
 
 /* Compare, outcome and the not-found page draw their own container. Job detail and candidate
    detail are flat, hairline-separated sections that the shell wraps in the one
@@ -197,7 +198,7 @@ function AccountMenu({ name, email, onLogout }: { name?: string; email?: string;
    company profile exists. */
 export default function EmployerShell({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
-  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus, companyName, listConversations, fetchCredit } = useEmployerData();
+  const { companyStatus, companyStatusLoading, companyStatusError, refreshCompanyStatus, companyName, listConversations, fetchCredit, teamsEnabled } = useEmployerData();
   const isMobile = useIsMobile();
   const router = useRouter();
   const pathname = usePathname();
@@ -304,13 +305,15 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
 
   const pageBody = companyStatusLoading ? <PageSkeleton label="Loading your workspace" /> : children;
 
+  const visibleNav = teamsEnabled ? navItems : navItems.filter((item) => item.id !== "team");
+
   return (
     <EmployerBreadcrumbContext.Provider value={setBreadcrumbState}>
     <EmployerHeaderSlotContext.Provider value={headerSlot}>
       <AppShellFrame
         homeHref="/employer"
         navAriaLabel="Employer navigation"
-        navItems={navItems}
+        navItems={visibleNav}
         activeId={sidebarActiveId}
         onNavigate={(path) => router.push(path)}
         messaging={{ fetchConversations: listConversations, basePath: "/employer/messages" }}

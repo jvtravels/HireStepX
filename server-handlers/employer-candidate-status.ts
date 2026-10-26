@@ -41,6 +41,7 @@ import { untouchedMatchFilter } from "./_employer-matching-helpers";
 import { findOrCreateConversationId, postSystemMessage } from "./_messages-helpers";
 import { emailShell, hero, para, b, button, escapeHtml } from "./_email-theme";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
+import { requireEmployerPermission, writeAuditLog } from "./_employer-team-helpers";
 import { formatInterviewWhen } from "../src/interviewWhen";
 
 /** Statuses that put the employer in direct contact with the candidate — only
@@ -196,11 +197,15 @@ export default async function handler(req: Request): Promise<Response> {
   const { privateNote: note, candidateMessage: requestedMessage } = splitStatusNotes(candidateStatus, body.note, body.candidateMessage);
 
   try {
+    const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, "candidates.manage");
+    if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+    const employerId = gate.ctx.employerId;
+
     const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
     const decision = await loadEmployerMatchAccess({
       supabaseUrl: SUPABASE_URL,
       headers: serviceHeaders(),
-      employerId: auth.userId,
+      employerId,
       matchId,
       authEmail: identity.email,
       emailConfirmed: identity.emailConfirmed,
@@ -305,6 +310,12 @@ export default async function handler(req: Request): Promise<Response> {
       return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });
     }
 
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId, actorUserId: auth.userId, actorEmail: gate.ctx.email, action: "candidate.status_changed",
+      entityType: "match", entityId: matchId,
+      meta: { from: currentStatus, to: candidateStatus, jobTitle: reqRows[0].title },
+    });
+
     // Append-only pipeline audit trail (employer-visible timeline + candidate
     // history). Best-effort: the status write above already succeeded.
     await fetch(`${SUPABASE_URL}/rest/v1/match_status_events`, {
@@ -313,7 +324,7 @@ export default async function handler(req: Request): Promise<Response> {
       body: JSON.stringify({
         match_id: matchId,
         requirement_id: requirementId,
-        employer_id: auth.userId,
+        employer_id: employerId,
         candidate_user_id: matchRows[0].candidate_user_id,
         from_status: currentStatus,
         to_status: candidateStatus,
@@ -364,13 +375,13 @@ export default async function handler(req: Request): Promise<Response> {
         const conversationId = await findOrCreateConversationId(SUPABASE_URL, serviceHeaders(), {
           matchId,
           requirementId,
-          employerId: auth.userId as string,
+          employerId,
           candidateUserId: matchRows[0].candidate_user_id,
         });
         if (conversationId) {
           await postSystemMessage(SUPABASE_URL, serviceHeaders(), {
             conversationId,
-            employerId: auth.userId as string,
+            employerId,
             candidateUserId: matchRows[0].candidate_user_id,
             senderId: auth.userId as string,
             body: systemBody,

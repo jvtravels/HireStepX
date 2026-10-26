@@ -11,6 +11,14 @@ vi.mock("../../server-handlers/_shared", () => ({
   slog: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+  };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-activity");
 
 const get = (qs = "?id=req-1", method = "GET") => handler(new Request(`https://x.test/api/employer-requirement-activity${qs}`, { method }));
@@ -25,11 +33,12 @@ describe("employer-requirement-activity GET", () => {
   it("returns the owner's activity mapped to camelCase, scoped by employer_id", async () => {
     const f = vi.fn()
       .mockResolvedValueOnce(json([{ id: "req-1" }]))
-      .mockResolvedValueOnce(json([{ id: "a1", action: "created", detail: null, created_at: "2026-10-01T00:00:00Z" }]));
+      .mockResolvedValueOnce(json([{ id: "a1", action: "created", detail: null, created_at: "2026-10-01T00:00:00Z" }]))
+      .mockResolvedValueOnce(json([]));
     global.fetch = f as unknown as typeof fetch;
     const res = await get();
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ activity: [{ id: "a1", action: "created", detail: null, createdAt: "2026-10-01T00:00:00Z" }] });
+    expect(await res.json()).toEqual({ activity: [{ id: "a1", action: "created", detail: null, createdAt: "2026-10-01T00:00:00Z", actorName: null }] });
     expect(String(f.mock.calls[0][0])).toContain("employer_id=eq.emp-1");
   });
 

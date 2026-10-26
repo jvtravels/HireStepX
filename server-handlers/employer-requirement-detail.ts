@@ -41,6 +41,7 @@ import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCover
 import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
+import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
 import {
   loadBlockedCandidateIds,
   withHandlerTiming,
@@ -170,10 +171,13 @@ export default async function handler(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: "id is required" }), { status: 400, headers });
   }
 
-  if (req.method === "PATCH") return handlePatch(req, requirementId, auth.userId, headers);
-  if (req.method !== "GET") {
+  if (req.method !== "PATCH" && req.method !== "GET") {
     return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
   }
+  const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, req.method === "GET" ? "jobs.read" : "jobs.write");
+  if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+  const employerId = gate.ctx.employerId;
+  if (req.method === "PATCH") return handlePatch(req, requirementId, gate.ctx, headers);
 
   const startedAt = Date.now();
   try {
@@ -210,10 +214,10 @@ export default async function handler(req: Request): Promise<Response> {
     // all three go out together. A requirement this employer doesn't own 404s
     // below and the other two results are never used.
     const matchesRead = loadAllMatches();
-    const blockedRead = loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), auth.userId);
+    const blockedRead = loadBlockedCandidateIds(SUPABASE_URL, serviceHeaders(), employerId);
 
     const reqRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at,last_matched_at`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id,title,location,notice_period_pref,description,status,stage,department,archive_reason,archive_disposition,experience_min,experience_max,due_date,budget_min,budget_max,locations,open_positions,work_mode,skills,responsibilities,nice_to_have,preferred_industry,preferred_colleges,target_companies,perks_and_benefits,employment_type,salary_type,duration_weeks,hours_per_week,preferred_domain,work_schedule,availability,relevant_experience,portfolio_required,custom_skill_sets,min_readiness_band,min_star_completeness,matched_pool_size,created_at,last_matched_at`,
       { headers: serviceHeaders() },
     );
     if (!reqRes.ok) throw new Error(`requirement read failed: ${reqRes.status}`);
@@ -251,7 +255,7 @@ export default async function handler(req: Request): Promise<Response> {
        linger, so it is re-applied at read time. The unlock order uses the
        same ranked list (loadRankedVisibleMatches) so rank positions and the
        batch price shown here are exactly what gets charged. Fail closed. */
-    const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), auth.userId, allMatches, blockedRead);
+    const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), employerId, allMatches, blockedRead);
     if (!gated) throw new Error("candidate consent read failed");
     const { ranked: visibleMatches, optedOut } = gated;
     const nextUnlockBatch = nextUnlockBatchQuote(visibleMatches);
@@ -318,7 +322,6 @@ export default async function handler(req: Request): Promise<Response> {
        employer got their money back, so the contact details stop being theirs
        to export. Best-effort — the ledger is an optional table. */
     const refundedMatchIds = new Set<string>();
-    const employerId = auth.userId;
     const unlockedMatchIds = pageMatches.filter((m) => m.unlocked).map((m) => m.id);
     const loadRefunds = () => Promise.all(chunk(unlockedMatchIds, 100).map(async (batch) => {
       const ledgerRes = await fetch(
@@ -475,7 +478,7 @@ export default async function handler(req: Request): Promise<Response> {
     );
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    slog.error("employer-requirement-detail GET threw", { code: "employer_requirement_detail_unexpected_error", error: msg.slice(0, 200), userId: auth.userId, requirementId });
+    slog.error("employer-requirement-detail GET threw", { code: "employer_requirement_detail_unexpected_error", error: msg.slice(0, 200), userId: auth.userId, employerId, requirementId });
     return new Response(JSON.stringify({ error: "Failed to load requirement" }), { status: 500, headers });
   }
 }
@@ -575,12 +578,13 @@ async function handleRestoreAction(requirementId: string, userId: string, rawMat
 
 async function handleStatusAction(
   requirementId: string,
-  userId: string,
+  ctx: EmployerContext,
   action: "archive" | "reopen",
   headers: Record<string, string>,
   archiveReason: string | null,
   archiveDisposition: "keep_candidates" | "reject_remaining" | null,
 ): Promise<Response> {
+  const userId = ctx.employerId;
   try {
     const existingRes = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,title,location,description,skills,custom_skill_sets,work_mode,experience_min,experience_max,min_readiness_band,min_star_completeness,employment_type,duration_weeks,hours_per_week,${EMPLOYER_EMBED}`,
@@ -646,7 +650,11 @@ async function handleStatusAction(
         { status: 409, headers },
       );
     }
-    await logRequirementActivity(requirementId, userId, action === "archive" ? "archived" : "reopened");
+    await logRequirementActivity(requirementId, userId, action === "archive" ? "archived" : "reopened", undefined, ctx.userId);
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId: userId, actorUserId: ctx.userId, actorEmail: ctx.email, action: action === "archive" ? "job.archived" : "job.reopened",
+      entityType: "job", entityId: requirementId, meta: { title: current.title, ...(archiveReason ? { reason: archiveReason } : {}) },
+    });
 
     // Recorded so the client can offer undo: the ids and the status each row
     // held, taken before the bulk write so the record is what was replaced.
@@ -695,10 +703,11 @@ async function handleStatusAction(
 
 async function handleStageAction(
   requirementId: string,
-  userId: string,
+  ctx: EmployerContext,
   stage: RequirementStage,
   headers: Record<string, string>,
 ): Promise<Response> {
+  const userId = ctx.employerId;
   try {
     const existingRes = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,stage,status,employers(suspended_at)`,
@@ -772,7 +781,11 @@ async function handleStageAction(
         { status: 409, headers },
       );
     }
-    await logRequirementActivity(requirementId, userId, "stage_changed");
+    await logRequirementActivity(requirementId, userId, "stage_changed", undefined, ctx.userId);
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId: userId, actorUserId: ctx.userId, actorEmail: ctx.email, action: "job.stage_changed",
+      entityType: "job", entityId: requirementId, meta: { stage },
+    });
 
     return new Response(JSON.stringify({ id: requirementId, stage: updated[0]?.stage ?? stage }), { status: 200, headers });
   } catch (err) {
@@ -782,7 +795,8 @@ async function handleStageAction(
   }
 }
 
-async function handlePatch(req: Request, requirementId: string, userId: string, headers: Record<string, string>): Promise<Response> {
+async function handlePatch(req: Request, requirementId: string, ctx: EmployerContext, headers: Record<string, string>): Promise<Response> {
+  const userId = ctx.employerId;
   let body: {
     action?: unknown;
     stage?: unknown;
@@ -811,7 +825,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
   if (body.action === "archive" || body.action === "reopen") {
     const archiveReason = asBoundedString(body.archiveReason, 200) || null;
     const archiveDisposition = asArchiveDisposition(body.archiveDisposition);
-    return handleStatusAction(requirementId, userId, body.action, headers, archiveReason, archiveDisposition);
+    return handleStatusAction(requirementId, ctx, body.action, headers, archiveReason, archiveDisposition);
   }
 
   if (body.action === "restore") {
@@ -823,7 +837,7 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
     if (!stage) {
       return new Response(JSON.stringify({ error: "Invalid stage" }), { status: 400, headers });
     }
-    return handleStageAction(requirementId, userId, stage, headers);
+    return handleStageAction(requirementId, ctx, stage, headers);
   }
 
   try {
@@ -978,7 +992,11 @@ async function handlePatch(req: Request, requirementId: string, userId: string, 
           userId,
         )
       : existing.status;
-    await logRequirementActivity(requirementId, userId, "updated", needsRematch ? undefined : NO_REMATCH_DETAIL);
+    await logRequirementActivity(requirementId, userId, "updated", needsRematch ? undefined : NO_REMATCH_DETAIL, ctx.userId);
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId: userId, actorUserId: ctx.userId, actorEmail: ctx.email, action: "job.updated",
+      entityType: "job", entityId: requirementId, meta: { title },
+    });
 
     return new Response(
       JSON.stringify({

@@ -32,6 +32,7 @@ function installFetch(o: Opts) {
     const u = String(url);
     const method = init?.method ?? "GET";
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
+    if (u.includes("/rest/v1/employer_members")) return { ok: true, json: async () => (u.includes(`user_id=eq.${EMP}`) ? [{ employer_id: EMP, user_id: EMP, role: "owner", email: "a@acme.com", name: null, last_active_at: new Date().toISOString() }] : []) };
     if (u.includes("/rest/v1/employer_blocks")) return { ok: true, json: async () => [] };
     if (u.includes("/rest/v1/requirement_matches") && method === "PATCH") {
       const patch = JSON.parse(String(init?.body));
@@ -79,7 +80,7 @@ const patch = (body: Record<string, unknown>) =>
 beforeEach(() => {
   withAuthAndRateLimit.mockReset();
   withAuthAndRateLimit.mockResolvedValue({ auth: { userId: EMP }, headers: {} });
-  notify.mockClear();
+  vi.mocked(notify).mockClear();
 });
 
 describe("employer-candidate-status free text", () => {
@@ -180,5 +181,52 @@ describe("employer-candidate-status rate limit", () => {
     installFetch({ unlocked: true });
     await patch({ candidateStatus: "rejected" });
     expect(withAuthAndRateLimit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ userLimit: 60 }));
+  });
+});
+
+function asMember(userId: string, role: string) {
+  withAuthAndRateLimit.mockResolvedValue({ auth: { userId }, headers: {} });
+  const base = global.fetch as unknown as (u: string, init?: RequestInit) => Promise<unknown>;
+  global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    const u = String(url);
+    if (u.includes("/rest/v1/employer_members") && u.includes(`user_id=eq.${userId}`)) {
+      return { ok: true, json: async () => [{ employer_id: EMP, user_id: userId, role, email: "t@acme.com", name: null, last_active_at: new Date().toISOString() }] };
+    }
+    if (u.includes("/rest/v1/employer_audit_log")) return { ok: true, json: async () => [] };
+    return base(u, init);
+  }) as unknown as typeof fetch;
+  return global.fetch as unknown as ReturnType<typeof installFetch>;
+}
+
+describe("employer-candidate-status team permissions", () => {
+  it("lets a member move a candidate and records who did it, without the candidate's name", async () => {
+    installFetch({ unlocked: true, from: "shortlisted" });
+    const f = asMember("mate-1", "member");
+    const res = await patch({ candidateStatus: "rejected" });
+    expect(res.status).toBe(200);
+    const audit = f.mock.calls.find(([u]) => String(u).includes("/rest/v1/employer_audit_log"));
+    const row = JSON.parse(String((audit![1] as RequestInit).body));
+    expect(row).toMatchObject({
+      employer_id: EMP, actor_user_id: "mate-1", action: "candidate.status_changed", entity_id: MATCH,
+      meta: { from: "shortlisted", to: "rejected", jobTitle: "Dev" },
+    });
+    expect(JSON.stringify(row)).not.toContain("Priya");
+    const event = JSON.parse(String(eventInserts(f)[0][1]?.body));
+    expect(event.employer_id).toBe(EMP);
+  });
+
+  it("403s a viewer, who can read candidates but not manage them", async () => {
+    installFetch({ unlocked: true, from: "shortlisted" });
+    const f = asMember("mate-2", "viewer");
+    const res = await patch({ candidateStatus: "rejected" });
+    expect(res.status).toBe(403);
+    expect(f.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "PATCH")).toBe(false);
+  });
+
+  it("does not audit a note-only edit that leaves the status unchanged", async () => {
+    installFetch({ unlocked: true, from: "hired" });
+    const f = asMember("mate-1", "member");
+    await patch({ candidateStatus: "hired", note: "start date confirmed" });
+    expect(f.mock.calls.some(([u]) => String(u).includes("/rest/v1/employer_audit_log"))).toBe(false);
   });
 });

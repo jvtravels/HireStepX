@@ -10,7 +10,9 @@
  *
  * Caller role (employer vs candidate) is never taken on trust: resolved
  * server-side from the match's own employer_id/candidate_user_id against
- * the authenticated caller (see resolveRole in _messages-helpers.ts).
+ * the authenticated caller (see resolveRole in _messages-helpers.ts). An
+ * employer-side caller is any member of the owning company, gated per action
+ * on the team permission matrix (_employer-team-helpers.ts).
  *
  * Contact-info / off-platform-contact phrases are auto-flagged (see
  * detectContactInfoFlag) but never block the send — product decision: this
@@ -47,6 +49,7 @@ import {
   type MessageSenderRole,
 } from "./_messages-helpers";
 import { notify } from "./_notify";
+import { resolveEmployerContext, can, type EmployerContext, type Permission } from "./_employer-team-helpers";
 import {
   fetchMatchAccessRow,
   isBlockedByCandidate,
@@ -69,6 +72,19 @@ const UNAVAILABLE_EMPLOYER_NAME = "Employer no longer available";
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
+}
+
+/** The identity a thread is keyed on: the company for anyone on an employer
+ *  team, the account itself for candidates. */
+interface Party {
+  userId: string;
+  partyId: string;
+  team: EmployerContext | null;
+}
+
+async function resolveParty(userId: string): Promise<Party> {
+  const team = await resolveEmployerContext(SUPABASE_URL, serviceHeaders(), userId);
+  return { userId, partyId: team?.employerId ?? userId, team };
 }
 
 type MatchRow = MatchAccessRow;
@@ -100,13 +116,14 @@ interface MessageRow {
 }
 
 /** Resolves the match + its owning requirement in one round trip, determines
- *  the caller's role and, for an employer, runs the shared entitlement check
- *  (ownership, suspension, candidate opt-out, candidate block). Returns the
- *  failure Response on any denial. */
+ *  the caller's role and, for an employer, requires `permission` and runs the
+ *  shared entitlement check (ownership, suspension, candidate opt-out,
+ *  candidate block). Returns the failure Response on any denial. */
 async function resolveMatchAndRole(
   headers: Record<string, string>,
   matchId: string,
-  authUserId: string,
+  party: Party,
+  permission: Permission,
 ): Promise<{ match: MatchRow; role: MessageRole; access: EmployerMatchAccess | null } | Response> {
   const row = await fetchMatchAccessRow(SUPABASE_URL, serviceHeaders(), matchId);
   if (row === "error") {
@@ -122,8 +139,11 @@ async function resolveMatchAndRole(
   if (isSelfConversation(employerId, row.candidate_user_id)) {
     return new Response(JSON.stringify({ error: "You can't message yourself" }), { status: 400, headers });
   }
-  const role = resolveRole(authUserId, employerId, row.candidate_user_id);
+  const role = resolveRole(party.partyId, employerId, row.candidate_user_id);
   if (!role) {
+    return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
+  }
+  if (role === "employer" && !(party.team && can(party.team.role, permission))) {
     return new Response(JSON.stringify({ error: "Not authorized for this conversation" }), { status: 403, headers });
   }
   if (role === "candidate") return { match: row, role, access: null };
@@ -132,8 +152,8 @@ async function resolveMatchAndRole(
   if (blocked === "error") {
     return new Response(JSON.stringify({ error: "Failed to load conversation" }), { status: 502, headers });
   }
-  const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), authUserId);
-  const decision = decideEmployerMatchAccess(row, authUserId, {
+  const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), party.userId);
+  const decision = decideEmployerMatchAccess(row, employerId, {
     blockedByCandidate: blocked,
     authEmail: identity.email,
     emailConfirmed: identity.emailConfirmed,
@@ -217,12 +237,17 @@ interface ConversationListRow extends ConversationRow {
 
 /** Lists every conversation the caller is a party to, newest first — the
  *  inbox view for a side with no single matchId in context (candidate's
- *  /messages page). Role-agnostic: a user is never both an employer and a
- *  candidate (employers.id/profiles.id are the same uuid space as
- *  auth.users.id, 1-1), so an `or=` filter on both FK columns is safe. */
-async function handleListConversations(headers: Record<string, string>, authUserId: string): Promise<Response> {
+ *  /messages page). Keyed on the party id: the company id for an employer
+ *  team member (so teammates share one inbox), the account itself for a
+ *  candidate. Role-agnostic: the two id spaces never collide, so an `or=`
+ *  filter on both FK columns is safe. */
+async function handleListConversations(headers: Record<string, string>, party: Party): Promise<Response> {
+  const { partyId } = party;
+  if (party.team && !can(party.team.role, "candidates.read")) {
+    return new Response(JSON.stringify({ conversations: [] }), { status: 200, headers });
+  }
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/conversations?or=(employer_id.eq.${authUserId},candidate_user_id.eq.${authUserId})` +
+    `${SUPABASE_URL}/rest/v1/conversations?or=(employer_id.eq.${partyId},candidate_user_id.eq.${partyId})` +
       `&select=*,employer_requirements(title,employers(company_name,suspended_at)),profiles(name,employer_visibility),requirement_matches(candidate_status,match_score,unlocked,candidate_response)` +
       `&order=last_message_at.desc.nullslast,created_at.desc`,
     { headers: serviceHeaders() },
@@ -234,7 +259,7 @@ async function handleListConversations(headers: Record<string, string>, authUser
 
   // Same rule as every other employer path: a suspended / scheduled-for-deletion
   // employer is read-only and gets no inbox either.
-  const employerRow = rows.find((r) => r.employer_id === authUserId);
+  const employerRow = rows.find((r) => r.employer_id === partyId);
   if (employerRow && isSuspended(employerRow.employer_requirements?.employers)) {
     const d = DENIED_STATUS.suspended;
     return new Response(JSON.stringify({ error: d.error }), { status: d.status, headers });
@@ -243,9 +268,9 @@ async function handleListConversations(headers: Record<string, string>, authUser
   // An employer must not see threads a candidate has since blocked, nor ones
   // with a candidate who withdrew visibility before the employer paid to unlock.
   let blockedCandidates = new Set<string>();
-  if (rows.some((r) => r.employer_id === authUserId)) {
+  if (rows.some((r) => r.employer_id === partyId)) {
     const blockRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_blocks?employer_id=eq.${encodeURIComponent(authUserId)}&select=candidate_user_id`,
+      `${SUPABASE_URL}/rest/v1/employer_blocks?employer_id=eq.${encodeURIComponent(partyId)}&select=candidate_user_id`,
       { headers: serviceHeaders() },
     );
     if (blockRes.ok) {
@@ -254,13 +279,13 @@ async function handleListConversations(headers: Record<string, string>, authUser
     }
   }
   const visible = rows.filter((row) => {
-    if (row.employer_id !== authUserId) return true;
+    if (row.employer_id !== partyId) return true;
     if (blockedCandidates.has(row.candidate_user_id)) return false;
     return !(row.profiles?.employer_visibility === "off" && !row.requirement_matches?.unlocked);
   });
 
   const conversations = visible.map((row) => {
-    const role: MessageRole = row.employer_id === authUserId ? "employer" : "candidate";
+    const role: MessageRole = row.employer_id === partyId ? "employer" : "candidate";
     // A candidate keeps the thread history but never sees the identity of a
     // suspended / deleted employer, and can't post into it (see POST).
     const employerUnavailable = role === "candidate" && isSuspended(row.employer_requirements?.employers);
@@ -296,17 +321,17 @@ async function handleListConversations(headers: Record<string, string>, authUser
   return new Response(JSON.stringify({ conversations }), { status: 200, headers });
 }
 
-async function handleGet(req: Request, headers: Record<string, string>, auth: { userId: string }): Promise<Response> {
+async function handleGet(req: Request, headers: Record<string, string>, party: Party): Promise<Response> {
   const url = new URL(req.url);
   const matchId = url.searchParams.get("matchId") || "";
   if (!matchId) {
-    return handleListConversations(headers, auth.userId);
+    return handleListConversations(headers, party);
   }
   if (!MATCH_ID_RE.test(matchId)) {
     return new Response(JSON.stringify({ error: "Invalid matchId" }), { status: 400, headers });
   }
 
-  const resolved = await resolveMatchAndRole(headers, matchId, auth.userId);
+  const resolved = await resolveMatchAndRole(headers, matchId, party, "candidates.read");
   if (resolved instanceof Response) return resolved;
   const { match, role } = resolved;
   // Contact text stays masked for an employer until the unlock is paid AND the
@@ -380,7 +405,7 @@ async function handleGet(req: Request, headers: Record<string, string>, auth: { 
   );
 }
 
-async function handlePost(req: Request, headers: Record<string, string>, auth: { userId: string }): Promise<Response> {
+async function handlePost(req: Request, headers: Record<string, string>, party: Party): Promise<Response> {
   let body: { matchId?: unknown; body?: unknown; attachmentPath?: unknown; attachmentName?: unknown; attachmentMime?: unknown };
   try {
     body = await req.json();
@@ -398,7 +423,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     return new Response(JSON.stringify({ error: "Message body or attachment is required" }), { status: 400, headers });
   }
 
-  const resolved = await resolveMatchAndRole(headers, matchId, auth.userId);
+  const resolved = await resolveMatchAndRole(headers, matchId, party, "messages.send");
   if (resolved instanceof Response) return resolved;
   const { match, role } = resolved;
 
@@ -433,7 +458,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
 
   const conversation = await findOrCreateConversation(match);
   if (!conversation) {
-    slog.error("messages POST: failed to resolve conversation", { code: "messages_conversation_create_failed", userId: auth.userId, matchId });
+    slog.error("messages POST: failed to resolve conversation", { code: "messages_conversation_create_failed", userId: party.userId, matchId });
     return new Response(JSON.stringify({ error: "Failed to start conversation" }), { status: 500, headers });
   }
 
@@ -469,7 +494,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
       conversation_id: conversation.id,
       employer_id: conversation.employer_id,
       candidate_user_id: conversation.candidate_user_id,
-      sender_id: auth.userId,
+      sender_id: party.userId,
       sender_role: role,
       body: text,
       attachment_path: attachmentPath,
@@ -481,7 +506,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
   const insertedRows = (await insertRes.json().catch(() => [])) as MessageRow[];
   if (!insertRes.ok || !insertedRows[0]) {
     const t = await insertRes.text().catch(() => "");
-    slog.error("messages POST insert failed", { code: "messages_insert_failed", httpStatus: insertRes.status, body: t.slice(0, 200), userId: auth.userId });
+    slog.error("messages POST insert failed", { code: "messages_insert_failed", httpStatus: insertRes.status, body: t.slice(0, 200), userId: party.userId });
     return new Response(JSON.stringify({ error: "Failed to send message" }), { status: 500, headers });
   }
   const inserted = insertedRows[0];
@@ -493,7 +518,7 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
       body: JSON.stringify({
         message_id: inserted.id,
         conversation_id: conversation.id,
-        flagged_by: auth.userId,
+        flagged_by: party.userId,
         flagged_by_role: "system",
         reason: autoFlagReason,
       }),
@@ -509,7 +534,17 @@ async function handlePost(req: Request, headers: Record<string, string>, auth: {
     body: JSON.stringify({ last_message_at: now, last_sender_role: role }),
   }).catch((err) => slog.warn("messages: last_message_at update failed", { conversationId: conversation.id, error: (err as Error).message }));
 
-  const recipientId = role === "employer" ? conversation.candidate_user_id : conversation.employer_id;
+  // A candidate's reply goes to the teammate who last wrote in the thread,
+  // not to whichever account happens to own the company.
+  let recipientId = role === "employer" ? conversation.candidate_user_id : conversation.employer_id;
+  if (role === "candidate") {
+    const lastRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/conversation_messages?conversation_id=eq.${encodeURIComponent(conversation.id)}&sender_role=eq.employer&select=sender_id&order=created_at.desc&limit=1`,
+      { headers: serviceHeaders() },
+    ).catch(() => null);
+    const last = lastRes?.ok ? ((await lastRes.json().catch(() => [])) as Array<{ sender_id: string }>)[0] : undefined;
+    if (last?.sender_id) recipientId = last.sender_id;
+  }
   // Awaited: on the edge runtime an un-awaited promise can be dropped once the
   // response returns, which silently lost the recipient's notification.
   await notify({
@@ -554,9 +589,11 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    if (req.method === "GET") return await handleGet(req, headers, { userId: auth.userId });
-    if (req.method === "POST") return await handlePost(req, headers, { userId: auth.userId });
-    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+    if (req.method !== "GET" && req.method !== "POST") {
+      return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers });
+    }
+    const party = await resolveParty(auth.userId);
+    return req.method === "GET" ? await handleGet(req, headers, party) : await handlePost(req, headers, party);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     slog.error("messages threw", { code: "messages_unexpected_error", error: msg.slice(0, 200), userId: auth.userId });

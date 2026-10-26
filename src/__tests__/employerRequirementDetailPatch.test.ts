@@ -30,6 +30,15 @@ vi.mock("../../server-handlers/employer-requirements", () => ({
   logRequirementActivity: (...args: unknown[]) => logRequirementActivity(...args),
 }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-detail");
 
 const EXISTING_ROW = {
@@ -366,7 +375,7 @@ describe("employer-requirement-detail PATCH — rematch only when matching input
 
     expect(res.status).toBe(200);
     expect(runMatching).not.toHaveBeenCalled();
-    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", "no_rematch");
+    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", "no_rematch", "emp-1");
     const sentBody = JSON.parse((patchCall(fetchMock)![1] as RequestInit).body as string);
     expect(sentBody.status).toBeUndefined();
   });
@@ -380,7 +389,7 @@ describe("employer-requirement-detail PATCH — rematch only when matching input
     expect(res.status).toBe(200);
     expect(runMatching).toHaveBeenCalledTimes(1);
     expect(runMatching.mock.calls[0][1]).toMatchObject({ customSkills: ["Prototyping"], workMode: "remote" });
-    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", undefined);
+    expect(logRequirementActivity).toHaveBeenCalledWith("req-1", "emp-1", "updated", undefined, "emp-1");
   });
 
   it("any save re-runs matching when the last run failed", async () => {

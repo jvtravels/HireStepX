@@ -36,6 +36,7 @@ function installFetch(o: Opts) {
   const fetchMock = vi.fn(async (url: string, _init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
+    if (u.includes("/rest/v1/employer_members")) return { ok: true, json: async () => (u.includes(`user_id=eq.${EMP}`) ? [{ employer_id: EMP, user_id: EMP, role: "owner", email: "a@acme.com", name: null, last_active_at: new Date().toISOString() }] : []) };
     if (u.includes("/rest/v1/conversation_messages")) {
       return {
         ok: true,

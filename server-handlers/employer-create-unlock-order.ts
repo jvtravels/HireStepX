@@ -33,6 +33,7 @@ import {
 import { singleUnlockPrice, batchUnlockPrice, formatPaise, creditToApply } from "./_unlock-pricing";
 import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
 import { razorpayBasicAuth } from "./_razorpay-auth";
+import { requireEmployerPermission } from "./_employer-team-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 import { deriveEmployerTier, isSuspended, type EmployerTier } from "./_employer-trust";
 import {
@@ -158,15 +159,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const SUPABASE_URL = supabaseUrl();
   const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let employerId: string | undefined;
+  let actorId: string | undefined;
   const authToken = (req.headers.authorization || "").replace("Bearer ", "");
   if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
     const authResult = await verifyEmployerAuthToken(authToken, SUPABASE_URL, SUPABASE_ANON_KEY);
     if (authResult.kind === "auth-fail") return res.status(401).json({ error: "Unauthorized" });
     if (authResult.kind === "transient") return res.status(401).json({ error: "Auth verification failed" });
-    employerId = authResult.employerId;
+    actorId = authResult.employerId;
   }
-  if (!employerId) {
+  if (!actorId) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
@@ -174,7 +175,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // IPs (corporate NAT, mobile network switches), exceed the intended
   // per-account cap on order creation — pair it with a per-employer bucket
   // the same way every edge-runtime endpoint does via withAuthAndRateLimit.
-  if (await isRateLimited(`user:${employerId}`, "employer-create-unlock-order", 15, 60_000)) {
+  if (await isRateLimited(`user:${actorId}`, "employer-create-unlock-order", 15, 60_000)) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
   }
@@ -196,7 +197,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sh = supabaseServiceHeaders();
   let lockKey = "";
   try {
-    const identity = await loadAuthIdentity(SUPABASE_URL, sh, employerId);
+    // The purchase belongs to the company (employerId); the paying member is
+    // only recorded in the order notes so verification can attribute it.
+    const gate = await requireEmployerPermission(SUPABASE_URL, sh, actorId, "candidates.unlock");
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    const employerId = gate.ctx.employerId;
+
+    const identity = await loadAuthIdentity(SUPABASE_URL, sh, actorId);
     let tier: EmployerTier;
     let orderRequirementId: string;
     let targetMatchIds: string[];
@@ -406,8 +413,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // so batch notes carry only counts — employer_unlock_orders.match_ids is
     // the authoritative record of which matches an order covers.
     const orderNotes: Record<string, string> = mode === "single"
-      ? { employerId, mode, requirementId: orderRequirementId, matchIds: targetMatchIds[0] }
-      : { employerId, mode, requirementId: orderRequirementId, matchCount: String(targetMatchIds.length) };
+      ? { employerId, createdBy: actorId, mode, requirementId: orderRequirementId, matchIds: targetMatchIds[0] }
+      : { employerId, createdBy: actorId, mode, requirementId: orderRequirementId, matchCount: String(targetMatchIds.length) };
 
     const ac = new AbortController();
     const acTimer = setTimeout(() => ac.abort(), 10_000);
@@ -473,7 +480,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     slog.error("employer_unlock_orders insert failed", { code: "unlock_create_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
     return res.status(500).json({ error: "Could not start the payment. Please try again." });
   } catch (err) {
-    slog.error("employer-create-unlock-order threw", { code: "unlock_create_unexpected_error", requestId, employerId, err: err instanceof Error ? err.message : String(err) });
+    slog.error("employer-create-unlock-order threw", { code: "unlock_create_unexpected_error", requestId, actorId, err: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   } finally {
     if (lockKey) void releaseCreateLock(lockKey, { url: UPSTASH_URL, token: UPSTASH_TOKEN });
