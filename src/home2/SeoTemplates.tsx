@@ -78,7 +78,7 @@ function fmtDate(iso: string) {
   return new Date(iso + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-function Faqs({ items }: { items: { q: string; a: string }[] }) {
+export function Faqs({ items }: { items: { q: string; a: string }[] }) {
   if (items.length === 0) return null;
   return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
 }
@@ -88,7 +88,7 @@ const HUBS = [
   ["Interview preparation", "/interview-prep"], ["AI mock interview", "/ai-mock-interview"],
 ];
 
-function Hubs() {
+export function Hubs() {
   return (
     <nav className="sx-hubs" aria-label="Browse HireStepX">
       {HUBS.map(([l, h]) => <a key={h} data-no-underline href={h}>{l}</a>)}
@@ -373,9 +373,12 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
 export function SalaryTemplate({ company, model, meta, facts, related, groupLabel, blogSlug, calibrationDate }: SalaryTemplateProps) {
   const [ri, setRi] = useState(0);
   const [li, setLi] = useState(0);
+  const [tab, setTab] = useState<"pay" | "info" | "compare">("pay");
   const { label, roles, faqs, peerComparisons, interviewTeaser, page } = model;
   const headline = roles[0];
   const signup = `/signup?source=salary-seo&company=${encodeURIComponent(company)}&next=${encodeURIComponent(`/interview${headline ? `?role=${encodeURIComponent(headline.roleLabel)}` : ""}`)}`;
+  const hasInfo = !!(facts || interviewTeaser || blogSlug);
+  const tabs = [{ id: "pay" as const, label: "Pay by level" }, ...(hasInfo ? [{ id: "info" as const, label: "Interview and company" }] : []), ...(related.length > 0 ? [{ id: "compare" as const, label: "Compare companies" }] : [])];
   const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Reported");
   return (
     <Shell active="resources">
@@ -395,12 +398,19 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
         </div>
       </header>
       <section className="sx-body">
-        <div className="hx-wrap sx-grid sx-grid-wide">
-          <aside className="sx-side">
+        {tabs.length > 1 && (
+          <div className="hx-wrap sx-tabbar">
+            <div className="sx-seg" role="tablist" aria-label="Salary page sections">
+              {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
+            </div>
+          </div>
+        )}
+        <div className={`hx-wrap sx-grid ${tab === "pay" ? "sx-grid-wide" : "sx-one"}`}>
+          <aside className="sx-side" hidden={tab !== "pay" || roles.length < 2}>
             <span className="sx-mono">Role</span>
             <div className="sx-roles">
               {roles.map((r, i) => (
-                <a key={r.roleKey} data-no-underline href={`#role-${r.roleKey}`} data-on={i === ri ? "1" : "0"} onClick={() => setRi(i)}>{r.roleLabel}</a>
+                <a key={r.roleKey} data-no-underline href={`#role-${r.roleKey}`} data-on={i === ri ? "1" : "0"} onClick={(e) => { e.preventDefault(); setRi(i); }}>{r.roleLabel}</a>
               ))}
             </div>
           </aside>
@@ -409,7 +419,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               const top = role.bands[role.bands.length - 1];
               const peer = peerComparisons[i] ?? null;
               return (
-                <section key={role.roleKey} id={`role-${role.roleKey}`} className="sx-role">
+                <section key={role.roleKey} id={`role-${role.roleKey}`} className="sx-role" hidden={tab !== "pay" || i !== ri}>
                   <h2 className="sx-h2">{role.roleLabel} at {label}</h2>
                   <p className="sx-sub">Total CTC by level, in lakhs per annum. Base, variable and equity combined.</p>
                   <Ladder bands={role.bands} />
@@ -441,8 +451,9 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
                 </section>
               );
             })}
+            <div hidden={tab !== "info"}>
             {facts && (
-              <section className="sx-snap">
+              <section className="sx-snap sx-snap-first">
                 <h2 className="sx-h2">{label} snapshot</h2>
                 <dl>
                   {facts.scale && <div><dt>Scale</dt><dd>{facts.scale}</dd></div>}
@@ -459,6 +470,10 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               </section>
             )}
             {blogSlug && <p className="sx-peer"><a data-no-underline className="sx-link" href={`/blog/${blogSlug}`}>Read the {label} interview guide <Arrow /></a></p>}
+            </div>
+            <div hidden={tab !== "compare"}>
+              {related.length > 0 && <PeerCompare label={label} headline={headline} related={related} groupLabel={groupLabel} />}
+            </div>
           </div>
         </div>
       </section>
@@ -466,9 +481,6 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
         <p className="sx-peer sx-peer-note">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
       </div>
       <Faqs items={faqs} />
-      <div className="hx-wrap sx-after">
-        {related.length > 0 && <PeerCompare label={label} headline={headline} related={related} groupLabel={groupLabel} />}
-      </div>
       <Hubs />
       <Close kicker="Negotiate" title={<>Walk in knowing <b>your number</b>.</>} body={`Practise the salary conversation with an AI recruiter before the real one, using the ${label} bands above.`} primary={["Practise negotiation", signup]} />
     </Shell>
@@ -488,6 +500,15 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
   const locked = Math.max(0, questions.length - free.length);
   const first = page.intro.split(/(?<=\.)\s/)[0];
   const rest = page.intro.slice(first.length).trim();
+  const [tab, setTab] = useState<"qs" | "process" | "framework">("qs");
+  const [diff, setDiff] = useState("all");
+  const showRounds = !!page.interviewRounds && !(page.recruitmentSteps?.length && page.interviewRounds.every((r) => /^Stage \d+:/.test(r)));
+  const hasProcess = !!page.recruitmentSteps?.length || showRounds;
+  const fwSteps = page.framework.summary.split(/\s*→\s*/).filter(Boolean);
+  const diffCount = (d: string) => free.filter((q) => q.difficulty === d).length;
+  const diffs = Object.keys(DIFF).filter((d) => diffCount(d) > 0);
+  const tabs = [{ id: "qs" as const, label: `Questions (${questions.length})` }, ...(hasProcess ? [{ id: "process" as const, label: "Interview process" }] : []), { id: "framework" as const, label: "Answer framework" }];
+  const intense = questions.filter((q) => q.difficulty === "intense").length;
   return (
     <Shell active="resources">
       <style>{sxCss + coverCss}</style>
@@ -496,10 +517,11 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           <span className="sx-mono sx-kick">{focusLabel} · {companyLabel}</span>
           <h1 className="sx-h1">{page.searchPhrase}</h1>
           <p className="sx-dek">{first}</p>
-          <div className="sx-meta">
-            <span>{questions.length} questions</span>
-            {page.interviewRounds && <span>{page.interviewRounds.length} rounds</span>}
-            <span>Framework: {displayFrameworkName(page.framework.name)}</span>
+          <div className="sx-stats">
+            <div><span className="sx-mono">Questions</span><b>{questions.length}</b></div>
+            {page.interviewRounds && <div><span className="sx-mono">Rounds</span><b>{page.interviewRounds.length}</b></div>}
+            {intense > 0 && <div><span className="sx-mono">Intense</span><b>{intense} <small>of {questions.length}</small></b></div>}
+            <div><span className="sx-mono">Framework</span><b>{displayFrameworkName(page.framework.name)}</b></div>
           </div>
           <Skel><FlipDeck href={signup} questions={questions} framework={page.framework} company={companyLabel} /></Skel>
         </div>
@@ -508,23 +530,39 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
         <div className="hx-wrap sx-grid sx-grid-q">
           <article className="sx-prose">
             {rest && <p className="sx-lead">{rest}</p>}
+            <div className="sx-seg sx-tabs-q" role="tablist" aria-label="Question set sections">
+              {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
+            </div>
+            <div hidden={tab !== "process"}>
             {page.recruitmentSteps && (
               <section>
                 <h2>Recruitment process</h2>
                 <ol className="sx-steps">{page.recruitmentSteps.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
-            {page.interviewRounds && !(page.recruitmentSteps?.length && page.interviewRounds.every((r) => /^Stage \d+:/.test(r))) && (
+            {page.interviewRounds && showRounds && (
               <section>
                 <h2>Interview rounds</h2>
                 <ol className="sx-steps">{page.interviewRounds.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
-            <section>
+            </div>
+            <section hidden={tab !== "framework"}>
+              <h2>{displayFrameworkName(page.framework.name)} framework</h2>
+              <ol className="sx-x-steps">{fwSteps.map((st) => <li key={st}>{st}</li>)}</ol>
+              <p>{stripEndPunct(page.framework.summary)}.</p>
+            </section>
+            <section hidden={tab !== "qs"}>
               <h2>Questions candidates report</h2>
+              {diffs.length > 1 && (
+                <div className="sx-chips" role="group" aria-label="Filter by difficulty">
+                  <button type="button" aria-pressed={diff === "all"} onClick={() => setDiff("all")}>All {free.length}</button>
+                  {diffs.map((d) => <button key={d} type="button" aria-pressed={diff === d} onClick={() => setDiff(d)}>{DIFF[d]} {diffCount(d)}</button>)}
+                </div>
+              )}
               <ol className="sx-qs">
                 {free.map((q, i) => (
-                  <li key={q.text}>
+                  <li key={q.text} hidden={diff !== "all" && q.difficulty !== diff}>
                     <span className="sx-mono">{String(i + 1).padStart(2, "0")}</span>
                     <div>
                       <p>{q.text}</p>
@@ -585,7 +623,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
 
 /* ── Styles ── */
 
-const sxCss = `
+export const sxCss = `
 .sx-cmp { padding: 8px 0 24px; }
 .sx-cmp-list { margin-top: 16px; display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--white); }
 .sx-cmp-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 120px; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); color: var(--ink); transition: background .2s; }
@@ -689,6 +727,16 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-x-trio b { font-size: 16px; font-weight: 500; }
 .sx-body { padding: 64px 0 56px; }
 .sx-grid { display: grid; grid-template-columns: 160px 960px; justify-content: center; gap: 40px; align-items: start; }
+[hidden] { display: none !important; }
+.sx-tabbar { margin-bottom: 28px; }
+.sx-tabbar .sx-seg { display: inline-flex; }
+.sx-one { grid-template-columns: minmax(0, 1fr); justify-content: stretch; }
+.sx-tabs-q { display: inline-flex; margin: 0 0 28px; }
+.sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.sx-chips button { font: inherit; font-size: 14px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--white); color: var(--ink-2); cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.sx-chips button:hover { border-color: var(--btn); color: var(--ink); }
+.sx-chips button[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
+.sx-snap-first { margin-top: 0; }
 .sx-grid-wide { grid-template-columns: 240px minmax(0, 1fr); justify-content: stretch; gap: 64px; }
 .sx-grid-q { grid-template-columns: minmax(0, 1fr) 340px; justify-content: stretch; gap: 64px; }
 .sx-toc, .sx-side { position: sticky; top: 96px; display: grid; gap: 2px; }
