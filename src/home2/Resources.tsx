@@ -573,8 +573,8 @@ export const resourcesCss = sceneCss + `
 .lb-index { margin-top: 40px; border-top: 1px solid var(--line-2); padding-top: 20px; }
 .lb-index summary { cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink); }
 .lb-index ul { list-style: none; margin: 16px 0 0; padding: 0; columns: 3 260px; column-gap: 32px; }
-.lb-index li { break-inside: avoid; padding: 4px 0; font-size: 13px; line-height: 1.45; }
-.lb-index a { color: var(--ink-2, var(--ink)); text-decoration: none; }
+.lb-index li { break-inside: avoid; font-size: 13px; line-height: 1.45; }
+.lb-index a { display: flex; align-items: center; min-height: 44px; color: var(--ink-2, var(--ink)); text-decoration: none; }
 .lb-index a:hover { color: var(--btn); text-decoration: underline; }
 .lb-more { display: flex; margin: 20px auto 0; cursor: pointer; font-family: inherit; }
 .lb-note { margin: 18px 0 0; font-size: 13px; color: var(--ink-3); }
