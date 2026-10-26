@@ -51,7 +51,7 @@ export const homeCss = `
 .hx-btn.sm { min-height: 38px; padding: 0 16px; font-size: 15px; }
 .hx-btn.lg { min-height: 54px; padding: 0 28px; font-size: 16px; border-radius: 12px; }
 .hx-btn.alt { background: var(--white); color: var(--ink); border: 1px solid var(--line-2); box-shadow: none; }
-.hx-btn.alt:hover { background: var(--wash); border-color: var(--ink-3); }
+.hx-btn.alt:hover { background: var(--wash); border-color: var(--btn); }
 .hx-btn.light { background: var(--white); color: var(--btn); box-shadow: none; }
 .hx-btn.light:hover { background: var(--wash); }
 .hx-btn.ghosty { background: transparent; color: var(--white); border: 1px solid oklch(0.995 0.004 285 / 0.45); box-shadow: none; }

@@ -18,7 +18,7 @@ export const authCss = `
 .hx-seg button[aria-pressed="true"] { background: var(--white); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
 .hx-seg button:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .hx-gbtn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 46px; margin-top: 24px; border-radius: 10px; border: 1px solid var(--line); background: var(--white); font: inherit; font-size: 15px; font-weight: 500; color: var(--ink); cursor: pointer; transition: border-color .2s, background .2s; }
-.hx-gbtn:hover { border-color: var(--ink-3); background: var(--wash); }
+.hx-gbtn:hover:not(:disabled) { border-color: var(--btn); background: var(--wash); }
 .hx-gbtn svg { width: 18px; height: 18px; }
 .hx-or { display: flex; align-items: center; gap: 14px; margin: 22px 0 4px; color: var(--ink-3); font-size: 13px; }
 .hx-or::before, .hx-or::after { content: ""; flex: 1; height: 1px; background: var(--line-2); }
