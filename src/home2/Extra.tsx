@@ -9,11 +9,12 @@ const Lock = () => (
 );
 
 const QA: [string, string][] = [
-  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round's own scorecard, tracks your progress, and shows the exact sentence to fix."],
+  ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round's own scorecard, tracks your progress, and shows the exact sentence to fix. A session runs 10 to 25 minutes, depending on the round."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed."],
-  ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search."],
+  ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search. We never tell your current or target employer that you practise here."],
   ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram in the US, Sarvam in India) to be turned into text, and they do not keep it. We save only the written transcript."],
   ["Can I delete everything?", "Yes. Delete your account in Settings. Your profile disappears at once and your resume, answers and scores are permanently erased within 7 days."],
+  ["How is this different from ChatGPT?", "ChatGPT answers when you type. HireStepX interviews you out loud, scores each answer on a STAR scorecard for that round, shows the sentence to fix with a coached model answer, and tracks your progress across sessions."],
 ];
 
 const Bars = () => (
@@ -74,6 +75,14 @@ function PrivStage({ i }: { i: number }) {
             <p className="hx-mini-cap">After you answer</p>
             <div className="hx-pv-row"><Bars /><div><b>Your voice</b><span>Deleted once it is turned into text</span></div><em className="hx-pv-tag gone">Not kept</em></div>
             <div className="hx-pv-row"><span className="hx-pv-doc" aria-hidden="true"><i /><i /><i /></span><div><b>Written transcript</b><span>Saved to your report</span></div><em className="hx-pv-tag">Kept</em></div>
+          </div>
+        )}
+        {i === 5 && (
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">In every session</p>
+            {[["You speak", "Out loud, like the real thing"], ["STAR scorecard", "Scored for that round"], ["Coached model answer", "Shown after each answer"]].map(([n, d]) => (
+              <div className="hx-pv-row" key={n}><div><b>{n}</b><span>{d}</span></div><em className="hx-pv-tag">Included</em></div>
+            ))}
           </div>
         )}
         {i === 4 && (
@@ -224,7 +233,7 @@ const CAND_QA: [string, string][] = [
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed. After that it is ₹9 a session, or ₹39 for five sessions valid for 30 days."],
   QA[2],
   QA[3],
-  QA[4],
+  ["Will it understand my Indian English accent?", "Yes. Speech recognition includes Sarvam, a model built for Indian speech. Speak the way you would to a real interviewer."],
 ];
 
 const SAMPLE_Q: [string, string[]][] = [
@@ -235,6 +244,20 @@ const SAMPLE_Q: [string, string[]][] = [
 
 function CandStage({ i }: { i: number }) {
   const [role, setRole] = useState(0);
+  if (i === 5) {
+    return (
+      <div className="hx-priv-stage" aria-live="polite">
+        <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[5][0]}</span></div>
+        <div className="hx-priv-body">
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">As you speak</p>
+            <div className="hx-pv-row"><Bars /><div><b>Your voice</b><span>Turned into text as you talk</span></div><em className="hx-pv-tag">Live</em></div>
+            <div className="hx-pv-row"><div><b>Indian English</b><span>Supported</span></div><em className="hx-pv-tag">Yes</em></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (i !== 1) return <PrivStage i={i === 0 ? 0 : i === 2 ? 1 : i - 1} />;
   return (
     <div className="hx-priv-stage" aria-live="polite">
