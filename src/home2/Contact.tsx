@@ -126,7 +126,13 @@ function ContactForm({ topic }: { topic: Topic }) {
           <svg viewBox="0 0 40 40" width="56" height="56"><circle cx="20" cy="20" r="19" /><path d="M12 20.5l5.5 5.5L28 15" /></svg>
         </span>
         <h2 className="ct-h">Message sent</h2>
-        <p>We will reply to your email within 1 business day.{ref ? <> Your reference is <b>{ref}</b> <Copy text={ref} label="Copy reference" done="Copied" iconOnly />.</> : null}</p>
+        <p>We will reply to your email within 1 business day.</p>
+        {ref ? (
+          <div className="ct-ref">
+            <span className="ct-ref-l">Your reference</span>
+            <span className="ct-ref-row"><b>{ref}</b><Copy text={ref} label="Copy reference" done="Copied" iconOnly /></span>
+          </div>
+        ) : null}
         <div className="ct-actions">
           <button type="button" className="ct-copy" onClick={() => { setStatus("idle"); setRef(null); setPickedFor({ id: topic.id, list: [] }); setNote(""); }}>Send another</button>
         </div>
@@ -335,7 +341,14 @@ const contactCss = `
 .ct-spin { width: 16px; height: 16px; border-radius: 99px; border: 2px solid oklch(1 0 0 / 0.35); border-top-color: var(--white); animation: ct-rot .7s linear infinite; }
 @keyframes ct-rot { to { transform: rotate(360deg); } }
 .ct-err { margin: 0; font-size: 14px; color: oklch(0.5 0.17 25); }
-.ct-done { text-align: left; gap: 12px; }
+.ct-stage .ct-card.ct-done { text-align: center; justify-items: center; align-content: center; gap: 12px; min-height: 320px; }
+.ct-done { text-align: center; justify-items: center; gap: 12px; }
+.ct-done p { max-width: 36ch; text-wrap: balance; }
+.ct-ref { display: grid; justify-items: center; gap: 6px; margin-top: 8px; }
+.ct-ref-l { font-size: 12px; font-weight: 500; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.ct-ref-row { display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 16px; border: 1px solid var(--line-2); border-radius: 12px; background: var(--wash); }
+.ct-ref-row b { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 600; letter-spacing: .04em; color: var(--ink); }
+.ct-ref-row .ct-copy-ico { margin-left: 0; width: 36px; height: 36px; border-color: transparent; }
 .ct-done p { margin: 0; font-size: 16px; line-height: 1.55; color: var(--ink-2); }
 .ct-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
 .ct-copy { appearance: none; font: inherit; font-size: 14px; font-weight: 500; color: var(--btn); background: transparent; border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 14px; cursor: pointer; transition: border-color .15s, background .15s; }
