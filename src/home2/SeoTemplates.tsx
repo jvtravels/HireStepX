@@ -57,7 +57,7 @@ function Related({ title, items }: { title: string; items: { item: Item; meta: s
       <style>{resourcesCss}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
-        {items.map(({ item: i, meta }) => (
+        {items.slice(0, 3).map(({ item: i, meta }) => (
           <li key={i.h}>
             <article className={`lb-card k-${i.k}`}>
               <Vis i={i} />
