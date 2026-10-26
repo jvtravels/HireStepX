@@ -103,3 +103,18 @@ describe("0054 unlock money guards", () => {
     }
   });
 });
+
+describe("0061 payment_dedup.user_id", () => {
+  const sql = read("supabase-migrations/0061-payment-dedup-user-id.sql");
+
+  it("adds the column idempotently, with ON DELETE SET NULL so the dedup row outlives the profile", () => {
+    expect(sql).toContain("alter table payment_dedup add column if not exists user_id uuid;");
+    expect(sql).toContain("on delete set null");
+    expect(sql).not.toMatch(/on delete cascade/);
+  });
+
+  it("is mirrored in the schema so a pre-existing table gets the column too", () => {
+    expect(schema).toContain("alter table payment_dedup add column if not exists user_id uuid;");
+    expect(schema).toMatch(/create table if not exists payment_dedup \([^;]*on delete set null/);
+  });
+});
