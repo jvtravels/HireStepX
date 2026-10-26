@@ -12,8 +12,8 @@ const QA: [string, string][] = [
   ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round's own scorecard, tracks your progress, and shows the exact sentence to fix. A session runs 10 to 25 minutes, depending on the round."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed."],
   ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search. We never tell your current or target employer that you practise here."],
-  ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram in the US, Sarvam in India) to be turned into text, and they do not keep it. We save only the written transcript."],
-  ["Can I delete everything?", "Yes. Delete your account in Settings. Your profile disappears at once and your resume, answers and scores are permanently erased within 7 days."],
+  ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram, with Sarvam as backup) to be turned into text, and they do not keep it. We save only the written transcript."],
+  ["Can I delete everything?", "Yes. Delete your account in Settings. Your profile disappears at once and your resume, answers and scores are permanently erased within 7 days. Only anonymised payment records are kept, as tax law requires."],
   ["How is this different from ChatGPT?", "ChatGPT answers when you type. HireStepX interviews you out loud, scores each answer on a STAR scorecard for that round, shows the sentence to fix with a coached model answer, and tracks your progress across sessions."],
 ];
 
@@ -233,7 +233,7 @@ const CAND_QA: [string, string][] = [
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed. After that it is ₹9 a session, or ₹39 for five sessions valid for 30 days."],
   QA[2],
   QA[3],
-  ["Will it understand my Indian English accent?", "Yes. Speech recognition includes Sarvam, a model built for Indian speech. Speak the way you would to a real interviewer."],
+  ["Will it understand my Indian English accent?", "Yes. The interviewer speaks in an Indian English voice, and speech recognition is set up to handle Indian accents. Speak the way you would to a real interviewer."],
 ];
 
 const SAMPLE_Q: [string, string[]][] = [

@@ -39,7 +39,7 @@ const TOPICS: Topic[] = [
     id: "billing",
     label: "Payment or refund",
     hint: "Charges, failed payments, refunds",
-    answer: "Refund requests are processed within 5 business days.",
+    answer: "Unused credits are refundable within 7 days of purchase. We process refunds within 5 business days, and your bank can take 3 to 7 more to show the credit.",
     steps: ["Write to us from your account email", "Mention the payment date and amount", "We confirm the refund in writing"],
     reply: "Within 1 business day",
     placeholder: "What did you pay for, and what went wrong?",
@@ -188,7 +188,7 @@ function ContactForm({ topic }: { topic: Topic }) {
 const CONTACT_QA: [string, string][] = [
   ["How fast will I hear back?", "Within 1 business day, India time. Privacy requests are acknowledged within 24 hours and resolved within 15 days."],
   ["How do I dispute a score?", "Open the session report and choose Dispute score. We review it within 24 hours."],
-  ["How do refunds work?", "Write to us from your account email with the payment date and amount. Refunds are processed within 5 business days."],
+  ["How do refunds work?", "Unused credits are refundable within 7 days of purchase. Write to us from your account email with the payment date and amount. We process refunds within 5 business days, and your bank can take 3 to 7 more to show the credit."],
   ["How do I delete my account?", "Do it from Settings. Your profile is hidden from employers right away, and your data is permanently erased within 7 days."],
   ["Is there a phone number or live chat?", "No. The form on this page goes to the inbox a person reads, and you get a reference number to follow up with."],
 ];
