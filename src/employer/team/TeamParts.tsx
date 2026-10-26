@@ -6,8 +6,7 @@ import {
   AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge, PrimaryCta, type BadgeTone } from "@/employer/_atoms";
+import { Badge, type BadgeTone } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { ROLE_BLURB, ROLE_LABEL, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
 
@@ -135,26 +134,41 @@ export function ConfirmDialog({ spec, onClose }: { spec: ConfirmSpec | null; onC
 
 export const muted: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 };
 
-export function PageSkeleton({ label = "Loading" }: { label?: string }) {
+export const PAD = "px-4 sm:px-7";
+
+/* Seats are a hard cap, so the meter is quiet until the team is nearly full. */
+export function SeatMeter({ used, max }: { used: number; max: number }) {
+  const pct = Math.min(100, Math.round((used / Math.max(max, 1)) * 100));
+  const nearFull = pct >= 80;
   return (
-    <div role="status" aria-live="polite" aria-busy="true" style={{ width: "100%", display: "flex", flexDirection: "column", gap: 16 }}>
-      <span className="sr-only">{label}…</span>
-      <Skeleton style={{ height: 40, width: "min(420px, 70%)", borderRadius: 8 }} />
-      <Skeleton style={{ height: 18, width: "min(560px, 90%)", borderRadius: 6 }} />
-      <Skeleton style={{ height: 140, width: "100%", borderRadius: 12 }} />
+    <div style={{ minWidth: 132 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
+        <span>Seats</span>
+        <span style={{ color: nearFull ? t.warningInk : t.coal, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{used} of {max}</span>
+      </div>
+      <div
+        role="progressbar"
+        aria-label="Seats used"
+        aria-valuemin={0}
+        aria-valuemax={max}
+        aria-valuenow={used}
+        style={{ height: 4, borderRadius: 999, background: t.creamSoft, marginTop: 6, overflow: "hidden" }}
+      >
+        <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: nearFull ? t.warningInk : t.indigo, transition: "width 200ms ease-out" }} />
+      </div>
     </div>
   );
 }
 
-export function ErrorPanel({ title, message, onRetry }: { title: string; message: string; onRetry: () => void }) {
+export function EmptyBlock({ icon, title, body, action }: { icon: React.ReactNode; title: string; body: string; action?: React.ReactNode }) {
   return (
-    <div
-      role="alert"
-      style={{ width: "100%", maxWidth: 560, margin: "0 auto", boxSizing: "border-box", padding: 24, textAlign: "center", background: t.white, border: `1px solid ${t.line}`, borderRadius: 12 }}
-    >
-      <h2 style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal, margin: "0 0 6px" }}>{title}</h2>
-      <p style={{ ...muted, fontSize: 14, margin: "0 0 16px" }}>{message}</p>
-      <PrimaryCta onClick={onRetry}>Try again</PrimaryCta>
+    <div style={{ padding: "56px 24px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6 }}>
+      <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 12, background: t.creamSoft, color: t.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
+        {icon}
+      </span>
+      <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>{title}</h2>
+      <p style={{ ...muted, maxWidth: 380 }}>{body}</p>
+      {action && <div style={{ marginTop: 12 }}>{action}</div>}
     </div>
   );
 }

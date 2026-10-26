@@ -10,7 +10,8 @@ import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { can, ROLE_LABEL } from "../../../../server-handlers/_employer-team-helpers";
 import { useTeam, useTeamActivity, type ActivityFilter, type InviteResult, type TeamAction, type TeamInvite } from "@/employer/useTeam";
-import { ConfirmDialog, ErrorPanel, PageSkeleton, muted, type ConfirmSpec } from "@/employer/team/TeamParts";
+import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
+import { ConfirmDialog, PAD, SeatMeter, muted, type ConfirmSpec } from "@/employer/team/TeamParts";
 import InvitePanel from "@/employer/team/InvitePanel";
 import MembersTab, { type MemberCommand } from "@/employer/team/MembersTab";
 import InvitesTab from "@/employer/team/InvitesTab";
@@ -27,7 +28,7 @@ export default function EmployerTeamPage() {
   const { teamsEnabled, companyStatusLoading } = useEmployerData();
   const hidden = !companyStatusLoading && !teamsEnabled;
   useEffect(() => { if (hidden) router.replace("/employer"); }, [hidden, router]);
-  if (!teamsEnabled) return <PageSkeleton label="Loading team" />;
+  if (!teamsEnabled) return <PageSkeleton label="Loading team" variant="list" />;
   return <TeamConsole />;
 }
 
@@ -56,7 +57,7 @@ function TeamConsole() {
     [team],
   );
 
-  if (loading) return <PageSkeleton label="Loading team" />;
+  if (loading) return <PageSkeleton label="Loading team" variant="list" />;
   if (error || !team) {
     return <ErrorPanel title="We couldn't load your team" message={error ?? "Check your connection and try again."} onRetry={() => { void reload(); }} />;
   }
@@ -152,37 +153,42 @@ function TeamConsole() {
     tabRefs.current[next.id]?.focus();
   };
 
-  const seatsNote = `${team.members.length} of ${team.limits.maxTeamSize} seats used`;
+  const seatsFull = team.members.length >= team.limits.maxTeamSize;
+  const openInvite = () => { setInviting(true); setTab("members"); };
+  const who = companyName || "this company";
 
   return (
     <div style={{ width: "100%" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-        <header style={{ padding: "20px 28px 0", display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+        <header className={PAD} style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em" }}>Team</h1>
-              <p style={{ ...muted, fontSize: 14, marginTop: 4 }}>
+              <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>Team</h1>
+              <p style={{ ...muted, fontSize: 14, marginTop: 2 }}>
                 {canInvite
-                  ? `Everyone with access to ${companyName || "this company"} on HireStepX. ${seatsNote}.`
-                  : `You're ${/^[aeiou]/i.test(ROLE_LABEL[myRole]) ? "an" : "a"} ${ROLE_LABEL[myRole].toLowerCase()} on ${companyName || "this company"}. ${seatsNote}.`}
+                  ? `Who can work in ${who} on HireStepX, and what they can do.`
+                  : `You're ${/^[aeiou]/i.test(ROLE_LABEL[myRole]) ? "an" : "a"} ${ROLE_LABEL[myRole].toLowerCase()} on ${who}.`}
               </p>
             </div>
-            {canInvite && !panelOpen && (
-              <Button
-                type="button"
-                size="lg"
-                className="h-9 gap-2 px-4"
-                disabled={team.members.length >= team.limits.maxTeamSize}
-                onClick={() => { setInviting(true); setTab("members"); }}
-              >
-                <UserPlusIcon aria-hidden="true" /> Invite teammate
-              </Button>
-            )}
+            <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+              <SeatMeter used={team.members.length} max={team.limits.maxTeamSize} />
+              {canInvite && !panelOpen && (
+                <Button type="button" size="lg" className="h-9 gap-2 px-4" disabled={seatsFull} onClick={openInvite}>
+                  <UserPlusIcon aria-hidden="true" /> Invite teammate
+                </Button>
+              )}
+            </div>
           </div>
+          {seatsFull && canInvite && (
+            <p role="status" style={{ ...muted, color: t.warningInk }}>
+              Your team is at its {team.limits.maxTeamSize}-seat limit. Remove someone or revoke an invite to add another person.
+            </p>
+          )}
 
           <div role="tablist" aria-label="Team sections" style={{ display: "flex", gap: 24, marginBottom: -1, overflowX: "auto" }}>
             {tabs.map((tb, i) => {
               const on = tab === tb.id;
+              const attention = tb.id === "invites" && (tb.count ?? 0) > 0;
               return (
                 <button
                   key={tb.id}
@@ -199,12 +205,19 @@ function TeamConsole() {
                   style={{
                     background: "none", border: 0, cursor: "pointer", padding: "10px 0 12px", whiteSpace: "nowrap",
                     fontFamily: f.sans, fontSize: 14, fontWeight: on ? 600 : 500, color: on ? t.coal : t.inkSoft,
-                    borderBottom: `2px solid ${on ? t.indigo : "transparent"}`,
+                    borderBottom: `2px solid ${on ? t.indigo : "transparent"}`, transition: "color 150ms ease-out",
                   }}
                 >
                   {tb.label}
                   {tb.count !== undefined && (
-                    <span style={{ marginLeft: 6, fontSize: 12, fontWeight: 500, color: t.inkSoft, fontVariantNumeric: "tabular-nums" }}>{tb.count}</span>
+                    <span
+                      style={{
+                        marginLeft: 6, padding: "1px 7px", borderRadius: 999, fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums",
+                        background: attention ? t.indigo100 : t.creamSoft, color: attention ? t.indigoDeep : t.inkSoft,
+                      }}
+                    >
+                      {tb.count}
+                    </span>
                   )}
                 </button>
               );
@@ -232,6 +245,9 @@ function TeamConsole() {
               showActivity={canSeeActivity && !compact}
               compact={compact}
               soleOwner={myRole === "owner" && owners <= 1}
+              canInvite={canInvite}
+              seatsFull={seatsFull}
+              onInvite={openInvite}
               onCommand={onCommand}
               busyId={busyId}
             />
@@ -240,9 +256,10 @@ function TeamConsole() {
             <InvitesTab
               invites={team.invites}
               canInvite={canInvite}
+              seatsFull={seatsFull}
               onResend={resend}
               onRevoke={revoke}
-              onInviteClick={() => { setInviting(true); setTab("members"); }}
+              onInviteClick={openInvite}
               busyId={busyId}
             />
           )}

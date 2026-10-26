@@ -4,11 +4,13 @@ import { useId, useRef, useState } from "react";
 import { CheckIcon, CopyIcon, XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SegmentedControl } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import {
   INVITE_TTL_DAYS, ROLE_BLURB, ROLE_LABEL, isValidEmail, normalizeEmail, type InvitableRole,
 } from "../../../server-handlers/_employer-team-helpers";
 import type { ActionOutcome, InviteResult, TeamAction } from "../useTeam";
+import { PAD } from "./TeamParts";
 
 const ORDER: InvitableRole[] = ["admin", "member", "viewer"];
 
@@ -55,9 +57,12 @@ export default function InvitePanel({
   };
 
   return (
-    <section aria-label="Invite a teammate" style={{ background: t.creamRaised, borderBottom: `1px solid ${t.line}`, padding: "20px 28px 22px" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
-        <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Invite a teammate</h2>
+    <section aria-label="Invite a teammate" className={PAD} style={{ background: t.creamRaised, borderBottom: `1px solid ${t.line}`, paddingTop: 18, paddingBottom: 20 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
+        <div>
+          <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Invite a teammate</h2>
+          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "2px 0 0" }}>They get an email with a link that works for {INVITE_TTL_DAYS} days.</p>
+        </div>
         <Button type="button" variant="ghost" size="icon" aria-label="Close invite form" onClick={onClose}>
           <XIcon aria-hidden="true" />
         </Button>
@@ -93,31 +98,16 @@ export default function InvitePanel({
           {validationError || error}
         </p>
 
-        <fieldset style={{ border: 0, padding: 0, margin: "16px 0 0" }}>
-          <legend style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.inkSoft, padding: 0, marginBottom: 6 }}>Role</legend>
-          <div style={{ display: "flex", flexDirection: "column", borderTop: `1px solid ${t.line}` }}>
-            {options.map((r) => (
-              <label
-                key={r}
-                style={{
-                  display: "flex", alignItems: "baseline", gap: 12, padding: "10px 2px", cursor: "pointer",
-                  borderBottom: `1px solid ${t.line}`, flexWrap: "wrap",
-                }}
-              >
-                <input
-                  type="radio"
-                  name={`${groupId}-role`}
-                  value={r}
-                  checked={role === r}
-                  onChange={() => setRole(r)}
-                  style={{ accentColor: t.indigo, margin: 0, alignSelf: "center" }}
-                />
-                <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, minWidth: 64 }}>{ROLE_LABEL[r]}</span>
-                <span style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, flex: "1 1 220px" }}>{ROLE_BLURB[r]}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div style={{ margin: "14px 0 0", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span aria-hidden="true" style={{ fontFamily: f.sans, fontSize: 12, fontWeight: 600, color: t.inkSoft }}>Role</span>
+          <SegmentedControl
+            ariaLabel="Role"
+            value={role}
+            onChange={setRole}
+            options={options.map((r) => ({ value: r, label: ROLE_LABEL[r] }))}
+          />
+          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, flex: "1 1 240px", lineHeight: 1.5 }}>{ROLE_BLURB[role]}</p>
+        </div>
       </form>
 
       {sent && (

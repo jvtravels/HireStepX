@@ -7,13 +7,14 @@ import { Badge } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import type { TeamInvite } from "../useTeam";
 import { daysUntil } from "../teamActivity";
-import { RoleBadge, muted } from "./TeamParts";
+import { EmptyBlock, PAD, PersonAvatar, RoleBadge, muted } from "./TeamParts";
 
 export default function InvitesTab({
-  invites, canInvite, onResend, onRevoke, onInviteClick, busyId,
+  invites, canInvite, seatsFull, onResend, onRevoke, onInviteClick, busyId,
 }: {
   invites: TeamInvite[];
   canInvite: boolean;
+  seatsFull: boolean;
   onResend: (invite: TeamInvite) => Promise<string | null>;
   onRevoke: (invite: TeamInvite) => void;
   onInviteClick: () => void;
@@ -25,16 +26,12 @@ export default function InvitesTab({
 
   if (open.length === 0) {
     return (
-      <div style={{ padding: "56px 28px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 6 }}>
-        <span aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 12, background: t.creamSoft, color: t.inkSoft, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: 6 }}>
-          <MailIcon size={18} />
-        </span>
-        <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>No pending invites</h2>
-        <p style={{ ...muted, maxWidth: 360 }}>Invites you send show up here until they&apos;re accepted, revoked or expired.</p>
-        {canInvite && (
-          <Button type="button" variant="outline" size="lg" className="mt-3 h-9 px-4" onClick={onInviteClick}>Invite a teammate</Button>
-        )}
-      </div>
+      <EmptyBlock
+        icon={<MailIcon size={18} />}
+        title="No pending invites"
+        body="People you invite show up here until they accept, you revoke the invite, or it expires."
+        action={canInvite && <Button type="button" size="lg" className="h-9 px-4" disabled={seatsFull} onClick={onInviteClick}>Invite a teammate</Button>}
+      />
     );
   }
 
@@ -49,18 +46,19 @@ export default function InvitesTab({
         const left = daysUntil(inv.expiresAt);
         const busy = busyId === inv.id;
         return (
-          <li key={inv.id} style={{ padding: "14px 28px", borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.email}</span>
-                  <RoleBadge role={inv.role} />
-                  <Badge tone={expired ? "warning" : "neutral"}>{expired ? "Expired" : "Pending"}</Badge>
-                </div>
+          <li key={inv.id} className={PAD} style={{ paddingTop: 14, paddingBottom: 14, borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+              <PersonAvatar seed={inv.id} label={inv.email} />
+              <div style={{ flex: "1 1 240px", minWidth: 0 }}>
+                <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{inv.email}</div>
                 <p style={{ ...muted, fontSize: 12, marginTop: 2 }}>
                   {inv.invitedByName ? `Invited by ${inv.invitedByName} · ` : ""}
-                  {expired ? "Send a new invite to reopen access." : left <= 1 ? "Expires today" : `Expires in ${left} days`}
+                  {expired ? "Expired. Send again to reopen access." : left <= 1 ? "Expires today" : `Expires in ${left} days`}
                 </p>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <RoleBadge role={inv.role} />
+                <Badge tone={expired ? "warning" : "neutral"}>{expired ? "Expired" : "Pending"}</Badge>
               </div>
               {canInvite && (
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -75,7 +73,7 @@ export default function InvitesTab({
               )}
             </div>
             {links[inv.id] && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, paddingLeft: 50 }}>
                 <code style={{ flex: 1, minWidth: 0, fontFamily: f.mono, fontSize: 12, color: t.inkSoft, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 8, padding: "7px 10px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {links[inv.id]}
                 </code>
