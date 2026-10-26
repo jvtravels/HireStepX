@@ -437,7 +437,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
         </div>
       </section>
       <div className="hx-wrap">
-        <p className="sx-peer" style={{ margin: "0 0 8px" }}>Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
+        <p className="sx-peer sx-peer-note">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
       </div>
       <Faqs items={faqs} />
       <div className="hx-wrap sx-after">
@@ -710,6 +710,7 @@ const sxCss = `
 .sx-badge[data-tier="high"] { background: oklch(0.94 0.05 160); color: oklch(0.38 0.1 160); }
 .sx-badge[data-tier="medium"] { background: oklch(0.95 0.05 85); color: oklch(0.42 0.09 75); }
 .sx-tip, .sx-peer { margin: 0 0 14px; font-size: 16px; line-height: 1.6; color: var(--ink-2); }
+.sx-peer.sx-peer-note { margin-bottom: 8px; }
 .sx-tip b { color: var(--ink); }
 .sx-snap { margin-top: 56px; }
 .sx-snap dl { display: grid; gap: 0; margin: 0; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
