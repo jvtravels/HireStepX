@@ -134,7 +134,7 @@ describe("edit form shows every stored value", () => {
     expect(label(/availability/i)).toHaveValue("Immediate");
     expect(label(/relevant experience/i)).toHaveValue("3+ years");
     expect(screen.getByRole("checkbox", { name: /portfolio required/i })).toHaveAttribute("aria-checked", "false");
-    expect(label(/minimum readiness/i)).toHaveTextContent("Hire or better");
+    expect(label(/minimum readiness/i)).toHaveTextContent("Interview ready or better");
     expect(label(/minimum star/i)).toHaveValue("60");
   });
 });
@@ -171,7 +171,7 @@ describe("edit form → PATCH handler → stored columns", () => {
     change(/availability/i, "2 weeks");
     change(/relevant experience/i, "5+ years");
     fireEvent.click(screen.getByRole("checkbox", { name: /portfolio required/i }));
-    pick(/minimum readiness/i, "Strong hire only");
+    pick(/minimum readiness/i, "Strong interview readiness only");
     change(/minimum star/i, "75");
 
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
@@ -241,7 +241,7 @@ describe("detail page shows every saved field", () => {
       "Other skills", "Preferred colleges", "Target companies", "Perks and benefits",
     ]);
     const byLabel = Object.fromEntries(roleDetailRows(STORED).map((r) => [r.label, r]));
-    expect(byLabel["Minimum readiness"].text).toBe("Hire or better");
+    expect(byLabel["Minimum readiness"].text).toBe("Interview ready or better");
     expect(byLabel["Minimum STAR completeness"].text).toBe("60%");
     expect(byLabel["Perks and benefits"].tags).toEqual(["Insurance"]);
   });

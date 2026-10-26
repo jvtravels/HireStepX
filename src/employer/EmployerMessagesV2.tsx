@@ -650,7 +650,7 @@ export default function EmployerMessagesV2() {
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {evidence.readiness && (
                           <Badge tone={evidence.readiness.band === "strongHire" ? "success" : evidence.readiness.band === "hire" ? "brand" : "neutral"}>
-                            {evidence.readiness.band === "strongHire" ? "Strong hire" : evidence.readiness.band === "hire" ? "Hire" : "Lean hire"} readiness · {evidence.readiness.confidence} confidence
+                            {evidence.readiness.band === "strongHire" ? "Strong interview" : evidence.readiness.band === "hire" ? "Interview" : "Near interview"} readiness · {evidence.readiness.confidence} confidence
                           </Badge>
                         )}
                         {evidence.starCompleteness && (

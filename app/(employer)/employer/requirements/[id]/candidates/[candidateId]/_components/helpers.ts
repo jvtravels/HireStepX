@@ -8,9 +8,9 @@ import type { DotTone } from "@/employer/_panelParts";
    fields the API actually returns — no synthesized or seeded values. */
 
 export const READINESS_LABEL: Record<"strongHire" | "hire" | "leanHire", string> = {
-  strongHire: "Strong hire",
-  hire: "Hire",
-  leanHire: "Lean hire",
+  strongHire: "Strong interview readiness",
+  hire: "Interview ready",
+  leanHire: "Nearly interview ready",
 };
 export const PROVENANCE = "Scored by HireStepX AI from graded practice sessions";
 

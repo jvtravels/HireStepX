@@ -9567,7 +9567,7 @@ export const SEO_PAGES: SeoPage[] = [
 /** Last significant content update, bump whenever SEO_PAGES entries are added
  *  or intro/framework text is rewritten. Shared by sitemap.ts and the question
  *  page Article schema so dateModified is never duplicated out of sync. */
-export const SEO_PAGES_LAST_MODIFIED = "2026-08-01";
+export const SEO_PAGES_LAST_MODIFIED = "2026-10-26";
 
 /** Lookup helper. */
 export function getSeoPageBySlug(slug: string): SeoPage | undefined {

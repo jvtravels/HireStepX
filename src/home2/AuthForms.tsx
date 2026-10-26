@@ -414,7 +414,7 @@ export function StagingLoginForm() {
     : error || errorParamMessage;
 
   return (
-    <div className="hx-au-inner">
+    <main className="hx-au-inner">
       <style>{authFormsCss}</style>
       <h1 id="login-heading">Welcome back</h1>
       <p className="hx-sub">
@@ -506,7 +506,7 @@ export function StagingLoginForm() {
         <a href="/terms" target="_blank" rel="noopener noreferrer">Terms</a> and{" "}
         <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
       </p>
-    </div>
+    </main>
   );
 }
 
@@ -736,7 +736,7 @@ export function StagingSignupForm() {
   }
 
   return (
-    <div className="hx-au-inner">
+    <main className="hx-au-inner">
       <style>{authFormsCss}</style>
       <h1 id="signup-heading">{isEmployerFlow ? "Create a company account" : "Create your account"}</h1>
       <p className="hx-sub">{isEmployerFlow ? "Find candidates who have practised." : "Practise with an AI interviewer and get a scored report."}</p>
@@ -914,7 +914,7 @@ export function StagingSignupForm() {
         </button>
         {!isEmployerFlow && <p className="hx-note hx-trial">2 sessions free · No card needed</p>}
       </form>
-    </div>
+    </main>
   );
 }
 
