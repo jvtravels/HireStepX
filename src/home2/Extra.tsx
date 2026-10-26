@@ -100,7 +100,7 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-export function FaqBlock({ id, title, qa, stage, jsonLd = true }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode; jsonLd?: boolean }) {
+export function FaqBlock({ id, title, qa, stage, jsonLd = true, kicker = "Questions" }: { id?: string; kicker?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode; jsonLd?: boolean }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
@@ -110,7 +110,7 @@ export function FaqBlock({ id, title, qa, stage, jsonLd = true }: { id?: string;
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="hx-tr">
           <div className="hx-tr-l">
-            <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>Questions</span>
+            <span className="hx-kicker hx-ri" style={{ ["--i" as string]: 0 }}>{kicker}</span>
             <h2 className="hx-h2 hx-pt hx-ri" style={{ ["--i" as string]: 1 }}>{title}</h2>
             {stage && <div className="hx-fst"><Skel replayKey={shown}>{stage(shown)}</Skel></div>}
           </div>

@@ -78,9 +78,18 @@ function fmtDate(iso: string) {
   return new Date(iso + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-export function Faqs({ items }: { items: { q: string; a: string }[] }) {
+export type FaqKind = "article" | "salary" | "questions" | "hub";
+const FAQ_COPY: Record<FaqKind, { kicker: string; title: React.ReactNode }> = {
+  article: { kicker: "Quick answers", title: <>Before you close <b>this tab</b>.</> },
+  salary: { kicker: "Pay, explained", title: <>What the numbers <b>really mean</b>.</> },
+  questions: { kicker: "Prep notes", title: <>How to <b>walk in ready</b>.</> },
+  hub: { kicker: "Good to know", title: <>The short <b>version</b>.</> },
+};
+
+export function Faqs({ items, kind = "hub" }: { items: { q: string; a: string }[]; kind?: FaqKind }) {
   if (items.length === 0) return null;
-  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
+  const c = FAQ_COPY[kind];
+  return <FaqBlock id="faq" kicker={c.kicker} title={c.title} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
 }
 
 const HUBS = [
@@ -265,7 +274,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
           </article>
         </div>
       </section>
-      <Faqs items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
+      <Faqs kind="article" items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
       <div className="hx-wrap sx-after">
         <Explore links={explore} />
         {related.length > 0 && (
@@ -480,7 +489,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
       <div className="hx-wrap">
         <p className="sx-peer sx-peer-note">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
       </div>
-      <Faqs items={faqs} />
+      <Faqs kind="salary" items={faqs} />
       <Hubs />
       <Close kicker="Negotiate" title={<>Walk in knowing <b>your number</b>.</>} body={`Practise the salary conversation with an AI recruiter before the real one, using the ${label} bands above.`} primary={["Practise negotiation", signup]} />
     </Shell>
@@ -605,7 +614,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           </aside>
         </div>
       </section>
-      <Faqs items={visibleFaqs} />
+      <Faqs kind="questions" items={visibleFaqs} />
       <div className="hx-wrap sx-after">
         <Related
           title="More to read"
