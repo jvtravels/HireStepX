@@ -58,7 +58,7 @@ const SAMPLE_BARS: ReadonlyArray<{ label: string; pct: number }> = [
 const VALUE_CARDS: ReadonlyArray<{ title: string; body: string }> = [
   { title: "AI-matched, not keyword-matched", body: "Candidates are ranked on how well their role and skills fit your job, plus, where they have completed practice sessions, the results: STAR structure, answer depth and readiness." },
   { title: "Pay only to unlock a contact", body: `Browse match scores, skill breakdowns, practice evidence and resume detail for free. Unlock a batch of ${UNLOCK_BUNDLE_SIZE} for ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, or one candidate for ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}. Pay as you go, no subscription.` },
-  { title: "Fair to candidates too", body: "Candidates control whether employers can discover them, and can block or report an employer. Until you unlock a candidate you see their resume and practice evidence under \"Candidate #…\", without their name, contact details or links. Employers self-serve sign up and are placed in verification tiers." },
+  { title: "Fair to candidates too", body: "Candidates are discoverable by default under a masked ID, and can opt out, block or report an employer. Until you unlock a candidate you see their resume and practice evidence under \"Candidate #…\", without their name, contact details or links. Employers self-serve sign up and are placed in verification tiers." },
 ];
 
 export default function EmployersLandingPage() {
