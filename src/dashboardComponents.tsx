@@ -399,6 +399,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         amount: data.amount,
         currency: data.currency,
         name: "HireStepX",
+        image: "https://hirestepx.com/favicon-512.png",
         description: data.description,
         order_id: data.orderId,
         prefill: { email: user?.email || "", name: user?.name || "" },

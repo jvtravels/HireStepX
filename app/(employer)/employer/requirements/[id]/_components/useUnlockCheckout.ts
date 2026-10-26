@@ -115,6 +115,7 @@ export function useUnlockCheckout({
           amount: order.data.amount,
           currency: order.data.currency,
           name: order.data.name,
+          image: "https://hirestepx.com/favicon-512.png",
           description: order.data.description,
           order_id: order.data.orderId,
           theme: { color: t.indigo },

@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   manifest: "/manifest.json",
-  icons: [{ url: "/favicon.svg?v=2", type: "image/svg+xml" }],
+  icons: [{ url: "/favicon.svg?v=3", type: "image/svg+xml" }, { url: "/favicon.ico?v=3", sizes: "48x48" }],
   openGraph: {
     type: "website",
     url: "https://hirestepx.com/",
