@@ -709,8 +709,23 @@ export const resourcesCss = sceneCss + `
 @keyframes lb-up { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes lb-pop { from { opacity: 0; transform: translateY(-4px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes lb-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.lb-card:hover .lb-doc i:not(.h):not(.blk), .lb-card:focus-within .lb-doc i:not(.h):not(.blk) { animation: lb-write .6s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--n, 0) * 70ms); }
+.lb-doc i:nth-child(2) { --n: 1; } .lb-doc i:nth-child(3) { --n: 2; } .lb-doc i:nth-child(5) { --n: 3; } .lb-doc i:nth-child(6) { --n: 4; }
+.lb-card:hover .lb-q, .lb-card:focus-within .lb-q { animation: lb-float 2.4s ease-in-out infinite; }
+.lb-card:hover .lb-stars b, .lb-card:focus-within .lb-stars b { animation: lb-pop .5s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 90ms); }
+.lb-card:hover .lb-bars i, .lb-card:focus-within .lb-bars i { animation: lb-rise .7s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.lb-card:hover .lb-skyline i, .lb-card:focus-within .lb-skyline i { animation: lb-rise .7s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 60ms); transform-origin: bottom; }
+.lb-card:hover .lb-pin, .lb-card:focus-within .lb-pin { animation: lb-bob 1.4s ease-in-out infinite; }
+.lb-card:hover .lb-steps i, .lb-card:focus-within .lb-steps i { animation: lb-pop .5s cubic-bezier(.16,1,.3,1) both; animation-delay: calc(var(--i, 0) * 90ms); }
+.lb-card:hover .lb-vtag, .lb-card:focus-within .lb-vtag { transform: translateY(-2px); }
+.lb-vtag { transition: transform .3s cubic-bezier(.16,1,.3,1); }
+@keyframes lb-write { from { transform: scaleX(.25); } to { transform: scaleX(1); } }
+@keyframes lb-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+@keyframes lb-pop { 0% { transform: translateY(0) scale(1); } 45% { transform: translateY(-5px) scale(1.12); } 100% { transform: translateY(-3px) scale(1); } }
+@keyframes lb-rise { from { transform: scaleY(.45); } to { transform: scaleY(1.18); } }
+@keyframes lb-bob { 0%, 100% { transform: rotate(-45deg) translate(3px, -3px); } 50% { transform: rotate(-45deg) translate(5px, -5px); } }
 @keyframes lb-eq { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.35); } }
-@media (prefers-reduced-motion: reduce) { .lb-hero .hx-h1, .lb-ddmenu, .lb-panel, .lb-num, .lb-grid li, .lb-fill, .lb-pill, .lb-drop, .lb-eq i { animation: none !important; } .lb-tabs::before, .lb-tab, .lb-swap svg, .lb-ddbtn svg, .lb-card, .lb-go, .lb-doc i, .lb-range i, .lb-range u, .lb-path, .lb-steps i, .v-question b { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .lb-hero .hx-h1, .lb-ddmenu, .lb-panel, .lb-num, .lb-grid li, .lb-fill, .lb-pill, .lb-drop, .lb-eq i, .lb-card .lb-vis * { animation: none !important; } .lb-tabs::before, .lb-tab, .lb-swap svg, .lb-ddbtn svg, .lb-card, .lb-go, .lb-doc i, .lb-range i, .lb-range u, .lb-path, .lb-steps i, .v-question b { transition: none; } }
 @container (max-width: 900px) {
   .lb-hero { padding-bottom: 48px; }
   .lb-hero .hx-h1 { font-size: 34px; margin-top: 20px; }
