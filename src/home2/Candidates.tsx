@@ -97,7 +97,6 @@ function CandHero() {
     <section className="cx-hero">
       <div ref={ref} className={`hx-wrap cx-hero-in hx-rv${on ? " on" : ""}`}>
         <div className="cx-copy">
-          <span className="hx-kicker hx-ri" style={delay(0)}>For candidates</span>
           <h1 className="cx-h1 hx-ri" style={delay(1)}>Practise the interview. <b>Get shortlisted</b> by recruiters.</h1>
           <p className="cx-lede hx-ri" style={delay(2)}>Answer interview questions out loud and get a score with simple tips. Recruiters hiring for your skills can then see your proof.</p>
           <div className="cx-cta hx-ri" style={delay(3)}>
