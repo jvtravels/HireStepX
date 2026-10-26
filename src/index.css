@@ -27,7 +27,7 @@
 
 @custom-variant dark (&:is(.dark *));
 :root {
-  --font-ui: 'Geist Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 
   /* ── Typography scale (8 stops) ──────────────────────────────────────────
    * Ratio ≈ 1.25 (major third). Use these for NEW code; existing hardcoded
@@ -278,7 +278,7 @@ button:not(:disabled), [role="button"]:not([aria-disabled="true"]) {
   padding: 12px 24px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-family: "Geist Sans", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
   border-radius: 10px;
@@ -307,7 +307,7 @@ html {
 
 body {
   margin: 0;
-  font-family: "Geist Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background: var(--background);
@@ -342,7 +342,7 @@ body {
   padding: 12px 24px;
   background: var(--primary);
   color: var(--primary-foreground);
-  font-family: "Geist Sans", system-ui, sans-serif;
+  font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 600;
   border-radius: 0 0 8px 8px;
@@ -771,7 +771,7 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid oklch(from var(--background) l c h / 0.06);
   border-radius: 10px;
   color: var(--foreground);
-  font-family: "Geist Sans", system-ui, sans-serif;
+  font-family: var(--font-ui);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 .glass-input:focus {
