@@ -536,9 +536,9 @@ export function RequirementForm({
                 <SelectTrigger id="rf-readiness" className={SELECT_FIELD}><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No minimum</SelectItem>
-                  <SelectItem value="leanHire">Lean hire or better</SelectItem>
-                  <SelectItem value="hire">Hire or better</SelectItem>
-                  <SelectItem value="strongHire">Strong hire only</SelectItem>
+                  <SelectItem value="leanHire">Nearly interview ready or better</SelectItem>
+                  <SelectItem value="hire">Interview ready or better</SelectItem>
+                  <SelectItem value="strongHire">Strong interview readiness only</SelectItem>
                 </SelectContent>
               </Select>
             </div>

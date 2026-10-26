@@ -216,9 +216,9 @@ export function canReject(c: Candidate): boolean {
 }
 
 const READINESS_LABEL: Record<NonNullable<Requirement["minReadinessBand"]>, string> = {
-  leanHire: "Lean hire or better",
-  hire: "Hire or better",
-  strongHire: "Strong hire only",
+  leanHire: "Nearly interview ready or better",
+  hire: "Interview ready or better",
+  strongHire: "Strong interview readiness only",
 };
 
 export interface RoleDetailRow {

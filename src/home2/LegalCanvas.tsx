@@ -17,7 +17,7 @@ function PrivacyBody() {
       <p>To run the product. The resume tunes the AI's questions to your background. The transcripts power scoring and the report you read after each session. Email is for login, receipts, and support replies.</p>
 
       <h2>How long we keep it</h2>
-      <p>Transcripts auto-delete after 90 days unless you explicitly save a session. Account data persists until you delete your account, after which it's purged within 30 days.</p>
+      <p>Your resume, transcripts, scores, and reports are kept until you delete your account. We do not run an automatic transcript-deletion job. When you delete your account, you can restore it by signing in within 7 days; after that your profile, sessions, transcripts, and resume are permanently deleted, and copies in backups are overwritten within 30 days.</p>
 
       <h2>Who we share with</h2>
       <p>We do not sell your data, and we do not share your transcripts, scores, or resume with colleges, advertisers, or other third parties. The one exception is employers on HireStepX, covered in the next section. We use the following third-party sub-processors, each under a data-processing agreement that prevents retention or use beyond what we authorise:</p>

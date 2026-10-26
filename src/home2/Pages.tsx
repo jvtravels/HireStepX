@@ -444,7 +444,7 @@ function HowScene({ n }: { n: number }) {
     <Win left="Backend Engineer" right="Sample · Compare" alt="Two candidates opened side by side with their skill scores">
       <div className="pg-body hs-two">
         <div className="hs-col">
-          <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Hire</span></div><span className="sc"><ScoreChip score={97} /></span></div>
+          <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Interview ready</span></div><span className="sc"><ScoreChip score={97} /></span></div>
           <SkillBars rows={HS_SKILLS} start={0.3} />
           <Summary at={1.6}>Clear, structured answers. Strong on Node.js and database design, with a calm, specific style under follow-ups.</Summary>
         </div>
