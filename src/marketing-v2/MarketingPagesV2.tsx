@@ -739,9 +739,9 @@ export function PricingPageV2() {
             Not sure what to practice?{" "}
             <a href="/questions" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Browse question sets →</a>
             {" · "}
-            <a href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Campus placement guide →</a>
+            <a href="/candidates" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>Campus placement guide →</a>
             {" · "}
-            <a href="/how-it-works" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See how it works →</a>
+            <a href="/" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See how it works →</a>
           </p>
         </div>
       </section>
@@ -1124,7 +1124,7 @@ export function AboutV2() {
               Browse practice questions →
             </a>
             <a
-              href="/for-students"
+              href="/candidates"
               style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 600, color: t.coal, background: "transparent", border: `1px solid ${t.line}`, padding: "12px 22px", borderRadius: 8, textDecoration: "none", display: "inline-block" }}
             >
               Campus placement guide →
@@ -1826,7 +1826,7 @@ export function PrivacyV2() {
       <p><strong>What an employer gets by unlocking.</strong> An employer can pay to unlock a candidate. Unlocking releases your name, email, phone, LinkedIn, portfolio links and the original resume file you uploaded (if any) to that employer, lets them message you through HireStepX, and shows them your resume and practice answers without the name and contact removals described above. Employers sign up on their own and have different verification levels; we do not vet every employer, so treat outreach with the same care you would give any job approach. Employers agree to use candidate data only to evaluate and contact you about the role, and not to resell it or send unrelated bulk messages (see the <a href="/terms#employers">employer terms</a>).</p>
       <p><strong>Switching it off.</strong> When you switch discovery off, you are removed from employer search and from new matches immediately. An unlock an employer has already paid for stays valid and they keep the details they received, but they see nothing new from you and cannot contact you again after you switch it off. We keep a record of when you turned discovery on or off, which you can see in Settings. You can also block or report a specific employer from your Jobs or Messages screens; blocked employers can no longer see or contact you.</p>
       <p><strong>Retention.</strong> Employer discovery uses the same practice data described above, so it follows the same retention. Deleting your account removes you from employer discovery.</p>
-      <p><strong>Questions or complaints.</strong> Contact our <a href="/grievance">Grievance Officer</a>.</p>
+      <p><strong>Questions or complaints.</strong> Contact our <a href="/privacy#grievance-officer">Grievance Officer</a>.</p>
 
       {/* "As long as tax law requires" is deliberate: a CA must confirm the period before any number is published. */}
       <h2 id="employer-data">Employer data</h2>
@@ -1902,7 +1902,7 @@ export function TermsV2() {
       <p>To the maximum extent permitted by law, our total liability for any claim arising from your use of HireStepX is limited to the amount you paid us in the 12 months preceding the claim.</p>
 
       <h2>Complaints and governing law</h2>
-      <p>Write to our <a href="/grievance">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
+      <p>Write to our <a href="/privacy#grievance-officer">Grievance Officer</a> at <CopyEmailLink email="grievance@hirestepx.com" />. We acknowledge within 24 hours and resolve within 15 days. These terms are governed by the laws of India. Disputes go to the courts of Bengaluru, Karnataka.</p>
 
       <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (minimum age 18, employer terms added, complaint timelines unified); 10 October 2026." />
     </LegalPage>
@@ -1937,7 +1937,7 @@ export function RefundPolicyV2() {
       <p>Email <CopyEmailLink email="hello@hirestepx.com" /> with your account email and order ID. We process refunds within 5 working days to the original payment method. Razorpay typically takes another 3 to 7 working days to reflect the credit on your bank statement.</p>
 
       <h2>Disputes</h2>
-      <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours. For any other complaint, write to the <a href="/grievance">Grievance Officer</a>: we acknowledge within 24 hours and resolve within 15 days.</p>
+      <p>If you believe a session was scored unfairly and want a refund of just that session's credit, hit the "Dispute score" link inside the session report. We review every dispute within 24 hours. For any other complaint, write to the <a href="/privacy#grievance-officer">Grievance Officer</a>: we acknowledge within 24 hours and resolve within 15 days.</p>
 
       <PolicyChanges history="18 October 2026 (employer credit on account deletion); 11 October 2026 (employer unlock refunds added); 30 May 2026." />
     </LegalPage>

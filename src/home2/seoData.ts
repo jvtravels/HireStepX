@@ -10,6 +10,7 @@ import { getAutoLinks } from "../blogAutoLinks";
 import { buildSalaryPageModel } from "../../app/(marketing)/salary/[company]/_jsonld";
 import { buildQuestionsPageModel } from "../../app/(marketing)/questions/[slug]/_jsonld";
 import type { ArticleTemplateProps, SalaryTemplateProps } from "./SeoTemplates";
+import { questionHref } from "../seoLinks";
 
 export function articlePost(slug: string): BlogPost | undefined {
   return BLOG_POSTS.find((p) => p.slug === slug);
@@ -24,7 +25,7 @@ export function articleProps(post: BlogPost): ArticleTemplateProps {
     seen.add(href);
     explore.push({ label, href });
   };
-  for (const { label, slug } of post.practicePageSlugs ?? []) add(label, `/questions/${slug}`);
+  for (const { label, slug } of post.practicePageSlugs ?? []) add(label, questionHref(slug));
   for (const l of post.relatedLinks ?? []) add(l.label, l.href);
   for (const l of getAutoLinks(post)) add(l.label, l.href);
   return { post, explore: explore.slice(0, 6), related: getBlogMetasBySlugs(post.relatedSlugs) };

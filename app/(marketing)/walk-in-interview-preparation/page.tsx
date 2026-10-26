@@ -223,8 +223,8 @@ export default async function WalkInInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "Campus Placement Preparation Guide", href: "/for-students" },
-                { label: "How It Works: 5 Steps", href: "/how-it-works" },
+                { label: "Campus Placement Preparation Guide", href: "/candidates" },
+                { label: "How It Works: 5 Steps", href: "/" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

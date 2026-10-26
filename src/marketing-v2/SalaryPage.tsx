@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
+import { questionHref } from "../seoLinks";
 
 /* PRI-150: rotate a few hand-written phrasings for the templated sentences
    below so 224 salary pages built from one skeleton don't read as
@@ -517,8 +518,8 @@ export function SalaryCompanyPage({
 }: SalaryPageProps) {
   const hasSnapshot = Boolean(scale || interviewNotes || (products && products.length > 0));
   const hasRoles = roles.length > 0;
-  const questionHref = questionPageSlug
-    ? `/questions/${questionPageSlug}`
+  const practiceHref = questionPageSlug
+    ? questionHref(questionPageSlug)
     : "/questions";
 
   /* Headline figure — the single number visitors came for, surfaced in the
@@ -860,7 +861,7 @@ export function SalaryCompanyPage({
                 real percentile, not a guess. In the meantime, practice the actual
                 interview so you walk in ready regardless of the number.
               </p>
-              <a href={questionHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
+              <a href={practiceHref} className="ed-cta" style={ctaPrimaryStyle("md")}>
                 Practice {companyLabel} interview questions <span className="ed-cta-arrow" aria-hidden>→</span>
               </a>
             </div>
@@ -881,7 +882,7 @@ export function SalaryCompanyPage({
                   </li>
                 ))}
               </ol>
-              <a href={`/questions/${interviewTeaser.questionSlug}`} style={ctaGhostStyle("md")}>
+              <a href={questionHref(interviewTeaser.questionSlug)} style={ctaGhostStyle("md")}>
                 Full {companyLabel} interview guide →
               </a>
             </div>
@@ -899,7 +900,7 @@ export function SalaryCompanyPage({
             }}
           >
             <a
-              href={questionHref}
+              href={practiceHref}
               style={ctaPrimaryStyle("md")}
             >
               Practice {companyLabel} Interview Questions →

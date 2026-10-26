@@ -222,7 +222,7 @@ export default async function TelephonicInterviewPage() {
                 { label: "BPO Interview Questions & Answers", href: "/bpo-interview-questions" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
                 { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers" },
-                { label: "How It Works: 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

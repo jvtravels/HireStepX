@@ -137,7 +137,7 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
         An employer who has already paid to unlock your details keeps what they paid for, but can&apos;t see anything new
         or contact you again. You can also{" "}
         <strong style={{ fontWeight: 600 }}>block or report</strong> a specific employer from Jobs or Messages. Questions or complaints:{" "}
-        <a href="/grievance" className="underline underline-offset-4" style={{ color: t.indigo }}>Grievance Officer</a>.
+        <a href="/privacy#grievance-officer" className="underline underline-offset-4" style={{ color: t.indigo }}>Grievance Officer</a>.
         See the <a href="/privacy" className="underline underline-offset-4" style={{ color: t.indigo }}>Privacy Policy</a>.
       </p>
 

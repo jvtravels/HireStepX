@@ -5,6 +5,7 @@ import { COMPANY_LABEL } from "../../data/company-labels";
 import { seoHubItems } from "./seoHubItems";
 import type { Item } from "./resourcesData";
 import { CARD_REDIRECTS } from "./cardRedirects";
+import { questionHref } from "../seoLinks";
 
 const label = (slug: string) => COMPANY_LABEL[slug] ?? slug.charAt(0).toUpperCase() + slug.slice(1);
 
@@ -21,7 +22,7 @@ export function buildResourceItems(): Item[] {
     k: "salary", t: p.searchPhrase, h: `/salary/${p.slug}`, co: salaryCompanyLabel(p.slug), tag: "Salary", d: p.hubNote,
   }));
   const questions: Item[] = SEO_PAGES.map((p) => ({
-    k: "question", t: p.searchPhrase, h: `/questions/${p.slug}`, co: label(p.company), role: p.roleFamily, focus: p.focus,
+    k: "question", t: p.searchPhrase, h: questionHref(p.slug), co: label(p.company), role: p.roleFamily, focus: p.focus,
   }));
   const companies: Item[] = [...new Set(SEO_PAGES.map((p) => p.company))].map((c) => ({
     k: "company", t: `${label(c)} interview guide`, h: `/companies/${c}`, co: label(c),

@@ -223,7 +223,7 @@ export default async function BpoInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
-                { label: "How It Works: 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

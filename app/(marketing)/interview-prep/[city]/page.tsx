@@ -9,6 +9,7 @@ import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { buildInterviewPrepCityJsonLd } from "./_jsonld";
+import { questionHref } from "../../../../src/seoLinks";
 
 /* /interview-prep/[city] — city-specific interview prep landing pages.
  *
@@ -175,7 +176,7 @@ export default async function CityInterviewPrepPage({
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
               {companyLinks.map((c) => (
                 <li key={c.key}>
-                  <Link href={`/questions/${c.slug}`} style={{
+                  <Link href={questionHref(c.slug)} style={{
                     display: "block", padding: "14px 16px",
                     background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
                     textDecoration: "none", color: t.coal, fontSize: 14, fontWeight: 500,

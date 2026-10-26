@@ -30,7 +30,8 @@ import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_js
  */
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://hirestepx.com";
-  const now = new Date();
+  /* Stable, not build time: a lastmod that changes on every deploy trains Google to ignore it. */
+  const staticLastModified = new Date(SEO_PAGES_LAST_MODIFIED);
   /* Stable date for SEO pages — bumped only when SEO_PAGES changes
      materially (new pages, intro rewrites). Hardcoded so the build
      isn't a freshness signal in itself. */
@@ -41,32 +42,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const seoPagesLastModified = new Date(SEO_PAGES_LAST_MODIFIED);
 
   const staticEntries: MetadataRoute.Sitemap = [
-    { url: `${baseUrl}/`, lastModified: now, changeFrequency: "weekly", priority: 1.0 },
-    { url: `${baseUrl}/pricing`, lastModified: now, changeFrequency: "monthly", priority: 0.9 },
-    { url: `${baseUrl}/employers`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
-    { url: `${baseUrl}/candidates`, lastModified: now, changeFrequency: "monthly", priority: 0.85 },
-    { url: `${baseUrl}/resources`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
-    { url: `${baseUrl}/legal`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/`, lastModified: staticLastModified, changeFrequency: "weekly", priority: 1.0 },
+    { url: `${baseUrl}/pricing`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.9 },
+    { url: `${baseUrl}/employers`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${baseUrl}/candidates`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.85 },
+    { url: `${baseUrl}/resources`, lastModified: staticLastModified, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/legal`, lastModified: staticLastModified, changeFrequency: "yearly", priority: 0.3 },
     /* Pillar pages — high topical authority, link to all company/focus trees */
-    { url: `${baseUrl}/ai-mock-interview`, lastModified: now, changeFrequency: "monthly", priority: 0.93 },
-    { url: `${baseUrl}/interview-prep`, lastModified: now, changeFrequency: "monthly", priority: 0.92 },
-    { url: `${baseUrl}/interview-anxiety`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${baseUrl}/english-interview-practice`, lastModified: now, changeFrequency: "monthly", priority: 0.8 },
-    { url: `${baseUrl}/telephonic-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/walk-in-interview-preparation`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/one-way-video-interview-practice`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/bpo-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/bank-po-interview-questions`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/mba-personal-interview-preparation`, lastModified: now, changeFrequency: "monthly", priority: 0.75 },
-    { url: `${baseUrl}/companies`, lastModified: now, changeFrequency: "monthly", priority: 0.88 },
-    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
-    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
-    { url: `${baseUrl}/login`, lastModified: now, changeFrequency: "yearly", priority: 0.4 },
-    { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: "yearly", priority: 0.6 },
-    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${baseUrl}/refund`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
-    { url: `${baseUrl}/referral`, lastModified: now, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${baseUrl}/ai-mock-interview`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.93 },
+    { url: `${baseUrl}/interview-prep`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.92 },
+    { url: `${baseUrl}/interview-anxiety`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/english-interview-practice`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.8 },
+    { url: `${baseUrl}/telephonic-interview-questions`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/walk-in-interview-preparation`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/one-way-video-interview-practice`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/bpo-interview-questions`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/bank-po-interview-questions`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/mba-personal-interview-preparation`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.75 },
+    { url: `${baseUrl}/companies`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.88 },
+    { url: `${baseUrl}/contact`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${baseUrl}/blog`, lastModified: staticLastModified, changeFrequency: "weekly", priority: 0.85 },
+    { url: `${baseUrl}/privacy`, lastModified: staticLastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: staticLastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/refund`, lastModified: staticLastModified, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${baseUrl}/referral`, lastModified: staticLastModified, changeFrequency: "monthly", priority: 0.5 },
   ];
 
   /* /questions index + /questions/[slug] — the canonical URL tree for all

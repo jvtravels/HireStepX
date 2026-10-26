@@ -30,6 +30,7 @@ import { getKnownFacts } from "../../data/company-known-facts";
 import type { BankEntry } from "../../data/interview-question-bank";
 import { SEO_PAGES } from "../../data/seo-pages";
 import type { SeoPage } from "../../data/seo-pages";
+import { questionHref } from "../seoLinks";
 
 /* ─── Shared layout primitives ─────────────────────────────────────────── */
 
@@ -417,7 +418,7 @@ export function QuestionSetPage({
                 {(page.focus === "campus-placement" || page.focus === "hr") && (
                   <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "16px 0 0", lineHeight: 1.5 }}>
                     Preparing for a campus placement drive?{" "}
-                    <Link href="/for-students" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See the full campus placement guide →</Link>
+                    <Link href="/candidates" style={{ color: t.copper, fontWeight: 500, textDecoration: "none" }}>See the full campus placement guide →</Link>
                   </p>
                 )}
               </section>
@@ -525,7 +526,7 @@ export function QuestionSetPage({
                 <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   {relatedPages.map((p) => (
                     <li key={p.slug}>
-                      <Link href={`/questions/${p.slug}`} className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none", lineHeight: 1.4, display: "block" }}>
+                      <Link href={questionHref(p.slug)} className="ed-link" style={{ fontFamily: fonts.sans, fontSize: 13, color: t.copper, textDecoration: "none", lineHeight: 1.4, display: "block" }}>
                         {p.searchPhrase}
                       </Link>
                     </li>
@@ -771,7 +772,7 @@ export function QuestionsIndexPage({ pages, activeFilter, page = 1 }: QuestionsI
                 {grouped[company].map((p, i) => (
                   <li key={p.slug}>
                     <Link
-                      href={`/questions/${p.slug}`}
+                      href={questionHref(p.slug)}
                       className="ed-cta ed-row"
                       style={{
                         display: "flex",

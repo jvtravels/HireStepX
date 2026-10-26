@@ -9,6 +9,7 @@ import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
 import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
+import { questionHref } from "../../../src/seoLinks";
 
 /* /interview-prep — pillar page targeting broad "interview preparation
  * India" head terms. Acts as the hub for the entire company × focus
@@ -319,7 +320,7 @@ export default async function InterviewPrepPage({
                       label: "Service IT Companies", companies: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini",
                       format: "Aptitude test → CS fundamentals → HR",
                       tip: "The aptitude round eliminates 60–80% of candidates. Score well on reasoning and coding basics first.",
-                      href: "/for-students",
+                      href: "/candidates",
                     },
                     {
                       label: "Indian Product Companies", companies: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha",
@@ -583,7 +584,7 @@ export default async function InterviewPrepPage({
                 </div>
                 <p style={{ fontSize: 13, color: sand, margin: "16px 0 0", lineHeight: 1.5 }}>
                   Preparing for a campus placement drive?{" "}
-                  <Link href="/for-students" style={{ color: copper, fontWeight: 500, textDecoration: "none" }}>
+                  <Link href="/candidates" style={{ color: copper, fontWeight: 500, textDecoration: "none" }}>
                     See the full campus placement guide →
                   </Link>
                 </p>
@@ -763,7 +764,7 @@ function CompanyGroup({
       <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {pages.map((p) => (
           <li key={p.slug}>
-            <Link href={`/questions/${p.slug}`} style={{
+            <Link href={questionHref(p.slug)} style={{
               display: "block", padding: "14px 16px",
               background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
               textDecoration: "none", color: t.coal,

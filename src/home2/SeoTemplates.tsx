@@ -16,6 +16,7 @@ import type { COMPANY_KNOWN_FACTS } from "../../data/company-known-facts";
 import type { buildSalaryPageModel } from "../../app/(marketing)/salary/[company]/_jsonld";
 import type { buildQuestionsPageModel } from "../../app/(marketing)/questions/[slug]/_jsonld";
 import type { SalaryBandRow } from "../marketing-v2/SalaryPage";
+import { questionHref } from "../seoLinks";
 
 /* ── Shared helpers ── */
 
@@ -429,7 +430,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               <section className="sx-teaser">
                 <span className="sx-mono">How the interview goes</span>
                 <ul>{interviewTeaser.items.map((it) => <li key={it}>{it}</li>)}</ul>
-                <a data-no-underline className="sx-link" href={`/questions/${interviewTeaser.questionSlug}`}>{interviewTeaser.searchPhrase} <Arrow /></a>
+                <a data-no-underline className="sx-link" href={questionHref(interviewTeaser.questionSlug)}>{interviewTeaser.searchPhrase} <Arrow /></a>
               </section>
             )}
             {blogSlug && <p className="sx-peer"><a data-no-underline className="sx-link" href={`/blog/${blogSlug}`}>Read the {label} interview guide <Arrow /></a></p>}
@@ -549,7 +550,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           title="More to read"
           items={[
             ...relatedBlogPosts.map((b): { item: Item; meta: string } => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, }, meta: "Guide" })),
-            ...relatedPages.map((r): { item: Item; meta: string } => ({ item: { k: "question", t: r.searchPhrase, h: `/questions/${r.slug}` }, meta: "Question set" })),
+            ...relatedPages.map((r): { item: Item; meta: string } => ({ item: { k: "question", t: r.searchPhrase, h: questionHref(r.slug) }, meta: "Question set" })),
           ]}
         />
       </div>

@@ -5,6 +5,7 @@ import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
 import { FooterDome } from "@/marketing-v2/FooterDome";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import { faqSchema, buildForStudentsJsonLd } from "./_jsonld";
+import { questionHref } from "../../../src/seoLinks";
 
 /* /for-students — dedicated campus placement landing page.
  * Targets: "campus placement interview preparation India 2026",
@@ -255,7 +256,7 @@ export default async function ForStudentsPage() {
                   </div>
                   <p style={{ fontSize: 13, color: sand, margin: "0 0 12px", lineHeight: 1.5 }}>{co.desc}</p>
                   <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    <Link href={`/questions/${co.slug}`} style={{ color: copper, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>
+                    <Link href={questionHref(co.slug)} style={{ color: copper, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>
                       Practice interview →
                     </Link>
                     {co.salary && (

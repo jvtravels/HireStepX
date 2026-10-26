@@ -15,6 +15,7 @@ import {
   companyKeyFromLabel,
   getAllBlogCompanySlugs,
 } from "./_jsonld";
+import { questionHref } from "../../../../../src/seoLinks";
 
 /* /blog/company/[slug] — company-specific blog category pages.
  *
@@ -195,7 +196,7 @@ export default async function BlogCompanyPage({
                 {questionPages.map((q) => (
                   <Link
                     key={q.slug}
-                    href={`/questions/${q.slug}`}
+                    href={questionHref(q.slug)}
                     style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
                       padding: "14px 18px", background: "#fff", border: `1px solid ${t.line}`,

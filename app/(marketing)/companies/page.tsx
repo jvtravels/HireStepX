@@ -12,6 +12,7 @@ import {
   DarkBand,
   ctaPrimaryStyle,
 } from "@/marketing-v2/_editorial";
+import { questionHref } from "../../../src/seoLinks";
 
 /* /companies — index / hub page listing all 55+ company interview
  * question sets, grouped by company type.
@@ -380,7 +381,7 @@ export default async function CompaniesIndexPage({
                     {section.pages.map((page, i) => (
                       <Link
                         key={page.slug}
-                        href={`/questions/${page.slug}`}
+                        href={questionHref(page.slug)}
                         className="ed-cta ed-row"
                         style={{
                           display: "flex",

@@ -7,6 +7,7 @@ import { FAQItem } from "@/marketing-v2/MarketingPagesV2";
 import { DarkBand, ctaPrimaryStyle, editorialCSS } from "@/marketing-v2/_editorial";
 import { tokens as t, fonts } from "@/auth/_tokens";
 import { buildAiMockInterviewJsonLd, FAQ_ENTRIES, HOW_IT_WORKS } from "./_jsonld";
+import { questionHref } from "../../../src/seoLinks";
 
 /*
  * /ai-mock-interview — dedicated landing page for the highest-volume
@@ -160,7 +161,7 @@ export default async function AiMockInterviewPage() {
               Start free, no card needed
             </Link>
             <Link
-              href="/how-it-works"
+              href="/"
               style={{
                 ...s,
                 background: "transparent",
@@ -358,7 +359,7 @@ export default async function AiMockInterviewPage() {
             {TOP_COMPANIES.map((c) => (
               <Link
                 key={c.label}
-                href={`/questions/${c.slug}`}
+                href={questionHref(c.slug)}
                 style={{
                   ...s,
                   display: "block",
@@ -453,11 +454,11 @@ export default async function AiMockInterviewPage() {
                     { label: "How to Overcome Interview Anxiety", href: "/interview-anxiety" },
                     { label: "English Speaking Practice for Interviews", href: "/english-interview-practice" },
                     { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                    { label: "Campus Placement Preparation Guide", href: "/for-students" },
+                    { label: "Campus Placement Preparation Guide", href: "/candidates" },
                     { label: "Behavioral Interview Questions for Freshers", href: "/blog/behavioral-interview-questions-freshers" },
                     { label: "STAR Method Guide India", href: "/blog/star-method-interview-answers" },
                     { label: "Salary Negotiation Tips India", href: "/blog/salary-negotiation-tips-india" },
-                    { label: "How It Works: 5 Steps", href: "/how-it-works" },
+                    { label: "How It Works: 5 Steps", href: "/" },
                   ],
                 },
                 {

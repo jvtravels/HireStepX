@@ -237,7 +237,7 @@ export default async function OneWayVideoInterviewPage() {
                 { label: "Telephonic Interview Questions", href: "/telephonic-interview-questions" },
                 { label: "Walk-in Interview Preparation", href: "/walk-in-interview-preparation" },
                 { label: "Interview Preparation Guide India 2026", href: "/interview-prep" },
-                { label: "How It Works: 5 Steps", href: "/how-it-works" },
+                { label: "How It Works: 5 Steps", href: "/" },
               ].map((link) => (
                 <Link key={link.href} href={link.href} style={{ ...s, fontSize: 14, color: t.copper, textDecoration: "underline", lineHeight: 1.5 }}>
                   {link.label}

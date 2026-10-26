@@ -15,6 +15,7 @@ import { CATEGORY_BUCKET_MAP, CATEGORY_BUCKETS, bucketToSlug } from "./blog-cate
 import { CopyEmailLink } from "./_CopyEmailLink";
 import { SearchWithSuggestions } from "@/components/SearchWithSuggestions";
 import { SECTION_VISUALS } from "./blog/sectionVisuals";
+import { questionHref } from "./seoLinks";
 
 /* PageShell: mirrors marketing-v2 chrome so the blog inherits the
    editorial brand (cream surface, Instrument Serif + Geist Sans, copper
@@ -544,7 +545,7 @@ function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
   if (category === "Freshers") {
     links.push({ label: "Practice campus placement interviews", href: "/interview" });
     links.push({ label: "Fresher salary benchmarks", href: "/salary" });
-    links.push({ label: "Campus placement preparation guide", href: "/for-students" });
+    links.push({ label: "Campus placement preparation guide", href: "/candidates" });
   }
   if (category === "Behavioral") {
     links.push({ label: "Practice behavioral questions with AI", href: "/interview" });
@@ -575,7 +576,7 @@ function getAutoLinks(post: BlogPost): { label: string; href: string }[] {
     links.push({ label: "PM salary guide", href: "/salary" });
   }
   if (category === "Campus Placement") {
-    links.push({ label: "Campus placement preparation guide", href: "/for-students" });
+    links.push({ label: "Campus placement preparation guide", href: "/candidates" });
     links.push({ label: "Practice campus interviews", href: "/interview" });
   }
 
@@ -784,7 +785,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
             const seen = new Set<string>();
             const combined: { label: string; href: string }[] = [];
             for (const { label, slug } of post.practicePageSlugs ?? []) {
-              const href = `/questions/${slug}`;
+              const href = questionHref(slug);
               if (seen.has(href)) continue;
               seen.add(href);
               combined.push({ label, href });

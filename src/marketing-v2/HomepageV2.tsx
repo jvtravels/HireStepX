@@ -2223,7 +2223,7 @@ export function BuiltForIndiaV2() {
               Salary guides India <span className="mv2-dark-arrow" aria-hidden>→</span>
             </a>
             <a
-              href="/for-students"
+              href="/candidates"
               className="mv2-dark-link"
               style={{
                 fontFamily: fonts.sans, fontSize: 13, fontWeight: 600,
