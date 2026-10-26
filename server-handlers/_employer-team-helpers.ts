@@ -144,6 +144,32 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
+export const INVITES_PER_DAY = 20;
+export const RESENDS_PER_DAY = 30;
+export const MAX_BULK_INVITES = 10;
+
+/* Splits pasted text (comma, semicolon, space or newline separated) into
+   unique valid addresses and the pieces that were not addresses. */
+export function parseEmailList(raw: string): { valid: string[]; invalid: string[] } {
+  const valid: string[] = [];
+  const invalid: string[] = [];
+  for (const piece of raw.split(/[\s,;]+/)) {
+    const cleaned = piece.replace(/^[<"']+|[>"']+$/g, "");
+    if (!cleaned) continue;
+    const email = normalizeEmail(cleaned);
+    if (!isValidEmail(email)) invalid.push(cleaned);
+    else if (!valid.includes(email)) valid.push(email);
+  }
+  return { valid, invalid };
+}
+
+/* Counts invites created inside the window whatever their state, so revoking
+   or replacing an invite can't be used to dodge the daily cap. */
+export function invitesRemainingToday(createdAts: string[], now = Date.now(), cap = INVITES_PER_DAY): number {
+  const dayAgo = now - 86_400_000;
+  return Math.max(0, cap - createdAts.filter((c) => Date.parse(c) > dayAgo).length);
+}
+
 function toHex(buf: ArrayBuffer): string {
   return Array.from(new Uint8Array(buf), (b) => b.toString(16).padStart(2, "0")).join("");
 }

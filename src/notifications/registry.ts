@@ -30,6 +30,8 @@ export const NOTIFICATION_TYPES = {
   new_message_candidate: { audience: "candidate", category: "messages", priority: "normal" },
   new_message_employer: { audience: "employer", category: "messages", priority: "normal" },
   new_message: { audience: "both", category: "messages", priority: "normal" },
+  team_invite_accepted: { audience: "employer", category: "activity", priority: "normal" },
+  team_role_changed: { audience: "employer", category: "activity", priority: "normal" },
 } as const satisfies Record<string, TypeMeta>;
 
 export type NotificationType = keyof typeof NOTIFICATION_TYPES;

@@ -119,3 +119,18 @@ export function relativeTime(iso: string | null, now = Date.now()): string {
 export function daysUntil(iso: string, now = Date.now()): number {
   return Math.max(0, Math.ceil((Date.parse(iso) - now) / 86_400_000));
 }
+
+/* Spreadsheet apps run cells that start with = + - @ as formulas, and names
+   and job titles here are user-typed, so those cells are neutralised. */
+function csvCell(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+export function activityToCsv(events: ActivityEvent[]): string {
+  const rows = events.map((e) => {
+    const d = describeEvent(e);
+    return [e.at, e.actor.name, d.group, [d.verb, d.subject, d.detail].filter(Boolean).join(" "), e.action].map(csvCell).join(",");
+  });
+  return ["When (UTC),Who,Area,What,Action code", ...rows].join("\r\n");
+}

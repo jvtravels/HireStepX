@@ -18,10 +18,11 @@ import {
   rateLimitResponse, validateOrigin, forbiddenResponse, slog,
 } from "./_shared";
 import {
-  INVITE_ACCEPT_MESSAGE, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
+  INVITE_ACCEPT_MESSAGE, ROLE_LABEL, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
   type InviteRow,
 } from "./_employer-team-helpers";
 import { teamsEnabledFor } from "./_employer-team-gate";
+import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -163,6 +164,15 @@ async function accept(req: Request): Promise<Response> {
       employerId: inv.employer_id, actorUserId: userId, actorEmail: user.email, action: "member.joined",
       entityType: "member", entityId: userId, meta: { role: inv.role, inviteId: inv.id },
     });
+    if (inv.invited_by) {
+      await notify({
+        userId: inv.invited_by,
+        type: "team_invite_accepted",
+        title: `${user.name || user.email || inv.email} joined your team`,
+        body: `They accepted your invite as ${ROLE_LABEL[inv.role]}.`,
+        link: "/employer/team",
+      });
+    }
     return reply({ ok: true, companyName: inv.employers?.company_name ?? "", role: inv.role });
   } catch (err) {
     slog.error("employer-team-accept threw", { code: "employer_team_accept_error", error: String(err).slice(0, 200), userId });

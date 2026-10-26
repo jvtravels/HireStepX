@@ -1,14 +1,14 @@
 "use client";
 
 import { Fragment, useMemo } from "react";
-import { ActivityIcon } from "lucide-react";
+import { ActivityIcon, DownloadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Badge, SegmentedControl } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import type { ActivityFilter, TeamMember } from "../useTeam";
 import type { useTeamActivity } from "../useTeam";
-import { dayBucket, describeEvent, type ActivityGroup } from "../teamActivity";
+import { activityToCsv, dayBucket, describeEvent, type ActivityGroup } from "../teamActivity";
 
 const GROUP_LABEL: Record<ActivityGroup, string> = { members: "Team", jobs: "Jobs", candidates: "Candidates", company: "Company" };
 import { EmptyBlock, PAD, PersonAvatar, muted } from "./TeamParts";
@@ -31,6 +31,15 @@ export default function ActivityTab({
 }) {
   const { events, loading, error, nextBefore, loadMore } = activity;
   const filtered = !!(filter.actor || filter.group);
+
+  const exportCsv = () => {
+    const url = URL.createObjectURL(new Blob([activityToCsv(events)], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `team-activity-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const days = useMemo(() => {
     const out: Array<{ label: string; items: typeof events }> = [];
@@ -63,6 +72,11 @@ export default function ActivityTab({
             {members.map((m) => <option key={m.userId} value={m.userId}>{m.name || m.email}</option>)}
           </NativeSelect>
         </label>
+        {events.length > 0 && (
+          <Button type="button" variant="outline" size="lg" className="h-9 gap-2 px-3.5" onClick={exportCsv}>
+            <DownloadIcon aria-hidden="true" /> Export CSV
+          </Button>
+        )}
       </div>
 
       {error && events.length === 0 ? (

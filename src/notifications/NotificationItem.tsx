@@ -2,7 +2,7 @@
 
 import {
   AlertTriangleIcon, ArchiveRestoreIcon, BellIcon, CheckIcon, ClockIcon, CreditCardIcon, EyeIcon, FlameIcon,
-  GiftIcon, MailOpenIcon, MessageSquareIcon, MoreHorizontalIcon, SparklesIcon, UserCheckIcon,
+  GiftIcon, MailOpenIcon, MessageSquareIcon, MoreHorizontalIcon, SparklesIcon, UserCheckIcon, UsersIcon,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,8 @@ const ICONS: Record<string, ComponentType<{ className?: string; "aria-hidden"?: 
   payment_success: CreditCardIcon,
   payment_failed: AlertTriangleIcon,
   subscription_renewed: CreditCardIcon,
+  team_invite_accepted: UserCheckIcon,
+  team_role_changed: UsersIcon,
 };
 
 interface Props {
