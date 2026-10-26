@@ -40,6 +40,12 @@ describe("describeEvent", () => {
     });
     expect(describeEvent({ action: "candidate.status_changed", meta: { to: "bogus" } }).detail).toBeNull();
   });
+  it("labels note edits with the candidate and job", () => {
+    expect(describeEvent({ action: "candidate.note_updated", meta: { candidateName: "Rahul S.", jobTitle: "SDE" } })).toMatchObject({
+      verb: "updated notes on", subject: "Rahul S.", detail: "for SDE",
+    });
+    expect(describeEvent({ action: "candidate.note_updated", meta: {} }).subject).toBe("a candidate");
+  });
   it("labels pipeline stage moves and job lifecycle", () => {
     expect(describeEvent({ action: "job.stage_changed", meta: { stage: "hired" } }).detail).toBe("to Hired");
     expect(describeEvent({ action: "job.created", meta: { title: "SDE" } })).toMatchObject({ verb: "posted", subject: "SDE" });

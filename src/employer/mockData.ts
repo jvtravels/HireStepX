@@ -88,6 +88,8 @@ export interface Candidate {
   hasResumeFile?: boolean;
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
+  /** The teammate who last unlocked, moved or annotated this candidate. */
+  lastUpdatedBy?: { name: string; isYou: boolean; at: string } | null;
   /** The candidate's own answer to contact: null when the server did not say. */
   candidateResponse?: "none" | "interested" | "declined" | null;
   /** True once the candidate switched employer visibility off after the unlock. */

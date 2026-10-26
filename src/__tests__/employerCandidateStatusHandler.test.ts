@@ -56,6 +56,7 @@ function installFetch(o: Opts) {
         }],
       };
     }
+    if (u.includes("/rest/v1/employer_audit_log")) return { ok: true, json: async () => [] };
     if (u.includes("/rest/v1/match_status_events")) return { ok: true, json: async () => [] };
     if (u.includes("/rest/v1/conversations?match_id=")) return { ok: true, json: async () => [{ id: "c1" }] };
     if (u.includes("/rest/v1/conversations?id=")) return { ok: true, json: async () => [] };
@@ -73,6 +74,11 @@ const systemBodies = (f: ReturnType<typeof installFetch>) =>
 
 const eventInserts = (f: ReturnType<typeof installFetch>) =>
   f.mock.calls.filter(([u, init]) => String(u).includes("/rest/v1/match_status_events") && (init as RequestInit | undefined)?.method === "POST");
+
+const auditActions = (f: ReturnType<typeof installFetch>) =>
+  f.mock.calls
+    .filter(([u, init]) => String(u).includes("/rest/v1/employer_audit_log") && (init as RequestInit | undefined)?.method === "POST")
+    .map(([, init]) => JSON.parse(String((init as RequestInit).body)).action as string);
 
 const patch = (body: Record<string, unknown>) =>
   handler(new Request("https://x.test/api/employer-candidate-status", { method: "PATCH", body: JSON.stringify({ matchId: MATCH, ...body }) }));
@@ -123,6 +129,18 @@ describe("employer-candidate-status same-state repeats", () => {
     expect(notify).not.toHaveBeenCalled();
     expect(systemBodies(f)).toHaveLength(0);
     expect(eventInserts(f)).toHaveLength(0);
+  });
+
+  it("audits a note-only edit so teammates can see who touched the candidate", async () => {
+    const f = installFetch({ unlocked: true, from: "rejected" });
+    await patch({ candidateStatus: "rejected", note: "internal" });
+    expect(auditActions(f)).toEqual(["candidate.note_updated"]);
+  });
+
+  it("does not audit a same-state request that carries no note", async () => {
+    const f = installFetch({ unlocked: true, from: "rejected" });
+    await patch({ candidateStatus: "rejected" });
+    expect(auditActions(f)).toEqual([]);
   });
 
   it("still notifies and posts on a real transition", async () => {
@@ -223,10 +241,13 @@ describe("employer-candidate-status team permissions", () => {
     expect(f.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "PATCH")).toBe(false);
   });
 
-  it("does not audit a note-only edit that leaves the status unchanged", async () => {
+  it("audits a note-only edit as a note update, not a status change", async () => {
     installFetch({ unlocked: true, from: "hired" });
     const f = asMember("mate-1", "member");
     await patch({ candidateStatus: "hired", note: "start date confirmed" });
-    expect(f.mock.calls.some(([u]) => String(u).includes("/rest/v1/employer_audit_log"))).toBe(false);
+    const actions = f.mock.calls
+      .filter(([u, init]) => String(u).includes("/rest/v1/employer_audit_log") && (init as RequestInit | undefined)?.method === "POST")
+      .map(([, init]) => JSON.parse(String((init as RequestInit).body)).action);
+    expect(actions).toEqual(["candidate.note_updated"]);
   });
 });

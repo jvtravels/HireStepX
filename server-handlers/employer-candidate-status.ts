@@ -307,6 +307,12 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     if (sameState) {
+      if (note !== null) {
+        await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+          employerId, actorUserId: auth.userId, actorEmail: gate.ctx.email, action: "candidate.note_updated",
+          entityType: "match", entityId: matchId, meta: { jobTitle: reqRows[0].title },
+        });
+      }
       return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });
     }
 
