@@ -48,7 +48,10 @@ export const homeCss = `
 
 .hx-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border-radius: 10px; font-size: 15px; font-weight: 500; background: var(--btn); color: var(--white); transition: background .15s, box-shadow .15s; box-shadow: 0 1px 2px oklch(0.257 0.086 281.288 / 0.2); }
 .hx-btn:hover { background: var(--btn-hover); }
-.hx-btn.sm { min-height: 38px; padding: 0 16px; font-size: 15px; }
+.hx-btn.sm { min-height: 44px; padding: 0 16px; font-size: 15px; }
+.hx-links a { display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box; }
+.hx-ghost { display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box; }
+.hx-logo { display: inline-flex; align-items: center; min-height: 44px; }
 .hx-btn.lg { min-height: 54px; padding: 0 28px; font-size: 16px; border-radius: 12px; }
 .hx-btn.alt { background: var(--white); color: var(--ink); border: 1px solid var(--line-2); box-shadow: none; }
 .hx-btn.alt:hover { background: var(--wash); border-color: var(--ink-3); }
