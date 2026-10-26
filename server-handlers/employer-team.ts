@@ -22,13 +22,12 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, slog } from "./_shared";
 import {
-  MAX_TEAM_SIZE, INVITE_TTL_DAYS, ROLE_LABEL, INVITES_PER_DAY, RESENDS_PER_DAY, invitesRemainingToday, VIOLATION_MESSAGE, assignableRoles, can, canManageMember, checkMemberChange,
+  MAX_TEAM_SIZE, INVITE_TTL_DAYS, INVITES_PER_DAY, RESENDS_PER_DAY, invitesRemainingToday, VIOLATION_MESSAGE, assignableRoles, can, canManageMember, checkMemberChange,
   generateInviteToken, hashInviteToken, inviteState, isEmployerRole, isInvitableRole, isValidEmail, normalizeEmail,
   requireEmployerPermission, writeAuditLog,
   type AuditAction, type EmployerContext, type EmployerRole, type InviteRow, type InvitableRole,
 } from "./_employer-team-helpers";
 import { inviteLink, sendTeamChangeEmail, sendTeamInviteEmail, type TeamChange } from "./_employer-team-emails";
-import { notify } from "./_notify";
 import { teamsEnabledFor } from "./_employer-team-gate";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -186,21 +185,9 @@ function audit(ctx: EmployerContext, action: AuditAction, entityId: string | und
 }
 
 /* Best-effort: the change is already committed, so telling the person never
-   fails the request. Removed people only get email, they have lost the console. */
-async function tellMember(ctx: EmployerContext, companyName: string, target: { userId: string; email: string }, change: TeamChange): Promise<void> {
-  const actorName = ctx.name || ctx.email;
-  const tasks: Array<Promise<unknown>> = [sendTeamChangeEmail({ to: target.email, change, companyName, actorName })];
-  if (change.kind !== "removed") {
-    const owner = change.kind === "ownership_received";
-    tasks.push(notify({
-      userId: target.userId,
-      type: "team_role_changed",
-      title: owner ? `You now own ${companyName}` : `Your role is now ${ROLE_LABEL[change.role]}`,
-      body: `${actorName} changed your access at ${companyName}.`,
-      link: "/employer/team",
-    }));
-  }
-  await Promise.allSettled(tasks);
+   fails the request. Email only: removed people have lost the console. */
+async function tellMember(ctx: EmployerContext, companyName: string, target: { email: string }, change: TeamChange): Promise<void> {
+  await Promise.allSettled([sendTeamChangeEmail({ to: target.email, change, companyName, actorName: ctx.name || ctx.email })]);
 }
 
 async function handleAction(ctx: EmployerContext, body: Record<string, unknown>, reply: Reply): Promise<Response> {
@@ -338,7 +325,7 @@ async function changeMember(ctx: EmployerContext, companyName: string, targetId:
     const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=minimal" } });
     if (!res.ok) throw new Error(`member delete failed: ${res.status}`);
     await audit(ctx, targetId === ctx.userId ? "member.left" : "member.removed", targetId, { email: target.email, role: target.role });
-    if (targetId !== ctx.userId) await tellMember(ctx, companyName, { userId: targetId, email: target.email }, { kind: "removed" });
+    if (targetId !== ctx.userId) await tellMember(ctx, companyName, { email: target.email }, { kind: "removed" });
     return reply({ ok: true });
   }
   const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, {
@@ -346,7 +333,7 @@ async function changeMember(ctx: EmployerContext, companyName: string, targetId:
   });
   if (!res.ok) throw new Error(`member update failed: ${res.status}`);
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: newRole });
-  await tellMember(ctx, companyName, { userId: targetId, email: target.email }, { kind: "role_changed", role: newRole });
+  await tellMember(ctx, companyName, { email: target.email }, { kind: "role_changed", role: newRole });
   return reply({ member: memberDto({ ...target, role: newRole }, ctx.userId) });
 }
 
@@ -367,6 +354,6 @@ async function transferOwnership(ctx: EmployerContext, companyName: string, targ
   const down = await patch(ctx.userId, "admin");
   if (!down.ok) throw new Error(`ownership demote failed: ${down.status}`);
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: "owner", transfer: true });
-  await tellMember(ctx, companyName, { userId: targetId, email: target.email }, { kind: "ownership_received" });
+  await tellMember(ctx, companyName, { email: target.email }, { kind: "ownership_received" });
   return reply({ ok: true });
 }

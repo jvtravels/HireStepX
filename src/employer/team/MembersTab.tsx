@@ -4,11 +4,10 @@ import { useMemo, useState } from "react";
 import { LogOutIcon, MoreHorizontalIcon, SearchIcon, UserMinusIcon, UserPlusIcon, UsersIcon, CrownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { ROLE_LABEL, assignableRoles, canManageMember, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
+import { assignableRoles, canManageMember, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
 import type { ActivitySummary, TeamMember } from "../useTeam";
 import { relativeTime } from "../teamActivity";
 import { PAD, PersonAvatar, RoleMenu, muted } from "./TeamParts";
@@ -44,12 +43,10 @@ export default function MembersTab({
   const peak = Math.max(1, ...summary.map((s) => s.count));
   const columns = showActivity ? COLS : COLS_NO_ACTIVITY;
   const [query, setQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<"" | EmployerRole>("");
   const q = query.trim().toLowerCase();
-  const filtering = !!q || !!roleFilter;
   const visible = useMemo(
-    () => members.filter((m) => (!roleFilter || m.role === roleFilter) && (!q || `${m.name ?? ""} ${m.email}`.toLowerCase().includes(q))),
-    [members, q, roleFilter],
+    () => (q ? members.filter((m) => `${m.name ?? ""} ${m.email}`.toLowerCase().includes(q)) : members),
+    [members, q],
   );
   const alone = members.length === 1;
 
@@ -69,15 +66,8 @@ export default function MembersTab({
               style={{ fontFamily: f.sans }}
             />
           </div>
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-            Role
-            <NativeSelect aria-label="Filter by role" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as "" | EmployerRole)} className="min-w-32">
-              <option value="">All roles</option>
-              {(["owner", "admin", "member", "viewer"] as const).map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
-            </NativeSelect>
-          </label>
           <span style={{ ...muted, fontSize: 12 }} aria-live="polite">
-            {filtering ? `${visible.length} of ${members.length}` : `${members.length} members`}
+            {q ? `${visible.length} of ${members.length}` : `${members.length} members`}
           </span>
         </div>
       )}
@@ -87,19 +77,14 @@ export default function MembersTab({
           <span role="columnheader" style={headStyle}>Member</span>
           <span role="columnheader" style={headStyle}>Role</span>
           <span role="columnheader" style={headStyle}>Last active</span>
-          {showActivity && (
-            <span role="columnheader" style={headStyle} title={`Jobs, candidate and team changes this person made in the last ${summaryDays} days`}>
-              Actions, {summaryDays}d
-              <span className="sr-only"> (jobs, candidate and team changes this person made in the last {summaryDays} days)</span>
-            </span>
-          )}
+          {showActivity && <span role="columnheader" style={headStyle}>Actions, {summaryDays}d</span>}
           <span role="columnheader" style={headStyle}><span className="sr-only">Actions</span></span>
         </div>
       )}
 
       <div role="rowgroup">
         {visible.length === 0 && (
-          <div role="row"><p role="cell" style={{ ...muted, padding: "32px 16px", textAlign: "center" }}>{q ? <>No one matches &ldquo;{query.trim()}&rdquo;.</> : "No one has that role."}</p></div>
+          <div role="row"><p role="cell" style={{ ...muted, padding: "32px 16px", textAlign: "center" }}>No one matches &ldquo;{query.trim()}&rdquo;.</p></div>
         )}
         {visible.map((m, i) => {
           const label = m.name || m.email;
@@ -205,7 +190,7 @@ export default function MembersTab({
       </div>
       </div>
 
-      {alone && canInvite && !filtering && (
+      {alone && canInvite && !q && (
         <div className={PAD} style={{ paddingTop: 20, paddingBottom: 24, borderTop: `1px solid ${t.line}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap", border: `1px dashed ${t.line}`, borderRadius: 12, padding: "16px 18px", background: t.creamRaised }}>
             <span aria-hidden="true" style={{ width: 36, height: 36, borderRadius: 10, background: t.indigo100, color: t.indigoDeep, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

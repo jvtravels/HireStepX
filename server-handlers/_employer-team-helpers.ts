@@ -146,22 +146,6 @@ export function isValidEmail(email: string): boolean {
 
 export const INVITES_PER_DAY = 20;
 export const RESENDS_PER_DAY = 30;
-export const MAX_BULK_INVITES = 10;
-
-/* Splits pasted text (comma, semicolon, space or newline separated) into
-   unique valid addresses and the pieces that were not addresses. */
-export function parseEmailList(raw: string): { valid: string[]; invalid: string[] } {
-  const valid: string[] = [];
-  const invalid: string[] = [];
-  for (const piece of raw.split(/[\s,;]+/)) {
-    const cleaned = piece.replace(/^[<"']+|[>"']+$/g, "");
-    if (!cleaned) continue;
-    const email = normalizeEmail(cleaned);
-    if (!isValidEmail(email)) invalid.push(cleaned);
-    else if (!valid.includes(email)) valid.push(email);
-  }
-  return { valid, invalid };
-}
 
 /* Counts invites created inside the window whatever their state, so revoking
    or replacing an invite can't be used to dodge the daily cap. */

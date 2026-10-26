@@ -9,8 +9,6 @@ vi.mock("../../server-handlers/_shared", () => ({
   slog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("../../server-handlers/_employer-team-gate", () => ({ teamsEnabledFor: async () => true }));
-const notify = vi.fn(async (..._a: unknown[]) => {});
-vi.mock("../../server-handlers/_notify", () => ({ notify: (...a: unknown[]) => notify(...a) }));
 const sendChange = vi.fn(async (..._a: unknown[]) => true);
 const sendInvite = vi.fn(async (..._a: unknown[]) => true);
 vi.mock("../../server-handlers/_employer-team-emails", async (orig) => ({
@@ -104,25 +102,22 @@ describe("employer-team handler: resend cap", () => {
 });
 
 describe("employer-team handler: telling people about access changes", () => {
-  it("emails and notifies a member whose role changed", async () => {
+  it("emails a member whose role changed", async () => {
     const res = await post({ action: "set_role", userId: "u-2", role: "admin" });
     expect(res.status).toBe(200);
     expect(sendChange).toHaveBeenCalledWith(expect.objectContaining({ to: "dev@acme.com", change: { kind: "role_changed", role: "admin" } }));
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "u-2", type: "team_role_changed" }));
   });
 
-  it("emails a removed member but sends no in-app notification", async () => {
+  it("emails a removed member", async () => {
     const res = await post({ action: "remove_member", userId: "u-2" });
     expect(res.status).toBe(200);
     expect(sendChange).toHaveBeenCalledWith(expect.objectContaining({ to: "dev@acme.com", change: { kind: "removed" } }));
-    expect(notify).not.toHaveBeenCalled();
   });
 
   it("tells the new owner on a transfer", async () => {
     const res = await post({ action: "transfer_ownership", userId: "u-2" });
     expect(res.status).toBe(200);
     expect(sendChange).toHaveBeenCalledWith(expect.objectContaining({ change: { kind: "ownership_received" } }));
-    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "u-2", title: "You now own Acme" }));
   });
 
   it("sends nothing when the sole owner is blocked from leaving", async () => {
