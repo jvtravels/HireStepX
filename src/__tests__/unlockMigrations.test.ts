@@ -118,3 +118,19 @@ describe("0061 payment_dedup.user_id", () => {
     expect(schema).toMatch(/create table if not exists payment_dedup \([^;]*on delete set null/);
   });
 });
+
+describe("0062 promo redemptions", () => {
+  const sql = read("supabase-migrations/0062-promo-redemptions.sql");
+
+  it("creates the table the erasure delete targets and the 2-arg RPC verify-payment calls", () => {
+    expect(sql).toContain("create table if not exists promo_redemptions");
+    expect(sql).toContain("create or replace function consume_promo_code(p_code text, p_user_id uuid default null)");
+    expect(sql).toContain("grant execute on function consume_promo_code(text, uuid) to service_role;");
+  });
+
+  it("keeps the same table and function definitions as the schema file", () => {
+    const body = sql.slice(sql.indexOf("create table if not exists promo_redemptions"));
+    const norm = (x: string) => x.replace(/--[^\n]*/g, "").replace(/\s+/g, " ").trim();
+    expect(norm(schema)).toContain(norm(body));
+  });
+});
