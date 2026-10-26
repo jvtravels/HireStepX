@@ -101,7 +101,7 @@ const GROUPS: GroupDef[] = [
   {
     id: "service-it",
     label: "Service IT",
-    description: "India's largest employers. TCS, Infosys, and Wipro alone hire 100,000+ freshers per year. Focus: aptitude, CS fundamentals, HR.",
+    description: "India's largest employers. TCS, Infosys, and Wipro alone hire tens of thousands of freshers in a typical year. Focus: aptitude, CS fundamentals, HR.",
     companies: ["tcs", "infosys", "wipro", "cognizant", "accenture", "ltimindtree", "hcl", "capgemini", "ibm", "techmahindra", "mphasis", "persistent", "ntt-data", "globallogic", "thoughtworks"],
   },
   {

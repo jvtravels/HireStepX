@@ -462,7 +462,7 @@ const tdMono: CSSProperties = {
    with identical styling. */
 function ConfidenceBadge({ tier }: { tier?: "high" | "medium" | "low" }) {
   const config = {
-    high: { label: "Verified", color: t.success, background: t.success100 },
+    high: { label: "Multiple sources", color: t.success, background: t.success100 },
     medium: { label: "Est.", color: t.inkFaint, background: t.creamSoft },
     low: { label: "Directional", color: t.warning, background: t.warning100 },
   }[tier ?? "high"];
@@ -588,7 +588,7 @@ export function SalaryCompanyPage({
                   border: `1px solid ${t.line}`,
                 }}
               >
-                Verified {calibrationDate} · rechecked quarterly
+                Checked {calibrationDate} · rechecked quarterly
               </span>
               {noticePeriodDays && (
                 <span
@@ -752,7 +752,7 @@ export function SalaryCompanyPage({
                         </th>
                         <th scope="col" style={thStyle}>Equity</th>
                         <th scope="col" style={{ ...thStyle }} className="sal-hide-sm">
-                          Last Verified
+                          Last checked
                         </th>
                         <th scope="col" style={{ ...thStyle }} className="sal-hide-sm">
                           Confidence
@@ -985,7 +985,7 @@ export function SalaryCompanyPage({
         </div>
       </div>
       <p style={{ fontFamily: fonts.sans, fontSize: 12, color: t.inkFaint, lineHeight: 1.5, textAlign: "center", margin: "0 auto", padding: "16px 24px 24px", maxWidth: 720 }}>
-          Company names and logos belong to their owners; HireStepX is not affiliated with or endorsed by them.
+          Company names and logos belong to their owners; HireStepX is not affiliated with or endorsed by them. Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.
         </p>
     </>
   );

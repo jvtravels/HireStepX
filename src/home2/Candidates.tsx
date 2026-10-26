@@ -339,9 +339,9 @@ function Proof() {
             <h3>Product designer</h3>
             <p className="pf-meta">5 years · Pune · name hidden</p>
             <ul className="pf-ev">
-              <li style={delay(1)}><ShieldCheck {...I} size={16} />Communication<em>Verified</em></li>
-              <li style={delay(2)}><ShieldCheck {...I} size={16} />Problem solving<em>Verified</em></li>
-              <li style={delay(3)}><ShieldCheck {...I} size={16} />Leadership<em>Verified</em></li>
+              <li style={delay(1)}><ShieldCheck {...I} size={16} />Communication<em>Scored</em></li>
+              <li style={delay(2)}><ShieldCheck {...I} size={16} />Problem solving<em>Scored</em></li>
+              <li style={delay(3)}><ShieldCheck {...I} size={16} />Leadership<em>Scored</em></li>
               <li className="no" style={delay(4)}><ShieldCheck {...I} size={16} />Salary negotiation<em>Not yet</em></li>
             </ul>
             <p className="pf-lock"><Lock {...I} size={14} />Name and contact hidden until you say yes.</p>

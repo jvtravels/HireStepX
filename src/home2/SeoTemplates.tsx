@@ -336,7 +336,7 @@ function LevelExplorer({ roles, ri, setRi, li, setLi }: { roles: { roleKey: stri
       <div className="sx-x-trio">
         <div><span className="sx-mono">Base</span><b>{range(b.baseMin, b.baseMax)}</b></div>
         <div><span className="sx-mono">Equity</span><b>{range(b.equityMin, b.equityMax, "None reported")}</b></div>
-        <div><span className="sx-mono">Verified</span><b>{b.lastVerified}</b></div>
+        <div><span className="sx-mono">Last checked</span><b>{b.lastVerified}</b></div>
       </div>
     </div>
   );
@@ -365,7 +365,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
       <style>{sxCss + coverCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
-          <span className="sx-mono sx-kick">Salary guide · India 2026 · verified {calibrationDate}</span>
+          <span className="sx-mono sx-kick">Salary guide · India 2026 · checked {calibrationDate}</span>
           <h1 className="sx-h1">{label} salary in India</h1>
           <p className="sx-dek">{page.metaDescription}</p>
           <div className="sx-cover"><SeoCover hero item={{ k: "salary", t: `${label} salary`, co: label }} /></div>
@@ -399,7 +399,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
                   <div className="sx-tablewrap">
                     <table className="sx-table">
                       <thead>
-                        <tr><th>Level</th><th>Total CTC</th><th>Base</th><th>Equity</th><th>Confidence</th><th>Verified</th></tr>
+                        <tr><th>Level</th><th>Total CTC</th><th>Base</th><th>Equity</th><th>Confidence</th><th>Last checked</th></tr>
                       </thead>
                       <tbody>
                         {role.bands.map((b) => (
@@ -442,6 +442,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               </section>
             )}
             {blogSlug && <p className="sx-peer"><a data-no-underline className="sx-link" href={`/blog/${blogSlug}`}>Read the {label} interview guide <Arrow /></a></p>}
+            <p className="sx-peer">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
             <Faqs items={faqs} />
           </div>
         </div>
