@@ -598,6 +598,18 @@ export default function Signup() {
             >
               Log in
             </a>
+            {!isEmployerFlow && (
+              <>
+                <span style={{ margin: "0 8px", color: t.inkSoft }}>|</span>
+                <a
+                  href="/signup?next=/employer"
+                  className="hsx-link-indigo"
+                  style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
+                >
+                  Hiring? Employer sign up
+                </a>
+              </>
+            )}
           </div>
         </header>
 

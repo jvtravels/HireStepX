@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { storePendingReferralCode, storePendingConsent, clearPendingConsent, useAuth } from "../AuthContext";
+import { getAuthToken } from "../supabase";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -143,10 +144,36 @@ export default function Login() {
   // propagating across tabs and we'd yank this tab to /dashboard with
   // a stale session about to be invalidated.
   useEffect(() => {
-    if (isLoggedIn && user && !isResetInProgress()) {
+    if (!(isLoggedIn && user) || isResetInProgress()) return;
+    // No explicit destination: an account that already has an employer
+    // profile belongs on the employer console, not the candidate dashboard.
+    if (nextParam || planParam) {
       router.replace(computeRedirect());
+      return;
     }
-  }, [isLoggedIn, user, router, computeRedirect]);
+    let cancelled = false;
+    (async () => {
+      let dest = computeRedirect();
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          const res = await fetch("/api/employer-profile", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data: { status?: string } = await res.json();
+            if (data.status && data.status !== "none") dest = "/employer";
+          }
+        }
+      } catch {
+        /* fall back to the candidate redirect */
+      }
+      if (!cancelled) router.replace(dest);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, user, router, computeRedirect, nextParam, planParam]);
 
   // Analytics: viewed once. Pass the screen variant for funnel symmetry
   // with Signup which fires "signup".
