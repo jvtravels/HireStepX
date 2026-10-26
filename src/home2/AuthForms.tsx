@@ -33,7 +33,7 @@ import {
   readStaySignedInPref,
   suggestEmailCorrection,
   UNVERIFIED_EMAIL_MESSAGE,
-  useIsMounted, buildAuthLink, EMPLOYER_DISCOVERY_NOTICE } from "../auth/_shell";
+  useIsMounted, buildAuthLink } from "../auth/_shell";
 import { Google } from "./Auth";
 
 const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
@@ -901,9 +901,6 @@ export function StagingSignupForm() {
           </label>
           {termsAttempted && !termsAccepted && (
             <p className="hx-err" role="alert" style={{ marginTop: 6 }}>Tick the box to accept the Terms and continue.</p>
-          )}
-          {!isEmployerFlow && (
-            <p data-employer-discovery-notice className="hx-note" style={{ marginTop: 8 }}>{EMPLOYER_DISCOVERY_NOTICE}</p>
           )}
         </div>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
