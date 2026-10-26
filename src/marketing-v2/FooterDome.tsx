@@ -40,7 +40,7 @@ const LEGAL_LINKS: Array<[string, string]> = [
   ["Privacy", "/privacy"],
   ["Terms", "/terms"],
   ["Refund", "/refund"],
-  ["Grievance", "/grievance"],
+  ["Grievance", "/privacy#grievance-officer"],
 ];
 
 /* ── Icon SVGs ── */

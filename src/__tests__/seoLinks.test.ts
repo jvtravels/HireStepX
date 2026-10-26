@@ -42,3 +42,13 @@ describe("hub crawlability", () => {
     expect(missing).toEqual([]);
   });
 });
+
+import { readFileSync } from "node:fs";
+describe("footer links", () => {
+  it("do not point at redirecting routes", () => {
+    const src = readFileSync("src/marketing-v2/FooterDome.tsx", "utf8");
+    for (const p of ["/how-it-works", "/for-students", "/grievance"]) {
+      expect(src).not.toContain(`"${p}"`);
+    }
+  });
+});
