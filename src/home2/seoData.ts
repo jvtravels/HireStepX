@@ -36,8 +36,19 @@ export function salaryProps(company: string): SalaryTemplateProps | null {
   if (!model) return null;
   const key = company.replace(/-/g, " ");
   const group = SLUG_TO_GROUP[company];
+  const headline = model.roles[0];
+  const headLevel = headline?.bands[0]?.level;
   const related = group
-    ? SALARY_GROUPS[group].filter((s) => s !== company).slice(0, 5).map((s) => ({ slug: s, label: salaryCompanyLabel(s) }))
+    ? SALARY_GROUPS[group].filter((s) => s !== company).slice(0, 5).map((s) => {
+        const peer = buildSalaryPageModel(s);
+        const role = peer?.roles.find((r) => r.roleKey === headline?.roleKey) ?? peer?.roles[0];
+        const band = role?.bands.find((b) => b.level === headLevel) ?? role?.bands[0];
+        return {
+          slug: s,
+          label: salaryCompanyLabel(s),
+          band: band && role ? { role: role.roleLabel, level: band.levelLabel, min: band.totalMin, max: band.totalMax } : undefined,
+        };
+      })
     : [];
   return {
     company,

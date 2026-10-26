@@ -31,3 +31,15 @@ export function truncateSeoDescription(text: string, suffix?: string): string {
   if (text.length <= DESC_MAX) return text;
   return truncateSeoText(text, DESC_MAX);
 }
+
+/** Strips trailing sentence punctuation so steps can be re-joined without ".;" or ".." artefacts. */
+export function stripEndPunct(s: string): string {
+  return s.trim().replace(/[.;:,\s]+$/, "");
+}
+
+/** "Service-Minded-Banker" (3+ hyphenated words) reads better as "Service-minded banker"; short names like "Reliability-first" are left alone. */
+export function displayFrameworkName(name: string): string {
+  if (name.includes(" ") || (name.match(/-/g)?.length ?? 0) < 2) return name;
+  const words = name.split("-");
+  return [words[0], ...words.slice(1).map((w) => w.toLowerCase())].join(" ");
+}

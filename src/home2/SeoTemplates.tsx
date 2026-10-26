@@ -17,6 +17,7 @@ import type { buildSalaryPageModel } from "../../app/(marketing)/salary/[company
 import type { buildQuestionsPageModel } from "../../app/(marketing)/questions/[slug]/_jsonld";
 import type { SalaryBandRow } from "../marketing-v2/SalaryPage";
 import { questionHref } from "../seoLinks";
+import { displayFrameworkName, stripEndPunct } from "../../data/_seo-text-helpers";
 
 /* ── Shared helpers ── */
 
@@ -165,7 +166,7 @@ function FlipDeck({ questions, framework, company, href }: { href: string; quest
         </div>
       ) : (
         <div className="sx-x-face sx-x-back">
-          <span className="sx-mono">{framework.name} framework</span>
+          <span className="sx-mono">{displayFrameworkName(framework.name)} framework</span>
           <ol className="sx-x-steps">{steps.map((st) => <li key={st}>{st}</li>)}</ol>
           {q.styleNote && <span className="sx-x-hint">{q.styleNote}</span>}
           <button type="button" className="sx-x-link" onClick={() => setFlip(false)}>Back to the question</button>
@@ -339,11 +340,35 @@ export type SalaryTemplateProps = {
   model: NonNullable<ReturnType<typeof buildSalaryPageModel>>;
   meta?: (typeof COMPANY_META)[string];
   facts?: (typeof COMPANY_KNOWN_FACTS)[string];
-  related: { slug: string; label: string }[];
+  related: { slug: string; label: string; band?: { role: string; level: string; min: number; max: number } }[];
   groupLabel: string;
   blogSlug?: string;
   calibrationDate: string;
 };
+
+function PeerCompare({ label, headline, related, groupLabel }: { label: string; headline?: { roleLabel: string; bands: SalaryBandRow[] }; related: NonNullable<SalaryTemplateProps["related"]>; groupLabel: string }) {
+  const own = headline?.bands[0];
+  const rows = [
+    ...(own ? [{ slug: "", label, band: { role: headline?.roleLabel ?? "", level: own.levelLabel, min: own.totalMin, max: own.totalMax }, self: true }] : []),
+    ...related.filter((r) => r.band).map((r) => ({ ...r, self: false })),
+  ];
+  const max = Math.max(...rows.map((r) => r.band?.max ?? 0), 1);
+  return (
+    <section className="sx-cmp">
+      <h2 className="sx-h2">{label} vs similar companies</h2>
+      <p className="sx-sub">{groupLabel ? `${groupLabel}, ` : ""}{own ? `${own.levelLabel} level, total CTC in LPA.` : "Total CTC in LPA."}</p>
+      <div className="sx-cmp-list">
+        {rows.map((r) => (
+          <a key={r.label} data-no-underline href={r.self ? undefined : `/salary/${r.slug}`} className="sx-cmp-row" data-self={r.self ? "1" : "0"}>
+            <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
+            <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
+            <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export function SalaryTemplate({ company, model, meta, facts, related, groupLabel, blogSlug, calibrationDate }: SalaryTemplateProps) {
   const [ri, setRi] = useState(0);
@@ -364,7 +389,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
           <div className="sx-stats">
             {meta?.noticePeriodDays != null && <div><span className="sx-mono">Notice period</span><b>{meta.noticePeriodDays} <small>days</small></b></div>}
             {meta?.bondPenaltyLpa != null && <div><span className="sx-mono">Bond</span><b>{meta.bondPenaltyLpa} <small>LPA penalty</small></b></div>}
-            <div><span className="sx-mono">Roles covered</span><b>{roles.length}</b></div>
+            {roles.length > 1 && <div><span className="sx-mono">Roles covered</span><b>{roles.length}</b></div>}
           </div>
           <LevelExplorer roles={roles} ri={ri} setRi={setRi} li={li} setLi={setLi} />
         </div>
@@ -442,9 +467,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
       </div>
       <Faqs items={faqs} />
       <div className="hx-wrap sx-after">
-        {related.length > 0 && (
-          <Related title={`Compare ${label} salary with similar companies`} items={related.map((r) => ({ item: { k: "salary", t: `${r.label} salary`, h: `/salary/${r.slug}`, co: r.label }, meta: groupLabel || "Compare pay" }))} />
-        )}
+        {related.length > 0 && <PeerCompare label={label} headline={headline} related={related} groupLabel={groupLabel} />}
       </div>
       <Hubs />
       <Close kicker="Negotiate" title={<>Walk in knowing <b>your number</b>.</>} body={`Practise the salary conversation with an AI recruiter before the real one, using the ${label} bands above.`} primary={["Practise negotiation", signup]} />
@@ -476,7 +499,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           <div className="sx-meta">
             <span>{questions.length} questions</span>
             {page.interviewRounds && <span>{page.interviewRounds.length} rounds</span>}
-            <span>Framework: {page.framework.name}</span>
+            <span>Framework: {displayFrameworkName(page.framework.name)}</span>
           </div>
           <Skel><FlipDeck href={signup} questions={questions} framework={page.framework} company={companyLabel} /></Skel>
         </div>
@@ -488,13 +511,13 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             {page.recruitmentSteps && (
               <section>
                 <h2>Recruitment process</h2>
-                <ol className="sx-steps">{page.recruitmentSteps.map((s) => <li key={s}>{s}</li>)}</ol>
+                <ol className="sx-steps">{page.recruitmentSteps.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
-            {page.interviewRounds && (
+            {page.interviewRounds && !(page.recruitmentSteps?.length && page.interviewRounds.every((r) => /^Stage \d+:/.test(r))) && (
               <section>
                 <h2>Interview rounds</h2>
-                <ol className="sx-steps">{page.interviewRounds.map((s) => <li key={s}>{s}</li>)}</ol>
+                <ol className="sx-steps">{page.interviewRounds.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
             <section>
@@ -531,7 +554,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             </div>
             <div className="sx-card">
               <span className="sx-mono">Framework</span>
-              <b>{page.framework.name}</b>
+              <b>{displayFrameworkName(page.framework.name)}</b>
               <p>{page.framework.summary}</p>
             </div>
             {salaryTeaser && (
@@ -563,6 +586,19 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
 /* ── Styles ── */
 
 const sxCss = `
+.sx-cmp { padding: 8px 0 24px; }
+.sx-cmp-list { margin-top: 16px; display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--white); }
+.sx-cmp-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 120px; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); color: var(--ink); transition: background .2s; }
+.sx-cmp-row:first-child { border-top: 0; }
+a.sx-cmp-row:hover { background: var(--wash); }
+.sx-cmp-row[data-self="1"] { background: var(--wash); }
+.sx-cmp-name { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sx-cmp-name em { font-style: normal; font-size: 12px; font-weight: 500; color: var(--btn); }
+.sx-cmp-track { position: relative; height: 8px; border-radius: 99px; background: var(--line); }
+.sx-cmp-track i { position: absolute; top: 0; bottom: 0; border-radius: 99px; background: var(--ink-3); opacity: .55; }
+.sx-cmp-row[data-self="1"] .sx-cmp-track i { background: var(--btn); opacity: 1; }
+.sx-cmp-val { text-align: right; font-size: 14px; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+@media (max-width: 900px) { .sx-cmp-row { grid-template-columns: 1fr 100px; } .sx-cmp-track { grid-column: 1 / -1; grid-row: 2; } }
 .sa-bar { position: fixed; inset: 0 0 auto 0; height: 3px; z-index: 100; pointer-events: none; }
 .sa-bar i { display: block; height: 100%; background: var(--btn); transform-origin: 0 50%; transform: scaleX(var(--rp, 0)); }
 @keyframes sa-in { from { transform: translateY(10px); } to { transform: none; } }

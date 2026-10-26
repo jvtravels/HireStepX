@@ -202,11 +202,11 @@ const HEADLINE_Q_VARIANTS = [
 
 const HEADLINE_A_VARIANTS = [
   (role: string, label: string, min: number, max: number, lo: string, hi: string) =>
-    `${role}s at ${label} in India earn between ₹${min}L and ₹${max}L total CTC (2026, ${lo} to ${hi}, 25th–90th percentile).`,
+    `${role}s at ${label} in India earn between ₹${min}L and ₹${max}L total CTC (2026, ${lo} to ${hi}, estimated range).`,
   (role: string, label: string, min: number, max: number, lo: string, hi: string) =>
-    `${label} pays ${role}s in India ₹${min}L–₹${max}L total CTC as of 2026, spanning ${lo} through ${hi} level (25th–90th percentile of reported offers).`,
+    `${label} pays ${role}s in India ₹${min}L–₹${max}L total CTC as of 2026, spanning ${lo} through ${hi} level (estimated range).`,
   (role: string, label: string, min: number, max: number, lo: string, hi: string) =>
-    `Total CTC for a ${role} at ${label} ranges ₹${min}L to ₹${max}L in 2026 (${lo}–${hi}, 25th–90th percentile).`,
+    `Total CTC for a ${role} at ${label} ranges ₹${min}L to ₹${max}L in 2026 (${lo}–${hi}, estimated range).`,
 ] as const;
 
 const PER_LEVEL_Q_VARIANTS = [
@@ -219,9 +219,9 @@ const PER_LEVEL_A_VARIANTS = [
   (phraseCap: string, role: string, label: string, min: number, max: number, source: string) =>
     `${phraseCap} ${role}s at ${label} earn ₹${min}L–₹${max}L total CTC in India (2026). Source: ${source}.`,
   (phraseCap: string, role: string, label: string, min: number, max: number, source: string) =>
-    `At the ${phraseCap.toLowerCase()} band, ${label} ${role}s in India take home ₹${min}L–₹${max}L total CTC (2026 data, ${source}).`,
+    `At the ${phraseCap.charAt(0).toLowerCase()}${phraseCap.slice(1)} band, ${label} ${role}s in India have a total CTC of ₹${min}L–₹${max}L (2026 estimate, ${source}).`,
   (phraseCap: string, role: string, label: string, min: number, max: number, source: string) =>
-    `${label}'s ${phraseCap.toLowerCase()} ${role}s see ₹${min}L–₹${max}L total CTC in 2026, per ${source}.`,
+    `${label}'s ${phraseCap.charAt(0).toLowerCase()}${phraseCap.slice(1)} ${role}s see ₹${min}L–₹${max}L total CTC in 2026, per ${source}.`,
 ] as const;
 
 /* Built once and reused for both the visible FAQ section and the FAQPage

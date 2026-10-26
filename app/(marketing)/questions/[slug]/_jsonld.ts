@@ -1,3 +1,4 @@
+import { displayFrameworkName, stripEndPunct } from "../../../../data/_seo-text-helpers";
 import { getSeoPageBySlug, SEO_PAGES, SEO_PAGES_LAST_MODIFIED, type SeoPage } from "../../../../data/seo-pages";
 import { getSalaryPage } from "../../../../data/salary-seo";
 import { QUESTION_BANK, type BankEntry, type RoleFamily } from "../../../../data/interview-question-bank";
@@ -164,6 +165,7 @@ export function buildQuestionsPageModel(slug: string) {
   const questionsAreCompanySpecific = tier !== 3;
   const companyLabel = COMPANY_LABEL[page.company] ?? page.company;
   const focusLabel = FOCUS_LABEL[page.focus] ?? page.focus;
+  const fwName = displayFrameworkName(page.framework.name);
 
   type FaqEntry = { "@type": "Question"; name: string; acceptedAnswer: { "@type": "Answer"; text: string } };
   const faqEntries: FaqEntry[] = [];
@@ -174,7 +176,7 @@ export function buildQuestionsPageModel(slug: string) {
       name: `What is the recruitment process at ${companyLabel}?`,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `The typical ${companyLabel} recruitment process has ${page.recruitmentSteps.length} stages: ${page.recruitmentSteps.join(" → ")}.`,
+        text: `The typical ${companyLabel} recruitment process has ${page.recruitmentSteps.length} stages: ${page.recruitmentSteps.map(stripEndPunct).join(" → ")}.`,
       },
     });
   }
@@ -185,7 +187,7 @@ export function buildQuestionsPageModel(slug: string) {
       name: `What are the interview rounds at ${companyLabel}?`,
       acceptedAnswer: {
         "@type": "Answer",
-        text: `${companyLabel} typically conducts ${page.interviewRounds.length} interview rounds: ${page.interviewRounds.join("; ")}.`,
+        text: `${companyLabel} typically conducts ${page.interviewRounds.length} interview rounds: ${page.interviewRounds.map(stripEndPunct).join("; ")}.`,
       },
     });
   }
@@ -195,18 +197,16 @@ export function buildQuestionsPageModel(slug: string) {
     name: `What framework should I use for ${companyLabel} ${focusLabel.toLowerCase()} interviews?`,
     acceptedAnswer: {
       "@type": "Answer",
-      text: `HireStepX recommends the ${page.framework.name} framework for this type of interview: ${page.framework.summary}`,
+      text: `HireStepX recommends the ${fwName} framework for this type of interview: ${stripEndPunct(page.framework.summary)}.`,
     },
   });
 
   questions.slice(0, 8).forEach((q) => {
+    if (!q.styleNote) return;
     faqEntries.push({
       "@type": "Question",
       name: q.text,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: `To answer this question well, HireStepX recommends the ${page.framework.name} approach: ${page.framework.summary} Ground your answer in a specific real example from your own experience.`,
-      },
+      acceptedAnswer: { "@type": "Answer", text: q.styleNote },
     });
   });
 
