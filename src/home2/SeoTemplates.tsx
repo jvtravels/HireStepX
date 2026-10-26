@@ -763,8 +763,10 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-hubs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; max-width: 1240px; margin: 32px auto 0; padding: 0 24px; font-size: 14px; }
 .sx-hubs a { color: var(--ink-2); }
 .sx-hubs a:hover { color: var(--ink); }
-.sx-allposts { margin: 8px 0 0; font-size: 14px; }
-.sx-allposts a { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--ink); }
+.sx-allposts { margin: 24px 0 0; text-align: center; }
+.sx-allposts a { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; font-size: 15px; font-weight: 500; color: var(--ink); padding: 10px 18px; border: 1px solid var(--line-2); border-radius: 99px; transition: border-color .15s; }
+.sx-allposts a:hover { border-color: var(--btn); }
+.sx-allposts svg { width: 14px; height: 14px; flex: none; }
 .sx-role { margin: 0 0 56px; scroll-margin-top: 96px; }
 .sx-rel { margin-top: 24px; padding-bottom: 32px; }
 .sx-rel .sx-h2 { text-align: center; margin-bottom: 28px; }
