@@ -10,7 +10,7 @@ const INK = "#14131f";
 const INK_SOFT = "#4b4a5e";
 const WASH = "#f6f5fb";
 const LINE = "#e3e1f0";
-const ORANGE = "#e2552c";
+const ORANGE = "#B45309";
 
 const frame = { width: "100%", height: "100%", display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 80px", background: WASH, backgroundImage: "radial-gradient(ellipse 60% 60% at 90% 0%, rgba(47, 43, 119, 0.12) 0%, transparent 70%)" } as const;
 const row = { display: "flex", alignItems: "center" } as const;
