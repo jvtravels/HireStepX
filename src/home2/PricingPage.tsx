@@ -12,6 +12,8 @@ const CAND_QA: [string, string][] = [
   ["Does my credit expire?", "Single session credit never expires. A Sprint Pack is valid for 30 days, so buy singles if you will spread your practice out."],
   ["How do I pay?", "UPI, card or netbanking. There is no subscription and nothing renews on its own."],
   ["What if something goes wrong?", "Read the refund policy for what is covered, or write to us from the contact page."],
+  ["What happens to unused Sprint Pack sessions?", "The 5 sessions are valid for 30 days from purchase. Unused ones then expire, with no carryover and no automatic charge for a new pack. If you have not started any session, you can ask for a full refund within 7 days."],
+  ["Will I get a tax invoice?", "Every order gives you a downloadable payment receipt with the order ID, amount and date. Formal GST invoices will follow once we cross the GST registration threshold."],
 ];
 
 const EMP_QA: [string, string][] = [
@@ -28,6 +30,8 @@ const CAND_STAGE: Stage[] = [
   { cap: "How long credit lasts", rows: [["Single session", "Never expires"], ["Sprint Pack", "30 days"]] },
   { cap: "Ways to pay", rows: [["UPI", "Accepted"], ["Card", "Accepted"], ["Netbanking", "Accepted"], ["Subscription", "None", true]] },
   { cap: "If something goes wrong", rows: [["Refund policy", "Read it"], ["Contact page", "Write to us"]] },
+  { cap: "Sprint Pack after 30 days", rows: [["Unused sessions", "Expire"], ["Carryover", "None", true], ["Refund if none started", "Within 7 days"]] },
+  { cap: "Your receipt", rows: [["Payment receipt", "Downloadable"], ["Order ID, amount, date", "Included"], ["GST invoice", "Later", true]] },
 ];
 
 const EMP_STAGE: Stage[] = [
