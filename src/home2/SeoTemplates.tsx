@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
 import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
-import { SeoCover, coverCss } from "./SeoCover";
+import { Scene } from "./ResourceScenes";
+import type { Item as ResItem } from "./resourcesData";
 import Skel from "./Skel";
 import { FaqBlock } from "./Extra";
 import { delay, useReveal } from "./motion";
@@ -85,6 +86,14 @@ const FAQ_COPY: Record<FaqKind, { kicker: string; title: React.ReactNode }> = {
   questions: { kicker: "Prep notes", title: <>How to <b>walk in ready</b>.</> },
   hub: { kicker: "Good to know", title: <>The short <b>version</b>.</> },
 };
+
+function HeroScene({ item }: { item: ResItem }) {
+  return (
+    <div className={`sx-scene k-${item.k}`} aria-hidden="true">
+      <div className="sx-scene-in">{Scene({ i: item }) ?? <Vis i={item} />}</div>
+    </div>
+  );
+}
 
 export function Faqs({ items, kind = "hub" }: { items: { q: string; a: string }[]; kind?: FaqKind }) {
   if (items.length === 0) return null;
@@ -242,7 +251,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
 
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <div className="sa-bar" ref={bar} aria-hidden="true"><i /></div>
       <header className="sx-hero sa-hero">
         <div className="hx-wrap">
@@ -255,7 +264,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
             <span>{post.readTime} read</span>
             <span>{post.sections.length} sections</span>
           </div>
-          <div className="sx-cover sa-in" style={delay(4)}><SeoCover hero item={{ k: "guide", t: post.title, co: post.company, tag: post.category }} /></div>
+          <div className="sx-cover sa-in" style={delay(4)}><HeroScene item={{ k: "guide", t: post.title, h: "", co: post.company, tag: post.category }} /></div>
         </div>
       </header>
       <section className="sa-body">
@@ -391,13 +400,13 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
   const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Reported");
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">Salary guide · India 2026 · checked {calibrationDate}</span>
           <h1 className="sx-h1">{label} salary in India</h1>
           <p className="sx-dek">{page.metaDescription}</p>
-          <div className="sx-cover"><SeoCover hero item={{ k: "salary", t: `${label} salary`, co: label }} /></div>
+          <div className="sx-cover"><HeroScene item={{ k: "salary", t: `${label} salary`, h: "", co: label }} /></div>
           <div className="sx-stats">
             {meta?.noticePeriodDays != null && <div><span className="sx-mono">Notice period</span><b>{meta.noticePeriodDays} <small>days</small></b></div>}
             {meta?.bondPenaltyLpa != null && <div><span className="sx-mono">Bond</span><b>{meta.bondPenaltyLpa} <small>LPA penalty</small></b></div>}
@@ -520,7 +529,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
   const intense = questions.filter((q) => q.difficulty === "intense").length;
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">{focusLabel} · {companyLabel}</span>
@@ -692,6 +701,12 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; margin: 0 auto; max-width: 960px; text-wrap: balance; }
 .sx-h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 500; margin: 0 0 14px; }
 .sx-dek { margin: 20px auto 0; max-width: 62ch; font-size: 19px; line-height: 1.55; color: var(--ink-2); }
+.sx-scene { position: relative; height: 340px; border-radius: 28px; border: 1px solid var(--line); overflow: hidden; }
+.sx-scene-in { position: absolute; left: 50%; top: 50%; width: 380px; height: 176px; transform: translate(-50%, -50%) scale(1.85); transform-origin: center; }
+.sx-scene .lb-vis { position: absolute; inset: 0; height: auto; display: block; padding: 0; }
+.sx-scene.k-guide { background: oklch(0.945 0.035 285); }
+.sx-scene.k-salary { background: oklch(0.955 0.045 70); }
+@media (max-width: 900px) { .sx-scene { height: 230px; border-radius: 20px; } .sx-scene-in { transform: translate(-50%, -50%) scale(1.15); } }
 .sx-cover { position: relative; width: 100%; max-width: 1040px; margin-inline: auto; margin-top: 40px; }
 .sx-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin-top: 24px; font-size: 14px; color: var(--ink-3); }
 .sx-meta span + span::before { content: ''; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); margin-right: 24px; vertical-align: middle; }
