@@ -31,3 +31,14 @@ describe("sitemap", () => {
     expect(new Set(urls).size).toBe(urls.length);
   });
 });
+
+import { buildResourceItems } from "../home2/resourcesBuild";
+
+describe("hub crawlability", () => {
+  const hrefs = new Set(buildResourceItems().map((i) => i.h));
+  const urls = sitemap().map((e) => e.url.replace("https://hirestepx.com", ""));
+  it("every sitemap question/salary/blog page is listed in the hub index", () => {
+    const missing = urls.filter((p) => /^\/(questions|salary|blog)\/[^/]+$/.test(p) && !hrefs.has(p));
+    expect(missing).toEqual([]);
+  });
+});

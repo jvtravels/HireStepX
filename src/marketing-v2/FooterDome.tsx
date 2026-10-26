@@ -21,16 +21,17 @@ import { copyrightHolder } from "../../data/legal-entity";
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
   ["AI Mock Interview", "/ai-mock-interview"],
-  ["How it works", "/how-it-works"],
   ["Companies", "/companies"],
   ["Interview Prep", "/interview-prep"],
   ["Practice Questions", "/questions"],
   ["Salary Guides", "/salary"],
+  ["Salary Report 2026", "/salary-report-2026"],
 ];
 
 const COMPANY_LINKS: Array<[string, string]> = [
   ["Methodology", "/methodology"],
   ["Contact", "/contact"],
+  ["Refer a friend", "/referral"],
   ["For employers", "/employers"],
   ["Blog", "/blog"],
 ];

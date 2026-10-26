@@ -74,12 +74,12 @@ function truncateAtWord(text: string, maxLen: number): string {
 /* Some intros' first sentence still overruns the SERP budget on its own
    (verbose company-context openers). Cutting at a raw word boundary there
    still lands mid-clause ("...core Java, Spring."). Prefer the last
-   comma-clause boundary when there is one past 40% of the budget — a
+   comma-clause boundary when there is one past 65% of the budget — a
    full clause reads as a complete (if shorter) thought. */
 function truncateAtClause(text: string, maxLen: number): string {
   const cut = text.slice(0, maxLen);
   const lastComma = cut.lastIndexOf(", ");
-  if (lastComma > maxLen * 0.4) return `${cut.slice(0, lastComma)}.`;
+  if (lastComma > maxLen * 0.65) return `${cut.slice(0, lastComma)}.`;
   return `${truncateAtWord(text, maxLen)}.`;
 }
 

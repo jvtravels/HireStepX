@@ -5,7 +5,7 @@ import { buildReferralJsonLd } from "./_jsonld";
 export const metadata: Metadata = {
   title: "Refer a Friend: Give a Session, Get a Session | HireStepX",
   description:
-    "Refer a friend to HireStepX, and both of you get a free session credit. Share your link, they finish a first interview, you earn a free session. No codes, no hassle.",
+    "Refer a friend to HireStepX, and both of you get a free session credit. Share your link; when they finish a first interview, you earn a free session.",
   keywords: [
     "HireStepX referral program",
     "refer a friend interview prep India",

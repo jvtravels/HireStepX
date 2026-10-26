@@ -469,6 +469,14 @@ export function ResourcesPage({ initial = {}, items }: { initial?: ResourcesInit
                 <button type="button" className="hx-btn sm alt lb-more" onClick={() => setShown((v) => v + 12)}>Show 12 more ({results.length - shown} left)</button>
               )}
             </div>
+            {initial.kinds?.length === 1 && (
+              <details className="lb-index">
+                <summary>Browse all {ALL.filter((i) => i.k === initial.kinds![0]).length} {KIND_PLURAL[initial.kinds[0]].toLowerCase()} as a plain list</summary>
+                <ul>
+                  {ALL.filter((i) => i.k === initial.kinds![0]).map((i) => <li key={i.h}><a href={i.h}>{i.t}</a></li>)}
+                </ul>
+              </details>
+            )}
           </div>
 
         </div>
@@ -562,6 +570,12 @@ export const resourcesCss = sceneCss + `
 .lb-empty { text-align: center; padding: 56px 24px; border-radius: 14px; background: var(--wash); border: 1px solid var(--line); }
 .lb-empty h3 { margin: 0; font-size: 20px; font-weight: 600; color: var(--ink); }
 .lb-empty p { margin: 8px 0 20px; font-size: 15px; color: var(--ink-2); }
+.lb-index { margin-top: 40px; border-top: 1px solid var(--line-2); padding-top: 20px; }
+.lb-index summary { cursor: pointer; font-size: 14px; font-weight: 500; color: var(--ink); }
+.lb-index ul { list-style: none; margin: 16px 0 0; padding: 0; columns: 3 260px; column-gap: 32px; }
+.lb-index li { break-inside: avoid; padding: 4px 0; font-size: 13px; line-height: 1.45; }
+.lb-index a { color: var(--ink-2, var(--ink)); text-decoration: none; }
+.lb-index a:hover { color: var(--btn); text-decoration: underline; }
 .lb-more { display: flex; margin: 20px auto 0; cursor: pointer; font-family: inherit; }
 .lb-note { margin: 18px 0 0; font-size: 13px; color: var(--ink-3); }
 .lb-tabs { position: relative; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 40px; }
