@@ -1,5 +1,6 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   clearPendingConsent,
@@ -510,6 +511,8 @@ export function StagingLoginForm() {
 }
 
 export function StagingSignupForm() {
+  const [footEl, setFootEl] = useState<HTMLElement | null>(null);
+  useEffect(() => { setFootEl(document.getElementById("hx-au-foot")); }, []);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signup, loginWithGoogle, isLoggedIn, user } = useAuth();
@@ -753,11 +756,14 @@ export function StagingSignupForm() {
             <Google />
             {googleInFlight ? "Opening Google…" : "Continue with Google"}
           </button>
-          <p className="hx-legal" style={{ marginTop: 10 }}>
-            By continuing with Google you confirm you are 18 or older and agree to our{" "}
-            <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> and{" "}
-            <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
-          </p>
+          {footEl && createPortal(
+            <p>
+              By continuing with Google you confirm you are 18 or older and agree to our{" "}
+              <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Use</a> and{" "}
+              <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+            </p>,
+            footEl,
+          )}
           <div className="hx-or">or use your email</div>
         </>
       )}
