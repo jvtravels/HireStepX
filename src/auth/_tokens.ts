@@ -150,7 +150,7 @@ export const tokens = {
  * var(--font-ui)). Geist Mono replaces JetBrains Mono the same way. */
 export const fonts = {
   serif: "'Instrument Serif', Georgia, serif",
-  sans: "'Geist Sans', system-ui, -apple-system, sans-serif",
+  sans: "var(--font-ui), 'Geist Sans', system-ui, -apple-system, sans-serif",
   mono: "'Geist Mono', monospace",
 } as const;
 

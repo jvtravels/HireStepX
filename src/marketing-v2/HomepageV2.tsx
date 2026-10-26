@@ -829,7 +829,7 @@ export function InterviewFocusV2() {
       icon: (
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <text x="32" y="48" textAnchor="middle" fontSize="48"
-            fontFamily='"Geist Sans", "Inter", system-ui, sans-serif'
+            style={{ fontFamily: "var(--font-ui), system-ui, sans-serif" }}
             fontWeight="500" fill={G}>₹</text>
         </svg>
       ),
@@ -3021,7 +3021,7 @@ function RPT_InterviewCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boole
     { key: "A", label: "Action",     score: 71, c: t.copper },
     { key: "R", label: "Result",     score: 42, c: t.error },
   ];
-  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'Geist Mono', 'Fira Code', monospace" };
+  const rptF = { sans: "var(--font-ui), 'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif", mono: "'Geist Mono', 'Fira Code', monospace" };
   /* Arc length for 82% of a semicircle: π × r × 0.82 = π × 33 × 0.82 ≈ 85 */
   const arcLen = 85;
   return (
@@ -3099,7 +3099,7 @@ function RPT_ReportCard({ lifted, revealed, baseDelay = 0 }: { lifted?: boolean;
     { n: 2, label: "Justified with market data" },
     { n: 3, label: "Closed at ₹48L target" },
   ];
-  const rptF = { sans: "'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
+  const rptF = { sans: "var(--font-ui), 'Geist Sans', system-ui, -apple-system, sans-serif", serif: "'Instrument Serif', Georgia, serif" };
   /* Arc length for 84% of a semicircle: π × r × 0.84 = π × 37 × 0.84 ≈ 98 */
   const arcLen = 98;
   return (
