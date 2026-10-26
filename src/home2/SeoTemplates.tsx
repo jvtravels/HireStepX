@@ -198,7 +198,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
   const slug = post.slug;
   const ids = post.sections.map((x) => slugify(x.heading));
   const [active, setActive] = useState(ids[0]);
-  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(ids.map((i) => [i, true])));
+  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(ids.map((i) => [i, i === ids[0]])));
   const allOpen = ids.every((i) => open[i]);
   const bar = useRef<HTMLDivElement>(null);
   const art = useRef<HTMLElement>(null);
