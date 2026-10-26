@@ -36,6 +36,19 @@ interface SupabaseWebhookBody {
   };
 }
 
+async function secretsMatch(a: string, b: string): Promise<boolean> {
+  const enc = new TextEncoder();
+  const [da, db] = await Promise.all([
+    crypto.subtle.digest("SHA-256", enc.encode(a)),
+    crypto.subtle.digest("SHA-256", enc.encode(b)),
+  ]);
+  const x = new Uint8Array(da);
+  const y = new Uint8Array(db);
+  let diff = 0;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
+
 async function sendEmail(subject: string, text: string): Promise<void> {
   if (!RESEND_API_KEY) return;
   try {
@@ -72,7 +85,7 @@ export default async function handler(req: Request): Promise<Response> {
 
   /* Verify shared secret — reject anything that doesn't match */
   const secret = req.headers.get("x-webhook-secret") || "";
-  if (!WEBHOOK_SECRET || secret !== WEBHOOK_SECRET) {
+  if (!WEBHOOK_SECRET || !(await secretsMatch(secret, WEBHOOK_SECRET))) {
     return new Response("Unauthorized", { status: 401 });
   }
 

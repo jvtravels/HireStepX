@@ -1,24 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Instrument_Serif } from "next/font/google";
 import localFont from "next/font/local";
 import "../src/index.css";
-
-/* ── Instrument Serif via next/font/google ──
- *
- *   - display: "swap" so FCP never blocks on font download
- *   - adjustFontFallback: auto — Next.js generates a size-adjusted fallback
- *     which removes the CLS spike when the real font loads
- *   - preload: true — this is one of the two critical (UI + display) fonts.
- */
-const instrumentSerif = Instrument_Serif({
-  subsets: ["latin"],
-  weight: "400",
-  style: ["normal", "italic"],
-  variable: "--font-display",
-  display: "swap",
-  preload: true,
-  fallback: ["Georgia", "Times New Roman", "serif"],
-});
 
 /* Geist Mono — self-hosted via next/font/local (variable woff2, from the
  * `geist` npm package's bundled font files, copied into public/fonts/ so
@@ -155,7 +137,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${instrumentSerif.variable} ${geistMono.variable}`}
+      className={geistMono.variable}
     >
       <head>
         {/*
