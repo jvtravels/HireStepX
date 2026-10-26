@@ -229,12 +229,12 @@ function HeroChat() {
         <div className="hc-log" ref={log} role="log" aria-live="polite">
           {msgs.map((m) => (
             <div key={m.id} className={`hc-m ${m.from}`}>
-              {m.from === "us" && <span className="hc-x" aria-hidden="true">X</span>}
+              {m.from === "us" && <span className="hc-x" aria-hidden="true" />}
               <div className="hc-b">{m.text}</div>
             </div>
           ))}
           {typing === "you" && typed && <div className="hc-m you"><div className="hc-b hc-caret">{typed}</div></div>}
-          {typing === "us" && <div className="hc-m us" aria-hidden="true"><span className="hc-x">X</span><div className="hc-b hc-dots"><span /><span /><span /></div></div>}
+          {typing === "us" && <div className="hc-m us" aria-hidden="true"><span className="hc-x" aria-hidden="true" /><div className="hc-b hc-dots"><span /><span /><span /></div></div>}
         </div>
         <div className="hc-res">
           {picked ? (

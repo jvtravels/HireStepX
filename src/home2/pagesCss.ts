@@ -170,7 +170,9 @@ export const pagesCss = `
 .hc-b { min-width: 0; max-width: 92%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.45; }
 .hc-m.you .hc-b { background: color-mix(in oklab, var(--btn) 10%, white); color: var(--ink); border-bottom-right-radius: 6px; }
 .hc-m.us .hc-b { background: transparent; padding-left: 0; padding-right: 0; color: var(--ink-2, var(--ink)); border-top-left-radius: 6px; }
-.hc-x { flex: none; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in oklab, var(--btn) 12%, white); display: grid; place-items: center; font-weight: 700; font-size: 15px; color: var(--btn); }
+.hc-x { flex: none; width: 30px; height: 30px; border-radius: 50%; background: color-mix(in oklab, var(--btn) 12%, white); display: grid; place-items: center; }
+.hc-x::before { content: ''; width: 13px; height: 13px; background: var(--btn); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M0 0h2.6L6 3.4 9.4 0H12L7.3 4.7 6 3.4 4.7 4.7zM0 12h2.6L6 8.6 9.4 12H12L7.3 7.3 6 8.6 4.7 7.3z'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M0 0h2.6L6 3.4 9.4 0H12L7.3 4.7 6 3.4 4.7 4.7zM0 12h2.6L6 8.6 9.4 12H12L7.3 7.3 6 8.6 4.7 7.3z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.hc-m.us .hc-b { padding-top: 4px; padding-bottom: 4px; }
 .hc-log > .hc-m:first-child { margin-top: auto; }
 .hc-caret::after { content: ""; display: inline-block; width: 2px; height: 1em; margin-left: 2px; vertical-align: -2px; background: currentColor; animation: hc-blink 1s steps(1) infinite; }
 .hc-dots { display: flex; gap: 5px; align-items: center; height: 24px; padding-top: 12px; padding-bottom: 12px; box-sizing: content-box; }

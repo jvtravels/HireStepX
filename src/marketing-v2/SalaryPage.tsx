@@ -37,7 +37,6 @@ const INTRO_SOURCING_VARIANTS = [
   (companyLabel: string) =>
     `Every band below is total CTC (base + variable + equity), drawn from the 25th–90th percentile of reported offers at ${companyLabel} in India and verified against AmbitionBox and Glassdoor.`,
 ] as const;
-
 const ROLE_HEADING_VARIANTS = [
   (roleLabel: string, companyLabel: string) => `${roleLabel} Salary at ${companyLabel} (India, 2026)`,
   (roleLabel: string, companyLabel: string) => `${companyLabel} ${roleLabel} Compensation (India, 2026)`,
