@@ -3,6 +3,7 @@ import Skel from "./Skel";
 import { useState } from "react";
 import { useReveal } from "./motion";
 import { JsonLd, faqPage } from "./jsonld";
+import { sessionMinutesForFocus } from "../../data/session-length";
 
 const Lock = () => (
   <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5" /><path d="M5.5 7V5a2.5 2.5 0 015 0v2" /></svg>
@@ -11,7 +12,7 @@ const Lock = () => (
 const QA: [string, string][] = [
   ["How does a practice session work?", "You pick a round (HR, behavioural, technical, campus placement or salary negotiation) and answer out loud. The AI scores each answer on that round's own scorecard, tracks your progress, and shows the exact sentence to fix. A session runs 10 to 25 minutes, depending on the round."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed."],
-  ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search. We never tell your current or target employer that you practise here."],
+  ["Who can see my profile?", "Discovery is on by default, with your identity masked. Employers can search by role and scores and see a code, never your name, phone or email. Switch it off in Settings and you vanish from search."],
   ["Is my voice recorded?", "We do not store it. Your voice goes to speech-to-text providers (Deepgram, with Sarvam as backup) to be turned into text, and they do not keep it. We save only the written transcript."],
   ["Can I delete everything?", "Yes. Delete your account in Settings. Your profile disappears at once and your resume, answers and scores are permanently erased within 7 days. Only anonymised payment records are kept, as tax law requires."],
   ["How is this different from ChatGPT?", "ChatGPT answers when you type. HireStepX interviews you out loud, scores each answer on a STAR scorecard for that round, shows the sentence to fix with a coached model answer, and tracks your progress across sessions."],
@@ -228,12 +229,12 @@ export function EmpFaq() {
 }
 
 const CAND_QA: [string, string][] = [
-  QA[0],
+  ["How long does a session take?", "Between 10 and 25 minutes, depending on the round. An HR round is the shortest, and a case study or panel interview the longest. Your scored report is ready when you finish."],
   ["What questions will I get?", "They come from your target role, your experience, the company you name and your resume. A backend engineer and a sales executive get different questions."],
   ["Is it free to start?", "Yes. Your first 2 sessions are free and no card is needed. After that it is ₹9 a session, or ₹39 for five sessions valid for 30 days."],
-  QA[2],
-  QA[3],
+  ["Does it work on my phone?", "Yes. It runs in your browser on a phone, tablet or laptop, so there is nothing to install. You need a microphone and a quiet minute."],
   ["Will it understand my Indian English accent?", "Yes. The interviewer speaks in an Indian English voice, and speech recognition is set up to handle Indian accents. Speak the way you would to a real interviewer."],
+  QA[3],
 ];
 
 const SAMPLE_Q: [string, string[]][] = [
@@ -242,12 +243,43 @@ const SAMPLE_Q: [string, string[]][] = [
   ["Sales Executive", ["Sell me this pen.", "Tell me about a deal you almost lost.", "How do you handle a client who says it costs too much?"]],
 ];
 
+const LENGTH_ROUNDS = ["HR Round", "Behavioral", "Management", "Panel Interview"];
+
 function CandStage({ i }: { i: number }) {
   const [role, setRole] = useState(0);
-  if (i === 5) {
+  if (i === 0) {
     return (
       <div className="hx-priv-stage" aria-live="polite">
-        <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[5][0]}</span></div>
+        <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[0][0]}</span></div>
+        <div className="hx-priv-body">
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">By round</p>
+            {LENGTH_ROUNDS.map((r) => (
+              <div className="hx-pv-row" key={r}><div><b>{r}</b></div><em className="hx-pv-tag">{sessionMinutesForFocus(r)} min</em></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (i === 3) {
+    return (
+      <div className="hx-priv-stage" aria-live="polite">
+        <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[3][0]}</span></div>
+        <div className="hx-priv-body">
+          <div className="hx-priv-card">
+            <p className="hx-mini-cap">What you need</p>
+            <div className="hx-pv-row"><div><b>A browser</b><span>Phone, tablet or laptop</span></div><em className="hx-pv-tag">Yes</em></div>
+            <div className="hx-pv-row"><div><b>An app download</b></div><em className="hx-pv-tag gone">Not needed</em></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (i === 4) {
+    return (
+      <div className="hx-priv-stage" aria-live="polite">
+        <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[4][0]}</span></div>
         <div className="hx-priv-body">
           <div className="hx-priv-card">
             <p className="hx-mini-cap">As you speak</p>
@@ -258,7 +290,8 @@ function CandStage({ i }: { i: number }) {
       </div>
     );
   }
-  if (i !== 1) return <PrivStage i={i === 0 ? 0 : i === 2 ? 1 : i - 1} />;
+  if (i === 2) return <PrivStage i={1} />;
+  if (i === 5) return <PrivStage i={3} />;
   return (
     <div className="hx-priv-stage" aria-live="polite">
       <div className="hx-priv-top"><span className="hx-priv-lab"><i className="hx-gdot" />{CAND_QA[1][0]}</span></div>

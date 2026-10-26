@@ -52,16 +52,14 @@ const initials = (name: string) => {
 
 const ABOUT_QA: [string, string][] = [
   ["Who is behind HireStepX?", "A small team that works remotely from cities across India. Real people read every piece of feedback and decide what we build next."],
-  ["What does practice cost?", "Your first 2 sessions are free, with no card needed. After that a single session is ₹9, and the Sprint Pack is ₹39 for 5 sessions."],
-  ["Do companies pay too?", "Yes, and only when they want to talk to someone. Unlocking one candidate is ₹59, or ₹299 for ten."],
+  ["Who is HireStepX for?", "Job seekers in India who want to practise spoken interviews, and companies that want to hire from proof of how people answer."],
   ["What happens to my data?", "Delete your account from Settings. Your profile is hidden from employers right away and your data is erased within 7 days."],
   ["How do I reach the team?", "Write to hello@hirestepx.com or use the contact page. A person reads the inbox and replies within 1 business day, India time."],
 ];
 
 const ABOUT_STAGE: { cap: string; rows: [string, string][] }[] = [
   { cap: "The team", rows: [["Works", "Remotely, across India"], ["Reads", "Every piece of feedback"], ["Decides", "What we build next"]] },
-  { cap: "Candidate pricing", rows: [["First 2 sessions", "Free, no card"], ["One session", "₹9"], ["Sprint Pack", "₹39 for 5 sessions"]] },
-  { cap: "Company pricing", rows: [["One candidate", "₹59"], ["Ten candidates", "₹299"], ["Browsing", "Free"]] },
+  { cap: "Two sides", rows: [["Candidates", "Practise out loud"], ["Companies", "Read the evidence"]] },
   { cap: "When you delete", rows: [["Right away", "Profile hidden from employers"], ["Within 7 days", "Your data is erased"]] },
   { cap: "Reaching us", rows: [["Email", "hello@hirestepx.com"], ["Reply time", "1 business day"]] },
 ];
