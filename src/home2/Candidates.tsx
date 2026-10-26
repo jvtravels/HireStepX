@@ -225,7 +225,7 @@ const I = { size: 18, strokeWidth: 1.75, "aria-hidden": true } as const;
 const HOW: { t: string; d: string }[] = [
   { t: "Practise out loud", d: "An AI interviewer asks the questions and you answer like the real thing. A round takes about 10 to 25 minutes." },
   { t: "Find out what to fix", d: "Get a score out of 100 and simple tips. Try again until you are happy." },
-  { t: "Get seen by recruiters", d: "Recruiters hiring for your skills see your verified proof. Your name stays hidden until you say yes." },
+  { t: "Get seen by recruiters", d: "Recruiters hiring for your skills see your practice scores. Your name and contact stay hidden until an employer unlocks them, and you can switch visibility off any time." },
 ];
 
 function Head({ kicker, title, lede }: { kicker: string; title: ReactNode; lede?: string }) {
@@ -321,9 +321,9 @@ function HowItWorks() {
 }
 
 const PROOF: { Icon: LucideIcon; t: string; d: string }[] = [
-  { Icon: FileText, t: "Know where your resume stands", d: "Get a score out of 100, a check that hiring software can read it, and a rewrite for weak lines." },
-  { Icon: ShieldCheck, t: "Proof, not promises", d: "Skills like communication and problem solving show as verified once you have practised them." },
-  { Icon: BriefcaseBusiness, t: "Skip the repeat questions", d: "Add your notice period once. Only employers you accept can see it." },
+  { Icon: FileText, t: "Know where your resume stands", d: "Get a score out of 100, a check of how readable it is for hiring software, and a rewrite for weak lines." },
+  { Icon: ShieldCheck, t: "Proof, not promises", d: "Skills like communication and problem solving show as scored once you have practised them." },
+  { Icon: BriefcaseBusiness, t: "Skip the repeat questions", d: "Add your notice period once, so you do not repeat it in every conversation." },
 ];
 
 function Proof() {

@@ -644,7 +644,7 @@ export type FeatureTab = { name: string; title: string; body: string; points?: s
 const TABS: FeatureTab[] = [
   {
     name: "Ranking",
-    title: "Best fit first, every time.",
+    title: "Best fit first.",
     body: "Each candidate is scored against the role, skills and location you posted, plus how much they have practised.",
     points: ["Matching reruns when you edit the role", "And when a candidate updates their resume", "And every night, so new people appear"],
     view: (alt) => { const picked = alt ? ["Node.js", "PostgreSQL"] : HERO_SKILLS; return <Win left="Backend Engineer" right={`Sample · Ranked on ${picked.length} skills`} alt="Candidates ranked for a Backend Engineer role"><div className="pg-body"><RankList picked={picked} /></div></Win>; },

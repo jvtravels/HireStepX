@@ -130,7 +130,7 @@ export function Connection() {
   const steps: [string, string][] = [
     ["Practise", "A candidate runs a voice interview for a real role."],
     ["Get scored", "Every answer is scored on clarity, relevance, depth and confidence, then saved as evidence."],
-    ["Opt in", "The candidate chooses whether employers can find them."],
+    ["Stay in control", "Your name and contact stay hidden, and you can switch visibility off any time."],
     ["Connect", "An employer reads the answers, then pays to see the name and say hello."],
   ];
   const { ref, on } = useReveal<HTMLDivElement>();

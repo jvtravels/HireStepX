@@ -187,7 +187,7 @@ export function SignupScreen() {
     <Shell
       top={<>Have an account?<a href="/login">Log in</a></>}
       headline={talent ? <>Your first answer is free.</> : <>Hire from proof, not promises.</>}
-      sub={talent ? "Practise out loud and see exactly what to fix. Employers only see you if you opt in." : "Read the answers behind every score. Pay only to unlock a name."}
+      sub={talent ? "Practise out loud and see exactly what to fix. Your name and contact stay hidden until an employer unlocks them." : "Read the answers behind every score. Pay only to unlock a name."}
       talent={talent}
     >
       <h1>{talent ? "Create your account" : "Create a company account"}</h1>
