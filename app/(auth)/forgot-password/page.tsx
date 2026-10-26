@@ -3,6 +3,7 @@ import { AuthSkin } from "@/home2/AuthSkin";
 import ForgotPassword from "@/auth/ForgotPassword";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Reset Password | HireStepX",
   description:
     "Enter your account email and we'll send you a link to reset your password.",

@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Signup from "@/auth/Signup";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Sign Up | HireStepX",
   description:
     "Create your free HireStepX account and start practicing interviews today.",

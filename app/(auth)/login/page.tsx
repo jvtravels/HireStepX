@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import Login from "@/auth/Login";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Log In | HireStepX",
   description:
     "Log in to your HireStepX account to continue practicing interviews.",

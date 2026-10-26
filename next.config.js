@@ -402,6 +402,11 @@ const nextConfig = {
         headers: [{ key: "Cross-Origin-Resource-Policy", value: "same-site" }],
       },
       {
+        // /employer is the logged-in portal, not the marketing page at /employers.
+        source: "/employer/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
         // Unhashed public/ assets: cache a day at the edge and browser, serve stale
         // for a week while revalidating. /_next/static is already immutable.
         source: "/:path*.(png|jpg|jpeg|webp|avif|svg|ico|woff2|mp4|webm)",
