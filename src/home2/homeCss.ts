@@ -33,7 +33,13 @@ export const homeCss = `
 .hx-nav { position: sticky; top: 0; z-index: 40; background: oklch(1 0 0); border-bottom: 1px solid var(--line); }
 .hx-nav-in { display: flex; align-items: center; justify-content: space-between; height: 64px; }
 .hx-logo img { height: 24px; width: auto; display: block; }
-.hx-links { display: flex; gap: 32px; font-size: 15px; color: var(--ink-2); }
+.hx-links { display: flex; font-size: 15px; color: var(--ink-2); }
+.hx-links { gap: 4px; position: relative; }
+.hx-links a { padding: 7px 14px; border-radius: 99px; transition: color .2s, background-color .2s; }
+.hx-links a { position: relative; }
+.hx-links a[aria-current="page"] { color: var(--ink); font-weight: 500; }
+.hx-links .hx-x { position: absolute; left: 0; bottom: -4px; width: 9px; height: 9px; opacity: 0; pointer-events: none; will-change: transform; background: var(--accent); -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M1.8 1.8l6.4 6.4M8.2 1.8L1.8 8.2' stroke='%23000' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat; }
+@media (max-width: 900px) { .hx-links { gap: 0; } }
 .hx-links a:hover { color: var(--ink); }
 .hx-nav-cta { display: flex; align-items: center; gap: 8px; }
 .hx-burger { display: none; width: 44px; height: 44px; margin-right: -10px; border: 0; background: none; color: var(--ink); border-radius: 10px; cursor: pointer; place-items: center; }
