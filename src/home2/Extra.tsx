@@ -100,13 +100,13 @@ function PrivStage({ i }: { i: number }) {
   );
 }
 
-export function FaqBlock({ id, title, qa, stage }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode }) {
+export function FaqBlock({ id, title, qa, stage, jsonLd = true }: { id?: string; title: React.ReactNode; qa: [string, string][]; stage?: (i: number) => React.ReactNode; jsonLd?: boolean }) {
   const { ref, on } = useReveal<HTMLDivElement>();
   const [open, setOpen] = useState(0);
   const shown = open < 0 ? 0 : open;
   return (
     <section className="hx-sec hx-privacy" id={id}>
-      <JsonLd data={faqPage(qa)} />
+      {jsonLd && <JsonLd data={faqPage(qa)} />}
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
         <div className="hx-tr">
           <div className="hx-tr-l">

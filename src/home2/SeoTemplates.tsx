@@ -5,6 +5,7 @@ import { Shell, Close, Arrow } from "./Pages";
 import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
 import { SeoCover, coverCss } from "./SeoCover";
 import Skel from "./Skel";
+import { FaqBlock } from "./Extra";
 import { delay, useReveal } from "./motion";
 import type { Item } from "./resourcesData";
 import { captureClientEvent } from "../posthogClient";
@@ -77,17 +78,7 @@ function fmtDate(iso: string) {
 
 function Faqs({ items }: { items: { q: string; a: string }[] }) {
   if (items.length === 0) return null;
-  return (
-    <section className="sx-faq" aria-label="Frequently asked questions">
-      <h2 className="sx-h2">Frequently asked questions</h2>
-      {items.map((f) => (
-        <details key={f.q}>
-          <summary>{f.q}</summary>
-          <p>{f.a}</p>
-        </details>
-      ))}
-    </section>
-  );
+  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
 }
 
 const HUBS = [
@@ -272,8 +263,8 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
           </article>
         </div>
       </section>
+      <Faqs items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
       <div className="hx-wrap sx-after">
-        <Faqs items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
         <Explore links={explore} />
         {related.length > 0 && (
           <Related title="Continue reading" items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, co: b.company, tag: b.category }, meta: `${b.category} · ${b.readTime}` }))} />
@@ -442,11 +433,13 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               </section>
             )}
             {blogSlug && <p className="sx-peer"><a data-no-underline className="sx-link" href={`/blog/${blogSlug}`}>Read the {label} interview guide <Arrow /></a></p>}
-            <p className="sx-peer">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
-            <Faqs items={faqs} />
           </div>
         </div>
       </section>
+      <div className="hx-wrap">
+        <p className="sx-peer" style={{ margin: "0 0 8px" }}>Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
+      </div>
+      <Faqs items={faqs} />
       <div className="hx-wrap sx-after">
         {related.length > 0 && (
           <Related title={`Compare ${label} salary with similar companies`} items={related.map((r) => ({ item: { k: "salary", t: `${r.label} salary`, h: `/salary/${r.slug}`, co: r.label }, meta: groupLabel || "Compare pay" }))} />
@@ -528,7 +521,6 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
                 </div>
               )}
             </section>
-            <Faqs items={visibleFaqs} />
           </article>
           <aside className="sx-rail">
             <div className="sx-card sx-dark">
@@ -551,6 +543,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           </aside>
         </div>
       </section>
+      <Faqs items={visibleFaqs} />
       <div className="hx-wrap sx-after">
         <Related
           title="More to read"
@@ -677,14 +670,6 @@ const sxCss = `
 .sx-q { display: block; margin-bottom: 8px; color: var(--btn); }
 .hx-closing .hx-end p { font-size: 16px; line-height: 1.65; max-width: 60ch; text-wrap: pretty; }
 .sx-after { padding-bottom: 8px; padding-top: 16px; }
-.sx-faq { margin: 40px 0 8px; }
-.sx-faq details { border-top: 1px solid var(--line, rgba(0,0,0,.1)); padding: 14px 0; }
-.sx-faq details:last-child { border-bottom: 1px solid var(--line, rgba(0,0,0,.1)); }
-.sx-faq summary { cursor: pointer; font-weight: 600; font-size: 17px; color: var(--ink); list-style: none; display: flex; justify-content: space-between; gap: 16px; }
-.sx-faq summary::-webkit-details-marker { display: none; }
-.sx-faq summary::after { content: "+"; color: var(--ink-2); font-weight: 400; }
-.sx-faq details[open] summary::after { content: "\\2212"; }
-.sx-faq p { margin: 10px 0 0; font-size: 16px; line-height: 1.65; color: var(--ink-2); max-width: 70ch; }
 .sx-explore { margin: 40px 0 8px; }
 .sx-explore div { display: flex; flex-wrap: wrap; gap: 10px; }
 .sx-explore a { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border: 1px solid var(--line, rgba(0,0,0,.12)); border-radius: 999px; font-size: 14px; font-weight: 500; color: var(--ink); }
