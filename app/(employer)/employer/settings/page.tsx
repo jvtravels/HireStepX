@@ -12,12 +12,12 @@ import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import BillingHistorySection from "@/employer/BillingHistorySection";
 import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import NotificationPreferences from "@/notifications/NotificationPreferences";
-import { Badge, OutlineCta } from "@/employer/_atoms";
+import { OutlineCta } from "@/employer/_atoms";
 import { KeyboardIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { setShortcutsEnabled, useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 import {
-  describeLimits, exportBody, exportFilename, exportIsIncomplete, openJobCount, tierPresentation,
+  exportBody, exportFilename, exportIsIncomplete, openJobCount,
 } from "@/employer/_accountHelpers";
 import { PageHeader, FlatSection, ActionRow, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection, icons } from "@/settingsSections";
 
@@ -30,7 +30,7 @@ import { PageHeader, FlatSection, ActionRow, SoundsSection, EmailPreferencesSect
 export default function EmployerSettingsPage() {
   const {
     companyName, companyWebsite, companyLogoUrl, companyStatus, companyStatusLoading, companyStatusError,
-    refreshCompanyStatus, suspended, deletionPending, verificationTier, limits, requirements, fetchCredit,
+    refreshCompanyStatus, suspended, deletionPending, requirements, fetchCredit,
   } = useEmployerData();
   const { user, logout, resetPassword } = useAuth();
   const { toast } = useToast();
@@ -90,7 +90,6 @@ export default function EmployerSettingsPage() {
 
   const onDirtyChange = useCallback((v: boolean) => setDirty(v), []);
   const formLocked = suspended || deletionPending;
-  const tierInfo = tierPresentation(verificationTier);
 
   const handlePasswordReset = async () => {
     if (!user?.email) return;
@@ -144,17 +143,6 @@ export default function EmployerSettingsPage() {
               disabled={formLocked}
               onDirtyChange={onDirtyChange}
             />
-          </div>
-        </FlatSection>
-
-        <FlatSection split title="Verification and limits">
-          <div className="flex max-w-[640px] flex-col gap-2 text-[13px] leading-relaxed text-foreground">
-            <p className="m-0 flex flex-wrap items-center gap-2">
-              <span className="font-semibold">Current tier</span>
-              {tierInfo.verifiedBadge ? <Badge tone="success">Verified</Badge> : <Badge tone="neutral">{tierInfo.label}</Badge>}
-            </p>
-            <p className="m-0 text-muted-foreground">Your limits: {describeLimits(limits)}.</p>
-            {tierInfo.nextStep && <p className="m-0 text-muted-foreground">{tierInfo.nextStep}</p>}
           </div>
         </FlatSection>
 
