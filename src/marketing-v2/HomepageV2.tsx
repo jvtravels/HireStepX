@@ -9,7 +9,6 @@ import { FooterDome as FinalCTAFooterV2 } from "./FooterDome";
 import { CopyEmailLink } from "../_CopyEmailLink";
 import { HeroV2 } from "./Hero";
 import { Button } from "@/components/ui/button";
-import { LazyBandVideo } from "./_editorial-lazy-video";
 export { FinalCTAFooterV2 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3643,23 +3642,7 @@ export function VideoCtaV2({
   });
 
   return (
-    <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
-
-      {/* Background video — only fetched once this section nears the viewport,
-          same lazy-mount as DarkBand elsewhere (_editorial-lazy-video.tsx) */}
-      <LazyBandVideo
-        src="/cta.mp4"
-        style={{
-          position: "absolute", inset: 0, width: "100%", height: "100%",
-          objectFit: "cover", objectPosition: "center 75%",
-          opacity: revealed ? 1 : 0,
-          transform: revealed ? "scale(1)" : "scale(1.06)",
-          transition: "opacity 1.2s ease 0ms, transform 1.4s ease 0ms",
-        }}
-      />
-
-      {/* Dark gradient — top to transparent */}
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0) 100%)", pointerEvents: "none" }} />
+    <section ref={sectionRef} style={{ position: "relative", minHeight: 720, overflow: "hidden", background: t.coal, display: "flex", alignItems: "flex-start", justifyContent: "center" }}>
 
       {/* Content */}
       <div style={{ position: "relative", zIndex: 2, textAlign: "center", padding: "60px 40px 40px", maxWidth: 1100, margin: "0 auto", alignSelf: "flex-start" }}>

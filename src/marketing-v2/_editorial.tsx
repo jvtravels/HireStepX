@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
-import { LazyBandVideo } from "./_editorial-lazy-video";
 
 /* ════════════════════════════════════════════════════════════════════
    HireStepX — Editorial kit for SEO surfaces
@@ -458,20 +457,17 @@ export function DarkBand({
   title,
   accent,
   children,
-  videoSrc,
 }: {
   eyebrow?: string;
   title: string;
   accent?: string;
   children?: ReactNode;
-  videoSrc?: string;
 }) {
   return (
     <section
       className="ed-close"
       style={{
         position: "relative",
-        /* Coal is the fallback when video hasn't loaded yet */
         background: t.coal,
         color: t.cream,
         minHeight: 720,
@@ -482,33 +478,6 @@ export function DarkBand({
         alignItems: "center",
       }}
     >
-      {videoSrc && (
-        <LazyBandVideo
-          src={videoSrc}
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            objectPosition: "center 75%",
-            opacity: 0.9,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {/* Gradient — top-heavy dark for text contrast, fades to reveal video */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          background: videoSrc
-            ? "linear-gradient(to bottom, rgba(14,12,8,0.82) 0%, rgba(14,12,8,0.55) 50%, rgba(14,12,8,0.35) 100%)"
-            : "none",
-          pointerEvents: "none",
-        }}
-      />
       <div className="ed-container" style={{ position: "relative", textAlign: "center" as const }}>
         {eyebrow && <p style={{ ...edEyebrow, color: t.copperOnDark, marginBottom: 20 }}>{eyebrow}</p>}
         <h2

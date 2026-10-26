@@ -493,7 +493,7 @@ export default async function AiMockInterviewPage() {
       </main>
 
       {/* ── Closing video CTA — sits directly above the footer ── */}
-      <DarkBand eyebrow="Free · 2 sessions · no card" title="Start your AI mock interview," accent="free." videoSrc="/cta.mp4">
+      <DarkBand eyebrow="Free · 2 sessions · no card" title="Start your AI mock interview," accent="free.">
         <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "40ch", margin: 0 }}>
           2 complete sessions. No credit card. Voice-based, resume-personalized, STAR-scored.
         </p>

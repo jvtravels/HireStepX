@@ -207,7 +207,7 @@ export default function EmployersLandingPage() {
           </div>
         </section>
 
-        <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on practice." videoSrc="/cta.mp4">
+        <DarkBand eyebrow="Hiring, not hoping" title="Skip the resume pile," accent="hire on practice.">
           <p className="emp-dark-copy">
             Candidates on HireStepX practise interviews, and completed sessions are graded by AI (self-run, not independent assessments). Post a job and see who matches.
           </p>
