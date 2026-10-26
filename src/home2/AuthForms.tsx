@@ -10,6 +10,7 @@ import {
   storePendingReferralCode,
   useAuth,
 } from "../AuthContext";
+import { getAuthToken } from "../supabase";
 import { isPlausibleWebsite, WEBSITE_FORMAT_MESSAGE } from "../employer/_companyProfileHelpers";
 import { emailDomain, isFreeMailDomain } from "../../server-handlers/_employer-trust";
 import { PasswordChecklist, PasswordStrengthMeter } from "../auth/_fields";
@@ -286,8 +287,34 @@ export function StagingLoginForm() {
   );
 
   useEffect(() => {
-    if (isLoggedIn && user && !isResetInProgress()) router.replace(computeRedirect());
-  }, [isLoggedIn, user, router, computeRedirect]);
+    if (!(isLoggedIn && user) || isResetInProgress()) return;
+    // No explicit destination: an account with an employer profile belongs on
+    // the employer console, not the candidate dashboard.
+    if (nextParam || planParam) {
+      router.replace(computeRedirect());
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      let dest = computeRedirect();
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          const res = await fetch("/api/employer-profile", { headers: { Authorization: `Bearer ${token}` } });
+          if (res.ok) {
+            const data: { status?: string } = await res.json();
+            if (data.status && data.status !== "none") dest = "/employer";
+          }
+        }
+      } catch {
+        /* fall back to the candidate redirect */
+      }
+      if (!cancelled) router.replace(dest);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, user, router, computeRedirect, nextParam, planParam]);
 
   useEffect(() => {
     trackAuth(loginViewedEvent("login"));
