@@ -9,7 +9,7 @@ const skinCss = `
 .hx-auth-skin .hx-au { display: flex; flex-direction: column; height: auto; background: transparent; }
 .hx-auth-skin .hx-au-l { flex: 1; padding: 24px 40px; display: flex; flex-direction: column; background: transparent; }
 .hx-auth-skin .hx-au-main { margin: auto; align-self: center; width: 100%; max-width: 920px; padding: 44px 56px 40px; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: none; }
-.hx-auth-skin .hx-au-foot { align-self: center; width: 100%; max-width: 600px; margin-top: 20px; text-align: center; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
+.hx-auth-skin .hx-au-foot { align-self: center; width: 100%; max-width: 760px; margin-top: 20px; text-align: center; text-wrap: balance; color: var(--ink-3); font-size: 13px; line-height: 1.5; }
 .hx-auth-skin .hx-au-foot a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .hx-auth-skin .hx-au-foot:empty { display: none; }
 .hx-auth-skin .hx-au-l::after { content: ""; flex: 0 0 64px; }
