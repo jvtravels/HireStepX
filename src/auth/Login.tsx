@@ -25,6 +25,7 @@ import {
   validatePassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { classifyAuthIntent } from "./authIntent";
 import {
   buildAuthLink,
   computeAuthRedirect,
@@ -117,7 +118,9 @@ export default function Login() {
   // Plan + redirect param preservation (matches existing SignUp behavior)
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
 
   // Re-capture a referral code forwarded through the verification-email
   // redirect (verify-email.ts appends ?ref= for us). The signup browser's
@@ -466,7 +469,13 @@ export default function Login() {
                 color: t.coal,
               }}
             >
-              {isEmployerFlow ? (
+              {isInviteFlow ? (
+                <>
+                  Join{" "}
+                  your{" "}
+                  team
+                </>
+              ) : isEmployerFlow ? (
                 <>
                   Hire{" "}
                   faster{" "}
@@ -492,7 +501,9 @@ export default function Login() {
                 textWrap: "balance",
               }}
             >
-              {isEmployerFlow
+              {isInviteFlow
+                ? "Sign in to accept your team invite."
+                : isEmployerFlow
                 ? "Sign in to review your shortlist of candidates who've already been scored on real interview practice."
                 : "Practise interviews with an AI coach. Get scored, structured feedback after every session."}
             </p>
@@ -750,7 +761,7 @@ export default function Login() {
                       </>
                     ) : (
                       <>
-                        {isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
+                        {isInviteFlow ? "Continue to your invite" : isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"

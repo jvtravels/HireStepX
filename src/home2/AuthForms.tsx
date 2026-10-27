@@ -25,6 +25,8 @@ import {
   validateSignupPassword,
 } from "../auth/_validation";
 import { loginViewedEvent, trackAuth } from "../auth/_analytics";
+import { classifyAuthIntent } from "../auth/authIntent";
+import { useInviteHint } from "../auth/useInviteHint";
 import ResendVerification, { ResendStatus, resendButtonLabel, useResendVerification } from "../auth/ResendVerification";
 import {
   computeAuthRedirect,
@@ -172,6 +174,7 @@ function TextField({
   error,
   invalid,
   autoFocus,
+  readOnly,
 }: {
   label: string;
   id: string;
@@ -187,6 +190,7 @@ function TextField({
   error: string | null;
   invalid: boolean;
   autoFocus?: boolean;
+  readOnly?: boolean;
 }) {
   return (
     <div className="hx-lab">
@@ -206,6 +210,7 @@ function TextField({
         maxLength={maxLength}
         aria-invalid={invalid}
         aria-describedby={error ? `${id}-err` : undefined}
+        readOnly={readOnly}
         // eslint-disable-next-line jsx-a11y/no-autofocus
         autoFocus={autoFocus}
       />
@@ -274,7 +279,9 @@ export function StagingLoginForm() {
 
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
 
   useEffect(() => {
     const ref = searchParams?.get("ref") ?? null;
@@ -445,7 +452,7 @@ export function StagingLoginForm() {
       <style>{authFormsCss}</style>
       <h1 id="login-heading">Welcome back</h1>
       <p className="hx-sub">
-        {isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to pick up your practice."}
+        {isInviteFlow ? "Log in to accept your team invite." : isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to pick up your practice."}
       </p>
       <button
         type="button"
@@ -568,7 +575,13 @@ export function StagingSignupForm() {
 
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  // A teammate joining an existing company signs up as a person: no company fields,
+  // no account-type toggle (it would drop the invite link).
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
+  const inviteHint = useInviteHint(intent.kind === "invite" ? intent.token : null);
+  const emailLocked = isInviteFlow && !!inviteHint;
 
   const nameV = validateName(name);
   const emailV = validateEmail(email);
@@ -622,6 +635,10 @@ export function StagingSignupForm() {
     storePendingReferralCode(searchParams?.get("ref") ?? null);
     storePendingNextTarget(nextParam);
   }, [searchParams, nextParam]);
+
+  useEffect(() => {
+    if (inviteHint) setEmail(inviteHint.email);
+  }, [inviteHint]);
 
   const switchWho = (employer: boolean) => {
     if (employer === isEmployerFlow) return;
@@ -706,7 +723,7 @@ export function StagingSignupForm() {
           cleanEmail,
           isEmployerFlow ? companyName.trim() : name.trim(),
           password,
-          isEmployerFlow ? "/employer" : undefined,
+          isInviteFlow && nextParam ? nextParam : isEmployerFlow ? "/employer" : undefined,
           isEmployerFlow ? { companyName, website } : undefined,
         );
         if (!isMounted.current) return;
@@ -725,7 +742,7 @@ export function StagingSignupForm() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, website],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, isInviteFlow, nextParam, companyName, website],
   );
 
   if (signupSent) {
@@ -765,12 +782,20 @@ export function StagingSignupForm() {
   return (
     <main className="hx-au-inner">
       <style>{authFormsCss}</style>
-      <h1 id="signup-heading">{isEmployerFlow ? "Create a company account" : "Create your account"}</h1>
-      <p className="hx-sub">{isEmployerFlow ? "Find candidates who have practised." : "Practise with an AI interviewer and get a scored report."}</p>
-      <div className="hx-seg" role="group" aria-label="Account type">
-        <button type="button" aria-pressed={!isEmployerFlow} onClick={() => switchWho(false)}>I&apos;m a candidate</button>
-        <button type="button" aria-pressed={isEmployerFlow} onClick={() => switchWho(true)}>I&apos;m hiring</button>
-      </div>
+      <h1 id="signup-heading">{isInviteFlow ? "Create your account to join" : isEmployerFlow ? "Create a company account" : "Create your account"}</h1>
+      <p className="hx-sub">
+        {isInviteFlow
+          ? inviteHint
+            ? `${inviteHint.inviterName ?? "A teammate"} invited you to join ${inviteHint.companyName} on HireStepX.`
+            : "You were invited to a team on HireStepX. Use the email address your invite was sent to."
+          : isEmployerFlow ? "Find candidates who have practised." : "Practise with an AI interviewer and get a scored report."}
+      </p>
+      {!isInviteFlow && (
+        <div className="hx-seg" role="group" aria-label="Account type">
+          <button type="button" aria-pressed={!isEmployerFlow} onClick={() => switchWho(false)}>I&apos;m a candidate</button>
+          <button type="button" aria-pressed={isEmployerFlow} onClick={() => switchWho(true)}>I&apos;m hiring</button>
+        </div>
+      )}
       {!isEmployerFlow && (
         <>
           <button
@@ -873,7 +898,13 @@ export function StagingSignupForm() {
           maxLength={254}
           error={emailError}
           invalid={!!error || (emailTouched && (!!emailV.message || !workEmailValid))}
+          readOnly={emailLocked}
         />
+        {emailLocked && (
+          <p className="hx-note" style={{ marginTop: -8 }}>
+            This is the address your invite was sent to. Accepting it requires this email.
+          </p>
+        )}
         {emailSuggestion && !emailV.valid && (
           <p className="hx-note" style={{ marginTop: -8 }}>
             Did you mean{" "}
@@ -937,9 +968,9 @@ export function StagingSignupForm() {
           )}
         </div>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
-          {loading ? "Creating your account…" : isEmployerFlow ? "Create company account" : "Create account"}
+          {loading ? "Creating your account…" : isEmployerFlow ? "Create company account" : isInviteFlow ? "Create account and continue" : "Create account"}
         </button>
-        {!isEmployerFlow && <p className="hx-note hx-trial">2 sessions free · No card needed</p>}
+        {!isEmployerFlow && !isInviteFlow && <p className="hx-note hx-trial">2 sessions free · No card needed</p>}
       </form>
     </main>
   );
