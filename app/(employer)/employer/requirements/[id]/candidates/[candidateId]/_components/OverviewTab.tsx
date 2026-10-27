@@ -383,12 +383,14 @@ function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidat
                   renderAction={
                     c.ask
                       ? (text) => (
-                          <ItemRequest
-                            candidate={candidate}
-                            ui={requestUi}
-                            label="Ask them about this"
-                            preset={{ kind: "clarification", topic: text.slice(0, 120), note: `Could you tell me more about this? ${text}`.slice(0, 300) }}
-                          />
+                          <div className="mt-1">
+                            <ItemRequest
+                              candidate={candidate}
+                              ui={requestUi}
+                              label="Ask them about this"
+                              preset={{ kind: "clarification", topic: text.slice(0, 120), note: `Could you tell me more about this? ${text}`.slice(0, 300) }}
+                            />
+                          </div>
                         )
                       : undefined
                   }
@@ -449,18 +451,20 @@ export function OverviewTab({
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
   return (
     <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:divide-x lg:divide-y-0">
-      <div className="flex min-w-0 flex-col divide-y divide-hx-line">
+      <div className="@container flex min-w-0 flex-col divide-y divide-hx-line">
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
+        <div className="grid min-w-0 divide-y divide-hx-line @3xl:grid-cols-2 @3xl:divide-x @3xl:divide-y-0 @3xl:[&:has(>:only-child)]:grid-cols-1">
+          <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
+          <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
+        </div>
       </div>
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
-        <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
-        <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
       </div>
     </div>
   );

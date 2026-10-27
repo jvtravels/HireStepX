@@ -293,7 +293,7 @@ export function InlineRequestTrigger({ label, requested, ...triggerProps }: { la
     <button
       {...triggerProps}
       type="button"
-      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
+      className="cursor-pointer self-start border-0 bg-transparent p-0 text-left text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
     >
       {requested ? "Requested" : label}
     </button>
