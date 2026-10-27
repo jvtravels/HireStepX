@@ -134,7 +134,7 @@ export function checkMemberChange(params: {
 /* ── Invites ─────────────────────────────────────────────────────────── */
 
 export const INVITE_TTL_DAYS = 7;
-export const MAX_TEAM_SIZE = 50;
+export const MAX_TEAM_SIZE = 5;
 
 export function normalizeEmail(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().toLowerCase().slice(0, 254) : "";

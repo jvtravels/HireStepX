@@ -25,6 +25,7 @@ vi.mock("../../server-handlers/_employer-team-helpers", async (orig) => ({
 }));
 
 const { default: handler } = await import("../../server-handlers/employer-team");
+const { MAX_TEAM_SIZE } = await import("../../server-handlers/_employer-team-helpers");
 
 const hoursAgo = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
 const roster = [
@@ -81,6 +82,34 @@ describe("employer-team handler: invite throttle", () => {
     const res = await post({ action: "invite", email: "new@acme.com", role: "member" });
     expect(res.status).toBe(201);
     expect(sendInvite).toHaveBeenCalledOnce();
+  });
+});
+
+describe("employer-team handler: seat cap", () => {
+  const seats = (n: number) => Array.from({ length: n }, (_, i) => ({
+    user_id: `u-${i}`, role: "member", email: `m${i}@acme.com`, name: `M${i}`, invited_by: "owner-1", joined_at: hoursAgo(10), last_active_at: null,
+  }));
+
+  it("allows at most 5 people and refuses the 6th invite", async () => {
+    expect(MAX_TEAM_SIZE).toBe(5);
+    const original = roster.splice(0, roster.length, ...seats(MAX_TEAM_SIZE));
+    try {
+      const res = await post({ action: "invite", email: "new@acme.com", role: "member" });
+      expect(res.status).toBe(409);
+      expect(sendInvite).not.toHaveBeenCalled();
+    } finally {
+      roster.splice(0, roster.length, ...original);
+    }
+  });
+
+  it("still allows the 5th seat", async () => {
+    const original = roster.splice(0, roster.length, ...seats(MAX_TEAM_SIZE - 1));
+    try {
+      const res = await post({ action: "invite", email: "new@acme.com", role: "member" });
+      expect(res.status).toBe(201);
+    } finally {
+      roster.splice(0, roster.length, ...original);
+    }
   });
 });
 

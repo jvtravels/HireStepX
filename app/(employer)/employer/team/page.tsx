@@ -155,7 +155,8 @@ function TeamConsole() {
     tabRefs.current[next.id]?.focus();
   };
 
-  const seatsFull = team.members.length >= team.limits.maxTeamSize;
+  const seatsUsed = team.members.length + team.invites.filter((i) => i.state === "pending").length;
+  const seatsFull = seatsUsed >= team.limits.maxTeamSize;
   const openInvite = () => { setInviting(true); setTab("members"); };
   const who = companyName || "this company";
 
@@ -173,7 +174,7 @@ function TeamConsole() {
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              <SeatMeter used={team.members.length} max={team.limits.maxTeamSize} />
+              <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} />
               {canInvite && !panelOpen && (
                 <Button type="button" size="lg" className="h-9 gap-2 px-4" disabled={seatsFull} onClick={openInvite}>
                   <UserPlusIcon aria-hidden="true" /> Invite teammate
@@ -242,14 +243,8 @@ function TeamConsole() {
             <MembersTab
               members={team.members}
               myRole={myRole}
-              summary={activity.summary}
-              summaryDays={activity.summaryDays}
-              showActivity={canSeeActivity && !compact}
               compact={compact}
               soleOwner={myRole === "owner" && owners <= 1}
-              canInvite={canInvite}
-              seatsFull={seatsFull}
-              onInvite={openInvite}
               onCommand={onCommand}
               busyId={busyId}
             />
