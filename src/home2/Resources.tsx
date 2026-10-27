@@ -689,6 +689,9 @@ export const resourcesCss = sceneCss + `
 .lb-tabs[data-ready] .lb-tab { background: transparent; transition: color .25s, border-color .15s; }
 .lb-tabs[data-ready] .lb-tab.on { border-color: transparent; }
 .lb-tabs[data-ready] .lb-tab:not(.on):hover { background: var(--wash); }
+.lb-stage .lb-tabs .lb-tab:not(.on), .lb-stage .lb-tabs[data-ready] .lb-tab:not(.on) { background: oklch(1 0 0 / 0.78); border-color: oklch(1 0 0 / 0.9); color: var(--ink); }
+.lb-stage .lb-tabs .lb-tab:not(.on) small { color: var(--ink-2); }
+.lb-stage .lb-tabs[data-ready] .lb-tab:not(.on):hover { background: var(--white); color: var(--btn); }
 .lb-dd { transform-origin: top right; }
 .lb-ddmenu { transform-origin: top right; }
 .lb-ddmenu[data-state="closing"] { animation: lb-out .14s cubic-bezier(.4,0,1,1) both; pointer-events: none; }
