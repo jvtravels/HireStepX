@@ -168,6 +168,9 @@ async function accept(req: Request): Promise<Response> {
         method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ accepted_at: null, accepted_by: null }),
       }).catch(() => {});
       if (ins.status === 409) return reply({ error: INVITE_ACCEPT_MESSAGE.already_member, code: "already_member" }, 409);
+      if ((await ins.text().catch(() => "")).includes("team_full")) {
+        return reply({ error: `This team already has ${MAX_TEAM_SIZE} people. Ask an admin to free up a seat, then try again.`, code: "team_full" }, 409);
+      }
       throw new Error(`member insert failed: ${ins.status}`);
     }
 

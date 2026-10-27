@@ -143,8 +143,12 @@ export default function JoinTeam() {
   const accept = useCallback(async () => {
     setBusy(true);
     setProblem(null);
-    const res = await apiFetch<{ ok: boolean }>("/api/employer-team-accept", { token }, { method: "POST" });
-    if (res.ok) { window.location.assign("/employer"); return; }
+    const res = await apiFetch<{ ok: boolean; role?: string }>("/api/employer-team-accept", { token }, { method: "POST" });
+    if (res.ok) {
+      const role = res.data?.role;
+      window.location.assign(isEmployerRole(role) ? `/employer?joined=${role}` : "/employer");
+      return;
+    }
     const err = res.errorData as { error?: string; code?: string } | null;
     setProblem({ code: err?.code, message: err?.error || res.error || "Something went wrong. Please try again." });
     setBusy(false);

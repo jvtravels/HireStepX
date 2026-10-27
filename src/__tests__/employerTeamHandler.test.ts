@@ -35,6 +35,9 @@ const roster = [
 
 let recentInvites: Array<{ created_at: string }>;
 let resendsLogged: number;
+let memberWriteRows: unknown[];
+let inviteInsertFull: boolean;
+let demoteFails: boolean;
 const calls: Array<{ url: string; method: string }> = [];
 
 beforeEach(() => {
@@ -42,6 +45,9 @@ beforeEach(() => {
   calls.length = 0;
   recentInvites = [];
   resendsLogged = 0;
+  memberWriteRows = [{ ok: 1 }];
+  inviteInsertFull = false;
+  demoteFails = false;
   vi.stubGlobal("fetch", vi.fn(async (input: string, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? "GET";
@@ -49,10 +55,14 @@ beforeEach(() => {
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
     if (url.includes("/employers?")) return json([{ company_name: "Acme", suspended_at: null }]);
     if (url.includes("/employer_members?") && method === "GET") return json(roster);
-    if (url.includes("/employer_members?")) return json([]);
+    if (url.includes("/employer_members?")) {
+      if (demoteFails && method === "PATCH" && url.includes("user_id=eq.owner-1")) return json({}, 500);
+      return json(memberWriteRows);
+    }
     if (url.includes("employer_invites?") && url.includes("accepted_at=is.null&revoked_at=is.null&select")) return json([]);
     if (url.includes("employer_invites?") && url.includes("created_at=gt.")) return json(recentInvites);
     if (url.includes("employer_audit_log?")) return json(Array.from({ length: resendsLogged }, (_, i) => ({ id: i })));
+    if (url.includes("/employer_invites") && method === "POST" && inviteInsertFull) return new Response('{"message":"team_full"}', { status: 400 });
     if (url.includes("/employer_invites") && method === "POST") {
       return json([{ id: "inv-new", employer_id: "co-1", email: "new@acme.com", role: "member", invited_by: "owner-1", created_at: hoursAgo(0), expires_at: hoursAgo(-100), accepted_at: null, revoked_at: null }], 201);
     }
@@ -153,5 +163,39 @@ describe("employer-team handler: telling people about access changes", () => {
     const res = await post({ action: "leave" });
     expect(res.status).toBe(409);
     expect(sendChange).not.toHaveBeenCalled();
+  });
+});
+
+describe("employer-team handler: concurrent changes", () => {
+  it("pins a role change to the role it validated and reports a stale roster as 409", async () => {
+    memberWriteRows = [];
+    const res = await post({ action: "set_role", userId: "u-2", role: "admin" });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { code: string }).code).toBe("stale");
+    const patch = calls.find((c) => c.method === "PATCH" && c.url.includes("user_id=eq.u-2"));
+    expect(patch?.url).toContain("role=eq.member");
+    expect(sendChange).not.toHaveBeenCalled();
+  });
+
+  it("does not remove someone who was changed since the page loaded", async () => {
+    memberWriteRows = [];
+    const res = await post({ action: "remove_member", userId: "u-2" });
+    expect(res.status).toBe(409);
+    expect(sendChange).not.toHaveBeenCalled();
+  });
+
+  it("puts the new owner back when the old owner's demotion fails", async () => {
+    demoteFails = true;
+    expect((await post({ action: "transfer_ownership", userId: "u-2" })).status).toBe(500);
+    const patches = calls.filter((c) => c.method === "PATCH" && c.url.includes("employer_members"));
+    expect(patches.at(-1)?.url).toContain("user_id=eq.u-2");
+    expect(patches.at(-1)?.url).toContain("role=eq.owner");
+  });
+
+  it("maps the database seat-cap error on invite to the normal team-full message", async () => {
+    inviteInsertFull = true;
+    const res = await post({ action: "invite", email: "new@acme.com", role: "member" });
+    expect(res.status).toBe(409);
+    expect(sendInvite).not.toHaveBeenCalled();
   });
 });

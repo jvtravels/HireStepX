@@ -9,6 +9,7 @@ import { tokens as t, fonts as f } from "../auth/_tokens";
 import { EmployerWordmark } from "./_atoms";
 import { useEmployerData } from "./EmployerDataContext";
 import VerificationBanner from "./VerificationBanner";
+import JoinedBanner from "./JoinedBanner";
 import { ErrorPanel, InWhiteCardProvider, PageSkeleton } from "./_consoleParts";
 import { Button } from "@/components/ui/button";
 import {
@@ -339,7 +340,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         mainId="employer-main"
         pageKey={pathname}
         headerActionsRef={setHeaderSlot}
-        banners={<VerificationBanner />}
+        banners={<><JoinedBanner /><VerificationBanner /></>}
       >
         <div className={"flex min-h-0 w-full min-w-0 flex-1 flex-col"}>
           {isSelfCardedRoute(pathname ?? "") ? pageBody : DETAIL_ROUTE.test(pathname ?? "") ? (

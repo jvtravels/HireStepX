@@ -216,7 +216,7 @@ async function handleAction(ctx: EmployerContext, body: Record<string, unknown>,
   }
 }
 
-async function insertInvite(ctx: EmployerContext, email: string, role: InvitableRole, tokenHash: string): Promise<InviteListRow | "conflict"> {
+async function insertInvite(ctx: EmployerContext, email: string, role: InvitableRole, tokenHash: string): Promise<InviteListRow | "conflict" | "full"> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites`, {
     method: "POST",
     headers: jsonHeaders(),
@@ -226,7 +226,10 @@ async function insertInvite(ctx: EmployerContext, email: string, role: Invitable
     }),
   });
   if (res.status === 409) return "conflict";
-  if (!res.ok) throw new Error(`invite insert failed: ${res.status}`);
+  if (!res.ok) {
+    if ((await res.text().catch(() => "")).includes("team_full")) return "full";
+    throw new Error(`invite insert failed: ${res.status}`);
+  }
   return ((await res.json()) as InviteListRow[])[0];
 }
 
@@ -273,6 +276,7 @@ async function invite(ctx: EmployerContext, companyName: string, body: Record<st
   if (!row) {
     const inserted = await insertInvite(ctx, email, role, tokenHash);
     if (inserted === "conflict") return reply({ error: "An invite for that email is already pending." }, 409);
+    if (inserted === "full") return reply({ error: `Teams are limited to ${MAX_TEAM_SIZE} people. Remove someone or cancel an invite first.` }, 409);
     row = inserted;
   }
 
@@ -332,11 +336,15 @@ async function changeMember(ctx: EmployerContext, companyName: string, targetId:
   });
   if (violation) return reply({ error: VIOLATION_MESSAGE[violation], code: violation }, violation === "forbidden" ? 403 : 409);
   const target = roster.find((m) => m.user_id === targetId)!;
-  const where = `employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(targetId)}`;
+  // Pinned to the role the rules were checked against, so a concurrent change by another admin
+  // makes this a no-op (409) instead of overwriting or deleting someone under a stale view.
+  const where = `employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(targetId)}&role=eq.${target.role}`;
+  const STALE = "Someone else just changed this person. Refresh the page and try again.";
 
   if (newRole === null) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=minimal" } });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=representation" } });
     if (!res.ok) throw new Error(`member delete failed: ${res.status}`);
+    if (((await res.json().catch(() => [])) as unknown[]).length === 0) return reply({ error: STALE, code: "stale" }, 409);
     await audit(ctx, targetId === ctx.userId ? "member.left" : "member.removed", targetId, { email: target.email, role: target.role });
     if (targetId !== ctx.userId) await tellMember(ctx, companyName, { email: target.email }, { kind: "removed" });
     return reply({ ok: true });
@@ -345,6 +353,7 @@ async function changeMember(ctx: EmployerContext, companyName: string, targetId:
     method: "PATCH", headers: jsonHeaders(), body: JSON.stringify({ role: newRole }),
   });
   if (!res.ok) throw new Error(`member update failed: ${res.status}`);
+  if (((await res.json().catch(() => [])) as unknown[]).length === 0) return reply({ error: STALE, code: "stale" }, 409);
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: newRole });
   await tellMember(ctx, companyName, { email: target.email }, { kind: "role_changed", role: newRole });
   return reply({ member: memberDto({ ...target, role: newRole }, ctx.userId) });
@@ -357,15 +366,23 @@ async function transferOwnership(ctx: EmployerContext, companyName: string, targ
   const target = roster.find((m) => m.user_id === targetId);
   if (!target) return reply({ error: "That person isn't on your team." }, 404);
 
-  const patch = (uid: string, role: EmployerRole) =>
-    fetch(`${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(uid)}`, {
-      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ role }),
+  // `from` pins the row to the role we read, so a stale roster changes nothing.
+  const patch = (uid: string, from: EmployerRole, role: EmployerRole) =>
+    fetch(`${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(uid)}&role=eq.${from}`, {
+      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=representation" }, body: JSON.stringify({ role }),
     });
-  // Promote first: if the demotion then fails there are two owners, never none.
-  const up = await patch(targetId, "owner");
+  const changed = async (res: Response) => res.ok && ((await res.json().catch(() => [])) as unknown[]).length > 0;
+  // Promote first: if the demotion then fails there are two owners, never none, and we
+  // put the target back so the failure leaves the team exactly as it was.
+  const up = await patch(targetId, target.role, "owner");
   if (!up.ok) throw new Error(`ownership promote failed: ${up.status}`);
-  const down = await patch(ctx.userId, "admin");
-  if (!down.ok) throw new Error(`ownership demote failed: ${down.status}`);
+  if (!(await changed(up))) return reply({ error: "Someone else just changed this person. Refresh the page and try again.", code: "stale" }, 409);
+  const down = await patch(ctx.userId, "owner", "admin");
+  if (!(await changed(down))) {
+    await patch(targetId, "owner", target.role).catch(() => null);
+    if (!down.ok) throw new Error(`ownership demote failed: ${down.status}`);
+    return reply({ error: "Ownership changed while you were transferring it. Refresh the page and try again.", code: "stale" }, 409);
+  }
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: "owner", transfer: true });
   await tellMember(ctx, companyName, { email: target.email }, { kind: "ownership_received" });
   return reply({ ok: true });
