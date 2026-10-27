@@ -29,6 +29,7 @@ const ICONS: Record<string, ComponentType<{ className?: string; "aria-hidden"?: 
   payment_success: CreditCardIcon,
   payment_failed: AlertTriangleIcon,
   subscription_renewed: CreditCardIcon,
+  team_invite_accepted: UserCheckIcon,
 };
 
 interface Props {

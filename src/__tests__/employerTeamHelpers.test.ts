@@ -142,6 +142,13 @@ describe("resolveEmployerContext", () => {
     expect(await resolveEmployerContext("https://x", {}, "u1", f as unknown as typeof fetch)).toBeNull();
   });
 
+  it("a removed member is refused on their very next request", async () => {
+    const f = vi.fn().mockResolvedValueOnce(json([])).mockResolvedValueOnce(json([]));
+    const gate = await requireEmployerPermission("https://x", {}, "u1", "jobs.read", f as unknown as typeof fetch);
+    expect(gate.ok).toBe(false);
+    expect([401, 403, 404]).toContain((gate as { status: number }).status);
+  });
+
   it("requireEmployerPermission 403s a role without the permission", async () => {
     const f = vi.fn().mockResolvedValue(json([{ employer_id: "co", user_id: "u1", role: "viewer", email: "", name: null, last_active_at: new Date().toISOString() }]));
     const gate = await requireEmployerPermission("https://x", {}, "u1", "jobs.write", f as unknown as typeof fetch);

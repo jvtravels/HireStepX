@@ -53,6 +53,7 @@ import type { UnlockOrderRow } from "./_unlock-fulfillment";
 import { creditBalance, spendCreditDetailed, releaseCredit } from "./_employer-credit";
 import { captureServerEvent } from "./_posthog";
 import { isCreditOrderRef, newCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
+import { attributeUnlocks } from "./_employer-unlock-attribution";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -87,10 +88,11 @@ function orderResponse(order: Pick<UnlockOrderRow, "razorpay_order_id" | "amount
 /** Finishes a credit-only order (new or retried) and shapes the response the
  *  verify endpoint would have produced for a paid one. */
 async function creditOrderResponse(
-  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow,
+  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow, actorId: string,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const settled = await settleCreditOrder({ supabaseUrl, headers, order, expectEmployerId: order.employer_id });
   if (settled.kind === "fulfilled" || settled.kind === "partial") {
+    await attributeUnlocks({ supabaseUrl, headers, result: settled, actorId });
     // settleCreditOrder -> fulfillUnlockOrder already blanks the email and masks the name of a candidate who has
     // since withdrawn, declined or blocked this employer (or when the employer is suspended), including on a replay.
     const candidates = settled.candidates.map((c) => ({ matchId: c.matchId, name: c.name || "Candidate", contact: { email: c.email || "" } }));
@@ -319,7 +321,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reusable = findReusableOrder(openOrders, mode, targetMatchIds);
     if (reusable) {
       if (isCreditOrderRef(reusable.razorpay_order_id)) {
-        const done = await creditOrderResponse(SUPABASE_URL, sh, reusable);
+        const done = await creditOrderResponse(SUPABASE_URL, sh, reusable, actorId);
         return res.status(done.status).json(done.body);
       }
       return res.status(200).json(orderResponse(reusable, { reused: true }));
@@ -382,7 +384,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (inserted.kind === "conflict" && inserted.order) {
         const done = isCreditOrderRef(inserted.order.razorpay_order_id)
-          ? await creditOrderResponse(SUPABASE_URL, sh, inserted.order)
+          ? await creditOrderResponse(SUPABASE_URL, sh, inserted.order, actorId)
           : { status: 200, body: orderResponse(inserted.order, { reused: true }) };
         return res.status(done.status).json(done.body);
       }
@@ -403,7 +405,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
       }
       void captureServerEvent("employer_credit_spent", employerId, { orderId: inserted.order.razorpay_order_id, amountPaise: spent.spent, creditOnly: true });
-      const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order);
+      const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order, actorId);
       return res.status(done.status).json(done.body);
     }
 

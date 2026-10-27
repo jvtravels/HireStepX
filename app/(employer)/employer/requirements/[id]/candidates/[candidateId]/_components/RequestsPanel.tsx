@@ -1,6 +1,6 @@
 import { Panel, PanelButton } from "@/employer/_panelParts";
 import { Badge } from "@/employer/_atoms";
-import { REQUEST_KIND_LABEL, REQUEST_STATUS_LABEL, type CandidateRequestDto, type RequestStatus } from "@/employer/_candidateRequestTypes";
+import { REQUEST_KIND_LABEL, REQUEST_STATUS_LABEL, isHiringField, type CandidateRequestDto, type RequestStatus } from "@/employer/_candidateRequestTypes";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 
 const STATUS_TONE: Record<RequestStatus, "warning" | "success" | "error" | "neutral"> = {
@@ -10,7 +10,7 @@ const STATUS_TONE: Record<RequestStatus, "warning" | "success" | "error" | "neut
   cancelled: "neutral",
 };
 
-const FIELD_LABEL: Record<string, string> = { phone: "phone number", email: "email address", linkedin: "LinkedIn profile", portfolio: "portfolio or GitHub" };
+const FIELD_LABEL: Record<string, string> = { phone: "phone number", email: "email address", linkedin: "LinkedIn profile", portfolio: "portfolio or GitHub", notice_period: "notice period", current_ctc: "current CTC", expected_ctc: "expected CTC" };
 
 function ago(iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
@@ -19,7 +19,11 @@ function ago(iso: string): string {
 }
 
 function describe(r: CandidateRequestDto): string {
-  if (r.kind === "contact") return r.fields?.length ? `Contact details: ${r.fields.map((f) => FIELD_LABEL[f] ?? f).join(", ")}` : REQUEST_KIND_LABEL.contact;
+  if (r.kind === "contact") {
+    if (!r.fields?.length) return REQUEST_KIND_LABEL.contact;
+    const prefix = r.fields.every(isHiringField) ? "Hiring details" : r.fields.some(isHiringField) ? "Details" : "Contact details";
+    return `${prefix}: ${r.fields.map((f) => FIELD_LABEL[f] ?? f).join(", ")}`;
+  }
   return r.topic ? `${REQUEST_KIND_LABEL[r.kind]}: ${r.topic}` : REQUEST_KIND_LABEL[r.kind];
 }
 

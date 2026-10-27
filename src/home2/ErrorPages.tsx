@@ -51,7 +51,7 @@ const errorCss = `
 .er-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .er-chips a { display: inline-flex; align-items: center; padding: 8px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--white); font-size: 14px; font-weight: 500; color: var(--ink); transition: border-color .15s, color .15s; }
 .er-chips a:hover { border-color: var(--btn); color: var(--btn); }
-.er-stage { position: relative; aspect-ratio: 1 / .86; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); display: grid; place-items: center; padding: 8%; overflow: hidden; }
+.er-stage { position: relative; aspect-ratio: 1 / .86; border-radius: 28px; border: 1px solid var(--line); background: var(--sky); display: grid; place-items: center; padding: 8%; overflow: hidden; }
 .er-line { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 6px; width: 100%; height: 44%; }
 .er-line i { flex: 1; min-width: 0; border-radius: 99px; background: var(--btn); }
 .er-line i.s-live { transform-origin: center; animation: er-breathe 1.9s ease-in-out infinite; animation-delay: calc(var(--i, 0) * 90ms); }

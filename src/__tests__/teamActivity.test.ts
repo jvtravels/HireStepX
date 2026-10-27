@@ -34,11 +34,23 @@ describe("describeEvent", () => {
     expect(describeEvent({ action: "candidate.unlocked", meta: {} }).subject).toBe("a candidate");
     expect(describeEvent({ action: "candidate.unlocked", meta: { candidateName: "Rahul S." } }).subject).toBe("Rahul S.");
   });
+  it("describes a message to a candidate without any message text", () => {
+    expect(describeEvent({ action: "candidate.messaged", meta: { candidateName: "Rahul S.", jobTitle: "SDE", body: "secret" } })).toEqual({
+      verb: "messaged", subject: "Rahul S.", detail: "for SDE", group: "candidates",
+    });
+    expect(describeEvent({ action: "candidate.messaged", meta: {} })).toMatchObject({ subject: "a candidate", detail: null });
+  });
   it("labels candidate status changes and the job they are for", () => {
     expect(describeEvent({ action: "candidate.status_changed", meta: { candidateName: "Rahul S.", to: "interviewing", jobTitle: "SDE" } })).toMatchObject({
       verb: "marked", subject: "Rahul S.", detail: "as Interviewing for SDE",
     });
     expect(describeEvent({ action: "candidate.status_changed", meta: { to: "bogus" } }).detail).toBeNull();
+  });
+  it("labels note edits with the candidate and job", () => {
+    expect(describeEvent({ action: "candidate.note_updated", meta: { candidateName: "Rahul S.", jobTitle: "SDE" } })).toMatchObject({
+      verb: "updated notes on", subject: "Rahul S.", detail: "for SDE",
+    });
+    expect(describeEvent({ action: "candidate.note_updated", meta: {} }).subject).toBe("a candidate");
   });
   it("labels pipeline stage moves and job lifecycle", () => {
     expect(describeEvent({ action: "job.stage_changed", meta: { stage: "hired" } }).detail).toBe("to Hired");

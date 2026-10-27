@@ -124,7 +124,9 @@ export default function ThreadLog({
           }
           const m = row.message;
           const own = m.senderRole === viewerRole;
-          const sender = own ? selfName : otherName;
+          const teammate = own && m.sentBy && !m.sentBy.isYou ? m.sentBy.name : null;
+          const sender = teammate ?? (own ? selfName : otherName);
+          const shownName = teammate ?? (own ? "You" : sender);
           return (
             <div key={row.key} className={cn("group/msg relative flex gap-3 px-4 hover:bg-muted/40", Date.now() - new Date(m.createdAt).getTime() < 4000 && "mx-rise", row.showHeader ? "mt-2 pt-1.5 pb-0.5" : "py-0.5")}>
               <div className="w-9 shrink-0">
@@ -143,12 +145,12 @@ export default function ThreadLog({
               <div className="min-w-0 flex-1">
                 {row.showHeader && (
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-semibold text-foreground">{own ? "You" : sender}</span>
+                    <span className="text-sm font-semibold text-foreground">{shownName}</span>
                     <time dateTime={m.createdAt} className="text-xs text-muted-foreground">{clockTime(m.createdAt)}</time>
                     {m.flagged && <span className="rounded-full bg-red-100 px-1.5 text-xs font-medium text-red-700 dark:bg-red-500/20 dark:text-red-300">Flagged</span>}
                   </div>
                 )}
-                <span className="sr-only">{row.showHeader ? "" : `${own ? "You" : sender}: `}</span>
+                <span className="sr-only">{row.showHeader ? "" : `${shownName}: `}</span>
                 {m.body && <p className="m-0 text-sm leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap text-foreground">{m.body}</p>}
                 {m.attachmentPath && <AttachmentCard message={m} onOpen={onOpenAttachment} />}
                 {own && m.id === lastOwnId && <p className="m-0 mt-0.5 text-xs text-muted-foreground">Delivered</p>}

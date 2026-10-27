@@ -31,6 +31,7 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { classifyAuthIntent } from "./authIntent";
 import { ResendStatus, resendButtonLabel, useResendVerification } from "./ResendVerification";
 import {
   buildAuthLink,
@@ -119,8 +120,9 @@ export default function Signup() {
   // the separate CompanyOnboarding step after signup.
   // A teammate joining an existing company signs up as a person, not as a new
   // company: no company-name field and no pending company profile.
-  const isInviteFlow = !!nextParam?.startsWith("/employer/join");
-  const isEmployerFlow = !!nextParam?.startsWith("/employer") && !isInviteFlow;
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
 
   // Validation
   // Employers don't give a personal name — the company name (below) doubles

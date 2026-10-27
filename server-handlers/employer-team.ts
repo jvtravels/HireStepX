@@ -22,18 +22,17 @@ export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, slog } from "./_shared";
 import {
-  MAX_TEAM_SIZE, INVITE_TTL_DAYS, VIOLATION_MESSAGE, assignableRoles, can, canManageMember, checkMemberChange,
+  MAX_TEAM_SIZE, INVITE_TTL_DAYS, INVITES_PER_DAY, RESENDS_PER_DAY, invitesRemainingToday, VIOLATION_MESSAGE, assignableRoles, can, canManageMember, checkMemberChange,
   generateInviteToken, hashInviteToken, inviteState, isEmployerRole, isInvitableRole, isValidEmail, normalizeEmail,
   requireEmployerPermission, writeAuditLog,
   type AuditAction, type EmployerContext, type EmployerRole, type InviteRow, type InvitableRole,
 } from "./_employer-team-helpers";
-import { inviteLink, sendTeamInviteEmail } from "./_employer-team-emails";
+import { inviteLink, sendTeamChangeEmail, sendTeamInviteEmail, type TeamChange } from "./_employer-team-emails";
 import { teamsEnabledFor } from "./_employer-team-gate";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const INVITES_PER_DAY = 20;
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -73,6 +72,26 @@ async function loadLiveInvites(employerId: string): Promise<InviteListRow[]> {
   );
   if (!res.ok) throw new Error(`invites read failed: ${res.status}`);
   return (await res.json()) as InviteListRow[];
+}
+
+async function loadRecentInviteTimes(employerId: string): Promise<string[]> {
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/employer_invites?employer_id=eq.${encodeURIComponent(employerId)}&created_at=gt.${encodeURIComponent(since)}&select=created_at&limit=200`,
+    { headers: serviceHeaders() },
+  );
+  if (!res.ok) throw new Error(`recent invites read failed: ${res.status}`);
+  return ((await res.json()) as Array<{ created_at: string }>).map((r) => r.created_at);
+}
+
+async function countResendsToday(employerId: string): Promise<number> {
+  const since = new Date(Date.now() - 86_400_000).toISOString();
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/employer_audit_log?employer_id=eq.${encodeURIComponent(employerId)}&action=eq.member.invite_resent&created_at=gt.${encodeURIComponent(since)}&select=id&limit=200`,
+    { headers: serviceHeaders() },
+  );
+  if (!res.ok) throw new Error(`resend count failed: ${res.status}`);
+  return ((await res.json()) as unknown[]).length;
 }
 
 async function loadInvite(employerId: string, inviteId: string): Promise<InviteListRow | null> {
@@ -165,6 +184,12 @@ function audit(ctx: EmployerContext, action: AuditAction, entityId: string | und
   });
 }
 
+/* Best-effort: the change is already committed, so telling the person never
+   fails the request. Email only: removed people have lost the console. */
+async function tellMember(ctx: EmployerContext, companyName: string, target: { email: string }, change: TeamChange): Promise<void> {
+  await Promise.allSettled([sendTeamChangeEmail({ to: target.email, change, companyName, actorName: ctx.name || ctx.email })]);
+}
+
 async function handleAction(ctx: EmployerContext, body: Record<string, unknown>, reply: Reply): Promise<Response> {
   const action = typeof body.action === "string" ? body.action : "";
   const company = await loadCompany(ctx.employerId);
@@ -179,19 +204,19 @@ async function handleAction(ctx: EmployerContext, body: Record<string, unknown>,
     case "revoke_invite":
       return revokeInvite(ctx, body, reply);
     case "set_role":
-      return changeMember(ctx, String(body.userId ?? ""), isEmployerRole(body.role) ? body.role : undefined, reply);
+      return changeMember(ctx, company.company_name, String(body.userId ?? ""), isEmployerRole(body.role) ? body.role : undefined, reply);
     case "remove_member":
-      return changeMember(ctx, String(body.userId ?? ""), null, reply);
+      return changeMember(ctx, company.company_name, String(body.userId ?? ""), null, reply);
     case "leave":
-      return changeMember(ctx, ctx.userId, null, reply);
+      return changeMember(ctx, company.company_name, ctx.userId, null, reply);
     case "transfer_ownership":
-      return transferOwnership(ctx, String(body.userId ?? ""), reply);
+      return transferOwnership(ctx, company.company_name, String(body.userId ?? ""), reply);
     default:
       return reply({ error: "Unknown action" }, 400);
   }
 }
 
-async function insertInvite(ctx: EmployerContext, email: string, role: InvitableRole, tokenHash: string): Promise<InviteListRow | "conflict"> {
+async function insertInvite(ctx: EmployerContext, email: string, role: InvitableRole, tokenHash: string): Promise<InviteListRow | "conflict" | "full"> {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites`, {
     method: "POST",
     headers: jsonHeaders(),
@@ -201,7 +226,10 @@ async function insertInvite(ctx: EmployerContext, email: string, role: Invitable
     }),
   });
   if (res.status === 409) return "conflict";
-  if (!res.ok) throw new Error(`invite insert failed: ${res.status}`);
+  if (!res.ok) {
+    if ((await res.text().catch(() => "")).includes("team_full")) return "full";
+    throw new Error(`invite insert failed: ${res.status}`);
+  }
   return ((await res.json()) as InviteListRow[])[0];
 }
 
@@ -214,32 +242,45 @@ async function invite(ctx: EmployerContext, companyName: string, body: Record<st
   }
   const role = body.role;
 
-  const [roster, live] = await Promise.all([loadRoster(ctx.employerId), loadLiveInvites(ctx.employerId)]);
+  const [roster, live, recent] = await Promise.all([loadRoster(ctx.employerId), loadLiveInvites(ctx.employerId), loadRecentInviteTimes(ctx.employerId)]);
   if (roster.some((m) => m.email === email)) return reply({ error: "That person is already on your team." }, 409);
 
   const pending = live.filter((i) => inviteState(i) === "pending");
   if (roster.length + pending.filter((i) => i.email !== email).length >= MAX_TEAM_SIZE) {
     return reply({ error: `Teams are limited to ${MAX_TEAM_SIZE} people. Remove someone or cancel an invite first.` }, 409);
   }
-  const dayAgo = Date.now() - 86_400_000;
-  if (live.filter((i) => Date.parse(i.created_at) > dayAgo).length >= INVITES_PER_DAY) {
+  if (invitesRemainingToday(recent) === 0) {
     return reply({ error: "You've sent a lot of invites today. Try again tomorrow." }, 429);
   }
 
-  // Re-inviting an address replaces its live invite (one live invite per email).
+  const token = generateInviteToken();
+  const tokenHash = await hashInviteToken(token);
+
+  // Re-inviting an address rotates its live invite in place (one live invite per email), so a
+  // failure can never leave the person with no invite at all.
   const existing = live.find((i) => i.email === email);
+  let row: InviteListRow | undefined;
   if (existing) {
     if (!canManageMember(ctx.role, existing.role)) return reply({ error: VIOLATION_MESSAGE.forbidden }, 403);
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${existing.id}`, {
-      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ revoked_at: new Date().toISOString() }),
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${existing.id}&accepted_at=is.null&revoked_at=is.null`, {
+      method: "PATCH",
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        role, token_hash: tokenHash, invited_by: ctx.userId,
+        expires_at: new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000).toISOString(),
+      }),
     });
+    if (!res.ok) throw new Error(`invite rotate failed: ${res.status}`);
+    row = ((await res.json()) as InviteListRow[])[0];
+  }
+  if (!row) {
+    const inserted = await insertInvite(ctx, email, role, tokenHash);
+    if (inserted === "conflict") return reply({ error: "An invite for that email is already pending." }, 409);
+    if (inserted === "full") return reply({ error: `Teams are limited to ${MAX_TEAM_SIZE} people. Remove someone or cancel an invite first.` }, 409);
+    row = inserted;
   }
 
-  const token = generateInviteToken();
-  const row = await insertInvite(ctx, email, role, await hashInviteToken(token));
-  if (row === "conflict") return reply({ error: "An invite for that email is already pending." }, 409);
-
-  const emailed = await sendTeamInviteEmail({ to: email, token, companyName, inviterName: ctx.name || ctx.email, role });
+  const emailed = await sendTeamInviteEmail({ to: email, token, companyName, inviterName: ctx.name || ctx.email, inviterEmail: ctx.email, role });
   await audit(ctx, "member.invited", row.id, { email, role });
   return reply({ invite: inviteDto(row, roster), link: inviteLink(token), emailed }, 201);
 }
@@ -249,6 +290,10 @@ async function resendInvite(ctx: EmployerContext, companyName: string, body: Rec
   const inv = await loadInvite(ctx.employerId, String(body.inviteId ?? ""));
   if (!inv || inv.accepted_at || inv.revoked_at) return reply({ error: "Invite not found" }, 404);
   if (!canManageMember(ctx.role, inv.role)) return reply({ error: VIOLATION_MESSAGE.forbidden }, 403);
+
+  if ((await countResendsToday(ctx.employerId)) >= RESENDS_PER_DAY) {
+    return reply({ error: "You've re-sent a lot of invites today. Try again tomorrow." }, 429);
+  }
 
   const token = generateInviteToken();
   const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${inv.id}&accepted_at=is.null&revoked_at=is.null`, {
@@ -263,7 +308,7 @@ async function resendInvite(ctx: EmployerContext, companyName: string, body: Rec
   const row = ((await res.json()) as InviteListRow[])[0];
   if (!row) return reply({ error: "Invite not found" }, 404);
 
-  const emailed = await sendTeamInviteEmail({ to: inv.email, token, companyName, inviterName: ctx.name || ctx.email, role: inv.role });
+  const emailed = await sendTeamInviteEmail({ to: inv.email, token, companyName, inviterName: ctx.name || ctx.email, inviterEmail: ctx.email, role: inv.role });
   await audit(ctx, "member.invite_resent", inv.id, { email: inv.email, role: inv.role });
   return reply({ invite: inviteDto(row, await loadRoster(ctx.employerId)), link: inviteLink(token), emailed });
 }
@@ -282,7 +327,7 @@ async function revokeInvite(ctx: EmployerContext, body: Record<string, unknown>,
 }
 
 /** newRole: a role to set, null to remove/leave, undefined = the client sent an invalid role. */
-async function changeMember(ctx: EmployerContext, targetId: string, newRole: EmployerRole | null | undefined, reply: Reply): Promise<Response> {
+async function changeMember(ctx: EmployerContext, companyName: string, targetId: string, newRole: EmployerRole | null | undefined, reply: Reply): Promise<Response> {
   if (!targetId || newRole === undefined) return reply({ error: "Invalid request" }, 400);
   const roster = await loadRoster(ctx.employerId);
   const violation = checkMemberChange({
@@ -291,38 +336,54 @@ async function changeMember(ctx: EmployerContext, targetId: string, newRole: Emp
   });
   if (violation) return reply({ error: VIOLATION_MESSAGE[violation], code: violation }, violation === "forbidden" ? 403 : 409);
   const target = roster.find((m) => m.user_id === targetId)!;
-  const where = `employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(targetId)}`;
+  // Pinned to the role the rules were checked against, so a concurrent change by another admin
+  // makes this a no-op (409) instead of overwriting or deleting someone under a stale view.
+  const where = `employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(targetId)}&role=eq.${target.role}`;
+  const STALE = "Someone else just changed this person. Refresh the page and try again.";
 
   if (newRole === null) {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=minimal" } });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, { method: "DELETE", headers: { ...serviceHeaders(), Prefer: "return=representation" } });
     if (!res.ok) throw new Error(`member delete failed: ${res.status}`);
+    if (((await res.json().catch(() => [])) as unknown[]).length === 0) return reply({ error: STALE, code: "stale" }, 409);
     await audit(ctx, targetId === ctx.userId ? "member.left" : "member.removed", targetId, { email: target.email, role: target.role });
+    if (targetId !== ctx.userId) await tellMember(ctx, companyName, { email: target.email }, { kind: "removed" });
     return reply({ ok: true });
   }
   const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?${where}`, {
     method: "PATCH", headers: jsonHeaders(), body: JSON.stringify({ role: newRole }),
   });
   if (!res.ok) throw new Error(`member update failed: ${res.status}`);
+  if (((await res.json().catch(() => [])) as unknown[]).length === 0) return reply({ error: STALE, code: "stale" }, 409);
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: newRole });
+  await tellMember(ctx, companyName, { email: target.email }, { kind: "role_changed", role: newRole });
   return reply({ member: memberDto({ ...target, role: newRole }, ctx.userId) });
 }
 
-async function transferOwnership(ctx: EmployerContext, targetId: string, reply: Reply): Promise<Response> {
+async function transferOwnership(ctx: EmployerContext, companyName: string, targetId: string, reply: Reply): Promise<Response> {
   if (ctx.role !== "owner") return reply({ error: "Only the owner can transfer ownership." }, 403);
   if (!targetId || targetId === ctx.userId) return reply({ error: "Choose another team member." }, 400);
   const roster = await loadRoster(ctx.employerId);
   const target = roster.find((m) => m.user_id === targetId);
   if (!target) return reply({ error: "That person isn't on your team." }, 404);
 
-  const patch = (uid: string, role: EmployerRole) =>
-    fetch(`${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(uid)}`, {
-      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ role }),
+  // `from` pins the row to the role we read, so a stale roster changes nothing.
+  const patch = (uid: string, from: EmployerRole, role: EmployerRole) =>
+    fetch(`${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(ctx.employerId)}&user_id=eq.${encodeURIComponent(uid)}&role=eq.${from}`, {
+      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=representation" }, body: JSON.stringify({ role }),
     });
-  // Promote first: if the demotion then fails there are two owners, never none.
-  const up = await patch(targetId, "owner");
+  const changed = async (res: Response) => res.ok && ((await res.json().catch(() => [])) as unknown[]).length > 0;
+  // Promote first: if the demotion then fails there are two owners, never none, and we
+  // put the target back so the failure leaves the team exactly as it was.
+  const up = await patch(targetId, target.role, "owner");
   if (!up.ok) throw new Error(`ownership promote failed: ${up.status}`);
-  const down = await patch(ctx.userId, "admin");
-  if (!down.ok) throw new Error(`ownership demote failed: ${down.status}`);
+  if (!(await changed(up))) return reply({ error: "Someone else just changed this person. Refresh the page and try again.", code: "stale" }, 409);
+  const down = await patch(ctx.userId, "owner", "admin");
+  if (!(await changed(down))) {
+    await patch(targetId, "owner", target.role).catch(() => null);
+    if (!down.ok) throw new Error(`ownership demote failed: ${down.status}`);
+    return reply({ error: "Ownership changed while you were transferring it. Refresh the page and try again.", code: "stale" }, 409);
+  }
   await audit(ctx, "member.role_changed", targetId, { email: target.email, from: target.role, to: "owner", transfer: true });
+  await tellMember(ctx, companyName, { email: target.email }, { kind: "ownership_received" });
   return reply({ ok: true });
 }

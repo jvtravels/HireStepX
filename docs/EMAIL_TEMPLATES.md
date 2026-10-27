@@ -4,11 +4,11 @@ Single source of truth for every transactional/lifecycle email sent to users (an
 
 **Sender identity (all emails)**
 
-- **From**: `process.env.FROM_EMAIL`, defaulting to `HireStepX <noreply@hirestepx.com>`. Replies to a few emails go to `support@hirestepx.com` or `hello@hirestepx.com` (set per handler).
+- **From**: `process.env.FROM_EMAIL`, defaulting to `HireStepX <hello@hirestepx.com>` (every handler, including team invites; replies reach a real inbox). Replies to a few emails go to `support@hirestepx.com` or `hello@hirestepx.com` (set per handler).
 - **Colors** (tokens in `server-handlers/_email-theme.ts`): indigo `#312E81` primary (buttons, links), success green `#15803D`, error red `#B91C1C` (security/failure hero dot and light-red frame), neutral page background `#FAFAFA`, white sheet.
-- **Header**: HireStepX wordmark image (`https://hirestepx.com/wordmark.png`, 22px high), top-left.
+- **Header**: HireStepX wordmark image (`https://hirestepx.com/wordmark-email.png`, 18px high, with a dark-mode variant), top-left.
 - **Hero**: every email opens with a `hero()` block: a white card (eyebrow with status dot, 28px headline, optional lede) on a rounded 16px frame with the site's soft gradient (light red for `tone: "error"`).
-- **Footer (every email)**: "You're receiving this because you have an account at hirestepx.com." plus "Manage notifications"; marketing/lifecycle emails (`marketing: true`) also carry a signed "Unsubscribe" link, transactional ones never do. Sender line is `HireStepX · hello@hirestepx.com`; a postal address renders only if `LEGAL_POSTAL_ADDRESS` is configured, never invented.
+- **Footer (every email)**: "You're receiving this because you have an account at hirestepx.com." plus "Manage notifications" (emails to people who may have no account, such as team invites and contact acknowledgements, pass `footer: { reason }` instead, which replaces that sentence and drops the Manage link); marketing/lifecycle emails (`marketing: true`) also carry a signed "Unsubscribe" link, transactional ones never do. Sender line is `HireStepX · hello@hirestepx.com`; a postal address renders only if `LEGAL_POSTAL_ADDRESS` is configured, never invented.
 - **Width**: 600px max, single column, 15px body text, Geist/system sans stack, no italics.
 - **CTA buttons**: 10px radius, 12px 22px padding, white text on indigo (ghost variant is outlined).
 

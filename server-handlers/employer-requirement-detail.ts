@@ -37,6 +37,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { loadLastTouch, type LastTouch } from "./_employer-last-touch";
 import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, requiredSkillsMatched, type RequirementInput } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
@@ -335,7 +336,12 @@ export default async function handler(req: Request): Promise<Response> {
 
     // None of these reads depends on another, so they run together instead of
     // adding their round trips up.
-    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds()]);
+    let lastTouch = new Map<string, LastTouch>();
+    const loadTouches = async () => {
+      const touched = pageMatches.filter((m) => m.unlocked || m.candidate_status !== "shortlisted" || m.candidate_status_note).map((m) => m.id);
+      lastTouch = await loadLastTouch({ supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId, viewerId: gate.ctx.userId, matchIds: touched });
+    };
+    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds(), loadTouches()]);
 
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);
@@ -373,7 +379,7 @@ export default async function handler(req: Request): Promise<Response> {
       // free text are contact details too, so they go with the rest.
       const resume = unlocked
         ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
-        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, profile?.name || ""), expectedCtc: null });
+        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, profile?.name || ""), expectedCtc: null /* exact figure stays server-side; expectedCtcBand is the opt-in range */ });
 
       return {
         id: m.id,
@@ -402,6 +408,7 @@ export default async function handler(req: Request): Promise<Response> {
         resume,
         candidateStatus: m.candidate_status,
         candidateStatusNote: m.candidate_status_note,
+        lastUpdatedBy: lastTouch.get(m.id) ?? null,
         candidateResponse,
         interviewScheduledAt: m.interview_scheduled_at,
         creditRefunded: refundedMatchIds.has(m.id),

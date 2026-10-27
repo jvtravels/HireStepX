@@ -277,9 +277,15 @@ alter table account_erasure_log enable row level security;
 -- on-conflict-do-nothing and treats the conflict as "already processed".
 create table if not exists payment_dedup (
   razorpay_payment_id text primary key,
-  user_id uuid references profiles(id) on delete cascade,
+  user_id uuid references profiles(id) on delete set null,
   created_at timestamptz default now()
 );
+-- Migration 0062: prod's table predates user_id, so create-if-not-exists skipped it.
+alter table payment_dedup add column if not exists user_id uuid;
+alter table payment_dedup drop constraint if exists payment_dedup_user_id_fkey;
+alter table payment_dedup
+  add constraint payment_dedup_user_id_fkey
+  foreign key (user_id) references profiles(id) on delete set null;
 -- Service-role-only: written exclusively by verify-payment / webhook via the
 -- service key (which bypasses RLS). Enabling RLS with NO authenticated/anon
 -- policy denies all client access — defense-in-depth so payment ids never leak

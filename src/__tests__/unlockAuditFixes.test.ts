@@ -428,3 +428,47 @@ describe("credit note rendering", () => {
     expect(html).not.toMatch(/31 Oct(ober)? 2026/);
   });
 });
+
+/* ── who unlocked: the webhook attributes to the teammate on the order notes ── */
+
+describe("payment.captured webhook: attribution", () => {
+  const TEAMMATE = "22222222-2222-4222-8222-222222222222";
+  const audits: Array<Record<string, unknown>> = [];
+
+  function attributingFetch(notes: Record<string, unknown>): typeof fetch {
+    const base = combineFetch(db, fakeRazorpay({ orders: { order_1: { amount: 5900, notes } }, payments: [{ id: "pay_1", status: "captured", amount: 5900, order_id: "order_1", currency: "INR" }] }));
+    return (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("employer_audit_log")) {
+        if (init?.method === "POST") audits.push(JSON.parse(String(init.body)));
+        return new Response(init?.method === "POST" ? null : "[]", { status: init?.method === "POST" ? 201 : 200 });
+      }
+      if (url.includes("unlocked_by=is.null") || url.includes("paid_by=is.null")) {
+        return url.includes("unlocked_by=is.null")
+          ? new Response(JSON.stringify([{ id: "m1" }]), { status: 200 })
+          : new Response(null, { status: 204 });
+      }
+      return base(input, init);
+    }) as typeof fetch;
+  }
+
+  beforeEach(() => { audits.length = 0; });
+
+  it("logs the unlock against the teammate who created the order, not the company", async () => {
+    const out = await hook("payment.captured", capturedEvent(), {
+      fetchImpl: attributingFetch({ createdBy: TEAMMATE }), razorpayKeyId: "k", razorpayKeySecret: "s",
+    });
+    expect(out).toMatchObject({ handled: true, status: 200 });
+    expect(audits).toHaveLength(1);
+    expect(audits[0]).toMatchObject({ employer_id: "emp-1", actor_user_id: TEAMMATE, action: "candidate.unlocked", entity_id: "m1" });
+  });
+
+  it("still fulfils and logs under System when the order carries no teammate", async () => {
+    const out = await hook("payment.captured", capturedEvent(), {
+      fetchImpl: attributingFetch({}), razorpayKeyId: "k", razorpayKeySecret: "s",
+    });
+    expect(out).toMatchObject({ handled: true, status: 200 });
+    expect(audits).toHaveLength(1);
+    expect(audits[0]).toMatchObject({ actor_user_id: null, action: "candidate.unlocked" });
+  });
+});

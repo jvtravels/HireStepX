@@ -6,7 +6,7 @@ import { buildResourceItems } from "@/home2/resourcesBuild";
 import { JsonLd, breadcrumbs } from "@/home2/jsonld";
 
 const KIND_META: Record<string, { path: string; title: string; description: string }> = {
-  guide: { path: "/blog", title: "Interview Prep Blog: Guides for Indian Job Seekers | HireStepX", description: "Long-form guides on answering, structuring and rehearsing interviews. Written for Indian job seekers, with examples you can practise out loud." },
+  guide: { path: "/blog", title: "Interview Prep Blog for Indian Job Seekers | HireStepX", description: "Long-form guides on answering, structuring and rehearsing interviews. Written for Indian job seekers, with examples you can practise out loud." },
   question: { path: "/questions", title: "Interview Questions by Company, with Answers | HireStepX", description: "Real interview questions asked at top Indian companies, why interviewers ask them and how to answer without rambling. Practise them with AI." },
   salary: { path: "/salary", title: "Salary Guides for India by Company and Level | HireStepX", description: "What roles actually pay in India, by company and level. Use real ranges to negotiate your offer with confidence instead of guesses." },
   company: { path: "/resources/company", title: "Company Interview Guides | HireStepX", description: "What each company's interview loop looks like, which rounds to expect and how to prepare for every stage, from screening to final." },

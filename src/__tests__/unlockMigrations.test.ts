@@ -103,3 +103,34 @@ describe("0054 unlock money guards", () => {
     }
   });
 });
+
+describe("0062 payment_dedup.user_id", () => {
+  const sql = read("supabase-migrations/0062-payment-dedup-user-id.sql");
+
+  it("adds the column idempotently, with ON DELETE SET NULL so the dedup row outlives the profile", () => {
+    expect(sql).toContain("alter table payment_dedup add column if not exists user_id uuid;");
+    expect(sql).toContain("on delete set null");
+    expect(sql).not.toMatch(/on delete cascade/);
+  });
+
+  it("is mirrored in the schema so a pre-existing table gets the column too", () => {
+    expect(schema).toContain("alter table payment_dedup add column if not exists user_id uuid;");
+    expect(schema).toMatch(/create table if not exists payment_dedup \([^;]*on delete set null/);
+  });
+});
+
+describe("0063 promo redemptions", () => {
+  const sql = read("supabase-migrations/0063-promo-redemptions.sql");
+
+  it("creates the table the erasure delete targets and the 2-arg RPC verify-payment calls", () => {
+    expect(sql).toContain("create table if not exists promo_redemptions");
+    expect(sql).toContain("create or replace function consume_promo_code(p_code text, p_user_id uuid default null)");
+    expect(sql).toContain("grant execute on function consume_promo_code(text, uuid) to service_role;");
+  });
+
+  it("keeps the same table and function definitions as the schema file", () => {
+    const body = sql.slice(sql.indexOf("create table if not exists promo_redemptions"));
+    const norm = (x: string) => x.replace(/--[^\n]*/g, "").replace(/\s+/g, " ").trim();
+    expect(norm(schema)).toContain(norm(body));
+  });
+});

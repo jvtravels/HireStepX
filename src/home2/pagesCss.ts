@@ -1,7 +1,7 @@
 export const pagesCss = `
 .pg-hero { padding: 72px 0 96px; }
-.pg-stage { padding: 40px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); }
-.pg-stage.cool { background: linear-gradient(135deg, oklch(0.935 0.045 285) 0%, oklch(0.95 0.035 320) 55%, oklch(0.945 0.04 55) 100%); }
+.pg-stage { padding: 40px; border-radius: 28px; border: 1px solid var(--line); background: var(--sky); }
+.pg-stage.cool { background: var(--sky); background-position: 100% 0; }
 .pg-stage.wide { padding: 48px; }
 
 .pg-win { background: var(--white); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 24px 48px -16px oklch(0.4 0.1 285 / 0.12); }
@@ -261,7 +261,7 @@ export const pagesCss = `
 .hs-tab.done .hs-bar i { transform: none; }
 .hs-tab.on .hs-bar i { animation: hs-fill linear forwards; }
 .hs-t { display: block; margin-top: 14px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
-.hs-stage { height: 520px; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); overflow: hidden; }
+.hs-stage { height: 520px; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line); border-radius: 20px; background: var(--sky); overflow: hidden; }
 .hs-scene { width: 100%; display: flex; justify-content: center; }
 .hs-scene .pg-win { width: min(100%, 520px); }
 .hs-scene.wide .pg-win { width: min(100%, 760px); }
@@ -549,7 +549,7 @@ export const pagesCss = `
 .pc-l .pl-grp.paid li > svg, .pc-l .pl-grp.paid li em { color: oklch(1 0 0 / 0.72); }
 .pc-l .pl-grp.paid.open li > svg, .pc-l .pl-grp.paid.open li em { color: var(--white); }
 
-.wy { padding: 24px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); align-items: stretch; gap: 16px; }
+.wy { padding: 24px; border-radius: 28px; border: 1px solid var(--line); background: var(--sky); align-items: stretch; gap: 16px; }
 .wy-claim { background: oklch(1 0 0 / 0.55); border: 1px dashed var(--line-2); align-content: space-between; gap: 24px; }
 .wy-claim ul { font-size: 20px; gap: 12px; }
 .wy-claim li { padding: 14px 16px; border-radius: 12px; background: oklch(1 0 0 / 0.7); border: 1px solid var(--line); }
@@ -847,7 +847,7 @@ export const pagesCss = `
 /* ── Pricing (slide-to-plan receipt) ── */
 .pq { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
 .pq-card { display: flex; flex-direction: column; gap: 16px; padding: 32px; border-radius: 24px; background: var(--white); border: 1px solid var(--line); }
-.pq .pq-card.feat { margin: 0; background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); padding: 32px; border-radius: 24px; border-color: transparent; }
+.pq .pq-card.feat { margin: 0; background: var(--sky); padding: 32px; border-radius: 24px; border-color: transparent; }
 .pq-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .pq-name i { font-style: normal; padding: 4px 12px; border-radius: 99px; background: var(--white); color: var(--btn); letter-spacing: .04em; }
 .pq-price { margin: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }

@@ -50,7 +50,7 @@ const CONTACT_STATUSES = new Set(["interview_invited", "interviewing", "hired"])
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
   interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you. Check your dashboard for details." },
@@ -307,6 +307,12 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     if (sameState) {
+      if (note !== null) {
+        await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+          employerId, actorUserId: auth.userId, actorEmail: gate.ctx.email, action: "candidate.note_updated",
+          entityType: "match", entityId: matchId, meta: { jobTitle: reqRows[0].title },
+        });
+      }
       return new Response(JSON.stringify(toResponseShape(row)), { status: 200, headers });
     }
 

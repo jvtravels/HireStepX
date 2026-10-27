@@ -91,8 +91,10 @@ export function Stat({ label, hint, children }: { label: string; hint?: ReactNod
   return (
     <div className="min-w-0">
       <dt className="text-[12px] text-hx-ink-soft">{label}</dt>
-      <dd className="m-0 mt-0.5 text-[15px] leading-snug font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</dd>
-      {hint && <p className="m-0 mt-0.5 text-[12px] leading-snug text-hx-ink-soft">{hint}</p>}
+      <dd className="m-0 mt-0.5 min-w-0">
+        <span className="block text-[15px] leading-snug font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</span>
+        {hint && <span className="mt-0.5 block text-[12px] leading-snug text-hx-ink-soft">{hint}</span>}
+      </dd>
     </div>
   );
 }

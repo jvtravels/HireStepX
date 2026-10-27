@@ -22,6 +22,10 @@ import { displayFrameworkName, stripEndPunct } from "../../data/_seo-text-helper
 
 /* ── Shared helpers ── */
 
+function RangeBar({ min, max, scale }: { min: number; max: number; scale: number }) {
+  return <i style={{ left: `${(min / scale) * 100}%`, width: `${((max - min) / scale) * 100}%` }} />;
+}
+
 function slugify(t: string) {
   return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -309,7 +313,7 @@ function Ladder({ bands }: { bands: SalaryBandRow[] }) {
         <div key={b.level} className="sx-lrow">
           <span className="sx-llab">{LVL[b.level] ?? b.levelLabel}</span>
           <div className="sx-ltrack">
-            <i style={{ left: `${(b.totalMin / max) * 100}%`, width: `${((b.totalMax - b.totalMin) / max) * 100}%` }} />
+            <RangeBar min={b.totalMin} max={b.totalMax} scale={max} />
           </div>
           <span className="sx-lval">{lpa(b.totalMin)} to {lpa(b.totalMax)} LPA</span>
         </div>
@@ -341,7 +345,7 @@ function LevelExplorer({ roles, ri, setRi, li, setLi }: { roles: { roleKey: stri
       </div>
       <div className="sx-x-big">{lpa(b.totalMin)} to {lpa(b.totalMax)} <small>LPA total CTC</small></div>
       <div className="sx-x-track" role="img" aria-label={`${lpa(b.totalMin)} to ${lpa(b.totalMax)} LPA`}>
-        <i style={{ left: `${(b.totalMin / max) * 100}%`, width: `${((b.totalMax - b.totalMin) / max) * 100}%` }} />
+        <RangeBar min={b.totalMin} max={b.totalMax} scale={max} />
       </div>
       <div className="sx-x-trio">
         <div><span className="sx-mono">Base</span><b>{range(b.baseMin, b.baseMax)}</b></div>
@@ -375,13 +379,20 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
       <h2 className="sx-h2">{label} vs similar companies</h2>
       <p className="sx-sub">{groupLabel ? `${groupLabel}, ` : ""}{own ? `${own.levelLabel} level, total CTC in LPA.` : "Total CTC in LPA."}</p>
       <div className="sx-cmp-list">
-        {rows.map((r) => (
-          <a key={r.label} data-no-underline href={r.self ? undefined : `/salary/${r.slug}`} className="sx-cmp-row" data-self={r.self ? "1" : "0"}>
-            <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
-            <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
-            <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
-          </a>
-        ))}
+        {rows.map((r) => {
+          const cells = (
+            <>
+              <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
+              <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
+              <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
+            </>
+          );
+          return r.self ? (
+            <div key={r.label} className="sx-cmp-row" data-self="1">{cells}</div>
+          ) : (
+            <a key={r.label} data-no-underline href={`/salary/${r.slug}`} className="sx-cmp-row" data-self="0">{cells}</a>
+          );
+        })}
       </div>
     </section>
   );

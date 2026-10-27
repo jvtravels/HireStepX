@@ -28,6 +28,19 @@ describe("dayLabel", () => {
   });
 });
 
+describe("buildThreadRows: teammates", () => {
+  const by = (id: string, name: string, isYou: boolean, at: Date): ThreadMessage => ({ ...msg(id, "employer", at), sentBy: { name, isYou } });
+  it("starts a new header when a different teammate writes next, even within the grouping window", () => {
+    const rows = buildThreadRows([
+      by("a", "Priya", true, new Date(2026, 9, 10, 9, 0)),
+      by("b", "Dev", false, new Date(2026, 9, 10, 9, 1)),
+      by("c", "Dev", false, new Date(2026, 9, 10, 9, 2)),
+    ], NOW);
+    const flags = rows.flatMap((r) => (r.kind === "message" ? [r.showHeader] : []));
+    expect(flags).toEqual([true, true, false]);
+  });
+});
+
 describe("buildThreadRows", () => {
   it("adds a day separator and groups consecutive messages from one sender", () => {
     const rows = buildThreadRows([
