@@ -279,7 +279,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-footwrap { padding-top: 72px; padding-bottom: 48px; }
 .hx-foot-rights { font-size: 14px !important; max-width: 40ch !important; }
 .hx .hx-foot-rights a { color: var(--btn); font-weight: 500; }
-.hx-end { text-align: center; padding: 96px 40px 72px; border-radius: 28px; border: 1px solid var(--line); background: var(--sky); }
+.hx-end { text-align: center; padding: 96px 40px 72px; border-radius: 28px; border: 1px solid var(--line); background: oklch(0.93 0.035 278); }
 .hx-end .hx-h2 { font-size: 36px; margin-top: 14px; }
 .hx-end p { margin: 12px auto 0; font-size: 16px; max-width: 44ch; color: var(--ink-2); text-wrap: balance; }
 .hx-end .hx-cta { margin-top: 36px; }
