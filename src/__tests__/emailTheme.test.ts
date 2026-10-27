@@ -3,7 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import * as theme from "../../server-handlers/_email-theme";
 
-const FOOTER_TEXT = "You're receiving this because you have an account at hirestepx.com";
+const FOOTER_TEXT = "You're receiving this because you have an account at";
 
 describe("emailShell footer ownership", () => {
   it("renders exactly one compliance footer", () => {
@@ -17,6 +17,20 @@ describe("emailShell footer ownership", () => {
     expect(html).not.toContain("Unsubscribe");
     expect(html).toContain("Manage notifications");
     expect(html).toContain("This is a service email");
+  });
+
+  it("a custom reason replaces the account sentence and drops Manage notifications", () => {
+    const html = theme.emailShell({ preview: "p", body: "", footer: { reason: "A teammate invited this address." } });
+    expect(html).toContain("A teammate invited this address.");
+    expect(html).not.toContain(FOOTER_TEXT);
+    expect(html).not.toContain("Manage notifications");
+    expect(html).not.toContain("Unsubscribe");
+  });
+
+  it("footer site and support addresses are explicit links, not client auto-links", () => {
+    const html = theme.emailShell({ preview: "p", body: "" });
+    expect(html).toContain('href="https://hirestepx.com"');
+    expect(html).toContain('href="mailto:hello@hirestepx.com"');
   });
 
   it("marketing footers link the signed unsubscribe URL", () => {
@@ -39,7 +53,7 @@ describe("emailShell footer ownership", () => {
     const html = theme.emailShell({ preview: "p", body: "" });
     expect(html).toContain("https://hirestepx.com/wordmark-email.png");
     expect(html).not.toContain("favicon.svg");
-    expect(html).toContain("HireStepX &middot; hello@hirestepx.com");
+    expect(html).toContain("HireStepX &middot; <a href=\"mailto:hello@hirestepx.com\"");
   });
 
   it("marketing footers pair Manage notifications with Unsubscribe", () => {

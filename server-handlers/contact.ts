@@ -117,6 +117,7 @@ export default async function handler(req: Request): Promise<Response> {
         }) +
         para(`Your reference number is ${b(ref)}. Quote it if you follow up.`) +
         note(`Your message: ${escapeHtml(message.slice(0, 2000)).replace(/\n/g, "<br/>")}`),
+      footer: { reason: "You're receiving this because this address was used to contact HireStepX support." },
     }),
   });
 

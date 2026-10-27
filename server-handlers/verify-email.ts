@@ -7,7 +7,7 @@ import { consumeToken, releaseToken } from "./_used-tokens";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 /* Verification-token signing secret. MUST match the secret used by
    send-welcome.ts when issuing the token — they're two halves of the

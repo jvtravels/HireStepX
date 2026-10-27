@@ -50,7 +50,7 @@ const CONTACT_STATUSES = new Set(["interview_invited", "interviewing", "hired"])
 
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 const STATUS_NOTIFICATION_TEXT: Record<string, { title: string; body: string }> = {
   interview_invited: { title: "You've been invited to interview!", body: "An employer wants to move forward with you. Check your dashboard for details." },

@@ -2,15 +2,24 @@
    admin also gets a copyable link, so a failed send never fails the request. */
 
 import { escapeHtml, slog } from "./_shared";
-import { emailShell, title, para, b, button } from "./_email-theme";
+import { emailShell, hero, para, b, button } from "./_email-theme";
 import { INVITE_TTL_DAYS, ROLE_LABEL, ROLE_BLURB, type EmployerRole, type InvitableRole } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 
-const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <noreply@hirestepx.com>";
+const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
 
 export function appBaseUrl(): string {
   return (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
+}
+
+/* Names typed in caps lock ("JAY VYAS") read as shouting in an email. */
+function displayName(name: string): string {
+  const n = name.trim();
+  if (n && n === n.toUpperCase() && n !== n.toLowerCase()) {
+    return n.toLowerCase().replace(/(^|[\s'-])(\p{L})/gu, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+  }
+  return n;
 }
 
 export function inviteLink(token: string): string {
@@ -26,17 +35,23 @@ export async function sendTeamInviteEmail(params: {
 }): Promise<boolean> {
   const key = (process.env.RESEND_API_KEY || "").trim();
   if (!key) return false;
-  const company = escapeHtml(params.companyName || "the team");
-  const inviter = escapeHtml(params.inviterName || "A teammate");
+  const companyText = params.companyName || "the team";
+  const inviterText = displayName(params.inviterName) || "A teammate";
+  const company = escapeHtml(companyText);
+  const inviter = escapeHtml(inviterText);
   const html = emailShell({
-    preview: `${params.inviterName || "A teammate"} invited you to ${params.companyName || "their company"} on HireStepX.`,
+    preview: `${inviterText} invited you to ${companyText} on HireStepX.`,
     body:
-      title(`Join ${company}`) +
-      para(`${inviter} invited you to ${b(company)} as ${b(ROLE_LABEL[params.role])}. ${escapeHtml(ROLE_BLURB[params.role])}`) +
+      hero({
+        eyebrow: "Team invite",
+        title: `Join ${company}`,
+        lede: `${inviter} invited you to ${b(company)} as ${b(ROLE_LABEL[params.role])}. ${escapeHtml(ROLE_BLURB[params.role])}`,
+      }) +
       button("Accept invite", inviteLink(params.token)) +
-      para(`This link works for ${INVITE_TTL_DAYS} days and only for ${escapeHtml(params.to)}. If you weren't expecting it, you can ignore this email.`, { small: true, muted: true }),
+      para(`This link works for ${INVITE_TTL_DAYS} days and only for this email address. If you weren't expecting it, you can ignore this email.`, { small: true, muted: true }),
+    footer: { reason: "You're receiving this because a teammate invited this address to join their team on HireStepX." },
   });
-  return sendEmail(params.to, `${params.inviterName || "A teammate"} invited you to ${params.companyName || "their team"} on HireStepX`, html);
+  return sendEmail(params.to, `${inviterText} invited you to ${params.companyName || "their team"} on HireStepX`, html);
 }
 
 async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
@@ -93,7 +108,8 @@ export async function sendTeamChangeEmail(params: { to: string; change: TeamChan
   const copy = teamChangeCopy(params.change, params.companyName, params.actorName || "A teammate");
   const html = emailShell({
     preview: copy.message,
-    body: title(escapeHtml(copy.heading)) + para(escapeHtml(copy.message)) +
+    body:
+      hero({ eyebrow: "Team update", title: escapeHtml(copy.heading), lede: escapeHtml(copy.message) }) +
       (params.change.kind === "removed" ? "" : button("Open the console", `${appBaseUrl()}/employer/team`)),
   });
   return sendEmail(params.to, copy.subject, html);
