@@ -12,7 +12,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, missingHiringFacts, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -176,7 +176,7 @@ function ClampedText({ text }: { text: string }) {
   );
 }
 
-function ProfilePanel({ candidate, onOpenResume, requestUi }: { candidate: Candidate; onOpenResume: () => void; requestUi: RequestUi }) {
+function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null; onOpenResume: () => void; requestUi: RequestUi }) {
   const r = candidate.resume;
   if (!r) return null;
   const latest = r.experience[0];
@@ -204,7 +204,8 @@ function ProfilePanel({ candidate, onOpenResume, requestUi }: { candidate: Candi
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
   const summary = r.summary?.trim();
-  if (!summary && !r.headline && facts.length === 0) return null;
+  const hxSummary = buildProfileSummary(candidate, requirement, matched, evidence);
+  if (!hxSummary && !summary && !r.headline && facts.length === 0) return null;
   return (
     <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
@@ -228,13 +229,17 @@ function ProfilePanel({ candidate, onOpenResume, requestUi }: { candidate: Candi
           />
         )}
         {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
-        {summary ? (
+        {hxSummary && (
           <div className="grid gap-1.5 border-t border-hx-line pt-4">
-            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">Summary</h3>
+            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">HireStepX summary</h3>
+            <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{hxSummary}</p>
+          </div>
+        )}
+        {summary && (
+          <div className="grid gap-1.5">
+            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">In the candidate's words</h3>
             <ClampedText text={summary} />
           </div>
-        ) : (
-          !r.headline && <MutedText>This resume has no written summary. The details above come from the structured fields.</MutedText>
         )}
       </div>
     </Panel>
@@ -474,7 +479,7 @@ export function OverviewTab({
         </div>
       </div>
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
-        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} requestUi={requestUi} />
+        <ProfilePanel candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} onOpenResume={onOpenResume} requestUi={requestUi} />
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
       </div>
