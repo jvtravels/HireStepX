@@ -21,6 +21,19 @@ export const DOCUMENT_TOPICS = [
   "Employer verification",
 ] as const;
 
+/** Numeric hiring facts an employer may ask for. They ride on the `contact`
+ *  kind's field list so no schema change is needed. */
+export const HIRING_REQUEST_FIELDS = ["notice_period", "current_ctc", "expected_ctc"] as const;
+export type HiringRequestField = (typeof HIRING_REQUEST_FIELDS)[number];
+
+export const isHiringField = (f: string): f is HiringRequestField => (HIRING_REQUEST_FIELDS as readonly string[]).includes(f);
+
+/** A request made only of hiring facts gets its own topic, so it does not
+ *  collide with a pending contact-details request (one open per match, kind and topic). */
+export const HIRING_REQUEST_TOPIC = "hiring";
+export const contactRequestTopic = (fields: readonly string[]): string | null =>
+  fields.length > 0 && fields.every(isHiringField) ? HIRING_REQUEST_TOPIC : null;
+
 export const REQUEST_KIND_LABEL: Record<RequestKind, string> = {
   contact: "Contact details",
   document: "Document or link",

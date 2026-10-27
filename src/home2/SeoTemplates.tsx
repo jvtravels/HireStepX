@@ -26,12 +26,6 @@ function RangeBar({ min, max, scale }: { min: number; max: number; scale: number
   return <i style={{ left: `${(min / scale) * 100}%`, width: `${((max - min) / scale) * 100}%` }} />;
 }
 
-function CmpRow({ href, self, children }: { href?: string; self?: boolean; children: React.ReactNode }) {
-  const props = { className: "sx-cmp-row", "data-self": self ? "1" : "0" };
-  if (!href) return <div {...props}>{children}</div>;
-  return <a data-no-underline href={href} {...props}>{children}</a>;
-}
-
 function slugify(t: string) {
   return t.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
@@ -385,13 +379,20 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
       <h2 className="sx-h2">{label} vs similar companies</h2>
       <p className="sx-sub">{groupLabel ? `${groupLabel}, ` : ""}{own ? `${own.levelLabel} level, total CTC in LPA.` : "Total CTC in LPA."}</p>
       <div className="sx-cmp-list">
-        {rows.map((r) => (
-          <CmpRow key={r.label} href={r.self ? undefined : `/salary/${r.slug}`} self={r.self}>
-            <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
-            <span className="sx-cmp-track"><RangeBar min={r.band?.min ?? 0} max={r.band?.max ?? 0} scale={max} /></span>
-            <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
-          </CmpRow>
-        ))}
+        {rows.map((r) => {
+          const cells = (
+            <>
+              <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
+              <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
+              <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
+            </>
+          );
+          return r.self ? (
+            <div key={r.label} className="sx-cmp-row" data-self="1">{cells}</div>
+          ) : (
+            <a key={r.label} data-no-underline href={`/salary/${r.slug}`} className="sx-cmp-row" data-self="0">{cells}</a>
+          );
+        })}
       </div>
     </section>
   );

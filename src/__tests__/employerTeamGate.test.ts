@@ -6,8 +6,8 @@ const COMPANY = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
 
 describe("EMPLOYER_TEAMS flag defaults", () => {
-  it("ships dark: off by default and evaluated per company", () => {
-    expect(FLAGS.EMPLOYER_TEAMS.enabled).toBe(false);
+  it("is on for every company by default and evaluated per company", () => {
+    expect(FLAGS.EMPLOYER_TEAMS.enabled).toBe(true);
     expect(FLAGS.EMPLOYER_TEAMS.scope).toBe("user");
   });
 });

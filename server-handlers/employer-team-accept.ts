@@ -15,13 +15,14 @@ export const config = { runtime: "edge" };
 
 import {
   withAuthAndRateLimit, corsHeaders, handleCorsPreflightOrMethod, withRequestId, isRateLimited, getClientIp,
-  rateLimitResponse, validateOrigin, forbiddenResponse, slog,
+  rateLimitResponse, slog,
 } from "./_shared";
 import {
-  INVITE_ACCEPT_MESSAGE, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
+  INVITE_ACCEPT_MESSAGE, MAX_TEAM_SIZE, ROLE_LABEL, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
   type InviteRow,
 } from "./_employer-team-helpers";
 import { teamsEnabledFor } from "./_employer-team-gate";
+import { notify } from "./_notify";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -32,10 +33,10 @@ const jsonHeaders = () => ({ ...serviceHeaders(), "Content-Type": "application/j
 
 interface InviteWithCompany extends InviteRow {
   invited_by: string | null;
-  employers: { company_name: string } | null;
+  employers: { company_name: string; suspended_at: string | null } | null;
 }
 
-const COLS = "id,employer_id,email,role,invited_by,expires_at,accepted_at,revoked_at,employers(company_name)";
+const COLS = "id,employer_id,email,role,invited_by,expires_at,accepted_at,revoked_at,employers(company_name,suspended_at)";
 
 async function findInvite(token: string): Promise<InviteWithCompany | null> {
   if (!token || token.length < 20 || token.length > 100) return null;
@@ -71,7 +72,8 @@ async function preview(req: Request): Promise<Response> {
   const early = handleCorsPreflightOrMethod(req, { allowGet: true });
   if (early) return early;
   const headers = withRequestId(corsHeaders(req, { allowGet: true }));
-  if (!validateOrigin(req)) return forbiddenResponse(headers);
+  // No origin/Referer check here: this read is unauthenticated and gated by the secret token, and
+  // privacy-focused browsers strip Referer, which turned valid invite links into a 403.
   if (await isRateLimited(getClientIp(req), "employer-team-preview", 20, 60_000)) return rateLimitResponse(headers);
   try {
     const token = new URL(req.url).searchParams.get("token") ?? "";
@@ -132,6 +134,16 @@ async function accept(req: Request): Promise<Response> {
       return reply({ error: INVITE_ACCEPT_MESSAGE.already_member, code: "already_member" }, 409);
     }
 
+    if (inv.employers?.suspended_at) {
+      return reply({ error: "This company's account is suspended, so it can't add people right now.", code: "suspended" }, 403);
+    }
+    // Invites count as seats when sent, so this only trips when two invites raced past the cap
+    // or the team was already over it. Checked before the claim so the invite isn't burned.
+    const seats = await fetch(`${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(inv.employer_id)}&select=user_id`, { headers: serviceHeaders() });
+    if (seats.ok && ((await seats.json().catch(() => [])) as unknown[]).length >= MAX_TEAM_SIZE) {
+      return reply({ error: `This team already has ${MAX_TEAM_SIZE} people. Ask an admin to free up a seat, then try again.`, code: "team_full" }, 409);
+    }
+
     // Atomic claim: only one concurrent accept can flip accepted_at from null.
     const claim = await fetch(
       `${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${inv.id}&accepted_at=is.null&revoked_at=is.null&expires_at=gt.${encodeURIComponent(new Date().toISOString())}`,
@@ -156,6 +168,9 @@ async function accept(req: Request): Promise<Response> {
         method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ accepted_at: null, accepted_by: null }),
       }).catch(() => {});
       if (ins.status === 409) return reply({ error: INVITE_ACCEPT_MESSAGE.already_member, code: "already_member" }, 409);
+      if ((await ins.text().catch(() => "")).includes("team_full")) {
+        return reply({ error: `This team already has ${MAX_TEAM_SIZE} people. Ask an admin to free up a seat, then try again.`, code: "team_full" }, 409);
+      }
       throw new Error(`member insert failed: ${ins.status}`);
     }
 
@@ -163,6 +178,15 @@ async function accept(req: Request): Promise<Response> {
       employerId: inv.employer_id, actorUserId: userId, actorEmail: user.email, action: "member.joined",
       entityType: "member", entityId: userId, meta: { role: inv.role, inviteId: inv.id },
     });
+    if (inv.invited_by) {
+      await notify({
+        userId: inv.invited_by,
+        type: "team_invite_accepted",
+        title: `${user.name || user.email || inv.email} joined your team`,
+        body: `They accepted your invite as ${ROLE_LABEL[inv.role]}.`,
+        link: "/employer/team",
+      });
+    }
     return reply({ ok: true, companyName: inv.employers?.company_name ?? "", role: inv.role });
   } catch (err) {
     slog.error("employer-team-accept threw", { code: "employer_team_accept_error", error: String(err).slice(0, 200), userId });

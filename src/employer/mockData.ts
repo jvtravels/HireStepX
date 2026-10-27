@@ -43,6 +43,12 @@ export interface CandidateResumeDetail {
   currentCtc: string | null;
   /** What the candidate chose to share; only present once unlocked. */
   expectedCtc?: string | null;
+  /** Approximate range the candidate opted to show before an unlock. */
+  expectedCtcBand?: string | null;
+  /** ISO time the candidate last confirmed they are still looking. */
+  availabilityConfirmedAt?: string | null;
+  workModePref?: string | null;
+  openToRelocate?: boolean;
 }
 
 export interface MatchBreakdown {
@@ -88,6 +94,8 @@ export interface Candidate {
   hasResumeFile?: boolean;
   candidateStatus: CandidateStatus;
   candidateStatusNote: string | null;
+  /** The teammate who last unlocked, moved or annotated this candidate. */
+  lastUpdatedBy?: { name: string; isYou: boolean; at: string } | null;
   /** The candidate's own answer to contact: null when the server did not say. */
   candidateResponse?: "none" | "interested" | "declined" | null;
   /** True once the candidate switched employer visibility off after the unlock. */

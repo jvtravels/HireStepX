@@ -117,7 +117,7 @@ export default function InvitePanel({
           </span>
           <p style={{ fontFamily: f.sans, fontSize: 13, color: t.coal, margin: 0, flex: "1 1 240px", lineHeight: 1.5 }}>
             {sent.emailed
-              ? <>Invite sent to <strong>{sent.invite.email}</strong>. It expires in {INVITE_TTL_DAYS} days.</>
+              ? <>Email sent to <strong>{sent.invite.email}</strong>. It expires in {INVITE_TTL_DAYS} days. If it hasn&apos;t arrived in a few minutes, check spam or share the link.</>
               : <>We couldn&apos;t email <strong>{sent.invite.email}</strong>. Share this link with them directly.</>}
           </p>
           <Button type="button" variant="outline" size="lg" className="h-9 gap-2 px-3.5" onClick={() => void copy()}>

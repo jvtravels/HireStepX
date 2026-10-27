@@ -181,6 +181,12 @@ describe("buildRoleFit location and copy", () => {
     expect(buildRoleFit(candidate(), req, [], null).find((r) => r.id === "location")?.status).toBe("gap");
   });
 
+  it("treats a candidate open to relocating as a partial location fit", () => {
+    const row = buildRoleFit(candidate({}, { openToRelocate: true }), req, [], null).find((r) => r.id === "location");
+    expect(row?.status).toBe("partial");
+    expect(row?.reason).toContain("open to relocating to Bengaluru");
+  });
+
   it("writes experience in full words", () => {
     const row = buildRoleFit(candidate({}, { yearsExperience: 1 }), req, [], null).find((r) => r.id === "experience");
     expect(row?.has).toBe("1 year");

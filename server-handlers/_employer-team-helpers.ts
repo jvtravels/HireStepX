@@ -134,7 +134,7 @@ export function checkMemberChange(params: {
 /* ── Invites ─────────────────────────────────────────────────────────── */
 
 export const INVITE_TTL_DAYS = 7;
-export const MAX_TEAM_SIZE = 50;
+export const MAX_TEAM_SIZE = 5;
 
 export function normalizeEmail(raw: unknown): string {
   return typeof raw === "string" ? raw.trim().toLowerCase().slice(0, 254) : "";
@@ -142,6 +142,16 @@ export function normalizeEmail(raw: unknown): string {
 
 export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+export const INVITES_PER_DAY = 20;
+export const RESENDS_PER_DAY = 30;
+
+/* Counts invites created inside the window whatever their state, so revoking
+   or replacing an invite can't be used to dodge the daily cap. */
+export function invitesRemainingToday(createdAts: string[], now = Date.now(), cap = INVITES_PER_DAY): number {
+  const dayAgo = now - 86_400_000;
+  return Math.max(0, cap - createdAts.filter((c) => Date.parse(c) > dayAgo).length);
 }
 
 function toHex(buf: ArrayBuffer): string {
@@ -224,12 +234,14 @@ export type AuditAction =
   | "job.stage_changed"
   | "candidate.unlocked"
   | "candidate.status_changed"
+  | "candidate.note_updated"
+  | "candidate.messaged"
   | "company.profile_updated";
 
 export const AUDIT_ACTIONS: readonly AuditAction[] = [
   "member.invited", "member.invite_resent", "member.invite_revoked", "member.joined", "member.role_changed",
   "member.removed", "member.left", "job.created", "job.updated", "job.archived", "job.reopened",
-  "job.stage_changed", "candidate.unlocked", "candidate.status_changed", "company.profile_updated",
+  "job.stage_changed", "candidate.unlocked", "candidate.status_changed", "candidate.note_updated", "candidate.messaged", "company.profile_updated",
 ];
 
 export function isAuditAction(v: unknown): v is AuditAction {
@@ -244,6 +256,11 @@ export interface AuditEntry {
   entityType?: string;
   entityId?: string;
   meta?: Record<string, unknown>;
+}
+
+/* Local on purpose: this module is also imported by client code, and _shared.ts pulls in server-only next/server. */
+function warnAudit(msg: string, fields: Record<string, unknown>): void {
+  console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg, ...fields }));
 }
 
 /** Best-effort: the trail must never fail the mutation it describes. */
@@ -268,8 +285,10 @@ export async function writeAuditLog(
       }),
       signal: AbortSignal.timeout(5000),
     });
+    if (!res.ok) warnAudit("[team-audit] write rejected", { action: entry.action, status: res.status });
     return res.ok;
-  } catch {
+  } catch (err) {
+    warnAudit("[team-audit] write failed", { action: entry.action, err: err instanceof Error ? err.message : String(err) });
     return false;
   }
 }

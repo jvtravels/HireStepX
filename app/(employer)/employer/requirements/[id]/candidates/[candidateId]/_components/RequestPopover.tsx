@@ -15,7 +15,10 @@ import {
   REQUEST_KIND_LABEL,
   REQUEST_NOTE_MAX,
   REQUEST_TOPIC_MAX,
+  contactRequestTopic,
+  isHiringField,
   type CreateRequestBody,
+  type HiringRequestField,
   type RequestKind,
 } from "@/employer/_candidateRequestTypes";
 import { useToast } from "@/Toast";
@@ -29,10 +32,26 @@ const CONTACT_OPTIONS = [
   { key: "linkedin", label: "LinkedIn profile" },
   { key: "portfolio", label: "Portfolio or GitHub" },
 ] as const;
-type ContactKey = (typeof CONTACT_OPTIONS)[number]["key"];
+const HIRING_OPTIONS = [
+  { key: "notice_period", label: "Notice period" },
+  { key: "current_ctc", label: "Current CTC" },
+  { key: "expected_ctc", label: "Expected CTC" },
+] as const;
+type ContactKey = (typeof CONTACT_OPTIONS)[number]["key"] | (typeof HIRING_OPTIONS)[number]["key"];
+
+/** Hiring facts the candidate has not shared. Expected CTC counts as shared only through the opt-in range or an unlocked exact figure. */
+export function missingHiringFacts(candidate: Candidate): HiringRequestField[] {
+  const r = candidate.resume;
+  const have: Record<HiringRequestField, boolean> = {
+    notice_period: !!r?.noticePeriod,
+    current_ctc: !!r?.currentCtc,
+    expected_ctc: !!r?.expectedCtc || !!r?.expectedCtcBand,
+  };
+  return HIRING_OPTIONS.filter((o) => !have[o.key]).map((o) => o.key);
+}
 
 function missingContact(candidate: Candidate): ContactKey[] {
-  const have: Record<ContactKey, boolean> = {
+  const have: Record<(typeof CONTACT_OPTIONS)[number]["key"], boolean> = {
     phone: !!candidate.contact?.phone,
     email: !!candidate.contact?.email,
     linkedin: !!candidate.resume?.linkedin,
@@ -48,6 +67,7 @@ export interface RequestPreset {
   kind: RequestKind;
   topic?: string;
   note?: string;
+  fields?: ContactKey[];
 }
 
 const KIND_HINT: Record<RequestKind, string> = {
@@ -84,9 +104,10 @@ export function RequestPopover({
   const baseId = useId();
   const { toast } = useToast();
   const missing = missingContact(candidate);
+  const missingHiring: ContactKey[] = missingHiringFacts(candidate);
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<RequestKind>(preset?.kind ?? (missing.length > 0 ? "contact" : "document"));
-  const [fields, setFields] = useState<ContactKey[]>(missing);
+  const [fields, setFields] = useState<ContactKey[]>(preset?.fields ?? missing);
   const [topic, setTopic] = useState(preset?.topic ?? "");
   const [note, setNote] = useState(preset?.note ?? "");
   const [sending, setSending] = useState(false);
@@ -94,7 +115,7 @@ export function RequestPopover({
 
   const reset = () => {
     setKind(preset?.kind ?? (missing.length > 0 ? "contact" : "document"));
-    setFields(missing);
+    setFields(preset?.fields ?? missing);
     setTopic(preset?.topic ?? "");
     setNote(preset?.note ?? "");
     setError(null);
@@ -109,7 +130,7 @@ export function RequestPopover({
     kind === "contact"
       ? { kind, fields }
       : { kind, ...(topic.trim() ? { topic: topic.trim() } : {}), ...(note.trim() ? { note: note.trim() } : {}) };
-  const duplicate = state.findPending(kind, kind === "contact" ? null : topic.trim() || null);
+  const duplicate = state.findPending(kind, kind === "contact" ? contactRequestTopic(fields) : topic.trim() || null);
   const ready =
     kind === "contact" ? fields.length > 0
     : kind === "clarification" ? note.trim().length > 0
@@ -140,7 +161,7 @@ export function RequestPopover({
       </PopoverTrigger>
       <PopoverContent align={align} className="w-[22rem] max-w-[calc(100vw-2rem)] gap-3 p-4">
         <div>
-          <h3 className="m-0 text-[13px] font-semibold text-hx-coal">{preset ? REQUEST_KIND_LABEL[preset.kind] : "Request from candidate"}</h3>
+          <h3 className="m-0 text-[13px] font-semibold text-hx-coal">{preset ? (preset.fields?.length && preset.fields.every(isHiringField) ? "Hiring details" : REQUEST_KIND_LABEL[preset.kind]) : "Request from candidate"}</h3>
           <p className="m-0 mt-1 text-[13px] leading-snug text-hx-ink-soft">{lockedNote}</p>
         </div>
 
@@ -169,20 +190,33 @@ export function RequestPopover({
         )}
 
         {kind === "contact" && (
-          <ul className="m-0 flex list-none flex-col gap-1 p-0">
-            {CONTACT_OPTIONS.map((o) => {
-              const id = `${baseId}-${o.key}`;
+          <div className="grid gap-2">
+            {[
+              { heading: "Contact", options: CONTACT_OPTIONS, hiring: false },
+              { heading: "Hiring details", options: HIRING_OPTIONS, hiring: true },
+            ].map((group) => {
+              const mine = group.options as ReadonlyArray<{ key: ContactKey; label: string }>;
               return (
-                <li key={o.key} className="flex min-h-9 items-center gap-2.5 pointer-coarse:min-h-11">
-                  <Checkbox id={id} checked={fields.includes(o.key)} onCheckedChange={(v) => setFields((cur) => (v === true ? [...cur, o.key] : cur.filter((k) => k !== o.key)))} />
-                  <label htmlFor={id} className="flex flex-1 cursor-pointer items-baseline justify-between gap-2 text-[13px] text-hx-coal">
-                    {o.label}
-                    {!missing.includes(o.key) && <span className="text-[12px] text-hx-ink-soft">Already shared</span>}
-                  </label>
-                </li>
+                <fieldset key={group.heading} className="m-0 min-w-0 border-0 p-0">
+                  <legend className="mb-0.5 p-0 text-[12px] font-medium text-hx-ink-soft">{group.heading}</legend>
+                  <ul className="m-0 flex list-none flex-col gap-1 p-0">
+                    {mine.map((o) => {
+                      const id = `${baseId}-${o.key}`;
+                      return (
+                        <li key={o.key} className="flex min-h-9 items-center gap-2.5 pointer-coarse:min-h-11">
+                          <Checkbox id={id} checked={fields.includes(o.key)} onCheckedChange={(v) => setFields((cur) => (v === true ? [...cur, o.key] : cur.filter((k) => k !== o.key)))} />
+                          <label htmlFor={id} className="flex flex-1 cursor-pointer items-baseline justify-between gap-2 text-[13px] text-hx-coal">
+                            {o.label}
+                            {!(group.hiring ? missingHiring : missing).includes(o.key) && <span className="text-[12px] text-hx-ink-soft">Already shared</span>}
+                          </label>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </fieldset>
               );
             })}
-          </ul>
+          </div>
         )}
 
         {kind === "document" && (
@@ -293,7 +327,7 @@ export function InlineRequestTrigger({ label, requested, ...triggerProps }: { la
     <button
       {...triggerProps}
       type="button"
-      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
+      className="cursor-pointer self-start border-0 bg-transparent p-0 text-left text-[12px] font-medium text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
     >
       {requested ? "Requested" : label}
     </button>
@@ -309,7 +343,7 @@ export interface RequestUi {
 /** Per-item "Ask for proof" control; shows "Requested" once a matching request is pending. */
 export function ItemRequest({ candidate, ui, preset, label }: { candidate: Candidate; ui: RequestUi; preset: RequestPreset; label: string }) {
   if (!ui.state.available) return null;
-  const requested = !!ui.state.findPending(preset.kind, preset.topic ?? null);
+  const requested = !!ui.state.findPending(preset.kind, preset.kind === "contact" && preset.fields ? contactRequestTopic(preset.fields) : preset.topic ?? null);
   return (
     <RequestPopover candidate={candidate} state={ui.state} disabled={ui.disabled || requested} disabledReason={ui.disabledReason} preset={preset} align="start">
       <InlineRequestTrigger label={label} requested={requested} />

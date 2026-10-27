@@ -10,6 +10,24 @@ import {
   toRequestDto,
 } from "../../server-handlers/_candidate-request-helpers";
 
+describe("hiring-detail requests", () => {
+  it("get their own topic so they do not collide with a pending contact request", () => {
+    const hiring = parseCreateRequest({ kind: "contact", fields: ["notice_period", "expected_ctc"] });
+    expect(hiring.ok && hiring.value.topic).toBe("hiring");
+    const mixed = parseCreateRequest({ kind: "contact", fields: ["phone", "current_ctc"] });
+    expect(mixed.ok && mixed.value.topic).toBeNull();
+    const contact = parseCreateRequest({ kind: "contact", fields: ["phone"] });
+    expect(contact.ok && contact.value.topic).toBeNull();
+  });
+  it("rejects an unknown field", () => {
+    expect(parseCreateRequest({ kind: "contact", fields: ["salary_slip"] }).ok).toBe(false);
+  });
+  it("labels the request by what it asks for", () => {
+    expect(requestHeadline({ kind: "contact", topic: "hiring", fields: ["notice_period", "expected_ctc"] })).toBe("Hiring details: notice period and expected CTC");
+    expect(requestHeadline({ kind: "contact", topic: null, fields: ["phone", "current_ctc"] })).toBe("Details: phone number and current CTC");
+  });
+});
+
 describe("parseCreateRequest", () => {
   it("rejects an unknown kind", () => {
     expect(parseCreateRequest({ kind: "nuke" }).ok).toBe(false);

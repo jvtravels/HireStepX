@@ -33,6 +33,9 @@ interface MatchOpts {
   inbox?: Array<Record<string, unknown>>;
 }
 
+const auditWrites: Array<Record<string, unknown>> = [];
+let roster: Array<{ user_id: string; name: string | null; email: string }> = [];
+
 const EMP = "emp-1";
 const CAND = "cand-1";
 const MATCH = "11111111-1111-4111-8111-111111111111";
@@ -53,6 +56,11 @@ function installFetch(o: MatchOpts) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
+    if (u.includes("/rest/v1/employer_audit_log")) {
+      if (init?.method === "POST") { auditWrites.push(JSON.parse(String(init.body))); return { ok: true, status: 201, json: async () => [] }; }
+      return { ok: true, json: async () => [] };
+    }
+    if (u.includes("/rest/v1/employer_members?employer_id=")) return { ok: true, json: async () => roster };
     if (u.includes("/rest/v1/employer_members")) return { ok: true, json: async () => (u.includes(`user_id=eq.${EMP}`) ? [{ employer_id: EMP, user_id: EMP, role: "owner", email: "a@acme.com", name: null, last_active_at: new Date().toISOString() }] : []) };
     if (u.includes("/rest/v1/requirement_matches")) return { ok: true, json: async () => matchRow(o) };
     if (u.includes("/rest/v1/employer_blocks")) return { ok: true, json: async () => (o.blocked ? [{ candidate_user_id: CAND }] : []) };
@@ -87,6 +95,8 @@ const post = (body: Record<string, unknown> = { matchId: MATCH, body: "hello" })
 const asUser = (id: string) => withAuthAndRateLimit.mockResolvedValue({ auth: { userId: id }, headers: {} });
 
 beforeEach(() => {
+  auditWrites.length = 0;
+  roster = [];
   withAuthAndRateLimit.mockReset();
   asUser(EMP);
 });
@@ -437,5 +447,46 @@ describe("messages: employer team members", () => {
     vi.mocked(notify).mockClear();
     await post({ matchId: MATCH, body: "hello?" });
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: EMP }));
+  });
+});
+
+describe("messages: which teammate wrote it", () => {
+  it("audits an employer send and tells the sender it was them", async () => {
+    installFetch({ unlocked: true });
+    const res = await post();
+    expect(res.status).toBe(201);
+    expect((await res.json()).message.sentBy).toMatchObject({ isYou: true });
+    expect(auditWrites).toHaveLength(1);
+    expect(auditWrites[0]).toMatchObject({
+      employer_id: EMP, actor_user_id: EMP, action: "candidate.messaged", entity_id: MATCH,
+      meta: { candidateName: "C", jobTitle: "Dev", hasAttachment: false },
+    });
+    expect(JSON.stringify(auditWrites[0])).not.toContain("hello");
+  });
+
+  it("does not audit a candidate's reply", async () => {
+    installFetch({ unlocked: true });
+    asUser(CAND);
+    await post();
+    expect(auditWrites).toHaveLength(0);
+  });
+
+  it("labels each employer-sent message with its author for the team, never for the candidate", async () => {
+    roster = [{ user_id: EMP, name: "Priya", email: "p@acme.com" }, { user_id: "mate-1", name: null, email: "dev@acme.com" }];
+    const row = (id: string, sender_id: string, sender_role: string) => ({ id, conversation_id: "c1", sender_id, sender_role, body: id, attachment_path: null, attachment_name: null, attachment_mime: null, auto_flag_reason: null, created_at: "t" });
+    const messages = [row("a", EMP, "employer"), row("b", "mate-1", "employer"), row("c", "gone", "employer"), row("d", CAND, "candidate")];
+    installFetch({ unlocked: true, messages });
+    const asEmployer = await (await handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`))).json();
+    expect(asEmployer.messages.map((m: { sentBy?: unknown }) => m.sentBy)).toEqual([
+      { name: "Priya", isYou: true },
+      { name: "dev@acme.com", isYou: false },
+      { name: "Former teammate", isYou: false },
+      undefined,
+    ]);
+
+    asUser(CAND);
+    installFetch({ unlocked: true, messages });
+    const asCandidate = await (await handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`))).json();
+    expect(asCandidate.messages.every((m: { sentBy?: unknown }) => m.sentBy === undefined)).toBe(true);
   });
 });

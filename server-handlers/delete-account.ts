@@ -17,7 +17,7 @@ import { RESTORE_EMPLOYER_FILTER, deletionPendingPatch, restoreEmployerPatch } f
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader("X-Request-ID", crypto.randomUUID());

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  senderLabel,
   asMessageBody,
   asFlagReason,
   asFlagNote,
@@ -339,5 +340,20 @@ describe("attachment ownership", () => {
     expect(employerAttachmentBlock(locked, "candidate")?.code).toBe("unlock_required");
     expect(employerAttachmentBlock(locked, null)?.code).toBe("unlock_required");
     expect(employerAttachmentBlock(locked, "employer")).toBeNull();
+  });
+});
+
+describe("senderLabel", () => {
+  const roster = new Map([["u1", "Priya"], ["u2", "Dev"]]);
+  it("names a current teammate and flags the viewer's own messages", () => {
+    expect(senderLabel("u2", "u1", roster)).toEqual({ name: "Dev", isYou: false });
+    expect(senderLabel("u1", "u1", roster)).toEqual({ name: "Priya", isYou: true });
+  });
+  it("calls an ex-member a former teammate rather than guessing", () => {
+    expect(senderLabel("gone", "u1", roster)).toEqual({ name: "Former teammate", isYou: false });
+  });
+  it("still works when the roster could not be loaded", () => {
+    expect(senderLabel("u2", "u1", new Map())).toEqual({ name: "A teammate", isYou: false });
+    expect(senderLabel("u1", "u1", new Map())).toEqual({ name: "You", isYou: true });
   });
 });

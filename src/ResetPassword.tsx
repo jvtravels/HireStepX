@@ -39,6 +39,7 @@ const PASSWORD_VISIBLE_TIMEOUT_MS = 10_000;
 const PASSWORD_MAX_LENGTH = 128;
 // Reset links live for 30 minutes — surfaced via live countdown.
 const TOKEN_LIFETIME_SEC = 30 * 60;
+const OPENED_STAMP_KEY = "hirestepx_reset_opened_at";
 
 type TokenStatus = "pending" | "valid" | "expired" | "used" | "invalid";
 
@@ -175,6 +176,11 @@ export default function ResetPassword() {
       return;
     }
     let cancelled = false;
+    // Read before getSession: Supabase strips the hash once it processes it.
+    // A Supabase error hash (otp_expired) means expired; a bare visit with no
+    // token at all is just an invalid link.
+    const hadExpiredHash =
+      typeof window !== "undefined" && /error_code=otp_expired/.test(window.location.hash);
     (async () => {
       try {
         const client = await getSupabase();
@@ -183,7 +189,7 @@ export default function ResetPassword() {
         } = await client.auth.getSession();
         if (cancelled) return;
         if (!session) {
-          setTokenStatus("expired");
+          setTokenStatus(hadExpiredHash ? "expired" : "invalid");
           return;
         }
         // One-shot: reject if THIS specific link was already used.
@@ -258,7 +264,20 @@ export default function ResetPassword() {
            this gives users a real second chance after a failed
            first attempt. */
         const openedAt = userData.user.user_metadata?.password_reset_opened_at;
-        if (typeof openedAt === "number" && Date.now() - openedAt < 90 * 1000) {
+        // A reload in the same tab re-runs this effect inside the 90s window and
+        // would reject the user's own link. The stamp this tab wrote is kept in
+        // sessionStorage, so an identical value means "same tab, carry on".
+        let sameTab = false;
+        try {
+          sameTab =
+            typeof openedAt === "number" &&
+            window.sessionStorage.getItem(OPENED_STAMP_KEY) === String(openedAt);
+        } catch { /* storage blocked: fall back to the strict guard */ }
+        if (
+          typeof openedAt === "number" &&
+          !sameTab &&
+          Date.now() - openedAt < 90 * 1000
+        ) {
           // The link is "in use elsewhere" — sign out cleanly + reject.
           await client.auth.signOut().catch(() => {});
           if (cancelled) return;
@@ -268,9 +287,13 @@ export default function ResetPassword() {
         // Mark the link as opened. Best-effort — if this fails the
         // legit reset still proceeds; we just lose the one-shot guard
         // for this session.
-        client.auth.updateUser({
-          data: { password_reset_opened_at: Date.now() },
-        }).catch(() => { /* ignore */ });
+        const stamp = sameTab && typeof openedAt === "number" ? openedAt : Date.now();
+        try { window.sessionStorage.setItem(OPENED_STAMP_KEY, String(stamp)); } catch { /* ignore */ }
+        if (!sameTab) {
+          client.auth.updateUser({
+            data: { password_reset_opened_at: stamp },
+          }).catch(() => { /* ignore */ });
+        }
 
         csrfTokenRef.current = generateCsrfToken();
         setEmail(userData.user.email ?? undefined);
@@ -513,7 +536,7 @@ export default function ResetPassword() {
     return {
       title: "We couldn't verify this link.",
       body:
-        "It may have been mistyped or tampered with. Request a new link to try again.",
+        "It may be incomplete, expired or already used. Request a new link to try again.",
     };
   })();
 
@@ -1206,6 +1229,10 @@ export default function ResetPassword() {
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
+                // The mobile 44px min-height rule would top-align the text in
+                // this inline-flex row; padding keeps the tap target instead.
+                minHeight: 0,
+                padding: "12px 0",
               }}
             >
               Contact support

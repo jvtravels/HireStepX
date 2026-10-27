@@ -151,7 +151,7 @@ export function SeatMeter({ used, max }: { used: number; max: number }) {
         aria-label="Seats used"
         aria-valuemin={0}
         aria-valuemax={max}
-        aria-valuenow={used}
+        aria-valuenow={Math.min(used, max)}
         style={{ height: 4, borderRadius: 999, background: t.creamSoft, marginTop: 6, overflow: "hidden" }}
       >
         <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: nearFull ? t.warningInk : t.indigo, transition: "width 200ms ease-out" }} />

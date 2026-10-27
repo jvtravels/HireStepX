@@ -505,3 +505,17 @@ export async function postSystemMessage(
     body: JSON.stringify({ last_message_at: now, last_sender_role: "system" }),
   });
 }
+
+/** Which teammate wrote an employer-side message, as the viewing teammate should see it. */
+export interface SentBy {
+  name: string;
+  isYou: boolean;
+}
+
+/** `roster` maps a member's user id to a display name. A sender who is no longer on the team, or a roster that
+ *  failed to load, still resolves: "you" is known from the ids alone and anyone else is a generic teammate. */
+export function senderLabel(senderId: string, viewerId: string, roster: ReadonlyMap<string, string>): SentBy {
+  const isYou = senderId === viewerId;
+  const known = roster.get(senderId);
+  return { isYou, name: known ?? (isYou ? "You" : roster.size > 0 ? "Former teammate" : "A teammate") };
+}
