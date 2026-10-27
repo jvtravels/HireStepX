@@ -379,7 +379,7 @@ export default async function handler(req: Request): Promise<Response> {
       // free text are contact details too, so they go with the rest.
       const resume = unlocked
         ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
-        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, profile?.name || ""), expectedCtc: null });
+        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, profile?.name || ""), expectedCtc: null /* exact figure stays server-side; expectedCtcBand is the opt-in range */ });
 
       return {
         id: m.id,

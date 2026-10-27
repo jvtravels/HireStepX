@@ -1079,6 +1079,10 @@ export interface ResumeProfile {
   /** Current CTC as stated on the resume (e.g. "₹18 LPA"); salary-negotiation pre-fill. */
   currentCtc?: string | null;
   expectedCtc?: string | null;
+  /** Candidate agreed to show an approximate expected-CTC range to employers before an unlock. */
+  shareCtcBand?: boolean;
+  /** ISO time the candidate last confirmed they are still looking. */
+  availabilityConfirmedAt?: string | null;
   /** Explicit promotion signals extracted from the resume
    *  (e.g. "Promoted to Senior PM in 18 months at Flipkart").
    *  Prime STAR story material; used as behavioral probe anchors. */

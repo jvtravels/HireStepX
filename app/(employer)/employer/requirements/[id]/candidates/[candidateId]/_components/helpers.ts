@@ -484,3 +484,12 @@ export function buildCandidateSummary(candidate: Candidate, requirement: Require
   ];
   return lines.filter(Boolean).join("\n");
 }
+
+/** "Confirmed today" / "Confirmed 3d ago"; stale marks a confirmation older than 30 days. */
+export function availabilityConfirmedLabel(iso: string | null | undefined, nowMs: number = Date.now()): { text: string; stale: boolean } | null {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return null;
+  const days = Math.max(0, Math.floor((nowMs - t) / 86_400_000));
+  return { text: days === 0 ? "Confirmed today" : `Confirmed ${days}d ago`, stale: days > 30 };
+}

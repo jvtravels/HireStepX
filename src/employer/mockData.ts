@@ -43,6 +43,10 @@ export interface CandidateResumeDetail {
   currentCtc: string | null;
   /** What the candidate chose to share; only present once unlocked. */
   expectedCtc?: string | null;
+  /** Approximate range the candidate opted to show before an unlock. */
+  expectedCtcBand?: string | null;
+  /** ISO time the candidate last confirmed they are still looking. */
+  availabilityConfirmedAt?: string | null;
 }
 
 export interface MatchBreakdown {
