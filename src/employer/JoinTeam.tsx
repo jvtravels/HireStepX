@@ -24,10 +24,10 @@ type Phase =
   | { kind: "error"; message: string }
   | { kind: "ready"; preview: Preview };
 
-const DEAD_COPY: Record<string, { title: string; body: (p: Preview) => string }> = {
-  expired: { title: "This invite has expired", body: (p) => `Ask ${p.inviterName ?? "your admin"} to send a new one.` },
-  revoked: { title: "This invite was withdrawn", body: (p) => `${p.inviterName ?? "Your admin"} can send you a new invite if it was a mistake.` },
-  accepted: { title: "This invite was already used", body: () => "If that was you, log in to get to your team." },
+const DEAD_COPY: Record<string, { glyph: keyof typeof GLYPHS; title: string; body: (p: Preview) => string; cta: string }> = {
+  expired: { glyph: "clock", title: "This invite has expired", body: (p) => `Invites last 7 days. Ask ${p.inviterName ?? "your admin"} to send you a new one.`, cta: "Go to log in" },
+  revoked: { glyph: "ban", title: "This invite was withdrawn", body: (p) => `${p.inviterName ?? "Your admin"} can send you a new invite if it was a mistake.`, cta: "Go to log in" },
+  accepted: { glyph: "check", title: "This invite was already used", body: () => "If that was you, log in to get to your team.", cta: "Log in to your team" },
 };
 
 const ACCEPT_ERROR_TITLE: Record<string, string> = {
@@ -50,15 +50,50 @@ const joinCss = `
 .hx-join button.hx-btn { font-family: inherit; }
 .hx-join button.hx-btn:disabled { opacity: .5; cursor: not-allowed; }
 .hx-join-note { margin: 28px 0 0; text-align: center; color: var(--ink-3); }
+.hx-join-end { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 0 4px; }
+.hx-join-end .hx-join-hero { margin-bottom: 28px; }
+.hx-join-end h1 { font-size: 32px !important; }
+.hx-join-end .hx-join-subtitle { max-width: 440px; margin-left: auto; margin-right: auto; }
+.hx-join-end .hx-btn { width: auto; min-width: 220px; padding: 0 32px; }
+.hx-join-end-help { margin: 20px 0 0; color: var(--ink-3); }
+.hx-join-end-help a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
+.hx-join-glyph { width: 56px; height: 56px; border-radius: 16px; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 20px; background: ${t.indigo100}; color: ${t.indigoDeep}; }
 `;
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, note = false }: { children: React.ReactNode; note?: boolean }) {
   return (
     <div className="hx-join">
       <style>{joinCss}</style>
       <main>{children}</main>
-      <p className="hx-join-note">Invites work once and only for the email they were sent to.</p>
+      {note && <p className="hx-join-note">Invites work once and only for the email they were sent to.</p>}
     </div>
+  );
+}
+
+const GLYPHS: Record<"link" | "clock" | "ban" | "check" | "alert", React.ReactNode> = {
+  link: <><path d="M9 17H7a5 5 0 0 1 0-10h2" /><path d="M15 7h2a5 5 0 0 1 4 8" /><path d="M8 12h4" /><path d="m3 3 18 18" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  ban: <><circle cx="12" cy="12" r="9" /><path d="m5.6 5.6 12.8 12.8" /></>,
+  check: <><circle cx="12" cy="12" r="9" /><path d="m8 12.5 3 3 5-6" /></>,
+  alert: <><path d="M12 3 2.5 20h19L12 3Z" /><path d="M12 10v4" /><path d="M12 17.5v.01" /></>,
+};
+
+/* Every dead end (bad link, expired, withdrawn, used, server trouble) shares one calm layout:
+   a glyph, a short reason, one obvious next step. */
+function DeadEnd({ glyph, title, subtitle, action, help }: {
+  glyph: keyof typeof GLYPHS; title: string; subtitle: React.ReactNode; action: React.ReactNode; help?: React.ReactNode;
+}) {
+  return (
+    <Shell>
+      <div className="hx-join-end">
+        <span className="hx-join-glyph" aria-hidden="true">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">{GLYPHS[glyph]}</svg>
+        </span>
+        <Hero title={title} subtitle={subtitle} />
+        {action}
+        {help && <p className="hx-join-end-help">{help}</p>}
+      </div>
+    </Shell>
   );
 }
 
@@ -131,19 +166,24 @@ export default function JoinTeam() {
 
   if (phase.kind === "invalid") {
     return (
-      <Shell>
-        <Hero title="We couldn't find this invite" subtitle="The link may be incomplete or no longer valid. Ask the person who invited you to send it again." />
-        <Link href="/login" className="hx-btn alt">Go to log in</Link>
-      </Shell>
+      <DeadEnd
+        glyph="link"
+        title="We couldn't find this invite"
+        subtitle="The link may be incomplete or no longer valid. Ask the person who invited you to send it again."
+        action={<Link href="/login" className="hx-btn">Go to log in</Link>}
+        help={<>Copied the link by hand? Open it straight from the invite email.</>}
+      />
     );
   }
 
   if (phase.kind === "error") {
     return (
-      <Shell>
-        <Hero title="Something went wrong" subtitle={<span role="alert">{phase.message}</span>} />
-        <button type="button" className="hx-btn alt" onClick={() => window.location.reload()}>Try again</button>
-      </Shell>
+      <DeadEnd
+        glyph="alert"
+        title="Something went wrong"
+        subtitle={<span role="alert">{phase.message}</span>}
+        action={<button type="button" className="hx-btn" onClick={() => window.location.reload()}>Try again</button>}
+      />
     );
   }
 
@@ -151,10 +191,12 @@ export default function JoinTeam() {
   if (p.state !== "pending") {
     const copy = DEAD_COPY[p.state];
     return (
-      <Shell>
-        <Hero title={copy.title} subtitle={copy.body(p)} />
-        <Link href="/login" className="hx-btn alt">Go to log in</Link>
-      </Shell>
+      <DeadEnd
+        glyph={copy.glyph}
+        title={copy.title}
+        subtitle={copy.body(p)}
+        action={<Link href="/login" className="hx-btn">{copy.cta}</Link>}
+      />
     );
   }
 
@@ -163,7 +205,7 @@ export default function JoinTeam() {
   const wrongAccount = isLoggedIn && !!user && !emailMatches;
 
   return (
-    <Shell>
+    <Shell note>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, marginBottom: 20 }}>
         <span
           aria-hidden="true"

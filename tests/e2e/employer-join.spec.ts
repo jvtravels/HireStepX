@@ -53,7 +53,7 @@ test.describe("employer join page: signed out", () => {
     await mockPreview(page, preview({ state: "expired" }));
     await page.goto(URL_PATH);
     await expect(page.getByRole("heading", { name: "This invite has expired" })).toBeVisible();
-    await expect(page.getByText("Ask Priya Nair to send a new one.")).toBeVisible();
+    await expect(page.getByText("Ask Priya Nair to send you a new one.")).toBeVisible();
   });
 
   test("treats a missing token as an invalid link", async ({ page }) => {
