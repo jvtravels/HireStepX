@@ -38,6 +38,8 @@ const ACCEPT_ERROR_TITLE: Record<string, string> = {
   revoked: "This invite was withdrawn",
   used: "This invite was already used",
   already_member: "You're already on a team",
+  team_full: "This team is full",
+  suspended: "This company can't add people right now",
   email_mismatch: "This invite is for a different email",
 };
 

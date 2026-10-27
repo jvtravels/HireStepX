@@ -255,6 +255,32 @@ describe("team invite round trip: send, email, preview, accept", () => {
     expect(db.invites[0].accepted_at).toBeNull();
   });
 
+  it("refuses to join a suspended company, without burning the invite", async () => {
+    await invite();
+    const token = tokenFromEmail();
+    db.companies[0].suspended_at = iso(-1);
+    const res = await accept(token, "new-1");
+    expect(res.status).toBe(403);
+    expect(db.members.some((m) => m.user_id === "new-1")).toBe(false);
+    expect(db.invites[0].accepted_at).toBeNull();
+  });
+
+  it("refuses to join a team that is already at its seat limit, without burning the invite", async () => {
+    await invite();
+    const token = tokenFromEmail();
+    for (let i = 0; i < 4; i++) {
+      db.members.push({ employer_id: "co-1", user_id: `m-${i}`, role: "member", email: `m${i}@acme.com`, name: null, joined_at: iso(-1e6) });
+    }
+    const res = await accept(token, "new-1");
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as { code: string }).code).toBe("team_full");
+    expect(db.members.some((m) => m.user_id === "new-1")).toBe(false);
+    expect(db.invites[0].accepted_at).toBeNull();
+
+    db.members.pop();
+    expect((await accept(token, "new-1")).status).toBe(200);
+  });
+
   it("does not burn the invite when the membership insert fails", async () => {
     await invite();
     const token = tokenFromEmail();
