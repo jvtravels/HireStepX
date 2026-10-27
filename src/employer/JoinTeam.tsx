@@ -90,16 +90,12 @@ export default function JoinTeam() {
   useEffect(() => {
     if (!token) { setPhase({ kind: "invalid" }); return; }
     const ctl = new AbortController();
-    // The page is no-referrer so the token never leaks, but the API's GET origin check needs a Referer;
-    // same-origin sends one to our own API only.
-    fetch(`/api/employer-team-accept?token=${encodeURIComponent(token)}`, { signal: ctl.signal, referrerPolicy: "same-origin" })
+    fetch(`/api/employer-team-accept?token=${encodeURIComponent(token)}`, { signal: ctl.signal })
       .then(async (res) => {
         if (res.status === 404) { setPhase({ kind: "invalid" }); return; }
         const data = (await res.json().catch(() => null)) as (Preview & { error?: string }) | null;
         if (!res.ok || !data) {
-          const message = res.status === 403
-            ? "We couldn't verify this request from your browser. Reload the page, or open the link from your invite email again."
-            : data?.error || "Something went wrong. Please try again.";
+          const message = data?.error || "Something went wrong. Please try again.";
           setPhase({ kind: "error", message });
           return;
         }

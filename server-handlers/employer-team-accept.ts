@@ -15,7 +15,7 @@ export const config = { runtime: "edge" };
 
 import {
   withAuthAndRateLimit, corsHeaders, handleCorsPreflightOrMethod, withRequestId, isRateLimited, getClientIp,
-  rateLimitResponse, validateOrigin, forbiddenResponse, slog,
+  rateLimitResponse, slog,
 } from "./_shared";
 import {
   INVITE_ACCEPT_MESSAGE, MAX_TEAM_SIZE, ROLE_LABEL, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
@@ -72,7 +72,8 @@ async function preview(req: Request): Promise<Response> {
   const early = handleCorsPreflightOrMethod(req, { allowGet: true });
   if (early) return early;
   const headers = withRequestId(corsHeaders(req, { allowGet: true }));
-  if (!validateOrigin(req)) return forbiddenResponse(headers);
+  // No origin/Referer check here: this read is unauthenticated and gated by the secret token, and
+  // privacy-focused browsers strip Referer, which turned valid invite links into a 403.
   if (await isRateLimited(getClientIp(req), "employer-team-preview", 20, 60_000)) return rateLimitResponse(headers);
   try {
     const token = new URL(req.url).searchParams.get("token") ?? "";

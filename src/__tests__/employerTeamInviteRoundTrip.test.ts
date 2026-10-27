@@ -7,12 +7,12 @@ process.env.APP_URL = "https://app.test";
 
 /* Signed-in user for the request in flight; the tests switch it to act as the
    owner, then as the invitee. */
-const session = { userId: "owner-1" };
+const session = { userId: "owner-1", originOk: true };
 vi.mock("../../server-handlers/_shared", async (orig) => ({
   ...(await orig<typeof import("../../server-handlers/_shared")>()),
   withAuthAndRateLimit: async (req: Request) => ({ headers: {}, auth: { userId: req.headers.get("x-test-user") ?? session.userId } }),
   isRateLimited: async () => false,
-  validateOrigin: () => true,
+  validateOrigin: () => session.originOk,
   slog: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 vi.mock("../../server-handlers/_employer-team-gate", () => ({ teamsEnabledFor: async () => true }));
@@ -188,6 +188,17 @@ describe("team invite round trip: send, email, preview, accept", () => {
     const list = (await (await teamHandler(new Request("https://app.test/api/employer-team"))).json()) as { members: Array<{ email: string }>; invites: unknown[] };
     expect(list.members.map((m) => m.email)).toContain("new@acme.com");
     expect(list.invites).toHaveLength(0);
+  });
+
+  it("previews even when the request carries no allowed Origin or Referer", async () => {
+    await invite();
+    const token = tokenFromEmail();
+    session.originOk = false;
+    try {
+      expect((await preview(token)).status).toBe(200);
+    } finally {
+      session.originOk = true;
+    }
   });
 
   it("is single use: a replayed link is rejected and creates no second membership", async () => {

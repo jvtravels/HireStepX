@@ -6,7 +6,8 @@ import JoinTeam, { JoinTopLink } from "@/employer/JoinTeam";
 export const metadata: Metadata = {
   title: "Join your team | HireStepX",
   robots: { index: false, follow: false },
-  referrer: "no-referrer",
+  // Never sends the token to a third party, but still lets our own API see an Origin/Referer.
+  referrer: "same-origin",
 };
 
 export default function Page() {
