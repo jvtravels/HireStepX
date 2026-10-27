@@ -620,11 +620,16 @@ function inMemFallbackSetStr(key: string, value: string, ttlSec: number): void {
 function inMemFallbackIncr(key: string, ttlSec: number): number {
   const cur = inMemFallbackGetNum(key);
   const next = cur + 1;
-  inMemFallbackSetStr(key, String(next), ttlSec);
+  const entry = _inMemStore.get(key);
+  if (entry && cur > 0) entry.value = String(next);
+  else inMemFallbackSetStr(key, String(next), ttlSec);
   return next;
 }
 
-async function incrRedisKey(key: string, ttl: number): Promise<number> {
+/* EXPIRE ... NX sets the TTL only on the first hit, so the window is fixed from the
+   first attempt. A plain EXPIRE on every INCR slid the window forward and locked
+   shared-IP users out for as long as anyone kept retrying. */
+export async function incrRedisKey(key: string, ttl: number): Promise<number> {
   const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
   const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
   if (!UPSTASH_URL || !UPSTASH_TOKEN) return inMemFallbackIncr(key, ttl);
@@ -632,7 +637,7 @@ async function incrRedisKey(key: string, ttl: number): Promise<number> {
     const r = await fetch(`${UPSTASH_URL}/pipeline`, {
       method: "POST",
       headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify([["INCR", key], ["EXPIRE", key, ttl]]),
+      body: JSON.stringify([["INCR", key], ["EXPIRE", key, ttl, "NX"]]),
     });
     if (!r.ok) return inMemFallbackIncr(key, ttl);
     const results = await r.json();
