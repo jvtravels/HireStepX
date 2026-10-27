@@ -17,6 +17,8 @@ const AnonName = ({ id }: { id: string }) => (
 const ANSWER = "We timed checkout on the UPI path before and after, and watched it for two sale weekends.";
 const FIX = "Checkout time fell from 1.8s to 1.1s, and stayed there through both sales.";
 const ROW = 60;
+const RANK_ROW = 78;
+const RANK_GAP = 12;
 
 function Header({ left, right }: { left: string; right: React.ReactNode }) {
   return (
@@ -36,65 +38,83 @@ function Avatar({ id }: { id: string }) {
   return <img className="hx-av" src={`/people/${id}.jpg`} alt="" width={32} height={32} />;
 }
 
+const Ico = ({ children, size = 16 }: { children: React.ReactNode; size?: number }) => (
+  <svg viewBox="0 0 16 16" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{children}</svg>
+);
+const CandidateIcon = () => <Ico><circle cx="6.5" cy="5.5" r="2.5" /><path d="M1.8 13.5c0-2.6 2.1-4.5 4.7-4.5s4.7 1.9 4.7 4.5" /><path d="M11.5 3.5a3 3 0 0 1 0 4M13.3 2a5.4 5.4 0 0 1 0 7" /></Ico>;
+const EmployerIcon = () => <Ico><path d="M2 3.5h8M2 7.5h4.5M2 11.5h4.5" /><circle cx="11" cy="10" r="2.5" /><path d="M13 12l1.7 1.7" /></Ico>;
+const WaveIcon = () => <Ico><path d="M2 8h0M4.5 5v6M7 2.5v11M9.5 5.5v5M12 4v8M14 7v2" /></Ico>;
+const LockIcon = () => <Ico size={18}><rect x="3" y="7" width="10" height="7" rx="2" /><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" /></Ico>;
+const PlusIcon = () => <Ico size={18}><circle cx="8" cy="8" r="6.2" /><path d="M8 5.2v5.6M5.2 8h5.6" /></Ico>;
+const WarnIcon = () => <Ico size={14}><path d="M8 2.2l6 10.6H2z" /><path d="M8 6.5v3M8 11.2h0" /></Ico>;
+
 export function HeroSurface() {
   const [fixed, setFixed] = useState(false);
   const [contact, setContact] = useState(false);
   const { ref, on } = useReveal<HTMLDivElement>();
   const score = useTween(fixed ? 86 : 72);
   const people = [
-    { id: "a41f", s: fixed ? 86 : 72, note: fixed ? "Names the metric and the result" : "Names the metric, no result" },
     { id: "c92d", s: 78, note: "Strong trade-offs, thin Result" },
-    { id: "e07b", s: 64, note: "Good basics, low ownership" },
+    { id: "a41f", s: fixed ? 86 : 72, note: fixed ? "Names the metric and the result" : "Names the metric, no result" },
+    { id: "e07b", s: 64, note: "Solid basics, light on ownership" },
     { id: "f19a", s: 59, note: "Clear answers, limited depth" },
   ];
   const rank = [...people].sort((a, b) => b.s - a.s).map((p) => p.id);
   const star: [string, boolean][] = [["S", true], ["T", true], ["A", true], ["R", fixed]];
   return (
-    <div className={on ? "hx-hs hx-rv on" : "hx-hs hx-rv"} ref={ref}>
-      <div className="hx-win hx-ri" style={delay(0)}>
-        <Header left="HireStepX / Mock interview / Backend Engineer" right={<span className="hx-samp"><i />Interactive sample</span>} />
-        <div className="hx-split">
-          <section className="hx-pane" aria-label="Candidate view">
-            <p className="hx-pl"><span>Candidate view</span><em>Q3 of 6 · 0:42</em></p>
-            <ol className="hx-prog" aria-label="Question 3 of 6">{[0, 1, 2, 3, 4, 5].map((i) => <li key={i} className={i < 2 ? "done" : i === 2 ? "now" : undefined} />)}</ol>
-            <p className="hx-pq">Tell me about a time you made something faster.</p>
-            <p className="hx-tx">
-              <span className="hx-ts">0:31</span>
-              {fixed ? <>{ANSWER} <ins key="f">{FIX}</ins></> : <>We timed checkout on the UPI path <mark>before and after</mark>, and watched it for two sale weekends. <span className="hx-miss">Result missing</span></>}
-            </p>
-            <ul className="hx-sr" aria-label="STAR coverage">
-              {star.map(([l, ok]) => <li key={l} className={ok ? "ok" : "miss"}><b>{l}</b>{ok ? "Covered" : "Missing"}</li>)}
+    <div className={on ? "hx-hs hv hx-rv on" : "hx-hs hv hx-rv"} ref={ref}>
+      <div className="hv-win hx-ri" style={delay(0)}>
+        <header className="hv-bar">
+          <span className="hv-dots" aria-hidden="true"><i /><i /><i /></span>
+          <span className="hv-crumb">HireStepX / Mock interview / Backend Engineer</span>
+          <span className="hv-samp"><i />Sample, try it</span>
+        </header>
+        <div className="hv-split">
+          <section className="hv-pane" aria-label="Candidate view">
+            <p className="hv-ph"><b><CandidateIcon />Candidate view</b><em>Q3 of 6 · 0:42</em></p>
+            <ol className="hv-steps" aria-label="Question 3 of 6">{[1, 2, 3, 4, 5, 6].map((n) => <li key={n} className={n === 3 ? "now" : n > 3 ? "rest" : undefined} aria-current={n === 3 ? "step" : undefined}>{n}</li>)}</ol>
+            <p className="hv-q">Tell me about a time you made something faster.</p>
+            <div className="hv-ans">
+              <span className="hv-ats"><WaveIcon />0:31</span>
+              <p>
+                {fixed ? <>“{ANSWER} <ins key="f">{FIX}</ins>”</> : <>“We timed checkout on the UPI path before and after, and watched it for two sale weekends.” <span className="hv-miss">Result missing</span></>}
+              </p>
+            </div>
+            <ul className="hv-star" aria-label="STAR coverage">
+              {star.map(([l, ok]) => <li key={l} className={ok ? "ok" : "miss"}><b>{l}</b><span>{ok ? "Covered" : "Missing"}{ok ? <Check /> : <WarnIcon />}</span></li>)}
             </ul>
-            <button type="button" className="hx-fix" aria-pressed={fixed} onClick={() => setFixed((v) => !v)}>
-              {fixed && <Check />}{fixed ? "Undo the fix" : "Add the missing Result"}
-            </button>
+            <div className="hv-foot">
+              <button type="button" className="hv-fix" aria-pressed={fixed} onClick={() => setFixed((v) => !v)}>
+                {fixed ? <Check /> : <PlusIcon />}{fixed ? "Undo the fix" : "Add the missing Result"}
+              </button>
+              <span className="hv-score">Answer score <b className="hx-num">{score}</b><i>/ 100</i></span>
+            </div>
           </section>
-          <section className="hx-pane hx-pane-r" aria-label="Employer view">
-            <p className="hx-pl"><span>Employer view</span><em>Ranked on answers</em></p>
-            <ul className="hx-rk" style={{ height: ROW * people.length }} aria-live="polite">
-              {people.map((p) => (
-                <li key={p.id} className={p.id === "a41f" ? (fixed ? "hx-me hx-hit" : "hx-me") : undefined} style={{ transform: `translateY(${rank.indexOf(p.id) * ROW}px)` }}>
-                  <span className="hx-n">{rank.indexOf(p.id) + 1}</span>
-                  <span className="hx-who-row"><Avatar id={p.id} />{p.id === "a41f" && contact ? <b className="hx-real">Priya S.</b> : <AnonName id={p.id} />}</span>
-                  <em>{p.note}</em>
-                  {p.id === "a41f" ? <span className="hx-chipw"><ScoreChip score={score} /></span> : <ScoreChip score={p.s} />}
-                </li>
-              ))}
+          <section className="hv-pane hv-pane-r" aria-label="Employer view">
+            <p className="hv-ph"><b><EmployerIcon />Employer view</b><em>Ranked on answers</em></p>
+            <ul className="hv-rk" style={{ height: RANK_ROW * people.length - RANK_GAP }} aria-live="polite">
+              {people.map((p) => {
+                const me = p.id === "a41f";
+                return (
+                  <li key={p.id} className={me ? (fixed ? "me hit" : "me") : undefined} style={{ transform: `translateY(${rank.indexOf(p.id) * RANK_ROW}px)` }}>
+                    <span className="hv-n">{rank.indexOf(p.id) + 1}</span>
+                    <span className="hv-tile">#{p.id.slice(0, 2)}</span>
+                    <span className="hv-who">
+                      <b>{me && contact ? "Priya S." : `Candidate #${p.id}`}{me && !contact && <i aria-hidden="true" />}</b>
+                      <em>{p.note}</em>
+                    </span>
+                    <span className={me ? "hv-sc hv-sc-me" : p.s >= 75 ? "hv-sc hi" : "hv-sc"}>{me ? score : p.s}</span>
+                  </li>
+                );
+              })}
             </ul>
+            <div className="hv-unlock">
+              <span className="hv-lock"><LockIcon /></span>
+              <span className="hv-ut"><b>Rank {rank.indexOf("a41f") + 1} of 4</b><em>Full answers &amp; telemetry</em></span>
+              <button type="button" className="hv-btn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Unlock to contact"}</button>
+            </div>
           </section>
         </div>
-      </div>
-      <div className="hx-float hx-fl-a hx-ri" style={delay(3)} aria-hidden="true">
-        <span>Answer score</span>
-        <b className="hx-num">{score}</b>
-        <i><u style={{ width: `${score}%` }} /></i>
-      </div>
-      <div className="hx-float hx-fl-b hx-ri" style={delay(4)}>
-        <span className="hx-who-row">
-          <Avatar id="a41f" /><AnonName id="a41f" />
-        </span>
-        <span className="hx-num">Rank {rank.indexOf("a41f") + 1} of 4</span>
-        <button type="button" className="hx-fakebtn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Unlock to contact"}</button>
       </div>
     </div>
   );
