@@ -12,7 +12,6 @@
  */
 
 import type { EraseDeps } from "./_erase-user";
-import { slog } from "./_shared";
 
 export const EMPLOYER_ROLES = ["owner", "admin", "member", "viewer"] as const;
 export type EmployerRole = (typeof EMPLOYER_ROLES)[number];
@@ -259,6 +258,11 @@ export interface AuditEntry {
   meta?: Record<string, unknown>;
 }
 
+/* Local on purpose: this module is also imported by client code, and _shared.ts pulls in server-only next/server. */
+function warnAudit(msg: string, fields: Record<string, unknown>): void {
+  console.warn(JSON.stringify({ ts: new Date().toISOString(), level: "warn", msg, ...fields }));
+}
+
 /** Best-effort: the trail must never fail the mutation it describes. */
 export async function writeAuditLog(
   supabaseUrl: string,
@@ -281,10 +285,10 @@ export async function writeAuditLog(
       }),
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) slog.warn("[team-audit] write rejected", { action: entry.action, status: res.status });
+    if (!res.ok) warnAudit("[team-audit] write rejected", { action: entry.action, status: res.status });
     return res.ok;
   } catch (err) {
-    slog.warn("[team-audit] write failed", { action: entry.action, err: err instanceof Error ? err.message : String(err) });
+    warnAudit("[team-audit] write failed", { action: entry.action, err: err instanceof Error ? err.message : String(err) });
     return false;
   }
 }
