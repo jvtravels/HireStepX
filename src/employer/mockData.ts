@@ -47,6 +47,8 @@ export interface CandidateResumeDetail {
   expectedCtcBand?: string | null;
   /** ISO time the candidate last confirmed they are still looking. */
   availabilityConfirmedAt?: string | null;
+  workModePref?: string | null;
+  openToRelocate?: boolean;
 }
 
 export interface MatchBreakdown {

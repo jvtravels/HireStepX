@@ -57,7 +57,7 @@ const SIGNAL_TONE = { strong: "success", promising: "brand", fair: "warning", lo
 
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 
-function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi, analysisClear }: { candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi; analysisClear: boolean }) {
+function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi, analysisClear, onOpenPractice, onOpenResume }: { onOpenPractice: () => void; onOpenResume: () => void; candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi; analysisClear: boolean }) {
   const rows = sortFitRows(buildRoleFit(candidate, requirement, matched, evidence));
   const fit = summarizeFit(rows);
   const signal = candidateSignal(candidate.matchScore, fit);
@@ -122,7 +122,17 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                       <FitMark status={row.status} />
                     </div>
                   </div>
-                  <p className="m-0 text-[13px] text-hx-ink-soft">{row.reason} <span>{FIT_SOURCE_LABEL[row.source]}.</span></p>
+                  <p className="m-0 text-[13px] text-hx-ink-soft">
+                    {row.reason} <span>{FIT_SOURCE_LABEL[row.source]}.</span>
+                    {row.source !== "profile" && (
+                      <>
+                        {" "}
+                        <PanelButton onClick={row.source === "practice" ? onOpenPractice : onOpenResume}>
+                          {row.source === "practice" ? "See practice evidence" : "See in resume"}
+                        </PanelButton>
+                      </>
+                    )}
+                  </p>
                   {row.id === "skills" && (matched.length > 0 || unmatched.length > 0) && (
                     <div className="grid gap-2">
                       <div className="flex flex-wrap gap-1.5">
@@ -181,6 +191,8 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
   if (r.expectedCtc) facts.push({ label: "Expected CTC", value: r.expectedCtc, selfReported: true });
   else if (r.expectedCtcBand) facts.push({ label: "Expected CTC (range)", value: r.expectedCtcBand, selfReported: true });
+  const workPref = [r.workModePref ? { onsite: "On-site", hybrid: "Hybrid", remote: "Remote" }[r.workModePref] : null, r.openToRelocate ? "open to relocating" : null].filter(Boolean).join(", ");
+  if (workPref) facts.push({ label: "Work preference", value: workPref, selfReported: true });
   if (r.primaryDomain) {
     const primaryYears = r.domainYears?.find((d) => d.domain.toLowerCase() === r.primaryDomain?.toLowerCase())?.years;
     facts.push({ label: "Domain", value: primaryYears ? `${r.primaryDomain} (${formatYears(primaryYears)})` : r.primaryDomain });
@@ -438,7 +450,7 @@ export function OverviewTab({
   return (
     <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:divide-x lg:divide-y-0">
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
-        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} />
+        <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />

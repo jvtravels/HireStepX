@@ -1083,6 +1083,9 @@ export interface ResumeProfile {
   shareCtcBand?: boolean;
   /** ISO time the candidate last confirmed they are still looking. */
   availabilityConfirmedAt?: string | null;
+  /** Preferred way of working: onsite, hybrid or remote. */
+  workModePref?: "onsite" | "hybrid" | "remote" | null;
+  openToRelocate?: boolean;
   /** Explicit promotion signals extracted from the resume
    *  (e.g. "Promoted to Senior PM in 18 months at Flipkart").
    *  Prime STAR story material; used as behavioral probe anchors. */

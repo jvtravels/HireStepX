@@ -5,7 +5,7 @@
    same duck-typing check server-handlers/_requirement-match-helpers.ts
    already uses to tell them apart. */
 
-import { readAvailabilityConfirmedAt, sharedCtcBand } from "./_ctc-band";
+import { readAvailabilityConfirmedAt, readWorkModePref, sharedCtcBand } from "./_ctc-band";
 
 export interface ResumeExperienceEntry {
   title: string;
@@ -68,6 +68,8 @@ export interface ResumeDetail {
   // Approximate band the candidate agreed to show before an unlock.
   expectedCtcBand: string | null;
   availabilityConfirmedAt: string | null;
+  workModePref: string | null;
+  openToRelocate: boolean;
 }
 
 function escapeRegExp(s: string): string {
@@ -280,6 +282,8 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
     expectedCtc: null,
     expectedCtcBand: null,
     availabilityConfirmedAt: null,
+    workModePref: null,
+    openToRelocate: false,
   };
   if (!resumeData || typeof resumeData !== "object") return empty;
   const r = resumeData as Record<string, unknown>;
@@ -317,6 +321,8 @@ export function extractResumeDetail(resumeData: unknown): ResumeDetail {
       expectedCtc: asString(r.expectedCtc),
       expectedCtcBand: sharedCtcBand(r),
       availabilityConfirmedAt: readAvailabilityConfirmedAt(r.availabilityConfirmedAt, Date.now()),
+      workModePref: readWorkModePref(r.workModePref),
+      openToRelocate: r.openToRelocate === true,
     };
   }
 

@@ -6,12 +6,21 @@ export interface HiringFacts {
   expectedCtc: string;
   shareCtcBand: boolean;
   availabilityConfirmedAt: string;
+  workModePref: "" | "onsite" | "hybrid" | "remote";
+  openToRelocate: boolean;
 }
 
 export const NOTICE_PERIOD_OPTIONS = ["Immediate", "15 days", "30 days", "60 days", "90 days"] as const;
 export const HIRING_FACT_MAX = 40;
+export const WORK_MODE_OPTIONS = [
+  { value: "onsite", label: "On-site" },
+  { value: "hybrid", label: "Hybrid" },
+  { value: "remote", label: "Remote" },
+] as const;
 
-export const EMPTY_FACTS: HiringFacts = { noticePeriod: "", currentCtc: "", expectedCtc: "", shareCtcBand: false, availabilityConfirmedAt: "" };
+const workMode = (v: unknown): HiringFacts["workModePref"] => (v === "onsite" || v === "hybrid" || v === "remote" ? v : "");
+
+export const EMPTY_FACTS: HiringFacts = { noticePeriod: "", currentCtc: "", expectedCtc: "", shareCtcBand: false, availabilityConfirmedAt: "", workModePref: "", openToRelocate: false };
 
 const clean = (v: string | null | undefined) => (v ?? "").replace(/\s+/g, " ").trim().slice(0, HIRING_FACT_MAX);
 
@@ -23,6 +32,8 @@ export function readHiringFacts(resume: StoredResume | null | undefined): Hiring
     expectedCtc: clean(resume.expectedCtc),
     shareCtcBand: resume.shareCtcBand === true,
     availabilityConfirmedAt: clean(resume.availabilityConfirmedAt),
+    workModePref: workMode(resume.workModePref),
+    openToRelocate: resume.openToRelocate === true,
   };
 }
 
@@ -33,6 +44,8 @@ export function sanitizeFacts(raw: HiringFacts): HiringFacts {
     expectedCtc: clean(raw.expectedCtc),
     shareCtcBand: raw.shareCtcBand === true,
     availabilityConfirmedAt: clean(raw.availabilityConfirmedAt),
+    workModePref: workMode(raw.workModePref),
+    openToRelocate: raw.openToRelocate === true,
   };
 }
 
@@ -41,7 +54,8 @@ export function factsChanged(a: HiringFacts, b: HiringFacts): boolean {
   const y = sanitizeFacts(b);
   return (
     x.noticePeriod !== y.noticePeriod || x.currentCtc !== y.currentCtc || x.expectedCtc !== y.expectedCtc ||
-    x.shareCtcBand !== y.shareCtcBand || x.availabilityConfirmedAt !== y.availabilityConfirmedAt
+    x.shareCtcBand !== y.shareCtcBand || x.availabilityConfirmedAt !== y.availabilityConfirmedAt ||
+    x.workModePref !== y.workModePref || x.openToRelocate !== y.openToRelocate
   );
 }
 
@@ -55,6 +69,8 @@ export function withHiringFacts<T extends StoredResume>(resume: T, facts: Hiring
     expectedCtc: f.expectedCtc || null,
     shareCtcBand: f.shareCtcBand && !!f.expectedCtc,
     availabilityConfirmedAt: f.availabilityConfirmedAt || null,
+    workModePref: f.workModePref || null,
+    openToRelocate: f.openToRelocate,
   };
 }
 
@@ -69,5 +85,7 @@ export function carryHiringFacts<T extends StoredResume>(next: T, prev: StoredRe
     expectedCtc: next.expectedCtc || prev.expectedCtc || null,
     shareCtcBand: next.shareCtcBand ?? prev.shareCtcBand,
     availabilityConfirmedAt: next.availabilityConfirmedAt || prev.availabilityConfirmedAt || null,
+    workModePref: next.workModePref ?? prev.workModePref ?? null,
+    openToRelocate: next.openToRelocate ?? prev.openToRelocate,
   };
 }

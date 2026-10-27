@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "./AuthContext";
 import { isAiResume } from "./resumeParser";
-import { HIRING_FACT_MAX, NOTICE_PERIOD_OPTIONS, factsChanged, readHiringFacts, withHiringFacts } from "./hiringFacts";
+import { HIRING_FACT_MAX, NOTICE_PERIOD_OPTIONS, WORK_MODE_OPTIONS, factsChanged, readHiringFacts, withHiringFacts } from "./hiringFacts";
 
 export default function HiringDetailsCard({ showToast }: { showToast: (msg: string) => void }) {
   const { user, updateUser } = useAuth();
@@ -50,6 +50,24 @@ export default function HiringDetailsCard({ showToast }: { showToast: (msg: stri
           <label htmlFor="hf-expected" className="mb-1 block text-[12px] font-medium text-hx-coal">Expected CTC</label>
           <Input id="hf-expected" value={draft.expectedCtc} onChange={(e) => set("expectedCtc", e.target.value)} placeholder="24 LPA" className="h-9" />
         </div>
+      </div>
+      <div className="grid gap-3 min-[640px]:grid-cols-3">
+        <div>
+          <label htmlFor="hf-workmode" className="mb-1 block text-[12px] font-medium text-hx-coal">Preferred way of working</label>
+          <select
+            id="hf-workmode"
+            value={draft.workModePref}
+            onChange={(e) => setDraft((d) => ({ ...d, workModePref: e.target.value as typeof d.workModePref }))}
+            className="h-9 w-full rounded-md border border-border bg-background px-2 text-[13px]"
+          >
+            <option value="">No preference</option>
+            {WORK_MODE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </div>
+        <label className="flex items-center gap-2 text-[13px] text-hx-ink-soft min-[640px]:mt-5">
+          <input type="checkbox" checked={draft.openToRelocate} onChange={(e) => setDraft((d) => ({ ...d, openToRelocate: e.target.checked }))} />
+          Open to relocating
+        </label>
       </div>
       <label className="flex items-start gap-2 text-[13px] leading-snug text-hx-ink-soft">
         <input

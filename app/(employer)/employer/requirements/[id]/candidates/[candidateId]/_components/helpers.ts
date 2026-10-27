@@ -223,13 +223,15 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       ? "The job is remote, so location does not limit them."
       : inCity
         ? `Based in ${candidate.city}, where the job is hiring.`
-        : `Based in ${candidate.city}; the job is hiring in ${requirement.locations.slice(0, 2).join(" or ")}.`;
+        : r?.openToRelocate
+          ? `Based in ${candidate.city}, but open to relocating to ${requirement.locations.slice(0, 2).join(" or ")}.`
+          : `Based in ${candidate.city}; the job is hiring in ${requirement.locations.slice(0, 2).join(" or ")}.`;
     rows.push({
       id: "location",
       label: "Location",
       asked: remote ? "Remote" : requirement.locations.slice(0, 2).join(", "),
       has: candidate.city,
-      status: remote || inCity ? "meets" : "gap",
+      status: remote || inCity ? "meets" : r?.openToRelocate ? "partial" : "gap",
       reason,
       source: "profile",
     });

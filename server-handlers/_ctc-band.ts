@@ -51,3 +51,10 @@ export function readAvailabilityConfirmedAt(v: unknown, nowMs: number): string |
   if (!Number.isFinite(t) || t > nowMs + DAY_MS) return null;
   return new Date(t).toISOString();
 }
+
+export const WORK_MODE_PREFS = ["onsite", "hybrid", "remote"] as const;
+export type WorkModePref = (typeof WORK_MODE_PREFS)[number];
+
+export function readWorkModePref(v: unknown): WorkModePref | null {
+  return typeof v === "string" && (WORK_MODE_PREFS as readonly string[]).includes(v) ? (v as WorkModePref) : null;
+}
