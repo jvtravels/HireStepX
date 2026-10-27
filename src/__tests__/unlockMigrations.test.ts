@@ -104,8 +104,8 @@ describe("0054 unlock money guards", () => {
   });
 });
 
-describe("0061 payment_dedup.user_id", () => {
-  const sql = read("supabase-migrations/0061-payment-dedup-user-id.sql");
+describe("0062 payment_dedup.user_id", () => {
+  const sql = read("supabase-migrations/0062-payment-dedup-user-id.sql");
 
   it("adds the column idempotently, with ON DELETE SET NULL so the dedup row outlives the profile", () => {
     expect(sql).toContain("alter table payment_dedup add column if not exists user_id uuid;");
@@ -119,8 +119,8 @@ describe("0061 payment_dedup.user_id", () => {
   });
 });
 
-describe("0062 promo redemptions", () => {
-  const sql = read("supabase-migrations/0062-promo-redemptions.sql");
+describe("0063 promo redemptions", () => {
+  const sql = read("supabase-migrations/0063-promo-redemptions.sql");
 
   it("creates the table the erasure delete targets and the 2-arg RPC verify-payment calls", () => {
     expect(sql).toContain("create table if not exists promo_redemptions");

@@ -280,7 +280,7 @@ create table if not exists payment_dedup (
   user_id uuid references profiles(id) on delete set null,
   created_at timestamptz default now()
 );
--- Migration 0061: prod's table predates user_id, so create-if-not-exists skipped it.
+-- Migration 0062: prod's table predates user_id, so create-if-not-exists skipped it.
 alter table payment_dedup add column if not exists user_id uuid;
 alter table payment_dedup drop constraint if exists payment_dedup_user_id_fkey;
 alter table payment_dedup
