@@ -183,7 +183,7 @@ async function handlePasswordChanged(req: VercelRequest, res: VercelResponse, no
               ["Account", safeEmail],
             ]) +
             note(
-              `Wasn't you? Please ${link("secure your account", `${APP_URL}/login`)} right away and write to us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")}.`,
+              `Wasn't you? Please ${link("reset your password", `${APP_URL}/forgot-password`)} right away and write to us at ${link("hello@hirestepx.com", "mailto:hello@hirestepx.com")}.`,
               { tone: "warn" },
             ),
         }),
@@ -315,7 +315,7 @@ async function sendOAuthOnlyResetEmail(email: string): Promise<void> {
               title: "Use Google to sign in",
               lede: `Someone asked to reset the HireStepX password for ${b(safeEmail)}. This account signs in with Google, so there's no password to reset.`,
             }) +
-            button("Go to sign in", `${APP_URL}/login`) +
+            button("Continue with Google", `${APP_URL}/login?method=google`) +
             note(`Choose "Continue with Google" with this address. If you didn't request this, ignore it, nothing has changed.`),
         }),
       }),
@@ -350,12 +350,10 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
     return res.status(429).json({ error: "Too many reset requests. Try again later." });
   }
 
-  // Audit P0 #8: per-email rate limit. With the link-reuse cache the
-  // legit user only ever generates ONE link per 50 minutes, so 5/24h
-  // is plenty for legit retries (typo email → resend → final). An
-  // attacker on a botnet (different IPs) bypasses the per-IP limit
-  // and can otherwise spam-DoS a single victim's inbox until our
-  // domain reputation drops.
+  // Audit P0 #8: per-email rate limit. 3/24h covers legit retries
+  // (typo email → resend → final). An attacker on a botnet (different
+  // IPs) bypasses the per-IP limit and can otherwise spam-DoS a single
+  // victim's inbox until our domain reputation drops.
   const emailResetKey = `rl:reset:email:${normalizedEmail}`;
   const emailResetCount = await incrRedisKey(emailResetKey, 24 * 60 * 60);
   // Lowered from 5 to 3 — paired with the courtesy "no account found"
@@ -363,11 +361,12 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
   // emails/day at any inbox by typing the victim's address into our
   // reset form. 3/day still covers the legit typo→correct→final loop.
   if (emailResetCount > 3) {
-    // Generic 200 (enumeration defense) — the user's UI shows the
-    // same "check your email" confirmation regardless. Loud server
-    // log so ops can spot abuse.
+    // 429 rather than a silent 200: the counter is keyed on the typed
+    // address whether or not an account exists, so the response reveals
+    // nothing about the account, and a user who hit the cap would
+    // otherwise wait on "Check your email" for a message we won't send.
     console.warn(`[reset] per-email rate limit hit for ${normalizedEmail.slice(0, 50)} (count=${emailResetCount})`);
-    return res.status(200).json({ ok: true });
+    return res.status(429).json({ error: "Too many reset requests. Try again later." });
   }
 
   if (!RESEND_API_KEY || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -411,7 +410,7 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
             before any new link they request actually works.
        Fix: drop the cache. Each user-initiated send rotates the
        Supabase recovery token (T1 → T2) and emails the latest. The
-       per-IP (3/h) and per-email (5/24h) rate limits already prevent
+       per-IP (3/h) and per-email (3/24h) rate limits already prevent
        a runaway resend loop, and "only the latest link works" matches
        what users expect from every other reset flow they've used. */
     let resetUrl: string | null = null;
@@ -434,7 +433,10 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
     if (!linkRes.ok) {
       const errText = await linkRes.text().catch(() => "");
       console.error("generate_link failed:", linkRes.status, errText);
-      // Don't reveal whether user exists — always return success
+      // A Supabase outage says nothing about the address, so report it.
+      // 4xx can mean "no such user" when the lookup above failed, so those
+      // stay a generic success to keep the enumeration defence.
+      if (linkRes.status >= 500) return res.status(503).json({ error: "Password reset is temporarily unavailable" });
       return res.status(200).json({ ok: true });
     }
 
@@ -466,17 +468,17 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
         to: [normalizedEmail],
         subject: "Your password reset link",
         html: emailShell({
-          preview: "Valid for 60 minutes. Didn't ask? Nothing changes.",
+          preview: "Valid for 30 minutes. Didn't ask? Nothing changes.",
           body:
             hero({
               title: "Let's get you back in",
-              lede: `Tap the button to choose a new password. The link works once and expires in 60 minutes.`,
+              lede: `Tap the button to choose a new password. The link works once and expires in 30 minutes.`,
             }) +
             button("Choose a new password", resetUrl) +
             note(
               `Didn't ask for this? You can ignore this email and your password stays exactly as it is.`,
             ) +
-            note(`Button not working? Copy this link:<br>${link(resetUrl, resetUrl)}`),
+            note(`Button not working? Copy this link:<br><span style="word-break:break-all;">${link(resetUrl, resetUrl)}</span>`),
         }),
       }),
     });
@@ -486,16 +488,20 @@ async function handleReset(req: VercelRequest, res: VercelResponse, normalizedEm
       const errBody = await emailRes.text();
       console.error("Resend API error for reset:", emailRes.status, errBody);
       logResendUsage("reset", "error", undefined, `HTTP ${emailRes.status}`);
+      // Resend 5xx is an outage, not a property of the address. A 4xx can be
+      // address-specific (suppressed or rejected recipient), so it stays a
+      // generic success rather than separating real accounts from unknown ones.
+      if (emailRes.status >= 500) return res.status(503).json({ error: "Password reset is temporarily unavailable" });
     } else {
       logResendUsage("reset", "success");
     }
 
-    // Always return success to not reveal whether the email exists
     return res.status(200).json({ ok: true });
   } catch (err) {
     console.error("Password reset email error:", err);
     logResendUsage("reset", "error", undefined, err instanceof Error ? err.message : "Unknown");
-    return res.status(200).json({ ok: true });
+    // Thrown errors here are network failures or timeouts, not address-specific.
+    return res.status(503).json({ error: "Password reset is temporarily unavailable" });
   }
 }
 

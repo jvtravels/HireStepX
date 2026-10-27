@@ -416,6 +416,9 @@ export function StagingLoginForm() {
     [canSubmit, email, password, login, isMounted, staySignedIn],
   );
 
+  // Set by the "Your account signs in with Google" reset email so the user
+  // lands on the right button instead of an unexplained password form.
+  const googleHint = searchParams?.get("method") === "google";
   const verifiedParam = searchParams?.get("verified") ?? null;
   const errorParam = searchParams?.get("error") ?? null;
   const errorParamMessage = errorParam
@@ -454,6 +457,11 @@ export function StagingLoginForm() {
       <p className="hx-sub">
         {isInviteFlow ? "Log in to accept your team invite." : isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to pick up your practice."}
       </p>
+      {googleHint && (
+        <div role="status" aria-live="polite" className="hx-banner ok">
+          This account signs in with Google, so there is no password to reset. Choose Continue with Google below.
+        </div>
+      )}
       <button
         type="button"
         className="hx-gbtn"
@@ -500,7 +508,7 @@ export function StagingLoginForm() {
           error={emailError}
           invalid={!!error || (emailTouched && !!emailV.message)}
           // eslint-disable-next-line jsx-a11y/no-autofocus -- only focuses when the tab is visible (useAutoFocus)
-          autoFocus={autoFocus}
+          autoFocus={autoFocus && !googleHint}
         />
         <PasswordField
           label="Password"
