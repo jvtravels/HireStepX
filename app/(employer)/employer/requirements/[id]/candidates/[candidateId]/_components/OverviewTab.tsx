@@ -9,7 +9,7 @@ import { Badge, FAIR_MATCH_THRESHOLD, OutlineCta, STRONG_MATCH_THRESHOLD } from 
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
-import { ItemRequest, type RequestUi } from "./RequestPopover";
+import { ItemRequest, missingHiringFacts, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
 import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
@@ -176,7 +176,7 @@ function ClampedText({ text }: { text: string }) {
   );
 }
 
-function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpenResume: () => void }) {
+function ProfilePanel({ candidate, onOpenResume, requestUi }: { candidate: Candidate; onOpenResume: () => void; requestUi: RequestUi }) {
   const r = candidate.resume;
   if (!r) return null;
   const latest = r.experience[0];
@@ -184,13 +184,17 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
   const edu = r.education[0];
   const eduText = edu ? [edu.degree, edu.school].filter(Boolean).join(", ") : "";
   const avgTenureMonths = averageTenureMonths(r.experience);
-  const facts: Array<{ label: string; value: string; selfReported?: boolean }> = [];
+  const facts: Array<{ label: string; value: string; selfReported?: boolean; missing?: boolean }> = [];
+  const missingHiring = missingHiringFacts(candidate);
   if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
   const confirmed = availabilityConfirmedLabel(r.availabilityConfirmedAt);
   if (r.noticePeriod) facts.push({ label: "Notice period", value: confirmed ? `${r.noticePeriod} (${confirmed.text.toLowerCase()})` : r.noticePeriod, selfReported: true });
+  else facts.push({ label: "Notice period", value: "Not shared", missing: true });
   if (r.currentCtc) facts.push({ label: "Current CTC", value: r.currentCtc, selfReported: true });
+  else facts.push({ label: "Current CTC", value: "Not shared", missing: true });
   if (r.expectedCtc) facts.push({ label: "Expected CTC", value: r.expectedCtc, selfReported: true });
   else if (r.expectedCtcBand) facts.push({ label: "Expected CTC (range)", value: r.expectedCtcBand, selfReported: true });
+  else facts.push({ label: "Expected CTC", value: "Not shared", missing: true });
   const workPref = [r.workModePref ? { onsite: "On-site", hybrid: "Hybrid", remote: "Remote" }[r.workModePref] : null, r.openToRelocate ? "open to relocating" : null].filter(Boolean).join(", ");
   if (workPref) facts.push({ label: "Work preference", value: workPref, selfReported: true });
   if (r.primaryDomain) {
@@ -209,11 +213,19 @@ function ProfilePanel({ candidate, onOpenResume }: { candidate: Candidate; onOpe
           <KeyValueList>
             {facts.map((f) => (
               <KeyValueRow key={f.label} label={f.label}>
-                {f.value}
+                {f.missing ? <span className="font-normal text-hx-ink-soft">{f.value}</span> : f.value}
                 {f.selfReported && <span className="sr-only"> (self-reported)</span>}
               </KeyValueRow>
             ))}
           </KeyValueList>
+        )}
+        {missingHiring.length > 0 && (
+          <ItemRequest
+            candidate={candidate}
+            ui={requestUi}
+            preset={{ kind: "contact", fields: missingHiring }}
+            label={missingHiring.length === 1 ? "Ask the candidate to share this" : "Ask the candidate to share these"}
+          />
         )}
         {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
         {summary ? (
@@ -462,7 +474,7 @@ export function OverviewTab({
         </div>
       </div>
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
-        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} />
+        <ProfilePanel candidate={candidate} onOpenResume={onOpenResume} requestUi={requestUi} />
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
       </div>
