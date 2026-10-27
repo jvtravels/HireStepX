@@ -306,8 +306,7 @@ export default function ForgotPassword() {
                   aria-busy={resending || undefined}
                   style={{
                     width: "100%",
-                    height: "auto",
-                    padding: "16px 18px",
+                    height: 56,
                     fontFamily: f.sans,
                     fontSize: 16,
                     fontWeight: 500,
