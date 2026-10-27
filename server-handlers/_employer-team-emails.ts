@@ -31,6 +31,7 @@ export async function sendTeamInviteEmail(params: {
   token: string;
   companyName: string;
   inviterName: string;
+  inviterEmail?: string;
   role: InvitableRole;
 }): Promise<boolean> {
   const key = (process.env.RESEND_API_KEY || "").trim();
@@ -51,21 +52,39 @@ export async function sendTeamInviteEmail(params: {
       para(`This link works for ${INVITE_TTL_DAYS} days and only for this email address. If you weren't expecting it, you can ignore this email.`, { small: true, muted: true }),
     footer: { reason: "You're receiving this because a teammate invited this address to join their team on HireStepX." },
   });
-  return sendEmail(params.to, `${inviterText} invited you to ${params.companyName || "their team"} on HireStepX`, html);
+  const text = [
+    `${inviterText} invited you to ${companyText} on HireStepX as ${ROLE_LABEL[params.role]}.`,
+    ROLE_BLURB[params.role],
+    "",
+    `Accept the invite: ${inviteLink(params.token)}`,
+    "",
+    `This link works for ${INVITE_TTL_DAYS} days and only for this email address. If you weren't expecting it, you can ignore this email.`,
+  ].join("\n");
+  return sendEmail(params.to, `${inviterText} invited you to ${params.companyName || "their team"} on HireStepX`, html, { text, replyTo: params.inviterEmail });
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+/* A 2xx from Resend means it accepted the message, not that it was delivered, so the
+   message id is logged to match a "sent" invite against the Resend dashboard. */
+async function sendEmail(to: string, subject: string, html: string, extra: { text?: string; replyTo?: string } = {}): Promise<boolean> {
   const key = (process.env.RESEND_API_KEY || "").trim();
-  if (!key) return false;
+  if (!key) {
+    slog.warn("[team-email] RESEND_API_KEY is not set; nothing was sent");
+    return false;
+  }
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html, ...(extra.text ? { text: extra.text } : {}), ...(extra.replyTo ? { reply_to: extra.replyTo } : {}) }),
       signal: AbortSignal.timeout(8_000),
     });
-    if (!res.ok) slog.warn("[team-email] rejected", { status: res.status });
-    return res.ok;
+    if (!res.ok) {
+      slog.warn("[team-email] rejected", { status: res.status, body: (await res.text().catch(() => "")).slice(0, 300) });
+      return false;
+    }
+    const sent = (await res.json().catch(() => null)) as { id?: string } | null;
+    slog.info("[team-email] accepted by Resend", { id: sent?.id ?? null, domain: to.split("@")[1] ?? null });
+    return true;
   } catch (err) {
     slog.warn("[team-email] failed", { err: err instanceof Error ? err.message : String(err) });
     return false;

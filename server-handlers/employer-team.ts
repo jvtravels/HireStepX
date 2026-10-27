@@ -250,20 +250,33 @@ async function invite(ctx: EmployerContext, companyName: string, body: Record<st
     return reply({ error: "You've sent a lot of invites today. Try again tomorrow." }, 429);
   }
 
-  // Re-inviting an address replaces its live invite (one live invite per email).
+  const token = generateInviteToken();
+  const tokenHash = await hashInviteToken(token);
+
+  // Re-inviting an address rotates its live invite in place (one live invite per email), so a
+  // failure can never leave the person with no invite at all.
   const existing = live.find((i) => i.email === email);
+  let row: InviteListRow | undefined;
   if (existing) {
     if (!canManageMember(ctx.role, existing.role)) return reply({ error: VIOLATION_MESSAGE.forbidden }, 403);
-    await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${existing.id}`, {
-      method: "PATCH", headers: { ...jsonHeaders(), Prefer: "return=minimal" }, body: JSON.stringify({ revoked_at: new Date().toISOString() }),
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${existing.id}&accepted_at=is.null&revoked_at=is.null`, {
+      method: "PATCH",
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        role, token_hash: tokenHash, invited_by: ctx.userId,
+        expires_at: new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000).toISOString(),
+      }),
     });
+    if (!res.ok) throw new Error(`invite rotate failed: ${res.status}`);
+    row = ((await res.json()) as InviteListRow[])[0];
+  }
+  if (!row) {
+    const inserted = await insertInvite(ctx, email, role, tokenHash);
+    if (inserted === "conflict") return reply({ error: "An invite for that email is already pending." }, 409);
+    row = inserted;
   }
 
-  const token = generateInviteToken();
-  const row = await insertInvite(ctx, email, role, await hashInviteToken(token));
-  if (row === "conflict") return reply({ error: "An invite for that email is already pending." }, 409);
-
-  const emailed = await sendTeamInviteEmail({ to: email, token, companyName, inviterName: ctx.name || ctx.email, role });
+  const emailed = await sendTeamInviteEmail({ to: email, token, companyName, inviterName: ctx.name || ctx.email, inviterEmail: ctx.email, role });
   await audit(ctx, "member.invited", row.id, { email, role });
   return reply({ invite: inviteDto(row, roster), link: inviteLink(token), emailed }, 201);
 }
@@ -291,7 +304,7 @@ async function resendInvite(ctx: EmployerContext, companyName: string, body: Rec
   const row = ((await res.json()) as InviteListRow[])[0];
   if (!row) return reply({ error: "Invite not found" }, 404);
 
-  const emailed = await sendTeamInviteEmail({ to: inv.email, token, companyName, inviterName: ctx.name || ctx.email, role: inv.role });
+  const emailed = await sendTeamInviteEmail({ to: inv.email, token, companyName, inviterName: ctx.name || ctx.email, inviterEmail: ctx.email, role: inv.role });
   await audit(ctx, "member.invite_resent", inv.id, { email: inv.email, role: inv.role });
   return reply({ invite: inviteDto(row, await loadRoster(ctx.employerId)), link: inviteLink(token), emailed });
 }

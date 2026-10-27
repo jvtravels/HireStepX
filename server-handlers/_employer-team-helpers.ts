@@ -12,6 +12,7 @@
  */
 
 import type { EraseDeps } from "./_erase-user";
+import { slog } from "./_shared";
 
 export const EMPLOYER_ROLES = ["owner", "admin", "member", "viewer"] as const;
 export type EmployerRole = (typeof EMPLOYER_ROLES)[number];
@@ -280,8 +281,10 @@ export async function writeAuditLog(
       }),
       signal: AbortSignal.timeout(5000),
     });
+    if (!res.ok) slog.warn("[team-audit] write rejected", { action: entry.action, status: res.status });
     return res.ok;
-  } catch {
+  } catch (err) {
+    slog.warn("[team-audit] write failed", { action: entry.action, err: err instanceof Error ? err.message : String(err) });
     return false;
   }
 }

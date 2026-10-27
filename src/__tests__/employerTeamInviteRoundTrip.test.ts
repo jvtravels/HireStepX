@@ -35,7 +35,7 @@ interface Db {
   audit: Row[];
   companies: Row[];
   authUsers: Record<string, { email: string; email_confirmed_at: string | null; user_metadata?: Row }>;
-  emails: Array<{ to: string[]; subject: string; html: string }>;
+  emails: Array<{ to: string[]; subject: string; html: string; text?: string; reply_to?: string }>;
   failMemberInsert: boolean;
   resendOk: boolean;
   /* Holds token lookups until this many have arrived, so two accepts both see a pending invite. */
@@ -309,8 +309,21 @@ describe("team invite round trip: send, email, preview, accept", () => {
     await invite();
     const second = tokenFromEmail(1);
     expect(second).not.toBe(first);
-    expect(((await (await accept(first, "new-1")).json()) as { code: string }).code).toBe("revoked");
+    expect(((await (await accept(first, "new-1")).json()) as { code: string }).code).toBe("invalid");
     expect((await accept(second, "new-1")).status).toBe(200);
+  });
+
+  it("re-inviting rotates the one live invite instead of leaving a gap", async () => {
+    await invite();
+    await invite();
+    expect(db.invites).toHaveLength(1);
+    expect(db.invites[0].revoked_at).toBeNull();
+  });
+
+  it("sends a plain-text part and lets the invitee reply to the inviter", async () => {
+    await invite();
+    expect(db.emails[0].text).toContain("/employer/join?token=");
+    expect(db.emails[0].reply_to).toBeTruthy();
   });
 
   it("still creates the invite and returns a copyable link when the email fails to send", async () => {
