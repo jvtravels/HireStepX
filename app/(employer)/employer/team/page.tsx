@@ -161,8 +161,8 @@ function TeamConsole() {
   const who = companyName || "this company";
 
   return (
-    <div style={{ width: "100%" }}>
-      <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
+    <div style={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
+      <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
         <header className={PAD} style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
@@ -238,7 +238,7 @@ function TeamConsole() {
           />
         )}
 
-        <div role="tabpanel" id="team-panel" aria-labelledby={`team-tab-${tab}`}>
+        <div role="tabpanel" id="team-panel" aria-labelledby={`team-tab-${tab}`} style={{ flex: 1 }}>
           {tab === "members" && (
             <MembersTab
               members={team.members}
