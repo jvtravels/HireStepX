@@ -25,6 +25,15 @@ vi.mock("../../server-handlers/_requirement-match-helpers", async (orig) => {
   return { ...actual, explainMatch: (...a: Parameters<typeof actual.explainMatch>) => { explainSpy(...a); return actual.explainMatch(...a); } };
 });
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-detail");
 
 const EMPLOYER = "emp-1";

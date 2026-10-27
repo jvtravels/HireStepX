@@ -30,6 +30,11 @@ export const FLAGS = {
     enabled: true,
     scope: "global",
   },
+  EMPLOYER_TEAMS: {
+    description: "Employer team management (invites, roles, activity log). Off → Team page hidden and /api/employer-team* return 404; existing members keep their roles and access. Evaluated per company so every teammate sees the same state.",
+    enabled: true,
+    scope: "user",
+  },
 } as const satisfies Record<string, FeatureFlag>;
 
 export type FlagName = keyof typeof FLAGS;

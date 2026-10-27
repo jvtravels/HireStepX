@@ -47,7 +47,7 @@ const RAZORPAY_PLAN_ID_MAP: Record<string, string> = Object.fromEntries(
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 const UPSTASH_URL = (process.env.UPSTASH_REDIS_REST_URL || "").trim();
 const UPSTASH_TOKEN = (process.env.UPSTASH_REDIS_REST_TOKEN || "").trim();
 // PAYMENT_ID_HASH_SECRET — used to HMAC-hash payment IDs before sending to analytics.

@@ -33,6 +33,7 @@ import {
 import { singleUnlockPrice, batchUnlockPrice, formatPaise, creditToApply } from "./_unlock-pricing";
 import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
 import { razorpayBasicAuth } from "./_razorpay-auth";
+import { requireEmployerPermission } from "./_employer-team-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
 import { deriveEmployerTier, isSuspended, type EmployerTier } from "./_employer-trust";
 import {
@@ -52,6 +53,7 @@ import type { UnlockOrderRow } from "./_unlock-fulfillment";
 import { creditBalance, spendCreditDetailed, releaseCredit } from "./_employer-credit";
 import { captureServerEvent } from "./_posthog";
 import { isCreditOrderRef, newCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
+import { attributeUnlocks } from "./_employer-unlock-attribution";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
 const RAZORPAY_KEY_SECRET = (process.env.RAZORPAY_KEY_SECRET || "").trim();
@@ -86,10 +88,11 @@ function orderResponse(order: Pick<UnlockOrderRow, "razorpay_order_id" | "amount
 /** Finishes a credit-only order (new or retried) and shapes the response the
  *  verify endpoint would have produced for a paid one. */
 async function creditOrderResponse(
-  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow,
+  supabaseUrl: string, headers: Record<string, string>, order: UnlockOrderRow, actorId: string,
 ): Promise<{ status: number; body: Record<string, unknown> }> {
   const settled = await settleCreditOrder({ supabaseUrl, headers, order, expectEmployerId: order.employer_id });
   if (settled.kind === "fulfilled" || settled.kind === "partial") {
+    await attributeUnlocks({ supabaseUrl, headers, result: settled, actorId });
     // settleCreditOrder -> fulfillUnlockOrder already blanks the email and masks the name of a candidate who has
     // since withdrawn, declined or blocked this employer (or when the employer is suspended), including on a replay.
     const candidates = settled.candidates.map((c) => ({ matchId: c.matchId, name: c.name || "Candidate", contact: { email: c.email || "" } }));
@@ -158,15 +161,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const SUPABASE_URL = supabaseUrl();
   const SUPABASE_ANON_KEY = supabaseAnonKey();
-  let employerId: string | undefined;
+  let actorId: string | undefined;
   const authToken = (req.headers.authorization || "").replace("Bearer ", "");
   if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
     const authResult = await verifyEmployerAuthToken(authToken, SUPABASE_URL, SUPABASE_ANON_KEY);
     if (authResult.kind === "auth-fail") return res.status(401).json({ error: "Unauthorized" });
     if (authResult.kind === "transient") return res.status(401).json({ error: "Auth verification failed" });
-    employerId = authResult.employerId;
+    actorId = authResult.employerId;
   }
-  if (!employerId) {
+  if (!actorId) {
     return res.status(401).json({ error: "Authentication required" });
   }
 
@@ -174,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   // IPs (corporate NAT, mobile network switches), exceed the intended
   // per-account cap on order creation — pair it with a per-employer bucket
   // the same way every edge-runtime endpoint does via withAuthAndRateLimit.
-  if (await isRateLimited(`user:${employerId}`, "employer-create-unlock-order", 15, 60_000)) {
+  if (await isRateLimited(`user:${actorId}`, "employer-create-unlock-order", 15, 60_000)) {
     res.setHeader("Retry-After", "60");
     return res.status(429).json({ error: "Too many requests. Please try again shortly.", retryAfter: 60 });
   }
@@ -196,7 +199,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const sh = supabaseServiceHeaders();
   let lockKey = "";
   try {
-    const identity = await loadAuthIdentity(SUPABASE_URL, sh, employerId);
+    // The purchase belongs to the company (employerId); the paying member is
+    // only recorded in the order notes so verification can attribute it.
+    const gate = await requireEmployerPermission(SUPABASE_URL, sh, actorId, "candidates.unlock");
+    if (!gate.ok) return res.status(gate.status).json({ error: gate.error });
+    const employerId = gate.ctx.employerId;
+
+    const identity = await loadAuthIdentity(SUPABASE_URL, sh, actorId);
     let tier: EmployerTier;
     let orderRequirementId: string;
     let targetMatchIds: string[];
@@ -312,7 +321,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const reusable = findReusableOrder(openOrders, mode, targetMatchIds);
     if (reusable) {
       if (isCreditOrderRef(reusable.razorpay_order_id)) {
-        const done = await creditOrderResponse(SUPABASE_URL, sh, reusable);
+        const done = await creditOrderResponse(SUPABASE_URL, sh, reusable, actorId);
         return res.status(done.status).json(done.body);
       }
       return res.status(200).json(orderResponse(reusable, { reused: true }));
@@ -375,7 +384,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
       if (inserted.kind === "conflict" && inserted.order) {
         const done = isCreditOrderRef(inserted.order.razorpay_order_id)
-          ? await creditOrderResponse(SUPABASE_URL, sh, inserted.order)
+          ? await creditOrderResponse(SUPABASE_URL, sh, inserted.order, actorId)
           : { status: 200, body: orderResponse(inserted.order, { reused: true }) };
         return res.status(done.status).json(done.body);
       }
@@ -396,7 +405,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           : res.status(409).json({ error: "Your credit balance changed. Please review the price and try again.", code: "credit_changed" });
       }
       void captureServerEvent("employer_credit_spent", employerId, { orderId: inserted.order.razorpay_order_id, amountPaise: spent.spent, creditOnly: true });
-      const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order);
+      const done = await creditOrderResponse(SUPABASE_URL, sh, inserted.order, actorId);
       return res.status(done.status).json(done.body);
     }
 
@@ -406,8 +415,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // so batch notes carry only counts — employer_unlock_orders.match_ids is
     // the authoritative record of which matches an order covers.
     const orderNotes: Record<string, string> = mode === "single"
-      ? { employerId, mode, requirementId: orderRequirementId, matchIds: targetMatchIds[0] }
-      : { employerId, mode, requirementId: orderRequirementId, matchCount: String(targetMatchIds.length) };
+      ? { employerId, createdBy: actorId, mode, requirementId: orderRequirementId, matchIds: targetMatchIds[0] }
+      : { employerId, createdBy: actorId, mode, requirementId: orderRequirementId, matchCount: String(targetMatchIds.length) };
 
     const ac = new AbortController();
     const acTimer = setTimeout(() => ac.abort(), 10_000);
@@ -473,7 +482,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     slog.error("employer_unlock_orders insert failed", { code: "unlock_create_order_insert_failed", requestId, employerId, detail: inserted.kind === "error" ? inserted.detail : "conflict without winner" });
     return res.status(500).json({ error: "Could not start the payment. Please try again." });
   } catch (err) {
-    slog.error("employer-create-unlock-order threw", { code: "unlock_create_unexpected_error", requestId, employerId, err: err instanceof Error ? err.message : String(err) });
+    slog.error("employer-create-unlock-order threw", { code: "unlock_create_unexpected_error", requestId, actorId, err: err instanceof Error ? err.message : String(err) });
     return res.status(500).json({ error: "Internal error" });
   } finally {
     if (lockKey) void releaseCreateLock(lockKey, { url: UPSTASH_URL, token: UPSTASH_TOKEN });

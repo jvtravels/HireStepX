@@ -13,6 +13,7 @@ export async function patchMatchUnlocked(opts: {
   headers: Record<string, string>;
   matchId: string;
   unlockedAt: string;
+  unlockedBy?: string | null;
   profile?: UnlockProfileSnapshot;
   fetchImpl?: typeof fetch;
 }): Promise<Response> {
@@ -25,6 +26,7 @@ export async function patchMatchUnlocked(opts: {
     body: JSON.stringify({
       unlocked: true,
       unlocked_at: opts.unlockedAt,
+      unlocked_by: opts.unlockedBy ?? null,
       unlocked_candidate_name: opts.profile?.name ?? null,
       unlocked_candidate_email: opts.profile?.email ?? null,
     }),

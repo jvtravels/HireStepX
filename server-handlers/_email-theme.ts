@@ -265,6 +265,11 @@ export interface EmailFooterOptions {
       marketing email has none (no signing secret configured) the footer
       degrades to the login-gated settings page rather than a dead link. */
   unsubUrl?: string;
+  /** Why this address got the email, for recipients who may have no account
+      (team invites, contact acknowledgements). Plain text; replaces the
+      default "you have an account" sentence and drops the Manage link,
+      since there is no account to manage. */
+  reason?: string;
 }
 
 function postalAddress(): string {
@@ -277,17 +282,23 @@ function footer(opts: EmailFooterOptions = {}): string {
   const manageUrl = opts.manageUrl ?? "https://hirestepx.com/settings";
   const footLink = (label: string, href: string) =>
     `<a href="${href}" style="color:${C.inkSoft};text-decoration:underline;">${label}</a>`;
+  const siteLink = footLink("hirestepx.com", "https://hirestepx.com");
+  const hasAccount = opts.reason === undefined;
   const links = opts.marketing
     ? `${footLink("Manage notifications", manageUrl)} &middot; ${footLink("Unsubscribe", opts.unsubUrl ?? manageUrl)}`
-    : footLink("Manage notifications", manageUrl);
-  const reason = opts.marketing
-    ? "You're receiving this because you have an account at hirestepx.com."
-    : "You're receiving this because you have an account at hirestepx.com. This is a service email about your account or activity.";
+    : hasAccount
+      ? footLink("Manage notifications", manageUrl)
+      : "";
+  const reason = !hasAccount
+    ? escapeHtml(opts.reason ?? "")
+    : opts.marketing
+      ? `You're receiving this because you have an account at ${siteLink}.`
+      : `You're receiving this because you have an account at ${siteLink}. This is a service email about your account or activity.`;
   const address = postalAddress();
-  const sender = `HireStepX &middot; hello@hirestepx.com${address ? `<br>${escapeHtml(address)}` : ""}`;
+  const sender = `HireStepX &middot; ${footLink("hello@hirestepx.com", "mailto:hello@hirestepx.com")}${address ? `<br>${escapeHtml(address)}` : ""}`;
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px;">
     <tr><td style="padding-top:20px;border-top:1px solid ${C.line};font-family:${SANS};font-size:12px;line-height:1.7;color:${C.inkFaint};">
-      ${reason} ${links}<br>
+      ${reason}${links ? ` ${links}` : ""}<br>
       ${sender}
     </td></tr>
   </table>`;

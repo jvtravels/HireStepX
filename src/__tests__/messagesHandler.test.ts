@@ -14,6 +14,7 @@ vi.mock("../../server-handlers/_notify", () => ({ notify: vi.fn(async () => unde
 
 // Real _entitlements + _messages-helpers: the gating rules run end to end.
 const { default: handler } = await import("../../server-handlers/messages");
+const { notify } = await import("../../server-handlers/_notify");
 
 interface MatchOpts {
   unlocked?: boolean;
@@ -31,6 +32,9 @@ interface MatchOpts {
   /** rows returned for the inbox list */
   inbox?: Array<Record<string, unknown>>;
 }
+
+const auditWrites: Array<Record<string, unknown>> = [];
+let roster: Array<{ user_id: string; name: string | null; email: string }> = [];
 
 const EMP = "emp-1";
 const CAND = "cand-1";
@@ -52,6 +56,12 @@ function installFetch(o: MatchOpts) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const u = String(url);
     if (u.includes("/auth/v1/admin/users/")) return { ok: true, json: async () => ({ email: "a@acme.com", email_confirmed_at: "t" }) };
+    if (u.includes("/rest/v1/employer_audit_log")) {
+      if (init?.method === "POST") { auditWrites.push(JSON.parse(String(init.body))); return { ok: true, status: 201, json: async () => [] }; }
+      return { ok: true, json: async () => [] };
+    }
+    if (u.includes("/rest/v1/employer_members?employer_id=")) return { ok: true, json: async () => roster };
+    if (u.includes("/rest/v1/employer_members")) return { ok: true, json: async () => (u.includes(`user_id=eq.${EMP}`) ? [{ employer_id: EMP, user_id: EMP, role: "owner", email: "a@acme.com", name: null, last_active_at: new Date().toISOString() }] : []) };
     if (u.includes("/rest/v1/requirement_matches")) return { ok: true, json: async () => matchRow(o) };
     if (u.includes("/rest/v1/employer_blocks")) return { ok: true, json: async () => (o.blocked ? [{ candidate_user_id: CAND }] : []) };
     if (u.endsWith("/rest/v1/conversation_messages") && init?.method === "POST") {
@@ -85,6 +95,8 @@ const post = (body: Record<string, unknown> = { matchId: MATCH, body: "hello" })
 const asUser = (id: string) => withAuthAndRateLimit.mockResolvedValue({ auth: { userId: id }, headers: {} });
 
 beforeEach(() => {
+  auditWrites.length = 0;
+  roster = [];
   withAuthAndRateLimit.mockReset();
   asUser(EMP);
 });
@@ -374,5 +386,107 @@ describe("messages: attachment names and contact for a non-releasable employer",
     const body = await (await getThread()).json();
     expect(body.messages[0].attachmentName).toBe("Priya_Sharma_9876543210.pdf");
     expect(body.messages[0].body).toContain("9876543210");
+  });
+});
+
+/** Layers a teammate on top of installFetch: `userId` belongs to company EMP with `role`. */
+function withTeammate(userId: string, role: string, lastEmployerSender?: string) {
+  const base = global.fetch as unknown as (u: string, init?: RequestInit) => Promise<unknown>;
+  global.fetch = vi.fn(async (url: string, init?: RequestInit) => {
+    const u = String(url);
+    if (u.includes("/rest/v1/employer_members") && u.includes(`user_id=eq.${userId}`)) {
+      return { ok: true, json: async () => [{ employer_id: EMP, user_id: userId, role, email: "t@acme.com", name: null, last_active_at: new Date().toISOString() }] };
+    }
+    if (lastEmployerSender && u.includes("select=sender_id")) return { ok: true, json: async () => [{ sender_id: lastEmployerSender }] };
+    return base(u, init);
+  }) as unknown as typeof fetch;
+  return global.fetch as unknown as ReturnType<typeof installFetch>;
+}
+
+describe("messages: employer team members", () => {
+  it("lets any company member with messages.send write, recording them as the sender", async () => {
+    asUser("mate-1");
+    installFetch({ unlocked: true });
+    const f = withTeammate("mate-1", "member");
+    const res = await post();
+    expect(res.status).toBe(201);
+    const insert = f.mock.calls.find(([u, init]) => String(u).endsWith("/rest/v1/conversation_messages") && (init as RequestInit | undefined)?.method === "POST");
+    const row = JSON.parse(String((insert![1] as RequestInit).body));
+    expect(row).toMatchObject({ sender_id: "mate-1", employer_id: EMP, sender_role: "employer" });
+  });
+
+  it("lets a viewer read the thread but not send", async () => {
+    asUser("mate-2");
+    installFetch({ unlocked: true });
+    const f = withTeammate("mate-2", "viewer");
+    const denied = await post();
+    expect(denied.status).toBe(403);
+    expect(sent(f)).toBe(false);
+    const read = await handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`));
+    expect(read.status).toBe(200);
+  });
+
+  it("refuses someone with no company and no role on the match", async () => {
+    asUser("stranger");
+    installFetch({ unlocked: true });
+    expect((await post()).status).toBe(403);
+  });
+
+  it("sends a candidate's reply to the teammate who last wrote in the thread", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: true });
+    withTeammate("mate-1", "member", "mate-1");
+    const res = await post({ matchId: MATCH, body: "thanks" });
+    expect(res.status).toBe(201);
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: "mate-1", type: "new_message_employer" }));
+  });
+
+  it("falls back to the company owner when no teammate has written yet", async () => {
+    asUser(CAND);
+    installFetch({ unlocked: true });
+    vi.mocked(notify).mockClear();
+    await post({ matchId: MATCH, body: "hello?" });
+    expect(notify).toHaveBeenCalledWith(expect.objectContaining({ userId: EMP }));
+  });
+});
+
+describe("messages: which teammate wrote it", () => {
+  it("audits an employer send and tells the sender it was them", async () => {
+    installFetch({ unlocked: true });
+    const res = await post();
+    expect(res.status).toBe(201);
+    expect((await res.json()).message.sentBy).toMatchObject({ isYou: true });
+    expect(auditWrites).toHaveLength(1);
+    expect(auditWrites[0]).toMatchObject({
+      employer_id: EMP, actor_user_id: EMP, action: "candidate.messaged", entity_id: MATCH,
+      meta: { candidateName: "C", jobTitle: "Dev", hasAttachment: false },
+    });
+    expect(JSON.stringify(auditWrites[0])).not.toContain("hello");
+  });
+
+  it("does not audit a candidate's reply", async () => {
+    installFetch({ unlocked: true });
+    asUser(CAND);
+    await post();
+    expect(auditWrites).toHaveLength(0);
+  });
+
+  it("labels each employer-sent message with its author for the team, never for the candidate", async () => {
+    roster = [{ user_id: EMP, name: "Priya", email: "p@acme.com" }, { user_id: "mate-1", name: null, email: "dev@acme.com" }];
+    const row = (id: string, sender_id: string, sender_role: string) => ({ id, conversation_id: "c1", sender_id, sender_role, body: id, attachment_path: null, attachment_name: null, attachment_mime: null, auto_flag_reason: null, created_at: "t" });
+    const messages = [row("a", EMP, "employer"), row("b", "mate-1", "employer"), row("c", "gone", "employer"), row("d", CAND, "candidate")];
+    installFetch({ unlocked: true, messages });
+    const asEmployer = await (await handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`))).json();
+    expect(asEmployer.messages.map((m: { sentBy?: unknown }) => m.sentBy)).toEqual([
+      { name: "Priya", isYou: true },
+      { name: "dev@acme.com", isYou: false },
+      { name: "Former teammate", isYou: false },
+      undefined,
+    ]);
+
+    asUser(CAND);
+    installFetch({ unlocked: true, messages });
+    const asCandidate = await (await handler(new Request(`https://x.test/api/messages?matchId=${MATCH}`))).json();
+    expect(asCandidate.messages.every((m: { sentBy?: unknown }) => m.sentBy === undefined)).toBe(true);
   });
 });

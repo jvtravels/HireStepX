@@ -237,7 +237,6 @@ export default function AppShellFrame({
               <Button
                 type="button"
                 variant="outline"
-                aria-label="Account menu"
                 className="justify-between p-2 h-auto group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0"
                 style={{
                   width: "100%", display: "flex", alignItems: "center",
@@ -256,6 +255,7 @@ export default function AppShellFrame({
                   </span>
                 </span>
                 <ChevronsUpDownIcon size={12} aria-hidden="true" className="group-data-[collapsible=icon]:hidden" style={{ flexShrink: 0, color: c.inkSoft }} />
+                <span className="sr-only">Account menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>

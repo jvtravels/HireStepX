@@ -2,7 +2,7 @@
  *
  * GET /api/employer-unlock-history
  * Returns every completed unlock purchase (single or batch) for the caller's
- * employer account, newest first — backs the "Unlock history" panel on the
+ * company (all members' purchases, each attributed via paidBy), newest first — backs the "Unlock history" panel on the
  * opportunity detail page. Rows are written by
  * the shared unlock fulfilment (_unlock-fulfillment.ts); this is the first
  * read path against employer_unlock_payments. Not scoped to one requirement
@@ -33,6 +33,7 @@ import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_share
 import { creditSpentOnOrders } from "./_employer-credit";
 import { parseInvoiceSnapshot } from "./_unlock-tax";
 import { maskedCandidateName } from "./_employer-trust";
+import { requireEmployerPermission } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -72,13 +73,19 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
-    const baseUrl = `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(auth.userId)}`;
+    // Purchase history carries spend, so viewers (read-only) don't see it.
+    const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, "candidates.unlock");
+    if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+    const employerId = gate.ctx.employerId;
+    const baseUrl = `${SUPABASE_URL}/rest/v1/employer_unlock_payments?employer_id=eq.${encodeURIComponent(employerId)}`;
     // Invoice/refund columns arrive with migration 0032 and the snapshot /
     // partial-refund columns with 0045; fall back one level at a time so the
-    // list still loads on a database that hasn't applied them yet.
+    // list still loads on a database that hasn't applied them yet. paid_by
+    // (migration 0061) is tried first and dropped with them if it is missing.
     const core = "id,match_id,match_ids,amount,currency,created_at";
     const withInvoice = `${core},razorpay_order_id,invoice_no,refunded_at,requirement_id`;
-    const selects = [`${withInvoice},invoice_snapshot,partial_refund_paise,partial_refund_at`, withInvoice, core];
+    const withSnapshot = `${withInvoice},invoice_snapshot,partial_refund_paise,partial_refund_at`;
+    const selects = [`${withSnapshot},paid_by`, withSnapshot, withInvoice, core];
     let res = await fetch(`${baseUrl}&select=${selects[0]}&order=created_at.desc&limit=100`, { headers: serviceHeaders() });
     for (let i = 1; !res.ok && i < selects.length; i++) {
       res = await fetch(`${baseUrl}&select=${selects[i]}&order=created_at.desc&limit=100`, { headers: serviceHeaders() });
@@ -103,6 +110,7 @@ export default async function handler(req: Request): Promise<Response> {
       invoice_snapshot?: unknown;
       partial_refund_paise?: number | null;
       partial_refund_at?: string | null;
+      paid_by?: string | null;
     }>;
 
     // Snapshotted at unlock time (supabase-migrations/0026) so a candidate
@@ -166,7 +174,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
     // Credit applied to each purchase (migration 0041); soft-fails to none.
     const creditByOrderId = orderIds.length > 0
-      ? (await creditSpentOnOrders(SUPABASE_URL, serviceHeaders(), auth.userId, orderIds)) ?? new Map<string, number>()
+      ? (await creditSpentOnOrders(SUPABASE_URL, serviceHeaders(), employerId, orderIds)) ?? new Map<string, number>()
       : new Map<string, number>();
     // Credit notes, one row per refund (migration 0047). Soft-fails to none.
     const creditNotesByOrderId = new Map<string, Array<{ no: string; amountPaise: number; issuedAt: string }>>();
@@ -193,7 +201,7 @@ export default async function handler(req: Request): Promise<Response> {
     if (candidateIds.length > 0) {
       try {
         const bRes = await fetch(
-          `${SUPABASE_URL}/rest/v1/employer_blocks?employer_id=eq.${encodeURIComponent(auth.userId)}&candidate_user_id=in.(${candidateIds.map(encodeURIComponent).join(",")})&select=candidate_user_id`,
+          `${SUPABASE_URL}/rest/v1/employer_blocks?employer_id=eq.${encodeURIComponent(employerId)}&candidate_user_id=in.(${candidateIds.map(encodeURIComponent).join(",")})&select=candidate_user_id`,
           { headers: serviceHeaders() },
         );
         const bRows = bRes.ok ? await bRes.json().catch(() => null) : null;
@@ -202,7 +210,7 @@ export default async function handler(req: Request): Promise<Response> {
     }
     let employerSuspended = false;
     try {
-      const sRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(auth.userId)}&select=suspended_at`, { headers: serviceHeaders() });
+      const sRes = await fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(employerId)}&select=suspended_at`, { headers: serviceHeaders() });
       const sRows = sRes.ok ? await sRes.json().catch(() => null) : null;
       if (Array.isArray(sRows) && sRows[0]) employerSuspended = !!sRows[0].suspended_at;
     } catch { /* column absent: not suspended */ }
@@ -210,7 +218,7 @@ export default async function handler(req: Request): Promise<Response> {
     let billingName: string | null = null;
     try {
       const empRes = await fetch(
-        `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(auth.userId)}&select=gstin,billing_name`,
+        `${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(employerId)}&select=gstin,billing_name`,
         { headers: serviceHeaders() },
       );
       const empRows = empRes.ok ? await empRes.json().catch(() => null) : null;
@@ -219,6 +227,23 @@ export default async function handler(req: Request): Promise<Response> {
         billingName = empRows[0].billing_name ?? null;
       }
     } catch { /* billing identity is optional */ }
+
+    // Attribution is display-only and soft-fails like the lookups above.
+    const paidByName = new Map<string, string>();
+    if (rows.some((r) => r.paid_by)) {
+      try {
+        const memRes = await fetch(
+          `${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(employerId)}&select=user_id,name,email`,
+          { headers: serviceHeaders() },
+        );
+        const mem = memRes.ok ? await memRes.json().catch(() => null) : null;
+        if (Array.isArray(mem)) {
+          for (const m of mem as Array<{ user_id: string; name: string | null; email: string }>) {
+            paidByName.set(m.user_id, m.name || m.email);
+          }
+        }
+      } catch { /* attribution is optional */ }
+    }
 
     const purchases = rows.map((r) => {
       const matchIds = r.match_id ? [r.match_id] : r.match_ids || [];
@@ -230,6 +255,7 @@ export default async function handler(req: Request): Promise<Response> {
         amount: r.amount,
         currency: r.currency,
         createdAt: r.created_at,
+        paidBy: r.paid_by ? paidByName.get(r.paid_by) ?? "Former member" : null,
         invoiceNo: r.invoice_no ?? null,
         refundedAt: r.refunded_at ?? null,
         requirementId: r.requirement_id ?? null,

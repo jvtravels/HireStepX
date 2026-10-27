@@ -1,7 +1,9 @@
 /* Pure pieces for employer-request-contact.ts: validation of the requested
  * detail list and the wording shown to the candidate. */
 
-export const CONTACT_REQUEST_FIELDS = ["phone", "email", "linkedin", "portfolio"] as const;
+import { HIRING_REQUEST_FIELDS } from "../src/employer/_candidateRequestTypes";
+
+export const CONTACT_REQUEST_FIELDS = ["phone", "email", "linkedin", "portfolio", ...HIRING_REQUEST_FIELDS] as const;
 export type ContactRequestField = (typeof CONTACT_REQUEST_FIELDS)[number];
 
 const FIELD_LABELS: Record<ContactRequestField, string> = {
@@ -9,6 +11,9 @@ const FIELD_LABELS: Record<ContactRequestField, string> = {
   email: "email address",
   linkedin: "LinkedIn profile",
   portfolio: "portfolio or GitHub link",
+  notice_period: "notice period",
+  current_ctc: "current CTC",
+  expected_ctc: "expected CTC",
 };
 
 /** Dedupes and validates the client-supplied list; returns null when it is

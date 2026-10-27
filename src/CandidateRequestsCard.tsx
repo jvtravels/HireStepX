@@ -12,6 +12,9 @@ import { useAuth } from "./AuthContext";
 import { daysAgo } from "./hiringMatchFormat";
 import { REQUEST_REPLY_MAX, resolveCandidateRequest } from "./employerActions";
 import { ROUNDS, roundKeyForTopic } from "./focusRounds";
+import { HIRING_REQUEST_FIELDS, isHiringField, type HiringRequestField } from "./employer/_candidateRequestTypes";
+import { HIRING_FACT_MAX, NOTICE_PERIOD_OPTIONS, readHiringFacts, withHiringFacts, type HiringFacts } from "./hiringFacts";
+import { isAiResume } from "./resumeParser";
 import type { JobRequest } from "./DashboardJobs";
 
 const PLACEHOLDER: Record<JobRequest["kind"], string> = {
@@ -39,6 +42,38 @@ export function contactInputsFor(fields: readonly string[] | null | undefined): 
   return all.filter((f) => fields.includes(f));
 }
 
+type HiringValues = Record<HiringRequestField, string>;
+
+const HIRING_INPUTS: Record<HiringRequestField, { label: string; placeholder: string; fact: "noticePeriod" | "currentCtc" | "expectedCtc" }> = {
+  notice_period: { label: "Notice period", placeholder: "30 days", fact: "noticePeriod" },
+  current_ctc: { label: "Current CTC", placeholder: "18 LPA", fact: "currentCtc" },
+  expected_ctc: { label: "Expected CTC", placeholder: "24 LPA", fact: "expectedCtc" },
+};
+
+/** The hiring facts an employer asked for, in display order. */
+export function hiringInputsFor(fields: readonly string[] | null | undefined): HiringRequestField[] {
+  return HIRING_REQUEST_FIELDS.filter((f) => !!fields && fields.includes(f));
+}
+
+/** Returns the cleaned value, or an error message. A bare number is read as lakhs per annum. */
+export function validateHiringValue(field: HiringRequestField, raw: string): { value: string } | { error: string } {
+  const v = raw.replace(/\s+/g, " ").trim();
+  const label = HIRING_INPUTS[field].label.toLowerCase();
+  if (!v) return { error: `Add your ${label}, or decline.` };
+  if (field === "notice_period") {
+    if (!/immediate|\d/i.test(v)) return { error: "Enter your notice period, like 30 days or Immediate." };
+  } else {
+    if (!/\d/.test(v)) return { error: "Enter an amount, like 18 LPA." };
+    if (/^\d+(\.\d+)?$/.test(v)) return { value: `${v} LPA`.slice(0, HIRING_FACT_MAX) };
+  }
+  return { value: v.slice(0, HIRING_FACT_MAX) };
+}
+
+/** What the employer reads under "Candidate replied". */
+export function hiringReplyText(values: Partial<HiringValues>): string {
+  return HIRING_REQUEST_FIELDS.filter((f) => values[f]).map((f) => `${HIRING_INPUTS[f].label}: ${values[f]}`).join(" · ");
+}
+
 const withScheme = (v: string) => (/^https?:\/\//i.test(v) ? v : `https://${v}`);
 
 /** Returns the cleaned value, or an error message for the field. */
@@ -59,6 +94,42 @@ export function validateContactValue(field: ContactField, raw: string): { value:
   } catch {
     return { error: "Enter a valid link." };
   }
+}
+
+function HiringForm({ values, errors, onChange, inputs }: {
+  values: HiringValues;
+  errors: Partial<HiringValues>;
+  onChange: (field: HiringRequestField, value: string) => void;
+  inputs: HiringRequestField[];
+}) {
+  return (
+    <div className="mt-2.5 flex flex-col gap-2.5">
+      {inputs.map((field) => {
+        const meta = HIRING_INPUTS[field];
+        const id = `hiring-${field}`;
+        return (
+          <div key={field}>
+            <label htmlFor={id} className="mb-1 block text-[12px] font-medium text-hx-coal">{meta.label}</label>
+            <Input
+              id={id}
+              list={field === "notice_period" ? "hiring-notice-options" : undefined}
+              value={values[field]}
+              onChange={(e) => onChange(field, e.target.value.slice(0, HIRING_FACT_MAX))}
+              placeholder={meta.placeholder}
+              aria-invalid={errors[field] ? true : undefined}
+              aria-describedby={errors[field] ? `${id}-error` : undefined}
+              className="h-9"
+            />
+            {errors[field] && <p id={`${id}-error`} role="alert" className="m-0 mt-1 text-[12px] text-hx-error-ink">{errors[field]}</p>}
+          </div>
+        );
+      })}
+      <datalist id="hiring-notice-options">{NOTICE_PERIOD_OPTIONS.map((o) => <option key={o} value={o} />)}</datalist>
+      <p className="m-0 text-[12px] leading-normal text-hx-ink-soft">
+        This employer sees your answer. It is also saved to your hiring details, which you can change any time.
+      </p>
+    </div>
+  );
 }
 
 function ContactForm({ values, errors, onChange, inputs, includesEmail }: {
@@ -125,13 +196,40 @@ function RequestRow({ matchId, request, unlocked, practice, onResolved, onError 
   const isContact = request.kind === "contact";
   const roundLabel = practice ? roundLabelForRequest(request) : null;
   const needsReply = request.kind === "clarification";
-  const contactInputs = isContact ? contactInputsFor(request.fields) : [];
+  const hiringInputs = isContact ? hiringInputsFor(request.fields) : [];
+  const hiringOnly = hiringInputs.length > 0 && (request.fields ?? []).every(isHiringField);
+  const contactInputs = isContact && !hiringOnly ? contactInputsFor(request.fields) : [];
+  const [hiring, setHiring] = useState<HiringValues>(() => {
+    const facts = readHiringFacts(user?.resumeData);
+    return { notice_period: facts.noticePeriod, current_ctc: facts.currentCtc, expected_ctc: facts.expectedCtc };
+  });
+  const [hiringErrors, setHiringErrors] = useState<Partial<HiringValues>>({});
   const [contact, setContact] = useState<ContactValues>(() => ({
     phone: user?.resumeData?.phone ?? "",
     linkedin: user?.resumeData?.linkedin ?? "",
     portfolio: user?.portfolioLinks?.[0]?.url ?? "",
   }));
   const [contactErrors, setContactErrors] = useState<Partial<ContactValues>>({});
+
+  /** Validates the hiring answers and saves them to the profile when the resume can hold them.
+   *  The answer also travels in the reply, so a candidate without an AI resume can still respond. */
+  const saveHiring = async (): Promise<string | null> => {
+    const cleaned: Partial<HiringValues> = {};
+    const errors: Partial<HiringValues> = {};
+    for (const field of hiringInputs) {
+      const r = validateHiringValue(field, hiring[field]);
+      if ("error" in r) errors[field] = r.error; else cleaned[field] = r.value;
+    }
+    setHiringErrors(errors);
+    if (Object.keys(errors).length > 0) return null;
+    if (user && isAiResume(user.resumeData)) {
+      const current = readHiringFacts(user.resumeData);
+      const next: HiringFacts = { ...current };
+      for (const field of hiringInputs) next[HIRING_INPUTS[field].fact] = cleaned[field] ?? "";
+      try { await updateUser({ resumeData: withHiringFacts(user.resumeData, next) }); } catch { onError("Could not save your details. Try again."); return null; }
+    }
+    return hiringReplyText(cleaned);
+  };
 
   const saveContact = async (): Promise<boolean> => {
     const cleaned: Partial<ContactValues> = {};
@@ -160,8 +258,16 @@ function RequestRow({ matchId, request, unlocked, practice, onResolved, onError 
 
   const submit = async (resolution: "fulfilled" | "declined") => {
     setBusy(resolution);
-    if (isContact && resolution === "fulfilled" && !(await saveContact())) { setBusy(null); return; }
-    const res = await resolveCandidateRequest(matchId, request.id, resolution, reply);
+    let replyText = reply;
+    if (isContact && resolution === "fulfilled") {
+      if (hiringInputs.length > 0) {
+        const text = await saveHiring();
+        if (text === null) { setBusy(null); return; }
+        replyText = text;
+      }
+      if (contactInputs.length > 0 && !(await saveContact())) { setBusy(null); return; }
+    }
+    const res = await resolveCandidateRequest(matchId, request.id, resolution, replyText);
     setBusy(null);
     if (res.ok) onResolved(request.id, resolution);
     else onError(res.error);
@@ -175,13 +281,25 @@ function RequestRow({ matchId, request, unlocked, practice, onResolved, onError 
         <p className="m-0 mt-2 text-[14px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{request.note}</p>
       )}
       {isContact ? (
-        <ContactForm
-          values={contact}
-          errors={contactErrors}
-          onChange={(field, value) => { setContact((c) => ({ ...c, [field]: value })); setContactErrors((e) => ({ ...e, [field]: undefined })); }}
-          inputs={contactInputs}
-          includesEmail={!request.fields || request.fields.includes("email")}
-        />
+        <>
+          {hiringInputs.length > 0 && (
+            <HiringForm
+              values={hiring}
+              errors={hiringErrors}
+              onChange={(field, value) => { setHiring((h) => ({ ...h, [field]: value })); setHiringErrors((e) => ({ ...e, [field]: undefined })); }}
+              inputs={hiringInputs}
+            />
+          )}
+          {(contactInputs.length > 0 || !hiringOnly) && (
+            <ContactForm
+              values={contact}
+              errors={contactErrors}
+              onChange={(field, value) => { setContact((c) => ({ ...c, [field]: value })); setContactErrors((e) => ({ ...e, [field]: undefined })); }}
+              inputs={contactInputs}
+              includesEmail={!request.fields || request.fields.includes("email")}
+            />
+          )}
+        </>
       ) : roundLabel && practice ? (
         <p className="m-0 mt-2 text-[13px] leading-normal text-hx-ink-soft">
           Complete a {roundLabel} practice session and your result is sent to this employer automatically. Nothing else to do.

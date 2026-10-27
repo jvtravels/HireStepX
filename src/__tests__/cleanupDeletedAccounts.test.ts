@@ -13,6 +13,7 @@ describe("cleanup-deleted-accounts queue", () => {
   let urls: string[];
   let columnExists: boolean;
   let stillDeleted: Record<string, boolean>;
+  let rosterA: Array<{ user_id: string; role: string }>;
 
   beforeEach(() => {
     vi.resetModules();
@@ -24,16 +25,20 @@ describe("cleanup-deleted-accounts queue", () => {
     urls = [];
     columnExists = true;
     stillDeleted = { a: true, b: true };
+    rosterA = [{ user_id: "a", role: "owner" }];
     vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => {
       const u = String(url);
       urls.push(`${init?.method ?? "GET"} ${u}`);
       if (u.includes("erasure_attempted_at") && !columnExists) return new Response("{}", { status: 400 });
+      if (u.includes("employer_members?user_id=eq.a&select=employer_id,role")) return new Response(JSON.stringify([{ employer_id: "co-a", role: "owner" }]));
+      if (u.includes("employer_members?employer_id=eq.co-a&select=user_id,role")) return new Response(JSON.stringify(rosterA));
       if (u.includes("select=id&order=")) return new Response(JSON.stringify([{ id: "a" }, { id: "b" }]));
       if (u.includes("select=id") && u.includes("id=eq.")) {
         const id = /id=eq\.([^&]+)/.exec(u)![1];
         return new Response(JSON.stringify(stillDeleted[id] ? [{ id }] : []));
       }
-      return new Response("{}", { status: 204 });
+      if (u.includes("employer_members")) return new Response("[]");
+      return new Response(null, { status: 204 });
     }));
   });
 
@@ -66,5 +71,22 @@ describe("cleanup-deleted-accounts queue", () => {
     expect(res.body).toMatchObject({ deleted: 1 });
     expect(eraseUserData).toHaveBeenCalledTimes(1);
     expect(eraseUserData.mock.calls[0][1]).toBe("b");
+  });
+
+  it("skips a sole owner whose company still has members, erasing nobody on their behalf", async () => {
+    rosterA = [{ user_id: "a", role: "owner" }, { user_id: "m", role: "member" }];
+    const res = await run();
+    expect(res.body).toMatchObject({ deleted: 1, failed: 0 });
+    expect(eraseUserData).toHaveBeenCalledTimes(1);
+    expect(eraseUserData.mock.calls[0][1]).toBe("b");
+  });
+
+  it("hands the erasure the company it should remove, ahead of the login", async () => {
+    await run();
+    const deps = eraseUserData.mock.calls[0][0];
+    expect(deps.employerId).toBe("co-a");
+    expect(typeof deps.beforeAuth).toBe("function");
+    await deps.beforeAuth({ isEmployer: true, retainEmployer: false });
+    expect(urls.some((u) => u === "DELETE https://example.supabase.co/rest/v1/employers?id=eq.co-a")).toBe(true);
   });
 });

@@ -34,6 +34,7 @@ import { releaseCredit, creditSpentOnOrders, creditReturnedOnOrder, loadOrderCre
 import { creditNoteAmountForCashRefund } from "./_unlock-ownership";
 import { captureServerEvent } from "./_posthog";
 import { isCreditOrderRef, settleCreditOrder } from "./_employer-credit-unlock";
+import { attributeUnlocks, cashOrderActor } from "./_employer-unlock-attribution";
 import type { NotifyInput } from "./_notify";
 
 export const STALE_AFTER_MS = 10 * 60 * 1000;
@@ -88,9 +89,12 @@ async function reconcileCreditOrder(order: UnlockOrderRow, p: ReconcileParams, f
   const settled = await settleCreditOrder({
     supabaseUrl: p.supabaseUrl, headers: p.headers, order, fetchImpl: f, notifyImpl: p.notifyImpl, now: () => now,
   });
+  if (settled.kind === "fulfilled" || settled.kind === "partial") {
+    // The spender is not recorded on a credit order; the audit entry says so rather than guessing.
+    await attributeUnlocks({ supabaseUrl: p.supabaseUrl, headers: p.headers, result: settled, actorId: null, fetchImpl: f });
+    return settled.kind;
+  }
   switch (settled.kind) {
-    case "fulfilled": return "fulfilled";
-    case "partial": return "partial";
     case "ledger_unavailable": return "error";
     case "no_credit": {
       try {
@@ -168,9 +172,12 @@ async function reconcileOne(order: UnlockOrderRow, p: ReconcileParams, f: typeof
     supabaseUrl: p.supabaseUrl, headers: p.headers, razorpayOrderId: order.razorpay_order_id, payment: found,
     fetchImpl: f, notifyImpl: p.notifyImpl, now: () => now,
   });
+  if (result.kind === "fulfilled" || result.kind === "partial") {
+    const actorId = await cashOrderActor(order.razorpay_order_id, p.razorpayKeyId, p.razorpayKeySecret, f);
+    await attributeUnlocks({ supabaseUrl: p.supabaseUrl, headers: p.headers, result, actorId, paymentId: found.id, fetchImpl: f });
+    return result.kind;
+  }
   switch (result.kind) {
-    case "fulfilled": return "fulfilled";
-    case "partial": return "partial";
     case "error": return result.code === "db_error" ? "error" : "skipped";
     default: return "skipped";
   }

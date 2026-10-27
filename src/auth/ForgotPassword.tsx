@@ -15,6 +15,17 @@ import { sanitizeEmail, validateEmail } from "./_validation";
 import { detectEmailProvider, mapAuthError, useIsMounted } from "./_shell";
 import { trackAuth, loginViewedEvent } from "./_analytics";
 
+const ERROR_BANNER_STYLE: React.CSSProperties = {
+  background: t.error100,
+  border: `1px solid ${t.error}`,
+  borderRadius: 10,
+  padding: "12px 14px",
+  fontFamily: f.sans,
+  fontSize: 13,
+  color: t.error,
+  lineHeight: 1.4,
+};
+
 const EMAIL_MAX_LENGTH = 254; // RFC 5321 hard ceiling
 // 60s matches Stripe / Linear / Notion resend cooldowns.
 const RESEND_COOLDOWN_SEC = 60;
@@ -34,6 +45,7 @@ export default function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const isMounted = useIsMounted();
@@ -107,13 +119,17 @@ export default function ForgotPassword() {
   const handleResend = useCallback(async () => {
     if (cooldown > 0 || resending) return;
     setResending(true);
+    setResendError(null);
     try {
       const cleanEmail = sanitizeEmail(email);
-      await submitReset(cleanEmail);
+      const result = await submitReset(cleanEmail);
       if (!isMounted.current) return;
-      setCooldown(RESEND_COOLDOWN_SEC);
+      // A failed resend must not restart the cooldown, or the user believes a
+      // new link is on its way when none was sent.
+      if (result.success) setCooldown(RESEND_COOLDOWN_SEC);
+      else setResendError(mapAuthError(result.error));
     } catch {
-      /* keep cooldown idle so user can retry */
+      if (isMounted.current) setResendError(mapAuthError(undefined));
     } finally {
       if (isMounted.current) setResending(false);
     }
@@ -297,6 +313,16 @@ export default function ForgotPassword() {
                   </a>
                 )}
 
+                {resendError && (
+                  <div
+                    role="alert"
+                    className="hsx-error-banner"
+                    style={ERROR_BANNER_STYLE}
+                  >
+                    {resendError}
+                  </div>
+                )}
+
                 <Button
                   type="button"
                   variant="outline"
@@ -306,7 +332,7 @@ export default function ForgotPassword() {
                   aria-busy={resending || undefined}
                   style={{
                     width: "100%",
-                    height: "auto",
+                    height: 56,
                     fontFamily: f.sans,
                     fontSize: 16,
                     fontWeight: 500,
@@ -335,6 +361,7 @@ export default function ForgotPassword() {
                   onClick={() => {
                     setSent(false);
                     setCooldown(0);
+                    setResendError(null);
                   }}
                   style={{
                     width: "100%",
@@ -452,17 +479,7 @@ export default function ForgotPassword() {
                     role="alert"
                     id="forgot-error"
                     className="hsx-error-banner"
-                    style={{
-                      background: t.error100,
-                      border: `1px solid ${t.error}`,
-                      borderRadius: 10,
-                      padding: "12px 14px",
-                      marginBottom: 16,
-                      fontFamily: f.sans,
-                      fontSize: 13,
-                      color: t.error,
-                      lineHeight: 1.4,
-                    }}
+                    style={{ ...ERROR_BANNER_STYLE, marginBottom: 16 }}
                   >
                     {error}
                   </div>
@@ -650,6 +667,10 @@ export default function ForgotPassword() {
                 color: t.indigo,
                 fontWeight: 600,
                 textDecoration: "none",
+                // The mobile 44px min-height rule would top-align the text in
+                // this inline-flex row; padding keeps the tap target instead.
+                minHeight: 0,
+                padding: "12px 0",
               }}
             >
               Contact support

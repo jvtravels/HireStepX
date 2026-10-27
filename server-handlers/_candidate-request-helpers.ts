@@ -11,6 +11,8 @@ import {
   REQUEST_STATUSES,
   REQUEST_NOTE_MAX,
   REQUEST_TOPIC_MAX,
+  contactRequestTopic,
+  isHiringField,
   type RequestKind,
   type RequestStatus,
   type CandidateRequestDto,
@@ -68,7 +70,7 @@ export function parseCreateRequest(body: { kind?: unknown; topic?: unknown; fiel
   if (kind === "contact") {
     const fields = asContactRequestFields(body.fields);
     if (!fields) return { ok: false, error: "Choose at least one detail to request" };
-    return { ok: true, value: { kind, topic: null, fields, note: null } };
+    return { ok: true, value: { kind, topic: contactRequestTopic(fields), fields, note: null } };
   }
   if (kind === "document" && !topic) return { ok: false, error: "Say what you would like to see" };
   if (kind === "practice" && !topic) return { ok: false, error: "Say which skill or question to practise" };
@@ -80,7 +82,12 @@ export function parseCreateRequest(body: { kind?: unknown; topic?: unknown; fiel
 
 export function requestHeadline(r: { kind: RequestKind; topic: string | null; fields: readonly string[] | null }): string {
   switch (r.kind) {
-    case "contact": return `Contact details: ${joinFieldLabels((r.fields ?? []).filter((f): f is ContactRequestField => asContactRequestFields([f]) !== null))}`;
+    case "contact": {
+      const fields = (r.fields ?? []).filter((f): f is ContactRequestField => asContactRequestFields([f]) !== null);
+      const hiring = fields.filter(isHiringField).length;
+      const prefix = hiring === 0 ? "Contact details" : hiring === fields.length ? "Hiring details" : "Details";
+      return `${prefix}: ${joinFieldLabels(fields)}`;
+    }
     case "document": return r.topic ?? "A document or link";
     case "practice": return roundKeyForTopic(r.topic) ? `Practise a ${r.topic} interview` : `Practice answer: ${r.topic ?? "a skill"}`;
     case "clarification": return r.topic ? `Question about ${r.topic}` : "A question about your profile";

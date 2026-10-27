@@ -145,6 +145,7 @@ describe("eraseUserData — inventory", () => {
       "employer_unlock_payments", "employer_unlock_orders", "employers", // retention / auth cascade
       "account_erasure_log", // proof of erasure
       "used_verification_tokens", // keyed by email
+      "employer_members", // removed by the account-exit hook (employerErasureOptions) and the auth cascade
     ]);
     const tables = [...schema.matchAll(/create table (?:if not exists )?(?:public\.)?(\w+)\s*\(([\s\S]*?)\n\);/g)];
     const missing: string[] = [];

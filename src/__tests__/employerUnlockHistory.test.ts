@@ -19,10 +19,18 @@ function req() {
   return new Request("https://x.test/api/employer-unlock-history", { method: "GET" });
 }
 
+function memberOk(role = "owner", employerId = "emp-1", userId = employerId) {
+  return {
+    ok: true,
+    json: async () => [{ employer_id: employerId, user_id: userId, role, email: "", name: null, last_active_at: new Date().toISOString() }],
+  };
+}
+
 /** URL-routed fetch: each key is matched as a substring of the request URL; unmatched tables answer []. */
 function routed(map: Record<string, unknown | ((url: string) => { ok: boolean; status?: number; body: unknown })>) {
   return vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
+    if (url.includes("employer_members?user_id=eq.")) return memberOk() as unknown as Response;
     const key = Object.keys(map).find((k) => url.includes(k));
     const v = key ? map[key] : [];
     const r = typeof v === "function" ? (v as (u: string) => { ok: boolean; status?: number; body: unknown })(url) : { ok: true, body: v };
@@ -73,6 +81,7 @@ describe("employer-unlock-history handler", () => {
         creditNotes: [],
         gstin: null,
         billingName: null,
+        paidBy: null,
         candidates: [{ matchId: "m1", name: "Priya Sharma", email: "priya@example.com" }],
       },
     ]);
@@ -111,6 +120,7 @@ describe("employer-unlock-history handler", () => {
         creditNotes: [],
         gstin: null,
         billingName: null,
+        paidBy: null,
         candidates: [{ matchId: "m1", name: null, email: null }],
       },
     ]);
@@ -157,6 +167,7 @@ describe("employer-unlock-history handler", () => {
 
     it("returns the stored snapshot and partial refund, and drops a malformed snapshot", async () => {
       global.fetch = vi.fn()
+        .mockResolvedValueOnce(memberOk())
         .mockResolvedValueOnce({ ok: true, json: async () => [
           { ...row, invoice_snapshot: snapshot, partial_refund_paise: 2000, partial_refund_at: "2026-10-03T00:00:00Z" },
           { ...row, id: "p2", invoice_snapshot: { v: 1, supplier: "nope" } },
@@ -172,15 +183,17 @@ describe("employer-unlock-history handler", () => {
 
     it("falls back to the 0032 column set when 0045 is not applied, leaving the snapshot null", async () => {
       const fetchMock = vi.fn()
-        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ code: "42703" }) })
+        .mockResolvedValueOnce(memberOk())
+        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ code: "42703" }) }) // with paid_by
+        .mockResolvedValueOnce({ ok: false, status: 400, json: async () => ({ code: "42703" }) }) // with snapshot
         .mockResolvedValueOnce({ ok: true, json: async () => [row] })
         .mockResolvedValueOnce({ ok: true, json: async () => [] });
       global.fetch = fetchMock;
       const res = await handler(req());
       const body = await res.json();
       expect(res.status).toBe(200);
-      expect(String(fetchMock.mock.calls[0][0])).toContain("invoice_snapshot");
-      expect(String(fetchMock.mock.calls[1][0])).not.toContain("invoice_snapshot");
+      expect(String(fetchMock.mock.calls[1][0])).toContain("invoice_snapshot");
+      expect(String(fetchMock.mock.calls[3][0])).not.toContain("invoice_snapshot");
       expect(body.purchases[0]).toMatchObject({ invoiceNo: "HSX-2610-000001", invoiceSnapshot: null, partialRefundPaise: 0 });
     });
   });
@@ -246,8 +259,60 @@ describe("employer-unlock-history handler", () => {
   });
 
   it("500s when the primary purchase list query itself fails", async () => {
-    global.fetch = vi.fn().mockResolvedValueOnce({ ok: false, status: 500 });
+    global.fetch = vi.fn()
+      .mockResolvedValueOnce(memberOk())
+      .mockResolvedValue({ ok: false, status: 500, text: async () => "" }); // every select in the fallback ladder
     const res = await handler(req());
     expect(res.status).toBe(500);
+  });
+
+  it("shows the whole company's purchases with who paid, and queries by company id rather than the caller's user id", async () => {
+    withAuthAndRateLimit.mockResolvedValue({ auth: { userId: "user-member" }, headers: {} });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(memberOk("member", "company-1", "user-member"))
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => [
+          { ...PAY_ROW, id: "p1", match_id: "m1", paid_by: "user-member" },
+          { ...PAY_ROW, id: "p2", match_id: "m2", paid_by: "user-gone" },
+          { ...PAY_ROW, id: "p3", match_id: "m3", paid_by: null },
+        ],
+      });
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("employer_members?employer_id=eq.")) {
+        return { ok: true, status: 200, json: async () => [{ user_id: "user-member", name: "Asha", email: "asha@example.com" }] } as Response;
+      }
+      return { ok: true, status: 200, json: async () => [] } as Response;
+    });
+    global.fetch = fetchMock;
+
+    const res = await handler(req());
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("employer_id=eq.company-1");
+    expect(body.purchases.map((p: { paidBy: string | null }) => p.paidBy)).toEqual(["Asha", "Former member", null]);
+  });
+
+  it("falls back to the original columns when paid_by doesn't exist yet", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(memberOk())
+      .mockResolvedValueOnce({ ok: false, status: 400, text: async () => "column paid_by does not exist" })
+      .mockResolvedValueOnce({ ok: true, json: async () => [PAY_ROW] })
+      .mockResolvedValue({ ok: true, json: async () => [] });
+    global.fetch = fetchMock;
+    const res = await handler(req());
+    expect(res.status).toBe(200);
+    expect(String(fetchMock.mock.calls[1][0])).toContain("paid_by");
+    expect(String(fetchMock.mock.calls[2][0])).not.toContain("paid_by");
+    expect((await res.json()).purchases[0].paidBy).toBeNull();
+  });
+
+  it("403s a viewer — spend history needs the unlock permission", async () => {
+    global.fetch = vi.fn().mockResolvedValueOnce(memberOk("viewer"));
+    const res = await handler(req());
+    expect(res.status).toBe(403);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });

@@ -10,6 +10,7 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
+import { requireEmployerPermission } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -54,8 +55,11 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
+    const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, "jobs.read");
+    if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+    const employerId = gate.ctx.employerId;
     const ownerRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(auth.userId)}&select=id`,
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}&select=id`,
       { headers: serviceHeaders() },
     );
     const ownerRows = (await ownerRes.json().catch(() => [])) as Array<{ id: string }>;
@@ -64,13 +68,24 @@ export default async function handler(req: Request): Promise<Response> {
     }
 
     const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/employer_requirement_activity?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,action,detail,created_at&order=created_at.desc&limit=50`,
+      `${SUPABASE_URL}/rest/v1/employer_requirement_activity?requirement_id=eq.${encodeURIComponent(requirementId)}&select=id,action,detail,actor_user_id,created_at&order=created_at.desc&limit=50`,
       { headers: serviceHeaders() },
     );
     if (!res.ok) throw new Error(`activity read failed: ${res.status}`);
-    const rows = (await res.json().catch(() => [])) as Array<{ id: string; action: string; detail: string | null; created_at: string }>;
+    const rows = (await res.json().catch(() => [])) as Array<{ id: string; action: string; detail: string | null; actor_user_id: string | null; created_at: string }>;
 
-    const activity = rows.map((r) => ({ id: r.id, action: r.action, detail: r.detail, createdAt: r.created_at }));
+    // Names come from the live roster; a removed member's past actions read "Former member".
+    const rosterRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(employerId)}&select=user_id,name,email`,
+      { headers: serviceHeaders() },
+    ).catch(() => null);
+    const roster = rosterRes?.ok ? ((await rosterRes.json().catch(() => [])) as Array<{ user_id: string; name: string | null; email: string }>) : [];
+    const names = new Map(roster.map((m) => [m.user_id, m.name || m.email]));
+
+    const activity = rows.map((r) => ({
+      id: r.id, action: r.action, detail: r.detail, createdAt: r.created_at,
+      actorName: r.actor_user_id ? names.get(r.actor_user_id) ?? "Former member" : null,
+    }));
     return new Response(JSON.stringify({ activity }), { status: 200, headers });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);

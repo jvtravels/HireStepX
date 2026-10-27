@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
 import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
-import { SeoCover, coverCss } from "./SeoCover";
+import { Scene } from "./ResourceScenes";
+import type { Item as ResItem } from "./resourcesData";
 import Skel from "./Skel";
 import { FaqBlock } from "./Extra";
 import { delay, useReveal } from "./motion";
@@ -61,7 +62,7 @@ function Related({ title, items }: { title: string; items: { item: Item; meta: s
       <style>{resourcesCss}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
-        {items.map(({ item: i, meta }) => (
+        {items.slice(0, 3).map(({ item: i, meta }) => (
           <li key={i.h}>
             <article className={`lb-card k-${i.k}`}>
               <Vis i={i} />
@@ -82,9 +83,26 @@ function fmtDate(iso: string) {
   return new Date(iso + "T00:00:00Z").toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
-function Faqs({ items }: { items: { q: string; a: string }[] }) {
+export type FaqKind = "article" | "salary" | "questions" | "hub";
+const FAQ_COPY: Record<FaqKind, { kicker: string; title: React.ReactNode }> = {
+  article: { kicker: "Quick answers", title: <>Before you close <b>this tab</b>.</> },
+  salary: { kicker: "Pay, explained", title: <>What the numbers <b>really mean</b>.</> },
+  questions: { kicker: "Prep notes", title: <>How to <b>walk in ready</b>.</> },
+  hub: { kicker: "Good to know", title: <>The short <b>version</b>.</> },
+};
+
+function HeroScene({ item }: { item: ResItem }) {
+  return (
+    <div className={`sx-scene k-${item.k}`} aria-hidden="true">
+      <div className="sx-scene-in">{Scene({ i: item }) ?? <Vis i={item} />}</div>
+    </div>
+  );
+}
+
+export function Faqs({ items, kind = "hub" }: { items: { q: string; a: string }[]; kind?: FaqKind }) {
   if (items.length === 0) return null;
-  return <FaqBlock id="faq" title={<>Questions, <b>answered plainly</b>.</>} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
+  const c = FAQ_COPY[kind];
+  return <FaqBlock id="faq" kicker={c.kicker} title={c.title} qa={items.map((f): [string, string] => [f.q, f.a])} jsonLd={false} />;
 }
 
 const HUBS = [
@@ -92,7 +110,7 @@ const HUBS = [
   ["Interview preparation", "/interview-prep"], ["AI mock interview", "/ai-mock-interview"],
 ];
 
-function Hubs() {
+export function Hubs() {
   return (
     <nav className="sx-hubs" aria-label="Browse HireStepX">
       {HUBS.map(([l, h]) => <a key={h} data-no-underline href={h}>{l}</a>)}
@@ -193,7 +211,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
   const slug = post.slug;
   const ids = post.sections.map((x) => slugify(x.heading));
   const [active, setActive] = useState(ids[0]);
-  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(ids.map((i) => [i, true])));
+  const [open, setOpen] = useState<Record<string, boolean>>(() => Object.fromEntries(ids.map((i) => [i, i === ids[0]])));
   const allOpen = ids.every((i) => open[i]);
   const bar = useRef<HTMLDivElement>(null);
   const art = useRef<HTMLElement>(null);
@@ -237,7 +255,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
 
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <div className="sa-bar" ref={bar} aria-hidden="true"><i /></div>
       <header className="sx-hero sa-hero">
         <div className="hx-wrap">
@@ -250,7 +268,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
             <span>{post.readTime} read</span>
             <span>{post.sections.length} sections</span>
           </div>
-          <div className="sx-cover sa-in" style={delay(4)}><SeoCover hero item={{ k: "guide", t: post.title, co: post.company, tag: post.category }} /></div>
+          <div className="sx-cover sa-in" style={delay(4)}><HeroScene item={{ k: "guide", t: post.title, h: "", co: post.company, tag: post.category }} /></div>
         </div>
       </header>
       <section className="sa-body">
@@ -269,13 +287,12 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
           </article>
         </div>
       </section>
-      <Faqs items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
+      <Faqs kind="article" items={post.faqs.map((f) => ({ q: f.question, a: f.answer }))} />
       <div className="hx-wrap sx-after">
         <Explore links={explore} />
         {related.length > 0 && (
           <Related title="Continue reading" items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, co: b.company, tag: b.category }, meta: `${b.category} · ${b.readTime}` }))} />
         )}
-        <p className="sx-allposts"><a data-no-underline href="/blog">All posts <Arrow /></a></p>
       </div>
       <Hubs />
       <Close kicker="Practice" title={<>Know the answer. <b>Now say it.</b></>} body={post.cta} primary={["Start a free interview", "/signup"]} />
@@ -362,13 +379,20 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
       <h2 className="sx-h2">{label} vs similar companies</h2>
       <p className="sx-sub">{groupLabel ? `${groupLabel}, ` : ""}{own ? `${own.levelLabel} level, total CTC in LPA.` : "Total CTC in LPA."}</p>
       <div className="sx-cmp-list">
-        {rows.map((r) => (
-          <a key={r.label} data-no-underline href={r.self ? undefined : `/salary/${r.slug}`} className="sx-cmp-row" data-self={r.self ? "1" : "0"}>
-            <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
-            <span className="sx-cmp-track"><RangeBar min={r.band?.min ?? 0} max={r.band?.max ?? 0} scale={max} /></span>
-            <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
-          </a>
-        ))}
+        {rows.map((r) => {
+          const cells = (
+            <>
+              <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
+              <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
+              <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
+            </>
+          );
+          return r.self ? (
+            <div key={r.label} className="sx-cmp-row" data-self="1">{cells}</div>
+          ) : (
+            <a key={r.label} data-no-underline href={`/salary/${r.slug}`} className="sx-cmp-row" data-self="0">{cells}</a>
+          );
+        })}
       </div>
     </section>
   );
@@ -377,19 +401,22 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
 export function SalaryTemplate({ company, model, meta, facts, related, groupLabel, blogSlug, calibrationDate }: SalaryTemplateProps) {
   const [ri, setRi] = useState(0);
   const [li, setLi] = useState(0);
+  const [tab, setTab] = useState<"pay" | "info" | "compare">("pay");
   const { label, roles, faqs, peerComparisons, interviewTeaser, page } = model;
   const headline = roles[0];
   const signup = `/signup?source=salary-seo&company=${encodeURIComponent(company)}&next=${encodeURIComponent(`/interview${headline ? `?role=${encodeURIComponent(headline.roleLabel)}` : ""}`)}`;
+  const hasInfo = !!(facts || interviewTeaser || blogSlug);
+  const tabs = [{ id: "pay" as const, label: "Pay by level" }, ...(hasInfo ? [{ id: "info" as const, label: "Interview and company" }] : []), ...(related.length > 0 ? [{ id: "compare" as const, label: "Compare companies" }] : [])];
   const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Reported");
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">Salary guide · India 2026 · checked {calibrationDate}</span>
           <h1 className="sx-h1">{label} salary in India</h1>
           <p className="sx-dek">{page.metaDescription}</p>
-          <div className="sx-cover"><SeoCover hero item={{ k: "salary", t: `${label} salary`, co: label }} /></div>
+          <div className="sx-cover"><HeroScene item={{ k: "salary", t: `${label} salary`, h: "", co: label }} /></div>
           <div className="sx-stats">
             {meta?.noticePeriodDays != null && <div><span className="sx-mono">Notice period</span><b>{meta.noticePeriodDays} <small>days</small></b></div>}
             {meta?.bondPenaltyLpa != null && <div><span className="sx-mono">Bond</span><b>{meta.bondPenaltyLpa} <small>LPA penalty</small></b></div>}
@@ -399,12 +426,19 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
         </div>
       </header>
       <section className="sx-body">
-        <div className="hx-wrap sx-grid sx-grid-wide">
-          <aside className="sx-side">
+        {tabs.length > 1 && (
+          <div className="hx-wrap sx-tabbar">
+            <div className="sx-seg" role="tablist" aria-label="Salary page sections">
+              {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
+            </div>
+          </div>
+        )}
+        <div className={`hx-wrap sx-grid ${tab === "pay" ? "sx-grid-wide" : "sx-one"}`}>
+          <aside className="sx-side" hidden={tab !== "pay" || roles.length < 2}>
             <span className="sx-mono">Role</span>
             <div className="sx-roles">
               {roles.map((r, i) => (
-                <a key={r.roleKey} data-no-underline href={`#role-${r.roleKey}`} data-on={i === ri ? "1" : "0"} onClick={() => setRi(i)}>{r.roleLabel}</a>
+                <a key={r.roleKey} data-no-underline href={`#role-${r.roleKey}`} data-on={i === ri ? "1" : "0"} onClick={(e) => { e.preventDefault(); setRi(i); }}>{r.roleLabel}</a>
               ))}
             </div>
           </aside>
@@ -413,7 +447,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               const top = role.bands[role.bands.length - 1];
               const peer = peerComparisons[i] ?? null;
               return (
-                <section key={role.roleKey} id={`role-${role.roleKey}`} className="sx-role">
+                <section key={role.roleKey} id={`role-${role.roleKey}`} className="sx-role" hidden={tab !== "pay" || i !== ri}>
                   <h2 className="sx-h2">{role.roleLabel} at {label}</h2>
                   <p className="sx-sub">Total CTC by level, in lakhs per annum. Base, variable and equity combined.</p>
                   <Ladder bands={role.bands} />
@@ -445,8 +479,9 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
                 </section>
               );
             })}
+            <div hidden={tab !== "info"}>
             {facts && (
-              <section className="sx-snap">
+              <section className="sx-snap sx-snap-first">
                 <h2 className="sx-h2">{label} snapshot</h2>
                 <dl>
                   {facts.scale && <div><dt>Scale</dt><dd>{facts.scale}</dd></div>}
@@ -463,16 +498,17 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
               </section>
             )}
             {blogSlug && <p className="sx-peer"><a data-no-underline className="sx-link" href={`/blog/${blogSlug}`}>Read the {label} interview guide <Arrow /></a></p>}
+            </div>
+            <div hidden={tab !== "compare"}>
+              {related.length > 0 && <PeerCompare label={label} headline={headline} related={related} groupLabel={groupLabel} />}
+            </div>
           </div>
         </div>
       </section>
       <div className="hx-wrap">
         <p className="sx-peer sx-peer-note">Salary figures are estimates compiled from public, self-reported data and tier benchmarks. They are not offers or guarantees, and actual pay varies by team, level and negotiation.</p>
       </div>
-      <Faqs items={faqs} />
-      <div className="hx-wrap sx-after">
-        {related.length > 0 && <PeerCompare label={label} headline={headline} related={related} groupLabel={groupLabel} />}
-      </div>
+      <Faqs kind="salary" items={faqs} />
       <Hubs />
       <Close kicker="Negotiate" title={<>Walk in knowing <b>your number</b>.</>} body={`Practise the salary conversation with an AI recruiter before the real one, using the ${label} bands above.`} primary={["Practise negotiation", signup]} />
     </Shell>
@@ -492,18 +528,28 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
   const locked = Math.max(0, questions.length - free.length);
   const first = page.intro.split(/(?<=\.)\s/)[0];
   const rest = page.intro.slice(first.length).trim();
+  const [tab, setTab] = useState<"qs" | "process" | "framework">("qs");
+  const [diff, setDiff] = useState("all");
+  const showRounds = !!page.interviewRounds && !(page.recruitmentSteps?.length && page.interviewRounds.every((r) => /^Stage \d+:/.test(r)));
+  const hasProcess = !!page.recruitmentSteps?.length || showRounds;
+  const fwSteps = page.framework.summary.split(/\s*→\s*/).filter(Boolean);
+  const diffCount = (d: string) => free.filter((q) => q.difficulty === d).length;
+  const diffs = Object.keys(DIFF).filter((d) => diffCount(d) > 0);
+  const tabs = [{ id: "qs" as const, label: `Questions (${questions.length})` }, ...(hasProcess ? [{ id: "process" as const, label: "Interview process" }] : []), { id: "framework" as const, label: "Answer framework" }];
+  const intense = questions.filter((q) => q.difficulty === "intense").length;
   return (
     <Shell active="resources">
-      <style>{sxCss + coverCss}</style>
+      <style>{sxCss + resourcesCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">{focusLabel} · {companyLabel}</span>
           <h1 className="sx-h1">{page.searchPhrase}</h1>
           <p className="sx-dek">{first}</p>
-          <div className="sx-meta">
-            <span>{questions.length} questions</span>
-            {page.interviewRounds && <span>{page.interviewRounds.length} rounds</span>}
-            <span>Framework: {displayFrameworkName(page.framework.name)}</span>
+          <div className="sx-stats">
+            <div><span className="sx-mono">Questions</span><b>{questions.length}</b></div>
+            {page.interviewRounds && <div><span className="sx-mono">Rounds</span><b>{page.interviewRounds.length}</b></div>}
+            {intense > 0 && <div><span className="sx-mono">Intense</span><b>{intense} <small>of {questions.length}</small></b></div>}
+            <div><span className="sx-mono">Framework</span><b>{displayFrameworkName(page.framework.name)}</b></div>
           </div>
           <Skel><FlipDeck href={signup} questions={questions} framework={page.framework} company={companyLabel} /></Skel>
         </div>
@@ -512,23 +558,39 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
         <div className="hx-wrap sx-grid sx-grid-q">
           <article className="sx-prose">
             {rest && <p className="sx-lead">{rest}</p>}
+            <div className="sx-seg sx-tabs-q" role="tablist" aria-label="Question set sections">
+              {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)}>{t.label}</button>)}
+            </div>
+            <div hidden={tab !== "process"}>
             {page.recruitmentSteps && (
               <section>
                 <h2>Recruitment process</h2>
                 <ol className="sx-steps">{page.recruitmentSteps.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
-            {page.interviewRounds && !(page.recruitmentSteps?.length && page.interviewRounds.every((r) => /^Stage \d+:/.test(r))) && (
+            {page.interviewRounds && showRounds && (
               <section>
                 <h2>Interview rounds</h2>
                 <ol className="sx-steps">{page.interviewRounds.map((s) => <li key={s}>{stripEndPunct(s)}</li>)}</ol>
               </section>
             )}
-            <section>
+            </div>
+            <section hidden={tab !== "framework"}>
+              <h2>{displayFrameworkName(page.framework.name)} framework</h2>
+              <ol className="sx-x-steps">{fwSteps.map((st) => <li key={st}>{st}</li>)}</ol>
+              <p>{stripEndPunct(page.framework.summary)}.</p>
+            </section>
+            <section hidden={tab !== "qs"}>
               <h2>Questions candidates report</h2>
+              {diffs.length > 1 && (
+                <div className="sx-chips" role="group" aria-label="Filter by difficulty">
+                  <button type="button" aria-pressed={diff === "all"} onClick={() => setDiff("all")}>All {free.length}</button>
+                  {diffs.map((d) => <button key={d} type="button" aria-pressed={diff === d} onClick={() => setDiff(d)}>{DIFF[d]} {diffCount(d)}</button>)}
+                </div>
+              )}
               <ol className="sx-qs">
                 {free.map((q, i) => (
-                  <li key={q.text}>
+                  <li key={q.text} hidden={diff !== "all" && q.difficulty !== diff}>
                     <span className="sx-mono">{String(i + 1).padStart(2, "0")}</span>
                     <div>
                       <p>{q.text}</p>
@@ -571,7 +633,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           </aside>
         </div>
       </section>
-      <Faqs items={visibleFaqs} />
+      <Faqs kind="questions" items={visibleFaqs} />
       <div className="hx-wrap sx-after">
         <Related
           title="More to read"
@@ -589,7 +651,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
 
 /* ── Styles ── */
 
-const sxCss = `
+export const sxCss = `
 .sx-cmp { padding: 8px 0 24px; }
 .sx-cmp-list { margin-top: 16px; display: grid; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--white); }
 .sx-cmp-row { display: grid; grid-template-columns: 170px minmax(0, 1fr) 120px; gap: 16px; align-items: center; padding: 14px 18px; border-top: 1px solid var(--line); color: var(--ink); transition: background .2s; }
@@ -649,6 +711,12 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-h1 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; margin: 0 auto; max-width: 960px; text-wrap: balance; }
 .sx-h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 30px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 500; margin: 0 0 14px; }
 .sx-dek { margin: 20px auto 0; max-width: 62ch; font-size: 19px; line-height: 1.55; color: var(--ink-2); }
+.sx-scene { position: relative; height: 340px; border-radius: 28px; border: 1px solid var(--line); overflow: hidden; }
+.sx-scene-in { position: absolute; left: 50%; top: 50%; width: 380px; height: 176px; transform: translate(-50%, -50%) scale(1.85); transform-origin: center; }
+.sx-scene .lb-vis { position: absolute; inset: 0; height: auto; display: block; padding: 0; }
+.sx-scene.k-guide { background: oklch(0.945 0.035 285); }
+.sx-scene.k-salary { background: oklch(0.955 0.045 70); }
+@media (max-width: 900px) { .sx-scene { height: 230px; border-radius: 20px; } .sx-scene-in { transform: translate(-50%, -50%) scale(1.15); } }
 .sx-cover { position: relative; width: 100%; max-width: 1040px; margin-inline: auto; margin-top: 40px; }
 .sx-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin-top: 24px; font-size: 14px; color: var(--ink-3); }
 .sx-meta span + span::before { content: ''; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); margin-right: 24px; vertical-align: middle; }
@@ -693,6 +761,16 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-x-trio b { font-size: 16px; font-weight: 500; }
 .sx-body { padding: 64px 0 56px; }
 .sx-grid { display: grid; grid-template-columns: 160px 960px; justify-content: center; gap: 40px; align-items: start; }
+[hidden] { display: none !important; }
+.sx-tabbar { margin-bottom: 28px; }
+.sx-tabbar .sx-seg { display: inline-flex; }
+.sx-one { grid-template-columns: minmax(0, 1fr); justify-content: stretch; }
+.sx-tabs-q { display: inline-flex; margin: 0 0 28px; }
+.sx-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 20px; }
+.sx-chips button { font: inherit; font-size: 14px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 99px; background: var(--white); color: var(--ink-2); cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.sx-chips button:hover { border-color: var(--btn); color: var(--ink); }
+.sx-chips button[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
+.sx-snap-first { margin-top: 0; }
 .sx-grid-wide { grid-template-columns: 240px minmax(0, 1fr); justify-content: stretch; gap: 64px; }
 .sx-grid-q { grid-template-columns: minmax(0, 1fr) 340px; justify-content: stretch; gap: 64px; }
 .sx-toc, .sx-side { position: sticky; top: 96px; display: grid; gap: 2px; }
@@ -719,8 +797,6 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-hubs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; max-width: 1240px; margin: 32px auto 0; padding: 0 24px; font-size: 14px; }
 .sx-hubs a { color: var(--ink-2); }
 .sx-hubs a:hover { color: var(--ink); }
-.sx-allposts { margin: 8px 0 0; font-size: 14px; }
-.sx-allposts a { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; color: var(--ink); }
 .sx-role { margin: 0 0 56px; scroll-margin-top: 96px; }
 .sx-rel { margin-top: 24px; padding-bottom: 32px; }
 .sx-rel .sx-h2 { text-align: center; margin-bottom: 28px; }

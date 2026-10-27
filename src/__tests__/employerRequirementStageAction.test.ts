@@ -29,6 +29,15 @@ vi.mock("../../server-handlers/employer-requirements", () => ({
   logRequirementActivity: (...args: unknown[]) => logRequirementActivity(...args),
 }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-detail");
 
 function stageReq(stage: string) {

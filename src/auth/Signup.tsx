@@ -31,6 +31,7 @@ import {
   validateSignupPassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { classifyAuthIntent } from "./authIntent";
 import { ResendStatus, resendButtonLabel, useResendVerification } from "./ResendVerification";
 import {
   buildAuthLink,
@@ -117,7 +118,11 @@ export default function Signup() {
   // its own copy swap. Collecting the company name (+ website) right here
   // means a new employer lands on an already-approved dashboard instead of
   // the separate CompanyOnboarding step after signup.
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  // A teammate joining an existing company signs up as a person, not as a new
+  // company: no company-name field and no pending company profile.
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
 
   // Validation
   // Employers don't give a personal name — the company name (below) doubles
@@ -323,7 +328,7 @@ export default function Signup() {
           cleanEmail,
           isEmployerFlow ? companyName.trim() : name.trim(),
           password,
-          isEmployerFlow ? "/employer" : undefined,
+          isInviteFlow && nextParam ? nextParam : isEmployerFlow ? "/employer" : undefined,
           isEmployerFlow ? { companyName, website } : undefined,
         );
         if (!isMounted.current) return;
@@ -354,7 +359,7 @@ export default function Signup() {
         if (isMounted.current) setLoading(false);
       }
     },
-    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, companyName, website],
+    [canSubmit, email, name, password, signup, honeypot, isMounted, isEmployerFlow, isInviteFlow, nextParam, companyName, website],
   );
 
   const handlePasswordVisibility = () => {
@@ -598,6 +603,18 @@ export default function Signup() {
             >
               Log in
             </a>
+            {!isEmployerFlow && (
+              <>
+                <span style={{ margin: "0 8px", color: t.inkSoft }}>|</span>
+                <a
+                  href="/signup?next=/employer"
+                  className="hsx-link-indigo"
+                  style={{ color: t.indigo, fontWeight: 600, textDecoration: "none" }}
+                >
+                  Hiring? Employer sign up
+                </a>
+              </>
+            )}
           </div>
         </header>
 

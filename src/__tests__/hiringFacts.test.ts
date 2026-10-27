@@ -12,17 +12,17 @@ describe("hiringFacts", () => {
   });
 
   it("reads and trims the three facts from an AI resume", () => {
-    expect(readHiringFacts(ai({ noticePeriod: " 30  days ", currentCtc: "18 LPA", expectedCtc: null }))).toEqual({ noticePeriod: "30 days", currentCtc: "18 LPA", expectedCtc: "" });
+    expect(readHiringFacts(ai({ noticePeriod: " 30  days ", currentCtc: "18 LPA", expectedCtc: null }))).toEqual({ noticePeriod: "30 days", currentCtc: "18 LPA", expectedCtc: "", shareCtcBand: false, availabilityConfirmedAt: "", workModePref: "", openToRelocate: false });
   });
 
   it("writes empty strings as null and caps length", () => {
-    const out = withHiringFacts(ai({ noticePeriod: "old" }), { noticePeriod: "", currentCtc: "x".repeat(80), expectedCtc: "24 LPA" });
+    const out = withHiringFacts(ai({ noticePeriod: "old" }), { ...EMPTY_FACTS, currentCtc: "x".repeat(80), expectedCtc: "24 LPA" });
     expect(out).toMatchObject({ noticePeriod: null, expectedCtc: "24 LPA" });
     expect((out as { currentCtc: string }).currentCtc).toHaveLength(40);
   });
 
   it("detects real changes only", () => {
-    const a = { noticePeriod: "30 days", currentCtc: "", expectedCtc: "" };
+    const a = { ...EMPTY_FACTS, noticePeriod: "30 days" };
     expect(factsChanged(a, { ...a, noticePeriod: " 30 days " })).toBe(false);
     expect(factsChanged(a, { ...a, expectedCtc: "20 LPA" })).toBe(true);
   });
@@ -31,6 +31,40 @@ describe("hiringFacts", () => {
     const prev = ai({ noticePeriod: "60 days", currentCtc: "15 LPA", expectedCtc: "20 LPA" });
     const merged = carryHiringFacts(ai({ noticePeriod: null, currentCtc: "18 LPA" }), prev);
     expect(merged).toMatchObject({ noticePeriod: "60 days", currentCtc: "18 LPA", expectedCtc: "20 LPA" });
+  });
+});
+
+describe("range opt-in and availability", () => {
+  it("reads and writes the opt-in and confirmation time", () => {
+    const iso = "2026-10-20T00:00:00.000Z";
+    const facts = readHiringFacts(ai({ expectedCtc: "24 LPA", shareCtcBand: true, availabilityConfirmedAt: iso }));
+    expect(facts).toMatchObject({ shareCtcBand: true, availabilityConfirmedAt: iso });
+    expect(withHiringFacts(ai({}), facts)).toMatchObject({ shareCtcBand: true, availabilityConfirmedAt: iso });
+  });
+
+  it("drops the opt-in when there is no expected CTC to band", () => {
+    const out = withHiringFacts(ai({}), { ...EMPTY_FACTS, shareCtcBand: true });
+    expect((out as { shareCtcBand?: boolean }).shareCtcBand).toBe(false);
+  });
+
+  it("keeps the opt-in across a re-parse", () => {
+    const prev = ai({ expectedCtc: "20 LPA", shareCtcBand: true, availabilityConfirmedAt: "2026-10-01T00:00:00.000Z" });
+    expect(carryHiringFacts(ai({}), prev)).toMatchObject({ shareCtcBand: true, availabilityConfirmedAt: "2026-10-01T00:00:00.000Z" });
+  });
+});
+
+describe("work preference", () => {
+  it("round-trips work mode and relocation and ignores unknown modes", () => {
+    const facts = readHiringFacts(ai({ workModePref: "hybrid", openToRelocate: true }));
+    expect(facts).toMatchObject({ workModePref: "hybrid", openToRelocate: true });
+    expect(withHiringFacts(ai({}), facts)).toMatchObject({ workModePref: "hybrid", openToRelocate: true });
+    expect(readHiringFacts(ai({ workModePref: "anywhere" })).workModePref).toBe("");
+  });
+
+  it("reaches the employer view only as a known mode", () => {
+    const d = extractResumeDetail({ _type: "ai", topSkills: [], workModePref: "remote", openToRelocate: true });
+    expect(d).toMatchObject({ workModePref: "remote", openToRelocate: true });
+    expect(extractResumeDetail({ _type: "ai", topSkills: [], workModePref: "moon" }).workModePref).toBeNull();
   });
 });
 

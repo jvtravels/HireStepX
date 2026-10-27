@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
 import ConsentGatedAdSense from "../../ConsentGatedAdSense";
-import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
 import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
 import { SALARY_SEO_PAGES, salaryCompanyLabel } from "../../../data/salary-seo";
 import { CITY_PAGES } from "../../../data/city-pages";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
-import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
-import { FooterDome } from "@/marketing-v2/FooterDome";
-import { tokens as t, fonts } from "@/auth/_tokens";
+import { HubTemplate, type HubSection } from "@/home2/HubTemplate";
 import { questionHref } from "../../../src/seoLinks";
 
 /* /interview-prep — pillar page targeting broad "interview preparation
@@ -212,15 +209,6 @@ export default async function InterviewPrepPage({
     articleSection: "Interview Preparation",
   };
 
-  const s = { fontFamily: fonts.sans };
-  const serif = { fontFamily: fonts.serif };
-  const mono = { fontFamily: fonts.mono };
-  const copper = t.copper;
-  const coal = t.coal;
-  const sand = t.inkSoft;
-  const cream = t.cream;
-  const card = { background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10 };
-
   /* ── Flatten + paginate the 15 industry groups ─────────────────────── */
   const groupsWithPages = GROUPS.map((g) => ({ ...g, pages: pageGroup([...g.companies]) })).filter(
     (g) => g.pages.length > 0,
@@ -231,8 +219,8 @@ export default async function InterviewPrepPage({
   const pageSlice = flat.slice((safePage - 1) * GROUPS_PER_PAGE, safePage * GROUPS_PER_PAGE);
 
   /* Absolute start index of each group in the flattened list — tells us
-     which page a group first appears on (for the jump nav) and whether a
-     group rendered on this page is a continuation from a previous one. */
+     which page a group first appears on and whether a group rendered on
+     this page is a continuation from a previous one. */
   const groupAbsStart: Record<string, number> = {};
   let cursor = 0;
   for (const g of groupsWithPages) {
@@ -241,19 +229,130 @@ export default async function InterviewPrepPage({
   }
   const groupStartPage = (slug: string) => Math.floor(groupAbsStart[slug] / GROUPS_PER_PAGE) + 1;
 
-  const companyPageHref = (p: number, anchor?: string) => {
-    const qs = p > 1 ? `?page=${p}` : "";
-    return `/interview-prep${qs}${anchor ? `#${anchor}` : ""}`;
-  };
+  const companyPageHref = (p: number) => (p > 1 ? `/interview-prep?page=${p}` : "/interview-prep");
 
   /* Group this page's slice back into contiguous sections, preserving order. */
-  const sections: { slug: string; pages: typeof SEO_PAGES }[] = [];
+  const groupSections: { slug: string; pages: typeof SEO_PAGES }[] = [];
   for (const item of pageSlice) {
-    const last = sections[sections.length - 1];
+    const last = groupSections[groupSections.length - 1];
     if (last && last.slug === item.slug) last.pages.push(item.p);
-    else sections.push({ slug: item.slug, pages: [item.p] });
+    else groupSections.push({ slug: item.slug, pages: [item.p] });
   }
   const globalStartOfPage = (safePage - 1) * GROUPS_PER_PAGE;
+
+  const companySections: HubSection[] = groupSections.map((section) => {
+    const meta = groupsWithPages.find((g) => g.slug === section.slug)!;
+    const continued = groupAbsStart[section.slug] < globalStartOfPage;
+    return {
+      kind: "grid",
+      id: continued ? `${section.slug}-continued` : section.slug,
+      title: continued ? `${meta.heading} (continued)` : meta.heading,
+      sub: meta.description,
+      items: section.pages.map((p) => ({
+        label: p.searchPhrase,
+        href: questionHref(p.slug),
+        meta: `${COMPANY_LABEL[p.company] ?? p.company} · ${FOCUS_LABEL[p.focus] ?? p.focus}`,
+      })),
+      initial: 30,
+      filter: section.pages.length > 24,
+    };
+  });
+
+  const paginationSection: HubSection[] = totalCompanyPages > 1
+    ? [{
+        kind: "grid",
+        id: "directory-pages",
+        title: "Company directory pages",
+        sub: `${flat.length} companies · page ${safePage} of ${totalCompanyPages}`,
+        items: Array.from({ length: totalCompanyPages }, (_, i) => i + 1).map((n) => ({
+          label: `Page ${n}`,
+          href: companyPageHref(n),
+          meta: groupsWithPages.filter((g) => groupStartPage(g.slug) === n).map((g) => g.heading.split(" — ")[0].split(",")[0]).join(", ") || undefined,
+        })),
+        initial: 60,
+      }]
+    : [];
+
+  const faqs = faqSchema.mainEntity.map((f) => ({ q: f.name, a: f.acceptedAnswer.text }));
+
+  const guideSections: HubSection[] = [
+    {
+      kind: "grid", id: "types", title: "The four types of Indian interviews",
+      sub: "Preparation differs entirely by company type. Map your target before you prepare.",
+      items: [
+        { label: "Service IT Companies", href: "/candidates", meta: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini. Aptitude test → CS fundamentals → HR. The aptitude round eliminates 60–80% of candidates. Score well on reasoning and coding basics first." },
+        { label: "Indian Product Companies", href: "/questions/flipkart-sde-interview-questions", meta: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha. DSA (medium–hard) → System Design → Behavioral. Bar is high. Expect 2 DSA problems in 45 min + a system design round tied to India-scale problems." },
+        { label: "FAANG & Global Tech", href: "/questions/google-india-engineering-interview-questions", meta: "Google · Amazon · Microsoft · Meta · Netflix · Adobe. Hard DSA → System Design → Behavioral (LP or Googleyness). The highest bar. DSA needs competitive-programming speed. Behavioral rounds are as important as coding." },
+        { label: "Consulting & Finance", href: "/questions/mckinsey-case-study-interview-questions", meta: "McKinsey · BCG · Deloitte · Goldman · JPMorgan. Case Study → Behavioral (PEI/LP) → Partner round. Hypothesis-first thinking and structured problem-solving matter more than technical depth." },
+      ],
+    },
+    {
+      kind: "steps", id: "framework", title: "A preparation framework that works",
+      sub: "Most candidates fail at Step 1: they study what they already know instead of what they don't.",
+      items: [
+        { title: "Baseline mock interview first", body: "Do one practice interview before any studying. This is uncomfortable but essential: it shows you exactly where you are, not where you think you are. Most candidates discover their real gap is delivery and structure, not content." },
+        { title: "Know your company's format cold", body: "TCS Ninja has 3 NQT rounds. Amazon has 16 Leadership Principles. Google has a 'Googleyness' round. CRED has a take-home assignment. Each format rewards different preparation, so don't use generic content." },
+        { title: "Build a story bank (behavioral)", body: "Prepare 8–10 STAR (Situation, Task, Action, Result) stories covering: leadership, conflict, failure, initiative, teamwork, technical problem-solving, and learning something new. These same stories answer 90% of behavioral questions across all companies." },
+        { title: "Practice out loud, not on paper", body: "Reading answers and saying them are completely different skills. Record yourself. Count filler words. Time every answer (aim for 90 seconds to 2 minutes). The goal is naturally structured, not scripted." },
+        { title: "Company-specific deep dive (last 1 week)", body: "In the final week, simulate the exact interview format: same time limits, same question types, same pressure. Use company-specific question sets and frameworks, not generic prep materials." },
+      ],
+    },
+    {
+      kind: "table", id: "timelines", title: "How long does preparation take?",
+      head: ["Target", "Time needed", "Focus"],
+      rows: [
+        ["TCS / Infosys / Wipro", "3–4 weeks", "Aptitude + CS fundamentals + HR prep. 2 hours/day."],
+        ["Cognizant / Accenture / HCL", "3–4 weeks", "Same as above + communication practice for Accenture."],
+        ["Flipkart / Razorpay / Swiggy", "6–10 weeks", "Medium–hard DSA + system design + behavioral. 3+ hrs/day."],
+        ["Google / Amazon / Meta", "3–6 months", "Hard DSA, system design depth, 8–10 LP stories. Intensive."],
+        ["McKinsey / BCG / Deloitte", "6–8 weeks", "Case practice daily (out loud), PEI story bank, casing partner."],
+      ],
+    },
+  ];
+
+  const tailSections: HubSection[] = [
+    {
+      kind: "grid", id: "campus-hr", title: "Freshers & Campus Placement: HR Prep",
+      sub: "Every campus interview ends with an HR round. These guides cover the questions that appear in 90%+ of Indian campus drives, with structured answer frameworks you can practice out loud.",
+      items: [
+        { label: "Why Should We Hire You?", href: "/questions/why-should-we-hire-you-answer-india", meta: "The most consequential question in campus interviews. Most freshers waste it with vague claims. Learn the Skills → Proof → Fit structure." },
+        { label: "Tell Me About Yourself", href: "/questions/tell-me-about-yourself-answer-freshers-india", meta: "Opens every interview. The wrong structure is chronological. Learn the Present → Achievement → Future format that interviewers want." },
+        { label: "Common HR Interview Questions", href: "/questions/common-hr-interview-questions-freshers-india", meta: "10 questions that appear in 95%+ of fresher HR rounds: strength, weakness, 5-year goal, why this company, relocation, and more." },
+        { label: "Full campus placement guide", href: "/candidates", meta: "Preparing for a campus placement drive? See the full guide." },
+      ],
+    },
+    {
+      kind: "grid", id: "cities", title: "Prepare by city",
+      sub: "Hiring mix differs by city: a Bengaluru loop skews GCC-heavy, Mumbai skews banking and consulting. See which companies are actually hiring where.",
+      items: CITY_PAGES.map((c) => ({ label: c.city, href: `/interview-prep/${c.slug}` })),
+    },
+    {
+      kind: "grid", id: "guides", title: "Company interview guides",
+      sub: "Each guide covers the full process for that company: rounds, format, what the interviewers evaluate, and what separates shortlisted candidates.",
+      items: [
+        ["Browse all question sets", "/questions"],
+        ["AI Mock Interview Practice: Free, Voice-Based", "/ai-mock-interview"],
+        ["Freshworks SDE Interview 2026: B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
+        ["PhonePe Engineering Interview 2026: Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
+        ["Meesho Engineering Interview 2026: Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
+        ["FAANG Interview Preparation India 2026", "/blog/faang-interview-preparation-india-2026"],
+        ["System Design Interview Preparation India", "/blog/system-design-interview-preparation"],
+        ["DSA 60-Day Preparation Plan India 2026", "/blog/dsa-60-day-preparation-plan"],
+        ["Goldman Sachs India Interview Questions 2026", "/blog/goldman-sachs-india-interview-questions"],
+        ["JP Morgan Interview Questions India 2026", "/blog/jp-morgan-interview-questions-india-2026"],
+        ["Software Engineer Interview Checklist 2026", "/blog/software-engineer-interview-checklist-2026"],
+        ["STAR Method Interview Answers India", "/blog/star-method-interview-answers"],
+      ].map(([label, href]) => ({ label, href })),
+    },
+    {
+      kind: "grid", id: "salary", title: "Know your worth before the interview",
+      sub: "Salary guides for top Indian employers, sourced from AmbitionBox, Glassdoor, and DRHP filings. Know the range before you negotiate.",
+      items: [
+        ...SALARY_SEO_PAGES.slice(0, 18).map((sp) => ({ label: `${salaryCompanyLabel(sp.slug)} India 2026`, href: `/salary/${sp.slug}`, meta: "Salary guide" })),
+        { label: "View all salary guides", href: "/salary" },
+      ],
+    },
+  ];
 
   return (
     <>
@@ -264,521 +363,27 @@ export default async function InterviewPrepPage({
       {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
           noindex meta tag above — only loading ads on the canonical page 1
           keeps thin, noindexed pagination pages out of ad-serving scope. */}
-      {safePage === 1 && (
-        <ConsentGatedAdSense />
-      )}
-      <NavV2 />
-      <main style={{ background: cream, color: coal, minHeight: "100dvh", padding: "48px 24px 80px", ...s }}>
-        <div style={{ maxWidth: 860, margin: "0 auto" }}>
-
-          {safePage === 1 ? (
-            <>
-              {/* Eyebrow */}
-              <div style={{ ...mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 12 }}>
-                Complete Guide · 2026
-              </div>
-
-              {/* H1 */}
-              <h1 style={{ ...serif, fontSize: "clamp(30px, 5vw, 48px)", fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.12, margin: 0, color: coal, textWrap: "balance" }}>
-                Interview Preparation Guide for India 2026
-              </h1>
-
-              <p style={{ ...s, fontStyle: "italic", fontSize: 19, lineHeight: 1.55, color: sand, marginTop: 20, maxWidth: 680, textWrap: "balance" }}>
-                Not all Indian interviews are the same. TCS wants aptitude. Razorpay wants system design.
-                McKinsey wants case studies. This guide maps the terrain and links you directly to practice
-                for each company.
-              </p>
-
-              {/* Primary CTA */}
-              <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap" }}>
-                <Link href="/signup?source=interview-prep" style={{
-                  display: "inline-flex", alignItems: "center", gap: 8,
-                  background: copper, color: cream, textDecoration: "none",
-                  padding: "14px 24px", borderRadius: 8, fontSize: 15, fontWeight: 500,
-                }}>
-                  Start free mock interview → 2 sessions, no card
-                </Link>
-                <Link href="/questions" style={{
-                  display: "inline-flex", alignItems: "center",
-                  color: copper, textDecoration: "none", padding: "14px 16px", fontSize: 14, fontWeight: 500,
-                }}>
-                  Browse all question sets
-                </Link>
-              </div>
-
-              {/* ── Four interview types ─────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  The four types of Indian interviews
-                </h2>
-                <p style={{ fontSize: 14, color: sand, margin: "0 0 24px", lineHeight: 1.6 }}>
-                  Preparation differs entirely by company type. Map your target before you prepare.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
-                  {[
-                    {
-                      label: "Service IT Companies", companies: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini",
-                      format: "Aptitude test → CS fundamentals → HR",
-                      tip: "The aptitude round eliminates 60–80% of candidates. Score well on reasoning and coding basics first.",
-                      href: "/candidates",
-                    },
-                    {
-                      label: "Indian Product Companies", companies: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha",
-                      format: "DSA (medium–hard) → System Design → Behavioral",
-                      tip: "Bar is high. Expect 2 DSA problems in 45 min + a system design round tied to India-scale problems.",
-                      href: "/questions/flipkart-sde-interview-questions",
-                    },
-                    {
-                      label: "FAANG & Global Tech", companies: "Google · Amazon · Microsoft · Meta · Netflix · Adobe",
-                      format: "Hard DSA → System Design → Behavioral (LP or Googleyness)",
-                      tip: "The highest bar. DSA needs competitive-programming speed. Behavioral rounds are as important as coding.",
-                      href: "/questions/google-india-engineering-interview-questions",
-                    },
-                    {
-                      label: "Consulting & Finance", companies: "McKinsey · BCG · Deloitte · Goldman · JPMorgan",
-                      format: "Case Study → Behavioral (PEI/LP) → Partner round",
-                      tip: "Hypothesis-first thinking and structured problem-solving matter more than technical depth.",
-                      href: "/questions/mckinsey-case-study-interview-questions",
-                    },
-                  ].map((type) => (
-                    <div key={type.label} style={{ ...card, padding: "20px 22px" }}>
-                      <div style={{ ...mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 6 }}>
-                        {type.label}
-                      </div>
-                      <p style={{ fontSize: 13, color: sand, margin: "0 0 10px", lineHeight: 1.5 }}>{type.companies}</p>
-                      <p style={{ fontSize: 14, fontWeight: 500, color: coal, margin: "0 0 8px", lineHeight: 1.4 }}>{type.format}</p>
-                      <p style={{ fontSize: 13, color: sand, margin: "0 0 14px", lineHeight: 1.55 }}>{type.tip}</p>
-                      <Link href={type.href} style={{ color: copper, textDecoration: "none", fontSize: 13, fontWeight: 500 }}>
-                        Practice this type →
-                      </Link>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* ── Preparation framework ────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  A preparation framework that works
-                </h2>
-                <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Most candidates fail at Step 1: they study what they already know instead of what they don't.
-                </p>
-                <ol style={{ padding: "0 0 0 0", margin: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 0 }}>
-                  {[
-                    { n: "01", title: "Baseline mock interview first", body: "Do one practice interview before any studying. This is uncomfortable but essential: it shows you exactly where you are, not where you think you are. Most candidates discover their real gap is delivery and structure, not content." },
-                    { n: "02", title: "Know your company's format cold", body: "TCS Ninja has 3 NQT rounds. Amazon has 16 Leadership Principles. Google has a 'Googleyness' round. CRED has a take-home assignment. Each format rewards different preparation, so don't use generic content." },
-                    { n: "03", title: "Build a story bank (behavioral)", body: "Prepare 8–10 STAR (Situation, Task, Action, Result) stories covering: leadership, conflict, failure, initiative, teamwork, technical problem-solving, and learning something new. These same stories answer 90% of behavioral questions across all companies." },
-                    { n: "04", title: "Practice out loud, not on paper", body: "Reading answers and saying them are completely different skills. Record yourself. Count filler words. Time every answer (aim for 90 seconds to 2 minutes). The goal is naturally structured, not scripted." },
-                    { n: "05", title: "Company-specific deep dive (last 1 week)", body: "In the final week, simulate the exact interview format: same time limits, same question types, same pressure. Use company-specific question sets and frameworks, not generic prep materials." },
-                  ].map((step, i) => (
-                    <li key={step.n} style={{
-                      display: "flex", gap: 20, padding: "20px 0",
-                      borderBottom: i < 4 ? `1px solid ${t.line}` : "none",
-                    }}>
-                      <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: t.copperBorder, flexShrink: 0, lineHeight: 1 }}>{step.n}</div>
-                      <div>
-                        <h3 style={{ ...serif, fontSize: 18, fontWeight: 400, margin: "0 0 6px", letterSpacing: "-0.01em" }}>{step.title}</h3>
-                        <p style={{ fontSize: 14, lineHeight: 1.65, color: sand, margin: 0 }}>{step.body}</p>
-                      </div>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-
-              {/* ── Preparation timelines ────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px" }}>
-                  How long does preparation take?
-                </h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                  {[
-                    { company: "TCS / Infosys / Wipro", time: "3–4 weeks", note: "Aptitude + CS fundamentals + HR prep. 2 hours/day." },
-                    { company: "Cognizant / Accenture / HCL", time: "3–4 weeks", note: "Same as above + communication practice for Accenture." },
-                    { company: "Flipkart / Razorpay / Swiggy", time: "6–10 weeks", note: "Medium–hard DSA + system design + behavioral. 3+ hrs/day." },
-                    { company: "Google / Amazon / Meta", time: "3–6 months", note: "Hard DSA, system design depth, 8–10 LP stories. Intensive." },
-                    { company: "McKinsey / BCG / Deloitte", time: "6–8 weeks", note: "Case practice daily (out loud), PEI story bank, casing partner." },
-                  ].map((row) => (
-                    <div key={row.company} style={{ ...card, padding: "16px 18px" }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: coal, marginBottom: 4 }}>{row.company}</div>
-                      <div style={{ ...mono, fontSize: 18, fontWeight: 700, color: copper, marginBottom: 6 }}>{row.time}</div>
-                      <p style={{ fontSize: 12, color: sand, margin: 0, lineHeight: 1.55 }}>{row.note}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            </>
-          ) : (
-            <div style={{ paddingTop: 8 }}>
-              <div style={{ ...mono, fontSize: 11, fontWeight: 600, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 12 }}>
-                Complete Guide · 2026
-              </div>
-              <h1 style={{ ...serif, fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 400, letterSpacing: "-0.015em", lineHeight: 1.15, margin: 0, color: coal }}>
-                Company Interview Directory
-              </h1>
-              <p style={{ fontSize: 14, color: sand, marginTop: 10 }}>
-                Page {safePage} of {totalCompanyPages} ·{" "}
-                <Link href="/interview-prep" style={{ color: copper, textDecoration: "none", fontWeight: 500 }}>
-                  ← Back to the full guide
-                </Link>
-              </p>
-            </div>
-          )}
-
-          {/* ── Jump to a category ───────────────────────────────────────── */}
-          <nav aria-label="Jump to an industry category" style={{ marginTop: 56, marginBottom: -16 }}>
-            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.09em", textTransform: "uppercase", color: t.inkFaint, margin: "0 0 12px" }}>
-              Jump to a category
-            </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {groupsWithPages.map((g) => (
-                <Link
-                  key={g.slug}
-                  href={companyPageHref(groupStartPage(g.slug), g.slug)}
-                  style={{
-                    fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                    padding: "6px 14px", borderRadius: 999, textDecoration: "none",
-                    border: `1px solid ${t.line}`, color: t.inkSoft, whiteSpace: "nowrap",
-                  }}
-                >
-                  {g.heading.split(" — ")[0].split(",")[0]} · {g.pages.length}
-                </Link>
-              ))}
-            </div>
-          </nav>
-
-          {/* ── Company-specific guides — paginated, 30 per page ─────────── */}
-          {sections.map((section) => {
-            const meta = groupsWithPages.find((g) => g.slug === section.slug)!;
-            const continued = groupAbsStart[section.slug] < globalStartOfPage;
-            return (
-              <CompanyGroup
-                key={section.slug}
-                id={continued ? undefined : section.slug}
-                heading={continued ? `${meta.heading} (continued)` : meta.heading}
-                description={meta.description}
-                pages={section.pages}
-                companyLabel={COMPANY_LABEL}
-                focusLabel={FOCUS_LABEL}
-              />
-            );
-          })}
-
-          {/* ── Pagination — 30 companies per page ───────────────────────── */}
-          {totalCompanyPages > 1 && (
-            <nav
-              aria-label="Company directory pages"
-              style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", marginTop: 24, marginBottom: 48 }}
-            >
-              <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 10, whiteSpace: "nowrap" }}>
-                {flat.length} companies · page {safePage} of {totalCompanyPages}
-              </span>
-
-              <Link
-                href={companyPageHref(safePage - 1)}
-                aria-disabled={safePage === 1}
-                tabIndex={safePage === 1 ? -1 : undefined}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === 1 ? t.creamSoft : "#fff",
-                  color: safePage === 1 ? t.inkFaint : t.coal,
-                  textDecoration: "none",
-                  pointerEvents: safePage === 1 ? "none" : "auto",
-                  opacity: safePage === 1 ? 0.45 : 1,
-                }}
-              >
-                ← Prev
-              </Link>
-
-              {Array.from({ length: totalCompanyPages }, (_, i) => i + 1)
-                .filter((n) => n === 1 || n === totalCompanyPages || Math.abs(n - safePage) <= 1)
-                .reduce<(number | "…")[]>((acc, n) => {
-                  const prev = acc[acc.length - 1];
-                  if (typeof prev === "number" && n - prev > 1) acc.push("…");
-                  acc.push(n);
-                  return acc;
-                }, [])
-                .map((n, i) =>
-                  n === "…" ? (
-                    <span key={`e-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
-                  ) : (
-                    <Link
-                      key={n}
-                      href={companyPageHref(n)}
-                      aria-current={safePage === n ? "page" : undefined}
-                      style={{
-                        fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
-                        minWidth: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                        borderRadius: 8, border: `1.5px solid ${safePage === n ? t.copper : t.line}`,
-                        background: safePage === n ? t.copper : "#fff",
-                        color: safePage === n ? "#fff" : t.coal,
-                        textDecoration: "none",
-                      }}
-                    >
-                      {n}
-                    </Link>
-                  ),
-                )}
-
-              <Link
-                href={companyPageHref(safePage + 1)}
-                aria-disabled={safePage === totalCompanyPages}
-                tabIndex={safePage === totalCompanyPages ? -1 : undefined}
-                style={{
-                  fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                  padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                  background: safePage === totalCompanyPages ? t.creamSoft : "#fff",
-                  color: safePage === totalCompanyPages ? t.inkFaint : t.coal,
-                  textDecoration: "none",
-                  pointerEvents: safePage === totalCompanyPages ? "none" : "auto",
-                  opacity: safePage === totalCompanyPages ? 0.45 : 1,
-                }}
-              >
-                Next →
-              </Link>
-            </nav>
-          )}
-
-          {safePage === 1 && (
-            <>
-              {/* ── Freshers & Campus HR prep ─────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  Freshers &amp; Campus Placement: HR Prep
-                </h2>
-                <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Every campus interview ends with an HR round. These guides cover the questions that appear in 90%+ of Indian campus drives, with structured answer frameworks you can practice out loud.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
-                  {[
-                    {
-                      title: "Why Should We Hire You?",
-                      desc: "The most consequential question in campus interviews. Most freshers waste it with vague claims. Learn the Skills → Proof → Fit structure.",
-                      href: "/questions/why-should-we-hire-you-answer-india",
-                    },
-                    {
-                      title: "Tell Me About Yourself",
-                      desc: "Opens every interview. The wrong structure is chronological. Learn the Present → Achievement → Future format that interviewers want.",
-                      href: "/questions/tell-me-about-yourself-answer-freshers-india",
-                    },
-                    {
-                      title: "Common HR Interview Questions",
-                      desc: "10 questions that appear in 95%+ of fresher HR rounds: strength, weakness, 5-year goal, why this company, relocation, and more.",
-                      href: "/questions/common-hr-interview-questions-freshers-india",
-                    },
-                  ].map((item) => (
-                    <Link key={item.href} href={item.href} style={{
-                      ...card, padding: "20px 22px", textDecoration: "none", color: "inherit", display: "block",
-                    }}>
-                      <div style={{ ...mono, fontSize: 10, fontWeight: 700, letterSpacing: "0.10em", textTransform: "uppercase", color: copper, marginBottom: 8 }}>
-                        HR Round · Freshers
-                      </div>
-                      <h3 style={{ fontFamily: fonts.sans, fontSize: 16, fontWeight: 600, margin: "0 0 8px", letterSpacing: "-0.005em", color: coal }}>
-                        {item.title}
-                      </h3>
-                      <p style={{ fontSize: 13, color: sand, margin: "0 0 14px", lineHeight: 1.55 }}>{item.desc}</p>
-                      <span style={{ color: copper, fontSize: 13, fontWeight: 500 }}>Practice with AI →</span>
-                    </Link>
-                  ))}
-                </div>
-                <p style={{ fontSize: 13, color: sand, margin: "16px 0 0", lineHeight: 1.5 }}>
-                  Preparing for a campus placement drive?{" "}
-                  <Link href="/candidates" style={{ color: copper, fontWeight: 500, textDecoration: "none" }}>
-                    See the full campus placement guide →
-                  </Link>
-                </p>
-              </section>
-
-              {/* ── City guides ──────────────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  Prepare by city
-                </h2>
-                <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Hiring mix differs by city: a Bengaluru loop skews GCC-heavy, Mumbai skews banking and consulting. See which companies are actually hiring where.
-                </p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-                  {CITY_PAGES.map((c) => (
-                    <Link key={c.slug} href={`/interview-prep/${c.slug}`} style={{
-                      padding: "10px 16px", background: t.white, border: `1px solid ${t.line}`,
-                      borderRadius: 999, textDecoration: "none", color: coal, fontSize: 13, fontWeight: 500,
-                    }}>
-                      {c.city}
-                    </Link>
-                  ))}
-                </div>
-              </section>
-
-              {/* ── FAQ ──────────────────────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 20px" }}>
-                  Frequently asked questions
-                </h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-                  {faqSchema.mainEntity.map((faq, i) => (
-                    <div key={i} style={{
-                      padding: "20px 0",
-                      borderBottom: i < faqSchema.mainEntity.length - 1 ? `1px solid ${t.line}` : "none",
-                    }}>
-                      <h3 style={{ ...serif, fontSize: 17, fontWeight: 400, margin: "0 0 8px", letterSpacing: "-0.01em" }}>
-                        {faq.name}
-                      </h3>
-                      <p style={{ fontSize: 14, lineHeight: 1.65, color: sand, margin: 0 }}>
-                        {faq.acceptedAnswer.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              {/* ── Related reading — deep-dive company guides ────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ ...serif, fontSize: 28, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 8px" }}>
-                  Company interview guides
-                </h2>
-                <p style={{ fontSize: 14, color: sand, margin: "0 0 20px", lineHeight: 1.6 }}>
-                  Each guide covers the full process for that company: rounds, format, what the interviewers evaluate, and what separates shortlisted candidates.
-                </p>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-                  {([
-                    ["AI Mock Interview Practice: Free, Voice-Based", "/ai-mock-interview"],
-                    ["Freshworks SDE Interview 2026: B2B SaaS & Customer-Success Engineering", "/blog/freshworks-interview-questions-india-2026"],
-                    ["PhonePe Engineering Interview 2026: Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
-                    ["Meesho Engineering Interview 2026: Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
-                    ["FAANG Interview Preparation India 2026", "/blog/faang-interview-preparation-india-2026"],
-                    ["System Design Interview Preparation India", "/blog/system-design-interview-preparation"],
-                    ["DSA 60-Day Preparation Plan India 2026", "/blog/dsa-60-day-preparation-plan"],
-                    ["Goldman Sachs India Interview Questions 2026", "/blog/goldman-sachs-india-interview-questions"],
-                    ["JP Morgan Interview Questions India 2026", "/blog/jp-morgan-interview-questions-india-2026"],
-                    ["Software Engineer Interview Checklist 2026", "/blog/software-engineer-interview-checklist-2026"],
-                    ["STAR Method Interview Answers India", "/blog/star-method-interview-answers"],
-                  ] as [string, string][]).map(([label, href]) => (
-                    <Link
-                      key={href}
-                      href={href}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        padding: "14px 18px",
-                        background: t.white,
-                        border: `1px solid ${t.line}`,
-                        borderRadius: 12,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: coal,
-                        textDecoration: "none",
-                        gap: 10,
-                        lineHeight: 1.4,
-                      }}
-                    >
-                      <span style={{ color: copper, fontSize: 16, flexShrink: 0 }}>→</span>
-                      {label}
-                    </Link>
-                  ))}
-                </div>
-              </section>
-
-              {/* ── Salary guides ────────────────────────────────────────── */}
-              <section style={{ marginTop: 56 }}>
-                <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
-                  Know your worth before the interview
-                </h2>
-                <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>
-                  Salary guides for top Indian employers, sourced from AmbitionBox, Glassdoor, and DRHP filings. Know the range before you negotiate.
-                </p>
-                <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 10 }}>
-                  {SALARY_SEO_PAGES.slice(0, 18).map((salaryPage) => (
-                    <li key={salaryPage.slug}>
-                      <Link href={`/salary/${salaryPage.slug}`} style={{
-                        display: "block", padding: "12px 16px",
-                        background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
-                        textDecoration: "none", color: t.coal,
-                      }}>
-                        <div style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper, marginBottom: 4 }}>
-                          Salary Guide
-                        </div>
-                        <div style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, lineHeight: 1.4, color: t.coal }}>
-                          {salaryCompanyLabel(salaryPage.slug)} India 2026
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                <p style={{ fontSize: 13, color: t.inkSoft, marginTop: 14 }}>
-                  <Link href="/salary" style={{ color: t.copper, textDecoration: "underline" }}>
-                    View all salary guides →
-                  </Link>
-                </p>
-              </section>
-            </>
-          )}
-
-          {/* ── Bottom CTA ───────────────────────────────────────────── */}
-          <section style={{
-            marginTop: 56, padding: "32px 28px",
-            background: t.creamSoft, borderRadius: 16, textAlign: "center",
-          }}>
-            <h2 style={{ ...serif, fontSize: 26, fontWeight: 400, margin: 0, letterSpacing: "-0.01em" }}>
-              Stop reading. Start practicing.
-            </h2>
-            <p style={{ fontSize: 14, color: sand, margin: "10px 0 20px", lineHeight: 1.5, maxWidth: 480, marginInline: "auto" }}>
-              Reading interview tips is not the same as interview practice. The AI interviewer asks
-              questions, listens to your voice answer, and grades your structure and delivery, in 2 minutes.
-            </p>
-            <Link href="/signup?source=interview-prep-cta" style={{
-              display: "inline-flex", alignItems: "center", gap: 8,
-              background: copper, color: cream, textDecoration: "none",
-              padding: "14px 28px", borderRadius: 8, fontSize: 15, fontWeight: 500,
-            }}>
-              Start free practice → 2 sessions, no card
-            </Link>
-          </section>
-
-        </div>
-      </main>
-      <FooterDome />
-      <MobileStickyCTA />
+      {safePage === 1 && <ConsentGatedAdSense />}
+      <HubTemplate
+        kicker="Complete Guide · 2026"
+        title={safePage === 1 ? "Interview Preparation Guide for India 2026" : "Company Interview Directory"}
+        dek={safePage === 1
+          ? "Not all Indian interviews are the same. TCS wants aptitude. Razorpay wants system design. McKinsey wants case studies. This guide maps the terrain and links you directly to practice for each company."
+          : `Page ${safePage} of ${totalCompanyPages}. Practice guides for every company in the directory.`}
+        crumbs={safePage === 1
+          ? [{ label: "Interview prep" }]
+          : [{ label: "Interview prep", href: "/interview-prep" }, { label: `Page ${safePage}` }]}
+        stats={[{ label: "Company guides", value: String(flat.length) }, { label: "Free sessions", value: "2" }]}
+        cta={["Start free mock interview", "/signup?source=interview-prep"]}
+        sections={[
+          ...(safePage === 1 ? guideSections : []),
+          ...companySections,
+          ...paginationSection,
+          ...(safePage === 1 ? tailSections : []),
+        ]}
+        faqs={safePage === 1 ? faqs : undefined}
+        close={{ kicker: "Practise", title: "Stop reading. Start practicing.", body: "Reading interview tips is not the same as interview practice. The AI interviewer asks questions, listens to your voice answer, and grades your structure and delivery, in 2 minutes.", primary: ["Start free practice", "/signup?source=interview-prep-cta"] }}
+      />
     </>
-  );
-}
-
-/* Reusable company group section. */
-function CompanyGroup({
-  id, heading, description, pages, companyLabel, focusLabel,
-}: {
-  id?: string;
-  heading: string;
-  description: string;
-  pages: typeof SEO_PAGES;
-  companyLabel: Record<string, string>;
-  focusLabel: Record<string, string>;
-}) {
-  if (pages.length === 0) return null;
-  return (
-    <section id={id} style={{ marginTop: 56, scrollMarginTop: 24 }}>
-      <h2 style={{ fontFamily: fonts.serif, fontSize: 26, fontWeight: 400, letterSpacing: "-0.01em", margin: "0 0 6px" }}>
-        {heading}
-      </h2>
-      <p style={{ fontSize: 14, color: t.inkSoft, margin: "0 0 18px", lineHeight: 1.6 }}>{description}</p>
-      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
-        {pages.map((p) => (
-          <li key={p.slug}>
-            <Link href={questionHref(p.slug)} style={{
-              display: "block", padding: "14px 16px",
-              background: t.creamRaised, border: `1px solid ${t.line}`, borderRadius: 10,
-              textDecoration: "none", color: t.coal,
-            }}>
-              <div style={{ fontFamily: fonts.mono, fontSize: 10, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: t.copper, marginBottom: 4 }}>
-                {companyLabel[p.company] ?? p.company} · {focusLabel[p.focus] ?? p.focus}
-              </div>
-              <div style={{ fontFamily: fonts.sans, fontSize: 14, fontWeight: 500, lineHeight: 1.4, color: t.coal }}>
-                {p.searchPhrase}
-              </div>
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }

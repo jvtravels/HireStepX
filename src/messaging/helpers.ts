@@ -11,6 +11,8 @@ export interface ThreadMessage {
   attachmentMime: string | null;
   flagged: boolean;
   createdAt: string;
+  /** Employer-side messages only: which teammate wrote it. */
+  sentBy?: { name: string; isYou: boolean };
 }
 
 export interface InboxItem {
@@ -85,6 +87,8 @@ export function buildThreadRows(messages: ThreadMessage[], now: Date = new Date(
     const continues =
       prev !== null &&
       prev.senderRole === m.senderRole &&
+      prev.sentBy?.name === m.sentBy?.name &&
+      prev.sentBy?.isYou === m.sentBy?.isYou &&
       new Date(m.createdAt).getTime() - new Date(prev.createdAt).getTime() < GROUP_WINDOW_MS;
     rows.push({ kind: "message", key: m.id, message: m, showHeader: !continues });
     prev = m;

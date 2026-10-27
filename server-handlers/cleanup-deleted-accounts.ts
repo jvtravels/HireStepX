@@ -11,11 +11,12 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { supabaseUrl, slog } from "./_shared";
 import { eraseUserData, posthogConfigFromEnv } from "./_erase-user";
 import { sendErasureEmail } from "./_erase-user-email";
+import { employerErasureOptions, planErasureExit } from "./_employer-team-helpers";
 
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 const BATCH_SIZE = 25;
 const TIME_BUDGET_MS = 45_000;
@@ -65,6 +66,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let retained = 0;
     let failed = 0;
     let restored = 0;
+    let blocked = 0;
     const started = Date.now();
 
     // The batch was read a while ago and each erasure takes seconds: an owner can restore the
@@ -92,6 +94,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!(await stillScheduled(id))) { restored++; continue; }
       await stampAttempt(id);
       try {
+        // A sole owner with teammates left is skipped, not erased: that would orphan the team.
+        // They stay soft-deleted until ownership is transferred. The stamp above rotates them
+        // to the back of the queue so they cannot starve it.
+        const exit = await planErasureExit(SUPABASE_URL, headers, id);
+        if (exit.kind === "blocked") { blocked++; continue; }
         const result = await eraseUserData(
           {
             fetchImpl: fetch,
@@ -102,6 +109,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             notify: (contact) => sendErasureEmail(fetch, { resendApiKey: RESEND_API_KEY, fromEmail: FROM_EMAIL, appUrl: APP_URL }, contact),
             // Counts only; never an id or email.
             log: (msg, fields) => slog.info(msg, fields),
+            // The company (or membership) goes before the profile and login, so a failed
+            // run leaves the account soft-deleted and is retried.
+            ...employerErasureOptions(SUPABASE_URL, headers, id, exit),
           },
           id,
         );
@@ -118,7 +128,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed, skippedRestored: restored });
+    slog.info("cleanup-deleted-accounts: run complete", { erased: deleted, retainedFinancial: retained, failed, skippedRestored: restored, skippedBlockedOwners: blocked });
     // A stuck erasure is a DPDP deadline risk, so any failure keeps the heartbeat stale.
     await recordCronResult("cleanup-deleted-accounts", { errors: failed });
     return res.status(200).json({ deleted, retained, failed });

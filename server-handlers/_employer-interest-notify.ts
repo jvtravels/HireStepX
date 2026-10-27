@@ -33,7 +33,7 @@ async function sendInterestEmail(t: InterestTarget, fetchImpl: typeof fetch): Pr
   if (!apiKey || !t.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t.email)) return;
   if (await isSuppressed(preferenceDepsFromEnv(), t.candidateUserId, "employer_notifications")) return;
   const parts = await marketingEmailParts(t.candidateUserId, "employer_notifications");
-  const appUrl = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+  const appUrl = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
   const firstName = escapeHtml((t.name || "there").split(" ")[0]);
   const headline = "An employer is interested in your profile.";
   const html = emailShell({

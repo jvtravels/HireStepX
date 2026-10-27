@@ -77,6 +77,8 @@ interface MatchSpec {
 }
 interface World {
   authOk: boolean;
+  authUserId: string;
+  member: { employerId: string; role: string } | null; // null = no employer_members row and no legacy company
   email: string | null;
   emailConfirmed: boolean;
   website: string | null;
@@ -117,7 +119,11 @@ function routedFetch() {
     const body = init?.body ? JSON.parse(String(init.body)) : null;
     calls.push({ method, url, body });
 
-    if (url.endsWith("/auth/v1/user")) return world.authOk ? json({ id: EMP }) : json({}, 401);
+    if (url.endsWith("/auth/v1/user")) return world.authOk ? json({ id: world.authUserId }) : json({}, 401);
+    if (url.includes("employer_members?user_id=eq.")) {
+      return json(world.member ? [{ employer_id: world.member.employerId, user_id: world.authUserId, role: world.member.role, email: "", name: null, last_active_at: new Date().toISOString() }] : []);
+    }
+    if (url.includes("/rest/v1/employers?id=eq.")) return json([]);
     if (url.includes("/auth/v1/admin/users/")) {
       return json({ email: world.email, email_confirmed_at: world.emailConfirmed ? "2026-01-01T00:00:00Z" : null });
     }
@@ -143,7 +149,8 @@ function routedFetch() {
     }
     if (url.includes("employer_requirements?id=eq.")) {
       const id = decodeURIComponent(url.split("employer_requirements?id=eq.")[1].split("&")[0]);
-      if (id !== REQ || world.ownerId !== EMP) return json([]);
+      const owner = decodeURIComponent(url.split("employer_id=eq.")[1]?.split("&")[0] ?? "");
+      if (id !== REQ || (owner && owner !== world.ownerId)) return json([]);
       return json([{ id: REQ, status: world.reqStatus, employers: { website: world.website, suspended_at: world.suspendedAt, verification_tier: world.storedTier } }]);
     }
     if (url.includes("requirement_matches?requirement_id=eq.")) {
@@ -200,7 +207,7 @@ beforeEach(() => {
   supabaseServiceHeaders.mockReturnValue({ apikey: "service-key", Authorization: "Bearer service-key" });
   calls = [];
   world = {
-    authOk: true, email: "boss@acme.com", emailConfirmed: true, website: "https://acme.com", storedTier: null,
+    authOk: true, authUserId: EMP, member: { employerId: EMP, role: "owner" }, email: "boss@acme.com", emailConfirmed: true, website: "https://acme.com", storedTier: null,
     suspendedAt: null, reqStatus: "open", ownerId: EMP, matches: [{ id: M1 }], blockedCandidates: new Set(),
     openOrders: [], unlocked24h: 0, razorpay: { ok: true, status: 200, id: "order_new" }, insertStatus: 201, matchLookupStatus: 200,
     creditBalance: null, creditSpend: (a) => a, spendHttpStatus: 200, spentRows: [],
@@ -266,7 +273,7 @@ describe("employer-create-unlock-order — single mode", () => {
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ orderId: "order_new", amount: 5900, currency: "INR", keyId: "rzp_test_key123" });
     expect((res.body as Record<string, unknown>).reused).toBeUndefined();
-    expect(razorpayCall()?.body).toMatchObject({ amount: 5900, currency: "INR", notes: { employerId: EMP, mode: "single", requirementId: REQ, matchIds: M1 } });
+    expect(razorpayCall()?.body).toMatchObject({ amount: 5900, currency: "INR", notes: { employerId: EMP, createdBy: EMP, mode: "single", requirementId: REQ, matchIds: M1 } });
     const insert = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
     expect(insert?.body).toMatchObject({ razorpay_order_id: "order_new", employer_id: EMP, requirement_id: REQ, mode: "single", match_ids: [M1], amount: 5900, status: "created" });
   });
@@ -550,7 +557,7 @@ describe("employer-create-unlock-order — batch mode", () => {
     const res = mockRes();
     await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
     expect(res.statusCode).toBe(200);
-    expect(razorpayCall()?.body).toMatchObject({ amount: 29900, notes: { employerId: EMP, mode: "batch", requirementId: REQ, matchCount: "10" } });
+    expect(razorpayCall()?.body).toMatchObject({ amount: 29900, notes: { employerId: EMP, createdBy: EMP, mode: "batch", requirementId: REQ, matchCount: "10" } });
     const notes = (razorpayCall()?.body as { notes: Record<string, string> }).notes;
     expect(notes.matchIds).toBeUndefined();
     const insert = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
@@ -758,5 +765,52 @@ describe("employer-create-unlock-order — account credit", () => {
     await handler(mockReq({ mode: "single", matchId: M1 }), res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ orderId: "order_new", creditAppliedPaise: 2000 });
+  });
+});
+
+describe("employer-create-unlock-order — team roles", () => {
+  const COMPANY = "44444444-4444-4444-8444-444444444444";
+  const MEMBER = "55555555-5555-4555-8555-555555555555";
+
+  it("403s a viewer before any match lookup or Razorpay call", async () => {
+    world.authUserId = MEMBER;
+    world.member = { employerId: COMPANY, role: "viewer" };
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(403);
+    expect(razorpayCall()).toBeUndefined();
+    expect(calls.some((c) => c.url.includes("requirement_matches"))).toBe(false);
+  });
+
+  it("404s a user who belongs to no company", async () => {
+    world.authUserId = MEMBER;
+    world.member = null;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+    expect(res.statusCode).toBe(404);
+    expect(razorpayCall()).toBeUndefined();
+  });
+
+  it("lets a member buy for the company: everything is scoped to the company id and the order records who created it", async () => {
+    world.authUserId = MEMBER;
+    world.member = { employerId: COMPANY, role: "member" };
+    world.ownerId = COMPANY;
+    const res = mockRes();
+    await handler(mockReq({ mode: "single", matchId: M1 }), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(razorpayCall()?.body).toMatchObject({ notes: { employerId: COMPANY, createdBy: MEMBER, mode: "single", matchIds: M1 } });
+    const insert = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
+    expect(insert?.body).toMatchObject({ employer_id: COMPANY });
+    const openLookup = calls.find((c) => c.method === "GET" && c.url.includes("employer_unlock_orders?employer_id=eq."));
+    expect(openLookup?.url).toContain(`employer_id=eq.${COMPANY}`);
+  });
+
+  it("keeps the per-user rate limit on the acting member, not the company", async () => {
+    world.authUserId = MEMBER;
+    world.member = { employerId: COMPANY, role: "member" };
+    world.ownerId = COMPANY;
+    await handler(mockReq({ mode: "single", matchId: M1 }), mockRes());
+    expect(isRateLimited).toHaveBeenCalledWith(`user:${MEMBER}`, "employer-create-unlock-order", 15, 60_000);
   });
 });

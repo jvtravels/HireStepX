@@ -97,7 +97,7 @@ const aboutCss = `
 .ab-h1 { margin: 16px 0 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 52px; line-height: 1.05; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; color: var(--ink); }
 .ab-lede { margin: 20px 0 0; max-width: 46ch; font-size: 18px; line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
 .ab-cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
-.ab-stage { position: relative; display: grid; align-content: center; gap: 20px; padding: 40px 36px 44px; border-radius: 28px; border: 1px solid var(--line); background: linear-gradient(135deg, oklch(0.945 0.04 55) 0%, oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285) 100%); overflow: hidden; min-height: 460px; }
+.ab-stage { position: relative; display: grid; align-content: center; gap: 20px; padding: 40px 36px 44px; border-radius: 28px; border: 1px solid var(--line); background: var(--sky); overflow: hidden; min-height: 460px; }
 .ab-card { background: var(--white); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 1px 2px oklch(0.2 0.03 280 / 0.04), 0 18px 32px -12px oklch(0.2 0.03 280 / 0.14); }
 .ab-q { padding: 20px 22px 22px; display: grid; gap: 14px; max-width: 360px; }
 .ab-q em { font-style: normal; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
@@ -160,7 +160,7 @@ const aboutCss = `
 .ab-pick:hover { transform: translateX(4px); }
 .ab-pick:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .ab-pick[data-on="true"] { background: var(--white); border-color: var(--ink-3); box-shadow: 0 14px 28px -14px oklch(0.2 0.03 280 / 0.22); }
-.ab-pic { position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: linear-gradient(135deg, oklch(0.945 0.04 55), oklch(0.95 0.035 320) 50%, oklch(0.935 0.045 285)); }
+.ab-pic { position: relative; width: 56px; height: 56px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--sky); }
 .ab-pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .ab-pic b { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 500; color: var(--ink-3); }
 .ab-pick h3 { margin: 0; font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 19px; line-height: 1.2; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); }

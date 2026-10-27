@@ -1,17 +1,8 @@
 import type { Metadata } from "next";
 import ConsentGatedAdSense from "../../ConsentGatedAdSense";
-import Link from "next/link";
 import { SEO_PAGES } from "../../../data/seo-pages";
-import { COMPANY_LABEL as ALL_LABELS } from "../../../data/company-labels";
 import { breadcrumb, ldJson } from "@/marketing-v2/_schema";
-import { NavV2, MobileStickyCTA } from "@/marketing-v2/HomepageV2";
-import { FooterDome } from "@/marketing-v2/FooterDome";
-import { tokens as t, fonts } from "@/auth/_tokens";
-import {
-  editorialCSS,
-  DarkBand,
-  ctaPrimaryStyle,
-} from "@/marketing-v2/_editorial";
+import { HubTemplate, type HubSection } from "@/home2/HubTemplate";
 import { questionHref } from "../../../src/seoLinks";
 
 /* /companies — index / hub page listing all 55+ company interview
@@ -84,8 +75,6 @@ export async function generateMetadata({
 }
 
 /* ── Label maps ─────────────────────────────────────────────────────── */
-
-const COMPANY_LABEL = ALL_LABELS;
 
 const FOCUS_LABEL: Record<string, string> = {
   behavioral: "Behavioural", technical: "Technical", "system-design": "System Design",
@@ -266,289 +255,64 @@ export default async function CompaniesIndexPage({
     ],
   };
 
+  const companySections: HubSection[] = sections.map((section) => {
+    const group = groupsWithPages.find((g) => g.id === section.id)!;
+    const continued = groupAbsStart[section.id] < globalStartOfPage;
+    return {
+      kind: "grid",
+      id: continued ? `${section.id}-continued` : section.id,
+      title: `${group.label}${continued ? " (continued)" : ""}`,
+      sub: `${group.description} ${group.pages.length} ${group.pages.length === 1 ? "guide" : "guides"} total.`,
+      items: section.pages.map((p) => ({
+        label: p.searchPhrase,
+        href: questionHref(p.slug),
+        meta: FOCUS_LABEL[p.focus] ?? p.focus,
+      })),
+      initial: 30,
+      filter: section.pages.length > 24,
+    };
+  });
+
+  const paginationSection: HubSection[] = totalCompanyPages > 1
+    ? [{
+        kind: "grid",
+        id: "directory-pages",
+        title: "Company directory pages",
+        sub: `${flat.length} companies · page ${safePage} of ${totalCompanyPages}`,
+        items: Array.from({ length: totalCompanyPages }, (_, i) => i + 1).map((n) => ({
+          label: `Page ${n}`,
+          href: companyPageHref(n),
+          meta: groupsWithPages.filter((g) => groupStartPage(g.id) === n).map((g) => g.label).join(", ") || undefined,
+        })),
+        initial: 60,
+      }]
+    : [];
+
+  const faqs = faqSchema.mainEntity.map((f) => ({ q: f.name, a: f.acceptedAnswer.text }));
+
   return (
     <>
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
       <script nonce={nonce || undefined} type="application/ld+json" dangerouslySetInnerHTML={ldJson(breadcrumb([{ name: "Companies", path: "/companies" }]))} />
 
-      <style>{editorialCSS + `
-        @media (max-width: 720px) {
-          .co-group-split { flex-direction: column !important; gap: 32px !important; }
-          .co-group-label { width: 100% !important; }
-        }
-      `}</style>
       {/* Mediapartners-Google (AdSense's ad crawler) isn't governed by the
           noindex meta tag above — only loading ads on the canonical page 1
           keeps thin, noindexed pagination pages out of ad-serving scope. */}
-      {safePage === 1 && (
-        <ConsentGatedAdSense />
-      )}
-      <NavV2 />
-      <main style={{ background: t.cream, color: t.coal, minHeight: "100dvh", fontFamily: fonts.sans }}>
-
-        {/* ── Hero — compact single-column ─────────────────────────── */}
-        <header style={{ paddingTop: 72, paddingBottom: 64, borderBottom: `1px solid ${t.line}` }}>
-          <div className="ed-container">
-            <h1 style={{ fontFamily: fonts.serif, fontSize: "clamp(36px, 4.2vw, 54px)", fontWeight: 400, lineHeight: 1.08, letterSpacing: "-0.024em", color: t.coal, margin: "0 0 20px", maxWidth: "22ch" }}>
-              Every company&apos;s interview,{" "}
-              <em style={{ fontStyle: "italic", color: t.copper }}>decoded.</em>
-            </h1>
-            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-              <Link href="/signup?source=companies-index" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-                Pick a company, start free <span className="ed-cta-arrow" aria-hidden>→</span>
-              </Link>
-              <span style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkFaint }}>
-                {SEO_PAGES.length} guides · 2 free AI mocks per company
-                {totalCompanyPages > 1 && ` · page ${safePage} of ${totalCompanyPages}`}
-              </span>
-            </div>
-          </div>
-        </header>
-
-        {/* ── Category nav strip ────────────────────────────────────── */}
-        {/* overflowX on the outer div (not the nav) so the constrained block
-            width triggers horizontal scroll when 5 tabs exceed the viewport. */}
-        <div style={{ position: "relative", borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
-          {/* Right fade signals horizontal scroll on narrower viewports */}
-          <div aria-hidden style={{ position: "absolute", right: 0, top: 0, bottom: 1, width: 48, background: `linear-gradient(to right, transparent, ${t.creamSoft})`, pointerEvents: "none", zIndex: 1 }} />
-          <div style={{ overflowX: "auto" as const }}>
-          <div className="ed-container">
-            <nav aria-label="Browse company categories" style={{ display: "flex", gap: 0 }}>
-              {groupsWithPages.map((group, gi) => {
-                const hint = group.companies
-                  .filter((c) => SEO_PAGES.some((p) => p.company === c))
-                  .slice(0, 2)
-                  .map((c) => COMPANY_LABEL[c] ?? c)
-                  .join(" · ");
-                return (
-                  <Link
-                    key={group.id}
-                    href={companyPageHref(groupStartPage(group.id), group.id)}
-                    className="ed-cta ed-tab"
-                    style={{ display: "flex", flexDirection: "column" as const, gap: 2, padding: "16px 24px 14px", textDecoration: "none", borderRight: gi < groupsWithPages.length - 1 ? `1px solid ${t.line}` : "none", flexShrink: 0, whiteSpace: "nowrap" as const }}
-                  >
-                    <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{group.label}</span>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, color: t.inkFaint }}>{hint} · {group.pages.length}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-          </div>
-        </div>
-
-        {/* ── Company groups — paginated, 30 per page ─────────────────── */}
-        {sections.map((section) => {
-          const group = groupsWithPages.find((g) => g.id === section.id)!;
-          const gi = groupsWithPages.indexOf(group);
-          const continued = groupAbsStart[section.id] < globalStartOfPage;
-
-          return (
-            <section
-              key={`${section.id}-${globalStartOfPage}`}
-              id={continued ? undefined : section.id}
-              className="ed-section ed-reveal"
-              style={{
-                paddingTop: 80,
-                paddingBottom: 80,
-                borderBottom: `1px solid ${t.line}`,
-                background: t.cream,
-                scrollMarginTop: 96,
-              }}
-            >
-              <div className="ed-container">
-                <div className="co-group-split" style={{ display: "flex", gap: 64, alignItems: "flex-start" }}>
-
-                  {/* Left panel */}
-                  <div className="co-group-label" style={{ flexShrink: 0, width: 256, position: "sticky", top: 24, alignSelf: "flex-start" }}>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 12px" }}>
-                      {String(gi + 1).padStart(2, "0")} / {String(groupsWithPages.length).padStart(2, "0")}
-                    </p>
-                    <h2 style={{ fontFamily: fonts.sans, fontSize: 18, fontWeight: 700, color: t.coal, margin: "0 0 12px", lineHeight: 1.3, letterSpacing: "-0.01em" }}>
-                      {group.label}{continued ? " (continued)" : ""}
-                    </h2>
-                    <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.65, margin: "0 0 18px" }}>
-                      {group.description}
-                    </p>
-                    <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase" as const, color: t.copper }}>
-                      {group.pages.length} {group.pages.length === 1 ? "guide" : "guides"} total
-                    </span>
-                  </div>
-
-                  {/* Right: scannable list rows */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    {section.pages.map((page, i) => (
-                      <Link
-                        key={page.slug}
-                        href={questionHref(page.slug)}
-                        className="ed-cta ed-row"
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 18,
-                          padding: "14px 8px",
-                          borderBottom: `1px solid ${t.line}`,
-                          textDecoration: "none",
-                          margin: "0 -8px",
-                        }}
-                      >
-                        <span aria-hidden style={{ fontFamily: fonts.mono, fontSize: 12, color: t.inkFaint, lineHeight: 1, flexShrink: 0, minWidth: 22 }}>
-                          {i + 1}
-                        </span>
-                        <span style={{ flex: 1, fontFamily: fonts.sans, fontSize: 15, fontWeight: 500, lineHeight: 1.4, color: t.coal }}>
-                          {page.searchPhrase}
-                        </span>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 600, color: t.inkFaint, background: t.creamSoft, border: `1px solid ${t.line}`, borderRadius: 999, padding: "3px 10px", flexShrink: 0, whiteSpace: "nowrap" as const }}>
-                          {FOCUS_LABEL[page.focus] ?? page.focus}
-                        </span>
-                        <span style={{ fontFamily: fonts.sans, fontSize: 13, fontWeight: 600, color: t.copper, flexShrink: 0 }} aria-hidden>→</span>
-                      </Link>
-                    ))}
-                  </div>
-
-                </div>
-              </div>
-            </section>
-          );
-        })}
-
-        {/* ── Pagination — 30 companies per page ───────────────────────── */}
-        {totalCompanyPages > 1 && (
-          <nav
-            aria-label="Company directory pages"
-            style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "32px 24px" }}
-          >
-            <span style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, marginRight: 10, whiteSpace: "nowrap" }}>
-              {flat.length} companies · page {safePage} of {totalCompanyPages}
-            </span>
-
-            <Link
-              href={companyPageHref(safePage - 1)}
-              aria-disabled={safePage === 1}
-              tabIndex={safePage === 1 ? -1 : undefined}
-              style={{
-                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                background: safePage === 1 ? t.creamSoft : "#fff",
-                color: safePage === 1 ? t.inkFaint : t.coal,
-                textDecoration: "none",
-                pointerEvents: safePage === 1 ? "none" : "auto",
-                opacity: safePage === 1 ? 0.45 : 1,
-              }}
-            >
-              ← Prev
-            </Link>
-
-            {Array.from({ length: totalCompanyPages }, (_, i) => i + 1)
-              .filter((n) => n === 1 || n === totalCompanyPages || Math.abs(n - safePage) <= 1)
-              .reduce<(number | "…")[]>((acc, n) => {
-                const prev = acc[acc.length - 1];
-                if (typeof prev === "number" && n - prev > 1) acc.push("…");
-                acc.push(n);
-                return acc;
-              }, [])
-              .map((n, i) =>
-                n === "…" ? (
-                  <span key={`e-${i}`} style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, padding: "8px 4px" }}>…</span>
-                ) : (
-                  <Link
-                    key={n}
-                    href={companyPageHref(n)}
-                    aria-current={safePage === n ? "page" : undefined}
-                    style={{
-                      fontFamily: fonts.sans, fontSize: 13, fontWeight: safePage === n ? 700 : 400,
-                      minWidth: 36, height: 36, display: "inline-flex", alignItems: "center", justifyContent: "center",
-                      borderRadius: 8, border: `1.5px solid ${safePage === n ? t.copper : t.line}`,
-                      background: safePage === n ? t.copper : "#fff",
-                      color: safePage === n ? "#fff" : t.coal,
-                      textDecoration: "none",
-                    }}
-                  >
-                    {n}
-                  </Link>
-                ),
-              )}
-
-            <Link
-              href={companyPageHref(safePage + 1)}
-              aria-disabled={safePage === totalCompanyPages}
-              tabIndex={safePage === totalCompanyPages ? -1 : undefined}
-              style={{
-                fontFamily: fonts.sans, fontSize: 13, fontWeight: 500,
-                padding: "8px 16px", borderRadius: 8, border: `1.5px solid ${t.line}`,
-                background: safePage === totalCompanyPages ? t.creamSoft : "#fff",
-                color: safePage === totalCompanyPages ? t.inkFaint : t.coal,
-                textDecoration: "none",
-                pointerEvents: safePage === totalCompanyPages ? "none" : "auto",
-                opacity: safePage === totalCompanyPages ? 0.45 : 1,
-              }}
-            >
-              Next →
-            </Link>
-          </nav>
-        )}
-
-        {/* ── FAQ section — page 1 only, avoids duplicating across pages ── */}
-        {safePage === 1 && (
-        <section style={{ paddingTop: 80, paddingBottom: 80, borderBottom: `1px solid ${t.line}`, background: t.creamSoft }}>
-          <div className="ed-container">
-            <p style={{ fontFamily: fonts.sans, fontSize: 11, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase" as const, color: t.inkFaint, margin: "0 0 16px" }}>
-              FAQ
-            </p>
-            <h2 style={{ fontFamily: fonts.serif, fontSize: "clamp(26px, 3vw, 36px)", fontWeight: 400, color: t.coal, margin: "0 0 48px", lineHeight: 1.15, letterSpacing: "-0.02em", maxWidth: "32ch" }}>
-              Common questions about company interview prep
-            </h2>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))", gap: 32 }}>
-              {[
-                {
-                  q: "Which companies hire the most freshers in India?",
-                  a: "TCS, Infosys, Wipro, Cognizant, and Accenture collectively hire over 150,000 freshers per year in India. Their interviews focus on aptitude, basic data structures, and HR rounds, with less emphasis on competitive coding than product companies like Flipkart or Razorpay.",
-                },
-                {
-                  q: "How different is a FAANG interview from a Service IT interview?",
-                  a: "Service IT interviews (TCS, Infosys) are primarily aptitude tests, verbal ability, and one or two HR rounds. FAANG interviews (Google, Amazon, Microsoft) require 3–5 rounds of competitive DSA, system design, and behavioral interviews. Most candidates need 3–6 months of dedicated preparation for FAANG.",
-                },
-                {
-                  q: "What is the typical interview process at Indian product companies like Razorpay or Zerodha?",
-                  a: "Indian product companies typically have 4–6 rounds: an online coding assessment, 1–2 DSA rounds, a system design round, an engineering manager round, and an HR round. Behavioral questions follow the STAR method. Preparation time is 6–12 weeks.",
-                },
-                {
-                  q: "How do consulting interviews (McKinsey, BCG, Deloitte) differ from tech interviews?",
-                  a: "Consulting interviews have two main components: fit questions (leadership, teamwork, 'tell me about yourself') and case studies (market sizing, profitability analysis, business strategy). There is no coding. The evaluation framework is completely different from tech: verbal fluency and structured reasoning matter most.",
-                },
-                {
-                  q: "Can I use HireStepX to practice for multiple companies?",
-                  a: "Yes. Each company on HireStepX has its own question set tuned to that company's known interview style: TCS NQT aptitude format, Google-style DSA, Amazon's leadership-principle behavioral questions. You get 2 free mock sessions per company and can switch companies any time.",
-                },
-              ].map(({ q, a }, i) => (
-                <div key={i} style={{ borderTop: `2px solid ${t.coal}`, paddingTop: 20 }}>
-                  <h3 style={{ fontFamily: fonts.sans, fontSize: 15, fontWeight: 700, color: t.coal, margin: "0 0 10px", lineHeight: 1.4 }}>
-                    {q}
-                  </h3>
-                  <p style={{ fontFamily: fonts.sans, fontSize: 14, color: t.inkSoft, lineHeight: 1.7, margin: 0 }}>
-                    {a}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-        )}
-
-        {/* ── Closing band ──────────────────────────────────────────── */}
-        <DarkBand eyebrow="Reading won't get you hired" title="Pick your company," accent="start answering.">
-          <p style={{ fontFamily: fonts.sans, fontSize: 16, color: t.creamMuted, lineHeight: 1.65, maxWidth: "38ch", margin: 0 }}>
-            The AI interviews you in that company&apos;s exact question style, listens to your voice, and scores your answer in two minutes.
-          </p>
-          <Link href="/signup?source=companies-index-cta" className="ed-cta" style={ctaPrimaryStyle("lg")}>
-            Start free: 2 mock interviews <span className="ed-cta-arrow" aria-hidden>→</span>
-          </Link>
-        </DarkBand>
-
-      </main>
-      <FooterDome />
-      <MobileStickyCTA />
+      {safePage === 1 && <ConsentGatedAdSense />}
+      <HubTemplate
+        kicker="Company interview directory"
+        title="Every company's interview, decoded."
+        dek={`${SEO_PAGES.length} guides, 2 free AI mocks per company.${totalCompanyPages > 1 ? ` Page ${safePage} of ${totalCompanyPages}.` : ""}`}
+        crumbs={safePage === 1
+          ? [{ label: "Companies" }]
+          : [{ label: "Companies", href: "/companies" }, { label: `Page ${safePage}` }]}
+        stats={[{ label: "Guides", value: String(SEO_PAGES.length) }, { label: "Free mocks per company", value: "2" }]}
+        cta={["Pick a company, start free", "/signup?source=companies-index"]}
+        sections={[...companySections, ...paginationSection]}
+        faqs={safePage === 1 ? faqs : undefined}
+        close={{ kicker: "Reading won't get you hired", title: "Pick your company, start answering.", body: "The AI interviews you in that company's exact question style, listens to your voice, and scores your answer in two minutes.", primary: ["Start free: 2 mock interviews", "/signup?source=companies-index-cta"] }}
+      />
     </>
   );
 }

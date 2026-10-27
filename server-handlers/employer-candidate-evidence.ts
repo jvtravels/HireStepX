@@ -45,13 +45,14 @@ import { emailShell, hero, para, button, escapeHtml } from "./_email-theme";
 import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 import { loadEmployerMatchAccess, loadAuthIdentity, contactReleasable, DENIED_STATUS } from "./_entitlements";
 import { after } from "next/server";
+import { requireEmployerPermission } from "./_employer-team-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
 const RESEND_API_KEY = (process.env.RESEND_API_KEY || "").trim();
 const FROM_EMAIL = process.env.FROM_EMAIL || "HireStepX <hello@hirestepx.com>";
-const APP_URL = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+const APP_URL = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
 
 function serviceHeaders(): Record<string, string> {
   return { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}` };
@@ -170,11 +171,14 @@ export default async function handler(req: Request): Promise<Response> {
   }
 
   try {
+    const gate = await requireEmployerPermission(SUPABASE_URL, serviceHeaders(), auth.userId, "candidates.read");
+    if (!gate.ok) return new Response(JSON.stringify({ error: gate.error }), { status: gate.status, headers });
+
     const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), auth.userId);
     const decision = await loadEmployerMatchAccess({
       supabaseUrl: SUPABASE_URL,
       headers: serviceHeaders(),
-      employerId: auth.userId,
+      employerId: gate.ctx.employerId,
       matchId,
       authEmail: identity.email,
       emailConfirmed: identity.emailConfirmed,

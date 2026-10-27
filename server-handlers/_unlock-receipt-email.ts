@@ -103,7 +103,7 @@ export async function sendUnlockReceiptEmail(p: {
     const to = await lookupEmail(p.supabaseUrl, p.headers, p.receipt.employerId, f);
     if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(to)) return false;
     const company = await lookupCompany(p.supabaseUrl, p.headers, p.receipt.employerId, f);
-    const appUrl = (process.env.APP_URL || "https://hirestepx.vercel.app").replace(/\/$/, "");
+    const appUrl = (process.env.APP_URL || "https://hirestepx.com").replace(/\/$/, "");
     const { subject, html } = buildReceiptEmail(p.receipt, { company, appUrl, taxInvoice: hasSupplierGstin() });
     const ac = new AbortController();
     const timer = setTimeout(() => ac.abort(), 8_000);

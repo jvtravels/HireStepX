@@ -44,6 +44,9 @@ vi.mock("../../server-handlers/_shared", async (importOriginal) => {
 const sendOpsAlert = vi.fn(async (..._a: unknown[]) => {});
 vi.mock("../../server-handlers/_ops-alert", () => ({ sendOpsAlert: (...a: unknown[]) => sendOpsAlert(...a) }));
 
+const notifyMock = vi.fn(async (..._a: unknown[]) => {});
+vi.mock("../../server-handlers/_notify", () => ({ notify: (...a: unknown[]) => notifyMock(...a) }));
+
 const { default: handler } = await import("../../server-handlers/employer-verify-unlock-payment");
 
 const ORDER_ID = "order_ABCDEF123456";
@@ -81,6 +84,11 @@ let db: FakeUnlockDb;
 let payments: FakeRzpPayment[];
 let rzpOrders: Record<string, { amount: number; notes?: Record<string, unknown> }>;
 let authed: boolean;
+let authUserId: string;
+let member: { employerId: string; role: string } | null; // null = no employer_members row and no legacy company
+let attributionColumns: boolean; // false simulates migration 0061 (paid_by / unlocked_by) not applied
+const claimedMatches = new Set<string>();
+let attributionCalls: Array<{ method: string; url: string; body: Record<string, unknown> | null }>;
 let rzpDown: boolean;
 let paymentLookups: number;
 
@@ -90,7 +98,23 @@ const capturedPayment = (over: Partial<FakeRzpPayment> = {}): FakeRzpPayment =>
 function installFetch() {
   global.fetch = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    if (url.endsWith("/auth/v1/user")) return authed ? new Response(JSON.stringify({ id: "emp-1" })) : new Response("{}", { status: 401 });
+    if (url.endsWith("/auth/v1/user")) return authed ? new Response(JSON.stringify({ id: authUserId })) : new Response("{}", { status: 401 });
+    if (url.includes("employer_members?user_id=eq.")) {
+      return new Response(JSON.stringify(member ? [{ employer_id: member.employerId, user_id: authUserId, role: member.role, email: "", name: null, last_active_at: new Date().toISOString() }] : []));
+    }
+    if (url.includes("employer_audit_log")) {
+      attributionCalls.push({ method: "POST", url, body: init?.body ? JSON.parse(String(init.body)) : null });
+      return new Response(null, { status: 201 });
+    }
+    if (url.includes("paid_by=is.null") || url.includes("unlocked_by=is.null")) {
+      attributionCalls.push({ method: "PATCH", url, body: init?.body ? JSON.parse(String(init.body)) : null });
+      if (!attributionColumns) return new Response("{}", { status: 400 });
+      if (!url.includes("unlocked_by=is.null")) return new Response(null, { status: 204 });
+      // Like PostgREST with `unlocked_by is null`: only matches nobody has claimed yet come back.
+      const ids = (/id=in\.\(([^)]*)\)/.exec(url)?.[1] ?? "").split(",").filter((id) => id && !claimedMatches.has(id));
+      ids.forEach((id) => claimedMatches.add(id));
+      return new Response(JSON.stringify(ids.map((id) => ({ id }))), { status: 200 });
+    }
     if (url.includes("api.razorpay.com")) {
       if (/\/payments\/pay_/.test(url)) paymentLookups += 1;
       return fakeRazorpay({ payments, orders: rzpOrders, down: rzpDown })(input);
@@ -109,6 +133,11 @@ beforeEach(() => {
   supabaseAnonKey.mockReturnValue("anon-key");
   supabaseServiceHeaders.mockReturnValue({ apikey: "service-key", Authorization: "Bearer service-key" });
   authed = true;
+  authUserId = "emp-1";
+  member = { employerId: "emp-1", role: "owner" };
+  attributionColumns = true;
+  attributionCalls = [];
+  claimedMatches.clear();
   rzpDown = false;
   paymentLookups = 0;
   payments = [capturedPayment()];
@@ -152,6 +181,111 @@ describe("employer-verify-unlock-payment — request gating", () => {
     res = mockRes();
     await handler(mockReq({ razorpay_order_id: "x", razorpay_payment_id: "y", razorpay_signature: "z" }), res);
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("employer-verify-unlock-payment — team roles", () => {
+  const COMPANY = "company-1";
+  const MEMBER = "user-member";
+  const PAYER = "11111111-1111-4111-8111-111111111111";
+  const attributionPatch = (needle: string) => attributionCalls.find((c) => c.method === "PATCH" && c.url.includes(needle));
+  const auditCalls = () => attributionCalls.filter((c) => c.url.includes("employer_audit_log"));
+
+  function companyOrder(over: Record<string, unknown> = {}) {
+    db = new FakeUnlockDb().seed({
+      orders: [order({ razorpay_order_id: ORDER_ID, employer_id: COMPANY, ...over })],
+      matches: [match("m1")],
+    });
+  }
+
+  it("403s a viewer before the signature is checked or anything is fetched from Razorpay", async () => {
+    authUserId = MEMBER;
+    member = { employerId: COMPANY, role: "viewer" };
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(403);
+    expect(paymentLookups).toBe(0);
+    expect(db.ledger).toHaveLength(0);
+  });
+
+  it("404s a user who belongs to no company", async () => {
+    authUserId = "stranger";
+    member = null;
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(404);
+    expect(paymentLookups).toBe(0);
+  });
+
+  it("403s when the order belongs to a different company than the caller's", async () => {
+    authUserId = MEMBER;
+    member = { employerId: COMPANY, role: "member" };
+    db.orders.get(ORDER_ID)!.employer_id = "company-2";
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(403);
+    expect(db.ledger).toHaveLength(0);
+    expect(db.matches.get("m1")?.unlocked).toBe(false);
+  });
+
+  it("books the purchase to the company, attributes it to the member who created the order, audits once and notifies the payer", async () => {
+    authUserId = MEMBER;
+    member = { employerId: COMPANY, role: "member" };
+    companyOrder();
+    rzpOrders = { [ORDER_ID]: { amount: 5900, notes: { employerId: COMPANY, createdBy: PAYER, mode: "single", matchIds: "m1" } } };
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(db.ledger[0]).toMatchObject({ employer_id: COMPANY, razorpay_payment_id: PAYMENT_ID });
+    expect(attributionPatch("employer_unlock_payments")?.body).toEqual({ paid_by: PAYER });
+    expect(attributionPatch("requirement_matches")?.body).toEqual({ unlocked_by: PAYER });
+    expect(auditCalls()).toHaveLength(1);
+    expect(auditCalls()[0].body).toMatchObject({
+      employer_id: COMPANY, actor_user_id: PAYER, action: "candidate.unlocked", entity_type: "match", entity_id: "m1",
+      meta: { orderId: ORDER_ID, mode: "single" },
+    });
+    expect(notifyMock).toHaveBeenCalledWith(expect.objectContaining({ userId: PAYER, type: "unlock_confirmed" }));
+  });
+
+  it("falls back to the verifying member when the order has no createdBy note (order from before teams)", async () => {
+    authUserId = MEMBER;
+    member = { employerId: COMPANY, role: "member" };
+    companyOrder();
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(attributionPatch("employer_unlock_payments")?.body).toEqual({ paid_by: MEMBER });
+    expect(auditCalls()[0].body).toMatchObject({ actor_user_id: MEMBER });
+  });
+
+  it("never un-records a captured payment when the paid_by / unlocked_by columns are not deployed", async () => {
+    attributionColumns = false;
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(db.ledger).toHaveLength(1);
+    expect(db.matches.get("m1")?.unlocked).toBe(true);
+  });
+
+  it("does not audit or attribute again on a replay of an already fulfilled order", async () => {
+    await handler(mockReq(validBody()), mockRes());
+    expect(auditCalls()).toHaveLength(1);
+    attributionCalls = [];
+    notifyMock.mockClear();
+    const res = mockRes();
+    await handler(mockReq(validBody()), res);
+    expect(res.statusCode).toBe(200);
+    expect(attributionCalls).toHaveLength(0);
+    expect(notifyMock).not.toHaveBeenCalled();
+  });
+
+  it("keeps the per-user rate limit on the acting member", async () => {
+    authUserId = MEMBER;
+    member = { employerId: COMPANY, role: "member" };
+    companyOrder();
+    await handler(mockReq(validBody()), mockRes());
+    expect(isRateLimited).toHaveBeenCalledWith(`user:${MEMBER}`, "employer-verify-unlock-payment", 15, 60_000);
   });
 });
 

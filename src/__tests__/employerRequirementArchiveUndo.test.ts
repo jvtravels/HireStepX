@@ -26,6 +26,15 @@ vi.mock("../../server-handlers/_employer-matching-helpers", async (orig) => ({
   checkEmployerAllowance: vi.fn(async () => ({ ok: true })),
 }));
 
+vi.mock("../../server-handlers/_employer-team-helpers", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../server-handlers/_employer-team-helpers")>();
+  return {
+    ...actual,
+    requireEmployerPermission: async (_u: string, _h: unknown, userId: string) => ({ ok: true, ctx: { employerId: userId, userId, role: "owner", email: "", name: null } }),
+    writeAuditLog: async () => true,
+  };
+});
+
 const { default: handler } = await import("../../server-handlers/employer-requirement-detail");
 
 const M1 = "11111111-1111-4111-8111-111111111111";

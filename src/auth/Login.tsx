@@ -7,6 +7,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { storePendingReferralCode, storePendingConsent, clearPendingConsent, useAuth } from "../AuthContext";
+import { getAuthToken } from "../supabase";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -24,6 +25,7 @@ import {
   validatePassword,
 } from "./_validation";
 import { trackAuth, loginViewedEvent } from "./_analytics";
+import { classifyAuthIntent } from "./authIntent";
 import {
   buildAuthLink,
   computeAuthRedirect,
@@ -116,7 +118,9 @@ export default function Login() {
   // Plan + redirect param preservation (matches existing SignUp behavior)
   const planParam = searchParams?.get("plan") ?? null;
   const nextParam = searchParams?.get("next") ?? null;
-  const isEmployerFlow = !!nextParam?.startsWith("/employer");
+  const intent = classifyAuthIntent(nextParam);
+  const isInviteFlow = intent.kind === "invite";
+  const isEmployerFlow = intent.kind === "employer";
 
   // Re-capture a referral code forwarded through the verification-email
   // redirect (verify-email.ts appends ?ref= for us). The signup browser's
@@ -143,10 +147,36 @@ export default function Login() {
   // propagating across tabs and we'd yank this tab to /dashboard with
   // a stale session about to be invalidated.
   useEffect(() => {
-    if (isLoggedIn && user && !isResetInProgress()) {
+    if (!(isLoggedIn && user) || isResetInProgress()) return;
+    // No explicit destination: an account that already has an employer
+    // profile belongs on the employer console, not the candidate dashboard.
+    if (nextParam || planParam) {
       router.replace(computeRedirect());
+      return;
     }
-  }, [isLoggedIn, user, router, computeRedirect]);
+    let cancelled = false;
+    (async () => {
+      let dest = computeRedirect();
+      try {
+        const token = await getAuthToken();
+        if (token) {
+          const res = await fetch("/api/employer-profile", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data: { status?: string } = await res.json();
+            if (data.status && data.status !== "none") dest = "/employer";
+          }
+        }
+      } catch {
+        /* fall back to the candidate redirect */
+      }
+      if (!cancelled) router.replace(dest);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn, user, router, computeRedirect, nextParam, planParam]);
 
   // Analytics: viewed once. Pass the screen variant for funnel symmetry
   // with Signup which fires "signup".
@@ -439,7 +469,13 @@ export default function Login() {
                 color: t.coal,
               }}
             >
-              {isEmployerFlow ? (
+              {isInviteFlow ? (
+                <>
+                  Join{" "}
+                  your{" "}
+                  team
+                </>
+              ) : isEmployerFlow ? (
                 <>
                   Hire{" "}
                   faster{" "}
@@ -465,7 +501,9 @@ export default function Login() {
                 textWrap: "balance",
               }}
             >
-              {isEmployerFlow
+              {isInviteFlow
+                ? "Sign in to accept your team invite."
+                : isEmployerFlow
                 ? "Sign in to review your shortlist of candidates who've already been scored on real interview practice."
                 : "Practise interviews with an AI coach. Get scored, structured feedback after every session."}
             </p>
@@ -723,7 +761,7 @@ export default function Login() {
                       </>
                     ) : (
                       <>
-                        {isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
+                        {isInviteFlow ? "Continue to your invite" : isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"
