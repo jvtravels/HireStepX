@@ -35,6 +35,17 @@ test.describe("employer join page: signed out", () => {
     await expect(page.getByRole("link", { name: "I already have an account" })).toHaveAttribute("href", `/login?next=${next}`);
   });
 
+  test("the preview request carries a same-origin Referer, since the page itself is no-referrer", async ({ page }) => {
+    let referer: string | undefined;
+    await page.route(/\/api\/employer-team-accept\?token=/, (route: Route) => {
+      referer = route.request().headers()["referer"];
+      return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(preview()) });
+    });
+    await page.goto(URL_PATH);
+    await expect(page.getByRole("heading", { name: "Join Acme Technologies on HireStepX" })).toBeVisible();
+    expect(referer ?? "").toContain("/employer/join");
+  });
+
   test("explains an unknown link instead of a blank page", async ({ page }) => {
     await mockPreview(page, { error: "invalid" }, 404);
     await page.goto(URL_PATH);

@@ -70,7 +70,9 @@ export default function JoinTeam() {
   useEffect(() => {
     if (!token) { setPhase({ kind: "invalid" }); return; }
     const ctl = new AbortController();
-    fetch(`/api/employer-team-accept?token=${encodeURIComponent(token)}`, { signal: ctl.signal })
+    // The page is no-referrer so the token never leaks, but the API's GET origin check needs a Referer;
+    // same-origin sends one to our own API only.
+    fetch(`/api/employer-team-accept?token=${encodeURIComponent(token)}`, { signal: ctl.signal, referrerPolicy: "same-origin" })
       .then(async (res) => {
         if (res.status === 404) { setPhase({ kind: "invalid" }); return; }
         const data = (await res.json().catch(() => null)) as (Preview & { error?: string }) | null;
