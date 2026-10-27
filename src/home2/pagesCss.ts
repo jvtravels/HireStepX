@@ -581,6 +581,7 @@ export const pagesCss = `
 .hs-scene .pg-lockrow span { padding: 12px 14px; font-size: 15px; }
 @media (max-width: 900px) { .hs-people { grid-template-columns: repeat(2, auto); } .hs-scene .pg-body { min-height: 0; } }
 .hs-act, .hs-rank li.hs-sel { position: relative; }
+.hs-rank li.hs-sel { z-index: 2; }
 .hs-cur { position: absolute; left: 52px; top: 16px; z-index: 3; display: flex; align-items: flex-start; color: var(--accent); pointer-events: none; opacity: 0; animation: hs-cur 2.2s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; filter: drop-shadow(0 2px 4px oklch(0.3 0.05 50 / 0.3)); }
 .hs-cur em { margin: 16px 0 0 -3px; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--white); font-style: normal; font-size: 12px; font-weight: 500; line-height: 1.4; }
 .hs-rank li.hs-sel .hs-cur { left: 150px; top: 28px; }
