@@ -34,6 +34,12 @@ describe("describeEvent", () => {
     expect(describeEvent({ action: "candidate.unlocked", meta: {} }).subject).toBe("a candidate");
     expect(describeEvent({ action: "candidate.unlocked", meta: { candidateName: "Rahul S." } }).subject).toBe("Rahul S.");
   });
+  it("describes a message to a candidate without any message text", () => {
+    expect(describeEvent({ action: "candidate.messaged", meta: { candidateName: "Rahul S.", jobTitle: "SDE", body: "secret" } })).toEqual({
+      verb: "messaged", subject: "Rahul S.", detail: "for SDE", group: "candidates",
+    });
+    expect(describeEvent({ action: "candidate.messaged", meta: {} })).toMatchObject({ subject: "a candidate", detail: null });
+  });
   it("labels candidate status changes and the job they are for", () => {
     expect(describeEvent({ action: "candidate.status_changed", meta: { candidateName: "Rahul S.", to: "interviewing", jobTitle: "SDE" } })).toMatchObject({
       verb: "marked", subject: "Rahul S.", detail: "as Interviewing for SDE",

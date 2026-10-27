@@ -45,11 +45,14 @@ import {
   REDACTED_ATTACHMENT_NAME,
   CONTACT_REDACTED_NOTICE,
   CONTACT_WITHHELD_NOTICE,
+  senderLabel,
+  type SentBy,
   type MessageRole,
   type MessageSenderRole,
 } from "./_messages-helpers";
 import { notify } from "./_notify";
 import { resolveEmployerContext, can, type EmployerContext, type Permission } from "./_employer-team-helpers";
+import { logEmployerMessage } from "./_employer-message-audit";
 import {
   fetchMatchAccessRow,
   isBlockedByCandidate,
@@ -211,11 +214,12 @@ async function findOrCreateConversation(match: MatchRow): Promise<ConversationRo
 /** `hideContact` is set for an employer reading a thread of a still-Locked
  *  match: phone/email text in the candidate's messages is masked in what is
  *  returned (never in storage). The employer's own text is left as written. */
-function toMessageShape(row: MessageRow, viewerRole: MessageRole, hideContact = false) {
+function toMessageShape(row: MessageRow, viewerRole: MessageRole, hideContact = false, sentBy?: SentBy) {
   const body = messageBodyForViewer(row.body, row.sender_role, hideContact);
   return {
     id: row.id,
     senderRole: row.sender_role,
+    ...(sentBy ? { sentBy } : {}),
     body,
     contactRedacted: hideContact && body !== row.body,
     // An employer never receives the storage key of a candidate's file before
@@ -395,10 +399,23 @@ async function handleGet(req: Request, headers: Record<string, string>, party: P
     body: JSON.stringify({ [readColumn]: new Date().toISOString() }),
   }).catch((err) => slog.warn("messages: last-read update failed", { conversationId: conversation.id, error: (err as Error).message }));
 
+  // Teammates share one inbox, so each employer-sent message says which of them wrote it.
+  let roster = new Map<string, string>();
+  if (role === "employer" && party.team) {
+    const rosterRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_members?employer_id=eq.${encodeURIComponent(party.partyId)}&select=user_id,name,email`,
+      { headers: serviceHeaders() },
+    ).catch(() => null);
+    const members = rosterRes?.ok ? ((await rosterRes.json().catch(() => [])) as Array<{ user_id: string; name: string | null; email: string | null }>) : [];
+    if (Array.isArray(members)) roster = new Map(members.map((m) => [m.user_id, m.name || m.email || "A teammate"]));
+  }
+  const sentByFor = (m: MessageRow) =>
+    role === "employer" && party.team && m.sender_role === "employer" ? senderLabel(m.sender_id, party.userId, roster) : undefined;
+
   return new Response(
     JSON.stringify({
       conversation: { id: conversation.id, matchId: conversation.match_id, lastMessageAt: conversation.last_message_at },
-      messages: msgRows.map((m) => toMessageShape(m, role, hideContact)),
+      messages: msgRows.map((m) => toMessageShape(m, role, hideContact, sentByFor(m))),
       context,
     }),
     { status: 200, headers },
@@ -559,7 +576,24 @@ async function handlePost(req: Request, headers: Record<string, string>, party: 
     actionLabel: "Reply",
   }).catch(() => {});
 
-  return new Response(JSON.stringify({ conversationId: conversation.id, message: toMessageShape(inserted, role) }), { status: 201, headers });
+  let sentBy: SentBy | undefined;
+  if (role === "employer" && party.team) {
+    sentBy = { name: party.team.name || party.team.email || "You", isYou: true };
+    // Awaited for the same edge-runtime reason as the notification above.
+    await logEmployerMessage({
+      supabaseUrl: SUPABASE_URL,
+      headers: serviceHeaders(),
+      employerId: party.team.employerId,
+      actorUserId: party.userId,
+      actorEmail: party.team.email,
+      matchId: match.id,
+      candidateName: match.profiles?.name ?? null,
+      jobTitle: match.employer_requirements?.title ?? null,
+      hasAttachment: !!attachmentPath,
+    }).catch(() => false);
+  }
+
+  return new Response(JSON.stringify({ conversationId: conversation.id, message: toMessageShape(inserted, role, false, sentBy) }), { status: 201, headers });
 }
 
 export default async function handler(req: Request): Promise<Response> {

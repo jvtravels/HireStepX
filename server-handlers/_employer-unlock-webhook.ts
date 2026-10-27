@@ -45,6 +45,7 @@ import {
   toCapturedPayment,
   type UnlockOrderRow,
 } from "./_unlock-fulfillment";
+import { attributeUnlocks, cashOrderActor } from "./_employer-unlock-attribution";
 import type { NotifyInput } from "./_notify";
 
 export type UnlockWebhookOutcome =
@@ -235,8 +236,12 @@ export async function handleEmployerUnlockWebhook(p: UnlockWebhookParams): Promi
     });
     switch (result.kind) {
       case "fulfilled":
-      case "partial":
+      case "partial": {
+        // The tab may be closed after paying, so the browser callback never ran: record which teammate paid.
+        const actorId = await cashOrderActor(orderId, p.razorpayKeyId, p.razorpayKeySecret, f);
+        await attributeUnlocks({ supabaseUrl: p.supabaseUrl, headers: p.headers, result, actorId, paymentId: payment.id, fetchImpl: f });
         return done({ received: true, unlock: result.kind, unlocked: result.unlockedMatchIds.length, failed: result.failed.length });
+      }
       case "refunded":
       case "disputed":
         return done({ received: true, skipped: `unlock_order_${result.kind}` });

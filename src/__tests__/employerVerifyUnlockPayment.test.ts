@@ -87,6 +87,7 @@ let authed: boolean;
 let authUserId: string;
 let member: { employerId: string; role: string } | null; // null = no employer_members row and no legacy company
 let attributionColumns: boolean; // false simulates migration 0061 (paid_by / unlocked_by) not applied
+const claimedMatches = new Set<string>();
 let attributionCalls: Array<{ method: string; url: string; body: Record<string, unknown> | null }>;
 let rzpDown: boolean;
 let paymentLookups: number;
@@ -107,7 +108,12 @@ function installFetch() {
     }
     if (url.includes("paid_by=is.null") || url.includes("unlocked_by=is.null")) {
       attributionCalls.push({ method: "PATCH", url, body: init?.body ? JSON.parse(String(init.body)) : null });
-      return attributionColumns ? new Response(null, { status: 204 }) : new Response("{}", { status: 400 });
+      if (!attributionColumns) return new Response("{}", { status: 400 });
+      if (!url.includes("unlocked_by=is.null")) return new Response(null, { status: 204 });
+      // Like PostgREST with `unlocked_by is null`: only matches nobody has claimed yet come back.
+      const ids = (/id=in\.\(([^)]*)\)/.exec(url)?.[1] ?? "").split(",").filter((id) => id && !claimedMatches.has(id));
+      ids.forEach((id) => claimedMatches.add(id));
+      return new Response(JSON.stringify(ids.map((id) => ({ id }))), { status: 200 });
     }
     if (url.includes("api.razorpay.com")) {
       if (/\/payments\/pay_/.test(url)) paymentLookups += 1;
@@ -131,6 +137,7 @@ beforeEach(() => {
   member = { employerId: "emp-1", role: "owner" };
   attributionColumns = true;
   attributionCalls = [];
+  claimedMatches.clear();
   rzpDown = false;
   paymentLookups = 0;
   payments = [capturedPayment()];

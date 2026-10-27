@@ -89,6 +89,10 @@ export function describeEvent(e: Pick<ActivityEvent, "action" | "meta">): Descri
       const jobPart = str(m.jobTitle);
       return { verb: "updated notes on", subject: str(m.candidateName) ?? "a candidate", detail: jobPart && `for ${jobPart}`, group };
     }
+    case "candidate.messaged": {
+      const jobPart = str(m.jobTitle);
+      return { verb: "messaged", subject: str(m.candidateName) ?? "a candidate", detail: jobPart && `for ${jobPart}`, group };
+    }
     case "company.profile_updated": {
       const changed = Array.isArray(m.changed) ? m.changed.filter((c): c is string => typeof c === "string") : [];
       return { verb: "updated the company profile", subject: null, detail: changed.length ? changed.join(", ") : null, group };

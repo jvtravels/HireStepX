@@ -48,10 +48,9 @@ import {
   backfillLegacyUnlockOrder,
   alertUnlockProblem,
   type CapturedPayment,
-  type FulfillResult,
 } from "./_unlock-fulfillment";
-import { isUuid } from "./_employer-unlock-order";
-import { requireEmployerPermission, writeAuditLog } from "./_employer-team-helpers";
+import { requireEmployerPermission } from "./_employer-team-helpers";
+import { attributeUnlocks, cashOrderActor, type FulfilledResult } from "./_employer-unlock-attribution";
 import { notify } from "./_notify";
 
 const RAZORPAY_KEY_ID = (process.env.RAZORPAY_KEY_ID || "").trim();
@@ -68,52 +67,16 @@ async function fetchPaymentWithCaptureRetry(paymentId: string): Promise<Captured
   return payment;
 }
 
-type FulfilledResult = Extract<FulfillResult, { kind: "fulfilled" | "partial" }>;
-
 /** Who paid is attribution, never a precondition: fulfilment (shared with the webhook and reconciler) has
- *  already recorded the captured payment and unlocked the matches, so every write here is best-effort and a
- *  missing paid_by / unlocked_by column (migration 0061) can never un-record a payment. */
+ *  already recorded the captured payment and unlocked the matches, so a failure here can never un-record it. */
 async function attributeFirstFulfilment(p: {
   supabaseUrl: string; headers: Record<string, string>; employerId: string; actorId: string;
-  orderId: string; paymentId: string; startedAt: string; result: FulfilledResult;
+  orderId: string; paymentId: string; result: FulfilledResult;
 }): Promise<void> {
   const { supabaseUrl: base, headers, employerId, result } = p;
-  const rzpOrder = await fetchRazorpayOrder(p.orderId, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET).catch(() => null);
-  const createdBy = rzpOrder?.notes.createdBy;
-  const paidBy = typeof createdBy === "string" && isUuid(createdBy) ? createdBy : p.actorId;
-  const patch = (path: string, body: Record<string, unknown>) =>
-    fetch(`${base}/rest/v1/${path}`, {
-      method: "PATCH",
-      headers: { ...headers, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(4_000),
-    }).catch(() => null);
-
-  await patch(`employer_unlock_payments?razorpay_payment_id=eq.${encodeURIComponent(p.paymentId)}&paid_by=is.null`, { paid_by: paidBy });
-  if (result.unlockedMatchIds.length > 0) {
-    // unlocked_at >= startedAt limits this to matches this verification flipped, not ones unlocked earlier.
-    await patch(
-      `requirement_matches?id=in.(${result.unlockedMatchIds.map(encodeURIComponent).join(",")})&unlocked_by=is.null&unlocked_at=gte.${encodeURIComponent(p.startedAt)}`,
-      { unlocked_by: paidBy },
-    );
-  }
-
-  const nameByMatchId = new Map(result.candidates.map((c) => [c.matchId, c.name]));
-  await Promise.all(result.unlockedMatchIds.map((matchId) =>
-    writeAuditLog(base, headers, {
-      employerId,
-      actorUserId: paidBy,
-      action: "candidate.unlocked",
-      entityType: "match",
-      entityId: matchId,
-      meta: {
-        candidateName: nameByMatchId.get(matchId) ?? null,
-        jobId: result.requirementId,
-        orderId: p.orderId,
-        mode: result.order.mode,
-      },
-    }),
-  ));
+  const noted = await cashOrderActor(p.orderId, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
+  const paidBy = noted ?? p.actorId;
+  await attributeUnlocks({ supabaseUrl: base, headers, result, actorId: paidBy, paymentId: p.paymentId });
 
   // Fulfilment already notifies the company account; the member who paid is told as well when that is someone else.
   if (paidBy !== employerId && result.unlockedMatchIds.length > 0) {
@@ -242,7 +205,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    const startedAt = new Date().toISOString();
     const result = await fulfillUnlockOrder({
       supabaseUrl: SUPABASE_URL,
       headers: sh,
@@ -260,7 +222,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (result.firstFulfilment) {
           await attributeFirstFulfilment({
             supabaseUrl: SUPABASE_URL, headers: sh, employerId, actorId,
-            orderId: razorpay_order_id, paymentId: razorpay_payment_id, startedAt, result,
+            orderId: razorpay_order_id, paymentId: razorpay_payment_id, result,
           }).catch(() => null);
         }
         const profileByMatchId = new Map(result.candidates.map((c) => [c.matchId, { name: c.name, email: c.email }]));

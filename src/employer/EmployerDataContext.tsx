@@ -206,6 +206,8 @@ export interface ConversationMessage {
   createdAt: string;
   /** True when the server hid a phone number or email in this body while the match is locked. */
   contactRedacted?: boolean;
+  /** Employer-side messages only: which teammate wrote it. */
+  sentBy?: { name: string; isYou: boolean };
 }
 
 /** One row in the employer's conversation inbox. Mirrors the shape

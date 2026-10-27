@@ -235,12 +235,13 @@ export type AuditAction =
   | "candidate.unlocked"
   | "candidate.status_changed"
   | "candidate.note_updated"
+  | "candidate.messaged"
   | "company.profile_updated";
 
 export const AUDIT_ACTIONS: readonly AuditAction[] = [
   "member.invited", "member.invite_resent", "member.invite_revoked", "member.joined", "member.role_changed",
   "member.removed", "member.left", "job.created", "job.updated", "job.archived", "job.reopened",
-  "job.stage_changed", "candidate.unlocked", "candidate.status_changed", "candidate.note_updated", "company.profile_updated",
+  "job.stage_changed", "candidate.unlocked", "candidate.status_changed", "candidate.note_updated", "candidate.messaged", "company.profile_updated",
 ];
 
 export function isAuditAction(v: unknown): v is AuditAction {

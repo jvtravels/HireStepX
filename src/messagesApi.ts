@@ -14,6 +14,8 @@ export interface ConversationMessage {
   attachmentMime: string | null;
   flagged: boolean;
   createdAt: string;
+  /** Employer-side messages only: which teammate wrote it. */
+  sentBy?: { name: string; isYou: boolean };
 }
 
 export interface ConversationSummary {

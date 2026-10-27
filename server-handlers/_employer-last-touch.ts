@@ -7,7 +7,7 @@ export interface LastTouch {
   at: string;
 }
 
-const TOUCH_ACTIONS = ["candidate.unlocked", "candidate.status_changed", "candidate.note_updated"];
+const TOUCH_ACTIONS = ["candidate.unlocked", "candidate.status_changed", "candidate.note_updated", "candidate.messaged"];
 const BATCH = 50;
 
 type Fetch = typeof fetch;
