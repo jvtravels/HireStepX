@@ -148,9 +148,12 @@ jobs:
       # Rebased 2026-10-22 from CI: total client chunks 9704KB (`du -sk`, disk
       # blocks, not gzip), largest chunk 476KB, plus ~8% headroom on the total.
       # Fails on regression; lower them as the bundle shrinks.
+      # Rebased 2026-10-28: main measured 11020KB after the HireStepX 2.0 pages
+      # (home2/*, blog visuals, CSS-in-TS) shipped; ~5% headroom. Largest chunk
+      # (476KB) is lazy pdfjs. Per-route first-load budget is the next gate.
       - name: Check bundle sizes
         run: |
-          MAX_TOTAL_KB=10500
+          MAX_TOTAL_KB=11600
           MAX_CHUNK_KB=600
           TOTAL=$(du -sk .next/static/chunks | cut -f1)
           LARGEST=$(find .next/static/chunks -name '*.js' -exec du -k {} + | sort -n | tail -1 | cut -f1)
