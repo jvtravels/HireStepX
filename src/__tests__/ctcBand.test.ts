@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { ctcBand, parseCtcLpa, readAvailabilityConfirmedAt, sharedCtcBand } from "../../server-handlers/_ctc-band";
 import { extractResumeDetail } from "../../server-handlers/_resume-detail-helpers";
-import { availabilityConfirmedLabel } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { availabilityConfirmedLabel, buildInterviewQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 
 describe("parseCtcLpa", () => {
   it.each([
@@ -73,5 +73,20 @@ describe("availabilityConfirmedLabel", () => {
     expect(availabilityConfirmedLabel("2026-10-24T12:00:00Z", now)).toEqual({ text: "Confirmed 3d ago", stale: false });
     expect(availabilityConfirmedLabel("2026-08-01T00:00:00Z", now)?.stale).toBe(true);
     expect(availabilityConfirmedLabel(null, now)).toBeNull();
+  });
+});
+
+describe("buildInterviewQuestions", () => {
+  const cand = (periods: string[]) => ({ resume: { experience: periods.map((period) => ({ title: "Eng", company: "", period })) } }) as never;
+  it("asks about each unmatched skill first, max three questions", () => {
+    const q = buildInterviewQuestions(cand([]), { title: "Backend Engineer" }, ["Kafka", "Go", "Redis"]);
+    expect(q).toHaveLength(3);
+    expect(q[0]).toContain("Kafka");
+    expect(q[1]).toContain("Go");
+    expect(q.join(" ")).not.toContain("Redis");
+  });
+  it("falls back to a role-specific question", () => {
+    const q = buildInterviewQuestions(cand([]), { title: "Backend Engineer" }, []);
+    expect(q).toEqual([expect.stringContaining("Backend Engineer")]);
   });
 });

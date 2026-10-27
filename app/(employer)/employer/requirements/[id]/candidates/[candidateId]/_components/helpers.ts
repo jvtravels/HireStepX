@@ -493,3 +493,17 @@ export function availabilityConfirmedLabel(iso: string | null | undefined, nowMs
   const days = Math.max(0, Math.floor((nowMs - t) / 86_400_000));
   return { text: days === 0 ? "Confirmed today" : `Confirmed ${days}d ago`, stale: days > 30 };
 }
+
+/** Up to three screening questions drawn only from gaps already computed for this candidate. */
+export function buildInterviewQuestions(candidate: Candidate, requirement: Pick<Requirement, "title">, unmatched: string[]): string[] {
+  const questions: string[] = [];
+  for (const skill of unmatched.slice(0, 2)) {
+    questions.push(`Walk me through a project where you used ${skill}. What was your part, and what would you do differently?`);
+  }
+  const avg = averageTenureMonths(candidate.resume?.experience ?? []);
+  if (avg != null && avg < 12 && (candidate.resume?.experience.length ?? 0) >= 2) {
+    questions.push("What drove each of your last few moves, and what would make this role a longer stay?");
+  }
+  if (questions.length < 3) questions.push(`What is the hardest problem you solved recently that is closest to this ${requirement.title} role?`);
+  return questions.slice(0, 3);
+}

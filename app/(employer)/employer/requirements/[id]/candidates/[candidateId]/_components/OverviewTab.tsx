@@ -12,7 +12,7 @@ import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -393,6 +393,27 @@ function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidat
   );
 }
 
+function InterviewKitPanel({ candidate, requirement, unmatched }: { candidate: Candidate; requirement: Requirement; unmatched: string[] }) {
+  const [copied, setCopied] = useState(false);
+  const questions = buildInterviewQuestions(candidate, requirement, unmatched);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(questions.map((q, i) => `${i + 1}. ${q}`).join("\n"));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <Panel id="kit-heading" title="Interview kit" action={<PanelButton onClick={() => void copy()}>{copied ? "Copied" : "Copy questions"}</PanelButton>}>
+      <ol className="m-0 grid list-decimal gap-2 pl-5 text-[13px] leading-snug text-hx-coal">
+        {questions.map((q) => <li key={q}>{q}</li>)}
+      </ol>
+    </Panel>
+  );
+}
+
 export function OverviewTab({
   candidate,
   requirement,
@@ -427,6 +448,7 @@ export function OverviewTab({
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
         <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
+        <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
       </div>
     </div>
   );
