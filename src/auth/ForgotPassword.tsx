@@ -307,6 +307,7 @@ export default function ForgotPassword() {
                   style={{
                     width: "100%",
                     height: "auto",
+                    padding: "16px 18px",
                     fontFamily: f.sans,
                     fontSize: 16,
                     fontWeight: 500,
