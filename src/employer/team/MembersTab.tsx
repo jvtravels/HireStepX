@@ -11,7 +11,6 @@ import { assignableRoles, canManageMember, type EmployerRole, type InvitableRole
 import type { ActivitySummary, TeamMember } from "../useTeam";
 import { relativeTime } from "../teamActivity";
 import { PAD, PersonAvatar, RoleMenu, muted } from "./TeamParts";
-import RolesMatrix from "./RolesMatrix";
 
 export type MemberCommand =
   | { kind: "set_role"; member: TeamMember; role: InvitableRole }
@@ -207,7 +206,6 @@ export default function MembersTab({
         </div>
       )}
 
-      <RolesMatrix myRole={myRole} defaultOpen={alone} />
     </div>
   );
 }

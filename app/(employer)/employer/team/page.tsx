@@ -16,8 +16,9 @@ import InvitePanel from "@/employer/team/InvitePanel";
 import MembersTab, { type MemberCommand } from "@/employer/team/MembersTab";
 import InvitesTab from "@/employer/team/InvitesTab";
 import ActivityTab from "@/employer/team/ActivityTab";
+import RolesTab from "@/employer/team/RolesTab";
 
-type TabId = "members" | "invites" | "activity";
+type TabId = "members" | "invites" | "roles" | "activity";
 
 /* /employer/team — one company, many people. Everyone on the team can see who
    is on it; owners and admins also invite, change roles, and read the activity
@@ -50,7 +51,7 @@ function TeamConsole() {
   const canSeeActivity = can(myRole, "audit.read");
   const activity = useTeamActivity(canSeeActivity && !!team, filter);
 
-  const panelOpen = inviting && canInvite && tab !== "activity";
+  const panelOpen = inviting && canInvite && (tab === "members" || tab === "invites");
   const pendingInvites = useMemo(() => (team?.invites ?? []).filter((i) => i.state === "pending" || i.state === "expired"), [team]);
   const existingEmails = useMemo(
     () => new Set([...(team?.members ?? []).map((m) => m.email.toLowerCase()), ...(team?.invites ?? []).filter((i) => i.state === "pending").map((i) => i.email.toLowerCase())]),
@@ -66,6 +67,7 @@ function TeamConsole() {
   const tabs: Array<{ id: TabId; label: string; count?: number }> = [
     { id: "members", label: "Members", count: team.members.length },
     ...(canInvite ? [{ id: "invites" as const, label: "Invites", count: pendingInvites.length }] : []),
+    { id: "roles" as const, label: "Roles" },
     ...(canSeeActivity ? [{ id: "activity" as const, label: "Activity" }] : []),
   ];
 
@@ -263,6 +265,7 @@ function TeamConsole() {
               busyId={busyId}
             />
           )}
+          {tab === "roles" && <RolesTab myRole={myRole} members={team.members} />}
           {tab === "activity" && canSeeActivity && (
             <ActivityTab activity={activity} filter={filter} onFilter={setFilter} members={team.members} />
           )}
