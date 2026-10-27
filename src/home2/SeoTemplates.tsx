@@ -375,13 +375,20 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
       <h2 className="sx-h2">{label} vs similar companies</h2>
       <p className="sx-sub">{groupLabel ? `${groupLabel}, ` : ""}{own ? `${own.levelLabel} level, total CTC in LPA.` : "Total CTC in LPA."}</p>
       <div className="sx-cmp-list">
-        {rows.map((r) => (
-          <a key={r.label} data-no-underline href={r.self ? undefined : `/salary/${r.slug}`} className="sx-cmp-row" data-self={r.self ? "1" : "0"}>
-            <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
-            <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
-            <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
-          </a>
-        ))}
+        {rows.map((r) => {
+          const cells = (
+            <>
+              <span className="sx-cmp-name">{r.label}{r.self && <em>This page</em>}</span>
+              <span className="sx-cmp-track"><i style={{ left: `${((r.band?.min ?? 0) / max) * 100}%`, width: `${(((r.band?.max ?? 0) - (r.band?.min ?? 0)) / max) * 100}%` }} /></span>
+              <span className="sx-cmp-val">{lpa(r.band?.min ?? 0)} to {lpa(r.band?.max ?? 0)}</span>
+            </>
+          );
+          return r.self ? (
+            <div key={r.label} className="sx-cmp-row" data-self="1">{cells}</div>
+          ) : (
+            <a key={r.label} data-no-underline href={`/salary/${r.slug}`} className="sx-cmp-row" data-self="0">{cells}</a>
+          );
+        })}
       </div>
     </section>
   );
