@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Shell, Close, Arrow } from "./Pages";
 import { Vis, KIND_LABEL, resourcesCss } from "./Resources";
@@ -50,7 +50,31 @@ function Prose({ text, labels = false }: { text: string; labels?: boolean }) {
         }
         const lab = labels ? b.match(/^([A-Z][A-Za-z' ]{2,24}):\s+([\s\S]+)$/) : null;
         if (lab) return <p key={i} className="sa-lab"><span>{lab[1]}</span><span>{inline(lab[2].replace(/\n/g, " "))}</span></p>;
-        return <p key={i}>{inline(b.replace(/\n/g, " "))}</p>;
+        const flat = b.replace(/\n/g, " ");
+        if (flat.length > 380) {
+          /* Walls of "Label: text. Label: text." read better as a list. */
+          const items = flat.split(/(?<=[.!?]) (?=[A-Z][A-Za-z' \-/()]{2,34}: )/);
+          if (items.length >= 3) {
+            return (
+              <ul key={i} className="sa-defs">
+                {items.map((it, j) => {
+                  const m = it.match(/^([^:]{3,36}):\s+([\s\S]+)$/);
+                  return <li key={j}>{m ? <><b>{m[1]}.</b> {inline(m[2])}</> : inline(it)}</li>;
+                })}
+              </ul>
+            );
+          }
+        }
+        if (flat.length > 750) {
+          const sentences = flat.match(/[^.!?]+[.!?]+(?:\s+|$)/g);
+          if (sentences && sentences.length >= 5) {
+            const per = Math.ceil(sentences.length / Math.ceil(flat.length / 450));
+            const chunks: string[] = [];
+            for (let k = 0; k < sentences.length; k += per) chunks.push(sentences.slice(k, k + per).join("").trim());
+            return <Fragment key={i}>{chunks.map((c, j) => <p key={j}>{inline(c)}</p>)}</Fragment>;
+          }
+        }
+        return <p key={i}>{inline(flat)}</p>;
       })}
     </>
   );
@@ -398,6 +422,13 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
   );
 }
 
+/* Importer notes read "AB scrape: Product Manager (n=80); n=80"; show the sample size, not the pipeline label. */
+function readerNote(notes: string): string {
+  if (!/^AB scrape/i.test(notes)) return notes;
+  const n = notes.match(/n=(\d+)/)?.[1];
+  return n ? `Based on ${n} AmbitionBox salary reports.` : "Based on AmbitionBox salary reports.";
+}
+
 export function SalaryTemplate({ company, model, meta, facts, related, groupLabel, blogSlug, calibrationDate }: SalaryTemplateProps) {
   const [ri, setRi] = useState(0);
   const [li, setLi] = useState(0);
@@ -407,7 +438,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
   const signup = `/signup?source=salary-seo&company=${encodeURIComponent(company)}&next=${encodeURIComponent(`/interview${headline ? `?role=${encodeURIComponent(headline.roleLabel)}` : ""}`)}`;
   const hasInfo = !!(facts || interviewTeaser || blogSlug);
   const tabs = [{ id: "pay" as const, label: "Pay by level" }, ...(hasInfo ? [{ id: "info" as const, label: "Interview and company" }] : []), ...(related.length > 0 ? [{ id: "compare" as const, label: "Compare companies" }] : [])];
-  const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Reported");
+  const tierLabel = (t?: string) => (t === "high" ? "High" : t === "medium" ? "Medium" : t === "low" ? "Low" : "Estimate");
   return (
     <Shell active="resources">
       <style>{sxCss + resourcesCss}</style>
@@ -462,7 +493,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
                             <th>{LVL[b.level] ?? b.levelLabel}</th>
                             <td><b>{lpa(b.totalMin)} to {lpa(b.totalMax)} LPA</b></td>
                             <td>{b.baseMin != null && b.baseMax != null ? `${lpa(b.baseMin)} to ${lpa(b.baseMax)}` : "Not reported"}</td>
-                            <td>{b.equityMin != null && b.equityMax != null ? `${lpa(b.equityMin)} to ${lpa(b.equityMax)}` : "None reported"}</td>
+                            <td>{b.dataConfidenceTier && b.equityMin != null && b.equityMax != null ? `${lpa(b.equityMin)} to ${lpa(b.equityMax)}` : "Not reported"}</td>
                             <td><span className="sx-badge" data-tier={b.dataConfidenceTier ?? "none"}>{tierLabel(b.dataConfidenceTier)}</span></td>
                             <td>{b.lastVerified}</td>
                           </tr>
@@ -470,7 +501,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
                       </tbody>
                     </table>
                   </div>
-                  {top?.notes && <p className="sx-tip"><b>Negotiation note.</b> {top.notes}</p>}
+                  {top?.notes && <p className="sx-tip"><b>Note.</b> {readerNote(top.notes)}</p>}
                   {peer && (
                     <p className="sx-peer">
                       Peer median for {peer.groupLabel} at this level is {lpa(peer.peerMedianMin)} to {lpa(peer.peerMedianMax)} LPA, across {peer.peerCount} companies.
@@ -578,10 +609,9 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             <section hidden={tab !== "framework"}>
               <h2>{displayFrameworkName(page.framework.name)} framework</h2>
               <ol className="sx-x-steps">{fwSteps.map((st) => <li key={st}>{st}</li>)}</ol>
-              <p>{stripEndPunct(page.framework.summary)}.</p>
             </section>
             <section hidden={tab !== "qs"}>
-              <h2>Questions candidates report</h2>
+              <h2>Practice questions</h2>
               {diffs.length > 1 && (
                 <div className="sx-chips" role="group" aria-label="Filter by difficulty">
                   <button type="button" aria-pressed={diff === "all"} onClick={() => setDiff("all")}>All {free.length}</button>
@@ -697,7 +727,7 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sa-prose p, .sa-prose ul, .sa-prose ol { margin: 0 0 14px; max-width: 72ch; }
 .sa-prose > :last-child { margin-bottom: 0; }
 .sa-prose ul, .sa-prose ol { padding-left: 22px; display: grid; gap: 6px; }
-.sa-prose strong { font-weight: 600; }
+.sa-prose strong, .sa-prose .sa-defs b { font-weight: 600; }
 .sa-prose .sa-lab { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 16px; padding: 14px 12px; margin: 0 -12px; border-top: 1px solid var(--line); border-radius: 10px; transition: background .2s; }
 .sa-prose .sa-lab:hover { background: var(--wash); }
 .sa-prose .sa-lab span:first-child { padding-top: 3px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); transition: color .2s; }

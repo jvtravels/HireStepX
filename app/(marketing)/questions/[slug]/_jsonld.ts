@@ -74,19 +74,6 @@ function questionsForPage(p: SeoPage): { questions: BankEntry[]; tier: 1 | 2 | 3
   return { questions: QUESTION_BANK.filter((q) => q.focus === p.focus).slice(0, 12), tier: 3 };
 }
 
-/* Spreads pages across Jan 1 – Jul 21 2026 without touching 232 data entries.
-   Hash is stable: same slug always maps to the same date across deploys. */
-function slugPublishDate(slug: string): string {
-  let h = 0;
-  for (let i = 0; i < slug.length; i++) {
-    h = (Math.imul(31, h) + slug.charCodeAt(i)) | 0;
-  }
-  const t = Math.abs(h) / 0x7fffffff;
-  const from = new Date("2026-01-01").getTime();
-  const to   = new Date(SEO_PAGES_LAST_MODIFIED).getTime();
-  return new Date(from + t * (to - from)).toISOString().slice(0, 10);
-}
-
 function slugAuthor(_slug: string): string {
   return "HireStepX Editorial Team";
 }
@@ -154,7 +141,10 @@ function buildSalaryTeaser(page: SeoPage): SalaryTeaser | null {
 export function isThinDuplicateQuestionsPage(slug: string): boolean {
   const page = getSeoPageBySlug(slug);
   if (!page) return false;
-  return questionsForPage(page).tier === 3;
+  const { tier } = questionsForPage(page);
+  /* Tier 2 on a role-scoped page means the questions come from other roles at the
+     same company (e.g. linked-list questions on a Data Scientist page). */
+  return tier === 3 || (tier === 2 && !!page.roleFamily);
 }
 
 export function buildQuestionsPageModel(slug: string) {
@@ -276,7 +266,6 @@ export function buildQuestionsPageModel(slug: string) {
       name: "HireStepX",
       logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
     },
-    datePublished: slugPublishDate(slug),
     dateModified: SEO_PAGES_LAST_MODIFIED,
     inLanguage: "en-IN",
     url: `https://hirestepx.com/questions/${slug}`,
