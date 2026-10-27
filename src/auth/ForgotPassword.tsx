@@ -15,6 +15,17 @@ import { sanitizeEmail, validateEmail } from "./_validation";
 import { detectEmailProvider, mapAuthError, useIsMounted } from "./_shell";
 import { trackAuth, loginViewedEvent } from "./_analytics";
 
+const ERROR_BANNER_STYLE: React.CSSProperties = {
+  background: t.error100,
+  border: `1px solid ${t.error}`,
+  borderRadius: 10,
+  padding: "12px 14px",
+  fontFamily: f.sans,
+  fontSize: 13,
+  color: t.error,
+  lineHeight: 1.4,
+};
+
 const EMAIL_MAX_LENGTH = 254; // RFC 5321 hard ceiling
 // 60s matches Stripe / Linear / Notion resend cooldowns.
 const RESEND_COOLDOWN_SEC = 60;
@@ -306,16 +317,7 @@ export default function ForgotPassword() {
                   <div
                     role="alert"
                     className="hsx-error-banner"
-                    style={{
-                      background: t.error100,
-                      border: `1px solid ${t.error}`,
-                      borderRadius: 10,
-                      padding: "12px 14px",
-                      fontFamily: f.sans,
-                      fontSize: 13,
-                      color: t.error,
-                      lineHeight: 1.4,
-                    }}
+                    style={ERROR_BANNER_STYLE}
                   >
                     {resendError}
                   </div>
@@ -477,17 +479,7 @@ export default function ForgotPassword() {
                     role="alert"
                     id="forgot-error"
                     className="hsx-error-banner"
-                    style={{
-                      background: t.error100,
-                      border: `1px solid ${t.error}`,
-                      borderRadius: 10,
-                      padding: "12px 14px",
-                      marginBottom: 16,
-                      fontFamily: f.sans,
-                      fontSize: 13,
-                      color: t.error,
-                      lineHeight: 1.4,
-                    }}
+                    style={{ ...ERROR_BANNER_STYLE, marginBottom: 16 }}
                   >
                     {error}
                   </div>
