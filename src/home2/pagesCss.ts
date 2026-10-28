@@ -1125,6 +1125,8 @@ export const pagesCss = `
 }
 /* ── Visual polish: even stage padding, no dead space ── */
 .cxp .cx-demo .pd { max-width: none; }
+.cxp .cx-demo .pd { box-sizing: border-box; padding: 28px; border-radius: 28px; background: oklch(1 0 0 / .45); border: 1px solid oklch(1 0 0 / .6); }
+@media (max-width: 720px) { .cxp .cx-demo .pd { padding: 16px; border-radius: 20px; } }
 .ia-stage { display: flex; flex-direction: column; justify-content: center; }
 .hs-scene .pg-win { width: min(100%, 600px); }
 /* The stage keeps a fixed height; each window hugs its content and sits centred in it. */
