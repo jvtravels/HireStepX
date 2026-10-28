@@ -139,40 +139,61 @@ export function StepVisual({ n, play }: { n: number; play: boolean }) {
   const covered = sq.filter(Boolean).length;
   const score = useTween([0, 24, 48, 72, 86][covered], 600);
   if (n === 0) {
+    const bars: [number, string][] = [[14, "a"], [26, "b"], [44, "c"], [24, "d"], [56, "c"], [40, "e"], [22, "d"], [48, "c"], [30, "d"], [52, "c"], [20, "d"]];
     return (
-      <div className="hx-sd" data-rec={rec}>
-        <button type="button" className="hx-rec" aria-pressed={rec} onClick={() => setRec((v) => !v)}><i />{rec ? "Recording" : "Tap to record"} <span className="hx-num">0:42</span></button>
-        <div className="hx-wv">{[10, 22, 14, 30, 18, 36, 24, 12, 28, 16, 32, 20, 10, 26, 14, 22].map((h, i) => <b key={i} style={{ height: h, ["--d" as string]: `${i * 60}ms` }} />)}</div>
-        <p className="hx-cap">Q3 of 6: Tell me about a time you made something faster.</p>
+      <div className="hs-card hs-mid" data-rec={rec}>
+        <button type="button" className="hs-rec" aria-pressed={rec} onClick={() => setRec((v) => !v)}><i />{rec ? "Recording:" : "Tap to record:"} <span className="hx-num">0:42</span></button>
+        <div className="hs-wv" aria-hidden="true">{bars.map(([h, c], i) => <b key={i} data-c={c} style={{ height: h, ["--d" as string]: `${i * 60}ms` }} />)}</div>
+        <p className="hs-sub">Speak naturally. We listen as you answer.</p>
       </div>
     );
   }
   if (n === 1) {
+    const rows: [string, number, number][] = [["Clarity", 88, 0], ["Relevance", 76, 1], ["Depth", 82, 2], ["Confidence", 84, 3]];
     return (
-      <div className="hx-sd">
-        <div className="hx-sc"><ScoreChip score={score} /></div>
-        <ul className="hx-dm">{(["Clarity", "Relevance", "Depth", "Confidence"] as const).map((l, i) => <li key={l} data-on={sq[i]} className={sq[i] || !play || i < 3 ? "" : "miss"}><button type="button" aria-pressed={sq[i]} aria-label={`${l} ${sq[i] ? "strong" : "needs work"}`} onClick={() => setSq((a) => a.map((v, j) => (j === i ? !v : v)))}><span>{l}</span><i><u /></i></button></li>)}</ul>
+      <div className="hs-card">
+        <div className="hs-hd"><span>Answer score</span><ScoreChip score={score} /></div>
+        <ul className="hs-bars">
+          {rows.map(([l, v, i]) => {
+            const miss = i === 3 && !sq[3];
+            const shown = sq[i] ? v : i === 3 ? 41 : 0;
+            return (
+              <li key={l} className={miss && play ? "miss" : undefined}>
+                <button type="button" aria-pressed={sq[i]} aria-label={`${l} ${sq[i] ? "strong" : "needs work"}`} onClick={() => setSq((a) => a.map((x, j) => (j === i ? !x : x)))}>
+                  <span>{l}</span><b className="hx-num">{shown ? `${shown}%` : "\u2013"}</b>
+                  <i><u style={{ width: `${shown}%` }} /></i>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
     );
   }
   if (n === 2) {
     return (
-      <div className="hx-sd">
-        <button type="button" className="hx-tg" role="switch" aria-checked={open} onClick={() => setOpen((v) => !v)}>
-          <span>{open ? "Employers can find me" : "Hidden from search"}</span>
+      <div className="hs-card hs-mid2">
+        <button type="button" className="hs-tg" role="switch" aria-checked={open} onClick={() => setOpen((v) => !v)}>
+          <span><b>{open ? "Employers can find me" : "Hidden from search"}</b><em>Your name stays hidden until you share it.</em></span>
           <i className={open ? "hx-switch on" : "hx-switch"} />
         </button>
-        <p className="hx-cap">Your name stays hidden until you share it.</p>
+        <ul className="hs-ck">
+          <li><Check />Your name and contact stay hidden</li>
+          <li><Check />Switch visibility off any time</li>
+        </ul>
       </div>
     );
   }
   return (
-    <div className="hx-sd">
-      <div className="hx-uk">
-        <span className="hx-who-row"><Avatar id="a41f" /><span className="hx-who"><b>Priya S.</b><span className="hx-num">Backend Engineer</span></span></span>
-        <button type="button" className="hx-fakebtn" aria-pressed={revealed} onClick={() => setRevealed((v) => !v)}>{revealed ? "Sent" : "Say hello"}</button>
+    <div className="hs-card">
+      <div className="hs-top">
+        <img className="hs-av" src="/people/a41f.jpg" alt="" width={56} height={56} />
+        <button type="button" className="hs-hello" aria-pressed={revealed} onClick={() => setRevealed((v) => !v)}>{revealed ? "Sent" : "Say hello"}</button>
       </div>
-      {revealed ? <p key="r" className="hx-reply hx-swap">Priya: Happy to talk this week.</p> : <p className="hx-cap">Replies show up here.</p>}
+      <p className="hs-role"><b>{revealed ? "Priya S." : "Candidate #a41f"}</b><span>Backend Engineer</span><em>Score 86/100</em></p>
+      <p className="hs-sub hs-left">Answered: Tell me about a time you made something faster</p>
+      <blockquote className="hs-q">{"\u201C"}{FIX}{"\u201D"}</blockquote>
+      {revealed && <p key="r" className="hs-reply">Priya: Happy to talk this week.</p>}
     </div>
   );
 }
