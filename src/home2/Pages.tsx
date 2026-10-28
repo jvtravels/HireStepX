@@ -399,13 +399,13 @@ function HowScene({ n }: { n: number }) {
   if (n === 0) return (
     <Win left="New job" right="Sample" alt="A job being posted: Backend Engineer with three skills in Bengaluru">
       <div className="pg-body">
-        <div className="pg-field"><span>Role</span><div className="pg-input"><span className="hs-type" style={d(0.3)}>Backend Engineer</span></div></div>
-        <div className="pg-field"><span>Skills</span><div className="hv-chips">{HERO_SKILLS.map((s, i) => <span key={s} className="pg-tag on hs-pop" style={d(1.6 + i * 0.25)}>{s}</span>)}</div></div>
-        <div className="pg-two hs-in" style={d(2.5)}><div className="pg-input">Bengaluru or remote</div><div className="pg-input">3+ years</div></div>
+        <div className="pg-field"><span>Role</span><div className="pg-input"><span className="hs-type" style={d(0.1)}>Backend Engineer</span></div></div>
+        <div className="pg-field"><span>Skills</span><div className="hv-chips">{HERO_SKILLS.map((s, i) => <span key={s} className="pg-tag on hs-pop" style={d(0.9 + i * 0.2)}>{s}</span>)}</div></div>
+        <div className="pg-two hs-in" style={d(1.8)}><div className="pg-input">Bengaluru or remote</div><div className="pg-input">3+ years</div></div>
         <div className="hs-swap hs-act">
-          <span className="hx-fakebtn hs-press hs-gone" style={d(3.2)}>Post job</span>
-          <Cursor press={3.2} />
-          <span className="hs-ok hs-in" style={d(3.9)}>Posted. Matching has started.</span>
+          <span className="hx-fakebtn hs-press hs-gone" style={d(2.6)}>Post job</span>
+          <Cursor press={2.6} />
+          <span className="hs-ok hs-in" style={d(3.3)}>Posted. Matching has started.</span>
         </div>
       </div>
     </Win>
@@ -489,6 +489,9 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
   const [armed, setArmed] = useState(false);
   const [seen, setSeen] = useState(false);
   const [held, setHeld] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const [picked, setPicked] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
   useSkel(stage);
   const tabs = useRef<HTMLDivElement>(null);
@@ -508,7 +511,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
     if (box && tab && box.scrollWidth > box.clientWidth) box.scrollTo({ left: tab.offsetLeft - 16, behavior: reduced() ? "auto" : "smooth" });
   }, [step]);
 
-  const paused = armed && (!seen || held);
+  const paused = armed && (!seen || held || focused || userPaused);
   return (
     <section className="pg-sec" id="how">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
@@ -516,10 +519,16 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
           <span className="hx-kicker">How it works</span>
           <h2 className="hx-h2">{title}</h2>
         </div>
-        <div className={`hs${paused ? " paused" : ""}`} onMouseEnter={() => setHeld(true)} onMouseLeave={() => setHeld(false)}>
+        <div
+          className={`hs${paused ? " paused" : ""}`}
+          onPointerEnter={(e) => { if (e.pointerType === "mouse") setHeld(true); }}
+          onPointerLeave={(e) => { if (e.pointerType === "mouse") setHeld(false); }}
+          onFocus={(e) => { if (e.target.matches(":focus-visible")) setFocused(true); }}
+          onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); }}
+        >
           <div className="hs-tabs hx-ri" style={delay(1)} role="tablist" aria-label="How it works" ref={tabs}>
             {steps.map(([t], i) => (
-              <button key={t} type="button" role="tab" id={`hs-t${i}`} aria-selected={i === step} aria-controls="hs-panel" className={`hs-tab${i === step ? " on" : i < step ? " done" : ""}`} onClick={() => setStep(i)}>
+              <button key={t} type="button" role="tab" id={`hs-t${i}`} aria-selected={i === step} aria-controls="hs-panel" className={`hs-tab${i === step ? " on" : i < step ? " done" : ""}`} onClick={() => { setStep(i); setPicked(true); }}>
                 <span className="hs-bar"><i style={{ animationDuration: `${STEP_MS}ms` }} onAnimationEnd={() => setStep((s) => (s + 1) % steps.length)} /></span>
                 <span className="hs-t"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{icons[i]}</svg>{t}</span>
               </button>
@@ -527,8 +536,13 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
           </div>
           <div ref={stage} data-sk="pending" id="hs-panel" role="tabpanel" aria-labelledby={`hs-t${step}`} className="hs-stage" style={delay(2)}>
             <div key={step} className={`hs-scene${step === wideAt ? " wide" : ""}`}>{scene(step)}</div>
+            {armed && (
+              <button type="button" className="hs-pp" aria-pressed={userPaused} aria-label={userPaused ? "Play the walkthrough" : "Pause the walkthrough"} onClick={() => setUserPaused((v) => !v)}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true">{userPaused ? <path d="M8 5v14l11-7z" /> : <path d="M7 5h4v14H7zM13 5h4v14h-4z" />}</svg>
+              </button>
+            )}
           </div>
-          <p key={step} className="hs-cap" aria-live="polite">{steps[step][1]}</p>
+          <p key={step} className="hs-cap" aria-live={picked ? "polite" : "off"}>{steps[step][1]}</p>
         </div>
       </div>
     </section>

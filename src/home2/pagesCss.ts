@@ -261,11 +261,14 @@ export const pagesCss = `
 .hs-tab.done .hs-bar i { transform: none; }
 .hs-tab.on .hs-bar i { animation: hs-fill linear forwards; }
 .hs-t { display: block; margin-top: 14px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
-.hs-stage { height: 520px; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line); border-radius: 20px; background: var(--sky); overflow: hidden; }
+.hs-stage { position: relative; height: 520px; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line); border-radius: 20px; background: var(--sky); overflow: hidden; }
 .hs-scene { width: 100%; display: flex; justify-content: center; }
 .hs-scene .pg-win { width: min(100%, 520px); }
 .hs-scene.wide .pg-win { width: min(100%, 760px); }
-.hs-cap { width: fit-content; max-width: 100%; margin: 20px auto 0; padding: 12px 22px; border-radius: 99px; background: var(--ink); color: var(--white); font-size: 15px; line-height: 1.4; text-align: center; animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hs-cap { width: fit-content; max-width: 100%; margin: 20px auto 0; padding: 12px 22px; border-radius: 99px; background: var(--wash); border: 1px solid var(--line); color: var(--ink); font-size: 15px; line-height: 1.4; text-align: center; animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.hs-pp { position: absolute; top: 12px; right: 12px; z-index: 4; display: grid; place-items: center; width: 36px; height: 36px; min-height: 0; padding: 0; border: 1px solid var(--line); border-radius: 50%; background: var(--white); color: var(--ink-2); cursor: pointer; }
+.hs-pp:hover { color: var(--ink); }
+.hs-pp:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .hs.paused *, .hs.paused *::after { animation-play-state: paused !important; }
 
 .hs-in { animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
