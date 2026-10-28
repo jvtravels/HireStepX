@@ -714,5 +714,10 @@ p.hx-swap, div.hx-swap { display: block; }
   .hv-steps { gap: 8px; }
 }
 @media (prefers-reduced-motion: reduce) { .hv-rk li, .hv-ans ins { transition: none; animation: none; } }
+/* How-it-works step visuals: one white card on the sky, content inside it */
+.hx-sd { width: min(100%, 380px); min-height: 220px; margin: 0 auto; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); gap: 16px; box-sizing: border-box; }
+.hx-sd .hx-tg { width: 100%; justify-content: space-between; padding: 0; border: 0; border-radius: 0; background: none; }
+.hx-sd .hx-uk { padding: 0; border: 0; border-radius: 0; background: none; }
+.hx-sd .hx-reply { border: 0; background: var(--wash); }
 `;
 
