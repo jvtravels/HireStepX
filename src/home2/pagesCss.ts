@@ -578,7 +578,7 @@ export const pagesCss = `
 .em-head.ctr p { margin-left: auto; margin-right: auto; }
 .em-head.ctr .hx-h2 { text-wrap: balance; }
 .hs-scene .pg-win, .hs-scene.wide .pg-win { width: min(100%, 780px); }
-.hs-scene .pg-body { min-height: 300px; justify-content: center; gap: 14px; }
+.hs-scene .pg-body { justify-content: center; gap: 14px; }
 .hs-bars { gap: 18px; }
 .hs-bars li, .hs-col .hs-bars li { grid-template-columns: 116px minmax(0, 1fr) 28px; white-space: nowrap; }
 .hs-people { display: grid; grid-template-columns: repeat(4, auto) 1fr; gap: 10px; margin-top: 8px; }
@@ -1127,12 +1127,10 @@ export const pagesCss = `
 .cxp .cx-demo .pd { max-width: none; }
 .ia-stage { display: flex; flex-direction: column; justify-content: center; }
 .hs-scene .pg-win { width: min(100%, 600px); }
-/* One window height for every step so the stage does not jump between scenes. */
-.hs-stage { align-items: start; }
-.hs-scene .pg-win { min-height: 448px; display: flex; flex-direction: column; }
+/* The stage keeps a fixed height; each window hugs its content and sits centred in it. */
+.hs-scene .pg-win { display: flex; flex-direction: column; }
 .hs-scene .pg-body { flex: 1; }
-.hs-scene .pg-body.hs-two { align-content: center; }
-@media (max-width: 600px) { .hs-stage { padding-top: 60px; } .hs-scene .pg-win { min-height: 0; } }
+@media (max-width: 600px) { .hs-stage { align-items: start; padding-top: 60px; } }
 .hs-cur { left: 62px; top: 26px; }
 @media (max-width: 900px) { .ft-vis .pg-ch { flex-direction: column; align-items: flex-start; gap: 6px; } .ft-vis .pg-ch b, .ft-vis .pg-ch small { white-space: normal; overflow-wrap: normal; word-break: normal; } }
 .cxp .hx-priv-stage { justify-content: center; }
