@@ -210,7 +210,7 @@ export default async function ForStudentsPage() {
               {[
                 {
                   n: "01", title: "Aptitude / Online Test",
-                  body: "This eliminates 60–80% of applicants. It covers quantitative reasoning, logical reasoning, verbal ability, and basic coding questions. TCS uses the NQT, Wipro uses the NLTH assessment, Cognizant uses the GenC/GenC Next format. Each company's test has a different format: practice the specific format for your target company, not generic aptitude.",
+                  body: "This round filters out a large share of applicants. It covers quantitative reasoning, logical reasoning, verbal ability, and basic coding questions. TCS uses the NQT, Wipro uses the NLTH assessment, Cognizant uses the GenC/GenC Next format. Each company's test has a different format: practice the specific format for your target company, not generic aptitude.",
                 },
                 {
                   n: "02", title: "Technical Interview (45–60 min)",

@@ -728,7 +728,7 @@ export const SECTION_VISUALS_1: Record<string, ReactNode> = {
   "campus-placement-interview-tips||Typical Placement Process": (
     <RoundFlow rounds={[
       { label: "PPT", detail: "Pre-Placement Talk: attend every one, even for uncertain companies" },
-      { label: "Aptitude Test", duration: "45–90 min", detail: "Quantitative, verbal, logical reasoning: eliminates 60–80%" },
+      { label: "Aptitude Test", duration: "45–90 min", detail: "Quantitative, verbal, logical reasoning: filters out a large share" },
       { label: "Technical Round", detail: "DSA + CS fundamentals + project discussion" },
       { label: "HR Round", detail: "Behavioral questions, salary expectations, joining date" },
     ]} />

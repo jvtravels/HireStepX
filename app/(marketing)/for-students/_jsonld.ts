@@ -15,7 +15,7 @@ export const faqSchema = {
       name: "How early should I start preparing for campus placements in India?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Start 3–4 months before your placement season for service companies (TCS, Infosys, Wipro). For product companies (Flipkart, Swiggy, CRED), start 6–8 months early due to the higher DSA and system design bar. The aptitude round for service companies eliminates 60–80% of candidates, making it the highest-leverage area to prepare first.",
+        text: "Start 3–4 months before your placement season for service companies (TCS, Infosys, Wipro). For product companies (Flipkart, Swiggy, CRED), start 6–8 months early due to the higher DSA and system design bar. The aptitude round for service companies filters out a large share of candidates, making it the highest-leverage area to prepare first.",
       },
     },
     {
