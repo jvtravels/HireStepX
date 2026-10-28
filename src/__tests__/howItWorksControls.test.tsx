@@ -25,7 +25,7 @@ describe("HowItWorks autoplay controls", () => {
     expect(btn.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(btn);
     expect(screen.getByRole("button", { name: "Play the walkthrough" }).getAttribute("aria-pressed")).toBe("true");
-    expect(container.querySelector(".hs")?.classList.contains("paused")).toBe(true);
+    expect(container.querySelector(".hs")?.classList.contains("stopped")).toBe(true);
   });
 
   it("does not announce captions while it rotates by itself", () => {
@@ -58,12 +58,12 @@ describe("HowItWorks autoplay controls", () => {
     });
     const { container } = mount();
     const root = container.querySelector(".hs") as HTMLElement;
-    expect(root.classList.contains("paused")).toBe(false);
+    expect(root.classList.contains("stopped")).toBe(false);
     fireEvent.pointerEnter(root, { pointerType: "touch" });
-    expect(root.classList.contains("paused")).toBe(false);
+    expect(root.classList.contains("stopped")).toBe(false);
     fireEvent.pointerEnter(root, { pointerType: "mouse" });
-    expect(root.classList.contains("paused")).toBe(true);
+    expect(root.classList.contains("stopped")).toBe(true);
     fireEvent.pointerLeave(root, { pointerType: "mouse" });
-    expect(root.classList.contains("paused")).toBe(false);
+    expect(root.classList.contains("stopped")).toBe(false);
   });
 });

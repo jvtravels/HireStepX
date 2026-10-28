@@ -270,6 +270,8 @@ export const pagesCss = `
 .hs-pp:hover { color: var(--ink); }
 .hs-pp:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .hs.paused *, .hs.paused *::after { animation-play-state: paused !important; }
+/* Hover, focus and the pause button stop the step timer only, so a step picked meanwhile still plays its scene. */
+.hs.stopped .hs-bar i { animation-play-state: paused !important; }
 
 .hs-in { animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
 .hs-pop { animation: hs-pop .4s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }

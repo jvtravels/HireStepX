@@ -511,7 +511,8 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
     if (box && tab && box.scrollWidth > box.clientWidth) box.scrollTo({ left: tab.offsetLeft - 16, behavior: reduced() ? "auto" : "smooth" });
   }, [step]);
 
-  const paused = armed && (!seen || held || focused || userPaused);
+  const paused = armed && !seen;
+  const stopped = armed && (held || focused || userPaused);
   return (
     <section className="pg-sec" id="how">
       <div ref={ref} className={`hx-wrap hx-rv${on ? " on" : ""}`}>
@@ -520,7 +521,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
           <h2 className="hx-h2">{title}</h2>
         </div>
         <div
-          className={`hs${paused ? " paused" : ""}`}
+          className={`hs${paused ? " paused" : ""}${stopped ? " stopped" : ""}`}
           onPointerEnter={(e) => { if (e.pointerType === "mouse") setHeld(true); }}
           onPointerLeave={(e) => { if (e.pointerType === "mouse") setHeld(false); }}
           onFocus={(e) => { if (e.target.matches(":focus-visible")) setFocused(true); }}
