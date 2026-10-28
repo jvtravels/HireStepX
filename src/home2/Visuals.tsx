@@ -98,7 +98,7 @@ export function HeroSurface() {
                 return (
                   <li key={p.id} className={me ? (fixed ? "me hit" : "me") : undefined} style={{ transform: `translateY(${rank.indexOf(p.id) * RANK_ROW}px)` }}>
                     <span className="hv-n">{rank.indexOf(p.id) + 1}</span>
-                    <span className="hv-tile">#{p.id.slice(0, 2)}</span>
+                    <img className="hv-tile" src={`/people/${p.id}.jpg`} alt="" width={38} height={38} />
                     <span className="hv-who">
                       <b>{me && contact ? "Priya S." : `Candidate #${p.id}`}{me && !contact && <i aria-hidden="true" />}</b>
                       <em>{p.note}</em>

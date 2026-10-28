@@ -682,7 +682,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hv-rk li.me { border-color: var(--btn); box-shadow: 0 0 0 1px var(--btn); }
 .hv-rk li.hit { animation: hx-hit 900ms cubic-bezier(0.22, 1, 0.36, 1) 1; }
 .hv-n { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-3); }
-.hv-tile { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--wash); font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.hv-tile { width: 38px; height: 38px; object-fit: cover; border-radius: 10px; display: grid; place-items: center; border: 1px solid var(--line); background: var(--wash); font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 600; color: var(--ink-2); }
 .hv-rk li.me .hv-tile { background: oklch(0.95 0.03 285); border-color: oklch(0.9 0.04 285); color: var(--btn); }
 .hv-who { display: grid; gap: 2px; min-width: 0; }
 .hv-who b { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
