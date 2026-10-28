@@ -280,7 +280,7 @@ export default async function InterviewPrepPage({
       kind: "grid", id: "types", title: "The four types of Indian interviews",
       sub: "Preparation differs entirely by company type. Map your target before you prepare.",
       items: [
-        { label: "Service IT Companies", href: "/candidates", meta: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini. Aptitude test → CS fundamentals → HR. The aptitude round eliminates 60–80% of candidates. Score well on reasoning and coding basics first." },
+        { label: "Service IT Companies", href: "/candidates", meta: "TCS · Infosys · Wipro · Cognizant · Accenture · HCL · Capgemini. Aptitude test → CS fundamentals → HR. The aptitude round filters out a large share of candidates. Score well on reasoning and coding basics first." },
         { label: "Indian Product Companies", href: "/questions/flipkart-sde-interview-questions", meta: "Flipkart · Razorpay · Swiggy · CRED · Meesho · Zerodha. DSA (medium–hard) → System Design → Behavioral. Bar is high. Expect 2 DSA problems in 45 min + a system design round tied to India-scale problems." },
         { label: "FAANG & Global Tech", href: "/questions/google-india-engineering-interview-questions", meta: "Google · Amazon · Microsoft · Meta · Netflix · Adobe. Hard DSA → System Design → Behavioral (LP or Googleyness). The highest bar. DSA needs competitive-programming speed. Behavioral rounds are as important as coding." },
         { label: "Consulting & Finance", href: "/questions/mckinsey-case-study-interview-questions", meta: "McKinsey · BCG · Deloitte · Goldman · JPMorgan. Case Study → Behavioral (PEI/LP) → Partner round. Hypothesis-first thinking and structured problem-solving matter more than technical depth." },
@@ -292,7 +292,7 @@ export default async function InterviewPrepPage({
       items: [
         { title: "Baseline mock interview first", body: "Do one practice interview before any studying. This is uncomfortable but essential: it shows you exactly where you are, not where you think you are. Most candidates discover their real gap is delivery and structure, not content." },
         { title: "Know your company's format cold", body: "TCS Ninja has 3 NQT rounds. Amazon has 16 Leadership Principles. Google has a 'Googleyness' round. CRED has a take-home assignment. Each format rewards different preparation, so don't use generic content." },
-        { title: "Build a story bank (behavioral)", body: "Prepare 8–10 STAR (Situation, Task, Action, Result) stories covering: leadership, conflict, failure, initiative, teamwork, technical problem-solving, and learning something new. These same stories answer 90% of behavioral questions across all companies." },
+        { title: "Build a story bank (behavioral)", body: "Prepare 8–10 STAR (Situation, Task, Action, Result) stories covering: leadership, conflict, failure, initiative, teamwork, technical problem-solving, and learning something new. These same stories cover most behavioral questions across companies." },
         { title: "Practice out loud, not on paper", body: "Reading answers and saying them are completely different skills. Record yourself. Count filler words. Time every answer (aim for 90 seconds to 2 minutes). The goal is naturally structured, not scripted." },
         { title: "Company-specific deep dive (last 1 week)", body: "In the final week, simulate the exact interview format: same time limits, same question types, same pressure. Use company-specific question sets and frameworks, not generic prep materials." },
       ],
