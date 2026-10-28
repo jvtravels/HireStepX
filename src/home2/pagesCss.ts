@@ -296,8 +296,9 @@ export const pagesCss = `
 .hs-rank li > span { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-3); }
 .hs-rank b { font-weight: 600; }
 .hs-rank em { font-style: normal; font-size: 12px; font-weight: 500; color: var(--btn); }
-.hs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
-.hs-col { display: grid; gap: 22px; align-content: start; min-width: 0; }
+.hs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; }
+.hs-col { display: grid; gap: 22px; grid-template-rows: auto auto 1fr; min-width: 0; }
+.hs-col .hs-sum { align-self: stretch; }
 .hs-col .hs-bars li { grid-template-columns: 104px minmax(0, 1fr) 26px; }
 @keyframes hs-fill { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes hs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -1125,7 +1126,13 @@ export const pagesCss = `
 .cxp .cx-demo .pd { max-width: none; }
 .ia-stage { display: flex; flex-direction: column; justify-content: center; }
 .hs-scene .pg-win { width: min(100%, 600px); }
-.hs-cur { left: 44px; top: 24px; }
+/* One window height for every step so the stage does not jump between scenes. */
+.hs-stage { align-items: start; }
+.hs-scene .pg-win { min-height: 448px; display: flex; flex-direction: column; }
+.hs-scene .pg-body { flex: 1; }
+.hs-scene .pg-body.hs-two { align-content: center; }
+@media (max-width: 600px) { .hs-stage { padding-top: 60px; } .hs-scene .pg-win { min-height: 0; } }
+.hs-cur { left: 62px; top: 26px; }
 @media (max-width: 900px) { .ft-vis .pg-ch { flex-direction: column; align-items: flex-start; gap: 6px; } .ft-vis .pg-ch b, .ft-vis .pg-ch small { white-space: normal; overflow-wrap: normal; word-break: normal; } }
 .cxp .hx-priv-stage { justify-content: center; }
 .cxp .hx-priv-body { flex: none; }

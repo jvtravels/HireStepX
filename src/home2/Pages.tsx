@@ -365,7 +365,7 @@ const HOW: [string, string][] = [
 export const d = (s: number): React.CSSProperties => ({ ["--d" as string]: `${s}s` });
 
 const HS_SKILLS: [string, number][] = [["Node.js", 88], ["PostgreSQL", 84], ["System design", 80]];
-const HS_RANK = [["a41f", 97, 2], ["e07b", 80, 0], ["c92d", 74, 3], ["f19a", 66, 1]] as const;
+const HS_RANK = [["a41f", 86, 2], ["e07b", 80, 0], ["c92d", 74, 3], ["f19a", 66, 1]] as const;
 
 export function SkillBars({ rows, start }: { rows: [string, number | null][]; start: number }) {
   return (
@@ -416,14 +416,14 @@ function HowScene({ n }: { n: number }) {
         <div className="hs-h"><b>Best score per skill</b><span className="hs-count hs-pop" style={d(2.9)}>4 people match</span></div>
         <SkillBars rows={HS_SKILLS} start={0.4} />
         <div className="hs-people">
-          {HS_RANK.map(([id], i) => <span key={id} className="hs-pop" style={d(2 + i * 0.3)}><Av id={id} size={28} />#{id}</span>)}
+          {[...HS_RANK].sort((a, b) => a[2] - b[2]).map(([id], i) => <span key={id} className="hs-pop" style={d(2 + i * 0.3)}><Av id={id} size={28} />#{id}</span>)}
           <p className="hs-note hs-in" style={d(3.4)}>Found in their practice answers, not their resume.</p>
         </div>
       </div>
     </Win>
   );
   if (n === 2) return (
-    <Win left="Backend Engineer" right="Sample · Ranked on 3 skills" alt="Four candidates reordered with the best fit first">
+    <Win left="Backend Engineer" right="Sample · Ranked" alt="Four candidates reordered with the best fit first">
       <div className="pg-body">
         <ul className="hs-rank">
           {HS_RANK.map(([id, score, from], i) => (
@@ -444,7 +444,7 @@ function HowScene({ n }: { n: number }) {
     <Win left="Backend Engineer" right="Sample · Compare" alt="Two candidates opened side by side with their skill scores">
       <div className="pg-body hs-two">
         <div className="hs-col">
-          <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Interview ready</span></div><span className="sc"><ScoreChip score={97} /></span></div>
+          <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>12 sessions · Interview ready</span></div><span className="sc"><ScoreChip score={86} /></span></div>
           <SkillBars rows={HS_SKILLS} start={0.3} />
           <Summary at={1.6}>Clear, structured answers. Strong on Node.js and database design, with a calm, specific style under follow-ups.</Summary>
         </div>
@@ -457,9 +457,9 @@ function HowScene({ n }: { n: number }) {
     </Win>
   );
   return (
-    <Win left="Candidate #a41f" right="Sample" alt="A locked name and contact details being unlocked">
+    <Win left="Backend Engineer" right="Sample" alt="A locked name and contact details being unlocked">
       <div className="pg-body">
-        <div className="pg-who"><Av id="a41f" size={40} /><div><b>Backend Engineer</b><span>Bengaluru · 12 sessions</span></div><span className="sc"><ScoreChip score={97} /></span></div>
+        <div className="pg-who"><Av id="a41f" size={40} /><div><b>Candidate #a41f</b><span>Bengaluru · 12 sessions</span></div><span className="sc"><ScoreChip score={86} /></span></div>
         <Summary at={0.5}>Clear, structured answers. Strong on Node.js and databases.</Summary>
         <div className="hs-swap">
           <div className="pg-lockrow hs-gone" style={d(2.4)}><span><Lock />Name</span><span><Lock />Phone</span><span><Lock />Email</span></div>
