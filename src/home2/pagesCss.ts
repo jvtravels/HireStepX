@@ -253,16 +253,16 @@ export const pagesCss = `
 .em-head p { margin: 10px 0 0; max-width: 52ch; font-size: 16px; line-height: 1.5; color: var(--ink-2); }
 
 .hs-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 24px; margin-bottom: 20px; }
-.hs-tab { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; color: var(--ink-3); transition: color .2s; }
+.hs-tab { background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; color: var(--ink-3); transition: color .3s cubic-bezier(0.22, 1, 0.36, 1); }
 .hs-tab:hover, .hs-tab.on { color: var(--ink); }
 .hs-tab:focus-visible { outline: 2px solid var(--btn); outline-offset: 6px; border-radius: 4px; }
 .hs-bar { display: block; height: 3px; border-radius: 3px; background: var(--line); overflow: hidden; }
-.hs-bar i { display: block; height: 100%; background: var(--btn); transform: scaleX(0); transform-origin: left; }
+.hs-bar i { display: block; height: 100%; background: var(--btn); transform: scaleX(0); transform-origin: left; transition: transform .5s cubic-bezier(0.22, 1, 0.36, 1); }
 .hs-tab.done .hs-bar i { transform: none; }
 .hs-tab.on .hs-bar i { animation: hs-fill linear forwards; }
 .hs-t { display: block; margin-top: 14px; font-size: 17px; font-weight: 500; letter-spacing: -0.01em; }
 .hs-stage { position: relative; height: 520px; display: grid; place-items: center; padding: 32px; border: 1px solid var(--line); border-radius: 20px; background: var(--sky); overflow: hidden; }
-.hs-scene { width: 100%; display: flex; justify-content: center; }
+.hs-scene { width: 100%; display: flex; justify-content: center; animation: hs-scene .6s cubic-bezier(0.22, 1, 0.36, 1) both; }
 .hs-scene .pg-win { width: min(100%, 520px); }
 .hs-scene.wide .pg-win { width: min(100%, 760px); }
 .hs-cap { width: fit-content; max-width: 100%; margin: 20px auto 0; padding: 12px 22px; border-radius: 99px; background: var(--wash); border: 1px solid var(--line); color: var(--ink); font-size: 15px; line-height: 1.4; text-align: center; animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) both; }
@@ -275,10 +275,10 @@ export const pagesCss = `
 
 .hs-in { animation: hs-in .5s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
 .hs-pop { animation: hs-pop .4s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
-.hs-type { display: inline-block; white-space: nowrap; animation: hs-type 1.1s steps(16) var(--d, 0s) both; }
-.hs-press { animation: hs-press .3s ease var(--d, 0s) both, hs-out .3s ease calc(var(--d, 0s) + .6s) forwards; }
-.hs-gone { animation: hs-out .3s ease var(--d, 0s) forwards; }
-.hs-press.hs-gone { animation: hs-press .3s ease var(--d, 0s) both, hs-out .3s ease calc(var(--d, 0s) + .6s) forwards; }
+.hs-type { display: inline-block; white-space: nowrap; animation: hs-type 1.1s steps(40) var(--d, 0s) both; }
+.hs-press { animation: hs-press .3s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both, hs-out .4s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--d, 0s) + .6s) forwards; }
+.hs-gone { animation: hs-out .4s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) forwards; }
+.hs-press.hs-gone { animation: hs-press .3s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both, hs-out .4s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--d, 0s) + .6s) forwards; }
 .hs-swap { display: grid; }
 .hs-swap > * { grid-area: 1 / 1; }
 .hs-act { align-items: center; justify-items: start; min-height: 36px; }
@@ -300,9 +300,10 @@ export const pagesCss = `
 .hs-col { display: grid; gap: 22px; grid-template-rows: auto auto 1fr; min-width: 0; }
 .hs-col .hs-sum { align-self: stretch; }
 .hs-col .hs-bars li { grid-template-columns: 104px minmax(0, 1fr) 26px; }
+@keyframes hs-scene { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes hs-fill { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes hs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes hs-pop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
+@keyframes hs-pop { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
 @keyframes hs-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 @keyframes hs-grow { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes hs-press { 50% { transform: scale(.94); } }
