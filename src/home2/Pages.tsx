@@ -595,7 +595,7 @@ function EvidenceView() {
           {OPEN_SKILLS.map(([s, v]) => (
             <li key={s}><span>{s}</span><i style={{ ["--w" as string]: `${v}%` }} /><ScoreChip score={v} /></li>
           ))}
-          <li className="fl-plain"><span>Readiness</span><b>Hire</b></li>
+          <li className="fl-plain"><span>Readiness</span><b>Interview ready</b></li>
           <li className="fl-plain"><span>Practice sessions</span><b>12</b></li>
         </ul>
       </div>
@@ -788,7 +788,7 @@ function EmpPricing() {
                       {open ? <b>Priya S.</b> : <span className="ep-lock"><Lock />Name</span>}
                       <span>Backend Engineer, Bengaluru</span>
                     </div>
-                    <span className="ep-ready"><small>Readiness</small><b>Hire</b></span>
+                    <span className="ep-ready"><small>Readiness</small><b>Interview ready</b></span>
                   </div>
                   <div className={`ep-contact${open ? " open" : ""}`}>{open ? <>Phone, email</> : <><Lock />Phone and email</>}</div>
                   <h4>Skill scores</h4>

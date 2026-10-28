@@ -76,7 +76,7 @@ export const authFormsCss = `
 .hx-au-inner .hx-sent .hx-btn.ghost { background: var(--white); color: var(--ink); border: 1px solid var(--line); }
 .hx-au-inner .hx-link { all: unset; cursor: pointer; color: var(--btn); font-weight: 500; }
 .hx-au-inner .hx-note { margin-top: 6px; font-size: 13px !important; color: var(--ink-3); }
-.hx-au-inner .hx-hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+.hx-hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 .hx-au-inner .hx-pw button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; right: 2px; }
 .hx-au-inner .hx-pw .hx-in { padding-right: 52px; }
 .hx-au-inner .hx-pwfeed { margin-top: 8px; }
