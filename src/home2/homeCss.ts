@@ -663,6 +663,9 @@ p.hx-swap, div.hx-swap { display: block; }
 .hv-ans { display: grid; gap: 10px; padding: 16px 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
 .hv-ats { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; font-weight: 600; color: var(--btn); }
 .hv-ans p { font-size: 17px; line-height: 1.6; color: var(--ink-2); }
+.hv-ans p { display: grid; }
+.hv-ans p > * { grid-area: 1 / 1; }
+.hv-sz { visibility: hidden; pointer-events: none; }
 .hv-ans ins { text-decoration: none; background: oklch(0.935 0.045 285 / 0.7); border-radius: 4px; padding: 1px 3px; animation: hx-rise 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 .hv-miss { display: inline-block; padding: 4px 9px; border: 1px solid oklch(0.62 0.19 38 / 0.35); border-radius: 6px; background: var(--accent-tint); color: var(--accent-ink); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1; vertical-align: 2px; }
 .hv-star { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }

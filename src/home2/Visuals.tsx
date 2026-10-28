@@ -77,7 +77,8 @@ export function HeroSurface() {
             <div className="hv-ans">
               <span className="hv-ats"><WaveIcon />0:31</span>
               <p>
-                {fixed ? <>“{ANSWER} <ins key="f">{FIX}</ins>”</> : <>“We timed checkout on the UPI path before and after, and watched it for two sale weekends.” <span className="hv-miss">Result missing</span></>}
+                <span>{fixed ? <>“{ANSWER} <ins key="f">{FIX}</ins>”</> : <>“{ANSWER}” <span className="hv-miss">Result missing</span></>}</span>
+                <span className="hv-sz" aria-hidden="true">“{ANSWER} {FIX}”</span>
               </p>
             </div>
             <ul className="hv-star" aria-label="STAR coverage">
