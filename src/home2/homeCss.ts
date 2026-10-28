@@ -214,7 +214,7 @@ export const homeCss = `
 .hx-pv-opt:focus-visible { outline: 2px solid var(--btn) !important; outline-offset: 2px; border-color: var(--btn); }
 .hx-pv-note .hx-pv-tag { margin-left: 6px; }
 .hx-vis-open { font-weight: 500; color: var(--btn); }
-.hx-pv-note { margin: 20px 0 0; font-size: 16px; color: var(--ink-2); }
+.hx-pv-note { margin: 20px 0 0; font-size: 16px; color: var(--ink-2); text-wrap: balance; }
 .hx-pv-row + .hx-pv-note { margin-top: 4px; }
 .hx-priv-top { display: flex; justify-content: space-between; align-items: center; gap: 16px; font-size: 15px; font-weight: 500; }
 .hx-priv-body { margin-top: 20px; animation: hx-rise 380ms cubic-bezier(0.22, 1, 0.36, 1) both; }
