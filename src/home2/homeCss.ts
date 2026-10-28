@@ -550,7 +550,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-how { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 56px; align-items: center; }
 .hx-how-list { list-style: none; margin: 0; padding: 0; position: relative; }
 .hx-how-list li { position: relative; padding: 4px 0; }
-.hx-how-list button { all: unset; box-sizing: border-box; display: flex; align-items: baseline; gap: 14px; width: 100%; padding: 14px 0; cursor: pointer; border-radius: 8px; }
+.hx-how-list button { all: unset; box-sizing: border-box; display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 0; cursor: pointer; border-radius: 8px; }
 .hx-how-list button:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
 .hx-how-list b { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 500; font-size: 13px; color: var(--ink-3); }
 .hx-how-list button span { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 26px; font-weight: 500; letter-spacing: -0.012em; color: var(--ink-3); transition: color .4s; }
