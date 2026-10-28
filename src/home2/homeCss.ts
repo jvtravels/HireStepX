@@ -473,7 +473,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hx-evt li.gap { color: var(--accent-ink); background: var(--accent-tint); border-color: transparent; }
 .hx-evd .hx-fl-row { margin-top: 2px; }
 .hx-evd .hx-fakebtn { border: 0; font-family: inherit; cursor: pointer; }
-.hx-evd .hx-fakebtn.alt { border: 1px solid var(--line-2); }
+.hx-evd .hx-fakebtn.alt { border: 0; }
 .hx-reply { font-size: 13px; color: var(--ink); background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 8px 12px; align-self: stretch; }
 
 .hx-rv .hx-ri { transition: opacity .6s cubic-bezier(0.22, 1, 0.36, 1), transform .6s cubic-bezier(0.22, 1, 0.36, 1); transition-delay: calc(var(--i, 0) * 90ms); }
