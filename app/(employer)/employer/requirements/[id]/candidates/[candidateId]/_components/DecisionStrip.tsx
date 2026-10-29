@@ -2,7 +2,7 @@ import { CheckIcon, TriangleAlertIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
-import { buildDecisionBrief, poolStanding, scoreReason } from "./fitExtras";
+import { buildDecisionBrief, overlapReason, poolStanding, scoreReason } from "./fitExtras";
 import { buildRoleFit } from "./helpers";
 
 /** One glance before the detail: who this is against the pool, what speaks for them, what to check first. */
@@ -10,7 +10,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence }: { c
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const brief = buildDecisionBrief(rows);
   const hasPractice = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
-  const reason = scoreReason(rows, hasPractice);
+  const reason = scoreReason(rows, hasPractice) ?? (candidate.matchBreakdown ? overlapReason(candidate.matchBreakdown, hasPractice) : null);
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
   if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !reason) return null;
   return (

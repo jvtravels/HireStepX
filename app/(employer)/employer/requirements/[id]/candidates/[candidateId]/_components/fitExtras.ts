@@ -152,3 +152,11 @@ export function scoreReason(rows: FitRow[], hasPractice: boolean): string | null
   if (gaps.length > 0) parts.push(`gaps in ${gaps.slice(0, 2).join(" and ")}${gaps.length > 2 ? ` and ${gaps.length - 2} more` : ""}`);
   return `${parts.join(", ")}.${hasPractice ? "" : " No graded practice yet, so this reflects the resume only."}`;
 }
+
+/** Fallback when the job has no structured criteria: name the weakest resume-overlap input. */
+export function overlapReason(b: { roleMatch: number; skillMatch: number; locationMatch: number }, hasPractice: boolean): string {
+  const parts: [string, number][] = [["role", b.roleMatch], ["skill", b.skillMatch], ["location", b.locationMatch]];
+  const [name, value] = parts.reduce((lo, cur) => (cur[1] < lo[1] ? cur : lo));
+  const lead = value < 50 ? `weakest on ${name} overlap (${Math.round(value)}%)` : "resume overlaps the posting on role, skills and location";
+  return `${lead}.${hasPractice ? "" : " No graded practice yet, so this reflects the resume only."}`;
+}

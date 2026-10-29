@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backgroundFitRow, budgetRangeLpa, buildDecisionBrief, parsePayRangeLpa, payFitRow, poolStanding, scoreReason, workModeFitRow } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/fitExtras";
+import { backgroundFitRow, budgetRangeLpa, buildDecisionBrief, parsePayRangeLpa, payFitRow, poolStanding, scoreReason, overlapReason, workModeFitRow } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/fitExtras";
 
 const cand = (resume: Record<string, unknown> = {}): any => ({ id: "c", matchScore: 70, resume: { education: [], experience: [], industries: [], ...resume } });
 const req = (o: Record<string, unknown> = {}): any => ({ budgetMin: 15, budgetMax: 20, salaryType: "per-annum", workMode: "hybrid", preferredColleges: [], targetCompanies: [], preferredIndustry: "", ...o });
@@ -84,5 +84,14 @@ describe("scoreReason", () => {
   it("drops the caveat when practice exists and returns null without criteria", () => {
     expect(scoreReason([row("a", "Experience", "meets")], true)).toBe("1 of 1 criterion fully met.");
     expect(scoreReason([], true)).toBeNull();
+  });
+});
+
+describe("overlapReason", () => {
+  it("names the weakest overlap input and flags missing practice", () => {
+    expect(overlapReason({ roleMatch: 100, skillMatch: 0, locationMatch: 100 }, false)).toBe("weakest on skill overlap (0%). No graded practice yet, so this reflects the resume only.");
+  });
+  it("stays neutral when every input is decent", () => {
+    expect(overlapReason({ roleMatch: 80, skillMatch: 70, locationMatch: 90 }, true)).toBe("resume overlaps the posting on role, skills and location.");
   });
 });
