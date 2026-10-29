@@ -248,6 +248,51 @@ export async function filterSuppressed<T extends { id: string }>(
   return suppressed.size === 0 ? [...rows] : rows.filter((r) => !suppressed.has(r.id.toLowerCase()));
 }
 
+/** Ids in `userIds` that own an `employers` row. Every signup gets a candidate
+    `profiles` row from the auth trigger, employers included, so a profiles-based
+    candidate cron cannot tell them apart without this lookup.
+    FAIL CLOSED like getSuppressedUserIds: on any lookup failure the whole chunk
+    is reported as employer accounts, so the cron skips rather than sending a
+    candidate email to an employer. The next run retries. */
+export async function getEmployerAccountIds(deps: PreferenceDeps, userIds: readonly string[]): Promise<Set<string>> {
+  const out = new Set<string>();
+  const ids = [...new Set(userIds.filter((id) => UUID_RE.test(id)))];
+  if (ids.length === 0 || !deps.supabaseUrl || !deps.serviceKey) return out;
+  const doFetch = deps.fetchImpl ?? fetch;
+  for (let i = 0; i < ids.length; i += ID_CHUNK) {
+    const chunk = ids.slice(i, i + ID_CHUNK);
+    try {
+      const res = await doFetch(`${deps.supabaseUrl}/rest/v1/employers?id=in.(${chunk.join(",")})&select=id`, {
+        headers: authHeaders(deps),
+        signal: AbortSignal.timeout(8_000),
+      });
+      if (res.ok) {
+        const rows = (await res.json().catch(() => [])) as { id?: string }[];
+        for (const r of Array.isArray(rows) ? rows : []) if (r.id) out.add(r.id.toLowerCase());
+        continue;
+      }
+      console.warn(`[email-audience] employer lookup failed HTTP ${res.status}; skipping this batch`);
+    } catch (err) {
+      console.warn(`[email-audience] employer lookup threw (${err instanceof Error ? err.name : "error"}); skipping this batch`);
+    }
+    for (const id of chunk) out.add(id.toLowerCase());
+  }
+  return out;
+}
+
+/** Drop employer accounts from a candidate-email list (cron senders). Someone
+    who is both an employer and a candidate who has actually practised keeps
+    getting candidate emails (`hasPracticed`); an employer who never practised is
+    an employer only. Keeps order. */
+export async function filterEmployerOnlyAccounts<T extends { id: string }>(
+  deps: PreferenceDeps,
+  rows: readonly T[],
+  hasPracticed: (row: T) => boolean,
+): Promise<T[]> {
+  const employers = await getEmployerAccountIds(deps, rows.map((r) => r.id));
+  return employers.size === 0 ? [...rows] : rows.filter((r) => !employers.has(r.id.toLowerCase()) || hasPracticed(r));
+}
+
 export interface EmailPreferences {
   marketing_opt_out: boolean;
   employer_notifications_opt_out: boolean;

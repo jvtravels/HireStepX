@@ -13,7 +13,7 @@ import { verifyCronAuth } from "./_cron-auth";
 import { recordCronResult } from "./_cron-heartbeat";
 import { escapeHtml } from "./_shared";
 import { emailShell, hero, button, signoff, type EmailFooterOptions } from "./_email-theme";
-import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { filterEmployerOnlyAccounts, filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -121,7 +121,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const ts = p.practice_timestamps;
     return !ts || ts.length === 0;
   });
-  const profiles = await filterSuppressed(preferenceDepsFromEnv(), neverPracticed, "marketing");
+  // Employers get a candidate profile row at signup too and never practise, so
+  // without this they match "signed up, no sessions" and get a candidate email.
+  const candidatesOnly = await filterEmployerOnlyAccounts(preferenceDepsFromEnv(), neverPracticed, () => false);
+  const profiles = await filterSuppressed(preferenceDepsFromEnv(), candidatesOnly, "marketing");
 
   let sent = 0;
   let skipped = 0;

@@ -11,7 +11,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { escapeHtml } from "./_shared";
 import { fetchAllPages, timeBudget } from "./_batch";
 import { emailShell, hero, para, b, button, dataCard, type EmailFooterOptions } from "./_email-theme";
-import { filterSuppressed, getSuppressedUserIds, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { filterEmployerOnlyAccounts, filterSuppressed, getSuppressedUserIds, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
 
 const SUPABASE_URL = process.env.SUPABASE_URL || "";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
@@ -325,7 +325,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return daysSince >= 1 && daysSince < 14;
     });
     // Honour opt-outs at send time. Fails closed (everyone skipped) if the lookup errors.
-    const candidates = await filterSuppressed(prefDeps, candidatesBeforeOptOut, "marketing");
+    // Employer accounts also own a candidate profile and fall in the never-started bucket;
+    // they stay out unless they have really practised (dual-role).
+    const candidatesOnly = await filterEmployerOnlyAccounts(prefDeps, candidatesBeforeOptOut, (p) => (p.practice_timestamps?.length ?? 0) > 0);
+    const candidates = await filterSuppressed(prefDeps, candidatesOnly, "marketing");
 
     let sent = 0;
     let skipped = 0;
