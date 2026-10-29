@@ -18,7 +18,7 @@ jobs:
       group: post-deploy-verify
       cancel-in-progress: false
     if: github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - name: Probe production

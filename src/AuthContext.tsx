@@ -727,9 +727,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // when the code is absent, silently updating state so the share section is
   // live the next time the report renders.
   useEffect(() => {
-    if (!user?.id || user.referralCode) return;
-    // Employers have no share section; the call only costs them a request on every console page load.
-    if (window.location.pathname.startsWith("/employer")) return;
+    if (!user?.id || user.referralCode || window.location.pathname.startsWith("/employer")) return; // employers have no share section
     authHeaders()
       .then((headers) => fetch("/api/referral", { headers }))
       .then((r) => (r.ok ? r.json() : null))
