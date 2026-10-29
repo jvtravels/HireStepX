@@ -357,14 +357,18 @@ function HighlightsPanel({ candidate }: { candidate: Candidate }) {
   );
 }
 
-function SkillsPanel({ candidate, onOpenResume }: { candidate: Candidate; onOpenResume: () => void }) {
-  const detailed = candidate.resume?.skillsDetailed ?? [];
+/** Required skills already appear in the Fit card, so this panel lists only the rest. */
+function SkillsPanel({ candidate, requiredSkills, onOpenResume }: { candidate: Candidate; requiredSkills: string[]; onOpenResume: () => void }) {
+  const required = new Set(requiredSkills.map((s) => displaySkillName(s).toLowerCase()));
+  const isOther = (name: string) => !required.has(displaySkillName(name).toLowerCase());
+  const detailed = (candidate.resume?.skillsDetailed ?? []).filter((s) => isOther(s.name));
   const groups = groupSkillsByDepth(detailed).slice(0, 2).map((g) => ({ label: g.label, items: g.skills.slice(0, 8).map(skillChipLabel), more: Math.max(0, g.skills.length - 8) }));
-  const fallback = detailed.length === 0 ? candidate.skills.slice(0, 12).map(displaySkillName) : [];
+  const fallback = (candidate.resume?.skillsDetailed ?? []).length === 0 ? candidate.skills.filter(isOther).slice(0, 12).map(displaySkillName) : [];
   if (groups.length === 0 && fallback.length === 0) return null;
   const industries = (candidate.resume?.industries ?? []).slice(0, 4);
+  const trimmed = requiredSkills.length > 0;
   return (
-    <Panel id="skills-overview-heading" title="Skills" action={<PanelButton onClick={onOpenResume}>All skills</PanelButton>}>
+    <Panel id="skills-overview-heading" title={trimmed ? "Other skills" : "Skills"} action={<PanelButton onClick={onOpenResume}>All skills</PanelButton>}>
       <div className="grid gap-4">
         {groups.map((g) => (
           <div key={g.label} className="grid gap-2">
@@ -499,7 +503,7 @@ export function OverviewTab({
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         <ProfilePanel candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} onOpenResume={onOpenResume} requestUi={requestUi} />
         <HighlightsPanel candidate={candidate} />
-        <SkillsPanel candidate={candidate} onOpenResume={onOpenResume} />
+        <SkillsPanel candidate={candidate} requiredSkills={requirement.skills} onOpenResume={onOpenResume} />
       </div>
     </div>
   );

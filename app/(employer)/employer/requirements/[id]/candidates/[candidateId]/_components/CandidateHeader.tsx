@@ -153,7 +153,7 @@ export function CandidateHeader({
             Last updated by {candidate.lastUpdatedBy.isYou ? "you" : candidate.lastUpdatedBy.name}, {relativeTime(candidate.lastUpdatedBy.at).toLowerCase()}
           </p>
         )}
-        <PipelineStepper status={candidate.candidateStatus} />
+        <PipelineStepper status={candidate.candidateStatus} className="max-[639px]:hidden" />
       </div>
       {summary && <p className="m-0 mt-3 max-w-[75ch] text-[14px] leading-snug font-medium text-hx-coal">{summary}</p>}
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
