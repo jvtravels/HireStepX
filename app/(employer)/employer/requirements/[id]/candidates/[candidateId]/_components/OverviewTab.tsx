@@ -101,7 +101,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
           <div className="@container grid gap-3 border-t border-hx-line pt-4">
             <p className="m-0 flex items-center gap-1 text-[13px] font-medium text-hx-coal">
               Resume overlap
-              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it.</InfoTip>
+              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it. Skill overlap compares the words of the posting's skills with the resume, so it can differ from the skill count in the table below.</InfoTip>
             </p>
             <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-3">
               <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone="indigo" />
@@ -291,8 +291,8 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
                   </span>
                 </Stat>
               )}
-              {avg != null && <Stat label="Avg skill score" hint="out of 100">{avg}</Stat>}
-              {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked`}>{verifiedCount}</Stat>}
+              {avg != null && <Stat label="Avg skill score" hint={`out of 100, mean of ${evidence?.skills.length ?? 0} graded skills`}>{avg}</Stat>}
+              {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked in graded answers`}>{verifiedCount}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (
               <div className="mt-5 grid gap-3 border-t border-hx-line pt-4">
