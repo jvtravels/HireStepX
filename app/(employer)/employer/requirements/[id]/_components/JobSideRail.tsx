@@ -16,7 +16,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "cn";
-import { Badge, StageCell } from "@/employer/_atoms";
+import { Badge } from "@/employer/_atoms";
+import { StageCell } from "@/employer/_stageCell";
 import type { Requirement } from "@/employer/EmployerDataContext";
 import {
   KeyValueList,

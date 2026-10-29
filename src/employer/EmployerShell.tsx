@@ -306,7 +306,10 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     navItems[0];
   const sidebarActiveId = offNav ? "" : activeItem.id;
 
-  const pageBody = companyStatusLoading ? <PageSkeleton label="Loading your workspace" /> : children;
+  /* A returning employer's page starts loading with the company profile, not
+     behind it: holding the page back until /api/employer-profile answered put
+     one full round trip in front of every first request on slow links. */
+  const pageBody = children;
 
   const visibleNav = teamsEnabled ? navItems : navItems.filter((item) => item.id !== "team");
 

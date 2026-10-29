@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
-import { Badge, StageCell } from "@/employer/_atoms";
+import { Badge } from "@/employer/_atoms";
+import { StageCell } from "@/employer/_stageCell";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
 import { budgetLabel, experienceLabel, locationText } from "./jobsHelpers";

@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({ usePathname: () => pathname.value }));
 vi.mock("@/connectionMonitor", () => ({ useConnectionState: () => ({ status: connection.status }) }));
 
 import { OfflineBanner } from "../../app/OfflineBanner";
-import { StageCell } from "../employer/_atoms";
+import { StageCell } from "../employer/_stageCell";
 
 describe("OfflineBanner", () => {
   beforeEach(() => { connection.status = "offline"; });

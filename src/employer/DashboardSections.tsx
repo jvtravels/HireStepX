@@ -21,7 +21,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { EmptyState } from "@/components/EmptyState";
 import { Command, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { InfoTip, InsightList, InsightRow } from "./_panelParts";
-import { Badge, ScoreChip, STRONG_MATCH_THRESHOLD, StageCell } from "./_atoms";
+import { Badge, ScoreChip, STRONG_MATCH_THRESHOLD } from "./_atoms";
+import { StageCell } from "./_stageCell";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
 import {

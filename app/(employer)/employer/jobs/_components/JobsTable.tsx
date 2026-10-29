@@ -7,7 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { SortableHead, type Sort } from "@/components/SortableHead";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
-import { Badge, StageCell } from "@/employer/_atoms";
+import { Badge } from "@/employer/_atoms";
+import { StageCell } from "@/employer/_stageCell";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
 import { WORK_MODE_LABEL, EMPLOYMENT_TYPE_LABEL } from "@/hiringMatchFormat";
