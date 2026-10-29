@@ -82,7 +82,7 @@ export function TeamReview({ reviews }: { reviews: TeamReviewsState }) {
                     aria-checked={rating === o.value}
                     onClick={() => setRating(o.value)}
                     className={cn(
-                      "cursor-pointer rounded-lg border px-1.5 py-2 text-[13px] font-semibold",
+                      "cursor-pointer rounded-lg border px-1.5 py-2 text-[13px] font-semibold pointer-coarse:min-h-11",
                       rating === o.value ? "border-hx-indigo bg-hx-indigo text-white" : "border-hx-line bg-white text-hx-coal",
                     )}
                   >
