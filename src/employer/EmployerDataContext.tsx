@@ -631,10 +631,16 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     // for itself when the shortlist is bigger than one full page.
     const knownPool = requirementsRef.current.find((r) => r.id === id)?.aiScreening?.totalMatched;
     const needsQuickPage = knownPool === undefined || knownPool > SHORTLIST_PAGE_LIMIT;
-    const quick = onFirstPage && needsQuickPage ? await getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
-    if (quick && quick.ok && quick.data) onFirstPage?.(quick.data as Requirement);
+    const quickRequest = onFirstPage && needsQuickPage ? getWithRetry(`${base}&page=1&limit=${FIRST_PAINT_LIMIT}`) : null;
+    // Paint with whichever answers first; a slow small page must not hold back a full page that already arrived.
+    let fullArrived = false;
+    void quickRequest?.then((q) => { if (!fullArrived && q && q.ok && q.data) onFirstPage?.(q.data as Requirement); });
     const first = await fullFirst;
-    if (!first || !first.ok || !first.data) return quick && quick.ok ? (quick.data as Requirement) : null;
+    fullArrived = true;
+    if (!first || !first.ok || !first.data) {
+      const quick = quickRequest ? await quickRequest : null;
+      return quick && quick.ok ? (quick.data as Requirement) : null;
+    }
     const detail = first.data as Requirement;
     const total = Math.min(detail.total ?? detail.candidates.length, MAX_SHORTLIST_CANDIDATES);
     const lastPage = Math.ceil(total / SHORTLIST_PAGE_LIMIT);

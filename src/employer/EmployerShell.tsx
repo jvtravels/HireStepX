@@ -213,12 +213,14 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   }, [user?.id, companyStatus, companyStatusLoading, companyStatusError, companyName]);
 
   const [creditPaise, setCreditPaise] = useState(0);
+  /* isConsole (not companyStatus) so a returning employer's credit request
+     starts with the profile request instead of one round trip behind it. */
   useEffect(() => {
-    if (companyStatus !== "approved") return;
+    if (!isConsole) return;
     let live = true;
     void fetchCredit().then((c) => { if (live && c) setCreditPaise(c.balancePaise); }).catch(() => {});
     return () => { live = false; };
-  }, [companyStatus, fetchCredit, pathname]);
+  }, [isConsole, fetchCredit, pathname]);
 
   const [headerSlot, setHeaderSlot] = useState<HTMLElement | null>(null);
   const [breadcrumbState, setBreadcrumbState] = useState<BreadcrumbState>(null);
