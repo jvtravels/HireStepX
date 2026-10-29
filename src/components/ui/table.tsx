@@ -16,7 +16,8 @@ function Table({
   return (
     <div
       data-slot="table-container"
-      className={cn("relative w-full overflow-x-auto", containerClassName)}
+      tabIndex={0}
+      className={cn("relative w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2", containerClassName)}
     >
       <table
         data-slot="table"
