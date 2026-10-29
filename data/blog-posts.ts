@@ -21749,7 +21749,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact technical questions Krutrim interviewers ask: transformer internals, LLM inference optimisation, and GPU-cloud system design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/krutrim", label: "Krutrim Salary Guide India 2026: AI Engineer CTC Breakdown" },
-      { href: "/questions/krutrim-swe-interview-questions", label: "Krutrim Interview Questions: Technical Round Practice" },
+      { href: "/blog/krutrim-interview-experience-2026", label: "Krutrim Interview Questions: Technical Round Practice" },
       { href: "/salary/sarvam-ai", label: "Sarvam AI Salary Guide India 2026: SWE Roles CTC Breakdown" },
     ],
   },
@@ -21787,7 +21787,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact technical questions Perplexity interviewers ask: RAG pipeline design, retrieval and re-ranking, and low-latency answer-engine system design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/perplexity", label: "Perplexity Salary Guide India 2026: AI Engineer CTC Breakdown" },
-      { href: "/questions/perplexity-software-engineer-interview-questions", label: "Perplexity Interview Questions: Technical Round Practice" },
+      { href: "/blog/perplexity-interview-experience-2026", label: "Perplexity Interview Questions: Technical Round Practice" },
       { href: "/salary/sarvam-ai", label: "Sarvam AI Salary Guide India 2026: SWE Roles CTC Breakdown" },
     ],
   },
@@ -21825,7 +21825,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Moglix runs: DSA coding, backend and low-level design, and B2B commerce system design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/moglix", label: "Moglix Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/moglix-software-engineer-interview-questions", label: "Moglix Interview Questions: Technical Round Practice" },
+      { href: "/blog/moglix-interview-experience-2026", label: "Moglix Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22350,7 +22350,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Wakefit pay software engineers in India in 2026?", answer: "Wakefit salary India 2026 (estimated total CTC): mid-level software engineers (2-5 years) roughly ₹16-26 LPA, new grads typically start toward the lower end, and senior (5+ years) around ₹26-42 LPA. As a pre-IPO D2C sleep and furniture brand, Wakefit includes ESOP as longer-term upside. Most roles are Bengaluru-based. See the full Wakefit salary page for details." },
     ],
     relatedSlugs: ["low-level-design-interview-india-2026", "system-design-interview-questions-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Wakefit Software Engineer Salary India 2026", href: "/salary/wakefit" }, { label: "Wakefit Software Engineer Interview Questions", href: "/questions/wakefit-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Wakefit Software Engineer Salary India 2026", href: "/salary/wakefit" }, { label: "Wakefit Software Engineer Interview Questions", href: "/salary/wakefit" }],
     cta: "Interviewing at Wakefit? Practice the DSA, backend-design, and ownership-focused behavioral rounds with HireStepX's scored, India-specific mock interview, and fix your weak spots before the real loop.",
   },
   {
@@ -22384,7 +22384,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Fibe pay software engineers in India in 2026?", answer: "Fibe salary India 2026 (estimated total CTC): entry-level software engineers around ₹14-22 LPA, mid-level (2-5 years) roughly ₹22-36 LPA, and senior (5+ years) around ₹38-60 LPA. As a pre-IPO Pune-based fintech, Fibe includes ESOP tied to its growth and eventual liquidity. See the full Fibe salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Fibe Software Engineer Salary India 2026", href: "/salary/fibe" }, { label: "Fibe Software Engineer Interview Questions", href: "/questions/fibe-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Fibe Software Engineer Salary India 2026", href: "/salary/fibe" }, { label: "Fibe Software Engineer Interview Questions", href: "/salary/fibe" }],
     cta: "Interviewing at Fibe? Practice the DSA, systems-design, and behavioral rounds, with the correctness-and-failure follow-ups fintech interviewers love, using HireStepX's scored, India-specific mock interview.",
   },
   {
@@ -22418,7 +22418,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Navi pay software engineers in India in 2026?", answer: "Navi salary India 2026 (estimated total CTC): entry-level software engineers around ₹14-22 LPA, mid-level (2-5 years) roughly ₹24-38 LPA, and senior (5+ years) around ₹40-65 LPA. As a well-capitalised pre-IPO fintech founded by Sachin Bansal, Navi includes ESOP tied to its growth and eventual liquidity. Most roles are Bengaluru-based. See the full Navi salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Navi Software Engineer Salary India 2026", href: "/salary/navi" }, { label: "Navi Software Engineer Interview Questions", href: "/questions/navi-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Navi Software Engineer Salary India 2026", href: "/salary/navi" }, { label: "Navi Software Engineer Interview Questions", href: "/salary/navi" }],
     cta: "Interviewing at Navi? Its DSA bar is high and its systems questions are money-critical. Practice both, plus the behavioral round, with HireStepX's scored, India-specific mock interview before you face the real loop.",
   },
   {
@@ -22452,7 +22452,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Shadowfax pay software engineers in India in 2026?", answer: "Shadowfax salary India 2026 (estimated total CTC): entry-level software engineers around ₹8-14 LPA, mid-level (2-5 years) roughly ₹16-26 LPA, and senior (5+ years) around ₹28-46 LPA. As a pre-IPO gig-logistics unicorn, Shadowfax includes ESOP tied to its growth and eventual liquidity. Most roles are Bengaluru-based. See the full Shadowfax salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Shadowfax Software Engineer Salary India 2026", href: "/salary/shadowfax" }, { label: "Shadowfax Software Engineer Interview Questions", href: "/questions/shadowfax-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Shadowfax Software Engineer Salary India 2026", href: "/salary/shadowfax" }, { label: "Shadowfax Software Engineer Interview Questions", href: "/salary/shadowfax" }],
     cta: "Interviewing at Shadowfax? Its systems questions are real-time and geospatial. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview, and fix your weak spots first.",
   },
   {
@@ -22486,7 +22486,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Plivo pay software engineers in India in 2026?", answer: "Plivo salary India 2026 (estimated total CTC): entry-level software engineers around ₹14-22 LPA, mid-level (2-5 years) roughly ₹22-36 LPA, and senior (5+ years) around ₹38-62 LPA. As a profitable, bootstrapped Bengaluru CPaaS company, Plivo offers competitive cash with ESOP whose value rests on a healthy underlying business rather than the next funding round. See the full Plivo salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Plivo Software Engineer Salary India 2026", href: "/salary/plivo" }, { label: "Plivo Software Engineer Interview Questions", href: "/questions/plivo-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Plivo Software Engineer Salary India 2026", href: "/salary/plivo" }, { label: "Plivo Software Engineer Interview Questions", href: "/blog/plivo-interview-experience-2026" }],
     cta: "Interviewing at Plivo? Its systems questions are throughput-and-reliability focused. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview before the real loop.",
   },
   {
@@ -22520,7 +22520,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Khatabook pay software engineers in India in 2026?", answer: "Khatabook salary India 2026 (estimated total CTC): entry-level software engineers around ₹16-26 LPA, mid-level (2-5 years) roughly ₹26-40 LPA, and senior (5+ years) around ₹42-65 LPA. As a pre-IPO Bengaluru SMB fintech, Khatabook includes ESOP tied to its growth and eventual liquidity. See the full Khatabook salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Khatabook Software Engineer Salary India 2026", href: "/salary/khatabook" }, { label: "Khatabook Software Engineer Interview Questions", href: "/questions/khatabook-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Khatabook Software Engineer Salary India 2026", href: "/salary/khatabook" }, { label: "Khatabook Software Engineer Interview Questions", href: "/salary/khatabook" }],
     cta: "Interviewing at Khatabook? Practice the DSA, systems-design, and behavioral rounds, with the correctness-and-sync follow-ups SMB-fintech interviewers love, using HireStepX's scored, India-specific mock interview.",
   },
   {
@@ -22554,7 +22554,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does Purplle pay software engineers in India in 2026?", answer: "Purplle salary India 2026 (estimated total CTC): entry-level software engineers around ₹14-22 LPA, mid-level (2-5 years) roughly ₹22-36 LPA, and senior (5+ years) around ₹38-60 LPA. As a pre-IPO Mumbai beauty-commerce unicorn backed by Goldman Sachs and Sequoia, Purplle includes ESOP tied to its growth and eventual liquidity. See the full Purplle salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "Purplle Software Engineer Salary India 2026", href: "/salary/purplle" }, { label: "Purplle Software Engineer Interview Questions", href: "/questions/purplle-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "Purplle Software Engineer Salary India 2026", href: "/salary/purplle" }, { label: "Purplle Software Engineer Interview Questions", href: "/blog/purplle-interview-experience-2026" }],
     cta: "Interviewing at Purplle? Its systems questions are scale-and-caching focused. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview before the real loop.",
   },
   {
@@ -22588,7 +22588,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does KreditBee pay software engineers in India in 2026?", answer: "KreditBee salary India 2026 (estimated total CTC): entry-level software engineers around ₹12-20 LPA, mid-level (2-5 years) roughly ₹20-32 LPA, and senior (5+ years) around ₹34-55 LPA. As a pre-IPO Bengaluru lending fintech and RBI-regulated NBFC, KreditBee includes ESOP tied to its growth and eventual liquidity. See the full KreditBee salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "KreditBee Software Engineer Salary India 2026", href: "/salary/kreditbee" }, { label: "KreditBee Software Engineer Interview Questions", href: "/questions/kreditbee-software-engineer-interview-questions" }],
+    relatedLinks: [{ label: "KreditBee Software Engineer Salary India 2026", href: "/salary/kreditbee" }, { label: "KreditBee Software Engineer Interview Questions", href: "/blog/kreditbee-interview-experience-2026" }],
     cta: "Interviewing at KreditBee? Its systems questions are correctness-and-compliance focused. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview before the real loop.",
   },
   {
@@ -22622,7 +22622,7 @@ export const BLOG_POSTS: BlogPost[] = [
       { question: "What salary does CleverTap pay software engineers in India in 2026?", answer: "CleverTap salary India 2026 (estimated total CTC): entry-level software engineers around ₹16-24 LPA, mid-level (2-5 years) roughly ₹24-40 LPA, and senior (5+ years) around ₹42-68 LPA. As a well-funded global mobile-engagement SaaS company headquartered in Mumbai and backed by Tiger Global, CleverTap includes ESOP tied to its growth and eventual liquidity. See the full CleverTap salary page for details." },
     ],
     relatedSlugs: ["system-design-interview-questions-india-2026", "low-level-design-interview-india-2026", "startup-vs-mnc-india-2026"],
-    relatedLinks: [{ label: "CleverTap Software Engineer Salary India 2026", href: "/salary/clevertap" }, { label: "CleverTap Software Engineer Interview Questions", href: "/questions/clevertap-swe-interview-questions" }],
+    relatedLinks: [{ label: "CleverTap Software Engineer Salary India 2026", href: "/salary/clevertap" }, { label: "CleverTap Software Engineer Interview Questions", href: "/blog/clevertap-interview-experience-2026" }],
     cta: "Interviewing at CleverTap? Its systems questions are throughput-and-scale focused. Practice the DSA, systems-design, and behavioral rounds with HireStepX's scored, India-specific mock interview before the real loop.",
   },
   {
@@ -22748,7 +22748,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Zepto runs: efficiency-focused DSA coding, backend and low-level design, and quick-commerce systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/zepto", label: "Zepto Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/zepto-swe-interview-questions", label: "Zepto Interview Questions: Technical Round Practice" },
+      { href: "/blog/zepto-interview-questions-2026", label: "Zepto Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22785,7 +22785,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Databricks runs: coding, Spark and Delta Lake internals, distributed data-pipeline design, and its high-bar behavioural round. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/databricks", label: "Databricks Salary Guide India 2026: Engineer CTC Breakdown" },
-      { href: "/questions/databricks-data-engineer-interview-questions", label: "Databricks Data Engineer Interview Questions: Technical Round Practice" },
+      { href: "/blog/databricks-interview-experience-2026", label: "Databricks Data Engineer Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22822,7 +22822,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Juspay runs: reasoning-heavy DSA, functional-programming aptitude, and payment-systems design where correctness under failure is everything. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/juspay", label: "Juspay Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/juspay-swe-interview-questions", label: "Juspay Interview Questions: Technical Round Practice" },
+      { href: "/blog/juspay-interview-experience-2026", label: "Juspay Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22859,7 +22859,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Cashfree runs: efficiency-focused DSA, backend and low-level design, and payment-systems design built around idempotency and reconciliation. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/cashfree", label: "Cashfree Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/cashfree-payments-swe-interview-questions", label: "Cashfree Interview Questions: Technical Round Practice" },
+      { href: "/salary/cashfree", label: "Cashfree Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22896,7 +22896,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Zeta runs: efficiency-focused DSA, backend and low-level design, and banking-systems design built around ledgering, consistency, and auditability. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/zeta", label: "Zeta Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/zeta-software-engineer-interview-questions", label: "Zeta Interview Questions: Technical Round Practice" },
+      { href: "/salary/zeta", label: "Zeta Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22933,7 +22933,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Pine Labs runs: efficiency-focused DSA, backend and low-level design, and merchant-payments systems design built around settlement and reconciliation. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/pine-labs", label: "Pine Labs Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/pine-labs-swe-interview-questions", label: "Pine Labs Interview Questions: Technical Round Practice" },
+      { href: "/blog/pine-labs-interview-experience-2026", label: "Pine Labs Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -22970,7 +22970,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Lenskart runs: efficiency-focused DSA, backend and low-level design, and omnichannel e-commerce systems design built around cross-channel inventory and order management. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/lenskart", label: "Lenskart Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/lenskart-swe-interview-questions", label: "Lenskart Interview Questions: Technical Round Practice" },
+      { href: "/blog/lenskart-interview-experience-2026", label: "Lenskart Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23007,7 +23007,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Cars24 runs: efficiency-focused DSA, backend and low-level design, and marketplace systems design built around listings, auctions, and pricing. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/cars24", label: "Cars24 Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/cars24-software-engineer-interview-questions", label: "Cars24 Interview Questions: Technical Round Practice" },
+      { href: "/blog/cars24-interview-experience-2026", label: "Cars24 Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23044,7 +23044,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Delhivery runs: graph-heavy DSA, backend and low-level design, and logistics systems design built around tracking, routing, and warehouse management. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/delhivery", label: "Delhivery Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/delhivery-software-engineer-interview-questions", label: "Delhivery Interview Questions: Technical Round Practice" },
+      { href: "/blog/delhivery-interview-experience-2026", label: "Delhivery Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23081,7 +23081,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Rapido runs: graph-heavy DSA, backend and low-level design, and real-time mobility systems design built around matching, dispatch, and geospatial search. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/rapido", label: "Rapido Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/rapido-software-engineer-interview-questions", label: "Rapido Interview Questions: Technical Round Practice" },
+      { href: "/blog/rapido-interview-experience-2026", label: "Rapido Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23118,7 +23118,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Udaan runs: efficiency-focused DSA, backend and low-level design, and B2B commerce systems design spanning catalogue, fulfilment, and working-capital credit. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/udaan", label: "Udaan Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/udaan-software-engineer-interview-questions", label: "Udaan Interview Questions: Technical Round Practice" },
+      { href: "/blog/udaan-interview-experience-2026", label: "Udaan Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23155,7 +23155,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds BigBasket runs: efficiency-focused DSA, backend and low-level design, and e-grocery systems design built around inventory accuracy, delivery slots, and fulfilment. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/bigbasket", label: "BigBasket Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/bigbasket-software-engineer-interview-questions", label: "BigBasket Interview Questions: Technical Round Practice" },
+      { href: "/blog/bigbasket-interview-experience-2026", label: "BigBasket Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23192,7 +23192,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Ninjacart runs: algorithms-focused DSA, backend and low-level design, and agri-supply-chain systems design built around forecasting, sourcing, and fulfilment. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/ninjacart", label: "Ninjacart Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/ninjacart-software-engineer-interview-questions", label: "Ninjacart Interview Questions: Technical Round Practice" },
+      { href: "/blog/ninjacart-interview-experience-2026", label: "Ninjacart Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23229,7 +23229,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds slice runs: efficiency-focused DSA, backend and low-level design, and fintech systems design built around ledgers, card authorisation, and credit underwriting. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/slice", label: "slice Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/slice-software-engineer-interview-questions", label: "slice Interview Questions: Technical Round Practice" },
+      { href: "/blog/slice-interview-experience-2026", label: "slice Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23266,7 +23266,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Jupiter runs: efficiency-focused DSA, backend and low-level design, and fintech systems design built around account aggregation, spends insight, and rewards ledgers. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/jupiter", label: "Jupiter Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/jupiter-software-engineer-interview-questions", label: "Jupiter Interview Questions: Technical Round Practice" },
+      { href: "/salary/jupiter", label: "Jupiter Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23303,7 +23303,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds BharatPe runs: efficiency-focused DSA, backend and low-level design, and fintech systems design built around payment acceptance, reconciliation, settlement, and merchant lending. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/bharatpe", label: "BharatPe Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/bharatpe-swe-interview-questions", label: "BharatPe Interview Questions: Technical Round Practice" },
+      { href: "/salary/bharatpe", label: "BharatPe Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23340,7 +23340,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Fi runs: fundamentals-focused DSA, backend and low-level design, and fintech systems design built around account aggregation, transaction analysis, and savings ledgers. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/fi-money", label: "Fi Money Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/fi-money-software-engineer-interview-questions", label: "Fi Money Interview Questions: Technical Round Practice" },
+      { href: "/blog/fi-money-interview-experience-2026", label: "Fi Money Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23377,7 +23377,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds INDmoney runs: efficiency-focused DSA, backend and low-level design, and wealthtech systems design built around portfolio aggregation, trade execution, and market data. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/indmoney", label: "INDmoney Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/indmoney-software-engineer-interview-questions", label: "INDmoney Interview Questions: Technical Round Practice" },
+      { href: "/blog/indmoney-interview-experience-2026", label: "INDmoney Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23414,7 +23414,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds smallcase runs: efficiency-focused DSA, backend and low-level design, and investing-infrastructure systems design built around rebalancing, broker integrations, and market data. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/smallcase", label: "smallcase Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/smallcase-software-engineer-interview-questions", label: "smallcase Interview Questions: Technical Round Practice" },
+      { href: "/blog/smallcase-interview-experience-2026", label: "smallcase Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23451,7 +23451,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Moneyview runs: efficiency-focused DSA, backend and low-level design, and lending systems design built around origination, underwriting, and repayment ledgers. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/moneyview", label: "Moneyview Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/moneyview-software-engineer-interview-questions", label: "Moneyview Interview Questions: Technical Round Practice" },
+      { href: "/blog/moneyview-interview-experience-2026", label: "Moneyview Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23488,7 +23488,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Niyo runs: efficiency-focused DSA, backend and low-level design, and fintech systems design built around card management, forex conversion, and KYC onboarding. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/niyo", label: "Niyo Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/niyo-software-engineer-interview-questions", label: "Niyo Interview Questions: Technical Round Practice" },
+      { href: "/salary/niyo", label: "Niyo Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23562,7 +23562,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Go Digit runs: efficiency-focused DSA, backend and low-level design, and insurtech systems design built around policy administration, pricing, and claims automation. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/digit", label: "Go Digit Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/digit-software-engineer-interview-questions", label: "Go Digit Interview Questions: Technical Round Practice" },
+      { href: "/salary/digit", label: "Go Digit Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23599,7 +23599,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Apollo 24|7 runs: efficiency-focused DSA, backend and low-level design, and healthtech systems design built around appointments, e-pharmacy fulfilment, and diagnostics. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/apollo-247", label: "Apollo 24|7 Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/apollo-247-software-engineer-interview-questions", label: "Apollo 24|7 Interview Questions: Technical Round Practice" },
+      { href: "/salary/apollo-247", label: "Apollo 24|7 Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23636,7 +23636,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Tata 1mg runs: efficiency-focused DSA, backend and low-level design, and healthtech e-commerce systems design built around catalogue, e-pharmacy fulfilment, and diagnostics. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/tata-1mg", label: "Tata 1mg Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/tata-1mg-swe-interview-questions", label: "Tata 1mg Interview Questions: Technical Round Practice" },
+      { href: "/blog/tata-1mg-interview-experience-2026", label: "Tata 1mg Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23673,7 +23673,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Practo runs: efficiency-focused DSA, backend and low-level design, and healthtech systems design built around doctor discovery, appointment scheduling, and teleconsultation. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/practo", label: "Practo Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/practo-software-engineer-interview-questions", label: "Practo Interview Questions: Technical Round Practice" },
+      { href: "/blog/practo-interview-experience-2026", label: "Practo Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23710,7 +23710,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds MediBuddy runs: efficiency-focused DSA, backend and low-level design, and healthtech systems design built around teleconsultation, benefits eligibility, and fulfilment. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/medibuddy", label: "MediBuddy Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/medibuddy-software-engineer-interview-questions", label: "MediBuddy Interview Questions: Technical Round Practice" },
+      { href: "/blog/medibuddy-interview-experience-2026", label: "MediBuddy Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23747,7 +23747,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Cult.fit runs: efficiency-focused DSA, backend and low-level design, and consumer systems design built around class booking, memberships, and content delivery. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/curefit", label: "Cult.fit Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/curefit-swe-interview-questions", label: "Cult.fit Interview Questions: Technical Round Practice" },
+      { href: "/salary/curefit", label: "Cult.fit Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23784,7 +23784,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Dr Lal PathLabs runs: efficiency-focused DSA, backend and low-level design, and diagnostics systems design built around test booking, sample logistics, and lab-information systems. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/dr-lal-pathlabs", label: "Dr Lal PathLabs Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/dr-lal-pathlabs-swe-interview-questions", label: "Dr Lal PathLabs Interview Questions: Technical Round Practice" },
+      { href: "/blog/dr-lal-pathlabs-interview-experience-2026", label: "Dr Lal PathLabs Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23821,7 +23821,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Metropolis runs: efficiency-focused DSA, backend and low-level design, and diagnostics systems design built around test booking, sample logistics, and lab-information systems. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/metropolis", label: "Metropolis Healthcare Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/metropolis-software-engineer-interview-questions", label: "Metropolis Interview Questions: Technical Round Practice" },
+      { href: "/blog/metropolis-interview-experience-2026", label: "Metropolis Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23858,7 +23858,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Chargebee runs: efficiency-focused DSA, backend and low-level design, and subscription billing systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/chargebee", label: "Chargebee Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/chargebee-swe-interview-questions", label: "Chargebee Interview Questions: Technical Round Practice" },
+      { href: "/salary/chargebee", label: "Chargebee Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23895,7 +23895,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Hasura runs: efficiency-focused DSA, backend and low-level design, and developer-tools and API infrastructure systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/hasura", label: "Hasura Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/hasura-software-engineer-interview-questions", label: "Hasura Interview Questions: Technical Round Practice" },
+      { href: "/salary/hasura", label: "Hasura Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23932,7 +23932,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Druva runs: efficiency-focused DSA, backend and low-level design, and cloud data protection and backup systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/druva", label: "Druva Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/druva-swe-interview-questions", label: "Druva Interview Questions: Technical Round Practice" },
+      { href: "/salary/druva", label: "Druva Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -23969,7 +23969,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Darwinbox runs: efficiency-focused DSA, backend and low-level design, and HR SaaS systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/darwinbox", label: "Darwinbox Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/darwinbox-swe-interview-questions", label: "Darwinbox Interview Questions: Technical Round Practice" },
+      { href: "/salary/darwinbox", label: "Darwinbox Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24006,7 +24006,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds MoEngage runs: efficiency-focused DSA, backend and low-level design, and customer engagement and marketing automation systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/moengage", label: "MoEngage Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/moengage-swe-interview-questions", label: "MoEngage Interview Questions: Technical Round Practice" },
+      { href: "/salary/moengage", label: "MoEngage Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24043,7 +24043,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Mindtickle runs: efficiency-focused DSA, backend and low-level design, and sales-readiness and enablement SaaS systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/mindtickle", label: "Mindtickle Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/mindtickle-software-engineer-interview-questions", label: "Mindtickle Interview Questions: Technical Round Practice" },
+      { href: "/salary/mindtickle", label: "Mindtickle Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24080,7 +24080,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Gupshup runs: efficiency-focused DSA, backend and low-level design, and conversational messaging and CPaaS systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/gupshup", label: "Gupshup Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/gupshup-software-engineer-interview-questions", label: "Gupshup Interview Questions: Technical Round Practice" },
+      { href: "/salary/gupshup", label: "Gupshup Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24117,7 +24117,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Exotel runs: efficiency-focused DSA, backend and low-level design, and cloud telephony and CPaaS systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/exotel", label: "Exotel Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/exotel-software-engineer-interview-questions", label: "Exotel Interview Questions: Technical Round Practice" },
+      { href: "/blog/exotel-interview-experience-2026", label: "Exotel Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24154,7 +24154,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Sigmoid runs: efficiency-focused DSA, backend and low-level design, and data engineering and analytics systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/sigmoid", label: "Sigmoid Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/sigmoid-software-engineer-interview-questions", label: "Sigmoid Interview Questions: Technical Round Practice" },
+      { href: "/blog/sigmoid-interview-experience-2026", label: "Sigmoid Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24191,7 +24191,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Tracxn runs: efficiency-focused DSA, backend and low-level design, and market intelligence and data platform systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/tracxn", label: "Tracxn Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/tracxn-software-engineer-interview-questions", label: "Tracxn Interview Questions: Technical Round Practice" },
+      { href: "/salary/tracxn", label: "Tracxn Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24228,7 +24228,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Ather Energy runs: efficiency-focused DSA, backend and low-level design, and connected-vehicle and EV software systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/ather-energy", label: "Ather Energy Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/ather-energy-software-engineer-interview-questions", label: "Ather Energy Interview Questions: Technical Round Practice" },
+      { href: "/blog/ather-energy-interview-experience-2026", label: "Ather Energy Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24265,7 +24265,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Ola Electric runs: efficiency-focused DSA, backend and low-level design, and EV and connected-vehicle software systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/ola-electric", label: "Ola Electric Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/ola-electric-software-engineer-interview-questions", label: "Ola Electric Interview Questions: Technical Round Practice" },
+      { href: "/blog/ola-electric-interview-experience-2026", label: "Ola Electric Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24302,7 +24302,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Spinny runs: efficiency-focused DSA, backend and low-level design, and used-car e-commerce systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/spinny", label: "Spinny Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/spinny-software-engineer-interview-questions", label: "Spinny Interview Questions: Technical Round Practice" },
+      { href: "/salary/spinny", label: "Spinny Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24339,7 +24339,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds BlackBuck runs: efficiency-focused DSA, backend and low-level design, and trucking and logistics marketplace systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/blackbuck", label: "BlackBuck Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/blackbuck-software-engineer-interview-questions", label: "BlackBuck Interview Questions: Technical Round Practice" },
+      { href: "/salary/blackbuck", label: "BlackBuck Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24376,7 +24376,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Shiprocket runs: efficiency-focused DSA, backend and low-level design, and e-commerce shipping and logistics aggregation systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/shiprocket", label: "Shiprocket Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/shiprocket-software-engineer-interview-questions", label: "Shiprocket Interview Questions: Technical Round Practice" },
+      { href: "/salary/shiprocket", label: "Shiprocket Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24413,7 +24413,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Unacademy runs: efficiency-focused DSA, backend and low-level design, and edtech and live learning systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/unacademy", label: "Unacademy Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/unacademy-software-engineer-interview-questions", label: "Unacademy Interview Questions: Technical Round Practice" },
+      { href: "/salary/unacademy", label: "Unacademy Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24450,7 +24450,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds ixigo runs: efficiency-focused DSA, backend and low-level design, and online travel and booking systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/ixigo", label: "ixigo Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/ixigo-software-engineer-interview-questions", label: "ixigo Interview Questions: Technical Round Practice" },
+      { href: "/blog/ixigo-interview-experience-2026", label: "ixigo Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24487,7 +24487,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Truecaller runs: efficiency-focused DSA, backend and low-level design, and caller-ID and communications at scale systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/truecaller", label: "Truecaller Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/truecaller-swe-interview-questions", label: "Truecaller Interview Questions: Technical Round Practice" },
+      { href: "/salary/truecaller", label: "Truecaller Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24524,7 +24524,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Yulu runs: efficiency-focused DSA, backend and low-level design, and shared electric-mobility software systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/yulu", label: "Yulu Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/yulu-swe-technical-interview-questions", label: "Yulu Interview Questions: Technical Round Practice" },
+      { href: "/salary/yulu", label: "Yulu Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24561,7 +24561,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Licious runs: efficiency-focused DSA, backend and low-level design, and fresh-commerce and cold-chain fulfilment systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/licious", label: "Licious Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/licious-software-engineer-interview-questions", label: "Licious Interview Questions: Technical Round Practice" },
+      { href: "/blog/licious-interview-experience-2026", label: "Licious Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24598,7 +24598,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Mamaearth runs: efficiency-focused DSA, backend and low-level design, and D2C e-commerce and personal care systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/mamaearth", label: "Mamaearth Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/mamaearth-swe-interview-questions", label: "Mamaearth Interview Questions: Technical Round Practice" },
+      { href: "/salary/mamaearth", label: "Mamaearth Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24635,7 +24635,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Rebel Foods runs: efficiency-focused DSA, backend and low-level design, and cloud-kitchen and food-tech operations systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/rebel-foods", label: "Rebel Foods Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/rebel-foods-software-engineer-interview-questions", label: "Rebel Foods Interview Questions: Technical Round Practice" },
+      { href: "/salary/rebel-foods", label: "Rebel Foods Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24672,7 +24672,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice the exact rounds Country Delight runs: efficiency-focused DSA, backend and low-level design, and D2C subscription and daily-delivery systems design. Get scored feedback and a coached model answer from HireStepX's voice interviewer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/country-delight", label: "Country Delight Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/country-delight-swe-system-design-interview-questions", label: "Country Delight Interview Questions: Technical Round Practice" },
+      { href: "/salary/country-delight", label: "Country Delight Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24789,7 +24789,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice GlobalLogic's technical and client-facing rounds with scored feedback: domain-specific DSA and system design, STAR answers with business impact, and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/globallogic", label: "GlobalLogic Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/globallogic-india-software-engineer-interview-questions", label: "GlobalLogic Interview Questions: Technical Round Practice" },
+      { href: "/salary/globallogic", label: "GlobalLogic Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24865,7 +24865,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice P&G's CAR-framework rounds with scored feedback: structured story-building, quantified results, and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/procter-gamble", label: "P&G Salary Guide India 2026: Management Trainee CTC Breakdown" },
-      { href: "/questions/procter-gamble-india-interview-questions", label: "P&G Interview Questions: CAR Framework Practice" },
+      { href: "/salary/procter-gamble", label: "P&G Interview Questions: CAR Framework Practice" },
     ],
   },
   {
@@ -24903,7 +24903,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice Tower Research's quant screen and coding rounds with scored feedback: timed probability reasoning, C++/Python efficiency, and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/tower-research", label: "Tower Research Capital Salary Guide India 2026: Quant CTC Breakdown" },
-      { href: "/questions/tower-research-quant-interview-questions", label: "Tower Research Interview Questions: Quant Round Practice" },
+      { href: "/salary/tower-research", label: "Tower Research Interview Questions: Quant Round Practice" },
     ],
   },
   {
@@ -24941,7 +24941,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice boAt's practical coding and product-sense rounds with scored feedback: framework fluency, edge-case reasoning, and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/boat", label: "boAt Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/boat-software-engineer-interview-questions", label: "boAt Interview Questions: Technical Round Practice" },
+      { href: "/salary/boat", label: "boAt Interview Questions: Technical Round Practice" },
     ],
   },
   {
@@ -24979,7 +24979,7 @@ export const BLOG_POSTS: BlogPost[] = [
     cta: "Practice PolicyBazaar's DSA and backend design rounds with scored feedback: medium DSA, schema and API design, and a coached model answer after every response. First 2 sessions free.",
     relatedLinks: [
       { href: "/salary/policybazaar", label: "PolicyBazaar Salary Guide India 2026: Software Engineer CTC Breakdown" },
-      { href: "/questions/policybazaar-software-engineer-interview-questions", label: "PolicyBazaar Interview Questions: Technical Round Practice" },
+      { href: "/blog/policybazaar-interview-experience-2026", label: "PolicyBazaar Interview Questions: Technical Round Practice" },
     ],
   },
   {

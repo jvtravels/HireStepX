@@ -138,7 +138,13 @@ function buildSalaryTeaser(page: SeoPage): SalaryTeaser | null {
    review flags, not just the subset GSC happens to sample into its
    Coverage report. Used by both generateMetadata (per-page noindex)
    and sitemap.ts (don't submit noindexed URLs for crawling). */
+/* Hand-written hub pages whose value is the intro, framework and FAQs rather
+   than a company-specific question set, so the tier-3 fallback is not a
+   duplicate-content signal. Linked from ~60 pages and a high-intent query. */
+const INDEXABLE_HUB_SLUGS = new Set(["common-hr-interview-questions-freshers-india"]);
+
 export function isThinDuplicateQuestionsPage(slug: string): boolean {
+  if (INDEXABLE_HUB_SLUGS.has(slug)) return false;
   const page = getSeoPageBySlug(slug);
   if (!page) return false;
   const { tier } = questionsForPage(page);

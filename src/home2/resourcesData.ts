@@ -42,7 +42,7 @@ export const ITEMS: Item[] = [
   { "k": "question", "t": "Amazon SDE Behavioral Interview Questions", "h": "/questions/amazon-sde-leadership-principles-interview", "co": "Amazon", "role": "swe", "focus": "behavioral" },
   { "k": "question", "t": "Why Should We Hire You: Best Answer India Freshers 2026", "h": "/questions/why-should-we-hire-you-answer-india", "co": "Campus", "role": "undefined", "focus": "hr" },
   { "k": "question", "t": "ICICI Bank Relationship Manager Interview Questions 2026", "h": "/questions/icici-relationship-manager-interview-questions", "co": "Icici", "role": "bfsi-sales", "focus": "case-study" },
-  { "k": "question", "t": "Optiver India Quant Interview Questions 2026", "h": "/questions/optiver-quant-interview-questions", "co": "Optiver", "role": "quant", "focus": "technical" },
+  { "k": "question", "t": "Optiver India Quant Interview Questions 2026", "h": "/blog/optiver-interview-questions-india-2026", "co": "Optiver", "role": "quant", "focus": "technical" },
   { "k": "company", "t": "Flipkart interview guide", "h": "/companies/flipkart", "co": "Flipkart" },
   { "k": "company", "t": "Razorpay interview guide", "h": "/companies/razorpay", "co": "Razorpay" },
   { "k": "company", "t": "Swiggy interview guide", "h": "/companies/swiggy", "co": "Swiggy" },

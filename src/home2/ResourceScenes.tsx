@@ -226,7 +226,7 @@ function sceneFor(i: Item): ReactNode {
       return <Stage h1={160}><C p={{ l: "8%", t: 12, w: "74%" }} cls="f"><T>Why should we hire you?</T><span className="sc-pillars">{[["Skills", 80], ["Attitude", 65], ["Fit", 72]].map(([x, v]) => <span key={String(x)}><i style={{ height: `${v}%` }} /><S>{x}</S></span>)}</span></C><C p={{ r: "6%", b: 14 }} cls="f2"><Ch t="g">60 sec answer</Ch></C></Stage>;
     case "/questions/icici-relationship-manager-interview-questions":
       return <Stage h1={28}><C p={{ l: "8%", t: 12, w: "62%" }} cls="f"><S>Sales round</S><span className="sc-q">Sell me a savings account.</span><span className="sc-steps h">{["Lead", "Meet", "Account"].map((x, n) => <span key={x} className={n < 2 ? "done" : "now"}><u />{x}</span>)}</span></C><C p={{ r: "6%", b: 16 }} cls="f2"><Ch t="o">Targets</Ch></C></Stage>;
-    case "/questions/optiver-quant-interview-questions":
+    case "/blog/optiver-interview-questions-india-2026":
       return <Stage h1={75}><C p={{ l: "8%", t: 12, w: "66%" }} cls="f"><S>Probability</S><span className="sc-q">Expected flips to get two heads in a row?</span><Row g={5}>{["H", "T", "H", "H"].map((x, n) => <span key={n} className={`sc-coin${x === "H" ? " h" : ""}`}>{x}</span>)}<S>E = 6</S></Row></C><C p={{ r: "6%", b: 16 }} cls="f2"><Ch t="d">Quant</Ch></C></Stage>;
 
     /* guides */
