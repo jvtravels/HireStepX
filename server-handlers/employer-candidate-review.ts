@@ -88,6 +88,9 @@ export default async function handler(req: Request): Promise<Response> {
     reason = asReason(body.reason);
   }
   if (!matchId) return new Response(JSON.stringify({ error: "matchId is required" }), { status: 400, headers });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(matchId)) {
+    return new Response(JSON.stringify({ error: "matchId is not valid" }), { status: 400, headers });
+  }
   if (req.method === "PATCH") {
     if (!rating) return new Response(JSON.stringify({ error: "Pick a rating from 1 to 4" }), { status: 400, headers });
     if (!reason) return new Response(JSON.stringify({ error: "Add a short reason (up to 500 characters)" }), { status: 400, headers });

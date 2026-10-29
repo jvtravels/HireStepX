@@ -68,7 +68,7 @@ export function CandidateNav({
         <Step href={shortlist.next ? hrefFor(shortlist.next) : null} label="Next candidate" shortcut="j">
           <ChevronRightIcon size={16} aria-hidden="true" />
         </Step>
-        <span className="ml-1 text-[13px] whitespace-nowrap text-hx-ink-soft tabular-nums">
+        <span className="ml-1 text-[13px] whitespace-nowrap text-hx-ink-soft tabular-nums max-sm:hidden">
           {shortlist.position} of {shortlist.total}
           <span className="max-sm:hidden"> by match</span>
         </span>
@@ -102,7 +102,7 @@ export function CandidateNav({
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="outline" size="sm" className="gap-1.5 text-[13px] pointer-coarse:h-11">
               <Share2Icon size={14} aria-hidden="true" />
-              Share
+              <span className="max-sm:sr-only">Share</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-56">
