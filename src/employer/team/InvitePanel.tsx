@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { CheckIcon, CopyIcon, XIcon } from "lucide-react";
+import { CheckIcon, CopyIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
@@ -10,7 +11,6 @@ import {
   INVITE_TTL_DAYS, ROLE_BLURB, ROLE_LABEL, isValidEmail, normalizeEmail, type InvitableRole,
 } from "../../../server-handlers/_employer-team-helpers";
 import type { ActionOutcome, InviteResult, TeamAction } from "../useTeam";
-import { PAD } from "./TeamParts";
 
 const ORDER: InvitableRole[] = ["admin", "member", "viewer"];
 
@@ -57,16 +57,12 @@ export default function InvitePanel({
   };
 
   return (
-    <section aria-label="Invite a teammate" className={PAD} style={{ background: t.creamRaised, borderBottom: `1px solid ${t.line}`, paddingTop: 18, paddingBottom: 20 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12 }}>
-        <div>
-          <h2 style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Invite a teammate</h2>
-          <p style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: "2px 0 0" }}>They get an email with a link that works for {INVITE_TTL_DAYS} days.</p>
-        </div>
-        <Button type="button" variant="ghost" size="icon" aria-label="Close invite form" onClick={onClose}>
-          <XIcon aria-hidden="true" />
-        </Button>
-      </div>
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="sm:max-w-lg" style={{ fontFamily: f.sans }}>
+      <DialogHeader>
+        <DialogTitle style={{ fontFamily: f.sans, fontSize: 17, fontWeight: 600, color: t.coal }}>Invite a teammate</DialogTitle>
+        <DialogDescription style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>They get an email with a link that works for {INVITE_TTL_DAYS} days.</DialogDescription>
+      </DialogHeader>
 
       <form onSubmit={(e) => void submit(e)} noValidate>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-start" }}>
@@ -78,8 +74,6 @@ export default function InvitePanel({
               type="email"
               inputMode="email"
               autoComplete="off"
-              // eslint-disable-next-line jsx-a11y/no-autofocus
-              autoFocus
               placeholder="teammate@company.com"
               value={email}
               onChange={(e) => { setEmail(e.target.value); if (error) setError(null); }}
@@ -126,6 +120,7 @@ export default function InvitePanel({
           </Button>
         </div>
       )}
-    </section>
+      </DialogContent>
+    </Dialog>
   );
 }
