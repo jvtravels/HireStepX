@@ -3,6 +3,7 @@ import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion
 import { availabilityOf, candidateSkillFit, interviewScore } from "@/employer/_jobDetailHelpers";
 import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
 import type { DotTone } from "@/employer/_panelParts";
+import { backgroundFitRow, payFitRow, workModeFitRow } from "./fitExtras";
 
 /* Pure helpers for the candidate detail page. Everything here derives from
    fields the API actually returns — no synthesized or seeded values. */
@@ -249,6 +250,10 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
       const reason = status === "meets" ? "Can join within the notice asked." : status === "partial" ? "Notice runs a little past what was asked." : "Notice runs well past what was asked.";
       rows.push({ id: "notice", label: "Notice period", asked: pref, has: r.noticePeriod, status, reason, source: "resume" });
     }
+  }
+
+  for (const extra of [payFitRow(candidate, requirement), workModeFitRow(candidate, requirement), backgroundFitRow(candidate, requirement)]) {
+    if (extra) rows.push(extra);
   }
 
   if (requirement.minReadinessBand && evidence?.readiness) {

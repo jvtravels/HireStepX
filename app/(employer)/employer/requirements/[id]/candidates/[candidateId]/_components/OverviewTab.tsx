@@ -11,6 +11,7 @@ import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, missingHiringFacts, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
+import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
@@ -473,11 +474,12 @@ export function OverviewTab({
   return (
     <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:divide-x lg:divide-y-0">
       <div className="@container flex min-w-0 flex-col divide-y divide-hx-line">
+        <DecisionStrip candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} />
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
+        <TeamReview reviews={reviews} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
-        <TeamReview reviews={reviews} />
         <div className="grid min-w-0 divide-y divide-hx-line @3xl:grid-cols-2 @3xl:divide-x @3xl:divide-y-0 @3xl:[&:has(>:only-child)]:grid-cols-1">
           <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
           <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
