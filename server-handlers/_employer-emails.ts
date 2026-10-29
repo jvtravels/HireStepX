@@ -14,6 +14,8 @@ const appUrl = () => (process.env.APP_URL || "https://hirestepx.com").replace(/\
 export interface BuiltEmail {
   subject: string;
   html: string;
+  /** Optional plain-text alternative. */
+  text?: string;
 }
 
 /** Transactional (no unsubscribe): it confirms an account the person just created. */
@@ -31,7 +33,15 @@ export function buildEmployerWelcomeEmail(companyName: string): BuiltEmail {
     para("Tell us the title, skills and experience you need. We match it against candidates who have completed real mock interviews, and rank them on evidence from those sessions, not a keyword-stuffed resume.") +
     para("Browsing matches is free. You pay only when you unlock a candidate's contact details, so there is nothing to commit to up front.") +
     button("Post your first role", `${appUrl()}/employer/requirements/new`);
-  return { subject, html: emailShell({ preview: subject, body, footer: { manageUrl: `${appUrl()}/employer/settings` } }) };
+  const text = [
+    `Welcome, ${plain}. Your company profile is live.`,
+    "",
+    "Tell us the title, skills and experience you need. We match it against candidates who have completed real mock interviews, and rank them on evidence from those sessions.",
+    "Browsing matches is free. You pay only when you unlock a candidate's contact details.",
+    "",
+    `Post your first role: ${appUrl()}/employer/requirements/new`,
+  ].join("\n");
+  return { subject, html: emailShell({ preview: subject, body, footer: { manageUrl: `${appUrl()}/employer/settings` } }), text };
 }
 
 export interface NudgeRequirement {

@@ -13,6 +13,7 @@
 
 export const config = { runtime: "edge" };
 
+import { sendTeamJoinedEmail } from "./_employer-lifecycle-emails";
 import {
   withAuthAndRateLimit, corsHeaders, handleCorsPreflightOrMethod, withRequestId, isRateLimited, getClientIp,
   rateLimitResponse, slog,
@@ -186,6 +187,7 @@ async function accept(req: Request): Promise<Response> {
         body: `They accepted your invite as ${ROLE_LABEL[inv.role]}.`,
         link: "/employer/team",
       });
+      await sendTeamJoinedEmail({ ownerId: inv.invited_by, memberId: userId, memberName: user.name || user.email || inv.email, roleLabel: ROLE_LABEL[inv.role] });
     }
     return reply({ ok: true, companyName: inv.employers?.company_name ?? "", role: inv.role });
   } catch (err) {

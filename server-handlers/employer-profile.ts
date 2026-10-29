@@ -451,8 +451,8 @@ async function handlePost(req: Request, userId: string, existingCtx: EmployerCon
       if (!existing) {
         const identity = await loadAuthIdentity(SUPABASE_URL, serviceHeaders(), userId);
         if (identity.email) {
-          const mail = buildEmployerWelcomeEmail(companyName);
-          const sentWelcome = await sendEmployerEmail({ to: identity.email, ...mail, idempotencyKey: `employer-welcome-${userId}` });
+          const { text, ...mail } = buildEmployerWelcomeEmail(companyName);
+          const sentWelcome = await sendEmployerEmail({ to: identity.email, ...mail, extra: { text }, idempotencyKey: `employer-welcome-${userId}` });
           if (sentWelcome) await captureServerEvent("employer_welcome_sent", userId, { tier }, req);
         }
       }

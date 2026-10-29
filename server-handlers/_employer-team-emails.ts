@@ -26,6 +26,11 @@ export function inviteLink(token: string): string {
   return `${appBaseUrl()}/employer/join?token=${encodeURIComponent(token)}`;
 }
 
+async function sha256Hex(v: string): Promise<string> {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
+  return [...new Uint8Array(buf)].map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+
 export async function sendTeamInviteEmail(params: {
   to: string;
   token: string;
@@ -60,12 +65,14 @@ export async function sendTeamInviteEmail(params: {
     "",
     `This link works for ${INVITE_TTL_DAYS} days and only for this email address. If you weren't expecting it, you can ignore this email.`,
   ].join("\n");
-  return sendEmail(params.to, `${inviterText} invited you to ${params.companyName || "their team"} on HireStepX`, html, { text, replyTo: params.inviterEmail });
+  // Keyed on a hash of the token so a double click or retry can't send twice, and a resend (new token) still goes out.
+  const idempotencyKey = `team-invite-${(await sha256Hex(params.token)).slice(0, 32)}`;
+  return sendEmail(params.to, `${inviterText} invited you to ${params.companyName || "their team"} on HireStepX`, html, { text, replyTo: params.inviterEmail, idempotencyKey });
 }
 
 /* A 2xx from Resend means it accepted the message, not that it was delivered, so the
    message id is logged to match a "sent" invite against the Resend dashboard. */
-async function sendEmail(to: string, subject: string, html: string, extra: { text?: string; replyTo?: string } = {}): Promise<boolean> {
+async function sendEmail(to: string, subject: string, html: string, extra: { text?: string; replyTo?: string; idempotencyKey?: string } = {}): Promise<boolean> {
   const key = (process.env.RESEND_API_KEY || "").trim();
   if (!key) {
     slog.warn("[team-email] RESEND_API_KEY is not set; nothing was sent");
@@ -74,7 +81,7 @@ async function sendEmail(to: string, subject: string, html: string, extra: { tex
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(extra.idempotencyKey ? { "Idempotency-Key": extra.idempotencyKey } : {}) },
       body: JSON.stringify({ from: FROM_EMAIL, to: [to], subject, html, ...(extra.text ? { text: extra.text } : {}), ...(extra.replyTo ? { reply_to: extra.replyTo } : {}) }),
       signal: AbortSignal.timeout(8_000),
     });
@@ -132,5 +139,8 @@ export async function sendTeamChangeEmail(params: { to: string; change: TeamChan
       (params.change.kind === "removed" ? "" : button("Open the console", `${appBaseUrl()}/employer/team`)),
     footer: { manageUrl: `${appBaseUrl()}/employer/settings` },
   });
-  return sendEmail(params.to, copy.subject, html);
+  // 10-minute bucket: absorbs a retry, but a real second change later still sends.
+  const role = params.change.kind === "role_changed" ? params.change.role : "-";
+  const idempotencyKey = `team-change-${params.to}-${params.change.kind}-${role}-${Math.floor(Date.now() / 600_000)}`;
+  return sendEmail(params.to, copy.subject, html, { idempotencyKey });
 }

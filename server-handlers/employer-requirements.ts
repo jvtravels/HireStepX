@@ -39,6 +39,7 @@ import {
 import { extractResumeDetail } from "./_resume-detail-helpers";
 import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
+import { sendMatchesReadyEmail } from "./_employer-lifecycle-emails";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
 import { employerMarketingParts, isSuppressed, preferenceDepsFromEnv } from "./_unsubscribe";
@@ -1145,6 +1146,8 @@ async function runMatchingInner(requirementId: string, req: RequirementInput, ow
         body: `${req.title || "Your requirement"} has matched candidates ready for review.`,
         link: `/employer/requirements/${requirementId}`,
       }).catch(() => {});
+      // A strong-match email already covers this run; sending both would double up.
+      if (announceStrong.length === 0) await sendMatchesReadyEmail({ employerId: ownerUserId, requirementId, roleTitle: req.title || "" });
     }
   }
   return finalStatus;
@@ -1357,6 +1360,8 @@ async function rematchCandidateForRequirement(
           userId: r.employer_id, type: "matches_ready", title: "Candidates ready to review",
           body: `${r.title || "Your requirement"} has matched candidates ready for review.`, link: `/employer/requirements/${r.id}`,
         }).catch(() => {});
+        // The strong-match email below covers a strong first candidate.
+        if (!(score >= STRONG_MATCH_THRESHOLD && (existing?.match_score ?? 0) < STRONG_MATCH_THRESHOLD && !existing?.strong_alerted_at)) await sendMatchesReadyEmail({ employerId: r.employer_id, requirementId: r.id, roleTitle: r.title || "" });
       }
     }
   }

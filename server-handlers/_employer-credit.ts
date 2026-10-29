@@ -28,6 +28,7 @@
 import { slog } from "./_shared";
 import { notify as defaultNotify, type NotifyInput } from "./_notify";
 import { captureServerEvent } from "./_posthog";
+import { sendCreditRefundedEmail } from "./_employer-lifecycle-emails";
 import { incrementalOverlapPaise, loadNotDeliveredKeys, ownershipKey, refundOverlapPaise, remainingReturnablePaise } from "./_unlock-ownership";
 
 export type CreditReason =
@@ -834,6 +835,11 @@ export async function creditRefundForMatches(p: RefundParams): Promise<RefundRes
         body: `${s.count === 1 ? "A candidate you unlocked can't be reached" : `${s.count} candidates you unlocked can't be reached`} (${creditReasonLabel(p.reason).toLowerCase()}). ${rupees(s.total)} was added as credit and applies to your next unlock; their contact details are locked again.`,
         link: "/employer/settings",
         groupKey: `credit_refunded:${employerId}`,
+      });
+      const matchIds = result.credited.filter((c) => c.employerId === employerId).map((c) => c.matchId).sort();
+      await sendCreditRefundedEmail({
+        employerId, candidateCount: s.count, amountPaise: s.total, reasonLabel: creditReasonLabel(p.reason),
+        dedupeKey: `${employerId}-${matchIds[0]}-${matchIds.length}`,
       });
       await flagCreditAbuse({ base: p.base, headers: p.headers, employerId, fetchImpl: f });
     }
