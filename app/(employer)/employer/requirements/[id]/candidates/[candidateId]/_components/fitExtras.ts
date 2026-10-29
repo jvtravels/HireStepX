@@ -142,3 +142,13 @@ export function buildDecisionBrief(rows: FitRow[]): DecisionBrief {
       .map((r) => ({ text: brief(r), gap: r.status === "gap" })),
   };
 }
+
+/** One plain sentence on what the score rests on, from the criteria card only; null when there is nothing to compare. */
+export function scoreReason(rows: FitRow[], hasPractice: boolean): string | null {
+  if (rows.length === 0) return null;
+  const meets = rows.filter((r) => r.status === "meets").length;
+  const gaps = rows.filter((r) => r.status === "gap").map((r) => r.label.toLowerCase());
+  const parts = [`${meets} of ${rows.length} ${rows.length === 1 ? "criterion" : "criteria"} fully met`];
+  if (gaps.length > 0) parts.push(`gaps in ${gaps.slice(0, 2).join(" and ")}${gaps.length > 2 ? ` and ${gaps.length - 2} more` : ""}`);
+  return `${parts.join(", ")}.${hasPractice ? "" : " No graded practice yet, so this reflects the resume only."}`;
+}

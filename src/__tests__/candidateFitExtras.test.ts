@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { backgroundFitRow, budgetRangeLpa, buildDecisionBrief, parsePayRangeLpa, payFitRow, poolStanding, workModeFitRow } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/fitExtras";
+import { backgroundFitRow, budgetRangeLpa, buildDecisionBrief, parsePayRangeLpa, payFitRow, poolStanding, scoreReason, workModeFitRow } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/fitExtras";
 
 const cand = (resume: Record<string, unknown> = {}): any => ({ id: "c", matchScore: 70, resume: { education: [], experience: [], industries: [], ...resume } });
 const req = (o: Record<string, unknown> = {}): any => ({ budgetMin: 15, budgetMax: 20, salaryType: "per-annum", workMode: "hybrid", preferredColleges: [], targetCompanies: [], preferredIndustry: "", ...o });
@@ -72,5 +72,17 @@ describe("poolStanding and brief", () => {
     ]);
     expect(b.strengths).toEqual(["A: ok"]);
     expect(b.risks.map((r) => r.gap)).toEqual([true, false]);
+  });
+});
+
+describe("scoreReason", () => {
+  const row = (id: string, label: string, status: string): any => ({ id, label, status, asked: "", has: "", reason: "", source: "resume" });
+  it("states criteria met, gaps and the resume-only caveat", () => {
+    const rows = [row("a", "Experience", "meets"), row("b", "Required skills", "gap"), row("c", "Location", "gap")];
+    expect(scoreReason(rows, false)).toBe("1 of 3 criteria fully met, gaps in required skills and location. No graded practice yet, so this reflects the resume only.");
+  });
+  it("drops the caveat when practice exists and returns null without criteria", () => {
+    expect(scoreReason([row("a", "Experience", "meets")], true)).toBe("1 of 1 criterion fully met.");
+    expect(scoreReason([], true)).toBeNull();
   });
 });

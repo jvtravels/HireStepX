@@ -206,6 +206,8 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   }
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
+  const shownFacts = facts.filter((f) => !f.missing);
+  const notShared = facts.filter((f) => f.missing).map((f) => f.label);
   const summary = r.summary?.trim();
   const hxSummary = buildProfileSummary(candidate, requirement, matched, evidence);
   if (!hxSummary && !summary && !r.headline && facts.length === 0) return null;
@@ -213,9 +215,9 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
     <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
         {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
-        {facts.length > 0 && (
+        {shownFacts.length > 0 && (
           <KeyValueList>
-            {facts.map((f) => (
+            {shownFacts.map((f) => (
               <KeyValueRow key={f.label} label={f.label}>
                 {f.missing ? <span className="font-normal text-hx-ink-soft">{f.value}</span> : f.value}
                 {f.selfReported && <span className="sr-only"> (self-reported)</span>}
@@ -223,6 +225,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
             ))}
           </KeyValueList>
         )}
+        {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared: {notShared.join(", ")}.</p>}
         {missingHiring.length > 0 && (
           <ItemRequest
             candidate={candidate}
@@ -304,7 +307,15 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
         ) : evidence && hasRoleMismatch(evidence) ? (
           <RoleMismatchNotice evidence={evidence} candidate={candidate} requirementTitle={requirementTitle} requestUi={requestUi} />
         ) : (
-          <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
+          <div className="grid max-w-[75ch] justify-items-start gap-2">
+            <MutedText>No graded practice interviews yet, so this match reflects the resume only.</MutedText>
+            <ItemRequest
+              candidate={candidate}
+              ui={requestUi}
+              label="Ask them to practise this role"
+              preset={{ kind: "practice", topic: `Interview practice for ${requirementTitle}`.slice(0, 120) }}
+            />
+          </div>
         )}
       </EvidenceStatus>
     </Panel>

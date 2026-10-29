@@ -108,7 +108,12 @@ export function CandidateHeader({
   const meta: MetaPart[] = [];
   if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
   if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}` });
-  if (candidate.lastActiveDaysAgo >= 0) meta.push({ icon: ClockIcon, text: `Active ${candidate.lastActiveDaysAgo === 0 ? "today" : `${candidate.lastActiveDaysAgo}d ago`}` });
+  if (candidate.lastActiveDaysAgo >= 0) {
+    const days = candidate.lastActiveDaysAgo;
+    const stale = days >= 30;
+    const text = `Active ${days === 0 ? "today" : `${days}d ago`}`;
+    meta.push({ icon: ClockIcon, text: stale ? <span className="font-medium text-hx-warning-ink">{text}, may not respond</span> : text });
+  }
 
   const requestControl = requests.available ? (
     <RequestPopover candidate={candidate} state={requests} disabled={inviteBlocked} disabledReason={blockedReason}>
