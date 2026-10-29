@@ -450,7 +450,7 @@ export function shortlistPosition(ranked: Candidate[], id: string): ShortlistPos
 /** Plain-text brief for pasting into chat or email. Built only from what is visible on the page,
  *  so a locked candidate stays anonymous and no contact details leave the screen. */
 /** Notice period in the employer's terms ("30-day notice", "Immediate joiner"); null when we can't read it. */
-function noticePhrase(noticePeriod: string | null | undefined): string | null {
+export function noticePhrase(noticePeriod: string | null | undefined): string | null {
   if (!noticePeriod) return null;
   if (availabilityOf(noticePeriod).label === "Immediate") return "Immediate joiner";
   const days = noticeDays(noticePeriod);
@@ -564,4 +564,14 @@ export function buildInterviewQuestions(candidate: Candidate, requirement: Pick<
   }
   if (questions.length < 3) questions.push(`What is the hardest problem you solved recently that is closest to this ${requirement.title} role?`);
   return questions.slice(0, 3);
+}
+
+/** Deal-breaker facts for the header, from fields the candidate chose to share. Nothing is guessed when missing. */
+export function dealBreakerParts(r: Candidate["resume"]): { key: "notice" | "pay"; text: string }[] {
+  const out: { key: "notice" | "pay"; text: string }[] = [];
+  const notice = noticePhrase(r?.noticePeriod);
+  if (notice) out.push({ key: "notice", text: notice });
+  const ask = r?.expectedCtc ?? r?.expectedCtcBand;
+  if (ask) out.push({ key: "pay", text: `Expects ${ask}` });
+  return out;
 }

@@ -95,3 +95,15 @@ describe("overlapReason", () => {
     expect(overlapReason({ roleMatch: 80, skillMatch: 70, locationMatch: 90 }, true)).toBe("resume overlaps the posting on role, skills and location.");
   });
 });
+
+describe("dealBreakerParts", () => {
+  it("lists notice and pay only when shared", async () => {
+    const { dealBreakerParts } = await import("../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers");
+    expect(dealBreakerParts({ noticePeriod: "30 days", expectedCtc: "18 LPA" } as any)).toEqual([
+      { key: "notice", text: "30-day notice" },
+      { key: "pay", text: "Expects 18 LPA" },
+    ]);
+    expect(dealBreakerParts({ noticePeriod: null, expectedCtc: null, expectedCtcBand: null } as any)).toEqual([]);
+    expect(dealBreakerParts(undefined)).toEqual([]);
+  });
+});

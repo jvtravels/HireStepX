@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BriefcaseIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, PhoneIcon } from "lucide-react";
+import { BriefcaseIcon, CalendarClockIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, PhoneIcon, WalletIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { relativeTime } from "@/employer/teamActivity";
-import { HEADER_ACTION, candidateLinks, candidateSignal, formatYears, initials, maskedName, type FitSummary } from "./helpers";
+import { HEADER_ACTION, candidateLinks, candidateSignal, dealBreakerParts, formatYears, initials, maskedName, type FitSummary } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
@@ -108,6 +108,7 @@ export function CandidateHeader({
   const meta: MetaPart[] = [];
   if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
   if (resume?.yearsExperience != null) meta.push({ icon: BriefcaseIcon, text: `${formatYears(resume.yearsExperience)} experience${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}` });
+  for (const d of dealBreakerParts(resume)) meta.push({ icon: d.key === "notice" ? CalendarClockIcon : WalletIcon, text: d.text });
   if (candidate.lastActiveDaysAgo >= 0) {
     const days = candidate.lastActiveDaysAgo;
     const stale = days >= 30;
