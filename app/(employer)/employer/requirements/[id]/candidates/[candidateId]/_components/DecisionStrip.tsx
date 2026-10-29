@@ -10,7 +10,7 @@ import { ItemRequest, type RequestUi } from "./RequestPopover";
 export function DecisionStrip({ candidate, requirement, matched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null; requestUi?: RequestUi }) {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const brief = buildDecisionBrief(rows);
-  const hasPractice = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
+  const hasPractice = candidate.sessionsCompleted > 0 || !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   const reason = scoreReason(rows, hasPractice) ?? (candidate.matchBreakdown ? overlapReason(candidate.matchBreakdown, hasPractice) : null);
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
   if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !reason) return null;

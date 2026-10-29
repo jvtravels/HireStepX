@@ -13,4 +13,12 @@ describe("DecisionStrip on a resume-only candidate", () => {
     expect(text).toContain("gaps in required skills");
     expect(text).toContain("No graded practice yet");
   });
+
+  it("does not claim practice is missing when a graded session exists but detailed evidence is empty", () => {
+    render(<DecisionStrip candidate={{ ...candidate, sessionsCompleted: 1 }} requirement={requirement} matched={[]} evidence={null} />);
+    const text = screen.getByLabelText("At a glance").textContent ?? "";
+    expect(text).toContain("Score 31:");
+    expect(text).not.toContain("No graded practice yet");
+    expect(text).not.toContain("Ask them to practise");
+  });
 });
