@@ -306,6 +306,8 @@ interface EmployerDataContextValue {
   createCandidateRequest: (matchId: string, body: CreateRequestBody) => Promise<EmployerApiResult<CandidateRequestDto>>;
   cancelCandidateRequest: (matchId: string, requestId: string) => Promise<EmployerApiResult<CandidateRequestDto>>;
   fetchCandidateEvidence: (matchId: string) => Promise<CandidateEvidence | null>;
+  fetchCandidateReviews: (matchId: string) => Promise<CandidateReviews | null>;
+  saveCandidateReview: (matchId: string, rating: ReviewRating, reason: string) => Promise<EmployerApiResult<CandidateReviews>>;
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
@@ -336,6 +338,21 @@ function parseArchivedMatches(data: Record<string, unknown>): ArchivedMatchRecor
 }
 
 const EmployerDataContext = createContext<EmployerDataContextValue | null>(null);
+
+export type ReviewRating = 1 | 2 | 3 | 4;
+export interface CandidateReview { reviewerUserId: string; reviewerEmail: string; rating: ReviewRating; reason: string; updatedAt: string }
+export interface CandidateReviews {
+  mine: CandidateReview | null;
+  others: CandidateReview[];
+  /** False until the caller has reviewed: teammates' reviews are blind. */
+  revealed: boolean;
+  hiddenCount: number;
+  summary: { count: number; yes: number; no: number; disagreement: boolean } | null;
+}
+
+function isCandidateReviews(v: unknown): v is CandidateReviews {
+  return typeof v === "object" && v !== null && "others" in v && Array.isArray(v.others) && "revealed" in v && typeof v.revealed === "boolean";
+}
 
 export function useEmployerData() {
   const ctx = useContext(EmployerDataContext);
@@ -789,6 +806,18 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return Array.isArray(evidence.skills) ? evidence : null;
   }, []);
 
+  const fetchCandidateReviews = useCallback(async (matchId: string): Promise<CandidateReviews | null> => {
+    const res = await getWithRetry(`/api/employer-candidate-review?matchId=${encodeURIComponent(matchId)}`);
+    if (!res || !res.ok || !isCandidateReviews(res.data)) return null;
+    return res.data;
+  }, []);
+
+  const saveCandidateReview = useCallback(async (matchId: string, rating: ReviewRating, reason: string): Promise<EmployerApiResult<CandidateReviews>> => {
+    const res = await apiFetch<CandidateReviews>("/api/employer-candidate-review", { matchId, rating, reason }, { method: "PATCH" });
+    if (res.ok && res.data) return { ok: true, data: res.data };
+    return { ok: false, error: toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't save your review. Please try again.") };
+  }, []);
+
   const fetchCandidateResumeUrl = useCallback(async (matchId: string): Promise<{ url: string; fileName: string } | null> => {
     const res = await getWithRetry(`/api/employer-candidate-resume-url?matchId=${encodeURIComponent(matchId)}`);
     if (!res || !res.ok || !isRecord(res.data) || typeof res.data.url !== "string") return null;
@@ -920,6 +949,8 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     updateCandidateStatusResult,
     fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest,
     fetchCandidateEvidence,
+    fetchCandidateReviews,
+    saveCandidateReview,
     fetchCandidateResumeUrl,
     fetchRequirementActivity,
     fetchUnlockHistory,
@@ -939,7 +970,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     refreshCompanyStatus, submitCompanyProfile, submitCompanyProfileResult, addRequirement, updateRequirement,
     createUnlockOrder, createUnlockOrderResult, verifyUnlockPayment, fetchRequirementDetail, prefetchRequirementDetail, archiveRequirement, archiveRequirementResult, restoreArchivedMatches,
     reopenRequirement, updateRequirementStage, updateCandidateStatus, updateCandidateStatusResult,
-    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchCredit, fetchDashboard, refreshRequirements, listConversations,
+    fetchCandidateRequests, createCandidateRequest, cancelCandidateRequest, fetchCandidateEvidence, fetchCandidateReviews, saveCandidateReview, fetchCandidateResumeUrl, fetchRequirementActivity, fetchUnlockHistory, fetchCredit, fetchDashboard, refreshRequirements, listConversations,
     fetchMessages, sendMessage, sendMessageResult, uploadMessageAttachment, flagMessage, fetchMessageAttachmentUrl,
   ]);
 

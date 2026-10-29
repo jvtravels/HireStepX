@@ -24,6 +24,7 @@ import { PracticeTab } from "./PracticeTab";
 import { ResumeTab } from "./ResumeTab";
 import { useCandidateDetail } from "./useCandidateDetail";
 import { useCandidateRequests } from "./useCandidateRequests";
+import { useTeamReviews } from "./useTeamReviews";
 import type { RequestUi } from "./RequestPopover";
 
 type CandidateTabKey = "overview" | "practice" | "resume";
@@ -57,6 +58,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const access = useEmployerAccess();
   // The URL already names the match, so this starts alongside the job detail instead of after it.
   const requests = useCandidateRequests(matchId);
+  const reviews = useTeamReviews(matchId);
 
   const { requirement, candidate } = d;
   const shortlistHref = `/employer/requirements/${requirementId}`;
@@ -239,6 +241,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                 onOpenPractice={() => selectTab("practice")}
                 onOpenResume={() => selectTab("resume")}
                 requestUi={requestUi}
+                reviews={reviews}
               />
             )}
             {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} requestUi={requestUi} requirementTitle={requirement.title} />}

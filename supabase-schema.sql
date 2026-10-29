@@ -3128,3 +3128,25 @@ create policy "Members view own company" on public.employers
 -- value; only the cascade goes. delete-account / cleanup-deleted-accounts now
 -- remove the company explicitly, and only when its last member leaves.
 alter table public.employers drop constraint if exists employers_id_fkey;
+
+
+-- ── Team candidate reviews (migration 0065) ─────────────────────────────
+-- Blind until the reader submits their own; enforced in the handler, so no client policies.
+create table if not exists public.match_reviews (
+  id uuid primary key default gen_random_uuid(),
+  employer_id uuid not null references public.employers(id) on delete cascade,
+  requirement_id uuid not null references public.employer_requirements(id) on delete cascade,
+  match_id uuid not null references public.requirement_matches(id) on delete cascade,
+  reviewer_user_id uuid not null references auth.users(id) on delete cascade,
+  reviewer_email text not null default '',
+  -- 1 strong no, 2 lean no, 3 lean yes, 4 strong yes. No neutral midpoint on purpose.
+  rating smallint not null check (rating between 1 and 4),
+  reason text not null check (char_length(btrim(reason)) between 1 and 500),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (match_id, reviewer_user_id)
+);
+create index if not exists idx_match_reviews_match on public.match_reviews(match_id);
+create index if not exists idx_match_reviews_employer on public.match_reviews(employer_id, requirement_id);
+
+alter table public.match_reviews enable row level security; -- service-role only (blind reviews)

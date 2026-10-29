@@ -11,6 +11,8 @@ import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
 import { ItemRequest, missingHiringFacts, type RequestUi } from "./RequestPopover";
 import { RequestsPanel } from "./RequestsPanel";
+import { TeamReview } from "./TeamReview";
+import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
 import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
@@ -454,6 +456,7 @@ export function OverviewTab({
   onOpenPractice,
   onOpenResume,
   requestUi,
+  reviews,
 }: {
   candidate: Candidate;
   requirement: Requirement;
@@ -463,6 +466,7 @@ export function OverviewTab({
   onOpenPractice: () => void;
   onOpenResume: () => void;
   requestUi: RequestUi;
+  reviews: TeamReviewsState;
 }) {
   const insights = buildResumeInsights(candidate, unmatched);
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
@@ -473,6 +477,7 @@ export function OverviewTab({
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
+        <TeamReview reviews={reviews} />
         <div className="grid min-w-0 divide-y divide-hx-line @3xl:grid-cols-2 @3xl:divide-x @3xl:divide-y-0 @3xl:[&:has(>:only-child)]:grid-cols-1">
           <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
           <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
