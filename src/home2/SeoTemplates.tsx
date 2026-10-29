@@ -286,6 +286,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
           <span className="sx-mono sx-kick sa-in" style={delay(0)}>{post.category}</span>
           <h1 className="sx-h1 sa-in" style={delay(1)}>{post.title}</h1>
           <p className="sx-dek sa-in" style={delay(2)}>{post.metaDescription}</p>
+          <Byline />
           <div className="sx-meta sa-in" style={delay(3)}>
             <span>{post.company}</span>
             <span>{fmtDate(post.datePublished)}</span>
@@ -423,6 +424,14 @@ function PeerCompare({ label, headline, related, groupLabel }: { label: string; 
 }
 
 /* Importer notes read "AB scrape: Product Manager (n=80); n=80"; show the sample size, not the pipeline label. */
+function Byline() {
+  return (
+    <p className="sx-by">
+      By the HireStepX editorial team · <a data-no-underline href="/methodology">How we source and label this</a>
+    </p>
+  );
+}
+
 function readerNote(notes: string): string {
   if (!/^AB scrape/i.test(notes)) return notes;
   const n = notes.match(/n=(\d+)/)?.[1];
@@ -447,6 +456,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
           <span className="sx-mono sx-kick">Salary guide · India 2026 · checked {calibrationDate}</span>
           <h1 className="sx-h1">{label} salary in India</h1>
           <p className="sx-dek">{page.metaDescription}</p>
+          <Byline />
           <div className="sx-cover"><HeroScene item={{ k: "salary", t: `${label} salary`, h: "", co: label }} /></div>
           <div className="sx-stats">
             {meta?.noticePeriodDays != null && <div><span className="sx-mono">Notice period</span><b>{meta.noticePeriodDays} <small>days</small></b></div>}
@@ -576,6 +586,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
           <span className="sx-mono sx-kick">{focusLabel} · {companyLabel}</span>
           <h1 className="sx-h1">{page.searchPhrase}</h1>
           <p className="sx-dek">{first}</p>
+          <Byline />
           <div className="sx-stats">
             <div><span className="sx-mono">Questions</span><b>{questions.length}</b></div>
             {page.interviewRounds && <div><span className="sx-mono">Rounds</span><b>{page.interviewRounds.length}</b></div>}
@@ -748,6 +759,8 @@ a.sx-cmp-row:hover { background: var(--wash); }
 .sx-scene.k-salary { background: oklch(0.955 0.045 70); }
 @media (max-width: 900px) { .sx-scene { height: 230px; border-radius: 20px; } .sx-scene-in { transform: translate(-50%, -50%) scale(1.15); } }
 .sx-cover { position: relative; width: 100%; max-width: 1040px; margin-inline: auto; margin-top: 40px; }
+.sx-by { margin: 14px 0 0; text-align: center; font-size: 14px; color: var(--ink-3); }
+.sx-by a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 3px; }
 .sx-meta { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 24px; margin-top: 24px; font-size: 14px; color: var(--ink-3); }
 .sx-meta span + span::before { content: ''; display: inline-block; width: 3px; height: 3px; border-radius: 50%; background: var(--ink-3); margin-right: 24px; vertical-align: middle; }
 .sx-x { width: 100%; margin: 40px 0 0; text-align: left; background: var(--white); border: 1px solid var(--line); border-radius: 20px; box-shadow: 0 1px 2px rgba(20,20,60,.04), 0 12px 32px -16px rgba(20,20,60,.12); }

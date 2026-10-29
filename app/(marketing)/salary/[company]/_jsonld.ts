@@ -194,10 +194,12 @@ export type SalaryFaq = { q: string; a: string };
 /* PRI-150: several phrasings per slot, rotated deterministically per
    company+role (see data/_content-variants.ts) so 224 pages built from the
    same skeleton don't read as verbatim duplicates to Google. */
+const an = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
+
 const HEADLINE_Q_VARIANTS = [
   (role: string, label: string) => `What is the ${role} salary at ${label} India 2026?`,
-  (role: string, label: string) => `How much does ${label} pay a ${role} in India?`,
-  (role: string, label: string) => `${label} ${role} salary — what's the 2026 range?`,
+  (role: string, label: string) => `How much does ${label} pay ${an(role)} ${role} in India?`,
+  (role: string, label: string) => `${label} ${role} salary: what's the 2026 range?`,
 ] as const;
 
 const HEADLINE_A_VARIANTS = [
@@ -206,12 +208,12 @@ const HEADLINE_A_VARIANTS = [
   (role: string, label: string, min: number, max: number, lo: string, hi: string) =>
     `${label} pays ${role}s in India ₹${min}L–₹${max}L total CTC as of 2026, spanning ${lo} through ${hi} level (estimated range).`,
   (role: string, label: string, min: number, max: number, lo: string, hi: string) =>
-    `Total CTC for a ${role} at ${label} ranges ₹${min}L to ₹${max}L in 2026 (${lo}–${hi}, estimated range).`,
+    `Total CTC for ${an(role)} ${role} at ${label} ranges ₹${min}L to ₹${max}L in 2026 (${lo}–${hi}, estimated range).`,
 ] as const;
 
 const PER_LEVEL_Q_VARIANTS = [
   (phrase: string, role: string, label: string) => `What is the ${phrase} ${role} salary at ${label}?`,
-  (phrase: string, role: string, label: string) => `How much does a ${phrase} ${role} earn at ${label}?`,
+  (phrase: string, role: string, label: string) => `How much does ${an(phrase)} ${phrase} ${role} earn at ${label}?`,
   (phrase: string, role: string, label: string) => `${label} ${phrase} ${role}: what's the pay in 2026?`,
 ] as const;
 
