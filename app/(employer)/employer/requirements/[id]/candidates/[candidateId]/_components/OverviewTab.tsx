@@ -216,6 +216,9 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
       <div className="grid gap-4">
         {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
         {shownFacts.length > 0 && (
+          <p className="m-0 -mb-1 text-[12px] font-medium text-hx-ink-soft">Self-reported by the candidate, from their profile and resume</p>
+        )}
+        {shownFacts.length > 0 && (
           <KeyValueList>
             {shownFacts.map((f) => (
               <KeyValueRow key={f.label} label={f.label}>
@@ -266,6 +269,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
     : "";
   const action = (
     <div className="flex items-center gap-3">
+      {hasEvidence && <span className="text-[12px] font-medium text-hx-ink-soft">Graded in practice</span>}
       {hasEvidence && <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton>}
       <InfoTip label="How practice evidence is scored">
         {PROVENANCE}. This is practice performance, not an employment check.

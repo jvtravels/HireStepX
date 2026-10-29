@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
+import { cn } from "cn";
+import type { EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia } from "@/components/ui/item";
 import { SkillChip, type ChipTone } from "@/employer/_panelParts";
 
@@ -67,5 +69,34 @@ export function BalancedColumns({ items }: { items: Array<ColumnItem | false | n
         </div>
       ))}
     </div>
+  );
+}
+
+const STAR_LETTERS = [
+  { key: "S", name: "Situation" },
+  { key: "T", name: "Task" },
+  { key: "A", name: "Action" },
+  { key: "R", name: "Result" },
+] as const;
+
+export function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
+  const missing = STAR_LETTERS.filter((l) => !star[l.key]).map((l) => l.name);
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className="sr-only">{missing.length === 0 ? "Covers all four STAR parts" : `Missing STAR parts: ${missing.join(", ")}`}</span>
+      {STAR_LETTERS.map((l) => (
+        <span
+          key={l.key}
+          aria-hidden="true"
+          title={`${l.name}: ${star[l.key] ? "covered" : "missing"}`}
+          className={cn(
+            "inline-flex size-5 items-center justify-center rounded-md border text-[12px] font-semibold",
+            star[l.key] ? "border-hx-indigo-100 bg-hx-indigo-100 text-hx-indigo" : "border-hx-line text-hx-ink-soft/70",
+          )}
+        >
+          {l.key}
+        </span>
+      ))}
+    </span>
   );
 }

@@ -148,9 +148,9 @@ export interface FitRow { id: string; label: string; asked: string; has: string;
 
 /** Where the candidate-side value came from, so an employer can tell a self-reported resume line from a graded one. */
 export const FIT_SOURCE_LABEL: Record<FitSource, string> = {
-  resume: "From the resume",
-  profile: "From the candidate profile",
-  practice: "From graded practice interviews",
+  resume: "Self-reported, from the resume",
+  profile: "Self-reported, from the candidate profile",
+  practice: "Graded in practice interviews",
 };
 
 export const FIT_RANK: Record<FitStatus, number> = { meets: 0, partial: 1, gap: 2 };
@@ -366,6 +366,14 @@ function questionWords(text: string): Set<string> {
 
 /** Drops a later question that repeats an earlier one (the interviewer sometimes re-asks with
  *  near-identical wording), so the list and its counts don't double-count one prompt. */
+/** The strongest graded answer to lead with: highest score, ties go to the one covering more STAR parts. */
+export function bestGradedAnswer(questions: EvidenceQuestion[] | undefined): EvidenceQuestion | null {
+  const starCount = (q: EvidenceQuestion) => (q.star ? Object.values(q.star).filter(Boolean).length : 0);
+  const pool = (questions ?? []).filter((q) => q.verdict !== "skipped" && q.question.trim());
+  if (pool.length === 0) return null;
+  return [...pool].sort((a, b) => b.score - a.score || starCount(b) - starCount(a))[0];
+}
+
 export function cleanQuestionText(text: string): string {
   return text.replace(/\s*\[(?:pause|beat|silence)\]\s*/gi, " ").replace(/\s+/g, " ").trim();
 }

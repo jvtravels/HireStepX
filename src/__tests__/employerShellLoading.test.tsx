@@ -43,13 +43,13 @@ describe("EmployerShell first paint", () => {
     expect(screen.queryByTestId("console-frame")).toBeNull();
   });
 
-  it("draws the console chrome with a skeleton, not the page, for a returning approved employer", () => {
+  it("draws the console chrome and the page itself, with no skeleton gate, for a returning approved employer", () => {
     window.localStorage.setItem("hsx_employer_console", JSON.stringify({ userId: "u1", name: "Acme" }));
     data = { companyStatus: "none", companyStatusLoading: true, companyStatusError: false };
     render(<EmployerShell><p>Jobs page</p></EmployerShell>);
     expect(screen.getByTestId("console-frame")).toBeTruthy();
-    expect(screen.getByRole("status")).toBeTruthy();
-    expect(screen.queryByText("Jobs page")).toBeNull();
+    expect(screen.getByText("Jobs page")).toBeTruthy();
+    expect(screen.queryByRole("status")).toBeNull();
   });
 
   it("ignores a hint saved by a different user", () => {

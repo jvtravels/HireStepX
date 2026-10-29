@@ -8,36 +8,8 @@ import { Badge } from "@/employer/_atoms";
 import type { Candidate } from "@/employer/mockData";
 import { InfoTip, Panel } from "@/employer/_panelParts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
+import { StarMarks } from "./parts";
 import { DIFFICULTY_LABEL, cleanQuestionText, dedupeQuestions, LENGTH_LABEL, PROVENANCE, VERDICT_LABEL, VERDICT_TONE, summarizeQuestions } from "./helpers";
-
-const STAR_LETTERS = [
-  { key: "S", name: "Situation" },
-  { key: "T", name: "Task" },
-  { key: "A", name: "Action" },
-  { key: "R", name: "Result" },
-] as const;
-
-function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
-  const missing = STAR_LETTERS.filter((l) => !star[l.key]).map((l) => l.name);
-  return (
-    <span className="inline-flex items-center gap-1">
-      <span className="sr-only">{missing.length === 0 ? "Covers all four STAR parts" : `Missing STAR parts: ${missing.join(", ")}`}</span>
-      {STAR_LETTERS.map((l) => (
-        <span
-          key={l.key}
-          aria-hidden="true"
-          title={`${l.name}: ${star[l.key] ? "covered" : "missing"}`}
-          className={cn(
-            "inline-flex size-5 items-center justify-center rounded-md border text-[12px] font-semibold",
-            star[l.key] ? "border-hx-indigo-100 bg-hx-indigo-100 text-hx-indigo" : "border-hx-line text-hx-ink-soft/70",
-          )}
-        >
-          {l.key}
-        </span>
-      ))}
-    </span>
-  );
-}
 
 function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: number; candidate: Candidate; requestUi: RequestUi }) {
   const [open, setOpen] = useState(false);

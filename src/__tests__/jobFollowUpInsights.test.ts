@@ -67,6 +67,6 @@ describe("fit row sources", () => {
     const rows = buildRoleFit(c, requirement, ["React"], evidence);
     const bySource = Object.fromEntries(rows.map((r) => [r.id, r.source]));
     expect(bySource).toEqual({ skills: "resume", experience: "resume", location: "profile", readiness: "practice", star: "practice" });
-    expect(FIT_SOURCE_LABEL.practice).toBe("From graded practice interviews");
+    expect(FIT_SOURCE_LABEL.practice).toBe("Graded in practice interviews");
   });
 });
