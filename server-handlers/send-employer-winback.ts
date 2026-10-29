@@ -16,7 +16,7 @@ export const config = { runtime: "nodejs" };
 import { verifyCronAuth } from "./_cron-auth";
 import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx, redisPipeline } from "./_shared";
 import { claimMarketingCooldown, releaseMarketingCooldown } from "./_employer-marketing-cooldown";
-import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { employerMarketingParts, filterSuppressed, preferenceDepsFromEnv } from "./_unsubscribe";
 import { sendEmployerEmail } from "./_employer-emails";
 import { recordCronResult } from "./_cron-heartbeat";
 import { readAllPages, readPage, type RestGet } from "./_paged-fetch";
@@ -120,7 +120,20 @@ export default async function handler(req: Request): Promise<Response> {
       throw new ReadFailure("Employer lookup failed", err);
     }
 
-    const eligible = candidates.filter((c) => isWinbackEligible(employers.get(c.employerId), emails.get(c.employerId)));
+    // The no_unlock mail says candidates are waiting, so only send it to employers who have a role
+    // with real matches (ready/partial). A role that matched nobody gets the stale-role nudge instead.
+    const withMatches = new Set<string>();
+    try {
+      const noUnlockIds = candidates.filter((c) => c.kind === "no_unlock").map((c) => c.employerId);
+      for (let i = 0; i < noUnlockIds.length; i += CHUNK) {
+        const list = noUnlockIds.slice(i, i + CHUNK).map(encodeURIComponent).join(",");
+        for (const r of await readPage<{ employer_id: string }>(get, `employer_requirements?employer_id=in.(${list})&status=in.(ready,partial)&select=employer_id`)) withMatches.add(r.employer_id);
+      }
+    } catch (err) {
+      throw new ReadFailure("Matched-role lookup failed", err);
+    }
+
+    const eligible = candidates.filter((c) => (c.kind !== "no_unlock" || withMatches.has(c.employerId)) && isWinbackEligible(employers.get(c.employerId), emails.get(c.employerId)));
     const allowed = new Set(
       (await filterSuppressed(preferenceDepsFromEnv(), eligible.map((c) => ({ id: c.employerId })), "employer_notifications")).map((r) => r.id),
     );
@@ -141,7 +154,7 @@ export default async function handler(req: Request): Promise<Response> {
         continue;
       }
 
-      const parts = await marketingEmailParts(c.employerId, "employer_notifications");
+      const parts = await employerMarketingParts(c.employerId);
       const mail = buildWinbackEmail(c.kind, employers.get(c.employerId)?.company_name ?? "", parts.footer);
       const ok = await sendEmployerEmail({
         to: emails.get(c.employerId) as string,

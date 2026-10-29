@@ -17,6 +17,7 @@ const filterSuppressed = vi.fn();
 vi.mock("../../server-handlers/_unsubscribe", () => ({
   filterSuppressed: (...a: unknown[]) => filterSuppressed(...a),
   marketingEmailParts: async () => ({ footer: { marketing: true }, resend: { reply_to: "hello@hirestepx.com", headers: {} } }),
+  employerMarketingParts: async () => ({ footer: { marketing: true, manageUrl: "https://hirestepx.com/employer/settings" }, resend: { reply_to: "hello@hirestepx.com", headers: {} } }),
   preferenceDepsFromEnv: () => ({ supabaseUrl: "", serviceKey: "" }),
 }));
 const recordCronResult = vi.fn();

@@ -31,7 +31,7 @@ export function buildEmployerWelcomeEmail(companyName: string): BuiltEmail {
     para("Tell us the title, skills and experience you need. We match it against candidates who have completed real mock interviews, and rank them on evidence from those sessions, not a keyword-stuffed resume.") +
     para("Browsing matches is free. You pay only when you unlock a candidate's contact details, so there is nothing to commit to up front.") +
     button("Post your first role", `${appUrl()}/employer/requirements/new`);
-  return { subject, html: emailShell({ preview: subject, body }) };
+  return { subject, html: emailShell({ preview: subject, body, footer: { manageUrl: `${appUrl()}/employer/settings` } }) };
 }
 
 export interface NudgeRequirement {

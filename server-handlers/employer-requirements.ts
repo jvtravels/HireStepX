@@ -41,7 +41,7 @@ import { llmRerankCandidates, blendScore } from "./_requirement-match-llm";
 import { notify } from "./_notify";
 import { captureServerEvent } from "./_posthog";
 import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
-import { isSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { employerMarketingParts, isSuppressed, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
 import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
@@ -148,13 +148,14 @@ async function sendStrongMatchEmail(opts: {
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return;
     // Honour the employer's alert opt-out (fails closed on a lookup error).
     if (await isSuppressed(preferenceDepsFromEnv(), opts.ownerUserId, "employer_notifications")) return;
-    const parts = await marketingEmailParts(opts.ownerUserId, "employer_notifications");
-    // Employers have no /settings page; their preferences live under /employer/settings.
-    const footer = { ...parts.footer, manageUrl: `${APP_URL}/employer/settings` };
+    // Footer links to /employer/settings: employers have no candidate /settings page.
+    const parts = await employerMarketingParts(opts.ownerUserId);
+    const footer = parts.footer;
 
     const reqTitle = opts.requirementTitle || "your requirement";
     const headline = strongMatchAlertBody(opts.matchCount, opts.topScore, reqTitle);
     const link = `${APP_URL}/employer/requirements/${opts.requirementId}`;
+    const subject = `${opts.matchCount} strong ${opts.matchCount === 1 ? "match" : "matches"} for your ${reqTitle.trim().slice(0, 60)} role`;
     const html = emailShell({
       footer,
       preview: headline,
@@ -178,8 +179,9 @@ async function sendStrongMatchEmail(opts: {
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
-        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject: "Strong match update | HireStepX", html, ...parts.resend }),
+        // One mail per requirement per day at most: Resend rejects a repeat of this key for 24h.
+        headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json", "Idempotency-Key": `strong-match-${opts.requirementId}-${new Date().toISOString().slice(0, 10)}` },
+        body: JSON.stringify({ from: FROM_EMAIL, to: [email], subject, html, ...parts.resend }),
         signal: controller.signal,
       });
       if (!res.ok) {

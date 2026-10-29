@@ -18,7 +18,7 @@ export const config = { runtime: "nodejs" };
 import { verifyCronAuth } from "./_cron-auth";
 import { slog, supabaseUrl, supabaseServiceHeaders, redisGet, redisSetEx, redisPipeline } from "./_shared";
 import { claimMarketingCooldown, releaseMarketingCooldown } from "./_employer-marketing-cooldown";
-import { filterSuppressed, marketingEmailParts, preferenceDepsFromEnv } from "./_unsubscribe";
+import { employerMarketingParts, filterSuppressed, preferenceDepsFromEnv } from "./_unsubscribe";
 import { isSuspended } from "./_employer-trust";
 import { recordCronResult } from "./_cron-heartbeat";
 import { readAllPages, readPage, type RestGet } from "./_paged-fetch";
@@ -150,7 +150,7 @@ export default async function handler(req: Request): Promise<Response> {
         continue;
       }
 
-      const parts = await marketingEmailParts(employerId, "employer_notifications");
+      const parts = await employerMarketingParts(employerId);
       const mail = buildNudgeEmail(c, parts.footer);
       const ok = await sendEmployerEmail({
         to: emailById.get(employerId) as string,

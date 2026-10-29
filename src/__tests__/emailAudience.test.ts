@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   getEmployerAccountIds,
   filterEmployerOnlyAccounts,
+  employerMarketingParts,
   type PreferenceDeps,
 } from "../../server-handlers/_unsubscribe";
 
@@ -75,5 +76,15 @@ describe("filterEmployerOnlyAccounts", () => {
     const f = vi.fn(async () => json(503)) as unknown as typeof fetch;
     const out = await filterEmployerOnlyAccounts(deps(f), rows.slice(0, 2), () => false);
     expect(out).toEqual([]);
+  });
+});
+
+describe("employerMarketingParts", () => {
+  it("points Manage notifications at the employer console, not the candidate settings page", async () => {
+    vi.stubEnv("APP_URL", "https://hirestepx.com");
+    const parts = await employerMarketingParts(CAND);
+    expect(parts.footer.manageUrl).toBe("https://hirestepx.com/employer/settings");
+    expect(parts.footer.marketing).toBe(true);
+    vi.unstubAllEnvs();
   });
 });

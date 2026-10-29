@@ -17,6 +17,7 @@ const filterSuppressed = vi.fn();
 vi.mock("../../server-handlers/_unsubscribe", () => ({
   filterSuppressed: (...a: unknown[]) => filterSuppressed(...a),
   marketingEmailParts: async () => ({ footer: { marketing: true }, resend: { reply_to: "hello@hirestepx.com", headers: {} } }),
+  employerMarketingParts: async () => ({ footer: { marketing: true, manageUrl: "https://hirestepx.com/employer/settings" }, resend: { reply_to: "hello@hirestepx.com", headers: {} } }),
   preferenceDepsFromEnv: () => ({ supabaseUrl: "", serviceKey: "" }),
 }));
 const sendEmployerEmail = vi.fn();
@@ -142,12 +143,13 @@ describe("winback keys and copy", () => {
   });
 });
 
-interface Data { reqs?: unknown[]; unlocks?: unknown[]; employers?: unknown[]; profiles?: unknown[]; failAt?: string }
+interface Data { matched?: unknown[]; reqs?: unknown[]; unlocks?: unknown[]; employers?: unknown[]; profiles?: unknown[]; failAt?: string }
 function installFetch(d: Data) {
   global.fetch = vi.fn(async (url: string) => {
     const u = String(url);
-    const kind = u.includes("requirement_matches") ? "unlocks" : u.includes("employer_requirements") ? "reqs" : u.includes("/employers?") ? "employers" : u.includes("/profiles?") ? "profiles" : "";
+    const kind = u.includes("requirement_matches") ? "unlocks" : u.includes("status=in.(ready,partial)") ? "matched" : u.includes("employer_requirements") ? "reqs" : u.includes("/employers?") ? "employers" : u.includes("/profiles?") ? "profiles" : "";
     if (d.failAt === kind) return { ok: false, json: async () => ({}) };
+    if (kind === "matched") return { ok: true, json: async () => d.matched ?? [{ employer_id: "e1" }] };
     const body = kind === "reqs" ? d.reqs : kind === "unlocks" ? d.unlocks : kind === "employers" ? d.employers : d.profiles;
     return { ok: true, json: async () => body ?? [] };
   }) as unknown as typeof fetch;
@@ -223,6 +225,17 @@ describe("send-employer-winback handler", () => {
     expect(captureServerEvent).toHaveBeenCalledWith("employer_winback_sent", "e1", { kind: "no_unlock", requirement_count: 1, unlock_count: 0 });
     expect(JSON.stringify(captureServerEvent.mock.calls)).not.toContain("acme");
     expect(recordCronResult).toHaveBeenCalledWith("send-employer-winback", { errors: 0 });
+  });
+
+  it("does not tell an employer whose roles matched nobody that candidates are waiting", async () => {
+    installFetch({ ...baseData(), matched: [] });
+    expect(await (await call()).json()).toMatchObject({ sent: 0, skipped: 1 });
+    expect(sendEmployerEmail).not.toHaveBeenCalled();
+  });
+
+  it("still sends the inactive win-back to a past unlocker with no matched role", async () => {
+    installFetch({ ...baseData(), matched: [], reqs: [], unlocks: [{ unlocked_at: ago(40), employer_requirements: { employer_id: "e1" } }] });
+    expect(await (await call()).json()).toMatchObject({ sent: 1 });
   });
 
   it("skips an employer inside the 30-day cooldown", async () => {

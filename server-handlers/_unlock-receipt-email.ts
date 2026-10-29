@@ -57,7 +57,7 @@ export function buildReceiptEmail(r: UnlockReceipt, opts: { company: string | nu
     );
   return {
     subject: `${rupees(r.amountPaise)} received, ${doc} for your candidate unlock`,
-    html: emailShell({ preview: `${r.candidates} candidate contact${r.candidates === 1 ? "" : "s"} unlocked.`, body }),
+    html: emailShell({ preview: `${r.candidates} candidate contact${r.candidates === 1 ? "" : "s"} unlocked.`, body, footer: { manageUrl: `${opts.appUrl}/employer/settings` } }),
   };
 }
 

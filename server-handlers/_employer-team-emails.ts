@@ -130,6 +130,7 @@ export async function sendTeamChangeEmail(params: { to: string; change: TeamChan
     body:
       hero({ eyebrow: "Team update", title: escapeHtml(copy.heading), lede: escapeHtml(copy.message) }) +
       (params.change.kind === "removed" ? "" : button("Open the console", `${appBaseUrl()}/employer/team`)),
+    footer: { manageUrl: `${appBaseUrl()}/employer/settings` },
   });
   return sendEmail(params.to, copy.subject, html);
 }

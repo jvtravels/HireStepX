@@ -163,6 +163,15 @@ export async function marketingEmailParts(userId: string, category: EmailCategor
   };
 }
 
+/** marketingEmailParts for mail addressed to an employer: "Manage notifications"
+    must open the employer console settings, not the candidate /settings page
+    (employers have no candidate dashboard). Candidate-facing employer_notifications
+    mail (profile viewed, interest) keeps marketingEmailParts. */
+export async function employerMarketingParts(userId: string): Promise<MarketingEmailParts> {
+  const parts = await marketingEmailParts(userId, "employer_notifications");
+  return { ...parts, footer: { ...parts.footer, manageUrl: `${baseUrl()}/employer/settings` } };
+}
+
 /* ─── Suppression store (email_preferences) ─── */
 
 export interface PreferenceDeps {
