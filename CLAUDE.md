@@ -274,6 +274,13 @@ if you need to confirm readiness — do not re-trigger.
 
 ## If you are an AI agent
 
+- **Never assume or guess.** Before telling the maintainer how the live
+  product looks or behaves, check it yourself in Claude in Chrome on live
+  production, signed in with the maintainer's saved test credentials, then
+  report what you saw. Code, unit tests and local runs do not count as
+  proof of what production shows. If you could not check something, say
+  so plainly instead of inferring it. Never write the credentials into
+  chat, commits, docs or files that are committed.
 - Prefer editing existing files to creating new ones. New files have
   a high bar — they should represent a new logical unit, not a dump.
 - Prefer `npm test` over `npm run test:coverage` during local
