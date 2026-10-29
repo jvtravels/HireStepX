@@ -4,9 +4,10 @@ import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import { buildDecisionBrief, overlapReason, poolStanding, scoreReason } from "./fitExtras";
 import { buildRoleFit } from "./helpers";
+import { ItemRequest, type RequestUi } from "./RequestPopover";
 
 /** One glance before the detail: who this is against the pool, what speaks for them, what to check first. */
-export function DecisionStrip({ candidate, requirement, matched, evidence }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null }) {
+export function DecisionStrip({ candidate, requirement, matched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null; requestUi?: RequestUi }) {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const brief = buildDecisionBrief(rows);
   const hasPractice = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
@@ -15,7 +16,14 @@ export function DecisionStrip({ candidate, requirement, matched, evidence }: { c
   if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !reason) return null;
   return (
     <section aria-label="At a glance" className="grid min-w-0 gap-3 bg-hx-soft px-7 py-4 @container">
-      {reason && <p className="m-0 text-[13px] text-hx-coal">Score {candidate.matchScore}: {reason}</p>}
+      {reason && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+          <p className="m-0 text-[13px] text-hx-coal">Score {candidate.matchScore}: {reason}</p>
+          {!hasPractice && requestUi && (
+            <ItemRequest candidate={candidate} ui={requestUi} label="Ask them to practise this role" preset={{ kind: "practice", topic: `Interview practice for ${requirement.title}`.slice(0, 120) }} />
+          )}
+        </div>
+      )}
       {standing && (
         <p className="m-0 text-[13px] text-hx-ink-soft">
           Scores higher than <strong className="font-semibold text-hx-coal tabular-nums">{standing.below} of {standing.total}</strong> other matches for this job.
