@@ -97,6 +97,50 @@ export const STATIC_OPENINGS: PublicOpening[] = [
     listedAt: "2026-10-30T00:00:00.000Z",
     expiresAt: "2026-12-14T00:00:00.000Z",
   },
+  {
+    slug: "frontend-developer-react-typescript",
+    title: "Frontend Developer (React, TypeScript)",
+    summary:
+      "Build responsive, accessible web interfaces in React and TypeScript. Turn designs into reusable components, connect them to APIs, and keep the product fast and reliable. Remote, full-time, 1-3 years of frontend experience.",
+    location: "Remote (India)",
+    workMode: "remote",
+    experienceMin: 1,
+    experienceMax: 3,
+    skills: ["React", "TypeScript", "JavaScript", "HTML and CSS", "REST APIs", "Git"],
+    employmentType: "full-time",
+    department: "engineering",
+    details: {
+      about:
+        "An employer on HireStepX is looking for a Frontend Developer with 1 to 3 years of experience to build and improve the web product people use every day. You will turn designs into responsive, accessible interfaces in React and TypeScript, connect them to backend APIs, and work closely with designers and backend engineers. The role suits someone who cares about how an interface feels as well as how it is built.",
+      responsibilities: [
+        "Build and maintain responsive web interfaces using React and TypeScript.",
+        "Turn design files into clean, reusable components that follow the team's design system.",
+        "Integrate REST APIs and handle loading, error and empty states properly.",
+        "Write unit and component tests for the code you ship.",
+        "Improve accessibility, page speed and cross-browser behaviour.",
+        "Take part in code reviews, and fix bugs reported by users and teammates.",
+        "Work with designers, product managers and backend engineers to scope and deliver features.",
+      ],
+      requirements: [
+        "1 to 3 years of professional experience building web interfaces.",
+        "Solid JavaScript and TypeScript, including modern ES features.",
+        "Hands-on experience with React, including hooks and state management.",
+        "Strong HTML and CSS, and experience building responsive layouts.",
+        "Comfortable using Git and GitHub, and working through code review.",
+        "A portfolio or GitHub profile with projects you have built and deployed.",
+        "Clear written and spoken English, and comfort working remotely.",
+      ],
+      goodToHave: [
+        "Experience with Next.js or another React framework.",
+        "Experience with Tailwind CSS or a component library.",
+        "Knowledge of accessibility standards (WCAG) and web performance tuning.",
+        "Experience writing tests with Jest, React Testing Library or Playwright.",
+        "Experience with AI-assisted development tools.",
+      ],
+    },
+    listedAt: "2026-10-30T00:00:00.000Z",
+    expiresAt: "2026-12-14T00:00:00.000Z",
+  },
 ];
 
 export function liveStaticOpenings(now: Date = new Date()): PublicOpening[] {
