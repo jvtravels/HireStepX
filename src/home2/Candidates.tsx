@@ -97,8 +97,8 @@ function CandHero() {
     <section className="cx-hero">
       <div ref={ref} className={`hx-wrap cx-hero-in hx-rv${on ? " on" : ""}`}>
         <div className="cx-copy">
-          <h1 className="cx-h1 hx-ri" style={delay(1)}>Practise the interview. <b>Get shortlisted</b> by recruiters.</h1>
-          <p className="cx-lede hx-ri" style={delay(2)}>Answer interview questions out loud and get a score with simple tips. Recruiters hiring for your skills can then see your proof.</p>
+          <h1 className="cx-h1 hx-ri" style={delay(1)}>Practise the interview. <b>Get seen</b> by employers.</h1>
+          <p className="cx-lede hx-ri" style={delay(2)}>Answer interview questions out loud and see the exact sentence to fix. Employers hiring for your skills can then see your proof.</p>
           <div className="cx-cta hx-ri" style={delay(3)}>
             <a data-no-underline className="hx-btn lg" href="/signup">Start practising</a>
             <a className="cx-link" href="#how">See how it works</a>
@@ -224,7 +224,7 @@ const I = { size: 18, strokeWidth: 1.75, "aria-hidden": true } as const;
 const HOW: { t: string; d: string }[] = [
   { t: "Practise out loud", d: "An AI interviewer asks the questions and you answer like the real thing. A round takes about 10 to 25 minutes." },
   { t: "Find out what to fix", d: "Get a score out of 100 and simple tips. Try again until you are happy." },
-  { t: "Get seen by recruiters", d: "Recruiters hiring for your skills see your practice scores. Your name and contact stay hidden until an employer unlocks them, and you can switch visibility off any time." },
+  { t: "Get seen by employers", d: "Employers hiring for your skills see your practice scores. Your name and contact stay hidden until an employer unlocks them, and you can switch visibility off any time." },
 ];
 
 function Head({ kicker, title, lede }: { kicker: string; title: ReactNode; lede?: string }) {
@@ -275,9 +275,9 @@ function HowPanel({ i, on }: { i: number; on: boolean }) {
       <p className="hi-q">Who can see what</p>
       <ul className="hi-vis">
         <li><span>Your verified skills</span><em className="on">Recruiters can see</em></li>
-        <li><span>Your name and contact</span><em>Hidden until you say yes</em></li>
+        <li><span>Your name and contact</span><em>Hidden until an employer unlocks it</em></li>
       </ul>
-      <p className="hi-hint"><Lock size={16} strokeWidth={1.75} aria-hidden="true" />You decide, every time.</p>
+      <p className="hi-hint"><Lock size={16} strokeWidth={1.75} aria-hidden="true" />You can switch visibility off any time.</p>
     </div>
   );
 }
@@ -288,7 +288,7 @@ function HowItWorks() {
   const [auto, setAuto] = useState(true);
   const play = on && auto && !reduced();
   return (
-    <Sec id="how" kicker="How it works" title={<>Practise, improve, <b>get shortlisted</b>.</>}>
+    <Sec id="how" kicker="How it works" title={<>Practise, improve, <b>get seen</b>.</>}>
       <div className="hi" ref={ref}>
         <div className="hi-tabs" role="tablist" aria-label="How HireStepX works">
           {HOW.map((x, i) => (
@@ -327,14 +327,14 @@ const PROOF: { Icon: LucideIcon; t: string; d: string }[] = [
 
 function Proof() {
   return (
-    <Sec id="proof" band kicker="Your proof" title={<>Practice that <b>gets you shortlisted</b>.</>} lede="Every session adds proof of what you can do.">
+    <Sec id="proof" band kicker="Your proof" title={<>Practice that <b>gets you seen</b>.</>} lede="Every session adds proof of what you can do.">
       <div className="pf">
         <ul className="pf-list">
           {PROOF.map((p, i) => <li key={p.t} style={delay(i)}><span className="pf-ico"><p.Icon {...I} /></span><div><h3>{p.t}</h3><p>{p.d}</p></div></li>)}
         </ul>
         <Skel className="pf-card hx-stage hx-stage-warm">
           <div className="pf-in">
-            <span className="hx-kicker">What a recruiter sees</span>
+            <span className="hx-kicker">What an employer sees</span>
             <h3>Product designer</h3>
             <p className="pf-meta">5 years · Pune · name hidden</p>
             <ul className="pf-ev">
@@ -343,7 +343,7 @@ function Proof() {
               <li style={delay(3)}><ShieldCheck {...I} size={16} />Leadership<em>Scored</em></li>
               <li className="no" style={delay(4)}><ShieldCheck {...I} size={16} />Salary negotiation<em>Not yet</em></li>
             </ul>
-            <p className="pf-lock"><Lock {...I} size={14} />Name and contact hidden until you say yes.</p>
+            <p className="pf-lock"><Lock {...I} size={14} />Name and contact hidden until an employer unlocks them.</p>
           </div>
         </Skel>
       </div>
@@ -364,7 +364,7 @@ export function CandidatesPage() {
         <div className="cx-close"><Close
           kicker="Ready when you are"
           title={<>Start with <b>one answer</b>.</>}
-          body="Practise out loud, see exactly what to fix, and let recruiters find the proof."
+          body="Practise out loud, see exactly what to fix, and let employers find the proof."
           primary={["Start practising", "/signup"]}
           secondary={["Hire from proof", "/employers"]}
         /></div>

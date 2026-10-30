@@ -46,7 +46,7 @@ export function BetaBanner() {
       }}
     >
       <span>
-        HireStepX is now in Beta! Be among the first to practice smarter and land your dream role.{" "}
+        HireStepX is now in Beta! Be among the first to practise smarter and get hired on proof.{" "}
         <CopyEmailLink
           email="hello@hirestepx.com"
           style={{

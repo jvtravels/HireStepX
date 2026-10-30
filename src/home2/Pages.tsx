@@ -554,7 +554,7 @@ export function HowItWorks({ steps, icons, scene, wideAt, title }: { steps: [str
 
 const CLAIMS = ["Strong communicator", "Led a team of 5", "Expert in Node.js and PostgreSQL"];
 
-const DIFFS = ["Read answers, not resumes", "Free until you contact", "Rank and reject yourself"];
+const DIFFS = ["Read answers, not resumes", "Free until you contact", "Shortlist and reject in one place"];
 
 const DIFF_ICONS: React.ReactNode[] = [
   <path key="a" d="M4 5h16v11H9l-5 4z" />,
