@@ -9,6 +9,7 @@ import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
 import { isSyntheticHeavySalaryPage } from "../src/salaryQuality";
 import { blogDuplicateKeeper, shouldNoindexBlogPost } from "../src/blogQuality";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
+import { fetchLiveOpenings } from "../src/publicOpenings";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)
@@ -28,7 +29,7 @@ import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_js
  * track per-page mod times. SEO pages get a stable lastModified so
  * Google doesn't think we're churning content (which hurts ranking).
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://hirestepx.com";
   /* Stable, not build time: a lastmod that changes on every deploy trains Google to ignore it. */
   const staticLastModified = new Date(SEO_PAGES_LAST_MODIFIED);
@@ -155,5 +156,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75,
   }));
 
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCategoryEntries, ...cityEntries];
+  /* Live public roles only (two-key consent, 45-day auto-hide). The list page
+     joins the sitemap only once at least one role is live, matching its noindex
+     when empty. */
+  const openings = await fetchLiveOpenings();
+  const openingEntries: MetadataRoute.Sitemap = openings.length === 0 ? [] : [
+    { url: `${baseUrl}/openings`, lastModified: new Date(openings[0].listedAt), changeFrequency: "daily" as const, priority: 0.7 },
+    ...openings.map((o) => ({ url: `${baseUrl}/openings/${o.slug}`, lastModified: new Date(o.listedAt), changeFrequency: "weekly" as const, priority: 0.6 })),
+  ];
+
+  return [...openingEntries, ...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCategoryEntries, ...cityEntries];
 }

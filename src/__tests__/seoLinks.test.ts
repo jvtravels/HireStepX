@@ -15,8 +15,11 @@ describe("questionHref", () => {
   });
 });
 
+// No Supabase env in tests, so the live-openings fetch returns [] without a network call.
+const sitemapEntries = await sitemap();
+
 describe("sitemap", () => {
-  const urls = sitemap().map((e) => e.url);
+  const urls = sitemapEntries.map((e) => e.url);
   it("excludes URLs that redirect elsewhere", () => {
     for (const p of ["/login", "/signup", "/how-it-works", "/for-students", "/grievance"]) {
       expect(urls).not.toContain(`https://hirestepx.com${p}`);
@@ -36,7 +39,7 @@ import { buildResourceItems } from "../home2/resourcesBuild";
 
 describe("hub crawlability", () => {
   const hrefs = new Set(buildResourceItems().map((i) => i.h));
-  const urls = sitemap().map((e) => e.url.replace("https://hirestepx.com", ""));
+  const urls = sitemapEntries.map((e) => e.url.replace("https://hirestepx.com", ""));
   it("every sitemap question/salary/blog page is listed in the hub index", () => {
     const missing = urls.filter((p) => /^\/(questions|salary|blog)\/[^/]+$/.test(p) && !hrefs.has(p));
     expect(missing).toEqual([]);

@@ -21,14 +21,14 @@ import { Button } from "@/components/ui/button";
 
 /* ─────────────────────────── Shared primitives ─────────────────────────── */
 
-const container: CSSProperties = {
+export const container: CSSProperties = {
   maxWidth: 1240,
   margin: "0 auto",
   paddingLeft: 32,
   paddingRight: 32,
 };
 
-const containerNarrow: CSSProperties = {
+export const containerNarrow: CSSProperties = {
   maxWidth: 820,
   margin: "0 auto",
   paddingLeft: 32,
@@ -66,7 +66,7 @@ const h2: CSSProperties = {
   textWrap: "balance" as const,
 };
 
-const h3: CSSProperties = {
+export const h3: CSSProperties = {
   fontFamily: fonts.serif,
   fontSize: "clamp(24px, 2.6vw, 32px)",
   lineHeight: 1.15,
@@ -95,7 +95,7 @@ const lead: CSSProperties = {
   maxWidth: "62ch",
 };
 
-const body: CSSProperties = {
+export const body: CSSProperties = {
   fontFamily: fonts.sans,
   fontSize: 16,
   lineHeight: 1.65,
@@ -104,7 +104,7 @@ const body: CSSProperties = {
   maxWidth: "62ch",
 };
 
-const ctaPrimary = (size: "md" | "lg" = "md"): CSSProperties => ({
+export const ctaPrimary = (size: "md" | "lg" = "md"): CSSProperties => ({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -122,7 +122,7 @@ const ctaPrimary = (size: "md" | "lg" = "md"): CSSProperties => ({
   boxShadow: shadows.cta,
 });
 
-const ctaGhost = (size: "md" | "lg" = "md"): CSSProperties => ({
+export const ctaGhost = (size: "md" | "lg" = "md"): CSSProperties => ({
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
@@ -142,7 +142,7 @@ const ctaGhost = (size: "md" | "lg" = "md"): CSSProperties => ({
 /* PageHero — single shared header used by every non-home page so the
    typographic system feels unified across the site. Eyebrow + display
    headline (with italic copper accent) + lead. */
-function PageHero({
+export function PageHero({
   eyebrow: eb,
   title,
   accent,
@@ -297,7 +297,7 @@ export function FAQItem({ q, a, first }: { q: string; a: string; first?: boolean
 /* PageShell — wraps a page in Nav + content + Footer + mobile sticky CTA.
    Every marketing page passes children through here so the chrome is
    identical and breakpoints land in one place. */
-function PageShell({ children }: { children: ReactNode }) {
+export function PageShell({ children }: { children: ReactNode }) {
   return (
     <div
       style={{

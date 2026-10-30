@@ -802,6 +802,61 @@ async function handleStageAction(
   }
 }
 
+/** Employer consent key for the public /openings pages. "on" only opts the role in
+ *  (public_listing = employer_ok); an admin approval is still needed before anything
+ *  is public. "off" withdraws immediately, even from an approved listing. */
+async function handlePublicListingAction(
+  requirementId: string,
+  ctx: EmployerContext,
+  value: unknown,
+  headers: Record<string, string>,
+): Promise<Response> {
+  const userId = ctx.employerId;
+  if (value !== "on" && value !== "off") {
+    return new Response(JSON.stringify({ error: "value must be on | off" }), { status: 400, headers });
+  }
+  try {
+    const existingRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}&select=id,status,public_listing,employers(suspended_at)`,
+      { headers: serviceHeaders() },
+    );
+    const rows = (await existingRes.json().catch(() => [])) as Array<{ id: string; status: string; public_listing: string; employers?: EmployerEmbed }>;
+    if (!existingRes.ok || !rows[0]) {
+      return new Response(JSON.stringify({ error: "Requirement not found" }), { status: 404, headers });
+    }
+    if (isSuspendedEmployer(rows[0].employers)) return denyResponse(suspendedAllowance(), headers);
+    const current = rows[0].public_listing;
+    if (value === "on" && rows[0].status === "closed") {
+      return new Response(JSON.stringify({ error: "This requirement is closed" }), { status: 409, headers });
+    }
+    // Already opted in or approved: nothing to change, and never downgrade an approval by re-asking.
+    if (value === "on" && current !== "off") {
+      return new Response(JSON.stringify({ id: requirementId, publicListing: current }), { status: 200, headers });
+    }
+    const patch = value === "on"
+      ? { public_listing: "employer_ok" }
+      : { public_listing: "off", public_approved_at: null };
+    const patchRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(userId)}`,
+      { method: "PATCH", headers: { ...serviceHeaders(), "Content-Type": "application/json", Prefer: "return=representation" }, body: JSON.stringify(patch) },
+    );
+    if (!patchRes.ok) {
+      const t = await patchRes.text().catch(() => "");
+      slog.error("employer-requirement-detail public listing failed", { code: "employer_requirement_public_listing_failed", httpStatus: patchRes.status, body: t.slice(0, 200), userId, requirementId });
+      return new Response(JSON.stringify({ error: "Failed to update listing" }), { status: 500, headers });
+    }
+    await writeAuditLog(SUPABASE_URL, serviceHeaders(), {
+      employerId: userId, actorUserId: ctx.userId, actorEmail: ctx.email, action: "job.public_listing_changed",
+      entityType: "job", entityId: requirementId, meta: { on: value === "on" },
+    });
+    return new Response(JSON.stringify({ id: requirementId, publicListing: patch.public_listing }), { status: 200, headers });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    slog.error("employer-requirement-detail public listing threw", { code: "employer_requirement_public_listing_unexpected_error", error: msg.slice(0, 200), userId, requirementId });
+    return new Response(JSON.stringify({ error: "Failed to update listing" }), { status: 500, headers });
+  }
+}
+
 async function handlePatch(req: Request, requirementId: string, ctx: EmployerContext, headers: Record<string, string>): Promise<Response> {
   const userId = ctx.employerId;
   let body: {
@@ -837,6 +892,10 @@ async function handlePatch(req: Request, requirementId: string, ctx: EmployerCon
 
   if (body.action === "restore") {
     return handleRestoreAction(requirementId, userId, body.matches, headers);
+  }
+
+  if (body.action === "set_public_listing") {
+    return handlePublicListingAction(requirementId, ctx, (body as { value?: unknown }).value, headers);
   }
 
   if (body.action === "set_stage") {
@@ -965,6 +1024,10 @@ async function handlePatch(req: Request, requirementId: string, ctx: EmployerCon
       body: JSON.stringify({
         title, location, department, notice_period_pref: noticePeriodPref, description,
         ...(needsRematch ? { status: "generating" } : {}),
+        // Editing an approved public listing sends it back for admin review, so edited
+        // text never goes public unreviewed. Spread only when approved: the column may
+        // not exist yet on a database that has not run 0036.
+        ...((existing as { public_listing?: string }).public_listing === "approved" ? { public_listing: "employer_ok", public_approved_at: null } : {}),
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,

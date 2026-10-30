@@ -1724,6 +1724,11 @@ alter table employer_requirements add column if not exists availability text;
 alter table employer_requirements add column if not exists relevant_experience text;
 alter table employer_requirements add column if not exists portfolio_required boolean not null default false;
 alter table employer_requirements add column if not exists custom_skill_sets text[] not null default '{}';
+-- Public openings (2026-10-30): two-key consent. See supabase-migrations/0036-public-openings.sql.
+alter table employer_requirements add column if not exists public_listing text not null default 'off' check (public_listing in ('off', 'employer_ok', 'approved'));
+alter table employer_requirements add column if not exists public_summary text check (public_summary is null or char_length(public_summary) <= 280);
+alter table employer_requirements add column if not exists public_title text check (public_title is null or char_length(public_title) <= 120);
+alter table employer_requirements add column if not exists public_approved_at timestamptz;
 -- Manually-set hiring-pipeline stage, distinct from `status` (which tracks
 -- AI matching/generation lifecycle, not where the employer is in hiring).
 alter table employer_requirements add column if not exists stage text not null default 'ai_matching' check (stage in ('ai_matching', 'ready_for_review', 'interviewing', 'hired'));
