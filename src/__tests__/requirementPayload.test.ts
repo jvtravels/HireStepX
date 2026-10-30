@@ -42,3 +42,10 @@ describe("buildRequirementPayload", () => {
     expect(buildRequirementPayload({ ...draft, budgetMin: "abc" }).budgetMin).toBeNull();
   });
 });
+
+describe("buildRequirementPayload locations", () => {
+  it("sends Remote for a remote job with no city, and keeps an empty list otherwise", () => {
+    expect(buildRequirementPayload({ ...draft, locations: [], workMode: "remote" }).locations).toEqual(["Remote"]);
+    expect(buildRequirementPayload({ ...draft, locations: [], workMode: "onsite" }).locations).toEqual([]);
+  });
+});

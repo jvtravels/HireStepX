@@ -9,7 +9,7 @@ import { PROVENANCE, READINESS_LABEL, dedupeQuestions, describeDelivery, employe
 import { BalancedColumns } from "./parts";
 import { QuestionBreakdown } from "./QuestionBreakdown";
 import { EvidenceStatus, type EvidenceState } from "./OverviewTab";
-import type { RequestUi } from "./RequestPopover";
+import { ItemRequest, type RequestUi } from "./RequestPopover";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
 
 function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; sessions: number }) {
@@ -178,7 +178,11 @@ export function PracticeTab({
 
   if (!state.loading && !state.failed && !hasAnything) {
     return (
-      <EmptyNote flat title="No practice evidence yet">
+      <EmptyNote
+        flat
+        title="No practice evidence yet"
+        action={<ItemRequest candidate={candidate} ui={requestUi} label="Ask them to practise this role" preset={{ kind: "practice", topic: `Interview practice for ${requirementTitle}`.slice(0, 120) }} />}
+      >
         This candidate hasn&apos;t completed a graded mock interview, so there are no answers, scores or delivery measurements to show. The Resume tab has everything else we know.
       </EmptyNote>
     );

@@ -400,7 +400,7 @@ export function RequirementForm({
       <div>
         <FieldLabel htmlFor="rf-skills">Required skills</FieldLabel>
         <TagAutocompleteInput id="rf-skills" describedBy="rf-skills-help" values={draft.skills} onChange={(v) => set("skills", v)} placeholder="React, TypeScript, System design…" suggestions={SKILL_SUGGESTIONS} />
-        <HelpText id="rf-skills-help" live={false}>Pick a suggestion or type your own and press Enter. Five to eight skills match best.</HelpText>
+        <HelpText id="rf-skills-help" live={false}>Pick a suggestion or type your own and press Enter. Five to eight skills match best{draft.skills.length > 0 ? ` (${draft.skills.length} added)` : ""}.</HelpText>
       </div>
 
       <div>

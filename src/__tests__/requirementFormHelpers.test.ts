@@ -32,10 +32,14 @@ describe("validateDraft", () => {
   });
 
   it("requires title, location and a long enough description", () => {
-    const e = validateDraft(valid({ title: " ", locations: [], description: "short" }), TODAY);
+    const e = validateDraft(valid({ title: " ", locations: [], workMode: "onsite", description: "short" }), TODAY);
     expect(e.title).toBeTruthy();
     expect(e.locations).toBeTruthy();
     expect(e.description).toMatch(/more characters/);
+  });
+
+  it("does not ask a remote job for a city", () => {
+    expect(validateDraft(valid({ locations: [], workMode: "remote" }), TODAY).locations).toBeUndefined();
   });
 
   it("asks for a description when empty", () => {

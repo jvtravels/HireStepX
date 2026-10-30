@@ -57,7 +57,7 @@ describe("RequirementForm (create)", () => {
     setup();
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     const alert = screen.getByRole("alert");
-    expect(alert).toHaveTextContent("3 things need fixing");
+    expect(alert).toHaveTextContent("2 things need fixing");
     expect(screen.getByText("Step 1 of 2")).toBeInTheDocument();
     expect(screen.getByLabelText(/job title/i)).toHaveAttribute("aria-invalid", "true");
     expect(document.activeElement).toBe(screen.getByLabelText(/job title/i));
@@ -154,6 +154,6 @@ describe("RequirementForm (edit)", () => {
     const { onSubmit } = setup({ mode: "edit" });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
     expect(onSubmit).not.toHaveBeenCalled();
-    expect(screen.getByRole("alert")).toHaveTextContent("3 things need fixing");
+    expect(screen.getByRole("alert")).toHaveTextContent("2 things need fixing");
   });
 });

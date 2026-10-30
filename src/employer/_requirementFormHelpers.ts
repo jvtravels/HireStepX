@@ -70,7 +70,8 @@ function validateRange(minRaw: string, maxRaw: string, limit: number, noun: stri
 export function validateDraft(d: RequirementDraft, today: string, savedDueDate?: string | null): FormErrors {
   const e: FormErrors = {};
   if (d.title.trim().length < 2) e.title = "Enter a job title.";
-  if (d.locations.length === 0) e.locations = "Add at least one location, or \"Remote\".";
+  // A remote job needs no city; the payload sends "Remote" so the server's location rule still holds.
+  if (d.locations.length === 0 && d.workMode !== "remote") e.locations = "Add at least one location.";
 
   const desc = d.description.trim().length;
   if (desc === 0) e.description = `Add a description of at least ${MIN_DESCRIPTION_LENGTH} characters.`;

@@ -101,11 +101,11 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
           <div className="@container grid gap-3 border-t border-hx-line pt-4">
             <p className="m-0 flex items-center gap-1 text-[13px] font-medium text-hx-coal">
               Resume overlap
-              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it. Skill overlap compares the words of the posting's skills with the resume, so it can differ from the skill count in the table below.</InfoTip>
+              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it. Skill wording overlap compares the words of the posting's skills with the resume text, so it can differ from the "required skills" count below, which checks each listed skill.</InfoTip>
             </p>
             <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-3">
               <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone="indigo" />
-              <MeterRow label="Skill overlap" value={candidate.matchBreakdown.skillMatch} tone="indigo" />
+              <MeterRow label="Skill wording overlap" value={candidate.matchBreakdown.skillMatch} tone="indigo" />
               <MeterRow label="Location fit" value={candidate.matchBreakdown.locationMatch} tone="indigo" />
             </div>
           </div>

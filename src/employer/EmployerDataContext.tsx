@@ -373,6 +373,9 @@ const PREFETCH_DWELL_MS = 150;
 const RETRY_DELAYS_MS = [300, 900];
 /** A stalled connection otherwise sits on skeletons for the browser's own ~45s timeout; cutting it sooner lets the retry (which usually lands) run. */
 const GET_ATTEMPT_TIMEOUT_MS = 10_000;
+/* A cold first load of the heavy reads can pass 10s; aborting it and retrying restarts the same slow work, so the
+   user saw "couldn't load" for a request that would have finished. */
+const SLOW_GET_ATTEMPT_TIMEOUT_MS = 30_000;
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 /** Server failures and dead networks are worth a ticket; 4xx and 429 are answers. */
@@ -405,7 +408,7 @@ export async function getWithRetry(url: string): Promise<{ ok: boolean; status: 
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     const last = attempt === RETRY_DELAYS_MS.length;
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), GET_ATTEMPT_TIMEOUT_MS);
+    const timer = setTimeout(() => controller.abort(), TIMED_PATHS.has(url.split("?")[0]) ? SLOW_GET_ATTEMPT_TIMEOUT_MS : GET_ATTEMPT_TIMEOUT_MS);
     try {
       const headers = await authHeaders();
       const startedAt = performance.now();

@@ -51,7 +51,7 @@ const num = (v: string): number | null => {
 export function buildRequirementPayload(d: RequirementDraft): RequirementFormValues {
   return {
     title: d.title.trim(),
-    locations: d.locations,
+    locations: d.locations.length === 0 && d.workMode === "remote" ? ["Remote"] : d.locations,
     department: text(d.department),
     noticePeriodPref: d.noticePeriodPref,
     description: d.description.trim(),

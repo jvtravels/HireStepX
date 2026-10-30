@@ -93,7 +93,7 @@ const ROWS: CompareRow[] = [
         <ScoreChip score={c.matchScore} />
         {c.matchBreakdown && (
           <div style={mutedText}>
-            Role {c.matchBreakdown.roleMatch}% · Skill {c.matchBreakdown.skillMatch}% · Location {c.matchBreakdown.locationMatch}%
+            Resume overlap: role {c.matchBreakdown.roleMatch}% · skill wording {c.matchBreakdown.skillMatch}% · location {c.matchBreakdown.locationMatch}%
           </div>
         )}
       </>
