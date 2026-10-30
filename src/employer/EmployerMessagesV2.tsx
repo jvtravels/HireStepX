@@ -526,7 +526,6 @@ export default function EmployerMessagesV2() {
         attaching={attaching}
         block={composerBlock}
         closedMessage={closedNotice}
-        closedMessage={closedNotice}
         error={composerError}
         onDismissError={() => setComposerError(null)}
         quickReplies={EMPLOYER_QUICK_REPLIES}
