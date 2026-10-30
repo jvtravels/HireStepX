@@ -93,6 +93,10 @@ export const STATIC_OPENINGS: PublicOpening[] = [
         "SEO, accessibility or performance optimisation experience.",
         "Experience with AI-assisted development tools.",
       ],
+      offers: [
+        "Contract pay of ₹25,000 per month.",
+        "Fully remote working arrangement.",
+      ],
     },
     listedAt: "2026-10-30T00:00:00.000Z",
     expiresAt: "2026-12-14T00:00:00.000Z",
@@ -101,13 +105,13 @@ export const STATIC_OPENINGS: PublicOpening[] = [
     slug: "frontend-developer-react-typescript",
     title: "Frontend Developer (React, TypeScript)",
     summary:
-      "Build responsive, accessible web interfaces in React and TypeScript. Turn designs into reusable components, connect them to APIs, and keep the product fast and reliable. Remote, full-time, 1-3 years of frontend experience.",
+      "Build responsive, accessible web interfaces in React and TypeScript. Turn designs into reusable components, connect them to APIs, and keep the product fast and reliable. Remote contract role, 1-3 years of frontend experience.",
     location: "Remote (India)",
     workMode: "remote",
     experienceMin: 1,
     experienceMax: 3,
     skills: ["React", "TypeScript", "JavaScript", "HTML and CSS", "REST APIs", "Git"],
-    employmentType: "full-time",
+    employmentType: "contract",
     department: "engineering",
     details: {
       about:
@@ -136,6 +140,10 @@ export const STATIC_OPENINGS: PublicOpening[] = [
         "Knowledge of accessibility standards (WCAG) and web performance tuning.",
         "Experience writing tests with Jest, React Testing Library or Playwright.",
         "Experience with AI-assisted development tools.",
+      ],
+      offers: [
+        "Contract pay of ₹25,000 per month.",
+        "Fully remote working arrangement.",
       ],
     },
     listedAt: "2026-10-30T00:00:00.000Z",
