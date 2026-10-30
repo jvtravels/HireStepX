@@ -258,6 +258,7 @@ export const homeCss = `
 .hx-fi[data-open="true"] .hx-fp > div { opacity: 1; filter: blur(0); transition-duration: 340ms; }
 @media (scripting: none) { .hx-fp { grid-template-rows: 1fr; } .hx-fp > div { opacity: 1; filter: none; } }
 .hx-fp p { padding: 0 56px 28px 0; color: var(--ink-2); max-width: 60ch; }
+.hx-fp .hx-priv-stage p { padding: 0; max-width: none; }
 @keyframes hx-rise { from { transform: translateY(8px); filter: blur(4px); opacity: 0; } to { transform: none; filter: blur(0); opacity: 1; } }
 p.hx-swap, div.hx-swap { display: block; }
 @keyframes hx-draw { to { stroke-dashoffset: 0; } }
