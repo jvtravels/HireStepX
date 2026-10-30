@@ -290,8 +290,8 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           </aside>
         </div>
         <div className="op-more">
-          <p>Looking at other options?</p>
-          <a className="hx-btn alt" data-no-underline href="/openings">See all open roles</a>
+          <p>Ready to practise for this role?</p>
+          {signUp("footer")}
         </div>
       </div>
       <div className="op-bar">{signUp("bar")}</div>
