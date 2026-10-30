@@ -336,7 +336,7 @@ export default async function InterviewPrepPage({
         ["PhonePe Engineering Interview 2026: Scale, UPI & Builder Mindset", "/blog/phonepe-interview-questions-india-2026"],
         ["Meesho Engineering Interview 2026: Social Commerce & Tier-3 India", "/blog/meesho-interview-questions-india-2026"],
         ["FAANG Interview Preparation India 2026", "/blog/faang-interview-preparation-india-2026"],
-        ["System Design Interview Preparation India", "/blog/system-design-interview-preparation"],
+        ["System Design Interview Preparation India", "/blog/system-design-interview-preparation-india-2026"],
         ["DSA 60-Day Preparation Plan India 2026", "/blog/dsa-60-day-preparation-plan"],
         ["Goldman Sachs India Interview Questions 2026", "/blog/goldman-sachs-india-interview-questions"],
         ["JP Morgan Interview Questions India 2026", "/blog/jp-morgan-interview-questions-india-2026"],
