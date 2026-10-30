@@ -449,7 +449,6 @@ export default function EmployerMessagesV2() {
     statusLabel: STATUS_LABEL[c.candidateStatus] || c.candidateStatus,
     statusTone: statusTone(c.candidateStatus),
   }));
-  const visible = sortInbox(filterInbox(items, filter, query, favorites));
 
   const activeName = active ? active.counterpartName : "";
   const activeMasked = active ? isMaskedName(context?.candidateName ?? active.counterpartName) : false;
@@ -461,6 +460,10 @@ export default function EmployerMessagesV2() {
       ? context?.candidateWithdrew ? "Candidate withdrew" : "Candidate declined"
       : STATUS_LABEL[active.candidateStatus] || active.candidateStatus
     : "";
+  // The list payload has no decline flag, so only the open thread's row can show the corrected label.
+  const visible = sortInbox(
+    filterInbox(items.map((i) => (active && i.matchId === active.matchId ? { ...i, statusLabel: activeStatusLabel } : i)), filter, query, favorites),
+  );
   const closedNotice = context?.candidateWithdrew
     ? "This candidate has withdrawn from employer contact. Earlier messages stay readable, but you can't send new ones."
     : context?.candidateResponse === "declined"
