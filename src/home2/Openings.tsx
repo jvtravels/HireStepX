@@ -275,15 +275,10 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
               </section>
             ) : null}
             <Bullets title="What you get" icon={Gift} items={d?.offers} />
-            {o.skills.length > 0 && (
-              <section>
-                <Head icon={Briefcase}>Skills for this role</Head>
-                <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>
-              </section>
-            )}
           </div>
           <aside className="op-aside" aria-label="Apply to practise">
-            <h2>Practise for this role</h2>
+            <h2>{o.skills.length > 0 ? "Skills for this role" : "Practise for this role"}</h2>
+            {o.skills.length > 0 && <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>}
             {signUp("aside")}
             <p className="op-note">Employers stay private until you have practised and chosen to share your profile.</p>
             <p className="op-note">
