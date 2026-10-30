@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
 import { ArrowLeft, Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
 import { Arrow, Shell } from "./Pages";
@@ -20,15 +20,20 @@ const openingsCss = `
 .op-card h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-card .op-facts { margin-top: auto; padding-top: 6px; }
 .op-more .hx-arr { width: 14px; height: 14px; flex: none; }
-.op-tools { display: grid; gap: 14px; margin-bottom: 24px; }
-.op-search { position: relative; max-width: 480px; }
-.op-search input { width: 100%; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--white); font: inherit; font-size: 15px; color: var(--ink); }
-.op-search input:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
-.op-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.op-chip { font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); cursor: pointer; }
-.op-chip:hover { border-color: var(--btn); }
+.op-tools.hx-stage { margin: 0 0 32px; padding: 48px; display: grid; gap: 28px; justify-items: center; }
+.op-search { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 760px; height: 68px; padding: 0 22px; border-radius: 18px; background: var(--white); border: 1px solid transparent; color: var(--btn); transition: border-color .15s, box-shadow .15s; }
+.op-search:focus-within { border-color: var(--btn); box-shadow: 0 0 0 3px oklch(0.359 0.135 278.697 / 0.14); }
+.op-search svg { width: 22px; height: 22px; flex: none; }
+.op-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 19px; color: var(--ink); }
+.op-search input::placeholder { color: var(--ink-3); }
+.op-kbd { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-3); border: 1px solid var(--line-2); border-radius: 6px; padding: 2px 8px; }
+.op-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; align-items: center; }
+.op-chip { font: inherit; font-size: 16px; font-weight: 500; color: var(--ink); padding: 10px 18px; border-radius: 99px; border: 1px solid oklch(1 0 0 / 0.9); background: oklch(1 0 0 / 0.78); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, color .15s; }
+.op-chip:hover { background: var(--white); color: var(--btn); }
 .op-chip[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
-.op-chip span { opacity: .65; margin-left: 4px; }
+.op-chip span { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-2); }
+.op-chip[aria-pressed="true"] span { color: oklch(1 0 0 / 0.7); }
+@media (max-width: 720px) { .op-tools.hx-stage { padding: 24px 16px 28px; border-radius: 22px; } .op-search { height: 56px; } .op-kbd { display: none; } }
 .op-clear { font: inherit; font-size: 14px; color: var(--ink-3); background: none; border: 0; padding: 7px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .op-none { text-align: center; padding: 40px 0; color: var(--ink-2); }
 .op-card .op-more { margin-top: 6px; }
@@ -110,6 +115,18 @@ function Facts({ o }: { o: PublicOpening }) {
 export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
   const [q, setQ] = useState("");
   const [dept, setDept] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (e.key !== "/" || e.metaKey || e.ctrlKey || e.altKey) return;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.tagName === "SELECT" || t.isContentEditable)) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   useEffect(() => { captureClientEvent("openings_list_view", { count: openings.length }); }, [openings.length]);
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -156,9 +173,11 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
             </div>
           ) : (
             <>
-              <div className="op-tools">
+              <div className="op-tools hx-stage">
                 <form className="op-search" role="search" onSubmit={(e) => e.preventDefault()}>
-                  <input type="search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search open roles" placeholder="Search roles, skills or location" />
+                  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.6" /><path d="m12.5 12.5 3.5 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
+                  <input ref={inputRef} type="search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search open roles" placeholder="Search roles, skills or location" />
+                  <kbd className="op-kbd" aria-hidden="true">/</kbd>
                 </form>
                 <div className="op-chips" role="group" aria-label="Department">
                   <button type="button" className="op-chip" aria-pressed={!dept} onClick={() => setDept("")}>All<span>{openings.length}</span></button>
