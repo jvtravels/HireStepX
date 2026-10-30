@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { OpeningDetailPage } from "@/marketing-v2/OpeningsPages";
+import { pageMeta } from "@/home2/pageMeta";
+import { JsonLd, breadcrumbs } from "@/home2/jsonld";
+import { OpeningDetailPage } from "@/home2/Openings";
 import { fetchLiveOpenings } from "../../../../server-handlers/_public-openings-fetch";
 import { findOpeningBySlug } from "../../../../server-handlers/_public-openings-helpers";
 
@@ -13,32 +15,21 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const o = findOpeningBySlug(await fetchLiveOpenings(), slug);
   if (!o) return { title: "Role not found | HireStepX", robots: { index: false, follow: false } };
-  const title = `${o.title}: Hiring on HireStepX | Practise for this Role`;
-  return {
-    title,
+  return pageMeta({
+    title: `${o.title}: Hiring on HireStepX | Practise for this Role`,
     description: o.summary,
-    alternates: { canonical: `/openings/${o.slug}` },
-    openGraph: { title: o.title, description: o.summary, url: `${BASE}/openings/${o.slug}`, type: "website", siteName: "HireStepX", locale: "en_IN" },
-    twitter: { card: "summary_large_image", title: o.title, description: o.summary },
-  };
+    path: `/openings/${o.slug}`,
+    ogTitle: o.title,
+  });
 }
 
 export default async function Page({ params }: Params) {
   const { slug } = await params;
   const o = findOpeningBySlug(await fetchLiveOpenings(), slug);
   if (!o) notFound();
-  const crumbs = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: `${BASE}/` },
-      { "@type": "ListItem", position: 2, name: "Open roles", item: `${BASE}/openings` },
-      { "@type": "ListItem", position: 3, name: o.title, item: `${BASE}/openings/${o.slug}` },
-    ],
-  };
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(crumbs) }} />
+      <JsonLd data={breadcrumbs([["Open roles", "/openings"], [o.title, `/openings/${o.slug}`]])} />
       <OpeningDetailPage opening={o} url={`${BASE}/openings/${o.slug}`} />
     </>
   );
