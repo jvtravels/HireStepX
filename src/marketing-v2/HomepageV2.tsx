@@ -1,5 +1,5 @@
 "use client";
-import { useHasOpenings } from "./openingsFlag";
+import { useWithOpenRoles } from "./openingsFlag";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -311,7 +311,6 @@ const sectionBase: CSSProperties = {
   paddingBottom: 80,
 };
 
-
 const h2: CSSProperties = {
   fontFamily: fonts.serif,
   fontSize: "clamp(40px, 5.4vw, 72px)",
@@ -333,14 +332,12 @@ const body: CSSProperties = {
 
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
-  const hasOpenings = useHasOpenings();
-  const navLinks: Array<[string, string]> = [
-    ...(hasOpenings ? ([["Open roles", "/openings"]] as Array<[string, string]>) : []),
+  const navLinks = useWithOpenRoles([
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
     ["For Employers", "/employers"],
     ["Contact", "/contact"],
-  ];
+  ]);
   /* Auth-aware CTA pair. Supabase session restore is async, so
      useAuth().isLoggedIn starts `false` and flips after restore — which
      leaves logged-in users staring at "Sign in / Start free" for the
@@ -748,7 +745,6 @@ export function NavV2() {
     </header>
   );
 }
-
 
 /* ─────────────────────────── 2. HERO ─────────────────────────── */
 function Waveform({ accent }: { accent?: string }) {

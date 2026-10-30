@@ -19,7 +19,15 @@ const note: CSSProperties = { margin: "4px 0 0", fontSize: 12, color: c.stone };
 const rowBox: CSSProperties = { background: c.obsidian, border: `1px solid ${c.border}`, borderRadius: radius.lg, padding: 14, marginBottom: 12, display: "grid", gap: 8 };
 const input: CSSProperties = { width: "100%", boxSizing: "border-box", padding: "8px 10px", fontSize: 13, color: c.ivory, background: c.carbon, border: `1px solid ${c.border}`, borderRadius: radius.lg, fontFamily: "inherit" };
 const btn: CSSProperties = { padding: "8px 14px", fontSize: 13, fontWeight: 600, borderRadius: radius.lg, border: `1px solid ${c.border}`, background: c.carbon, color: c.ivory, cursor: "pointer" };
-const btnPrimary: CSSProperties = { ...btn, background: c.gilt, color: "#fff", border: "none" };
+const btnPrimary: CSSProperties = { ...btn, background: c.gilt, color: "white", border: "none" };
+const msgNote: CSSProperties = { ...note, color: c.ivory, margin: "8px 0" };
+const listBox: CSSProperties = { marginTop: 12 };
+const rowHead: CSSProperties = { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" };
+const rowTitle: CSSProperties = { fontSize: 13, color: c.ivory, fontWeight: 600 };
+const rowCompany: CSSProperties = { color: c.stone, fontWeight: 400 };
+const textarea: CSSProperties = { ...input, minHeight: 64, resize: "vertical" };
+const actions: CSSProperties = { display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" };
+const statusStyle = (on: boolean): CSSProperties => ({ fontSize: 12, color: on ? c.sage : c.stone });
 
 const SUMMARY_MAX = 280;
 
@@ -43,7 +51,7 @@ export default function AdminOpenings({ getToken, setToken }: Props) {
 
   const load = useCallback(async () => {
     try {
-      const d = (await post({ section: "public-openings" })) as unknown as Listing;
+      const d = (await post({ section: "public-openings" })) as Listing;
       setData(d);
       setDrafts((prev) => {
         const next = { ...prev };
@@ -82,21 +90,21 @@ export default function AdminOpenings({ getToken, setToken }: Props) {
     <div style={card}>
       <p style={heading}>Public open roles</p>
       <p style={note}>Candidates see only the title and summary below, never the company. Roles hide {data.maxAgeDays} days after listing. Do not put the company name, phone or email in the text.</p>
-      {message && <p style={{ ...note, color: c.ivory, margin: "8px 0" }}>{message}</p>}
-      <div style={{ marginTop: 12 }}>
+      {message && <p style={msgNote}>{message}</p>}
+      <div style={listBox}>
         {data.rows.length === 0 && <p style={note}>No open roles yet.</p>}
         {data.rows.map((r) => {
           const d = drafts[r.requirementId] ?? { title: "", summary: "" };
           const on = r.listing === "approved";
           return (
             <div key={r.requirementId} style={rowBox}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, color: c.ivory, fontWeight: 600 }}>{r.title} <span style={{ color: c.stone, fontWeight: 400 }}>({r.companyName || "unknown company"}, private)</span></span>
-                <span style={{ fontSize: 12, color: on ? c.sage : c.stone }}>{on ? (r.live ? "Live" : "Expired, re-list to show") : "Not listed"}</span>
+              <div style={rowHead}>
+                <span style={rowTitle}>{r.title} <span style={rowCompany}>({r.companyName || "unknown company"}, private)</span></span>
+                <span style={statusStyle(on)}>{on ? (r.live ? "Live" : "Expired, re-list to show") : "Not listed"}</span>
               </div>
               <input style={input} aria-label="Public title" value={d.title} maxLength={120} onChange={(e) => set(r.requirementId, { title: e.target.value })} />
-              <textarea style={{ ...input, minHeight: 64, resize: "vertical" }} aria-label="Public summary" value={d.summary} maxLength={SUMMARY_MAX} placeholder="One or two sentences about the role. No company name." onChange={(e) => set(r.requirementId, { summary: e.target.value })} />
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <textarea style={textarea} aria-label="Public summary" value={d.summary} maxLength={SUMMARY_MAX} placeholder="One or two sentences about the role. No company name." onChange={(e) => set(r.requirementId, { summary: e.target.value })} />
+              <div style={actions}>
                 <button type="button" style={btnPrimary} disabled={busy === r.requirementId || !d.summary.trim()} onClick={() => void act(r, "approve")}>{on ? "Update and re-list" : "List this role"}</button>
                 {on && <button type="button" style={btn} disabled={busy === r.requirementId} onClick={() => void act(r, "unpublish")}>Unlist</button>}
                 <span style={note}>{d.summary.length}/{SUMMARY_MAX}</span>

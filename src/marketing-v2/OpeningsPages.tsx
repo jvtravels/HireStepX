@@ -26,11 +26,29 @@ const card: CSSProperties = {
   background: t.cream, textDecoration: "none", color: "inherit",
 };
 
+const chipList: CSSProperties = { display: "flex", flexWrap: "wrap", gap: 8, listStyle: "none", padding: 0, margin: 0 };
+const trustText: CSSProperties = { ...body, fontSize: 14, color: t.inkSoft, maxWidth: "62ch" };
+const sectionPad: CSSProperties = { paddingTop: 48, paddingBottom: 72 };
+const emptyCard: CSSProperties = { ...card, maxWidth: 640 };
+const emptyTitle: CSSProperties = { ...h3, fontSize: 24, margin: "0 0 8px" };
+const emptyBody: CSSProperties = { ...body, marginBottom: 20 };
+const grid: CSSProperties = { listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))" };
+const cardTitle: CSSProperties = { ...h3, fontSize: 22, margin: "0 0 10px" };
+const cardBody: CSSProperties = { ...body, fontSize: 15, margin: "0 0 16px" };
+const heroMeta: CSSProperties = { display: "grid", gap: 20 };
+const ctaRow: CSSProperties = { display: "flex", gap: 12, flexWrap: "wrap" };
+const detailWrap: CSSProperties = { ...container, display: "grid", gap: 40 };
+const sectionTitle: CSSProperties = { ...h3, fontSize: 26, margin: "0 0 12px" };
+const sectionLead: CSSProperties = { ...body, marginBottom: 16 };
+const steps: CSSProperties = { ...body, margin: 0, paddingLeft: 22, listStyle: "decimal", display: "block" };
+const footNote: CSSProperties = { ...body, fontSize: 14, color: t.inkSoft, marginTop: 12 };
+const footLink: CSSProperties = { color: t.inkSoft };
+
 function Facts({ o }: { o: PublicOpening }) {
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const items = [o.location, o.workMode ? WORK_MODE_LABEL[o.workMode] : null, exp, o.employmentType === "full-time" ? "Full-time" : o.employmentType].filter(Boolean) as string[];
   return (
-    <ul style={{ display: "flex", flexWrap: "wrap", gap: 8, listStyle: "none", padding: 0, margin: 0 }}>
+    <ul style={chipList}>
       {items.map((i) => <li key={i} style={chip}>{i}</li>)}
     </ul>
   );
@@ -38,7 +56,7 @@ function Facts({ o }: { o: PublicOpening }) {
 
 function TrustNote({ extra }: { extra?: string }) {
   return (
-    <p style={{ ...body, fontSize: 14, color: t.inkSoft, maxWidth: "62ch" }}>
+    <p style={trustText}>
       {TRUST.posted} {TRUST.anonymous}{extra ? ` ${extra}` : ""}
     </p>
   );
@@ -54,22 +72,22 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
         lead="Employers list roles here without a company name. Practise for the one you want, and your scored answers do the talking."
         meta={<TrustNote />}
       />
-      <section style={{ paddingTop: 48, paddingBottom: 72 }} aria-label="Open roles">
+      <section style={sectionPad} aria-label="Open roles">
         <div className="mv2-container" style={container}>
           {openings.length === 0 ? (
-            <div style={{ ...card, maxWidth: 640 }}>
-              <h2 style={{ ...h3, fontSize: 24, margin: "0 0 8px" }}>No roles are listed right now</h2>
-              <p style={{ ...body, marginBottom: 20 }}>New roles appear here as employers list them. Practising now gets your scored answers ready.</p>
+            <div style={emptyCard}>
+              <h2 style={emptyTitle}>No roles are listed right now</h2>
+              <p style={emptyBody}>New roles appear here as employers list them. Practising now gets your scored answers ready.</p>
               <a href="/signup?source=openings" style={ctaPrimary()} className="mv2-tap-44">Start practising</a>
             </div>
           ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 16, gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 340px), 1fr))" }}>
+            <ul style={grid}>
               {openings.map((o) => (
                 <li key={o.slug}>
                   <a href={`/openings/${o.slug}`} style={card} className="mv2-tap-44"
                     onClick={() => captureClientEvent("openings_card_click", { opening: o.slug })}>
-                    <h2 style={{ ...h3, fontSize: 22, margin: "0 0 10px" }}>{o.title}</h2>
-                    <p style={{ ...body, fontSize: 15, margin: "0 0 16px" }}>{o.summary}</p>
+                    <h2 style={cardTitle}>{o.title}</h2>
+                    <p style={cardBody}>{o.summary}</p>
                     <Facts o={o} />
                   </a>
                 </li>
@@ -92,9 +110,9 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
         title={o.title}
         lead={o.summary}
         meta={
-          <div style={{ display: "grid", gap: 20 }}>
+          <div style={heroMeta}>
             <Facts o={o} />
-            <div className="mv2p-cta-row" style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <div className="mv2p-cta-row" style={ctaRow}>
               <a href={practiseHref(o)} style={ctaPrimary("lg")} className="mv2-tap-44"
                 onClick={() => captureClientEvent("opening_practise_click", { opening: o.slug, role: o.title })}>
                 Practise for this role
@@ -107,20 +125,20 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           </div>
         }
       />
-      <section style={{ paddingTop: 48, paddingBottom: 72 }}>
-        <div className="mv2-container" style={{ ...container, display: "grid", gap: 40 }}>
+      <section style={sectionPad}>
+        <div className="mv2-container" style={detailWrap}>
           {o.skills.length > 0 && (
             <div>
-              <h2 style={{ ...h3, fontSize: 26, margin: "0 0 12px" }}>What this role is likely to test</h2>
-              <p style={{ ...body, marginBottom: 16 }}>Your practice interview for this role leans on these skills.</p>
-              <ul style={{ display: "flex", flexWrap: "wrap", gap: 8, listStyle: "none", padding: 0, margin: 0 }}>
+              <h2 style={sectionTitle}>What this role is likely to test</h2>
+              <p style={sectionLead}>Your practice interview for this role leans on these skills.</p>
+              <ul style={chipList}>
                 {o.skills.map((s) => <li key={s} style={chip}>{s}</li>)}
               </ul>
             </div>
           )}
           <div>
-            <h2 style={{ ...h3, fontSize: 26, margin: "0 0 12px" }}>How it works</h2>
-            <ol style={{ ...body, margin: 0, paddingLeft: 22, listStyle: "decimal", display: "block" }}>
+            <h2 style={sectionTitle}>How it works</h2>
+            <ol style={steps}>
               <li>Sign up and start a practice interview set up for this role. No credit card needed.</li>
               <li>Get a scored report with a STAR breakdown and a coached model answer.</li>
               <li>Choose whether to share your profile. Employers only see what you share.</li>
@@ -128,10 +146,10 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           </div>
           <div>
             <TrustNote extra={TRUST.noApply} />
-            <p style={{ ...body, fontSize: 14, color: t.inkSoft, marginTop: 12 }}>
-              <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`} style={{ color: t.inkSoft }}>Report this listing</a>
+            <p style={footNote}>
+              <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`} style={footLink}>Report this listing</a>
               {" · "}
-              <a href="/openings" style={{ color: t.inkSoft }}>All open roles</a>
+              <a href="/openings" style={footLink}>All open roles</a>
             </p>
           </div>
         </div>

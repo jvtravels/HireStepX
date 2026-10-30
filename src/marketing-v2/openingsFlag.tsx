@@ -13,3 +13,7 @@ export function OpeningsFlagProvider({ live, children }: { live: boolean; childr
 export function useHasOpenings(): boolean {
   return useContext(OpeningsFlag);
 }
+
+export function useWithOpenRoles(links: Array<[string, string]>): Array<[string, string]> {
+  return useContext(OpeningsFlag) ? [["Open roles", "/openings"], ...links] : links;
+}

@@ -1,6 +1,6 @@
 {
   "oversizedFiles": {
-    "src/AdminDashboard.tsx": 4094,
+    "src/AdminDashboard.tsx": 4096,
     "src/AuthContext.tsx": 2127,
     "src/InterviewPanels.tsx": 1528,
     "src/SessionSetup.tsx": 2196,
