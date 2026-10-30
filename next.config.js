@@ -123,6 +123,19 @@ const nextConfig = {
 
   async redirects() {
     return [
+      // Open roles are staging-only for now; send every other host to "/".
+      {
+        source: "/openings",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
+      {
+        source: "/openings/:slug",
+        missing: [{ type: "host", value: "staging.hirestepx.com" }],
+        destination: "/",
+        permanent: false,
+      },
       // /home-next is the staging-only homepage; send every other host to "/".
       {
         source: "/home-next",
