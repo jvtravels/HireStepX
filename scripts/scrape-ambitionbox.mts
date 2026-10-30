@@ -11,6 +11,9 @@
  *   npx tsx scripts/scrape-ambitionbox.mts --limit 50      # top 50 cos
  *   npx tsx scripts/scrape-ambitionbox.mts --company tcs   # one company
  *   npx tsx scripts/scrape-ambitionbox.mts --dry-run       # don't write CSV
+ *   npx tsx scripts/scrape-ambitionbox.mts --refresh --limit 999
+ *     # ignore the cache and rewrite existing "AB scrape" rows in place
+ *     # (curated rows are never touched)
  *
  * Pipeline:
  *   1. read companies from COMPANY_SALARY_OVERRIDES (or --company)
@@ -316,9 +319,11 @@ function yoeMidpointToLevel(min: number, max: number): ScrapedCell["level"] {
   return "executive";
 }
 
+let refreshMode = false;
+
 async function fetchWithCache(slug: string): Promise<string | null> {
   const cachePath = `${CACHE_DIR}/${slug}.html`;
-  if (existsSync(cachePath)) {
+  if (!refreshMode && existsSync(cachePath)) {
     return readFileSync(cachePath, "utf8");
   }
   const url = `https://www.ambitionbox.com/salaries/${slug}-salaries`;
@@ -501,6 +506,7 @@ async function main() {
   const limit = limitArg >= 0 ? Number(args[limitArg + 1]) : 30;
   const companyArg = args.indexOf("--company");
   const singleCompany = companyArg >= 0 ? args[companyArg + 1] : null;
+  refreshMode = args.includes("--refresh");
 
   const allKeys = Object.keys(COMPANY_SALARY_OVERRIDES).filter((k) => !k.startsWith("__"));
   const targetCompanies = singleCompany ? [singleCompany] : allKeys.slice(0, limit);
@@ -532,6 +538,24 @@ async function main() {
     const cells = profilesToCells(co, slug, profiles, unmapped);
     console.error(`${profiles.length} profiles → ${cells.length} cells`);
     allCells.push(...cells);
+  }
+
+  if (refreshMode) {
+    const fresh = new Map(allCells.map((c) => [`${c.company}|${c.role}|${c.level}|`, c]));
+    const lines = readFileSync(CSV_PATH, "utf8").split(/\r?\n/);
+    let updated = 0;
+    const out = lines.map((line) => {
+      const cells = line.split(",");
+      if (line.startsWith("#") || cells.length < 25 || !cells[23]?.startsWith("AB scrape")) return line;
+      const cell = fresh.get(`${cells[0]}|${cells[1]}|${cells[2]}|${cells[3]}`);
+      if (!cell) return line;
+      fresh.delete(`${cells[0]}|${cells[1]}|${cells[2]}|${cells[3]}`);
+      updated++;
+      return rowToCsvLine(cell);
+    });
+    console.error(`\nRefreshed ${updated} existing AB rows; ${fresh.size} cells have no AB row yet (not added).`);
+    if (!dryRun) writeFileSync(CSV_PATH, out.join("\n"));
+    return;
   }
 
   // Filter out cells that already exist in the CSV (idempotent).
