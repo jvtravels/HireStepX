@@ -35,10 +35,28 @@ export function buildInterviewPrepCityJsonLd(slug: string): { __html: string }[]
     })),
   };
 
+  const url = `https://hirestepx.com/interview-prep/${slug}`;
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: `${page.displayName} Interview Prep 2026`,
+    description: page.intro,
+    image: "https://hirestepx.com/opengraph-image",
+    author: { "@type": "Organization", name: "HireStepX", url: "https://hirestepx.com" },
+    publisher: {
+      "@type": "Organization",
+      name: "HireStepX",
+      logo: { "@type": "ImageObject", url: "https://hirestepx.com/wordmark.png" },
+    },
+    inLanguage: "en-IN",
+    url,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+  };
+
   const breadcrumbSchema = breadcrumb([
     { name: "Interview Prep", path: "/interview-prep" },
     { name: page.displayName, path: `/interview-prep/${slug}` },
   ]);
 
-  return [ldJson(faqSchema), ldJson(breadcrumbSchema)];
+  return [ldJson(articleSchema), ldJson(faqSchema), ldJson(breadcrumbSchema)];
 }
