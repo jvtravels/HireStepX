@@ -17,7 +17,6 @@ const AnonName = ({ id }: { id: string }) => (
 const ANSWER = "We timed checkout on the UPI path before and after, and watched it for two sale weekends.";
 const FIX = "Checkout time fell from 1.8s to 1.1s, and stayed there through both sales.";
 const ROW = 60;
-const RANK_ROW = 78;
 const RANK_GAP = 12;
 
 function Header({ left, right }: { left: string; right: React.ReactNode }) {
@@ -93,11 +92,11 @@ export function HeroSurface() {
           </section>
           <section className="hv-pane hv-pane-r" aria-label="Employer view">
             <p className="hv-ph"><b><EmployerIcon />Employer view</b><em>Ranked on answers</em></p>
-            <ul className="hv-rk" style={{ height: RANK_ROW * people.length - RANK_GAP }} aria-live="polite">
+            <ul className="hv-rk" style={{ height: `calc(var(--rk-row) * ${people.length} - ${RANK_GAP}px)` }} aria-live="polite">
               {people.map((p) => {
                 const me = p.id === "a41f";
                 return (
-                  <li key={p.id} className={me ? (fixed ? "me hit" : "me") : undefined} style={{ transform: `translateY(${rank.indexOf(p.id) * RANK_ROW}px)` }}>
+                  <li key={p.id} className={me ? (fixed ? "me hit" : "me") : undefined} style={{ transform: `translateY(calc(var(--rk-row) * ${rank.indexOf(p.id)}))` }}>
                     <span className="hv-n">{rank.indexOf(p.id) + 1}</span>
                     <img className="hv-tile" src={`/people/${p.id}.jpg`} alt="" width={38} height={38} />
                     <span className="hv-who">
@@ -112,7 +111,7 @@ export function HeroSurface() {
             <div className="hv-unlock">
               <span className="hv-lock"><LockIcon /></span>
               <span className="hv-ut"><b>Rank {rank.indexOf("a41f") + 1} of 4</b><em>Full answers &amp; telemetry</em></span>
-              <button type="button" className="hv-btn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Unlock to contact"}</button>
+              <button type="button" className="hv-btn" aria-pressed={contact} onClick={() => setContact((v) => !v)}>{contact ? "Contact shared" : "Contact"}</button>
             </div>
           </section>
         </div>
