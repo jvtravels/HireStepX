@@ -139,7 +139,7 @@ export const STATIC_OPENINGS: PublicOpening[] = [
       ],
     },
     listedAt: "2026-10-30T00:00:00.000Z",
-    expiresAt: "2026-12-14T00:00:00.000Z",
+    expiresAt: "2026-11-14T23:59:59.000Z",
   },
 ];
 
