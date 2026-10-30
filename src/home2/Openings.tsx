@@ -24,7 +24,6 @@ const openingsCss = `
 .op-card { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); transition: border-color .15s, background .15s; }
 .op-card:hover { border-color: var(--btn); background: var(--wash); }
 .op-card h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
-.op-card p { font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .op-card .op-facts { margin-top: auto; padding-top: 6px; }
 .op-more .hx-arr { width: 14px; height: 14px; flex: none; }
 .op-grid:has(> li:only-child) { max-width: 440px; margin-inline: auto; }
@@ -87,7 +86,6 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
                   <a data-no-underline className="op-card" href={`/openings/${o.slug}`}
                     onClick={() => captureClientEvent("openings_card_click", { opening: o.slug })}>
                     <h2>{o.title}</h2>
-                    <p>{o.summary}</p>
                     <Facts o={o} />
                     <span className="op-more">View role <Arrow /></span>
                   </a>
