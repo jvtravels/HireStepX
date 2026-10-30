@@ -1,9 +1,9 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
 import { Arrow, Close, Shell } from "./Pages";
 import {
-  experienceLabel, practiseHref, WORK_MODE_LABEL, type PublicOpening,
+  DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
 } from "../../server-handlers/_public-openings-helpers";
 
 /* Copy that makes a promise to candidates lives in one place so it can be reviewed in one read. */
@@ -20,13 +20,23 @@ const openingsCss = `
 .op-facts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .op-head .op-facts { justify-content: center; margin-top: 24px; }
 .op-facts li { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); }
-.op-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); }
+.op-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .op-card { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); transition: border-color .15s, background .15s; }
 .op-card:hover { border-color: var(--btn); background: var(--wash); }
 .op-card h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-card .op-facts { margin-top: auto; padding-top: 6px; }
 .op-more .hx-arr { width: 14px; height: 14px; flex: none; }
-.op-grid:has(> li:only-child) { max-width: 440px; margin-inline: auto; }
+.op-tools { display: grid; gap: 14px; margin-bottom: 24px; }
+.op-search { position: relative; max-width: 480px; }
+.op-search input { width: 100%; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--white); font: inherit; font-size: 15px; color: var(--ink); }
+.op-search input:focus-visible { outline: 2px solid var(--btn); outline-offset: 2px; }
+.op-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.op-chip { font: inherit; font-size: 14px; font-weight: 500; color: var(--ink-2); padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); cursor: pointer; }
+.op-chip:hover { border-color: var(--btn); }
+.op-chip[aria-pressed="true"] { background: var(--btn); border-color: var(--btn); color: var(--white); }
+.op-chip span { opacity: .65; margin-left: 4px; }
+.op-clear { font: inherit; font-size: 14px; color: var(--ink-3); background: none; border: 0; padding: 7px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.op-none { text-align: center; padding: 40px 0; color: var(--ink-2); }
 .op-card .op-more { margin-top: 6px; }
 .op-more { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--btn); }
 .op-empty { max-width: 640px; margin: 0 auto; padding: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--wash); text-align: center; }
@@ -45,8 +55,12 @@ const openingsCss = `
 .op-list { padding-top: 0; }
 .op-body .op-lead { margin-bottom: 14px; }
 .op-note2 { margin-top: 12px; }
+@container (max-width: 1000px) and (min-width: 721px) {
+  .op-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @container (max-width: 720px) {
   .op-head { padding: 56px 0 28px; }
+  .op-grid { grid-template-columns: 1fr; }
   .op-body { padding-bottom: 44px; gap: 32px; }
   .op-cta .hx-btn { width: 100%; }
 }
@@ -60,7 +74,34 @@ function Facts({ o }: { o: PublicOpening }) {
 }
 
 export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
+  const [q, setQ] = useState("");
+  const [dept, setDept] = useState("");
   useEffect(() => { captureClientEvent("openings_list_view", { count: openings.length }); }, [openings.length]);
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    setQ(sp.get("q") ?? "");
+    setDept(sp.get("dept") ?? "");
+  }, []);
+  useEffect(() => {
+    const sp = new URLSearchParams();
+    if (q.trim()) sp.set("q", q.trim());
+    if (dept) sp.set("dept", dept);
+    const qs = sp.toString();
+    window.history.replaceState(null, "", qs ? `?${qs}` : window.location.pathname);
+  }, [q, dept]);
+
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const o of openings) m.set(departmentOf(o), (m.get(departmentOf(o)) ?? 0) + 1);
+    return Object.keys(DEPARTMENT_LABEL).filter((k) => m.has(k)).map((k) => [k, m.get(k) ?? 0] as const);
+  }, [openings]);
+  const shown = useMemo(
+    () => openings.filter((o) => (!dept || departmentOf(o) === dept) && matchesOpeningSearch(o, q)),
+    [openings, dept, q],
+  );
+  const filtering = !!dept || !!q.trim();
+  const clear = () => { setQ(""); setDept(""); };
+
   return (
     <Shell active="openings">
       <style>{openingsCss}</style>
@@ -80,18 +121,38 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
               <a data-no-underline className="hx-btn lg" href="/signup?source=openings">Start practising <Arrow /></a>
             </div>
           ) : (
-            <ul className="op-grid">
-              {openings.map((o) => (
-                <li key={o.slug}>
-                  <a data-no-underline className="op-card" href={`/openings/${o.slug}`}
-                    onClick={() => captureClientEvent("openings_card_click", { opening: o.slug })}>
-                    <h2>{o.title}</h2>
-                    <Facts o={o} />
-                    <span className="op-more">View role <Arrow /></span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="op-tools">
+                <form className="op-search" role="search" onSubmit={(e) => e.preventDefault()}>
+                  <input type="search" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search open roles" placeholder="Search roles, skills or location" />
+                </form>
+                <div className="op-chips" role="group" aria-label="Department">
+                  <button type="button" className="op-chip" aria-pressed={!dept} onClick={() => setDept("")}>All<span>{openings.length}</span></button>
+                  {counts.map(([k, n]) => (
+                    <button key={k} type="button" className="op-chip" aria-pressed={dept === k} onClick={() => setDept(dept === k ? "" : k)}>
+                      {DEPARTMENT_LABEL[k]}<span>{n}</span>
+                    </button>
+                  ))}
+                  {filtering && <button type="button" className="op-clear" onClick={clear}>Clear filters</button>}
+                </div>
+              </div>
+              {shown.length === 0 ? (
+                <p className="op-none" role="status">No roles match. <button type="button" className="op-clear" onClick={clear}>Clear filters</button></p>
+              ) : (
+                <ul className="op-grid">
+                  {shown.map((o) => (
+                    <li key={o.slug}>
+                      <a data-no-underline className="op-card" href={`/openings/${o.slug}`}
+                        onClick={() => captureClientEvent("openings_card_click", { opening: o.slug })}>
+                        <h2>{o.title}</h2>
+                        <Facts o={o} />
+                        <span className="op-more">View role <Arrow /></span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
           )}
         </div>
       </section>

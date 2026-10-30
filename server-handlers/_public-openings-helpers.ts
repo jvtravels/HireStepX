@@ -33,6 +33,23 @@ export interface OpeningRow {
   due_date: string | null;
 }
 
+export const DEPARTMENT_LABEL: Record<string, string> = {
+  sales: "Sales", engineering: "Engineering", marketing: "Marketing", design: "Design", product: "Product",
+  operations: "Operations", "customer-success": "Customer success", hr: "HR", finance: "Finance", other: "Other",
+};
+
+export function departmentOf(o: PublicOpening): string {
+  return o.department && o.department in DEPARTMENT_LABEL ? o.department : "other";
+}
+
+/** Whole-word-prefix match on every search term, across the fields a candidate would type. */
+export function matchesOpeningSearch(o: PublicOpening, q: string): boolean {
+  const terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return true;
+  const hay = [o.title, o.location, DEPARTMENT_LABEL[departmentOf(o)], ...o.skills].join(" ").toLowerCase();
+  return terms.every((t) => hay.includes(t));
+}
+
 export interface PublicOpening {
   slug: string;
   title: string;
@@ -43,6 +60,8 @@ export interface PublicOpening {
   experienceMax: number | null;
   skills: string[];
   employmentType: string | null;
+  /** Key of DEPARTMENT_LABEL. Absent on roles from the database until the admin form asks for it. */
+  department?: string;
   listedAt: string;
   expiresAt: string;
 }
