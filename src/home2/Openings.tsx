@@ -8,17 +8,19 @@ import {
 } from "../../server-handlers/_public-openings-helpers";
 
 const openingsCss = `
-.op-head { padding: 96px 0 40px; text-align: center; }
+.op-head { padding: 72px 0 40px; text-align: center; }
+.op-head .hx-h1 { margin-top: 0; }
 .op-head .hx-lede { max-width: 56ch; }
 .op-facts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .op-head .op-facts { justify-content: center; margin-top: 24px; }
 .op-facts li { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); }
-.op-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.op-card { display: flex; flex-direction: column; gap: 10px; height: 100%; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); transition: border-color .15s, background .15s; }
+.op-grid { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; }
+.op-grid > li { display: flex; flex: 0 0 calc((100% - 32px) / 3); min-width: 0; }
+.op-card { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 0; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); transition: border-color .15s, background .15s; }
 .op-card:hover { border-color: var(--btn); background: var(--wash); }
 .op-card h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-card .op-facts { margin-top: auto; padding-top: 6px; }
-.op-more .hx-arr { width: 14px; height: 14px; flex: none; }
+.op-go .hx-arr { width: 14px; height: 14px; flex: none; }
 .op-tools.hx-stage { margin: 0 0 32px; padding: 48px; display: grid; gap: 28px; justify-items: center; }
 .op-search { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 760px; height: 68px; padding: 0 22px; border-radius: 18px; background: var(--white); border: 1px solid transparent; color: var(--btn); transition: border-color .15s, box-shadow .15s; }
 .op-search:focus-within { border-color: var(--btn); box-shadow: 0 0 0 3px oklch(0.359 0.135 278.697 / 0.14); }
@@ -35,8 +37,8 @@ const openingsCss = `
 @media (max-width: 720px) { .op-tools.hx-stage { padding: 24px 16px 28px; border-radius: 22px; } .op-search { height: 56px; } .op-kbd { display: none; } }
 .op-clear { font: inherit; font-size: 14px; color: var(--ink-3); background: none; border: 0; padding: 7px 4px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .op-none { text-align: center; padding: 40px 0; color: var(--ink-2); }
-.op-card .op-more { margin-top: 6px; }
-.op-more { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--btn); }
+.op-card .op-go { margin-top: 6px; }
+.op-go { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--btn); }
 .op-empty { max-width: 640px; margin: 0 auto; padding: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--wash); text-align: center; }
 .op-empty h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 26px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-empty p { margin: 8px 0 20px; color: var(--ink-2); }
@@ -88,17 +90,17 @@ const openingsCss = `
   .op-aside { position: static; }
 }
 @container (max-width: 1000px) and (min-width: 721px) {
-  .op-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .op-grid > li { flex-basis: calc((100% - 16px) / 2); }
 }
 @container (max-width: 720px) {
-  .op-head { padding: 56px 0 28px; }
+  .op-head { padding: 48px 0 28px; }
   .op-dtop { flex-direction: column; gap: 16px; }
   .op-dhead .op-dtop .hx-btn { display: none; }
   .op-aside .hx-btn { display: none; }
   .op-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); }
   .op-bar .hx-btn { width: 100%; justify-content: center; }
   .op-more { padding-bottom: 96px; }
-  .op-grid { grid-template-columns: 1fr; }
+  .op-grid > li { flex-basis: 100%; }
   .op-body { padding-bottom: 44px; gap: 32px; }
   .op-cta .hx-btn { width: 100%; }
 }
@@ -197,7 +199,7 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
                         onClick={() => captureClientEvent("openings_card_click", { opening: o.slug })}>
                         <h2>{o.title}</h2>
                         <Facts o={o} />
-                        <span className="op-more">View role <Arrow /></span>
+                        <span className="op-go">View role <Arrow /></span>
                       </a>
                     </li>
                   ))}
