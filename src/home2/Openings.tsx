@@ -69,7 +69,7 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
         <div className="hx-wrap">
           <span className="hx-kicker">Open roles</span>
           <h1 className="hx-h1">Roles hiring on <b>HireStepX</b></h1>
-          <p className="hx-lede">Employers list roles here without a company name. Practise for the one you want, and your scored answers do the talking.</p>
+          <p className="hx-lede">Browse roles from employers hiring on HireStepX. Practise an interview for the role you want, then choose whether to share your scored report with the employer.</p>
         </div>
       </section>
       <section className="hx-sec op-list" aria-label="Open roles">
