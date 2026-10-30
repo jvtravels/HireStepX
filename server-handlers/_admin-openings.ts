@@ -1,7 +1,6 @@
-/* Admin side of the public openings two-key consent. An employer opts a role in
- * (public_listing = 'employer_ok'); only an admin approval makes it public. The
- * admin reads the role (company name included) and writes the public summary and
- * title, so nothing an employer typed reaches the public unreviewed. Approval is
+/* Admin side of the public openings. Any open role can be listed: the admin reads
+ * it (company name included) and writes the public summary and title, so nothing
+ * an employer typed reaches the public unreviewed. Approval is
  * refused if the public text still contains the company name. The admin session is
  * one shared login (see _admin-unlock.ts), so the audit trail records the action,
  * not the person. */
@@ -46,7 +45,7 @@ interface AdminOpeningRow extends OpeningRow { employer_id: string }
 
 export async function listPublicOpeningRequests() {
   const rows = await fetchJSON<AdminOpeningRow>(
-    `employer_requirements?select=${PUBLIC_OPENING_SELECT},employer_id&public_listing=in.(employer_ok,approved)&order=created_at.desc&limit=200`,
+    `employer_requirements?select=${PUBLIC_OPENING_SELECT},employer_id&status=neq.closed&order=created_at.desc&limit=200`,
   );
   const ids = [...new Set(rows.map((r) => r.employer_id))];
   const employers = ids.length
@@ -76,19 +75,17 @@ export async function setPublicOpening(input: { requirementId?: unknown; decisio
   if (!req) throw new ValidationError("requirement not found");
   const [employer] = await fetchJSON<{ company_name: string }>(`employers?id=eq.${encodeURIComponent(req.employer_id)}&select=company_name&limit=1`);
   const v = validateOpeningInput(input, req.title, employer?.company_name ?? "");
-  if (v.decision === "approve" && req.public_listing === "off") throw new ValidationError("The employer has not opted this role in");
   if (v.decision === "approve" && req.status === "closed") throw new ValidationError("This role is closed");
 
   const patch = v.decision === "approve"
     ? { public_listing: "approved", public_summary: v.summary, public_title: v.title, public_approved_at: new Date().toISOString() }
-    : { public_listing: "employer_ok", public_approved_at: null };
-  // The guard keeps an employer withdrawal that lands mid-request from being overwritten.
-  const res = await supa(`employer_requirements?id=eq.${req.id}&public_listing=in.(employer_ok,approved)`, {
+    : { public_listing: "off", public_approved_at: null };
+  const res = await supa(`employer_requirements?id=eq.${req.id}`, {
     method: "PATCH",
     body: JSON.stringify(patch),
   });
   const updated = res.ok ? ((await res.json().catch(() => [])) as unknown[]) : [];
   if (!res.ok) return { ok: false as const, error: `Update failed: HTTP ${res.status}` };
-  if (updated.length === 0) return { ok: false as const, error: "The employer withdrew this role. Nothing was changed." };
+  if (updated.length === 0) return { ok: false as const, error: "Role not found. Nothing was changed." };
   return { ok: true as const, requirementId: req.id, listing: patch.public_listing };
 }
