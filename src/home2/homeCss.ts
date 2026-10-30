@@ -724,6 +724,37 @@ p.hx-swap, div.hx-swap { display: block; }
   .hv-rk li { height: 56px; }
   .hv-steps { gap: 8px; }
 }
+@container (max-width: 560px) {
+  .hx-stage-hero { padding: 10px 10px 0; }
+  .hv-win { padding: 0 12px; border-radius: 14px; margin-bottom: 10px; }
+  .hv-bar { height: 44px; gap: 8px; font-size: 12px; }
+  .hv-samp { padding: 4px 10px; gap: 6px; font-size: 10px; }
+  .hv-split { gap: 12px; padding: 12px 0; }
+  .hv-pane { padding: 14px; gap: 12px; border-radius: 14px; }
+  .hv-ph { font-size: 12px; gap: 8px; }
+  .hv-ph em { font-size: 11px; white-space: nowrap; }
+  .hv-steps li { width: 24px; height: 24px; font-size: 12px; }
+  .hv-steps li.now { width: 26px; height: 26px; }
+  .hv-q { font-size: 19px; line-height: 1.25; }
+  .hv-ans { padding: 12px 14px; gap: 8px; }
+  .hv-ans p { font-size: 15px; line-height: 1.55; }
+  .hv-star { gap: 8px; }
+  .hv-star li { padding: 10px 12px; }
+  .hv-star b { font-size: 14px; }
+  .hv-foot { padding-top: 12px; gap: 8px; }
+  .hv-fix, .hv-score { height: 40px; }
+  .hv-fix { padding: 0 14px; font-size: 13px; }
+  .hv-score { padding: 0 14px; }
+  .hv-score b { font-size: 19px; }
+  .hv-rk li { grid-template-columns: 12px 32px minmax(0, 1fr) auto; gap: 8px; padding: 0 10px; }
+  .hv-tile { width: 32px; height: 32px; border-radius: 8px; }
+  .hv-who b { font-size: 14px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .hv-unlock { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .hv-lock { width: 34px; height: 34px; }
+  .hv-ut { flex: 1; min-width: 0; }
+  .hv-ut b, .hv-ut em { white-space: nowrap; }
+  .hv-btn { margin-left: 0; width: 100%; height: 40px; }
+}
 @media (prefers-reduced-motion: reduce) { .hv-rk li, .hv-ans ins { transition: none; animation: none; } }
 /* How-it-works step cards */
 .hx-how-vis { background: var(--wash); }
