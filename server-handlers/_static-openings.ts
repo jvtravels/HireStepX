@@ -15,6 +15,7 @@ export const STATIC_OPENINGS: PublicOpening[] = [
     experienceMax: 2,
     skills: ["LinkedIn Sales Navigator", "Apollo", "HubSpot", "Salesforce", "Email sequencing"],
     employmentType: "full-time",
+    department: "sales",
     listedAt: "2026-10-30T00:00:00.000Z",
     expiresAt: "2026-12-14T00:00:00.000Z",
   },
