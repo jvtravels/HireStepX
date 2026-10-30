@@ -31,7 +31,7 @@ export function BetaBanner() {
       style={{
         position: "relative",
         zIndex: 1,
-        background: "oklch(0.359 0.135 278.697)",
+        background: "oklch(0.5 0.17 38)",
         color: "#FFFFFF",
         display: "flex",
         alignItems: "center",
