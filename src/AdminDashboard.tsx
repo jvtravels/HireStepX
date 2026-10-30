@@ -1999,7 +1999,6 @@ export default function AdminDashboard() {
         </div>
 
         <AdminEmployerFinancials getToken={getToken} setToken={setToken} />
-        <AdminOpenings getToken={getToken} setToken={setToken} />
         <div style={{ ...card, marginBottom: 24 }}>
           <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue — Last 12 Months</p>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 8 }}>
@@ -3737,6 +3736,7 @@ export default function AdminDashboard() {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
           <div style={statCard}><p style={labelStyle}>Total Employers</p><p style={bigNum}>{employers.total}</p></div>
         </div>
+        <AdminOpenings getToken={getToken} setToken={setToken} />
 
         {employers.rows.length > 0 && (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
