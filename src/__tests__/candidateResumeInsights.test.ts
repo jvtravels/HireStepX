@@ -273,7 +273,7 @@ describe("buildEvidenceSummary", () => {
 
   it("joins only the facts the profile holds", () => {
     const c = candidate({ rosterScore: 78.4, sessionsCompleted: 3, city: "Delhi" }, { noticePeriod: "30 days" });
-    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Interview score 78 across 3 practice interviews, 3 of 4 required skills, Delhi, 30-day notice.");
+    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Overall interview score 78 out of 100, across 3 practice interviews, 3 of 4 required skills, Delhi, 30-day notice.");
   });
 
   it("skips the interview clause without graded sessions and the city when unknown", () => {
@@ -283,7 +283,7 @@ describe("buildEvidenceSummary", () => {
 
   it("uses singular wording and months for long notice", () => {
     const c = candidate({ rosterScore: 60, sessionsCompleted: 1, city: "Pune" }, { noticePeriod: "2 months" });
-    expect(buildEvidenceSummary(c, { skills: [] }, [])).toBe("Interview score 60 across 1 practice interview, Pune, 2-month notice.");
+    expect(buildEvidenceSummary(c, { skills: [] }, [])).toBe("Overall interview score 60 out of 100, across 1 practice interview, Pune, 2-month notice.");
   });
 
   it("is null when nothing is known", () => {

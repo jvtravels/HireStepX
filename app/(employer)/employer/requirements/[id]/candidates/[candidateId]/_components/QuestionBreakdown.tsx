@@ -93,7 +93,7 @@ export function QuestionBreakdown({ questions, candidate, requestUi }: { questio
     >
       {summary && (
         <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
-          <span className="font-semibold text-hx-coal tabular-nums">{summary.count}</span> answered, averaging <span className="font-semibold text-hx-coal tabular-nums">{summary.avg}</span>.{" "}
+          <span className="font-semibold text-hx-coal tabular-nums">{summary.count}</span> answered in the latest interview, averaging <span className="font-semibold text-hx-coal tabular-nums">{summary.avg}</span> out of 100.{" "}
           {summary.strong} strong or complete{summary.weak > 0 ? `, ${summary.weak} weak` : ""}
           {summary.starCounted > 0 ? `. ${summary.fullStar} of ${summary.starCounted} cover all four STAR parts` : ""}.
         </p>

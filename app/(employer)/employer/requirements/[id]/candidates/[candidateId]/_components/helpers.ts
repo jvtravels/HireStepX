@@ -467,7 +467,7 @@ export function noticePhrase(noticePeriod: string | null | undefined): string | 
 export function buildEvidenceSummary(candidate: Candidate, requirement: Pick<Requirement, "skills">, matched: string[]): string | null {
   const parts: string[] = [];
   const score = interviewScore(candidate);
-  if (score != null) parts.push(`Interview score ${score} across ${plural(candidate.sessionsCompleted, "practice interview")}`);
+  if (score != null) parts.push(`Overall interview score ${score} out of 100, across ${plural(candidate.sessionsCompleted, "practice interview")}`);
   if (requirement.skills.length > 0) parts.push(`${matched.length} of ${requirement.skills.length} required skills`);
   if (candidate.city && candidate.city !== "Not specified") parts.push(candidate.city);
   const notice = noticePhrase(candidate.resume?.noticePeriod);

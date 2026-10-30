@@ -265,7 +265,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   const topSkills = [...(evidence?.skills ?? [])].sort((a, b) => b.score - a.score).slice(0, 4);
   const trend = evidence?.sessionTrend ?? [];
   const trendLine = trend.length > 1
-    ? `Latest ${trend[trend.length - 1].score}, best ${Math.max(...trend.map((t) => t.score))}, ${trend[trend.length - 1].score - trend[0].score >= 0 ? "+" : ""}${trend[trend.length - 1].score - trend[0].score} since first session`
+    ? `Latest session ${trend[trend.length - 1].score}, best session ${Math.max(...trend.map((t) => t.score))}, ${trend[trend.length - 1].score - trend[0].score >= 0 ? "+" : ""}${trend[trend.length - 1].score - trend[0].score} since first session`
     : "";
   const action = (
     <div className="flex items-center gap-3">
@@ -291,7 +291,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
                   </span>
                 </Stat>
               )}
-              {avg != null && <Stat label="Avg skill score" hint={`out of 100, mean of ${evidence?.skills.length ?? 0} graded skills`}>{avg}</Stat>}
+              {avg != null && <Stat label="Average skill score" hint={`out of 100, mean of ${evidence?.skills.length ?? 0} graded skills`}>{avg}</Stat>}
               {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked in graded answers`}>{verifiedCount}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (
