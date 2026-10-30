@@ -9,7 +9,6 @@ import {
 
 const openingsCss = `
 .op-head { padding: 96px 0 40px; text-align: center; }
-.op-head .hx-h1 { margin-top: 14px; }
 .op-head .hx-lede { max-width: 56ch; }
 .op-facts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .op-head .op-facts { justify-content: center; margin-top: 24px; }
@@ -158,7 +157,6 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
       <style>{openingsCss}</style>
       <section className="op-head">
         <div className="hx-wrap">
-          <span className="hx-kicker">Open roles</span>
           <h1 className="hx-h1">Roles hiring on <b>HireStepX</b></h1>
           <p className="hx-lede">Browse roles from employers hiring on HireStepX. Practise an interview for the role you want, then choose whether to share your scored report with the employer.</p>
         </div>
