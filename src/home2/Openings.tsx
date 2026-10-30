@@ -4,7 +4,7 @@ import { captureClientEvent } from "../posthogClient";
 import { ArrowLeft, Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
 import { Arrow, Shell } from "./Pages";
 import {
-  DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
+  DEPARTMENT_LABEL, departmentOf, employmentLabel, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
 } from "../../server-handlers/_public-openings-helpers";
 
 const openingsCss = `
@@ -109,7 +109,7 @@ const openingsCss = `
 function Facts({ o }: { o: PublicOpening }) {
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
-  const items = [o.location, mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : null, exp, o.employmentType === "full-time" ? "Full-time" : o.employmentType].filter(Boolean) as string[];
+  const items = [o.location, mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : null, exp, employmentLabel(o.employmentType)].filter(Boolean) as string[];
   return <ul className="op-facts">{items.map((i) => <li key={i}>{i}</li>)}</ul>;
 }
 
@@ -238,7 +238,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
     ["Location", o.location],
     ["Work mode", mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : ""],
     ["Experience", exp ?? ""],
-    ["Type", o.employmentType === "full-time" ? "Full-time" : o.employmentType ?? ""],
+    ["Type", employmentLabel(o.employmentType)],
     ["Department", DEPARTMENT_LABEL[departmentOf(o)]],
   ].filter(([, v]) => v) as [string, string][];
   const signUp = (where: string) => (

@@ -56,6 +56,47 @@ export const STATIC_OPENINGS: PublicOpening[] = [
     listedAt: "2026-10-30T00:00:00.000Z",
     expiresAt: "2026-12-14T00:00:00.000Z",
   },
+  {
+    slug: "wordpress-developer-block-themes-fse",
+    title: "Contract WordPress Developer (Block Themes / FSE)",
+    summary:
+      "Build pages, templates, reusable block patterns and custom blocks on a large-scale WordPress site. Turn Figma designs into responsive builds and troubleshoot across themes, plugins and environments. Remote contract.",
+    location: "Remote",
+    workMode: "remote",
+    experienceMin: null,
+    experienceMax: null,
+    skills: ["WordPress", "Block Themes", "Full Site Editing", "PHP", "JavaScript", "Git"],
+    employmentType: "contract",
+    department: "engineering",
+    details: {
+      about:
+        "An employer on HireStepX is looking for an experienced WordPress Developer with strong hands-on experience in Block Themes and Full Site Editing (FSE). You will work on a large-scale WordPress website, building reusable components, translating Figma designs into responsive pages, and solving technical issues across themes, plugins and environments.",
+      responsibilities: [
+        "Build pages, templates and reusable block patterns.",
+        "Develop custom blocks and theme functionality.",
+        "Translate Figma designs into responsive WordPress builds.",
+        "Improve accessibility, performance and consistency.",
+        "Work with Git, code reviews and ticket-based workflows.",
+        "Troubleshoot WordPress issues independently.",
+      ],
+      requirements: [
+        "Strong WordPress development experience.",
+        "Hands-on experience with Block Themes and Full Site Editing.",
+        "Strong working knowledge of PHP, HTML, CSS and JavaScript.",
+        "Experience translating Figma designs into responsive WordPress builds.",
+        "Comfortable using Git and GitHub.",
+        "Strong problem-solving skills and the ability to troubleshoot independently.",
+        "Comfortable working remotely across time zones.",
+      ],
+      goodToHave: [
+        "Enterprise or multisite WordPress experience.",
+        "SEO, accessibility or performance optimisation experience.",
+        "Experience with AI-assisted development tools.",
+      ],
+    },
+    listedAt: "2026-10-30T00:00:00.000Z",
+    expiresAt: "2026-12-14T00:00:00.000Z",
+  },
 ];
 
 export function liveStaticOpenings(now: Date = new Date()): PublicOpening[] {

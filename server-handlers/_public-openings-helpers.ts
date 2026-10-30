@@ -141,6 +141,11 @@ export function findOpeningBySlug(openings: PublicOpening[], slug: string): Publ
 }
 
 /** "2 to 4 years", "Up to 3 years", "Fresher" (0 to 1). */
+export function employmentLabel(t: string | null): string {
+  if (!t) return "";
+  return t === "full-time" ? "Full-time" : t.charAt(0).toUpperCase() + t.slice(1).replace(/-/g, " ");
+}
+
 export function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
   const lo = min ?? 0;
