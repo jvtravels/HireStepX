@@ -130,7 +130,7 @@ const RESOURCE_FIELDS: Array<[string, string]> = [
 ];
 /** Scalar request fields safe to keep: enums, counts and amounts. Free text (search, note,
  *  reason, subject, htmlBody) is excluded because it can carry PII. */
-const META_FIELDS = ["tier", "days", "qty", "amountPaise", "status", "flagStatus", "month", "scope"] as const;
+const META_FIELDS = ["tier", "days", "qty", "amountPaise", "status", "flagStatus", "month", "scope", "decision"] as const;
 
 const clean = (v: unknown, max: number): string | null =>
   typeof v === "string" && v.length > 0 ? v.slice(0, max) : null;

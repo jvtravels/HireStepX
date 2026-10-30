@@ -72,6 +72,8 @@ export function describeEvent(e: Pick<ActivityEvent, "action" | "meta">): Descri
       const stage = label(STAGE_LABEL as Record<RequirementStage, string>, m.stage);
       return { verb: "moved a job", subject: null, detail: stage && `to ${stage}`, group };
     }
+    case "job.public_listing_changed":
+      return { verb: m.on ? "opted in to listing" : "withdrew from the public listing", subject: job, detail: m.on ? "on the open roles page, pending approval" : null, group };
     case "candidate.unlocked":
       return { verb: "unlocked", subject: str(m.candidateName) ?? "a candidate", detail: null, group };
     case "candidate.status_changed": {

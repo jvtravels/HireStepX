@@ -10,6 +10,7 @@ import { getHealthAlerts } from "./_health-alerts";
 import { getEmployerFinancials } from "./_admin-employer-financials";
 import { listEmployers, setEmployerTier, suspendEmployer, unsuspendEmployer, listEmployerReports, resolveEmployerReport } from "./_admin-employers";
 import { listUnlockRequirements, getUnlockMatches, adminUnlockCandidates } from "./_admin-unlock";
+import { listPublicOpeningRequests, setPublicOpening } from "./_admin-openings";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { createAdminToken } from "./_admin-auth";
 import { describeAdminAction, toWebHeaders, ADMIN_ACTOR } from "./_admin-session-helpers";
@@ -49,7 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(503).json({ error: "Not configured", code: "not_configured" });
   }
 
-  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string; scope?: string } | undefined;
+  const body = req.body as { section?: string; action?: string; search?: string; offset?: number; userId?: string; sessionId?: string; id?: string; status?: string; tier?: string; days?: number; qty?: number; note?: string; paymentId?: string; amountPaise?: number; subject?: string; htmlBody?: string; month?: string; actualInvoiceInr?: number; flagId?: string; flagStatus?: string; requirementId?: string; matchIds?: string[]; employerId?: string; reportId?: string; reason?: string; scope?: string; decision?: string; publicSummary?: string; publicTitle?: string } | undefined;
   const section = body?.section || body?.action || "overview";
 
   const audit = (outcome: string) => recordAdminAudit({
@@ -92,6 +93,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         case "unlock-requirements": return listUnlockRequirements(body?.search);
         case "unlock-matches": return getUnlockMatches(String(body?.requirementId ?? ""));
         case "admin-unlock-candidates": return adminUnlockCandidates({ requirementId: body?.requirementId, matchIds: body?.matchIds, note: body?.note });
+        case "public-openings": return listPublicOpeningRequests();
+        case "set-public-opening": return setPublicOpening({ requirementId: body?.requirementId, decision: body?.decision, publicSummary: body?.publicSummary, publicTitle: body?.publicTitle });
         case "promo-codes": return getPromoCodes();
         case "calendar": return getCalendar();
         case "outcomes": return getOutcomes();

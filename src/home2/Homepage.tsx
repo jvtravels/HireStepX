@@ -6,6 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { preload } from "react-dom";
 import Link from "next/link";
 import Skel, { useSkel } from "./Skel";
+import { useHasOpenings } from "../marketing-v2/openingsFlag";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
 function Arrow() {
@@ -50,7 +51,7 @@ function useNavX(active: string | undefined) {
   return { links, x };
 }
 
-export type NavKey = "talent" | "companies" | "pricing" | "resources" | "about";
+export type NavKey = "talent" | "companies" | "pricing" | "resources" | "openings" | "about";
 
 export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; talentHref?: string }) {
   preloadFonts();
@@ -62,6 +63,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
     return () => window.removeEventListener("keydown", esc);
   }, [open]);
   const navx = useNavX(active);
+  const hasOpenings = useHasOpenings();
   const cur = (k: NavKey) => (active === k ? "page" : undefined);
   return (
     <header className="hx-nav">
@@ -72,6 +74,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
           <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For employers</Link>
           <Link data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
           <Link data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</Link>
+          {hasOpenings && <Link data-no-underline data-navx href="/openings" aria-current={cur("openings")}>Open roles</Link>}
           <i ref={navx.x} className="hx-x" aria-hidden="true" />
         </nav>
         <div className="hx-nav-cta">
@@ -91,6 +94,7 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
             <Link data-no-underline href="/employers" aria-current={cur("companies")}>For employers</Link>
             <Link data-no-underline href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
             <Link data-no-underline href="/resources" aria-current={cur("resources")}>Resources</Link>
+            {hasOpenings && <Link data-no-underline href="/openings" aria-current={cur("openings")}>Open roles</Link>}
           </nav>
           <div className="hx-menu-cta">
             <Link data-no-underline className="hx-btn alt" href="/login">Log in</Link>
@@ -233,6 +237,7 @@ export function Closing() {
 }
 
 export function Footer() {
+  const hasOpenings = useHasOpenings();
   return (
     <div className="hx-wrap hx-footwrap">
       <footer className="hx-foot">
@@ -242,7 +247,7 @@ export function Footer() {
             <p className="hx-foot-rights"><a href="/privacy#your-rights">Your rights under India&apos;s DPDP Act</a>: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a data-no-underline href="/candidates">For job seekers</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a><a href="/salary-report-2026">Salary report</a></div>
+            <div><h3>Product</h3><a data-no-underline href="/candidates">For job seekers</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a>{hasOpenings && <a href="/openings">Open roles</a>}<a href="/salary-report-2026">Salary report</a></div>
             <div><h3>Company</h3><a href="/methodology">Methodology</a><a href="/contact">Contact</a><a href="/referral">Refer a friend</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>
