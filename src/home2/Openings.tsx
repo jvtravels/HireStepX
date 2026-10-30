@@ -10,7 +10,7 @@ import {
 const openingsCss = `
 .op-head { padding: 72px 0 40px; text-align: center; }
 .op-head .hx-h1 { margin-top: 0; }
-.op-head .hx-lede { max-width: 56ch; }
+.op-head .hx-lede { max-width: 76ch; text-wrap: balance; }
 .op-facts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .op-head .op-facts { justify-content: center; margin-top: 24px; }
 .op-facts li { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); }
@@ -160,7 +160,7 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
       <section className="op-head">
         <div className="hx-wrap">
           <h1 className="hx-h1">Roles hiring on <b>HireStepX</b></h1>
-          <p className="hx-lede">Browse roles from employers hiring on HireStepX. Practise an interview for the role you want, then choose whether to share your scored report with the employer.</p>
+          <p className="hx-lede">Browse roles from employers hiring on HireStepX. Practise the interview, then choose whether to share your scored report with the employer.</p>
         </div>
       </section>
       <section className="hx-sec op-list" aria-label="Open roles">
