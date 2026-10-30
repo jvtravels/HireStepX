@@ -256,7 +256,7 @@ function sceneFor(i: Item): ReactNode {
       return <Stage h1={195}><C p={{ l: "9%", t: 14, w: "64%" }} cls="f"><span className="sc-name"><S>HELLO</S><b>my name is</b><em>Aarav</em></span><Ln /><Ln w="72%" /></C><C p={{ r: "6%", b: 16 }} cls="f2"><Ch>Script + examples</Ch></C></Stage>;
     case "/blog/tell-me-about-yourself-best-answer":
       return <Stage h1={300}><C p={{ l: "8%", t: 12, w: "72%" }} cls="f"><Row><T>Tell me about yourself</T></Row><span className="sc-q"><mark>Present</mark>, then <mark>past</mark>, then <mark>future</mark>.</span></C><C p={{ r: "6%", b: 14 }} cls="f2"><Row><Ring pct={60} label="60s" sz={36} /></Row></C></Stage>;
-    case "/blog/system-design-interview-preparation":
+    case "/blog/system-design-interview-preparation-india-2026":
       return <Stage h1={240}><C p={{ l: "7%", t: 10, w: "78%" }} cls="f"><S>Design a URL shortener</S><span className="sc-arch big"><Box>Client</Box><em /><Box>LB</Box><em /><Box on>API</Box><em /><Box>Cache</Box></span><span className="sc-arch big"><span /><span /><Box>DB</Box></span></C></Stage>;
     case "/blog/razorpay-interview-experience":
       return <Stage h1={262}><C p={{ l: "9%", t: 12, w: "56%" }} cls="f"><Row><Mono co="Razorpay" h={262} sz={22} /><T>My experience</T></Row><span className="sc-steps h">{["Applied", "Coding", "Design", "Offer"].map((x, n) => <span key={x} className={n < 3 ? "done" : "now"}><u />{x}</span>)}</span></C><C p={{ r: "6%", b: 14 }} cls="f2"><span className="sc-pay"><S>Pay</S><b>Razorpay</b></span></C></Stage>;

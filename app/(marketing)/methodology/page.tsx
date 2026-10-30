@@ -3,7 +3,7 @@ import { MethodologyV2 } from "@/marketing-v2/MarketingPagesV2";
 import { buildMethodologyJsonLd } from "./_jsonld";
 
 export const metadata: Metadata = {
-  title: "Methodology | HireStepX",
+  title: "How We Source Interview and Salary Data | HireStepX",
   description: "How HireStepX sources and labels interview questions and salary data: officially documented, candidate-reported, common practice, or HireStepX practice questions.",
   alternates: { canonical: "/methodology" },
 };

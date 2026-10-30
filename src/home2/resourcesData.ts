@@ -15,7 +15,7 @@ export const ITEMS: Item[] = [
   { "k": "guide", "t": "Amazon Leadership Principles Interview: All 16 Explained", "h": "/blog/amazon-leadership-principles-interview", "co": "Amazon", "tag": "Behavioral", "rt": 11 },
   { "k": "guide", "t": "How to Introduce Yourself in an Interview: Script + Examples", "h": "/blog/how-to-introduce-yourself-in-interview", "co": "", "tag": "Technical", "rt": 7 },
   { "k": "guide", "t": "Tell Me About Yourself: Best Answer Examples for 2026", "h": "/blog/tell-me-about-yourself-best-answer", "co": "", "tag": "Technical", "rt": 8 },
-  { "k": "guide", "t": "System Design Interview Prep for Indian Engineers", "h": "/blog/system-design-interview-preparation", "co": "", "tag": "Technical", "rt": 12 },
+  { "k": "guide", "t": "System Design Interview Prep for Indian Engineers", "h": "/blog/system-design-interview-preparation-india-2026", "co": "", "tag": "Technical", "rt": 12 },
   { "k": "guide", "t": "Razorpay Interview Experience: SDE & PM Roles (2026)", "h": "/blog/razorpay-interview-experience", "co": "Razorpay", "tag": "Career", "rt": 7 },
   { "k": "guide", "t": "Salary Negotiation Tips for India: How to Get 20-40% More", "h": "/blog/salary-negotiation-tips-india", "co": "", "tag": "Career", "rt": 8 },
   { "k": "guide", "t": "How to Ace Case Study Interviews: Framework + Examples", "h": "/blog/ace-case-study-interviews", "co": "", "tag": "Strategy", "rt": 9 },

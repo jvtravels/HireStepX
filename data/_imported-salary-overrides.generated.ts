@@ -351,6 +351,11 @@ export const IMPORTED_SALARY_OVERRIDES: Record<string, Record<string, Partial<Re
       "mid": {"totalMin":19.3,"totalMax":22.7,"baseMin":14.5,"baseMax":17,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cars24-salaries","lastVerified":"2026-10-30","notes":"AB scrape: Software Engineer (n=136); n=136","agreementCount":1},
     },
   },
+  "cashfree": {
+    "software-engineer": {
+      "mid": {"totalMin":28.5,"totalMax":32.5,"baseMin":21.4,"baseMax":24.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/cashfree-payments-salaries","lastVerified":"2026-10-30","notes":"AB scrape: Software Development Engineer II (n=50); n=50","agreementCount":1},
+    },
+  },
   "chargebee": {
     "software-engineer": {
       "entry": {"totalMin":17.4,"totalMax":19.2,"baseMin":13,"baseMax":14.4,"equityType":"none","source":"https://www.ambitionbox.com/salaries/chargebee-salaries","lastVerified":"2026-10-30","notes":"AB scrape: Software Engineer (n=129); n=129","agreementCount":1},

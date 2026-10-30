@@ -80,13 +80,13 @@ function Prose({ text, labels = false }: { text: string; labels?: boolean }) {
   );
 }
 
-function Related({ title, items }: { title: string; items: { item: Item; meta: string }[] }) {
+function Related({ title, items, limit = 3 }: { title: string; items: { item: Item; meta: string }[]; limit?: number }) {
   return (
     <section className="sx-rel">
       <style>{resourcesCss}</style>
       <h2 className="sx-h2">{title}</h2>
       <ul className="lb-grid">
-        {items.slice(0, 3).map(({ item: i, meta }) => (
+        {items.slice(0, limit).map(({ item: i, meta }) => (
           <li key={i.h}>
             <article className={`lb-card k-${i.k}`}>
               <Vis i={i} />
@@ -317,7 +317,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
       <div className="hx-wrap sx-after">
         <Explore links={explore} />
         {related.length > 0 && (
-          <Related title="Continue reading" items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, co: b.company, tag: b.category }, meta: `${b.category} · ${b.readTime}` }))} />
+          <Related title="Continue reading" limit={6} items={related.map((b) => ({ item: { k: "guide", t: b.title, h: `/blog/${b.slug}`, co: b.company, tag: b.category }, meta: `${b.category} · ${b.readTime}` }))} />
         )}
       </div>
       <Hubs />

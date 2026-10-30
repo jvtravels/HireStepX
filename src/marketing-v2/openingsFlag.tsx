@@ -1,9 +1,11 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import { useStagingHost } from "../home2/stagingHost";
 
-/* True only while at least one public role is live, so nav and footer never
-   link to an empty /openings page. Set by the marketing layout (server side). */
+/* True only while at least one public role is live AND the page is on the
+   staging host (open roles are staging-only for now), so nav and footer never
+   link to an empty or hidden /openings page. Set by the marketing layout. */
 const OpeningsFlag = createContext(false);
 
 export function OpeningsFlagProvider({ live, children }: { live: boolean; children: ReactNode }) {
@@ -11,9 +13,10 @@ export function OpeningsFlagProvider({ live, children }: { live: boolean; childr
 }
 
 export function useHasOpenings(): boolean {
-  return useContext(OpeningsFlag);
+  const staging = useStagingHost();
+  return useContext(OpeningsFlag) && staging;
 }
 
 export function useWithOpenRoles(links: Array<[string, string]>): Array<[string, string]> {
-  return useContext(OpeningsFlag) ? [["Open roles", "/openings"], ...links] : links;
+  return useHasOpenings() ? [["Open roles", "/openings"], ...links] : links;
 }
