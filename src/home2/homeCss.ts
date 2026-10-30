@@ -361,6 +361,16 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-end { padding: 64px 24px 48px; }
   .hx-end .hx-h2 { font-size: 28px; }
 }
+@media (max-width: 720px) {
+  .hx-end { padding: 36px 18px 26px; border-radius: 22px; }
+  .hx-end .hx-h2 { margin-top: 10px; }
+  .hx-end p { margin-top: 8px; font-size: 15px; }
+  .hx-end .hx-cta { margin-top: 22px; gap: 10px; }
+  .hx-end .hx-btn.lg { min-height: 48px; font-size: 15px; }
+  .hx-endnote { margin-top: 18px; gap: 6px 14px; font-size: 12.5px; }
+  .hx-endnote li { gap: 5px; }
+  .hx-endnote li::before { width: 12px; height: 12px; background-size: contain; }
+}
 
 
 /* ── Product surfaces ── */
