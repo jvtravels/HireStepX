@@ -58,7 +58,15 @@ const openingsCss = `
 .op-meta { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .op-meta li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); font-size: 14px; color: var(--ink-2); }
 .op-meta li svg { color: var(--ink-3); }
-.op-dlayout { padding: 40px 0 64px; }
+.op-dlayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 56px; align-items: start; padding: 40px 0 56px; }
+.op-aside { position: sticky; top: 88px; display: grid; gap: 16px; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); }
+.op-aside h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.op-aside .hx-btn { width: 100%; justify-content: center; }
+.op-aside .op-note a { color: var(--ink-3); }
+.op-bar { display: none; }
+.op-more { border-top: 1px solid var(--line); padding: 32px 0 64px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.op-more p { margin: 0; color: var(--ink-2); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .op-main { display: grid; gap: 36px; max-width: 720px; }
 .op-main h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 12px; }
 .op-main p { color: var(--ink-2); text-wrap: pretty; }
@@ -71,12 +79,21 @@ const openingsCss = `
 .op-win { margin: 0; display: grid; gap: 14px; }
 .op-win dt { font-size: 14px; font-weight: 600; color: var(--ink); }
 .op-win dd { margin: 2px 0 0; color: var(--ink-2); }
+@container (max-width: 1000px) {
+  .op-dlayout { grid-template-columns: 1fr; gap: 32px; }
+  .op-aside { position: static; }
+}
 @container (max-width: 1000px) and (min-width: 721px) {
   .op-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container (max-width: 720px) {
   .op-head { padding: 56px 0 28px; }
   .op-dtop { flex-direction: column; gap: 16px; }
+  .op-dhead .op-dtop .hx-btn { display: none; }
+  .op-aside .hx-btn { display: none; }
+  .op-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); }
+  .op-bar .hx-btn { width: 100%; justify-content: center; }
+  .op-more { padding-bottom: 96px; }
   .op-grid { grid-template-columns: 1fr; }
   .op-body { padding-bottom: 44px; gap: 32px; }
   .op-cta .hx-btn { width: 100%; }
@@ -193,6 +210,7 @@ function Bullets({ title, icon, items }: { title: string; icon: LucideIcon; item
 
 export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening; url: string }) {
   useEffect(() => { captureClientEvent("opening_view", { opening: o.slug }); }, [o.slug]);
+  const share = `https://wa.me/?text=${encodeURIComponent(`${o.title}, hiring on HireStepX: ${url}`)}`;
   const d = o.details;
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
@@ -221,7 +239,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
             {signUp("header")}
           </div>
           <ul className="op-meta">
-            {rows.map(([k, v]) => { const I = ROW_ICON[k]; return <li key={k} title={k}><I size={16} strokeWidth={1.75} aria-hidden="true" />{v}</li>; })}
+            {rows.map(([k, v]) => { const I = ROW_ICON[k]; return <li key={k}><I size={16} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">{k}: </span>{v}</li>; })}
           </ul>
         </div>
       </div>
@@ -229,7 +247,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
         <div className="op-dlayout">
           <div className="op-main">
             <section>
-              <Head icon={Building2}>About the opportunity</Head>
+              <Head icon={Building2}>About the role</Head>
               <p>{d?.about ?? o.summary}</p>
             </section>
             <Bullets title="What you will do" icon={ListChecks} items={d?.responsibilities} />
@@ -243,7 +261,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
                 </dl>
               </section>
             ) : null}
-            <Bullets title="What the opportunity offers" icon={Gift} items={d?.offers} />
+            <Bullets title="What you get" icon={Gift} items={d?.offers} />
             {o.skills.length > 0 && (
               <section>
                 <Head icon={Briefcase}>Skills for this role</Head>
@@ -251,8 +269,24 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
               </section>
             )}
           </div>
+          <aside className="op-aside" aria-label="Apply to practise">
+            <h2>Practise for this role</h2>
+            {signUp("aside")}
+            <p className="op-note">Employers stay private until you have practised and chosen to share your profile.</p>
+            <p className="op-note">
+              <a href={share} target="_blank" rel="noopener noreferrer"
+                onClick={() => captureClientEvent("opening_share_click", { opening: o.slug, channel: "whatsapp" })}>Share on WhatsApp</a>
+              {" · "}
+              <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`}>Report this listing</a>
+            </p>
+          </aside>
+        </div>
+        <div className="op-more">
+          <p>Looking at other options?</p>
+          <a className="hx-btn alt" data-no-underline href="/openings">See all open roles</a>
         </div>
       </div>
+      <div className="op-bar">{signUp("bar")}</div>
     </Shell>
   );
 }
