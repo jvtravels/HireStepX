@@ -21,10 +21,19 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Page() {
+  const openings = await fetchLiveOpenings();
   return (
     <>
-      <JsonLd data={breadcrumbs([["Open roles", "/openings"]])} />
-      <OpeningsIndexPage openings={await fetchLiveOpenings()} />
+      <JsonLd data={[
+        breadcrumbs([["Open roles", "/openings"]]),
+        {
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          name: "Open roles hiring on HireStepX",
+          itemListElement: openings.map((o, i) => ({ "@type": "ListItem", position: i + 1, name: o.title, url: `https://hirestepx.com/openings/${o.slug}` })),
+        },
+      ]} />
+      <OpeningsIndexPage openings={openings} />
     </>
   );
 }

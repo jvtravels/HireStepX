@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const o = findOpeningBySlug(await fetchLiveOpenings(), slug);
   if (!o) return { title: "Role not found | HireStepX", robots: { index: false, follow: false } };
   return pageMeta({
-    title: `${o.title}: Hiring on HireStepX | Practise for this Role`,
+    title: `${o.title} | Open Role on HireStepX`,
     description: o.summary,
     path: `/openings/${o.slug}`,
     ogTitle: o.title,

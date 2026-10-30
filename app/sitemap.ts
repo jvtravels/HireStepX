@@ -8,6 +8,7 @@ import { COMPANY_KNOWN_FACTS } from "../data/company-known-facts";
 import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
 import { isSyntheticHeavySalaryPage } from "../src/salaryQuality";
 import { blogDuplicateKeeper, shouldNoindexBlogPost } from "../src/blogQuality";
+import { fetchLiveOpenings } from "../server-handlers/_public-openings-fetch";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
 
 /* sitemap.xml — generated at build time. Includes:
@@ -28,7 +29,7 @@ import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_js
  * track per-page mod times. SEO pages get a stable lastModified so
  * Google doesn't think we're churning content (which hurts ranking).
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://hirestepx.com";
   /* Stable, not build time: a lastmod that changes on every deploy trains Google to ignore it. */
   const staticLastModified = new Date(SEO_PAGES_LAST_MODIFIED);
@@ -155,6 +156,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.75,
   }));
 
-  /* /openings is staging-only for now (see next.config.js), so it is not submitted. */
-  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCategoryEntries, ...cityEntries];
+  /* /openings and each live role; expired roles drop out because fetchLiveOpenings filters them. */
+  const openings = await fetchLiveOpenings();
+  const openingEntries: MetadataRoute.Sitemap = openings.length === 0 ? [] : [
+    { url: `${baseUrl}/openings`, lastModified: new Date(Math.max(...openings.map((o) => Date.parse(o.listedAt) || 0))), changeFrequency: "daily" as const, priority: 0.7 },
+    ...openings.map((o) => ({ url: `${baseUrl}/openings/${o.slug}`, lastModified: new Date(o.listedAt), changeFrequency: "weekly" as const, priority: 0.6 })),
+  ];
+  return [...staticEntries, ...questionsIndex, ...questionEntries, ...blogEntries, ...salaryIndex, ...salaryEntries, ...blogCategoryEntries, ...cityEntries, ...openingEntries];
 }
