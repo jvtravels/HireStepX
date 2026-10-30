@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
-import { ArrowLeft, Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
+import { Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
 import { Arrow, Shell } from "./Pages";
 import {
   DEPARTMENT_LABEL, departmentOf, employmentLabel, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
@@ -55,10 +55,8 @@ const openingsCss = `
 .op-list { padding-top: 0; }
 .op-body .op-lead { margin-bottom: 14px; }
 .op-note2 { margin-top: 12px; }
-.op-dhead { padding-block: 40px 28px; border-bottom: 1px solid var(--line); text-align: left; }
-.op-back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--ink-3); }
-.op-back:hover { color: var(--btn); }
-.op-dtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-top: 20px; }
+.op-dhead { padding-block: 56px 28px; border-bottom: 1px solid var(--line); text-align: left; }
+.op-dtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
 .op-dhead .hx-h1 { margin: 0; max-width: 28ch; text-align: left; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; }
 .op-meta { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .op-meta li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); font-size: 14px; color: var(--ink-2); }
@@ -250,7 +248,6 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
       <style>{openingsCss}</style>
       <div className="op-dhead">
         <div className="hx-wrap">
-          <a className="op-back" href="/openings"><ArrowLeft size={16} aria-hidden="true" />All open roles</a>
           <div className="op-dtop">
             <h1 className="hx-h1">{o.title}</h1>
           </div>
