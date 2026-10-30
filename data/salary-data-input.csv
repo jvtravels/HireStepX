@@ -900,3 +900,35 @@ fiserv,qa-engineer,senior,,9.7,11.5,7.3,8.6,0,0,none,,,,,,,,https://www.ambition
 fiserv,business-analyst,senior,,16.0,18.8,12.0,14.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/fiserv-salaries,,,,,AB scrape: Business Analyst (n=119); n=119,2026-10-30
 fiserv,project-manager,executive,,24.1,27.7,18.1,20.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/fiserv-salaries,,,,,AB scrape: Project Manager (n=94); n=94,2026-10-30
 fiserv,cloud-engineer,senior,,10.1,12.0,7.6,9.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/fiserv-salaries,,,,,AB scrape: System Administrator (n=80); n=80,2026-10-30
+persistent,software-engineer,mid,,8.0,9.8,6.0,7.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Senior Software Engineer (n=4899); Software Developer (n=823); n=5722,2026-10-30
+persistent,engineering-manager,senior,,10.2,19.4,7.6,14.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Lead Engineer (n=4686); Module Lead (n=286); n=4972,2026-10-30
+persistent,software-engineer,entry,,5.8,6.4,4.3,4.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Software Engineer (n=4489); n=4489,2026-10-30
+persistent,engineering-manager,lead,,27.6,30.7,20.7,23.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Project Lead (n=3296); Technical Lead (n=408); n=3704,2026-10-30
+persistent,qa-engineer,mid,,8.4,9.2,6.3,6.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Softwaretest Engineer (n=540); n=540,2026-10-30
+persistent,salesforce-developer,mid,,8.9,9.8,6.7,7.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Salesforce Developer (n=475); n=475,2026-10-30
+persistent,devops-engineer,mid,,11.5,12.7,8.6,9.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Devops Engineer (n=406); n=406,2026-10-30
+persistent,data-engineer,mid,,11.7,13.6,8.8,10.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/persistent-systems-salaries,,,,,AB scrape: Data Engineer (n=403); n=403,2026-10-30
+bosch-india,software-engineer,senior,,11.8,13.0,8.9,9.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Senior Software Engineer (n=6487); n=6487,2026-10-30
+bosch-india,software-engineer,mid,,7.3,8.4,5.5,6.3,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Software Engineer (n=3098); Software Developer (n=568); n=3666,2026-10-30
+bosch-india,engineering-manager,lead,,19.4,29.0,14.5,21.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Lead Engineer (n=1456); Technical Lead (n=657); n=2113,2026-10-30
+bosch-india,project-manager,executive,,23.7,26.1,17.8,19.6,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Project Manager (n=723); n=723,2026-10-30
+bosch-india,solutions-architect,lead,,22.6,25.0,17.0,18.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Technical Specialist (n=519); n=519,2026-10-30
+bosch-india,embedded-engineer,mid,,7.4,8.2,5.6,6.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Embedded Software Engineer (n=433); n=433,2026-10-30
+bosch-india,qa-engineer,mid,,7.0,7.8,5.3,5.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Softwaretest Engineer (n=214); n=214,2026-10-30
+bosch-india,program-manager,executive,,35.2,38.9,26.4,29.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/bosch-global-software-technologies-salaries,,,,,AB scrape: Program Manager (n=184); n=184,2026-10-30
+intel-india,software-engineer,senior,,21.0,37.5,15.8,28.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/intel-salaries,,,,,AB scrape: Software Engineer (n=405); Software Developer (n=245); Senior Software Engineer (n=189); n=839,2026-10-30
+intel-india,software-engineer,mid,,22.4,25.6,16.8,19.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/intel-salaries,,,,,AB scrape: Software Development Engineer (n=166); n=166,2026-10-30
+intel-india,data-scientist,mid,,21.9,24.9,16.4,18.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/intel-salaries,,,,,AB scrape: Data Scientist (n=91); n=91,2026-10-30
+intel-india,devops-engineer,mid,,15.5,20.7,11.6,15.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/intel-salaries,,,,,AB scrape: Devops Engineer (n=65); n=65,2026-10-30
+intel-india,engineering-manager,executive,,28.1,37.0,21.1,27.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/intel-salaries,,,,,AB scrape: Technical Lead (n=63); n=63,2026-10-30
+navi,business-analyst,mid,,21.6,25.3,16.2,19.0,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/navi-technologies-salaries,,,,,AB scrape: Business Analyst (n=66); n=66,2026-10-30
+capillary-tech,software-engineer,mid,,28.9,39.3,21.7,29.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/capillary-technologies-salaries,,,,,AB scrape: Software Developer (n=88); n=88,2026-10-30
+ola-electric,program-manager,senior,,22.7,25.1,17.0,18.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries,,,,,AB scrape: Program Manager (n=166); n=166,2026-10-30
+ola-electric,software-engineer,entry,,14.7,19.6,11.0,14.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/ola-electric-mobility-salaries,,,,,AB scrape: Software Developer (n=54); n=54,2026-10-30
+visa-india,software-engineer,mid,,24.1,34.5,18.1,25.9,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Senior Software Engineer (n=1161); Software Developer (n=197); n=1358,2026-10-30
+visa-india,software-engineer,entry,,22.2,24.5,16.6,18.4,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Software Engineer (n=967); n=967,2026-10-30
+visa-india,data-engineer,mid,,20.0,22.3,15.0,16.7,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Data Engineer (n=175); n=175,2026-10-30
+visa-india,data-engineer,senior,,34.0,37.6,25.5,28.2,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Senior Data Engineer (n=172); n=172,2026-10-30
+visa-india,product-manager,lead,,44.0,65.1,33.0,48.8,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Product Manager (n=94); Senior Product Manager (n=78); n=172,2026-10-30
+visa-india,data-scientist,mid,,32.8,37.5,24.6,28.1,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Data Scientist (n=75); n=75,2026-10-30
+visa-india,software-engineer,senior,,24.9,28.6,18.7,21.5,0,0,none,,,,,,,,https://www.ambitionbox.com/salaries/visa-salaries,,,,,AB scrape: Senior Systems Engineer (n=59); n=59,2026-10-30

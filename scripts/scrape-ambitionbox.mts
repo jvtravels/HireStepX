@@ -52,6 +52,22 @@ const SLUG_OVERRIDES: Record<string, string> = {
   // lollypop design studio: no AB page under any tried slug.
   // → all four keep curator entry as canonical until AB indexes them.
   "krutrim": "krutrim-si-designs",
+  // Oct 2026 retry: probed live for the slugs that 404ed on the first refresh.
+  persistent: "persistent-systems",
+  "procter-gamble": "procter-and-gamble",
+  "bosch-india": "bosch-global-software-technologies",
+  "intel-india": "intel",
+  "arm-india": "arm-embedded-technologies",
+  smallcase: "smallcase-technologies",
+  "fi-money": "epifi",
+  navi: "navi-technologies",
+  moneyview: "money-view",
+  scaler: "scaler-academy",
+  "capillary-tech": "capillary-technologies",
+  sumologic: "sumo-logic",
+  "ola-electric": "ola-electric-mobility",
+  "visa-india": "visa",
+  perplexity: "perplexity-ai",
   tcs: "tcs",
   "tech mahindra": "tech-mahindra",
   ltimindtree: "ltimindtree",
