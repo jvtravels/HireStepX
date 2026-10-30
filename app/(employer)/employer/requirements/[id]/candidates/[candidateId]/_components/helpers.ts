@@ -566,7 +566,13 @@ export function buildInterviewQuestions(candidate: Candidate, requirement: Pick<
   if (avg != null && avg < 12 && (candidate.resume?.experience.length ?? 0) >= 2) {
     questions.push("What drove each of your last few moves, and what would make this role a longer stay?");
   }
-  if (questions.length < 3) questions.push(`What is the hardest problem you solved recently that is closest to this ${requirement.title} role?`);
+  /* With no skill gaps or short stints to probe, three role-grounded openers beat one generic question. */
+  const generic = [
+    `What is the hardest problem you solved recently that is closest to this ${requirement.title} role?`,
+    "Tell me about a piece of work you are proud of. What was your part, and how did you know it worked?",
+    "Describe a time something you built or ran went wrong. What did you do next?",
+  ];
+  for (const q of generic) if (questions.length < 3) questions.push(q);
   return questions.slice(0, 3);
 }
 

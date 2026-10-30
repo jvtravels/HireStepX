@@ -87,6 +87,7 @@ describe("buildInterviewQuestions", () => {
   });
   it("falls back to a role-specific question", () => {
     const q = buildInterviewQuestions(cand([]), { title: "Backend Engineer" }, []);
-    expect(q).toEqual([expect.stringContaining("Backend Engineer")]);
+    expect(q).toHaveLength(3);
+    expect(q[0]).toContain("Backend Engineer");
   });
 });
