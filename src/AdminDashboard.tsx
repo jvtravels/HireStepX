@@ -9,6 +9,7 @@ import { SearchWithSuggestions } from "./components/SearchWithSuggestions";
 import LoadingScreen from "./_LoadingScreen";
 import AdminUnlockPanel from "./AdminUnlockPanel";
 import AdminEmployerFinancials from "./AdminEmployerFinancials";
+import AdminOpenings from "./AdminOpenings";
 import AdminCostTab from "./AdminCostTab";
 import { MiniBarChart, bigNum, card, exportCsv, formatDateTime, formatNum, labelStyle, statCard, tableStyle, tdStyle, thStyle, type CostData } from "./adminShared";
 
@@ -1998,6 +1999,7 @@ export default function AdminDashboard() {
         </div>
 
         <AdminEmployerFinancials getToken={getToken} setToken={setToken} />
+        <AdminOpenings getToken={getToken} setToken={setToken} />
         <div style={{ ...card, marginBottom: 24 }}>
           <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue — Last 12 Months</p>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 8 }}>

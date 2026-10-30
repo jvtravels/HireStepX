@@ -17,6 +17,7 @@ import { useEffect, useRef, type CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { openCookieSettings } from "../consent";
 import { copyrightHolder } from "../../data/legal-entity";
+import { useHasOpenings } from "./openingsFlag";
 
 /* ── Nav link data ── */
 const PRODUCT_LINKS: Array<[string, string]> = [
@@ -35,6 +36,8 @@ const COMPANY_LINKS: Array<[string, string]> = [
   ["For employers", "/employers"],
   ["Blog", "/blog"],
 ];
+
+const OPEN_ROLES_LINK: [string, string] = ["Open roles", "/openings"];
 
 const LEGAL_LINKS: Array<[string, string]> = [
   ["Privacy", "/privacy"],
@@ -86,6 +89,8 @@ const HEADLINE_EM_STYLE: CSSProperties = { fontStyle: "italic", color: t.copper 
 
 /* ── Desktop dome footer (≥880px) ── */
 function FooterDomeDesktop({ employer }: { employer: boolean }) {
+  const hasOpenings = useHasOpenings();
+  const companyLinks = hasOpenings ? [...COMPANY_LINKS, OPEN_ROLES_LINK] : COMPANY_LINKS;
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
@@ -258,7 +263,7 @@ function FooterDomeDesktop({ employer }: { employer: boolean }) {
           margin: "0 0 16px",
         }}>Company</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {COMPANY_LINKS.map(([label, href]) => (
+          {companyLinks.map(([label, href]) => (
             <a key={label} href={href} style={{
               display: "block",
               fontFamily: fonts.sans,
@@ -313,6 +318,8 @@ function FooterDomeDesktop({ employer }: { employer: boolean }) {
 
 /* ── Mobile fallback (<880px) ── */
 function FooterDomeMobile() {
+  const hasOpenings = useHasOpenings();
+  const companyLinks = hasOpenings ? [...COMPANY_LINKS, OPEN_ROLES_LINK] : COMPANY_LINKS;
   return (
     <div style={{ background: t.cream, padding: "48px 24px 40px" }}>
       {/* Wordmark */}
@@ -338,7 +345,7 @@ function FooterDomeMobile() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "32px 24px", marginBottom: 40 }}>
         {[
           { title: "Product", links: PRODUCT_LINKS },
-          { title: "Company", links: COMPANY_LINKS },
+          { title: "Company", links: companyLinks },
         ].map(col => (
           <div key={col.title}>
             <p style={{

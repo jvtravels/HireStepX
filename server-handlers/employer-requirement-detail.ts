@@ -1024,10 +1024,6 @@ async function handlePatch(req: Request, requirementId: string, ctx: EmployerCon
       body: JSON.stringify({
         title, location, department, notice_period_pref: noticePeriodPref, description,
         ...(needsRematch ? { status: "generating" } : {}),
-        // Editing an approved public listing sends it back for admin review, so edited
-        // text never goes public unreviewed. Spread only when approved: the column may
-        // not exist yet on a database that has not run 0036.
-        ...((existing as { public_listing?: string }).public_listing === "approved" ? { public_listing: "employer_ok", public_approved_at: null } : {}),
         experience_min: experienceMin, experience_max: experienceMax, due_date: dueDate,
         budget_min: budgetMin, budget_max: budgetMax,
         locations, open_positions: openPositions, work_mode: workMode, skills,

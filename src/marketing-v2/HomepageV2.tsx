@@ -1,4 +1,5 @@
 "use client";
+import { useHasOpenings } from "./openingsFlag";
 import { useEffect, useState, useRef, type CSSProperties } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
@@ -332,7 +333,9 @@ const body: CSSProperties = {
 
 /* ─────────────────────────── 1. NAV ─────────────────────────── */
 export function NavV2() {
+  const hasOpenings = useHasOpenings();
   const navLinks: Array<[string, string]> = [
+    ...(hasOpenings ? ([["Open roles", "/openings"]] as Array<[string, string]>) : []),
     ["Blog", "/blog"],
     ["Pricing", "/pricing"],
     ["For Employers", "/employers"],
