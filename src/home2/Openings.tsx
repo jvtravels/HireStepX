@@ -7,13 +7,6 @@ import {
   DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
 } from "../../server-handlers/_public-openings-helpers";
 
-/* Copy that makes a promise to candidates lives in one place so it can be reviewed in one read. */
-const TRUST = {
-  anonymous: "Employers stay private until you have practised and chosen to share your profile.",
-  posted: "Posted by an employer on HireStepX.",
-  noApply: "Signing up does not apply you. Employers read your scored answers.",
-} as const;
-
 const openingsCss = `
 .op-head { padding: 96px 0 40px; text-align: center; }
 .op-head .hx-h1 { margin-top: 14px; }
@@ -83,7 +76,6 @@ const openingsCss = `
 .op-aside dt { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
 .op-aside dd { margin: 2px 0 0; font-size: 15px; color: var(--ink); }
 .op-aside .hx-btn { width: 100%; justify-content: center; }
-.op-fine { padding-top: 24px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
 @container (max-width: 1000px) {
   .op-dlayout { grid-template-columns: 1fr; gap: 32px; }
   .op-aside { position: static; }
@@ -211,7 +203,6 @@ function Bullets({ title, icon, items }: { title: string; icon: LucideIcon; item
 
 export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening; url: string }) {
   useEffect(() => { captureClientEvent("opening_view", { opening: o.slug }); }, [o.slug]);
-  const share = `https://wa.me/?text=${encodeURIComponent(`${o.title}, hiring on HireStepX: ${url}`)}`;
   const d = o.details;
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
@@ -272,17 +263,6 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
             <h2>Details</h2>
             <dl>{rows.map(([k, v]) => { const I = ROW_ICON[k]; return <div className="op-row" key={k}><I size={18} strokeWidth={1.75} aria-hidden="true" /><div><dt>{k}</dt><dd>{v}</dd></div></div>; })}</dl>
             {signUp("details")}
-            <div className="op-fine">
-              <p className="op-note">{TRUST.posted} {TRUST.anonymous} {TRUST.noApply}</p>
-              <p className="op-note">
-                <a href={share} target="_blank" rel="noopener noreferrer"
-                  onClick={() => captureClientEvent("opening_share_click", { opening: o.slug, channel: "whatsapp" })}>Share on WhatsApp</a>
-                {" · "}
-                <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`}>Report this listing</a>
-                {" · "}
-                <a href="/openings">All open roles</a>
-              </p>
-            </div>
           </aside>
         </div>
       </div>
