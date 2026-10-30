@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
-import { Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
 import { Arrow, Shell } from "./Pages";
 import {
   DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
@@ -49,13 +49,16 @@ const openingsCss = `
 .op-list { padding-top: 0; }
 .op-body .op-lead { margin-bottom: 14px; }
 .op-note2 { margin-top: 12px; }
-.op-tabs { border-bottom: 1px solid var(--line); }
-.op-tabs .hx-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.op-tab { display: inline-block; padding: 16px 4px; font-size: 15px; font-weight: 600; color: var(--ink); border-bottom: 2px solid var(--ink); margin-bottom: -1px; }
-.op-dhead { padding-block: 72px 32px; }
-.op-dhead { text-align: left; }
-.op-dhead .hx-h1 { margin: 14px 0 0; max-width: 20ch; text-align: left; font-size: clamp(34px, 4.6vw, 56px); }
-.op-dlayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 56px; align-items: start; padding: 40px 0 56px; }
+.op-dhead { padding-block: 40px 28px; border-bottom: 1px solid var(--line); text-align: left; }
+.op-back { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--ink-3); }
+.op-back:hover { color: var(--btn); }
+.op-dtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-top: 20px; }
+.op-dhead .hx-h1 { margin: 0; max-width: 28ch; text-align: left; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; }
+.op-dhead .hx-btn { flex: none; }
+.op-meta { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.op-meta li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); font-size: 14px; color: var(--ink-2); }
+.op-meta li svg { color: var(--ink-3); }
+.op-dlayout { padding: 40px 0 64px; }
 .op-main { display: grid; gap: 36px; max-width: 720px; }
 .op-main h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 12px; }
 .op-main p { color: var(--ink-2); text-wrap: pretty; }
@@ -65,28 +68,15 @@ const openingsCss = `
 .op-list-b { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--ink-2); }
 .op-list-b li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; }
 .op-list-b li svg { margin-top: 3px; color: var(--ink); }
-.op-row { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
-.op-row > svg { margin-top: 2px; color: var(--ink-3); }
 .op-win { margin: 0; display: grid; gap: 14px; }
 .op-win dt { font-size: 14px; font-weight: 600; color: var(--ink); }
 .op-win dd { margin: 2px 0 0; color: var(--ink-2); }
-.op-aside { position: sticky; top: 88px; display: grid; gap: 20px; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); }
-.op-aside h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
-.op-aside dl { margin: 0; display: grid; gap: 14px; }
-.op-aside dt { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
-.op-aside dd { margin: 2px 0 0; font-size: 15px; color: var(--ink); }
-.op-aside .hx-btn { width: 100%; justify-content: center; }
-@container (max-width: 1000px) {
-  .op-dlayout { grid-template-columns: 1fr; gap: 32px; }
-  .op-aside { position: static; }
-}
 @container (max-width: 1000px) and (min-width: 721px) {
   .op-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container (max-width: 720px) {
   .op-head { padding: 56px 0 28px; }
-  .op-dhead { padding-block: 40px 24px; }
-  .op-tabs .hx-btn { padding-inline: 16px; }
+  .op-dtop { flex-direction: column; gap: 16px; }
   .op-grid { grid-template-columns: 1fr; }
   .op-body { padding-bottom: 44px; gap: 32px; }
   .op-cta .hx-btn { width: 100%; }
@@ -223,14 +213,16 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
   return (
     <Shell active="openings">
       <style>{openingsCss}</style>
-      <div className="hx-wrap op-dhead">
-        <span className="hx-kicker">Hiring on HireStepX</span>
-        <h1 className="hx-h1">{o.title}</h1>
-      </div>
-      <div className="op-tabs">
+      <div className="op-dhead">
         <div className="hx-wrap">
-          <span className="op-tab">Job details</span>
-          {signUp("tabs")}
+          <a className="op-back" href="/openings"><ArrowLeft size={16} aria-hidden="true" />All open roles</a>
+          <div className="op-dtop">
+            <h1 className="hx-h1">{o.title}</h1>
+            {signUp("header")}
+          </div>
+          <ul className="op-meta">
+            {rows.map(([k, v]) => { const I = ROW_ICON[k]; return <li key={k} title={k}><I size={16} strokeWidth={1.75} aria-hidden="true" />{v}</li>; })}
+          </ul>
         </div>
       </div>
       <div className="hx-wrap">
@@ -259,11 +251,6 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
               </section>
             )}
           </div>
-          <aside className="op-aside" aria-label="Role details">
-            <h2>Details</h2>
-            <dl>{rows.map(([k, v]) => { const I = ROW_ICON[k]; return <div className="op-row" key={k}><I size={18} strokeWidth={1.75} aria-hidden="true" /><div><dt>{k}</dt><dd>{v}</dd></div></div>; })}</dl>
-            {signUp("details")}
-          </aside>
         </div>
       </div>
     </Shell>
