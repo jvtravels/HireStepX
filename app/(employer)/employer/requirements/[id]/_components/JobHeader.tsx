@@ -66,6 +66,8 @@ export default function JobHeader({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // On phones the brief sits behind a button so the candidates, the reason for opening this page, come into view sooner.
+  const [briefOpen, setBriefOpen] = useState(false);
 
   const closed = requirement.status === "closed";
   const status = jobStatusPill(requirement.status);
@@ -133,10 +135,23 @@ export default function JobHeader({
         </div>
       </div>
 
+      {(description || responsibilities || requirementsSlot) && (
+        <div className="mt-4 border-t border-hx-line pt-3 lg:hidden">
+          <h2 className="m-0">
+            <PanelButton expanded={briefOpen} controls="job-brief" onClick={() => setBriefOpen((v) => !v)}>
+              Job brief and requirements
+              <ChevronDownIcon size={15} aria-hidden="true" className={cn("transition-transform duration-150 motion-reduce:transition-none", briefOpen && "rotate-180")} />
+            </PanelButton>
+          </h2>
+        </div>
+      )}
+
       <div
+        id="job-brief"
         className={cn(
           "mt-4 grid min-w-0 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-4",
           requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]",
+          !briefOpen && "max-lg:hidden",
         )}
       >
         <div className="min-w-0">
