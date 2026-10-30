@@ -16,6 +16,8 @@ function Table({
   return (
     <div
       data-slot="table-container"
+      // Scrollable region must be keyboard-focusable so keyboard users can scroll it (WCAG 2.1.1).
+      // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
       tabIndex={0}
       className={cn("relative w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-offset-2", containerClassName)}
     >
