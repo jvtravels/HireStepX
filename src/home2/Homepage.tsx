@@ -247,8 +247,8 @@ export function Footer() {
             <p className="hx-foot-rights"><a href="/privacy#your-rights">Your rights under India&apos;s DPDP Act</a>: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a data-no-underline href="/candidates">For job seekers</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a>{hasOpenings && <a href="/openings">Open roles</a>}<a href="/salary-report-2026">Salary report</a></div>
-            <div><h3>Company</h3><a href="/methodology">Methodology</a><a href="/contact">Contact</a><a href="/referral">Refer a friend</a></div>
+            <div><h3>Product</h3><a data-no-underline href="/candidates">For job seekers</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a>{hasOpenings && <a href="/openings">Open roles</a>}</div>
+            <div><h3>Company</h3><a href="/contact">Contact</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>
           <div className="hx-foot-bar">
