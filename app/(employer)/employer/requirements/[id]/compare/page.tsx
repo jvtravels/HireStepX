@@ -16,7 +16,7 @@ import { InsightList, InsightRow, SkillChip } from "@/employer/_panelParts";
 import { EmptyNote, ErrorRetry, LinkCta } from "@/employer/_requirementAtoms";
 import { PageSkeleton } from "@/employer/_consoleParts";
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
-import { candidateDisplayName } from "../_components/requirementFormat";
+import { agoFromDays, candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
 import { metricLeaders, sameAcross, summarizeComparison, type CompareMetric } from "../_components/compareInsights";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
@@ -139,7 +139,7 @@ const ROWS: CompareRow[] = [
         <span style={cellText}>
           <strong>{c.sessionsCompleted}</strong>
         </span>
-        <div style={mutedText}>Last active {c.lastActiveDaysAgo < 0 ? "unknown" : c.lastActiveDaysAgo === 0 ? "today" : `${c.lastActiveDaysAgo}d ago`}</div>
+        <div style={mutedText}>Last active {c.lastActiveDaysAgo < 0 ? "unknown" : agoFromDays(c.lastActiveDaysAgo)}</div>
       </>
     ),
   },

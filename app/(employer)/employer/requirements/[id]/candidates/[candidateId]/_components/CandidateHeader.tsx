@@ -16,6 +16,7 @@ import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 import { ResumeDownload } from "./ResumeDownload";
 import type { TeamReviewsState } from "./useTeamReviews";
+import { agoFromDays } from "../../../_components/requirementFormat";
 
 const REVIEW_LABEL = { 1: "Strong no", 2: "Lean no", 3: "Lean yes", 4: "Strong yes" } as const;
 
@@ -119,7 +120,7 @@ export function CandidateHeader({
   if (candidate.lastActiveDaysAgo >= 0) {
     const days = candidate.lastActiveDaysAgo;
     const stale = days >= 30;
-    const text = `Active ${days === 0 ? "today" : `${days}d ago`}`;
+    const text = `Active ${agoFromDays(days)}`;
     meta.push({ icon: ClockIcon, text: stale ? <span className="font-medium text-hx-warning-ink">{text}, may not respond</span> : text });
   }
 

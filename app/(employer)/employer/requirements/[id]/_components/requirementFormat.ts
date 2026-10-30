@@ -43,7 +43,7 @@ export function timeAgoLabel(iso: string | null | undefined, now: number = Date.
   return agoFromDays(Math.floor(diffMs / 86_400_000));
 }
 
-function agoFromDays(days: number): string {
+export function agoFromDays(days: number): string {
   if (days < 1) return "today";
   if (days === 1) return "yesterday";
   if (days < 7) return `${days}d ago`;

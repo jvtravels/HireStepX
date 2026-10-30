@@ -48,23 +48,23 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
           Scores higher than <strong className="font-semibold text-hx-coal tabular-nums">{standing.below} of {standing.total}</strong> other matches for this job.
         </p>
       )}
-      <div className="grid gap-x-8 gap-y-2 @2xl:grid-cols-2">
-        <ul aria-label="Strengths" className="m-0 flex list-none flex-col gap-1.5 p-0">
+      <div className={cn("grid gap-x-8 gap-y-2", brief.strengths.length > 0 && brief.risks.length > 0 && "@2xl:grid-cols-2")}>
+        {brief.strengths.length > 0 && <ul aria-label="Strengths" className="m-0 flex list-none flex-col gap-1.5 p-0">
           {brief.strengths.map((s) => (
             <li key={s} className="flex items-start gap-2 text-[13px] text-hx-coal">
               <CheckIcon size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-hx-success" />
               {s}
             </li>
           ))}
-        </ul>
-        <ul aria-label="Check first" className="m-0 flex list-none flex-col gap-1.5 p-0">
+        </ul>}
+        {brief.risks.length > 0 && <ul aria-label="Check first" className="m-0 flex list-none flex-col gap-1.5 p-0">
           {brief.risks.map((r) => (
             <li key={r.text} className="flex items-start gap-2 text-[13px] text-hx-coal">
               <TriangleAlertIcon size={15} aria-hidden="true" className={cn("mt-0.5 shrink-0", r.gap ? "text-hx-error" : "text-hx-warning")} />
               {r.text}
             </li>
           ))}
-        </ul>
+        </ul>}
       </div>
     </section>
   );
