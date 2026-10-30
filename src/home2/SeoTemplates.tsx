@@ -455,7 +455,7 @@ export function SalaryTemplate({ company, model, meta, facts, related, groupLabe
       <header className="sx-hero">
         <div className="hx-wrap">
           <span className="sx-mono sx-kick">Salary guide · India 2026 · checked {calibrationDate}</span>
-          <h1 className="sx-h1">{label} salary in India</h1>
+          <h1 className="sx-h1">{label} salary{/\bIndia\b/.test(label) ? "" : " in India"}</h1>
           <p className="sx-dek">{page.metaDescription}</p>
           <Byline />
           <div className="sx-cover"><HeroScene item={{ k: "salary", t: `${label} salary`, h: "", co: label }} /></div>
