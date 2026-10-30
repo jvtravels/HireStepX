@@ -102,6 +102,19 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.summary).toContain("aspiring Design Lead");
   });
 
+  it("removes a surname the profile does not carry when it sits beside the placeholder", () => {
+    const detail = extractResumeDetail({ skills: [], summary: "Karavadi Gandhini is an academically strong B.Tech graduate." });
+    const redacted = redactResumeDetailForLock(detail, "Gandhini");
+    expect(redacted.summary).not.toMatch(/karavadi|gandhini/i);
+    expect(redacted.summary).toContain("academically strong B.Tech graduate");
+  });
+
+  it("removes a name that only the resume spells", () => {
+    const detail = extractResumeDetail({ skills: [], summary: "The candidate Moulali has built APIs." });
+    const redacted = redactResumeDetailForLock(detail, "M");
+    expect(redacted.summary).not.toMatch(/moulali/i);
+  });
+
   it("matches non-Latin name parts as whole words", () => {
     const detail = extractResumeDetail({ skills: [], summary: "जलील is an aspiring designer." });
     expect(redactResumeDetailForLock(detail, "जलील शेख").summary).toBe("The candidate is an aspiring designer.");

@@ -88,6 +88,8 @@ export interface Candidate {
   lastActiveDaysAgo: number;
   skills: string[];
   unlocked: boolean;
+  /** Already unlocked by this company on a different job; this job still needs its own unlock. */
+  unlockedOnOtherJob?: boolean;
   contact?: { email: string; phone?: string };
   resume?: CandidateResumeDetail;
   portfolioLinks?: Array<{ title: string; url: string }>;

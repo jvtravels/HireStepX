@@ -453,14 +453,14 @@ export default function EmployerMessagesV2() {
 
   const activeName = active ? active.counterpartName : "";
   const activeMasked = active ? isMaskedName(context?.candidateName ?? active.counterpartName) : false;
-  const composerBlock: ComposerBlock = suspended ? "suspended" : unlockBlocked ? "unlock" : null;
-  // The server refuses invites and new messages for a candidate who declined or withdrew; don't offer them.
+    // The server refuses invites and new messages for a candidate who declined or withdrew; don't offer them.
   const inviteClosed = context?.candidateWithdrew === true || context?.candidateResponse === "declined";
   const closedNotice = context?.candidateWithdrew
     ? "This candidate has withdrawn from employer contact. Earlier messages stay readable, but you can't send new ones."
     : context?.candidateResponse === "declined"
       ? "This candidate declined contact for this job, so you can't invite or message them."
       : null;
+  const composerBlock: ComposerBlock = suspended ? "suspended" : unlockBlocked ? "unlock" : closedNotice ? "closed" : null;
   const suspendedTitle = suspended ? "Unavailable while your account is suspended" : undefined;
 
   const thread = active ? (
@@ -515,9 +515,6 @@ export default function EmployerMessagesV2() {
       {context?.contactNotice && (
         <p role="note" className="m-0 border-t border-border px-4 py-2 text-[12px] text-muted-foreground">{context.contactNotice}</p>
       )}
-      {closedNotice && (
-        <p role="note" className="m-0 border-t border-border px-4 py-2 text-[12px] text-muted-foreground">{closedNotice}</p>
-      )}
       <Composer
         counterpartName={activeName}
         masked={activeMasked}
@@ -528,6 +525,8 @@ export default function EmployerMessagesV2() {
         sending={sending}
         attaching={attaching}
         block={composerBlock}
+        closedMessage={closedNotice}
+        closedMessage={closedNotice}
         error={composerError}
         onDismissError={() => setComposerError(null)}
         quickReplies={EMPLOYER_QUICK_REPLIES}

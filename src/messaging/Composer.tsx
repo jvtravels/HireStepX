@@ -9,7 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 export const ATTACHMENT_MAX_BYTES = 8_000_000;
 
-export type ComposerBlock = "unlock" | "suspended" | null;
+export type ComposerBlock = "unlock" | "suspended" | "closed" | null;
 
 interface ComposerProps {
   counterpartName: string;
@@ -21,6 +21,8 @@ interface ComposerProps {
   sending: boolean;
   attaching: boolean;
   block: ComposerBlock;
+  /** Why the conversation is closed; shown when block is "closed". */
+  closedMessage?: string | null;
   /** Inline, recoverable error from the last send/attach attempt. */
   error: string | null;
   onDismissError: () => void;
@@ -28,7 +30,7 @@ interface ComposerProps {
 }
 
 export default function Composer({
-  counterpartName, masked, draft, onDraftChange, onSend, onAttach, sending, attaching, block, error, onDismissError, quickReplies,
+  counterpartName, masked, draft, onDraftChange, onSend, onAttach, sending, attaching, block, closedMessage, error, onDismissError, quickReplies,
 }: ComposerProps) {
   const uid = useId();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -65,6 +67,15 @@ export default function Composer({
           <div className="min-w-0 flex-1">
             <strong className="block">Messaging is turned off</strong>
             Your account is suspended, so this conversation is read-only. Contact support to restore access.
+          </div>
+        </div>
+      )}
+      {block === "closed" && (
+        <div id={blockId} role="status" className="flex items-start gap-2.5 rounded-lg border border-border bg-muted px-3 py-2.5 text-[13px] leading-normal text-foreground">
+          <LockIcon aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <strong className="block">Messaging is closed</strong>
+            {closedMessage}
           </div>
         </div>
       )}

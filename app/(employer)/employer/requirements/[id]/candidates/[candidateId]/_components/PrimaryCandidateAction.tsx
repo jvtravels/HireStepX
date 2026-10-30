@@ -35,7 +35,7 @@ export function PrimaryCandidateAction({
     return (
       <Button type="button" onClick={onUnlock} disabled={suspended} className={cn("gap-1.5 pointer-coarse:h-11", HEADER_ACTION)}>
         <LockIcon size={14} aria-hidden="true" />
-        Unlock for {formatPaise(singleUnlockPrice().amountPaise)}
+        {candidate.unlockedOnOtherJob ? "Unlock for this job," : "Unlock for"} {formatPaise(singleUnlockPrice().amountPaise)}
         <span className="sr-only"> to reveal identity and contact details and send an invite</span>
       </Button>
     );

@@ -86,13 +86,25 @@ function scrubName(text: string, fullName: string): string {
   if (!text) return text;
   // Split on anything that is not a letter or digit: "A.Jaleel" or "Jaleel." never match as whole words.
   const parts = fullName.split(/[^\p{L}\p{M}\p{N}]+/u).filter((p) => p.length > 1);
-  if (parts.length === 0) return text;
   let out = text;
   for (const part of parts) {
     out = out.replace(new RegExp(`(?<![\\p{L}\\p{M}\\p{N}])${escapeRegExp(part)}(?![\\p{L}\\p{M}\\p{N}])`, "giu"), "The candidate");
   }
   // Collapse repeats left behind when first+last name both matched back to back.
-  return out.replace(/(The candidate)(\s+\1)+/gi, "$1");
+  out = out.replace(/(The candidate)(\s+\1)+/gi, "$1");
+  // A name token the profile and resume spell differently survives the pass above and ends up
+  // glued to the placeholder ("Karavadi The candidate Gandhini"), so drop capitalised words
+  // sitting directly against a placeholder.
+  const NAME_WORD = "[\\p{Lu}][\\p{L}\\p{M}'-]+";
+  out = out.replace(new RegExp(`^(?:${NAME_WORD}\\s+)+(?=The candidate\\b)`, "u"), "");
+  return out.replace(new RegExp(`(The candidate)(?:\\s+${NAME_WORD})+(?=\\s+(?:is|has|holds|was|brings|works|have)\\b)`, "gu"), "$1");
+}
+
+/** The resume carries its own spelling of the name, which can differ from profiles.name. */
+export function resumeOwnName(resumeData: unknown): string {
+  if (!resumeData || typeof resumeData !== "object") return "";
+  const r = resumeData as Record<string, unknown>;
+  return [r.name, r.fullName, r.candidateName].filter((v): v is string => typeof v === "string").join(" ");
 }
 
 /** Placeholder for an employer, school or project name taken out of free text. */

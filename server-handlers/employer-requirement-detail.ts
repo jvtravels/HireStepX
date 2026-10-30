@@ -39,7 +39,7 @@ export const config = { runtime: "edge" };
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
 import { loadLastTouch, type LastTouch } from "./_employer-last-touch";
 import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, requiredSkillsMatched, type RequirementInput } from "./_requirement-match-helpers";
-import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity } from "./_resume-detail-helpers";
+import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, resumeOwnName } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
@@ -341,7 +341,21 @@ export default async function handler(req: Request): Promise<Response> {
       const touched = pageMatches.filter((m) => m.unlocked || m.candidate_status !== "shortlisted" || m.candidate_status_note).map((m) => m.id);
       lastTouch = await loadLastTouch({ supabaseUrl: SUPABASE_URL, headers: serviceHeaders(), employerId, viewerId: gate.ctx.userId, matchIds: touched });
     };
-    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds(), loadTouches()]);
+    /* Unlocks are per job (the score and evidence belong to the match), so a person this
+       employer already unlocked on another job is still sold here. Flag them so the screen
+       can say that, instead of looking like a duplicate charge. Best effort: a failed read
+       just means no note. */
+    const unlockedElsewhere = new Set<string>();
+    const loadUnlockedElsewhere = () => Promise.all(chunk(pageMatches.filter((m) => !m.unlocked).map((m) => m.candidate_user_id), 100).map(async (batch) => {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/requirement_matches?select=candidate_user_id,employer_requirements!inner(employer_id)&unlocked=eq.true&requirement_id=neq.${encodeURIComponent(requirementId)}&candidate_user_id=in.(${inList(batch)})&employer_requirements.employer_id=eq.${encodeURIComponent(employerId)}`,
+        { headers: serviceHeaders() },
+      ).catch(() => null);
+      if (!res?.ok) return;
+      const rows = (await res.json().catch(() => [])) as Array<{ candidate_user_id: string }>;
+      for (const r of Array.isArray(rows) ? rows : []) unlockedElsewhere.add(r.candidate_user_id);
+    }));
+    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds(), loadTouches(), loadUnlockedElsewhere()]);
 
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);
@@ -379,7 +393,7 @@ export default async function handler(req: Request): Promise<Response> {
       // free text are contact details too, so they go with the rest.
       const resume = unlocked
         ? reachable ? resumeDetail : scrubLockedResume({ ...resumeDetail, phone: null, linkedin: null })
-        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, profile?.name || ""), expectedCtc: null /* exact figure stays server-side; expectedCtcBand is the opt-in range */ });
+        : scrubLockedResume({ ...redactResumeDetailForLock(resumeDetail, `${profile?.name || ""} ${resumeOwnName(profile?.resume_data)}`), expectedCtc: null /* exact figure stays server-side; expectedCtcBand is the opt-in range */ });
 
       return {
         id: m.id,
@@ -398,6 +412,7 @@ export default async function handler(req: Request): Promise<Response> {
         lastActiveDaysAgo,
         skills: extractSkills(profile?.resume_data).slice(0, 8),
         unlocked,
+        unlockedOnOtherJob: !unlocked && unlockedElsewhere.has(m.candidate_user_id),
         contact: reachable && profile ? { email: profile.email, phone: resumeDetail.phone || undefined } : undefined,
         /* A personal site/GitHub link lets an employer identify or reach a
            candidate outside HireStepX without paying to unlock, so it's

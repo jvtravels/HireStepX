@@ -99,6 +99,8 @@ export function describeEvent(e: Pick<ActivityEvent, "action" | "meta">): Descri
       const changed = Array.isArray(m.changed) ? m.changed.filter((c): c is string => typeof c === "string") : [];
       return { verb: "updated the company profile", subject: null, detail: changed.length ? changed.join(", ") : null, group };
     }
+    case "candidate.reviewed":
+      return { verb: "reviewed a candidate", subject: null, detail: null, group };
     default:
       return { verb: e.action, subject: null, detail: null, group };
   }

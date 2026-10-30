@@ -194,7 +194,7 @@ export default function CandidateRow({
   const canInvite = moves.includes("interview_invited");
   const primary: PrimaryAction | null =
     !candidate.unlocked && !readOnly
-      ? { label: `Unlock for ${unlockPrice}`, icon: LockIcon, disabled: suspended, onSelect: onUnlock }
+      ? { label: candidate.unlockedOnOtherJob ? `Unlock for this job, ${unlockPrice}` : `Unlock for ${unlockPrice}`, icon: LockIcon, disabled: suspended, onSelect: onUnlock }
       : canInvite
         ? { label: "Invite to interview", icon: CalendarPlusIcon, disabled: false, onSelect: () => onStageChange("interview_invited") }
         : canMessage
