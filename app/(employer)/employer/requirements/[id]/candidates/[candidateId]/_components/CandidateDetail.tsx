@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import StatusTabs from "@/components/StatusTabs";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
@@ -10,8 +11,6 @@ import { markProfileOpened } from "@/employer/onboardingSteps";
 import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { ErrorRetry, EmptyNote, LinkCta, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { PageSkeleton } from "@/employer/_consoleParts";
-import UnlockDialog from "../../../_components/UnlockDialog";
-import { CandidateDialogsHost } from "./CandidateDialogsHost";
 import { CandidateHeader } from "./CandidateHeader";
 import { buildCandidateSummary, buildEvidenceSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, summarizeFit } from "./helpers";
 import { CandidateNav } from "./CandidateNav";
@@ -20,12 +19,16 @@ import { useCandidateShortcuts } from "./useCandidateShortcuts";
 import { useShortcutsEnabled } from "@/employer/keyboardShortcutsPref";
 import { ActionNoticeAlert } from "./Notices";
 import { OverviewTab } from "./OverviewTab";
-import { PracticeTab } from "./PracticeTab";
-import { ResumeTab } from "./ResumeTab";
 import { useCandidateDetail } from "./useCandidateDetail";
 import { useCandidateRequests } from "./useCandidateRequests";
 import { useTeamReviews } from "./useTeamReviews";
 import type { RequestUi } from "./RequestPopover";
+
+/* Loaded only when opened, so the score reaches the screen sooner on slow phones. */
+const PracticeTab = dynamic(() => import("./PracticeTab").then((m) => m.PracticeTab));
+const ResumeTab = dynamic(() => import("./ResumeTab").then((m) => m.ResumeTab));
+const UnlockDialog = dynamic(() => import("../../../_components/UnlockDialog"));
+const CandidateDialogsHost = dynamic(() => import("./CandidateDialogsHost").then((m) => m.CandidateDialogsHost));
 
 type CandidateTabKey = "overview" | "practice" | "resume";
 const TAB_ORDER: CandidateTabKey[] = ["overview", "practice", "resume"];
@@ -55,6 +58,11 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  // Once a dialog has been opened it stays mounted so it can animate closed; until then its code is not loaded.
+  const dialogOpened = useRef(false);
+  const unlockOpened = useRef(false);
+  if (dialog) dialogOpened.current = true;
+  if (unlockOpen) unlockOpened.current = true;
   const access = useEmployerAccess();
   // The URL already names the match, so this starts alongside the job detail instead of after it.
   const requests = useCandidateRequests(matchId);
@@ -158,7 +166,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
       {suspended && <div className="border-b border-hx-line px-7 py-4"><SuspendedBanner /></div>}
       {d.notice && !dialog && <div className="border-b border-hx-line px-7 py-4"><ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} /></div>}
 
-      <CandidateDialogsHost
+      {dialogOpened.current && <CandidateDialogsHost
         dialog={dialog}
         onClose={() => setDialog(null)}
         displayName={maskedName(candidate)}
@@ -168,14 +176,14 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
         candidateId={candidate.id}
         currentStatus={candidate.candidateStatus}
-      />
+      />}
 
-      <UnlockDialog
+      {unlockOpened.current && <UnlockDialog
         target={unlockOpen ? { mode: "single", matchId: candidate.id } : null}
         access={access}
         onClose={() => setUnlockOpen(false)}
         onUnlocked={() => void d.refresh()}
-      />
+      />}
 
       <div className="flex min-w-0 flex-col">
         {shortlist && (
