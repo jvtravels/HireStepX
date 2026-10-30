@@ -676,7 +676,7 @@ export default function RequirementDetailPage() {
                   </>
                 )}
   
-                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} nextBatch={nextBatchTarget} onChooseBatch={setUnlockTarget} lowMatch={unlockTarget?.mode === "single" && candidates.some((c) => c.id === unlockTarget.matchId && isLowMatch(c, jobHasSkills))} />
+                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} nextBatch={nextBatchTarget} onChooseBatch={setUnlockTarget} />
                 <EvidenceDialog
                   matchId={evidenceCandidate?.id ?? null}
                   displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}
