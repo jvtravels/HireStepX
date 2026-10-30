@@ -34,12 +34,12 @@ export default function NotificationList({ items, loading, error, loadingMore, h
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 p-4" aria-hidden="true">
+      <div className="flex flex-col gap-5 px-5 py-4" aria-hidden="true">
         {[0, 1, 2, 3].map((i) => (
           <div key={i} className="flex gap-3">
-            <Skeleton className="size-8 shrink-0 rounded-full" />
+            <Skeleton className="size-10 shrink-0 rounded-xl" />
             <div className="flex flex-1 flex-col gap-2">
-              <Skeleton className="h-3.5 w-2/3" />
+              <Skeleton className="h-3.5 w-3/4" />
               <Skeleton className="h-3 w-full" />
             </div>
           </div>
@@ -61,8 +61,10 @@ export default function NotificationList({ items, loading, error, loadingMore, h
   if (items.length === 0) {
     const e = EMPTY[filter];
     return (
-      <div className="m-auto flex max-w-xs flex-col items-center gap-2 px-6 py-10 text-center">
-        <BellOffIcon aria-hidden="true" className="size-6 text-muted-foreground" />
+      <div className="m-auto flex max-w-xs flex-col items-center gap-2 px-6 py-16 text-center">
+        <span aria-hidden="true" className="mb-1 grid size-12 place-items-center rounded-2xl bg-muted text-muted-foreground">
+          <BellOffIcon className="size-5" />
+        </span>
         <p className="m-0 text-sm font-semibold text-foreground">{e.title}</p>
         <p className="m-0 text-[13px] text-muted-foreground">{e.hint}</p>
       </div>
@@ -88,13 +90,13 @@ export default function NotificationList({ items, loading, error, loadingMore, h
     // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions
     <div onKeyDown={onKeyDown} role="region" aria-label="Notifications list">
       {error && (
-        <div role="status" className="bg-amber-50 px-4 py-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
+        <div role="status" className="bg-amber-50 px-5 py-2 text-xs text-amber-900 dark:bg-amber-500/10 dark:text-amber-200">
           Couldn&apos;t refresh. Showing what we have.
         </div>
       )}
       {groups.map((g) => (
         <section key={g.key} aria-label={g.label}>
-          <h3 className="sticky top-0 z-[1] m-0 border-b border-border bg-background/95 px-4 py-1.5 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase backdrop-blur-sm">
+          <h3 className="sticky top-0 z-[1] m-0 border-b border-border bg-background/95 px-5 py-2.5 text-xs font-semibold text-muted-foreground backdrop-blur-sm">
             {g.label}
           </h3>
           <ul role="list" className="m-0 list-none p-0">

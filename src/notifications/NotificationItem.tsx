@@ -11,7 +11,7 @@ import {
   DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { SNOOZE_OPTIONS, snoozeUntil, timeAgo, typeMeta } from "./registry";
+import { CATEGORY_LABELS, SNOOZE_OPTIONS, snoozeUntil, timeAgo, typeMeta, type Category } from "./registry";
 import type { FeedNotification } from "./useNotificationFeed";
 
 const ICONS: Record<string, ComponentType<{ className?: string; "aria-hidden"?: boolean }>> = {
@@ -32,6 +32,16 @@ const ICONS: Record<string, ComponentType<{ className?: string; "aria-hidden"?: 
   team_invite_accepted: UserCheckIcon,
 };
 
+/* Soft tile per category so a glance at the icon tells you what kind of event it is. */
+const TILE: Record<Category, string> = {
+  messages: "bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300",
+  applications: "bg-violet-100 text-violet-700 dark:bg-violet-500/15 dark:text-violet-300",
+  matches: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300",
+  billing: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300",
+  rewards: "bg-pink-100 text-pink-700 dark:bg-pink-500/15 dark:text-pink-300",
+  activity: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-300",
+};
+
 interface Props {
   n: FeedNotification;
   done: boolean;
@@ -45,24 +55,25 @@ export default function NotificationItem({ n, done, focused, onOpen, onAction }:
   const unread = !n.read_at;
   const critical = n.priority === "critical";
   const category = typeMeta(n.type)?.category;
+  const sub = n.body || (category ? CATEGORY_LABELS[category].label : "");
 
   return (
     <li
       data-notification-id={n.id}
       className={cn(
-        "group/row relative flex gap-3 border-b border-border px-4 py-3 transition-colors hover:bg-muted/50",
-        unread && "bg-muted/30",
+        "group/row relative flex gap-3.5 border-b border-border px-5 py-4 transition-colors hover:bg-muted/60",
+        unread ? "bg-primary/[0.06]" : "bg-background",
         focused && "ring-2 ring-ring ring-inset",
       )}
     >
       <span
         aria-hidden="true"
         className={cn(
-          "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full",
-          critical ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary",
+          "relative mt-0.5 grid size-10 shrink-0 place-items-center rounded-xl",
+          critical ? "bg-destructive/10 text-destructive" : category ? TILE[category] : "bg-muted text-muted-foreground",
         )}
       >
-        <Icon className="size-4" aria-hidden />
+        <Icon className="size-[18px]" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
         <button
@@ -70,25 +81,29 @@ export default function NotificationItem({ n, done, focused, onOpen, onAction }:
           onClick={() => onOpen(n)}
           className="block w-full text-left outline-none focus-visible:underline pointer-coarse:min-h-11"
         >
-          <span className="flex items-center gap-2">
-            {unread && <span aria-label="Unread" className="size-1.5 shrink-0 rounded-full bg-primary" />}
-            <span className={cn("min-w-0 truncate text-sm text-foreground", unread ? "font-semibold" : "font-medium")}>{n.title}</span>
-            {n.count > 1 && (
-              <span className="shrink-0 rounded-full bg-muted px-1.5 text-[11px] font-medium text-muted-foreground">{n.count} new</span>
-            )}
+          <span className="flex items-start gap-2">
+            <span className={cn("min-w-0 flex-1 line-clamp-2 text-sm leading-snug text-foreground", unread ? "font-semibold" : "font-medium")}>
+              {unread && <span aria-label="Unread" role="img" className="mr-1.5 mb-px inline-block size-2 rounded-full bg-primary align-middle" />}
+              {n.title}
+            </span>
+            <time dateTime={n.created_at} className="shrink-0 pt-0.5 text-xs whitespace-nowrap text-muted-foreground">
+              {timeAgo(n.created_at)}
+            </time>
           </span>
-          {n.body && <span className="mt-0.5 line-clamp-2 block text-[13px] leading-snug text-muted-foreground">{n.body}</span>}
+          {sub && <span className="mt-1 line-clamp-2 block text-[13px] leading-snug text-muted-foreground">{sub}</span>}
         </button>
-        <div className="mt-1.5 flex items-center gap-2 text-[11px] text-muted-foreground">
-          <time dateTime={n.created_at}>{timeAgo(n.created_at)}</time>
-          {category && <span aria-hidden="true">·</span>}
-          {category && <span className="capitalize">{category}</span>}
-          {n.link && n.action_label && !done && (
-            <Button type="button" size="xs" variant="outline" className="ml-auto h-6 px-2 text-xs" onClick={() => onOpen(n)}>
-              {n.action_label}
-            </Button>
-          )}
-        </div>
+        {(n.count > 1 || (n.link && n.action_label && !done)) && (
+          <div className="mt-2.5 flex items-center gap-2">
+            {n.link && n.action_label && !done && (
+              <Button type="button" size="sm" variant="outline" className="h-8 rounded-full px-3.5 text-[13px] font-medium text-primary" onClick={() => onOpen(n)}>
+                {n.action_label}
+              </Button>
+            )}
+            {n.count > 1 && (
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{n.count} new</span>
+            )}
+          </div>
+        )}
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -97,7 +112,7 @@ export default function NotificationItem({ n, done, focused, onOpen, onAction }:
             size="icon-sm"
             variant="ghost"
             aria-label={`Actions for ${n.title}`}
-            className="shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
+            className="-mr-2 mt-3.5 shrink-0 self-start opacity-0 transition-opacity group-hover/row:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-100"
           >
             <MoreHorizontalIcon className="size-4" aria-hidden="true" />
           </Button>
