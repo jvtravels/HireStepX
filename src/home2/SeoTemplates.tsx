@@ -290,6 +290,7 @@ export function ArticleTemplate({ post, explore, related }: ArticleTemplateProps
           <div className="sx-meta sa-in" style={delay(3)}>
             <span>{post.company}</span>
             <span>{fmtDate(post.datePublished)}</span>
+            {post.dateModified && post.dateModified !== post.datePublished && <span>Updated {fmtDate(post.dateModified)}</span>}
             <span>{post.readTime} read</span>
             <span>{post.sections.length} sections</span>
           </div>

@@ -27,7 +27,7 @@ export function buildBlogJsonLd(slug: string): { __html: string }[] {
     description: meta.metaDescription,
     image: meta.heroImage,
     datePublished: meta.datePublished,
-    dateModified: meta.datePublished,
+    dateModified: meta.dateModified ?? meta.datePublished,
     author: { "@type": "Organization", name: slugAuthor(slug), url: "https://hirestepx.com/about" },
     publisher: {
       "@type": "Organization",

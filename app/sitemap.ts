@@ -98,7 +98,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const blogMetaMap = new Map(BLOG_META.map((m) => [m.slug, m]));
   const blogEntries: MetadataRoute.Sitemap = getAllBlogSlugs().filter((slug) => !shouldNoindexBlogPost(slug) && !blogDuplicateKeeper(slug)).map((slug) => ({
     url: `${baseUrl}/blog/${slug}`,
-    lastModified: new Date(blogMetaMap.get(slug)?.datePublished ?? seoPagesLastModified),
+    lastModified: new Date(blogMetaMap.get(slug)?.dateModified ?? blogMetaMap.get(slug)?.datePublished ?? seoPagesLastModified),
     changeFrequency: "monthly" as const,
     priority: 0.75,
   }));
