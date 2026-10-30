@@ -83,12 +83,26 @@ export function compareCandidates(a: Candidate, b: Candidate, sort: Sort<SortCol
   }
 }
 
+/** Below this match score a candidate is tucked behind "Show lower matches" until the employer asks. */
+export const LOW_MATCH_BAR = 20;
+
+/** A candidate nobody has acted on yet who is a weak fit: under the bar, or (when the job lists
+ *  skills) meets none of them. Unlocked or already-moved candidates are never hidden, so nothing
+ *  an employer paid for or decided on disappears. */
+export function isLowMatch(c: Candidate, jobHasSkills: boolean): boolean {
+  if (c.unlocked || c.candidateStatus !== "shortlisted") return false;
+  return c.matchScore < LOW_MATCH_BAR || (jobHasSkills && c.requiredSkillsMet === 0);
+}
+
 export interface CandidateFilterState {
   search: string;
   contact: ContactFilter;
   location: string;
   tab: CandidateTab;
   insight: InsightFilter | null;
+  /** Hide weak fits by default; true when the employer chose to see them. */
+  showLow?: boolean;
+  jobHasSkills?: boolean;
 }
 
 export function filterCandidates(candidates: Candidate[], state: CandidateFilterState): Candidate[] {
@@ -99,6 +113,7 @@ export function filterCandidates(candidates: Candidate[], state: CandidateFilter
     if (state.location !== "all" && c.city !== state.location) return false;
     if (!inTab(c, state.tab)) return false;
     if (state.insight && !matchesInsight(c, state.insight)) return false;
+    if (!state.showLow && isLowMatch(c, state.jobHasSkills ?? false)) return false;
     if (!q) return true;
     /* A locked candidate is found by the masked label the table shows, never
        by the real name the employer hasn't paid to see. */

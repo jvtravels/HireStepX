@@ -22,6 +22,7 @@ export default function UnlockDialog({
   onUnlocked,
   nextBatch = null,
   onChooseBatch,
+  lowMatch = false,
 }: {
   target: UnlockTarget | null;
   access: EmployerAccess;
@@ -30,6 +31,8 @@ export default function UnlockDialog({
   /** The page's next batch of locked candidates, offered as a cheaper per-candidate rate from the single-unlock dialog. */
   nextBatch?: Extract<UnlockTarget, { mode: "batch" }> | null;
   onChooseBatch?: (batch: Extract<UnlockTarget, { mode: "batch" }>) => void;
+  /** A warning only: this candidate scores under the quality bar for the job. Never blocks the unlock. */
+  lowMatch?: boolean;
 }) {
   const { start, busy, paying, error, clearError } = useUnlockCheckout({
     tier: access.tier,
@@ -98,6 +101,9 @@ export default function UnlockDialog({
             Unlocks are not refunded in cash once contact details are delivered. If a candidate declines, withdraws, blocks you, or doesn&apos;t answer an interview invite within 14 days, the price comes back automatically as credit toward your next unlock. See the{" "}
             <a href="/refund#employers" target="_blank" rel="noopener noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>refund policy</a>.
           </p>
+          {lowMatch && (
+            <InlineNotice tone="warning">This candidate is a lower match for the job: a score under 20, or none of the required skills. You can still unlock them.</InlineNotice>
+          )}
           {creditPaise > 0 && (
             <p className="m-0 rounded-[10px] bg-hx-row px-3 py-2 text-[13px] leading-normal text-hx-coal">
               <strong className="tabular-nums">{formatPaise(creditPaise)} account credit applied.</strong>{" "}

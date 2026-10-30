@@ -53,6 +53,7 @@ import {
   filterCandidates,
   type ContactFilter,
   type SortColumn,
+  isLowMatch,
 } from "./_components/candidateTableModel";
 import { candidateDisplayName, closedSummary, reversibilityNote } from "./_components/requirementFormat";
 import type { UnlockTarget } from "./_components/useUnlockCheckout";
@@ -96,6 +97,7 @@ export default function RequirementDetailPage() {
   const [tabChoice, setTabChoice] = useState<CandidateTab | null>(initialView.tab);
   const [insightId, setInsightId] = useState<string | null>(initialView.insight);
   const [sort, setSort] = useState<Sort<SortColumn>>(initialView.sort);
+  const [showLow, setShowLow] = useState(initialView.showLow);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -238,14 +240,21 @@ export default function RequirementDetailPage() {
   if (locationFilter !== "all") appliedChips.push({ key: "location", label: locationFilter, remove: () => setLocationFilter("all") });
   if (activeInsight) appliedChips.push({ key: "insight", label: activeInsight.label, remove: () => setInsightId(null) });
 
+  const jobHasSkills = (requirement?.skills.length ?? 0) + (requirement?.customSkillSets.length ?? 0) > 0;
   const filteredSorted = useMemo(
-    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null }).sort((a, b) => compareCandidates(a, b, sort)),
-    [candidates, search, contactFilter, locationFilter, tab, sort, activeInsight],
+    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow, jobHasSkills }).sort((a, b) => compareCandidates(a, b, sort)),
+    [candidates, search, contactFilter, locationFilter, tab, sort, activeInsight, showLow, jobHasSkills],
   );
+  // How many weak fits the bar is hiding right now, so the row can say so and offer them.
+  const hiddenLowCount = useMemo(
+    () => (showLow ? 0 : filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow: true, jobHasSkills }).length - filteredSorted.length),
+    [candidates, search, contactFilter, locationFilter, tab, activeInsight, showLow, jobHasSkills, filteredSorted.length],
+  );
+  const lowCount = useMemo(() => candidates.filter((c) => isLowMatch(c, jobHasSkills)).length, [candidates, jobHasSkills]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId]);
+  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId, showLow]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -310,11 +319,11 @@ export default function RequirementDetailPage() {
   };
 
   useEffect(() => {
-    const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId });
+    const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId, showLow });
     const query = next.toString();
     if (query === window.location.search.replace(/^\?/, "")) return;
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId]);
+  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId, showLow]);
 
   const openCandidate = useCallback((id: string) => router.push(`/employer/requirements/${params.id}/candidates/${id}`), [router, params.id]);
   const sel = useShortlistSelection({ filtered: filteredSorted, pageRows, onOpen: openCandidate });
@@ -364,6 +373,7 @@ export default function RequirementDetailPage() {
 
   const clearFilters = () => {
     setSearch("");
+    setShowLow(false);
     setContactFilter("all");
     setLocationFilter("all");
     setInsightId(null);
@@ -569,7 +579,19 @@ export default function RequirementDetailPage() {
                     Nobody is on this shortlist right now. New matches appear here as candidates practise, and this page refreshes when you come back to it.
                   </EmptyNote>
                 ) : filteredSorted.length === 0 ? (
-                  hasActiveFilters ? (
+                  hiddenLowCount > 0 ? (
+                    <EmptyNote
+                      flat
+                      title="Only lower matches here"
+                      action={
+                        <Button type="button" variant="outline" className="pointer-coarse:h-11" onClick={() => setShowLow(true)}>
+                          Show {hiddenLowCount} lower {hiddenLowCount === 1 ? "match" : "matches"}
+                        </Button>
+                      }
+                    >
+                      Everyone here scores under 20{jobHasSkills ? " or meets none of the required skills" : ""}, so they are hidden by default. You can still look at them.
+                    </EmptyNote>
+                  ) : hasActiveFilters ? (
                     <EmptyNote
                       flat
                       title="No candidates match"
@@ -601,6 +623,18 @@ export default function RequirementDetailPage() {
                       <InlineNotice tone="info" live={false}>
                         Showing {candidates.length} of {requirement.total} candidates. Narrow the shortlist with search and filters, or close out candidates you have already decided on.
                       </InlineNotice>
+                    </div>
+                  )}
+                  {(hiddenLowCount > 0 || (showLow && lowCount > 0)) && (
+                    <div className="mx-7 mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-lg border border-hx-line bg-hx-soft px-4 py-2.5 text-[13px] text-hx-ink-soft">
+                      <span>
+                        {showLow
+                          ? `Showing ${lowCount} lower ${lowCount === 1 ? "match" : "matches"}: scores under 20${jobHasSkills ? ", or none of the required skills" : ""}.`
+                          : `${hiddenLowCount} lower ${hiddenLowCount === 1 ? "match is" : "matches are"} hidden: scores under 20${jobHasSkills ? ", or none of the required skills" : ""}.`}
+                      </span>
+                      <Button type="button" variant="link" className="h-auto p-0 text-[13px] font-semibold" onClick={() => setShowLow(!showLow)}>
+                        {showLow ? "Hide lower matches" : `Show ${hiddenLowCount} lower ${hiddenLowCount === 1 ? "match" : "matches"}`}
+                      </Button>
                     </div>
                   )}
                   <CandidatesTable
@@ -642,7 +676,7 @@ export default function RequirementDetailPage() {
                   </>
                 )}
   
-                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} nextBatch={nextBatchTarget} onChooseBatch={setUnlockTarget} />
+                <UnlockDialog target={unlockTarget} access={access} onClose={() => setUnlockTarget(null)} onUnlocked={handleUnlocked} nextBatch={nextBatchTarget} onChooseBatch={setUnlockTarget} lowMatch={unlockTarget?.mode === "single" && candidates.some((c) => c.id === unlockTarget.matchId && isLowMatch(c, jobHasSkills))} />
                 <EvidenceDialog
                   matchId={evidenceCandidate?.id ?? null}
                   displayName={evidenceCandidate ? candidateDisplayName(evidenceCandidate) : "Candidate"}

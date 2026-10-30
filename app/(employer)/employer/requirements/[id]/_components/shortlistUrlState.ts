@@ -12,9 +12,10 @@ export interface ShortlistView {
   location: string;
   sort: Sort<SortColumn>;
   insight: string | null;
+  showLow: boolean;
 }
 
-export const DEFAULT_VIEW: ShortlistView = { tab: null, search: "", contact: "all", location: "all", sort: DEFAULT_SORT, insight: null };
+export const DEFAULT_VIEW: ShortlistView = { tab: null, search: "", contact: "all", location: "all", sort: DEFAULT_SORT, insight: null, showLow: false };
 
 const TABS: readonly CandidateTab[] = ["all", "interviewing", "hired", "not_a_fit"];
 const CONTACTS: readonly ContactFilter[] = ["all", "locked", "unlocked"];
@@ -39,6 +40,7 @@ export function parseShortlistView(params: Params): ShortlistView {
     location: params.get("loc") || "all",
     sort: parseSort(params.get("sort")),
     insight: params.get("insight") || null,
+    showLow: params.get("low") === "1",
   };
 }
 
@@ -55,5 +57,6 @@ export function writeShortlistView(base: URLSearchParams, view: ShortlistView): 
   set("loc", view.location !== "all" ? view.location : null);
   set("sort", view.sort.column === DEFAULT_SORT.column && view.sort.direction === DEFAULT_SORT.direction ? null : `${view.sort.column}.${view.sort.direction}`);
   set("insight", view.insight);
+  set("low", view.showLow ? "1" : null);
   return next;
 }
