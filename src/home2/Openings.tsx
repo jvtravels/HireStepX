@@ -27,15 +27,20 @@ const openingsCss = `
 .op-card h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 22px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-card p { font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .op-card .op-facts { margin-top: auto; padding-top: 6px; }
+.op-more .hx-arr { width: 14px; height: 14px; flex: none; }
+.op-grid:has(> li:only-child) { max-width: 440px; margin-inline: auto; }
+.op-card .op-more { margin-top: 6px; }
 .op-more { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 500; color: var(--btn); }
 .op-empty { max-width: 640px; margin: 0 auto; padding: 32px; border-radius: 16px; border: 1px solid var(--line); background: var(--wash); text-align: center; }
 .op-empty h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 26px; line-height: 1.15; letter-spacing: -0.02em; font-weight: 600; }
 .op-empty p { margin: 8px 0 20px; color: var(--ink-2); }
 .op-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 28px; }
-.op-body { padding: 24px 0 72px; display: grid; gap: 40px; max-width: 760px; margin: 0 auto; }
+.op-body { padding: 24px 0 40px; display: grid; gap: 40px; max-width: 760px; margin: 0 auto; }
 .op-body h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 26px; line-height: 1.1; letter-spacing: -0.02em; font-weight: 600; margin-bottom: 10px; }
 .op-body p { color: var(--ink-2); text-wrap: pretty; }
-.op-steps { margin: 0; padding-left: 22px; color: var(--ink-2); display: grid; gap: 8px; }
+.op-steps { margin: 0; padding: 0; list-style: none; counter-reset: st; color: var(--ink-2); display: grid; gap: 12px; }
+.op-steps li { counter-increment: st; display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.op-steps li::before { content: counter(st); width: 28px; height: 28px; border-radius: 999px; background: var(--wash); border: 1px solid var(--line-2); color: var(--btn); font-size: 13px; font-weight: 600; display: grid; place-items: center; }
 .op-note { font-size: 14px; color: var(--ink-3); }
 .op-note a { color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px; }
 .op-note a:hover { color: var(--btn); }
@@ -51,7 +56,8 @@ const openingsCss = `
 
 function Facts({ o }: { o: PublicOpening }) {
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
-  const items = [o.location, o.workMode ? WORK_MODE_LABEL[o.workMode] : null, exp, o.employmentType === "full-time" ? "Full-time" : o.employmentType].filter(Boolean) as string[];
+  const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
+  const items = [o.location, mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : null, exp, o.employmentType === "full-time" ? "Full-time" : o.employmentType].filter(Boolean) as string[];
   return <ul className="op-facts">{items.map((i) => <li key={i}>{i}</li>)}</ul>;
 }
 
