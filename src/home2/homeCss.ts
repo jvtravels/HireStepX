@@ -836,5 +836,6 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx .hx-foot-cols a { min-height: 40px; }
   .hx-foot-bar { padding-top: 16px; font-size: 13px; }
 }
+.hx .hx-foot .hx-social a { display: grid; place-items: center; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 999px; }
 `;
 
