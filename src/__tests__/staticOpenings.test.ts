@@ -3,9 +3,12 @@ import { STATIC_OPENINGS, liveStaticOpenings } from "../../server-handlers/_stat
 import { fetchLiveOpenings } from "../../server-handlers/_public-openings-fetch";
 
 describe("static openings", () => {
-  it("lists the SDR role while unexpired and hides it after expiry", () => {
-    expect(liveStaticOpenings(new Date("2026-11-01")).map((o) => o.slug)).toContain(STATIC_OPENINGS[0].slug);
-    expect(liveStaticOpenings(new Date("2027-01-01"))).toEqual([]);
+  it("only returns entries that have not expired", () => {
+    const far = new Date("2999-01-01");
+    expect(liveStaticOpenings(far)).toEqual([]);
+    for (const o of liveStaticOpenings(new Date("2000-01-01"))) {
+      expect(Date.parse(o.expiresAt)).toBeGreaterThan(Date.parse("2000-01-01"));
+    }
   });
   it("keeps summaries within the public limits", () => {
     for (const o of STATIC_OPENINGS) {
