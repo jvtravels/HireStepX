@@ -17,7 +17,6 @@ const openingsCss = `
 .op-head { padding: 96px 0 40px; text-align: center; }
 .op-head .hx-h1 { margin-top: 14px; }
 .op-head .hx-lede { max-width: 56ch; }
-.op-trust { margin: 16px auto 0; max-width: 62ch; font-size: 14px; line-height: 1.5; color: var(--ink-3); text-wrap: pretty; }
 .op-facts { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 0; }
 .op-head .op-facts { justify-content: center; margin-top: 24px; }
 .op-facts li { font-size: 13px; font-weight: 500; color: var(--ink-2); padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); }
@@ -71,7 +70,6 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
           <span className="hx-kicker">Open roles</span>
           <h1 className="hx-h1">Roles hiring on <b>HireStepX</b></h1>
           <p className="hx-lede">Employers list roles here without a company name. Practise for the one you want, and your scored answers do the talking.</p>
-          <p className="op-trust">{TRUST.posted} {TRUST.anonymous}</p>
         </div>
       </section>
       <section className="hx-sec op-list" aria-label="Open roles">
