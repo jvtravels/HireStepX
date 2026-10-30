@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSlider } from "./motion";
-import { Arrow, Close, Shell } from "./Pages";
+import { Close, Shell } from "./Pages";
 import { FaqBlock } from "./Extra";
 import Skel from "./Skel";
 
@@ -84,7 +84,7 @@ function PlanTable({ plans }: { plans: Plan[] }) {
             <p className="prc-cost"><b>{p.price}</b><span>{p.unit}</span></p>
             <p className="prc-blurb">{p.blurb}</p>
             <ul className="prc-pts">{p.points.map((t) => <li key={t}>{t}</li>)}</ul>
-            <a data-no-underline className={`hx-btn lg${p.best ? "" : " alt"}`} href={p.href}>{p.cta} <Arrow /></a>
+            <a data-no-underline className={`hx-btn lg${p.best ? "" : " alt"}`} href={p.href}>{p.cta}</a>
           </div>
         ))}
       </div>

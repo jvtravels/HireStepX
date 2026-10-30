@@ -77,7 +77,7 @@ export function HubTemplate({ kicker, title, dek, crumbs, stats, cta, sections, 
               {stats.map((s) => <div key={s.label}><span className="sx-mono">{s.label}</span><b>{s.value}</b></div>)}
             </div>
           )}
-          {cta && <a data-no-underline className="hx-btn lg hb-cta" href={cta[1]}>{cta[0]} <Arrow /></a>}
+          {cta && <a data-no-underline className="hx-btn lg hb-cta" href={cta[1]}>{cta[0]}</a>}
         </div>
       </header>
       {sections.length > 2 && (

@@ -9,14 +9,6 @@ import Skel, { useSkel } from "./Skel";
 import { useHasOpenings } from "../marketing-v2/openingsFlag";
 import { useScrollTilt, useScrollDepth, useReveal, delay, reduced } from "./motion";
 
-function Arrow() {
-  return (
-    <svg className="hx-arr" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <g className="hx-arr-c"><path className="hx-arr-a hx-arr-t" d="M6 4L10 8" /><path className="hx-arr-a hx-arr-b" d="M10 8L6 12" /></g>
-    </svg>
-  );
-}
-
 
 const FONT_FILES = ["bricolage-500", "bricolage-600"];
 const preloadFonts = () => FONT_FILES.forEach((f) => preload(`/fonts/${f}.woff2`, { as: "font", type: "font/woff2", crossOrigin: "anonymous" }));
@@ -115,8 +107,8 @@ export function Hero() {
         <h1 className="hx-h1">Prepare to be <b>hired</b>.<br />Hire the <b>prepared</b>.</h1>
         <p className="hx-lede">Practise a mock interview and get scored on every answer. Employers read the answers behind the score.</p>
         <div className="hx-cta">
-          <a data-no-underline className="hx-btn lg" href="/signup">Start practising <Arrow /></a>
-          <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof <Arrow /></a>
+          <a data-no-underline className="hx-btn lg" href="/signup">Start practising</a>
+          <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
         </div>
         <div className="hx-tiltwrap">
           <div ref={tilt} data-sk="pending" className="hx-stage hx-stage-hero hx-tilt">
@@ -184,7 +176,7 @@ export function Candidates() {
             <h2 className="hx-h2">The report points at the sentence that <b>cost you</b>.</h2>
           </div>
           <div className="hx-head-cta">
-            <a data-no-underline className="hx-btn" href="/signup">Start practising <Arrow /></a>          </div>
+            <a data-no-underline className="hx-btn" href="/signup">Start practising</a>          </div>
         </div>
         <div ref={depth} data-sk="pending" className="hx-stage hx-stage-cool hx-stage-crop hx-depth"><ReportSurface /></div>
       </div>
@@ -204,7 +196,7 @@ export function Employers() {
             <h2 className="hx-h2">Know how they <b>think</b> before you call.</h2>
           </div>
           <div className="hx-head-cta">
-            <a data-no-underline className="hx-btn" href="/signup?next=/employer">Hire from proof <Arrow /></a>
+            <a data-no-underline className="hx-btn" href="/signup?next=/employer">Hire from proof</a>
           </div>
         </div>
         <div ref={depth} data-sk="pending" className="hx-stage hx-stage-warm hx-stage-crop hx-depth"><InboxSurface /></div>
@@ -222,8 +214,8 @@ export function Closing() {
           <h2 className="hx-h2">Start with <b>one answer</b>.</h2>
           <p>Practise out loud, see exactly what to fix, and let employers find the proof.</p>
           <div className="hx-cta">
-            <a data-no-underline className="hx-btn lg" href="/signup">Start practising <Arrow /></a>
-            <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof <Arrow /></a>
+            <a data-no-underline className="hx-btn lg" href="/signup">Start practising</a>
+            <a data-no-underline className="hx-btn lg alt" href="/signup?next=/employer">Hire from proof</a>
           </div>
           <ul className="hx-endnote">
             <li>2 free sessions</li>

@@ -165,7 +165,7 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
             <div className="op-empty">
               <h2>No roles are listed right now</h2>
               <p>New roles appear here as employers list them. Practising now gets your scored answers ready.</p>
-              <a data-no-underline className="hx-btn lg" href="/signup?source=openings">Start practising <Arrow /></a>
+              <a data-no-underline className="hx-btn lg" href="/signup?source=openings">Start practising</a>
             </div>
           ) : (
             <>

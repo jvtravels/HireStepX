@@ -66,7 +66,7 @@ export function Close({ kicker, title, body, primary, secondary, notes }: {
           <h2 className="hx-h2">{title}</h2>
           <p>{body}</p>
           <div className="hx-cta">
-            <a data-no-underline className="hx-btn lg" href={primary[1]}>{primary[0]} <Arrow /></a>
+            <a data-no-underline className="hx-btn lg" href={primary[1]}>{primary[0]}</a>
             {secondary && <a data-no-underline className="hx-btn lg alt" href={secondary[1]}>{secondary[0]}</a>}
           </div>
           {notes && <ul className="hx-endnote">{notes.map((n) => <li key={n}>{n}</li>)}</ul>}
@@ -343,7 +343,7 @@ function EmpHero() {
         <h1 className="hx-h1">Tell us who you need. We will show you who can <b>already do it</b>.</h1>
         <p className="hx-lede">Describe the role in plain words. We line up the people who have practised for it, with the answers behind every score. Reading is free. You pay only to reach someone.</p>
         <div className="hx-cta">
-          <a data-no-underline className="hx-btn lg" href="/signup">Start hiring <Arrow /></a>
+          <a data-no-underline className="hx-btn lg" href="/signup">Start hiring</a>
         </div>
         <Skel className="hx-stage pg-hero-stage" style={delay(2)}><HeroChat /></Skel>
       </div>

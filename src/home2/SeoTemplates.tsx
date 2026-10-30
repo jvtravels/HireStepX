@@ -208,7 +208,7 @@ function FlipDeck({ questions, framework, company, href }: { href: string; quest
           {q.difficulty && <em data-d={q.difficulty}>{DIFF[q.difficulty]}</em>}
           <p className="sx-x-q">{q.text}</p>
           <span className="sx-x-hint">Think of your answer first, then reveal how to structure it.</span>
-          <button type="button" className="hx-btn" onClick={() => setFlip(true)}>Reveal the framework <Arrow /></button>
+          <button type="button" className="hx-btn" onClick={() => setFlip(true)}>Reveal the framework</button>
         </div>
       ) : (
         <div className="sx-x-face sx-x-back">
@@ -649,7 +649,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
                 <div className="sx-gate">
                   <b>{locked} more questions</b>
                   <span>Create a free account to see the full set and practise any of them with scoring.</span>
-                  <a data-no-underline className="hx-btn" href={signup}>Unlock all questions <Arrow /></a>
+                  <a data-no-underline className="hx-btn" href={signup}>Unlock all questions</a>
                 </div>
               )}
             </section>
@@ -658,7 +658,7 @@ export function QuestionSetTemplate({ model }: { model: QuestionSetModel }) {
             <div className="sx-card sx-dark">
               <b>Practise this loop</b>
               <span>An AI interviewer asks the {companyLabel} questions and scores each answer.</span>
-              <a data-no-underline className="hx-btn" href={signup}>Start practising <Arrow /></a>
+              <a data-no-underline className="hx-btn" href={signup}>Start practising</a>
             </div>
             <div className="sx-card">
               <span className="sx-mono">Framework</span>

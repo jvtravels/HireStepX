@@ -3,7 +3,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import Skel from "./Skel";
 import { ArrowRight, BriefcaseBusiness, Check, FileText, Lock, Mic, ShieldCheck, X, type LucideIcon } from "lucide-react";
 import { CandFaq } from "./Extra";
-import { Arrow, Close, Shell, Win } from "./Pages";
+import { Close, Shell, Win } from "./Pages";
 import { delay, reduced, useReveal } from "./motion";
 
 /* ── Hero: a practice round, before and after ── */
@@ -100,7 +100,7 @@ function CandHero() {
           <h1 className="cx-h1 hx-ri" style={delay(1)}>Practise the interview. <b>Get shortlisted</b> by recruiters.</h1>
           <p className="cx-lede hx-ri" style={delay(2)}>Answer interview questions out loud and get a score with simple tips. Recruiters hiring for your skills can then see your proof.</p>
           <div className="cx-cta hx-ri" style={delay(3)}>
-            <a data-no-underline className="hx-btn lg" href="/signup">Start practising <Arrow /></a>
+            <a data-no-underline className="hx-btn lg" href="/signup">Start practising</a>
             <a className="cx-link" href="#how">See how it works</a>
           </div>
           <p className="cx-fine hx-ri" style={delay(4)}>2 free sessions, then ₹9 a session. No card needed.</p>
@@ -208,7 +208,7 @@ function CandPricing() {
             <p className="pq-price"><b>{pl.price}</b><span>{pl.unit}</span></p>
             <p className="pq-sess">{pl.sessions}</p>
             <p className="pq-note">{pl.note}</p>
-            <a data-no-underline className={`hx-btn lg${pl.feat ? "" : " alt"}`} href="/signup">{pl.cta} <Arrow /></a>
+            <a data-no-underline className={`hx-btn lg${pl.feat ? "" : " alt"}`} href="/signup">{pl.cta}</a>
           </div>
         ))}
       </div>

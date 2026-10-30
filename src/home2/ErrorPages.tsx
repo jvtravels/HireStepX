@@ -1,7 +1,7 @@
 "use client";
 import Skel from "./Skel";
 import { useState } from "react";
-import { Arrow, Shell } from "./Pages";
+import { Shell } from "./Pages";
 import { delay, useReveal } from "./motion";
 
 const MAIL = "hello@hirestepx.com";
@@ -99,7 +99,7 @@ export function NotFoundPage() {
     <Shell>
       <Frame kicker="404 · Page not found" code="404" mode="lost" title="That page dropped off the line." body="The link may be old or mistyped. Head home, or jump to one of the places people usually come for.">
         <div className="er-cta hx-ri" style={delay(4)}>
-          <a data-no-underline className="hx-btn lg" href="/">Back to home <Arrow /></a>
+          <a data-no-underline className="hx-btn lg" href="/">Back to home</a>
           <a data-no-underline className="hx-btn lg alt" href={`mailto:${MAIL}`}>Report a broken link</a>
         </div>
         <div className="er-try hx-ri" style={delay(5)}>
