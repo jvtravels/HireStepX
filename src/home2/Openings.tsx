@@ -60,7 +60,6 @@ const openingsCss = `
 .op-back:hover { color: var(--btn); }
 .op-dtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-top: 20px; }
 .op-dhead .hx-h1 { margin: 0; max-width: 28ch; text-align: left; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.1; }
-.op-dhead .hx-btn { flex: none; }
 .op-meta { list-style: none; margin: 18px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .op-meta li { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--white); font-size: 14px; color: var(--ink-2); }
 .op-meta li svg { color: var(--ink-3); }
@@ -95,7 +94,6 @@ const openingsCss = `
 @container (max-width: 720px) {
   .op-head { padding: 48px 0 28px; }
   .op-dtop { flex-direction: column; gap: 16px; }
-  .op-dhead .op-dtop .hx-btn { display: none; }
   .op-aside .hx-btn { display: none; }
   .op-bar { display: block; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--white); border-top: 1px solid var(--line); }
   .op-bar .hx-btn { width: 100%; justify-content: center; }
@@ -244,7 +242,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
   const signUp = (where: string) => (
     <a data-no-underline className="hx-btn" href={practiseHref(o)}
       onClick={() => captureClientEvent("opening_practise_click", { opening: o.slug, role: o.title, where })}>
-      Sign up
+      Sign up to practise
     </a>
   );
   return (
@@ -255,7 +253,6 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           <a className="op-back" href="/openings"><ArrowLeft size={16} aria-hidden="true" />All open roles</a>
           <div className="op-dtop">
             <h1 className="hx-h1">{o.title}</h1>
-            {signUp("header")}
           </div>
           <ul className="op-meta">
             {rows.map(([k, v]) => { const I = ROW_ICON[k]; return <li key={k}><I size={16} strokeWidth={1.75} aria-hidden="true" /><span className="sr-only">{k}: </span>{v}</li>; })}
