@@ -1,6 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { cn } from "cn";
 import { useEmployerData, type CandidateReview, type ReviewRating } from "@/employer/EmployerDataContext";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HelpText, OutlineCta } from "@/employer/_atoms";
 import { Panel } from "@/employer/_panelParts";
 import { relativeTime } from "@/employer/teamActivity";
@@ -30,14 +32,22 @@ function ReviewLine({ r, you }: { r: CandidateReview; you?: boolean }) {
   );
 }
 
-export function TeamReview({ reviews }: { reviews: TeamReviewsState }) {
+export function TeamReviewDialog({ open, onOpenChange, reviews, displayName }: { open: boolean; onOpenChange: (open: boolean) => void; reviews: TeamReviewsState; displayName: string }) {
   const { suspended } = useEmployerData();
-  const { data, loading, failed, retry, save, enabled } = reviews;
+  const { data, save } = reviews;
+  const mine = data?.mine ?? null;
   const [rating, setRating] = useState<ReviewRating | null>(null);
   const [reason, setReason] = useState("");
-  const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Opening always starts from the saved review, so a cancelled edit never leaks into the next open.
+  useEffect(() => {
+    if (!open) return;
+    setRating(mine?.rating ?? null);
+    setReason(mine?.reason ?? "");
+    setError(null);
+  }, [open, mine]);
 
   const submit = useCallback(async () => {
     if (!rating || !reason.trim()) return;
@@ -46,13 +56,70 @@ export function TeamReview({ reviews }: { reviews: TeamReviewsState }) {
     const err = await save(rating, reason.trim());
     setSaving(false);
     if (err) setError(err);
-    else setEditing(false);
-  }, [rating, reason, save]);
+    else onOpenChange(false);
+  }, [rating, reason, save, onOpenChange]);
 
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{mine ? "Update your review" : `Review ${displayName}`}</DialogTitle>
+          <DialogDescription>
+            {data && !data.revealed && data.hiddenCount > 0
+              ? `${data.hiddenCount} teammate${data.hiddenCount === 1 ? " has" : "s have"} reviewed. Submit yours to see theirs, so nobody anchors on a colleague.`
+              : "Reviews are blind: you see teammates' views only after submitting your own."}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 py-1">
+          <div role="radiogroup" aria-label="Your recommendation" className="grid grid-cols-[repeat(auto-fit,minmax(84px,1fr))] gap-1.5">
+            {RATINGS.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                role="radio"
+                aria-checked={rating === o.value}
+                onClick={() => setRating(o.value)}
+                className={cn(
+                  "cursor-pointer rounded-lg border px-1.5 py-2 text-[13px] font-semibold max-md:py-3",
+                  rating === o.value ? "border-hx-indigo bg-hx-indigo text-white" : "border-hx-line bg-white text-hx-coal",
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <label className="grid gap-1 text-[13px] text-hx-neutral-ink">
+            Why? One or two lines your team can act on.
+            <textarea
+              value={reason}
+              maxLength={MAX}
+              rows={4}
+              onChange={(e) => setReason(e.target.value)}
+              className="min-w-0 resize-y rounded-lg border border-hx-line p-2.5 text-sm text-hx-coal"
+            />
+          </label>
+          <span className="text-right text-xs text-hx-neutral-ink">{reason.length}/{MAX}</span>
+          {error && <HelpText tone="error">{error}</HelpText>}
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="pointer-coarse:h-11">Cancel</Button>
+          <Button type="button" onClick={submit} disabled={!rating || !reason.trim() || saving || suspended} aria-busy={saving || undefined} className="pointer-coarse:h-11">
+            {saving ? "Saving…" : mine ? "Update review" : "Submit review"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Read-only summary; writing happens in the dialog opened from the header. Hidden until there is something to show. */
+export function TeamReview({ reviews, onReview }: { reviews: TeamReviewsState; onReview: () => void }) {
+  const { suspended } = useEmployerData();
+  const { data, loading, failed, retry, enabled } = reviews;
   if (!enabled) return null;
   const mine = data?.mine ?? null;
-  // The server enforces who may write (candidates.manage); a viewer sees its message if they try.
-  const showForm = !suspended && data && (!mine || editing);
+  const hasContent = !!mine || (data?.hiddenCount ?? 0) > 0 || failed;
+  if (!loading && !hasContent) return null;
 
   return (
     <Panel id="team-review-heading" title="Team review">
@@ -70,62 +137,21 @@ export function TeamReview({ reviews }: { reviews: TeamReviewsState }) {
               Your team disagrees: {data.summary.yes} lean yes, {data.summary.no} lean no. Discuss before moving them on.
             </p>
           )}
-          {mine && !editing && <ul className="m-0 grid list-none gap-2.5 p-0"><ReviewLine r={mine} you /></ul>}
-          {showForm && (
-            <div className="grid gap-2.5">
-              <div role="radiogroup" aria-label="Your recommendation" className="grid grid-cols-[repeat(auto-fit,minmax(84px,1fr))] gap-1.5">
-                {RATINGS.map((o) => (
-                  <button
-                    key={o.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={rating === o.value}
-                    onClick={() => setRating(o.value)}
-                    className={cn(
-                      "cursor-pointer rounded-lg border px-1.5 py-2 text-[13px] font-semibold max-md:py-3",
-                      rating === o.value ? "border-hx-indigo bg-hx-indigo text-white" : "border-hx-line bg-white text-hx-coal",
-                    )}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
-              <label className="grid gap-1 text-[13px] text-hx-neutral-ink">
-                Why? One or two lines your team can act on.
-                <textarea
-                  value={reason}
-                  maxLength={MAX}
-                  rows={3}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="min-w-0 resize-y rounded-lg border border-hx-line p-2.5 text-sm text-hx-coal"
-                />
-              </label>
-              {error && <HelpText tone="error">{error}</HelpText>}
-              <div className="flex flex-wrap items-center gap-2">
-                <OutlineCta tone="indigo" size="sm" onClick={submit} disabled={!rating || !reason.trim()} loading={saving}>
-                  {mine ? "Update review" : "Submit review"}
-                </OutlineCta>
-                {editing && <OutlineCta size="sm" onClick={() => setEditing(false)}>Cancel</OutlineCta>}
-                <span className="text-xs text-hx-neutral-ink">{reason.length}/{MAX}</span>
-              </div>
-            </div>
-          )}
-          {mine && !editing && !suspended && (
-            <div><OutlineCta size="sm" onClick={() => { setRating(mine.rating); setReason(mine.reason); setEditing(true); }}>Edit my review</OutlineCta></div>
-          )}
+          {mine && <ul className="m-0 grid list-none gap-2.5 p-0"><ReviewLine r={mine} you /></ul>}
           {data.revealed && data.others.length > 0 && (
             <ul className="m-0 grid list-none gap-2.5 p-0">
               {data.others.map((r) => <ReviewLine key={r.reviewerUserId} r={r} />)}
             </ul>
           )}
+          {data.revealed && data.others.length === 0 && <HelpText>No teammate has reviewed yet.</HelpText>}
           {!data.revealed && (
             <HelpText>
-              {data.hiddenCount > 0
-                ? `${data.hiddenCount} teammate${data.hiddenCount === 1 ? " has" : "s have"} reviewed. Submit yours to see theirs, so nobody anchors on a colleague.`
-                : "Reviews are blind: you see teammates' views only after submitting your own."}
+              {data.hiddenCount} teammate{data.hiddenCount === 1 ? " has" : "s have"} reviewed. Submit yours to see theirs, so nobody anchors on a colleague.
             </HelpText>
           )}
-          {data.revealed && data.others.length === 0 && <HelpText>No teammate has reviewed yet.</HelpText>}
+          {!suspended && (
+            <div><OutlineCta size="sm" onClick={onReview}>{mine ? "Edit my review" : "Add my review"}</OutlineCta></div>
+          )}
         </div>
       )}
     </Panel>

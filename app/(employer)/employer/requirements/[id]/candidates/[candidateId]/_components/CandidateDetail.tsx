@@ -22,6 +22,7 @@ import { OverviewTab } from "./OverviewTab";
 import { useCandidateDetail } from "./useCandidateDetail";
 import { useCandidateRequests } from "./useCandidateRequests";
 import { useTeamReviews } from "./useTeamReviews";
+import { TeamReviewDialog } from "./TeamReview";
 import type { RequestUi } from "./RequestPopover";
 
 /* Loaded only when opened, so the score reaches the screen sooner on slow phones. */
@@ -58,6 +59,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const [tab, setTab] = useState<CandidateTabKey>("overview");
   const [dialog, setDialog] = useState<"invite" | "reject" | null>(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   // Once a dialog has been opened it stays mounted so it can animate closed; until then its code is not loaded.
   const dialogOpened = useRef(false);
   const unlockOpened = useRef(false);
@@ -98,7 +100,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const goTab = useCallback((i: number) => selectTab(TAB_ORDER[i]), [selectTab]);
   const undoLast = useCallback(() => void triggerToastAction(), [triggerToastAction]);
   const shortcutsOn = useShortcutsEnabled();
-  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab, onUndo: undoLast }, ready && !dialog && !unlockOpen && shortcutsOn);
+  useCandidateShortcuts({ onNext: goNext, onPrev: goPrev, onTab: goTab, onUndo: undoLast }, ready && !dialog && !unlockOpen && !reviewOpen && shortcutsOn);
   const condensed = useScrolledPast(headerRef, ready);
 
   useEmployerBreadcrumb(
@@ -180,6 +182,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         currentStatus={candidate.candidateStatus}
       />}
 
+      <TeamReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} reviews={reviews} displayName={maskedName(candidate)} />
+
       {unlockOpened.current && <UnlockDialog
         target={unlockOpen ? { mode: "single", matchId: candidate.id } : null}
         access={access}
@@ -223,6 +227,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           summary={buildEvidenceSummary(candidate, requirement, matched)}
           onUnlock={openUnlock}
           requests={requests}
+          reviews={reviews}
+          onReview={() => setReviewOpen(true)}
           onInvite={() => {
             d.clearNotice();
             setDialog("invite");
@@ -252,6 +258,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
                 onOpenResume={() => selectTab("resume")}
                 requestUi={requestUi}
                 reviews={reviews}
+                onReview={() => setReviewOpen(true)}
               />
             )}
             {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} requestUi={requestUi} requirementTitle={requirement.title} />}

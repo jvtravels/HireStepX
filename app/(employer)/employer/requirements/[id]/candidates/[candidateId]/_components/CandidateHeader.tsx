@@ -15,6 +15,9 @@ import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
 import { ResumeDownload } from "./ResumeDownload";
+import type { TeamReviewsState } from "./useTeamReviews";
+
+const REVIEW_LABEL = { 1: "Strong no", 2: "Lean no", 3: "Lean yes", 4: "Strong yes" } as const;
 
 function MatchSignal({ score, fit }: { score: number; fit: FitSummary }) {
   const { label, tone } = candidateSignal(score, fit);
@@ -73,6 +76,8 @@ export function CandidateHeader({
   onReject,
   onReopen,
   requests,
+  reviews,
+  onReview,
 }: {
   candidate: Candidate;
   declined: boolean;
@@ -85,6 +90,8 @@ export function CandidateHeader({
   onReject: () => void;
   onReopen: () => void;
   requests: CandidateRequestsState;
+  reviews: TeamReviewsState;
+  onReview: () => void;
 }) {
   const resume = candidate.resume;
   const displayName = maskedName(candidate);
@@ -143,6 +150,11 @@ export function CandidateHeader({
         <div className="flex flex-wrap items-center gap-2">
           <MatchSignal score={candidate.matchScore} fit={fit} />
           {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
+          {reviews.enabled && (
+            <Button type="button" variant="outline" onClick={onReview} disabled={suspended || !reviews.data} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>
+              {reviews.data?.mine ? `Your review: ${REVIEW_LABEL[reviews.data.mine.rating]}` : "Review"}
+            </Button>
+          )}
           {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
           <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} onReopen={onReopen} />
         </div>

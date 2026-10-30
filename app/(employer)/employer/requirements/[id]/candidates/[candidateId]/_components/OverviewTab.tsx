@@ -477,6 +477,7 @@ export function OverviewTab({
   onOpenResume,
   requestUi,
   reviews,
+  onReview,
 }: {
   candidate: Candidate;
   requirement: Requirement;
@@ -487,6 +488,7 @@ export function OverviewTab({
   onOpenResume: () => void;
   requestUi: RequestUi;
   reviews: TeamReviewsState;
+  onReview: () => void;
 }) {
   const insights = buildResumeInsights(candidate, unmatched);
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
@@ -495,7 +497,7 @@ export function OverviewTab({
       <div className="@container flex min-w-0 flex-col divide-y divide-hx-line">
         <DecisionStrip candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} requestUi={requestUi} />
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
-        <TeamReview reviews={reviews} />
+        <TeamReview reviews={reviews} onReview={onReview} />
         <PracticeSnapshot candidate={candidate} state={state} onOpenPractice={onOpenPractice} requirementTitle={requirement.title} requestUi={requestUi} />
         <StandoutPanel evidence={state.evidence} onOpenPractice={onOpenPractice} />
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
