@@ -225,7 +225,6 @@ function Bullets({ title, icon, items }: { title: string; icon: LucideIcon; item
 
 export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening; url: string }) {
   useEffect(() => { captureClientEvent("opening_view", { opening: o.slug }); }, [o.slug]);
-  const share = `https://wa.me/?text=${encodeURIComponent(`${o.title}, hiring on HireStepX: ${url}`)}`;
   const d = o.details;
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
@@ -279,14 +278,6 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           <aside className="op-aside" aria-label="Apply to practise">
             <h2>{o.skills.length > 0 ? "Skills for this role" : "Practise for this role"}</h2>
             {o.skills.length > 0 && <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>}
-            {signUp("aside")}
-            <p className="op-note">Employers stay private until you have practised and chosen to share your profile.</p>
-            <p className="op-note">
-              <a href={share} target="_blank" rel="noopener noreferrer"
-                onClick={() => captureClientEvent("opening_share_click", { opening: o.slug, channel: "whatsapp" })}>Share on WhatsApp</a>
-              {" · "}
-              <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`}>Report this listing</a>
-            </p>
           </aside>
         </div>
         <div className="op-more">
