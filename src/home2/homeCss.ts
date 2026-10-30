@@ -655,7 +655,7 @@ p.hx-swap, div.hx-swap { display: block; }
 .hv-samp { margin-left: auto; flex: none; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 999px; border: 1px solid oklch(0.9 0.04 285); background: oklch(0.95 0.03 285); color: var(--btn); font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
 .hv-samp i { width: 6px; height: 6px; border-radius: 50%; background: var(--btn); }
 .hv-split { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; padding-top: 24px; }
-.hv-pane { min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: oklch(0.99 0.005 285 / 0.7); }
+.hv-pane { container: hvpane / inline-size; min-width: 0; display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--line); border-radius: 16px; background: oklch(0.99 0.005 285 / 0.7); }
 .hv-ph { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; }
 .hv-ph b { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
 .hv-ph b svg { color: var(--btn); }
@@ -753,6 +753,18 @@ p.hx-swap, div.hx-swap { display: block; }
   .hv-lock { width: 34px; height: 34px; }
   .hv-ut { flex: 1; min-width: 0; }
   .hv-ut b, .hv-ut em { white-space: nowrap; }
+  .hv-btn { margin-left: 0; width: 100%; height: 40px; }
+}
+@container hvpane (max-width: 400px) {
+  .hv-ph b { white-space: nowrap; }
+  .hv-pane-r .hv-ph em { display: none; }
+  .hv-rk li { grid-template-columns: 32px minmax(0, 1fr) auto; gap: 8px; padding: 0 10px; }
+  .hv-rk .hv-n { display: none; }
+  .hv-tile { width: 32px; height: 32px; border-radius: 8px; }
+  .hv-who b { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .hv-unlock { flex-wrap: wrap; gap: 10px; padding: 12px; }
+  .hv-lock { width: 34px; height: 34px; }
+  .hv-ut { flex: 1; min-width: 0; }
   .hv-btn { margin-left: 0; width: 100%; height: 40px; }
 }
 @media (prefers-reduced-motion: reduce) { .hv-rk li, .hv-ans ins { transition: none; animation: none; } }
