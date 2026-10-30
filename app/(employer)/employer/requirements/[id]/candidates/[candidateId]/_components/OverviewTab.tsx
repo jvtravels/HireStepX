@@ -56,7 +56,7 @@ function FitMark({ status }: { status: FitStatus }) {
   );
 }
 
-const SIGNAL_TONE = { strong: "success", promising: "brand", fair: "warning", low: "neutral" } as const;
+const SIGNAL_TONE = { strong: "success", fair: "warning", low: "neutral" } as const;
 
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 

@@ -25,7 +25,7 @@ function MatchSignal({ score, fit }: { score: number; fit: FitSummary }) {
         <span className="tabular-nums text-hx-ink-soft">{score}</span>
       </DotLabel>
       <InfoTip label="How the match score works">
-        The score blends job match, required skills, practice results and recent activity. A strong score with unmet criteria reads "Promising" until you check the gaps under Fit for this job.
+        This is the fit for this job only, so the same person can score differently on another job. It blends job match, required skills, practice results and recent activity. Strong is 40 and above, Fair is 20 to 39, Low is under 20. Check the gaps under Fit for this job.
       </InfoTip>
     </span>
   );

@@ -68,10 +68,10 @@ describe("fitHeadline", () => {
 });
 
 describe("candidateSignal", () => {
-  it("keeps Strong only when the criteria agree", () => {
+  it("reads the same as the score band even when criteria have gaps", () => {
     expect(candidateSignal(44, fit(2, 2)).label).toBe("Strong match");
-    expect(candidateSignal(44, fit(0, 1, [], ["Required skills"])).label).toBe("Promising match");
-    expect(candidateSignal(60, fit(1, 2, ["Experience"])).label).toBe("Promising match");
+    expect(candidateSignal(44, fit(0, 1, [], ["Required skills"])).label).toBe("Strong match");
+    expect(candidateSignal(60, fit(1, 2, ["Experience"])).label).toBe("Strong match");
   });
 
   it("follows the score band below the strong line", () => {

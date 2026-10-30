@@ -659,12 +659,12 @@ export function explainMatch(
   return out;
 }
 
-/** Strong / Good / Possible label for a match score, for display next to the
+/** Strong / Fair / Low label for a match score, for display next to the
     percentage. Thresholds are the shared STRONG_MATCH_THRESHOLD and
     FAIR_MATCH_SCORE so the label can never disagree with the tier colour. */
 export const FAIR_MATCH_SCORE = 20;
-export function matchBandLabel(score: number): "Strong" | "Good" | "Possible" {
-  return score >= STRONG_MATCH_THRESHOLD ? "Strong" : score >= FAIR_MATCH_SCORE ? "Good" : "Possible";
+export function matchBandLabel(score: number): "Strong" | "Fair" | "Low" {
+  return score >= STRONG_MATCH_THRESHOLD ? "Strong" : score >= FAIR_MATCH_SCORE ? "Fair" : "Low";
 }
 
 /** Grounded "why this matched" sentence for the candidate-facing Jobs tab —

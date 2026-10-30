@@ -607,9 +607,9 @@ describe("explainMatch signals", () => {
 describe("matchBandLabel / hasResumeContent", () => {
   it("labels by the shared thresholds", () => {
     expect(matchBandLabel(STRONG_MATCH_THRESHOLD)).toBe("Strong");
-    expect(matchBandLabel(STRONG_MATCH_THRESHOLD - 1)).toBe("Good");
-    expect(matchBandLabel(FAIR_MATCH_SCORE)).toBe("Good");
-    expect(matchBandLabel(FAIR_MATCH_SCORE - 1)).toBe("Possible");
+    expect(matchBandLabel(STRONG_MATCH_THRESHOLD - 1)).toBe("Fair");
+    expect(matchBandLabel(FAIR_MATCH_SCORE)).toBe("Fair");
+    expect(matchBandLabel(FAIR_MATCH_SCORE - 1)).toBe("Low");
   });
 
   it("treats an empty parse as no content", () => {

@@ -294,17 +294,13 @@ export function fitHeadline(fit: FitSummary): string | null {
   return `${fit.meets} of ${fit.total} ${fit.total === 1 ? "criterion" : "criteria"} fully met${partly > 0 ? `, ${partly} partly` : ""}`;
 }
 
-export type CandidateSignalKey = "strong" | "promising" | "fair" | "low";
+export type CandidateSignalKey = "strong" | "fair" | "low";
 
-/** The one-word read shown beside the score. The score band alone says "Strong" even when the
- *  criteria card shows gaps, so a strong score with any gap or near-miss reads "Promising". */
+/** The one-word read shown beside the score. It follows the score band only, so the same number reads
+ *  the same on every screen; unmet criteria are shown by the criteria card, not by a different label. */
 export function candidateSignal(score: number, fit: FitSummary): { key: CandidateSignalKey; label: string; tone: DotTone } {
   const band = matchBand(score);
-  if (band === "strong") {
-    return fit.gaps.length === 0 && fit.close.length === 0
-      ? { key: "strong", label: "Strong match", tone: "good" }
-      : { key: "promising", label: "Promising match", tone: "soon" };
-  }
+  if (band === "strong") return { key: "strong", label: "Strong match", tone: "good" };
   const meetsNothing = fit.total > 0 && fit.meets === 0 && fit.close.length === 0;
   if (band === "fair" && !meetsNothing) return { key: "fair", label: "Fair match", tone: "soon" };
   return { key: "low", label: "Low match", tone: "unknown" };
