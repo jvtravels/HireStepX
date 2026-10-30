@@ -559,7 +559,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   /* Initial load only: an approved company with no completed fetch yet is
      "loading", so the first paint is a skeleton instead of a false empty
      state. Later refreshes (archive, reopen) keep the list on screen. */
-  const requirementsLoading = companyStatus === "approved" && !requirementsLoaded;
+  const requirementsLoading = companyStatusLoading || (companyStatus === "approved" && !requirementsLoaded);
 
   useEffect(() => {
     refreshRequirements();

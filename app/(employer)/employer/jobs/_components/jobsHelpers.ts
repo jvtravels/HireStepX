@@ -22,13 +22,13 @@ export function budgetLabel(req: RequirementSummary): string | null {
   const { budgetMin, budgetMax, salaryType } = req;
   if (budgetMin == null && budgetMax == null) return null;
   /* The server caps per-annum budgets at 1000 lakhs, so a larger value is a raw
-     rupee amount saved before that validation; show it as rupees, not "LPA". */
+     rupee amount saved before that validation; show it in lakhs so every job reads the same. */
   const rawRupees = (salaryType === "per-annum" || salaryType == null) && Math.max(budgetMin ?? 0, budgetMax ?? 0) > 1000;
   if (rawRupees) {
-    const fmtRaw = (n: number) => `₹${formatNumber(n)}`;
-    if (budgetMin != null && budgetMax != null) return `${fmtRaw(budgetMin)} to ${formatNumber(budgetMax)}/year`;
-    if (budgetMin != null) return `${fmtRaw(budgetMin)}+/year`;
-    return `Up to ${fmtRaw(budgetMax as number)}/year`;
+    const lakhs = (n: number) => Number((n / 100000).toFixed(2));
+    if (budgetMin != null && budgetMax != null) return `₹${lakhs(budgetMin)} to ${lakhs(budgetMax)} LPA`;
+    if (budgetMin != null) return `₹${lakhs(budgetMin)}+ LPA`;
+    return `Up to ₹${lakhs(budgetMax as number)} LPA`;
   }
   if (salaryType === "per-annum" || salaryType == null) {
     if (budgetMin != null && budgetMax != null) return `₹${budgetMin} to ${budgetMax} LPA`;

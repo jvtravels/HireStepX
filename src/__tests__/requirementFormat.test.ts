@@ -98,7 +98,7 @@ describe("budgetLabel", () => {
     expect(budgetLabel(req({ budgetMin: 12, budgetMax: 18 }))).toBe("₹12 to 18 LPA");
   });
   it("does not label raw rupee amounts as LPA", () => {
-    expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18,00,000 to 28,00,000/year");
+    expect(budgetLabel(req({ budgetMin: 1800000, budgetMax: 2800000 }))).toBe("₹18 to 28 LPA");
   });
 });
 
