@@ -104,7 +104,9 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   useEmployerBreadcrumb(
     requirement && candidate && !d.unavailable
       ? [{ label: requirement.title, path: shortlistHref }, { label: maskedName(candidate) }]
-      : null,
+      : requirement
+        ? [{ label: requirement.title, path: shortlistHref }, { label: "Candidate" }]
+        : null,
   );
 
   const back = <LinkCta href={shortlistHref} variant="outline">Back to shortlist</LinkCta>;

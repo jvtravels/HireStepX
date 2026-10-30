@@ -168,7 +168,7 @@ function DashboardSearch({ jobs, candidates }: { jobs: RequirementSummary[]; can
               </CommandGroup>
             )}
             {term && total === 0 && (
-              <p className="m-0 px-2.5 py-3 text-[13px] text-hx-ink-soft">Nothing matches &ldquo;{q.trim()}&rdquo;. Try a job title, a skill or a candidate name.</p>
+              <p className="m-0 px-2.5 py-3 text-[13px] text-hx-ink-soft">Nothing matches &ldquo;{q.trim()}&rdquo;. Search covers job titles, skills and strong-match candidates. Other candidates are on each job page.</p>
             )}
           </CommandList>
         </div>

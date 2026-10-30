@@ -455,6 +455,12 @@ export default function EmployerMessagesV2() {
   const activeMasked = active ? isMaskedName(context?.candidateName ?? active.counterpartName) : false;
     // The server refuses invites and new messages for a candidate who declined or withdrew; don't offer them.
   const inviteClosed = context?.candidateWithdrew === true || context?.candidateResponse === "declined";
+  // A declined or withdrawn candidate keeps their old pipeline status in the data ("Interview invited"), which reads as still live.
+  const activeStatusLabel = active
+    ? !["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && inviteClosed
+      ? context?.candidateWithdrew ? "Candidate withdrew" : "Candidate declined"
+      : STATUS_LABEL[active.candidateStatus] || active.candidateStatus
+    : "";
   const closedNotice = context?.candidateWithdrew
     ? "This candidate has withdrawn from employer contact. Earlier messages stay readable, but you can't send new ones."
     : context?.candidateResponse === "declined"
@@ -473,7 +479,7 @@ export default function EmployerMessagesV2() {
         headingRef={threadHeadingRef}
         badges={
           <>
-            <StatusPill label={STATUS_LABEL[active.candidateStatus] || active.candidateStatus} tone={statusTone(active.candidateStatus)} />
+            <StatusPill label={activeStatusLabel} tone={statusTone(active.candidateStatus)} />
             {active.matchScore != null && <ScoreChip score={active.matchScore} />}
           </>
         }
@@ -563,7 +569,7 @@ export default function EmployerMessagesV2() {
               facts={[
                 { label: "Candidate", value: <MaskedIdentity name={activeName} nameStyle={{ fontSize: 13 }} /> },
                 { label: "Role", value: active.roleTitle },
-                { label: "Status", value: STATUS_LABEL[active.candidateStatus] || active.candidateStatus },
+                { label: "Status", value: activeStatusLabel },
                 ...(active.matchScore != null ? [{ label: "Match", value: <ScoreChip score={active.matchScore} /> }] : []),
               ]}
               interviewAt={context?.interviewScheduledAt ?? null}

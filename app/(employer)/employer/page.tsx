@@ -240,6 +240,11 @@ function EmployerDashboard() {
     () => buildRecommendedCards(openRequirements, dashboard?.recommended ?? null, now),
     [openRequirements, dashboard, now],
   );
+  // The search box covers every strong match, not only the 3 cards shown on the page.
+  const searchableCandidates = useMemo(
+    () => buildRecommendedCards(openRequirements, dashboard?.recommended ?? null, now, 100),
+    [openRequirements, dashboard, now],
+  );
   const insights = useMemo(
     () => buildInsights(openRequirements, dashboard?.jobs ?? [], now),
     [openRequirements, dashboard, now],
@@ -296,7 +301,7 @@ function EmployerDashboard() {
         </EmployerHeaderAction>
       )}
       <div className="mx-stagger overflow-hidden rounded-2xl border border-hx-line bg-white">
-        <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={recommendedCards} />
+        <DashboardHeader companyName={companyName} range={range} onRangeChange={setRange} jobs={openRequirements} recommended={searchableCandidates} />
 
         {suspended && (
           <div role="status" className="border-b border-hx-line bg-hx-soft px-7 py-3 text-[14px] text-hx-ink-soft">

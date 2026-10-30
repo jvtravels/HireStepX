@@ -38,11 +38,14 @@ export function useNotificationFeed(audience: Audience, opts: { filter?: FeedFil
   const [unreadCount, setUnreadCount] = useState(0);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadedKey, setLoadedKey] = useState("");
   const [error, setError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [announcement, setAnnouncement] = useState("");
   const pending = useRef(0);
   const prevUnread = useRef<number | null>(null);
+
+  const viewKey = `${audience}|${filter}|${category ?? ""}`;
 
   const query = useCallback(
     (cursor?: string | null) => {
@@ -62,6 +65,7 @@ export function useNotificationFeed(audience: Audience, opts: { filter?: FeedFil
       return false;
     }
     if (pending.current === 0) {
+      setLoadedKey(viewKey);
       setItems(res.data.notifications);
       setNextCursor(res.data.nextCursor);
       setUnreadCount(res.data.unreadCount);
@@ -75,9 +79,9 @@ export function useNotificationFeed(audience: Audience, opts: { filter?: FeedFil
     setError(false);
     setLoading(false);
     return true;
-  }, [query]);
+  }, [query, viewKey]);
 
-  usePolling(load, POLL_MS, { restartKey: `${audience}|${filter}|${category ?? ""}`, enabled });
+  usePolling(load, POLL_MS, { restartKey: viewKey, enabled });
 
   const loadMore = useCallback(async () => {
     if (!nextCursor || loadingMore) return;
@@ -131,5 +135,7 @@ export function useNotificationFeed(audience: Audience, opts: { filter?: FeedFil
     if (!ok) await load();
   }, [audience, send, load]);
 
-  return { items, unreadCount, loading, error, loadingMore, hasMore: nextCursor !== null, announcement, reload: load, loadMore, act, markAllRead };
+  // Right after a tab switch `items` still holds the previous tab's rows until the new fetch lands.
+  const stale = loadedKey !== viewKey;
+  return { items: stale ? [] : items, unreadCount, loading: loading || (stale && !error), error, loadingMore, hasMore: nextCursor !== null, announcement, reload: load, loadMore, act, markAllRead };
 }

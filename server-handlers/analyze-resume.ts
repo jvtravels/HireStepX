@@ -348,7 +348,7 @@ Return a JSON object with ALL of these fields filled in thoroughly:
 
 {
   "headline": "A compelling one-line professional identity (e.g. 'Senior Product Designer with 5+ years in B2B SaaS')",
-  "summary": "A 2-3 sentence professional narrative covering their career arc, key strengths, and what makes them stand out. Write in third person. Be specific — reference actual companies, roles, or domains from the resume.",
+  "summary": "A 2-3 sentence professional narrative covering their career arc, key strengths, and what makes them stand out. Write in third person without gendered pronouns (no he/she/his/her: use the person's role, \"the candidate\" or \"they\"). Be specific — reference actual companies, roles, or domains from the resume.",
   "yearsExperience": <number or null>,
   "totalYearsExperience": <integer 0-50. The candidate's TOTAL career years of experience overall, regardless of domain. Sum of all professional work history. Example: a Senior Product Designer with 6 years across two companies → 6.>,
   "primaryDomain": "<short canonical domain label for the candidate's strongest functional area, e.g. 'Product Design', 'Java Backend', 'Frontend Engineering', 'Data Science', 'Product Management', 'Sales', 'Marketing'. Pick ONE — the area where the resume shows the most depth + recency. This is critical: downstream logic uses primaryDomain vs the target role to decide whether the candidate is a domain pivot vs an in-domain hire.>",
