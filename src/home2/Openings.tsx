@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
-import { Arrow, Close, Shell } from "./Pages";
+import { Arrow, Shell } from "./Pages";
 import {
   DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
 } from "../../server-handlers/_public-openings-helpers";
@@ -55,11 +55,39 @@ const openingsCss = `
 .op-list { padding-top: 0; }
 .op-body .op-lead { margin-bottom: 14px; }
 .op-note2 { margin-top: 12px; }
+.op-tabs { border-bottom: 1px solid var(--line); }
+.op-tabs .hx-wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.op-tab { display: inline-block; padding: 16px 4px; font-size: 15px; font-weight: 600; color: var(--ink); border-bottom: 2px solid var(--ink); margin-bottom: -1px; }
+.op-dhead { padding-block: 72px 32px; }
+.op-dhead { text-align: left; }
+.op-dhead .hx-h1 { margin: 14px 0 0; max-width: 20ch; text-align: left; font-size: clamp(34px, 4.6vw, 56px); }
+.op-dlayout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 56px; align-items: start; padding: 40px 0 56px; }
+.op-main { display: grid; gap: 36px; max-width: 720px; }
+.op-main h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 12px; }
+.op-main p { color: var(--ink-2); text-wrap: pretty; }
+.op-list-b { margin: 0; padding: 0 0 0 20px; list-style: disc; display: grid; gap: 10px; color: var(--ink-2); }
+.op-list-b li::marker { color: var(--ink-3); }
+.op-win { margin: 0; display: grid; gap: 14px; }
+.op-win dt { font-size: 14px; font-weight: 600; color: var(--ink); }
+.op-win dd { margin: 2px 0 0; color: var(--ink-2); }
+.op-aside { position: sticky; top: 88px; display: grid; gap: 20px; padding: 24px; border-radius: 16px; border: 1px solid var(--line); background: var(--white); }
+.op-aside h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+.op-aside dl { margin: 0; display: grid; gap: 14px; }
+.op-aside dt { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+.op-aside dd { margin: 2px 0 0; font-size: 15px; color: var(--ink); }
+.op-aside .hx-btn { width: 100%; justify-content: center; }
+.op-fine { padding-top: 24px; border-top: 1px solid var(--line); display: grid; gap: 8px; }
+@container (max-width: 1000px) {
+  .op-dlayout { grid-template-columns: 1fr; gap: 32px; }
+  .op-aside { position: static; }
+}
 @container (max-width: 1000px) and (min-width: 721px) {
   .op-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @container (max-width: 720px) {
   .op-head { padding: 56px 0 28px; }
+  .op-dhead { padding-block: 40px 24px; }
+  .op-tabs .hx-btn { padding-inline: 16px; }
   .op-grid { grid-template-columns: 1fr; }
   .op-body { padding-bottom: 44px; gap: 32px; }
   .op-cta .hx-btn { width: 100%; }
@@ -160,58 +188,92 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
   );
 }
 
+function Bullets({ title, items }: { title: string; items?: string[] }) {
+  if (!items?.length) return null;
+  return (
+    <section>
+      <h2>{title}</h2>
+      <ul className="op-list-b">{items.map((t) => <li key={t}>{t}</li>)}</ul>
+    </section>
+  );
+}
+
 export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening; url: string }) {
   useEffect(() => { captureClientEvent("opening_view", { opening: o.slug }); }, [o.slug]);
   const share = `https://wa.me/?text=${encodeURIComponent(`${o.title}, hiring on HireStepX: ${url}`)}`;
+  const d = o.details;
+  const exp = experienceLabel(o.experienceMin, o.experienceMax);
+  const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
+  const rows: [string, string][] = [
+    ["Location", o.location],
+    ["Work mode", mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : ""],
+    ["Experience", exp ?? ""],
+    ["Type", o.employmentType === "full-time" ? "Full-time" : o.employmentType ?? ""],
+    ["Department", DEPARTMENT_LABEL[departmentOf(o)]],
+  ].filter(([, v]) => v) as [string, string][];
+  const signUp = (where: string) => (
+    <a data-no-underline className="hx-btn" href={practiseHref(o)}
+      onClick={() => captureClientEvent("opening_practise_click", { opening: o.slug, role: o.title, where })}>
+      Sign up
+    </a>
+  );
   return (
     <Shell active="openings">
       <style>{openingsCss}</style>
-      <section className="op-head">
+      <div className="hx-wrap op-dhead">
+        <span className="hx-kicker">Hiring on HireStepX</span>
+        <h1 className="hx-h1">{o.title}</h1>
+      </div>
+      <div className="op-tabs">
         <div className="hx-wrap">
-          <span className="hx-kicker">Hiring on HireStepX</span>
-          <h1 className="hx-h1">{o.title}</h1>
-          <p className="hx-lede">{o.summary}</p>
-          <Facts o={o} />
-          <div className="op-cta">
-            <a data-no-underline className="hx-btn lg" href={practiseHref(o)}
-              onClick={() => captureClientEvent("opening_practise_click", { opening: o.slug, role: o.title })}>
-              Practise for this role <Arrow />
-            </a>
-            <a data-no-underline className="hx-btn lg alt" href={share} target="_blank" rel="noopener noreferrer"
-              onClick={() => captureClientEvent("opening_share_click", { opening: o.slug, channel: "whatsapp" })}>
-              Share on WhatsApp
-            </a>
-          </div>
-        </div>
-      </section>
-      <div className="hx-wrap">
-        <div className="op-body">
-          {o.skills.length > 0 && (
-            <div>
-              <h2>What this role is likely to test</h2>
-              <p className="op-lead">Your practice interview for this role leans on these skills.</p>
-              <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>
-            </div>
-          )}
-          <div>
-            <h2>How it works</h2>
-            <ol className="op-steps">
-              <li>Sign up and start a practice interview set up for this role. No credit card needed.</li>
-              <li>Get a scored report with a STAR breakdown and a coached model answer.</li>
-              <li>Choose whether to share your profile. Employers only see what you share.</li>
-            </ol>
-          </div>
-          <div>
-            <p className="op-note">{TRUST.posted} {TRUST.anonymous} {TRUST.noApply}</p>
-            <p className="op-note op-note2">
-              <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`}>Report this listing</a>
-              {" · "}
-              <a href="/openings">All open roles</a>
-            </p>
-          </div>
+          <span className="op-tab">Job details</span>
+          {signUp("tabs")}
         </div>
       </div>
-      <Close kicker="Ready?" title="Practise first, get seen second" body="Your scored answers are what employers read. Start with a free practice interview for this role." primary={["Practise for this role", practiseHref(o)]} />
+      <div className="hx-wrap">
+        <div className="op-dlayout">
+          <div className="op-main">
+            <section>
+              <h2>About the opportunity</h2>
+              <p>{d?.about ?? o.summary}</p>
+            </section>
+            <Bullets title="What you will do" items={d?.responsibilities} />
+            <Bullets title="What we are looking for" items={d?.requirements} />
+            <Bullets title="Good to have" items={d?.goodToHave} />
+            {d?.success?.length ? (
+              <section>
+                <h2>What success looks like</h2>
+                <dl className="op-win">
+                  {d.success.map((x) => <div key={x.label}><dt>{x.label}</dt><dd>{x.text}</dd></div>)}
+                </dl>
+              </section>
+            ) : null}
+            <Bullets title="What the opportunity offers" items={d?.offers} />
+            {o.skills.length > 0 && (
+              <section>
+                <h2>Skills for this role</h2>
+                <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>
+              </section>
+            )}
+          </div>
+          <aside className="op-aside" aria-label="Role details">
+            <h2>Details</h2>
+            <dl>{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            {signUp("details")}
+            <div className="op-fine">
+              <p className="op-note">{TRUST.posted} {TRUST.anonymous} {TRUST.noApply}</p>
+              <p className="op-note">
+                <a href={share} target="_blank" rel="noopener noreferrer"
+                  onClick={() => captureClientEvent("opening_share_click", { opening: o.slug, channel: "whatsapp" })}>Share on WhatsApp</a>
+                {" · "}
+                <a href={`/contact?topic=report-listing&opening=${encodeURIComponent(o.slug)}`}>Report this listing</a>
+                {" · "}
+                <a href="/openings">All open roles</a>
+              </p>
+            </div>
+          </aside>
+        </div>
+      </div>
     </Shell>
   );
 }

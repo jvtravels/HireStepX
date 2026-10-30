@@ -16,6 +16,43 @@ export const STATIC_OPENINGS: PublicOpening[] = [
     skills: ["LinkedIn Sales Navigator", "Apollo", "HubSpot", "Salesforce", "Email sequencing"],
     employmentType: "full-time",
     department: "sales",
+    details: {
+      about:
+        "An expanding SaaS business is looking for an SDR to build a qualified sales pipeline in India and international markets. You will identify potential customers, start conversations across email, LinkedIn and calls, qualify opportunities, and arrange meetings for the sales team. The role suits someone who enjoys outbound sales, thoughtful research and learning how different markets buy software.",
+      responsibilities: [
+        "Research relevant companies and decision-makers across assigned markets and build high-quality prospect lists.",
+        "Run personalised outbound sequences using email, LinkedIn and calls.",
+        "Follow up promptly on inbound enquiries, demo requests and other relevant leads.",
+        "Hold initial discovery conversations to understand prospect needs, fit and buying readiness.",
+        "Book qualified meetings and hand over clear notes and context to the sales team.",
+        "Keep accurate CRM records, outreach activity and pipeline updates.",
+        "Share recurring customer objections, competitor insights and messaging feedback.",
+        "Test outreach approaches by segment, market and channel, and help build a repeatable sales playbook.",
+      ],
+      requirements: [
+        "1 to 2 years of experience in SDR, BDR, inside sales or software business development.",
+        "Experience generating qualified meetings or pipeline. International prospecting experience is preferred.",
+        "Strong spoken and written English, and confidence engaging founders and senior decision-makers.",
+        "Hands-on familiarity with tools such as LinkedIn Sales Navigator, Apollo, HubSpot, Salesforce or email sequencing platforms.",
+        "Organised, resilient and self-directed, with the flexibility to overlap with international time zones.",
+      ],
+      goodToHave: [
+        "Exposure to SaaS for e-commerce, D2C brands, marketing technology or analytics.",
+        "Understanding of Shopify, Amazon, digital advertising or common e-commerce business metrics.",
+        "Experience at an early-stage startup, or building outbound outreach for a new market.",
+      ],
+      success: [
+        { label: "First 30 days", text: "Learn the offering, target customers and competitive landscape. Build prospect lists and launch the first sequences." },
+        { label: "By 60 days", text: "Run an organised outreach rhythm and consistently generate qualified sales conversations." },
+        { label: "By 90 days", text: "Improve meeting quality and conversion, refine messaging and document what works by region." },
+      ],
+      offers: [
+        "Fully remote working arrangement.",
+        "Competitive compensation, with details shared during the selection process.",
+        "Exposure to international sales and a path towards larger account responsibilities.",
+        "Close collaboration with sales leadership in a growing business.",
+      ],
+    },
     listedAt: "2026-10-30T00:00:00.000Z",
     expiresAt: "2026-12-14T00:00:00.000Z",
   },

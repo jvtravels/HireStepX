@@ -50,6 +50,16 @@ export function matchesOpeningSearch(o: PublicOpening, q: string): boolean {
   return terms.every((t) => hay.includes(t));
 }
 
+/** Long-form sections for the detail page. Same rule as everything else here: never name the employer. */
+export interface OpeningDetails {
+  about?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  goodToHave?: string[];
+  success?: { label: string; text: string }[];
+  offers?: string[];
+}
+
 export interface PublicOpening {
   slug: string;
   title: string;
@@ -62,6 +72,7 @@ export interface PublicOpening {
   employmentType: string | null;
   /** Key of DEPARTMENT_LABEL. Absent on roles from the database until the admin form asks for it. */
   department?: string;
+  details?: OpeningDetails;
   listedAt: string;
   expiresAt: string;
 }
