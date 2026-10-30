@@ -148,12 +148,16 @@ export async function generateMetadata({
   // only 1-5 roles still has real band data for its headline role, so it
   // gets the same numeric treatment instead of falling back straight to
   // the hand-written, number-free searchPhrase from data/salary-seo.ts.
+  // Labels like "Wells Fargo India" or "State Bank of India" already say India;
+  // repeating it reads as "India Salary India" in the SERP.
+  const inIndia = /\bIndia\b/.test(label) ? "" : "India";
+  const salaryIn = `Salary${inIndia ? " India" : ""}`;
   const baseTitle = isBroadRoster
     ? headlineRange
-      ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange} (+${roleSections.length - 1} More Roles)`
-      : `${label} Salary Guide India 2026 — ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
+      ? `${label} ${salaryIn} 2026: ${firstRoleTitle} ${headlineRange} (+${roleSections.length - 1} More Roles)`
+      : `${label} Salary Guide${inIndia ? " India" : ""} 2026 — ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
     : headlineRange
-      ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange}`
+      ? `${label} ${salaryIn} 2026: ${firstRoleTitle} ${headlineRange}`
       : page.searchPhrase;
   // For a company/role combo with a long name and a wide range (e.g.
   // "Goldman Sachs" + "Software Engineer" + "₹20-110 LPA"), the full
@@ -164,12 +168,12 @@ export async function generateMetadata({
   const titleCandidates = isBroadRoster
     ? [
         baseTitle,
-        headlineRange ? `${label} Salary India 2026: ${firstRoleTitle} ${headlineRange}` : undefined,
-        headlineRange ? `${label} Salary India 2026: ${headlineRange}` : undefined,
-        `${label} Salary India 2026 (${roleSections.length} Roles)`,
+        headlineRange ? `${label} ${salaryIn} 2026: ${firstRoleTitle} ${headlineRange}` : undefined,
+        headlineRange ? `${label} ${salaryIn} 2026: ${headlineRange}` : undefined,
+        `${label} ${salaryIn} 2026 (${roleSections.length} Roles)`,
       ].filter((c): c is string => Boolean(c))
     : headlineRange
-      ? [baseTitle, `${label} Salary India 2026: ${headlineRange}`, page.searchPhrase]
+      ? [baseTitle, `${label} ${salaryIn} 2026: ${headlineRange}`, page.searchPhrase]
       : [baseTitle];
   const fittingTitle = titleCandidates.find((c) => `${c} | HireStepX`.length <= 60);
   // If nothing fits, truncate the LAST candidate (the shortest, safest
