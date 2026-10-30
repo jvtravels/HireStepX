@@ -824,5 +824,17 @@ p.hx-swap, div.hx-swap { display: block; }
 .hs-q { margin: 0; padding: 14px 16px; border-radius: 12px; background: var(--wash); border: 1px solid var(--line); font-size: 15px; line-height: 1.55; color: var(--ink-2); }
 .hs-reply { margin: 0; padding: 10px 14px; border-radius: 12px; background: oklch(0.95 0.03 285); color: var(--btn); font-size: 14px; font-weight: 500; animation: hx-rise 340ms cubic-bezier(0.22, 1, 0.36, 1) both; }
 @media (max-width: 720px) { .hs-card { min-height: 260px; padding: 20px; } }
+@media (max-width: 720px) {
+  .hx-footwrap { padding-top: 40px; padding-bottom: 24px; }
+  .hx-foot { gap: 24px; }
+  .hx-foot-brand p { margin-top: 8px; font-size: 14px; line-height: 1.5; }
+  .hx .hx-foot-rights a { display: inline; min-height: 0; }
+  .hx-foot-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .hx-foot-cols div { gap: 0; }
+  .hx-foot-cols h3 { margin-bottom: 6px; font-size: 11px; }
+  .hx-foot-cols a, .hx-foot-btn { font-size: 14px; }
+  .hx .hx-foot-cols a { min-height: 40px; }
+  .hx-foot-bar { padding-top: 16px; font-size: 13px; }
+}
 `;
 
