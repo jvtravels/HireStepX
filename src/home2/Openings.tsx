@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { captureClientEvent } from "../posthogClient";
+import { Briefcase, Building2, Check, Clock, Gift, ListChecks, MapPin, Sparkles, Target, UserCheck, Wifi, type LucideIcon } from "lucide-react";
 import { Arrow, Shell } from "./Pages";
 import {
   DEPARTMENT_LABEL, departmentOf, experienceLabel, matchesOpeningSearch, practiseHref, WORK_MODE_LABEL, type PublicOpening,
@@ -65,8 +66,14 @@ const openingsCss = `
 .op-main { display: grid; gap: 36px; max-width: 720px; }
 .op-main h2 { font-family: 'Bricolage Grotesque', var(--font-ui), ui-sans-serif, system-ui, sans-serif; font-size: 20px; line-height: 1.2; letter-spacing: -0.01em; font-weight: 600; margin-bottom: 12px; }
 .op-main p { color: var(--ink-2); text-wrap: pretty; }
-.op-list-b { margin: 0; padding: 0 0 0 20px; list-style: disc; display: grid; gap: 10px; color: var(--ink-2); }
-.op-list-b li::marker { color: var(--ink-3); }
+.op-h { display: flex; align-items: center; gap: 12px; }
+.op-ico { flex: none; width: 32px; height: 32px; border-radius: 10px; display: inline-grid; place-items: center; background: var(--wash); border: 1px solid var(--line); color: var(--ink); }
+.op-main h2.op-h { margin-bottom: 14px; }
+.op-list-b { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; color: var(--ink-2); }
+.op-list-b li { display: grid; grid-template-columns: 20px 1fr; gap: 10px; align-items: start; }
+.op-list-b li svg { margin-top: 3px; color: var(--ink); }
+.op-row { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.op-row > svg { margin-top: 2px; color: var(--ink-3); }
 .op-win { margin: 0; display: grid; gap: 14px; }
 .op-win dt { font-size: 14px; font-weight: 600; color: var(--ink); }
 .op-win dd { margin: 2px 0 0; color: var(--ink-2); }
@@ -188,12 +195,16 @@ export function OpeningsIndexPage({ openings }: { openings: PublicOpening[] }) {
   );
 }
 
-function Bullets({ title, items }: { title: string; items?: string[] }) {
+function Head({ icon: Icon, children }: { icon: LucideIcon; children: string }) {
+  return <h2 className="op-h"><span className="op-ico" aria-hidden="true"><Icon size={16} strokeWidth={2} /></span>{children}</h2>;
+}
+
+function Bullets({ title, icon, items }: { title: string; icon: LucideIcon; items?: string[] }) {
   if (!items?.length) return null;
   return (
     <section>
-      <h2>{title}</h2>
-      <ul className="op-list-b">{items.map((t) => <li key={t}>{t}</li>)}</ul>
+      <Head icon={icon}>{title}</Head>
+      <ul className="op-list-b">{items.map((t) => <li key={t}><Check size={16} strokeWidth={2.5} aria-hidden="true" /><span>{t}</span></li>)}</ul>
     </section>
   );
 }
@@ -204,6 +215,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
   const d = o.details;
   const exp = experienceLabel(o.experienceMin, o.experienceMax);
   const mode = o.workMode ? WORK_MODE_LABEL[o.workMode] : null;
+  const ROW_ICON: Record<string, LucideIcon> = { Location: MapPin, "Work mode": Wifi, Experience: Clock, Type: Briefcase, Department: Building2 };
   const rows: [string, string][] = [
     ["Location", o.location],
     ["Work mode", mode && !o.location.toLowerCase().includes(mode.toLowerCase()) ? mode : ""],
@@ -234,31 +246,31 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
         <div className="op-dlayout">
           <div className="op-main">
             <section>
-              <h2>About the opportunity</h2>
+              <Head icon={Building2}>About the opportunity</Head>
               <p>{d?.about ?? o.summary}</p>
             </section>
-            <Bullets title="What you will do" items={d?.responsibilities} />
-            <Bullets title="What we are looking for" items={d?.requirements} />
-            <Bullets title="Good to have" items={d?.goodToHave} />
+            <Bullets title="What you will do" icon={ListChecks} items={d?.responsibilities} />
+            <Bullets title="What we are looking for" icon={UserCheck} items={d?.requirements} />
+            <Bullets title="Good to have" icon={Sparkles} items={d?.goodToHave} />
             {d?.success?.length ? (
               <section>
-                <h2>What success looks like</h2>
+                <Head icon={Target}>What success looks like</Head>
                 <dl className="op-win">
                   {d.success.map((x) => <div key={x.label}><dt>{x.label}</dt><dd>{x.text}</dd></div>)}
                 </dl>
               </section>
             ) : null}
-            <Bullets title="What the opportunity offers" items={d?.offers} />
+            <Bullets title="What the opportunity offers" icon={Gift} items={d?.offers} />
             {o.skills.length > 0 && (
               <section>
-                <h2>Skills for this role</h2>
+                <Head icon={Briefcase}>Skills for this role</Head>
                 <ul className="op-facts">{o.skills.map((s) => <li key={s}>{s}</li>)}</ul>
               </section>
             )}
           </div>
           <aside className="op-aside" aria-label="Role details">
             <h2>Details</h2>
-            <dl>{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+            <dl>{rows.map(([k, v]) => { const I = ROW_ICON[k]; return <div className="op-row" key={k}><I size={18} strokeWidth={1.75} aria-hidden="true" /><div><dt>{k}</dt><dd>{v}</dd></div></div>; })}</dl>
             {signUp("details")}
             <div className="op-fine">
               <p className="op-note">{TRUST.posted} {TRUST.anonymous} {TRUST.noApply}</p>
