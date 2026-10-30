@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { OpeningsIndexPage } from "@/marketing-v2/OpeningsPages";
-import { fetchLiveOpenings } from "@/publicOpenings";
+import { fetchLiveOpenings } from "../../../server-handlers/_public-openings-fetch";
 
 export const revalidate = 300;
 

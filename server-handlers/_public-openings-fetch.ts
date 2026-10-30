@@ -1,4 +1,4 @@
-import { PUBLIC_OPENING_SELECT, liveOpenings, type OpeningRow, type PublicOpening } from "../server-handlers/_public-openings-helpers";
+import { PUBLIC_OPENING_SELECT, liveOpenings, type OpeningRow, type PublicOpening } from "./_public-openings-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
 

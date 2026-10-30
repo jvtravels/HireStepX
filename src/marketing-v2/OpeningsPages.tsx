@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import type { CSSProperties } from "react";
 import { tokens as t, fonts } from "../auth/_tokens";
 import { captureClientEvent } from "../posthogClient";
-import { PageShell, PageHero, ctaPrimary, ctaGhost, container, containerNarrow, h3, body } from "./MarketingPagesV2";
+import { PageShell, PageHero, ctaPrimary, ctaGhost, container, h3, body } from "./MarketingPagesV2";
 import {
   experienceLabel, practiseHref, WORK_MODE_LABEL, type PublicOpening,
 } from "../../server-handlers/_public-openings-helpers";
@@ -108,7 +108,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
         }
       />
       <section style={{ paddingTop: 48, paddingBottom: 72 }}>
-        <div className="mv2-container" style={{ ...containerNarrow, display: "grid", gap: 40 }}>
+        <div className="mv2-container" style={{ ...container, display: "grid", gap: 40 }}>
           {o.skills.length > 0 && (
             <div>
               <h2 style={{ ...h3, fontSize: 26, margin: "0 0 12px" }}>What this role is likely to test</h2>
@@ -120,7 +120,7 @@ export function OpeningDetailPage({ opening: o, url }: { opening: PublicOpening;
           )}
           <div>
             <h2 style={{ ...h3, fontSize: 26, margin: "0 0 12px" }}>How it works</h2>
-            <ol style={{ ...body, margin: 0, paddingLeft: 22, display: "grid", gap: 8 }}>
+            <ol style={{ ...body, margin: 0, paddingLeft: 22, listStyle: "decimal", display: "block" }}>
               <li>Sign up and start a practice interview set up for this role. No credit card needed.</li>
               <li>Get a scored report with a STAR breakdown and a coached model answer.</li>
               <li>Choose whether to share your profile. Employers only see what you share.</li>

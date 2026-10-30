@@ -9,7 +9,7 @@ import { buildRoleSections } from "./(marketing)/salary/[company]/_jsonld";
 import { isSyntheticHeavySalaryPage } from "../src/salaryQuality";
 import { blogDuplicateKeeper, shouldNoindexBlogPost } from "../src/blogQuality";
 import { isThinDuplicateQuestionsPage } from "./(marketing)/questions/[slug]/_jsonld";
-import { fetchLiveOpenings } from "../src/publicOpenings";
+import { fetchLiveOpenings } from "../server-handlers/_public-openings-fetch";
 
 /* sitemap.xml — generated at build time. Includes:
  *   - Static marketing/legal pages (landing, pricing, privacy, terms, refund)

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { OpeningDetailPage } from "@/marketing-v2/OpeningsPages";
-import { fetchLiveOpenings } from "@/publicOpenings";
+import { fetchLiveOpenings } from "../../../../server-handlers/_public-openings-fetch";
 import { findOpeningBySlug } from "../../../../server-handlers/_public-openings-helpers";
 
 export const revalidate = 300;
