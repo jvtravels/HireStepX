@@ -855,7 +855,13 @@ export const pagesCss = `
 /* ── Pricing (slide-to-plan receipt) ── */
 .pq { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; align-items: stretch; }
 .pq-card { display: flex; flex-direction: column; gap: 16px; padding: 32px; border-radius: 24px; background: var(--white); border: 1px solid var(--line); }
-.pq .pq-card.feat { margin: 0; background: var(--sky); padding: 32px; border-radius: 24px; border-color: transparent; }
+.pq .pq-card.feat { margin: 0; background: oklch(0.257 0.086 281.288); padding: 32px; border-radius: 24px; border-color: transparent; }
+.pq-card.feat .pq-name { color: oklch(0.86 0.04 280); }
+.pq-card.feat .pq-name i { background: var(--white); color: oklch(0.257 0.086 281.288); }
+.pq-card.feat .pq-price b, .pq-card.feat .pq-sess { color: var(--white); }
+.pq-card.feat .pq-price span, .pq-card.feat .pq-note { color: oklch(0.86 0.04 280); }
+.pq-card.feat .hx-btn { background: var(--white); color: oklch(0.257 0.086 281.288); box-shadow: none; }
+.pq-card.feat .hx-btn:hover { background: oklch(0.94 0.03 280); }
 .pq-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
 .pq-name i { font-style: normal; padding: 4px 12px; border-radius: 99px; background: var(--white); color: var(--btn); letter-spacing: .04em; }
 .pq-price { margin: 0; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
