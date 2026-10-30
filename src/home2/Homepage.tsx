@@ -68,8 +68,8 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
       <div className="hx-wrap hx-nav-in">
         <Link data-no-underline className="hx-logo" href="/" aria-label="HireStepX home"><img src="/wordmark.png" alt="HireStepX" /></Link>
         <nav ref={navx.links} className="hx-links" aria-label="Primary">
-          <Link data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For Talent</Link>
-          <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For Companies</Link>
+          <Link data-no-underline data-navx href={talentHref} aria-current={cur("talent")}>For job seekers</Link>
+          <Link data-no-underline data-navx href="/employers" aria-current={cur("companies")}>For employers</Link>
           <Link data-no-underline data-navx href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
           <Link data-no-underline data-navx href="/resources" aria-current={cur("resources")}>Resources</Link>
           <i ref={navx.x} className="hx-x" aria-hidden="true" />
@@ -87,8 +87,8 @@ export function Nav({ active, talentHref = "/candidates" }: { active?: NavKey; t
       {open && (
         <div className="hx-menu" id="hx-menu" role="presentation" onClick={() => setOpen(false)}>
           <nav aria-label="Mobile">
-            <Link data-no-underline href={talentHref} aria-current={cur("talent")}>For Talent</Link>
-            <Link data-no-underline href="/employers" aria-current={cur("companies")}>For Companies</Link>
+            <Link data-no-underline href={talentHref} aria-current={cur("talent")}>For job seekers</Link>
+            <Link data-no-underline href="/employers" aria-current={cur("companies")}>For employers</Link>
             <Link data-no-underline href="/pricing" aria-current={cur("pricing")}>Pricing</Link>
             <Link data-no-underline href="/resources" aria-current={cur("resources")}>Resources</Link>
           </nav>
@@ -242,7 +242,7 @@ export function Footer() {
             <p className="hx-foot-rights"><a href="/privacy#your-rights">Your rights under India&apos;s DPDP Act</a>: access, correct or erase your data.</p>
           </div>
           <nav aria-label="Footer" className="hx-foot-cols">
-            <div><h3>Product</h3><a data-no-underline href="/candidates">For talent</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a><a href="/salary-report-2026">Salary report</a></div>
+            <div><h3>Product</h3><a data-no-underline href="/candidates">For job seekers</a><a data-no-underline href="/employers">For employers</a><a href="/pricing">Pricing</a><a href="/resources">Resources</a><a href="/salary-report-2026">Salary report</a></div>
             <div><h3>Company</h3><a href="/methodology">Methodology</a><a href="/contact">Contact</a><a href="/referral">Refer a friend</a></div>
             <div><h3>Legal</h3><a href="/privacy">Privacy policy</a><a href="/terms">Terms</a><a href="/refund">Refund policy</a></div>
           </nav>

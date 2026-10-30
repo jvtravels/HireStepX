@@ -359,7 +359,7 @@ const HOW: [string, string][] = [
   ["We match", "Scored practice answers are matched to what your role asks for."],
   ["We rank", "Best fit first, using fit to your role and how much they have practised."],
   ["You review", "Skill scores, readiness and practice history are open. Put any two side by side."],
-  ["Unlock", "Pay to see the name and contact details, then invite them to interview."],
+  ["Contact", "Pay to see the name and contact details, then invite them to interview."],
 ];
 
 export const d = (s: number): React.CSSProperties => ({ ["--d" as string]: `${s}s` });
