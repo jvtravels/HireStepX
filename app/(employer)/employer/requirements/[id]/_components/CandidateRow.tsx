@@ -69,7 +69,7 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
             <button
               type="button"
               aria-describedby={summaryId}
-              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
+              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left min-h-6 focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {slots.matched.map((skill) => (
                 <span key={`has-${skill}`} className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
@@ -238,7 +238,7 @@ export default function CandidateRow({
           <div className="min-w-0">
             <HoverCard openDelay={400} closeDelay={80}>
               <HoverCardTrigger asChild>
-                <Link href={profileHref} className="rq-link block truncate text-[14px] font-semibold text-hx-coal no-underline">
+                <Link href={profileHref} className="rq-link block min-h-6 truncate text-[14px] leading-6 font-semibold text-hx-coal no-underline">
                   {name}
                 </Link>
               </HoverCardTrigger>
@@ -280,7 +280,7 @@ export default function CandidateRow({
               type="button"
               onClick={onViewEvidence}
               aria-describedby={evidenceId}
-              className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
+              className="group flex min-h-6 cursor-pointer flex-col items-start justify-center rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {score != null ? (
                 <span title={practised ?? undefined} className="text-[13px] text-hx-ink-soft tabular-nums group-hover:underline">

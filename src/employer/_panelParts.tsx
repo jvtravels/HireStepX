@@ -45,7 +45,7 @@ export function PanelLink({ href, children, label }: { href: string; children: R
     <Link
       href={href}
       aria-label={label}
-      className="inline-flex items-center gap-1 rounded-md text-[13px] font-semibold text-hx-indigo no-underline transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
+      className="inline-flex min-h-6 items-center gap-1 rounded-md text-[13px] font-semibold text-hx-indigo no-underline transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
     >
       {children}
     </Link>
@@ -59,7 +59,7 @@ export function PanelButton({ onClick, children, expanded, controls }: { onClick
       onClick={onClick}
       aria-expanded={expanded}
       aria-controls={controls}
-      className="inline-flex cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-[13px] font-semibold text-hx-indigo transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
+      className="inline-flex min-h-6 cursor-pointer items-center gap-1 rounded-md border-0 bg-transparent p-0 text-[13px] font-semibold text-hx-indigo transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 motion-reduce:transition-none pointer-coarse:min-h-11"
     >
       {children}
     </button>
