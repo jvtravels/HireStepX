@@ -130,6 +130,11 @@ export function pickRequirementsToRematch<T extends RematchableRequirement>(
     scores slowly. */
 export const REMATCH_MAX_AGE_MS = 7 * 86_400_000;
 
+/** Bump to the deploy date whenever scoring changes. A requirement last matched
+    before this moment is due on the next sweep, so stored scores never keep
+    reflecting a retired formula for up to REMATCH_MAX_AGE_MS. */
+export const MATCH_ALGORITHM_EPOCH_MS = Date.parse("2026-10-31T00:00:00Z");
+
 /** Latest time any candidate input to matching changed (migration 0057):
     a number, null when nothing has changed yet, or "unknown" when the column is
     not applied or the read failed, in which case every requirement counts as due. */
@@ -169,6 +174,7 @@ export function isRematchDue(
   const matched = r.last_matched_at ? new Date(r.last_matched_at).getTime() : NaN;
   if (!Number.isFinite(matched)) return true;
   if (nowMs - matched > REMATCH_MAX_AGE_MS) return true;
+  if (matched < MATCH_ALGORITHM_EPOCH_MS) return true;
   if (latestInputChange === null) return false;
   const attempt = r.last_rematch_attempt_at ? new Date(r.last_rematch_attempt_at).getTime() : NaN;
   const baseline = Number.isFinite(attempt) ? Math.min(attempt, matched) : matched;

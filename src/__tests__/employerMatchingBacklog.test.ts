@@ -9,10 +9,11 @@ import {
   REMATCH_MAX_AGE_MS,
   fetchLatestMatchingInputChange,
   isRematchDue,
+  MATCH_ALGORITHM_EPOCH_MS,
 } from "../../server-handlers/_incremental-rematch-helpers";
 import { requiredSkillsCoverage, requiredSkillsMatched } from "../../server-handlers/_requirement-match-helpers";
 
-const NOW = Date.parse("2026-10-20T00:00:00Z");
+const NOW = Date.parse("2026-11-10T00:00:00Z");
 const iso = (ms: number) => new Date(ms).toISOString();
 const row = (over: Partial<ExistingMatchRow> & { id: string; candidate_user_id: string }): ExistingMatchRow =>
   ({ match_score: 60, unlocked: false, ...over }) as ExistingMatchRow;
@@ -91,6 +92,12 @@ describe("isRematchDue", () => {
   it("is skipped when nothing changed since the last pass", () => {
     expect(isRematchDue({ last_matched_at: iso(matchedAt) }, matchedAt - 1000, NOW)).toBe(false);
     expect(isRematchDue({ last_matched_at: iso(matchedAt) }, null, NOW)).toBe(false);
+  });
+
+  it("is due when last matched before the current scoring algorithm epoch", () => {
+    const before = MATCH_ALGORITHM_EPOCH_MS - 1000;
+    expect(isRematchDue({ last_matched_at: iso(before) }, null, before + 60_000)).toBe(true);
+    expect(isRematchDue({ last_matched_at: iso(MATCH_ALGORITHM_EPOCH_MS + 1000) }, null, MATCH_ALGORITHM_EPOCH_MS + 60_000)).toBe(false);
   });
 
   it("is due when a candidate input changed after the last pass", () => {
