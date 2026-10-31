@@ -86,7 +86,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
             </div>
             {fit.total > 0 && (
               <div className="grid gap-2">
-                <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit)}</p>
+                <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit, rows)}</p>
                 <div aria-hidden="true" className="flex gap-1">
                   {rows.map((row, i) => (
                     <span key={row.id} style={{ animationDelay: `${160 + i * 45}ms` }} className={cn("mx-seg h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />

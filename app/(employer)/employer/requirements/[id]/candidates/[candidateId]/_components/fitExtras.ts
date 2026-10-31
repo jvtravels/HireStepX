@@ -148,7 +148,7 @@ export function scoreReason(rows: FitRow[], hasPractice: boolean): string | null
   if (rows.length === 0) return null;
   const meets = rows.filter((r) => r.status === "meets").length;
   const gaps = rows.filter((r) => r.status === "gap").map((r) => r.label.toLowerCase());
-  const parts = [`${meets} of ${rows.length} ${rows.length === 1 ? "criterion" : "criteria"} fully met`];
+  const parts = [rows.length === 1 ? `${rows[0].label}: ${rows[0].has}` : `${meets} of ${rows.length} criteria fully met`];
   if (gaps.length > 0) parts.push(`gaps in ${gaps.slice(0, 2).join(" and ")}${gaps.length > 2 ? ` and ${gaps.length - 2} more` : ""}`);
   return `${parts.join(", ")}.${hasPractice ? "" : " No graded practice yet, so this reflects the resume only."}`;
 }

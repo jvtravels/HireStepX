@@ -58,6 +58,7 @@ const fit = (meets: number, total: number, gaps: string[] = [], close: string[] 
 describe("fitHeadline", () => {
   it("counts whole criteria and says how many are only partly met", () => {
     expect(fitHeadline(fit(0, 1, [], ["Required skills"]))).toBe("0 of 1 criterion fully met, 1 partly");
+    expect(fitHeadline(fit(0, 1, [], ["Required skills"]), [{ label: "Required skills", has: "4 of 9" } as never])).toBe("Required skills: 4 of 9");
     expect(fitHeadline(fit(3, 5, ["Location"], ["Skills"]))).toBe("3 of 5 criteria fully met, 1 partly");
     expect(fitHeadline(fit(4, 4))).toBe("4 of 4 criteria fully met");
   });

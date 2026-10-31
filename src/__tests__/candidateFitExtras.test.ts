@@ -82,7 +82,7 @@ describe("scoreReason", () => {
     expect(scoreReason(rows, false)).toBe("1 of 3 criteria fully met, gaps in required skills and location. No graded practice yet, so this reflects the resume only.");
   });
   it("drops the caveat when practice exists and returns null without criteria", () => {
-    expect(scoreReason([row("a", "Experience", "meets")], true)).toBe("1 of 1 criterion fully met.");
+    expect(scoreReason([{ ...row("a", "Required skills", "partial"), has: "4 of 9" }], true)).toBe("Required skills: 4 of 9.");
     expect(scoreReason([], true)).toBeNull();
   });
 });

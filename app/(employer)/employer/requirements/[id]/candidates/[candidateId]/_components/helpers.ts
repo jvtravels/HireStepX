@@ -291,8 +291,10 @@ export function summarizeFit(rows: FitRow[]): FitSummary {
 
 /** "0 of 1 criterion fully met, 1 partly"; "partly" is what reconciles a criterion like
  *  "Required skills 2 of 4" with a headline that counts whole criteria. */
-export function fitHeadline(fit: FitSummary): string | null {
+export function fitHeadline(fit: FitSummary, rows?: FitRow[]): string | null {
   if (fit.total === 0) return null;
+  // A lone criterion reads oddly as "0 of 1 fully met" next to a job with many skills; say what it measured.
+  if (fit.total === 1 && rows?.length === 1) return `${rows[0].label}: ${rows[0].has}`;
   const partly = fit.close.length;
   return `${fit.meets} of ${fit.total} ${fit.total === 1 ? "criterion" : "criteria"} fully met${partly > 0 ? `, ${partly} partly` : ""}`;
 }
@@ -535,7 +537,7 @@ export function buildCandidateSummary(candidate: Candidate, requirement: Require
   const missing = requirement.skills.filter((s) => !matched.includes(s));
   const lines = [
     `${maskedName(candidate)} for ${requirement.title}`,
-    `Match: ${candidate.matchScore} out of 100 (${candidateSignal(candidate.matchScore, fit).label.toLowerCase()})${fitHeadline(fit) ? `, ${fitHeadline(fit)}` : ""}`,
+    `Match: ${candidate.matchScore} out of 100 (${candidateSignal(candidate.matchScore, fit).label.toLowerCase()})${fitHeadline(fit, rows) ? `, ${fitHeadline(fit, rows)}` : ""}`,
     `Stage: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}`,
     experienceMonthsOf(resume ?? null) != null && `Experience: ${formatExperience(experienceMonthsOf(resume ?? null) ?? 0)}${resume?.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}`,
     candidate.city && candidate.city !== "Not specified" && `Location: ${candidate.city}`,
