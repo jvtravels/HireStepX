@@ -227,17 +227,28 @@ export const PROFILE_COLUMNS = [
 
 const UNDEFINED_COLUMN = "42703";
 
+/* PostgREST names the missing column: `column profiles.avatar_url does not exist`. */
+export function missingProfileColumn(message: string | undefined): string | null {
+  return message?.match(/column (?:\w+\.)?(\w+) does not exist/i)?.[1] ?? null;
+}
+
 export async function getProfile(userId: string): Promise<Profile | null> {
   const client = await getSupabase();
-  let { data, error } = await client
-    .from("profiles")
-    .select(PROFILE_COLUMNS.join(","))
-    .eq("id", userId)
-    .maybeSingle<Profile>();
   /* A database that has not run every migration lacks some column. Sign-in must
-     not break on that, so fall back to the full row once. */
-  if (error?.code === UNDEFINED_COLUMN) {
-    ({ data, error } = await client.from("profiles").select("*").eq("id", userId).maybeSingle<Profile>());
+     not break on that, so drop the column the error names and retry, keeping the
+     select named. Full row only if the error names nothing we can drop. */
+  let columns: string[] = [...PROFILE_COLUMNS];
+  let data: Profile | null = null;
+  let error: { message: string; code?: string } | null = null;
+  for (let attempt = 0; attempt <= 4; attempt++) {
+    ({ data, error } = await client.from("profiles").select(columns.join(",")).eq("id", userId).maybeSingle<Profile>());
+    if (error?.code !== UNDEFINED_COLUMN) break;
+    const missing = missingProfileColumn(error.message);
+    if (!missing || !columns.includes(missing)) {
+      ({ data, error } = await client.from("profiles").select("*").eq("id", userId).maybeSingle<Profile>());
+      break;
+    }
+    columns = columns.filter((c) => c !== missing);
   }
   if (error) {
     console.warn("[supabase] getProfile error:", error.message, error.code, "for user:", userId);
