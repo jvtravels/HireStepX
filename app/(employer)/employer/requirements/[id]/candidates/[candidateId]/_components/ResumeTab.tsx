@@ -96,7 +96,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
               <Panel id="employment-heading" title="Employment history">
                 {resume?.experience.length ? (
                   <div className="grid gap-3">
-                    {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, about {formatTenure(avg)} each.</p>}
+                    {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, average {formatTenure(avg)} per role.</p>}
                     <Entries
                       label="Employment history"
                       rows={resume.experience.map((e, i) => {
