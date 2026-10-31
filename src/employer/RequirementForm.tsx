@@ -337,8 +337,8 @@ export function RequirementForm({
 
       <div style={flexRow}>
       <div style={cell(3, 300)}>
-        <FieldLabel required htmlFor="rf-locations">Location</FieldLabel>
-        <TagAutocompleteInput id="rf-locations" values={draft.locations} onChange={(v) => set("locations", v)} onBlur={() => touch("locations")} invalid={!!shown("locations")} describedBy={describe("locations", "rf-locations-help")} placeholder="Mumbai, Bengaluru, Remote…" suggestions={CITY_SUGGESTIONS} />
+        <FieldLabel required={draft.workMode !== "remote"} htmlFor="rf-locations">Location</FieldLabel>
+        <TagAutocompleteInput id="rf-locations" values={draft.locations} onChange={(v) => set("locations", v)} onBlur={() => touch("locations")} invalid={!!shown("locations")} describedBy={describe("locations", "rf-locations-help")} placeholder={draft.workMode === "remote" ? "Optional for remote jobs" : "Mumbai, Bengaluru, Remote…"} suggestions={CITY_SUGGESTIONS} />
         <HelpText id="rf-locations-help" live={false}>Pick a suggestion or type a city and press Enter. Add more than one if the job is open in several.</HelpText>
         {fieldError("locations")}
       </div>
