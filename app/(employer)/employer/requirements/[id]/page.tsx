@@ -652,7 +652,7 @@ export default function RequirementDetailPage() {
                           ? `Showing ${lowCount} lower ${lowCount === 1 ? "match" : "matches"}: scores under 20${jobHasSkills ? ", or none of the required skills" : ""}.`
                           : `${hiddenLowCount} lower ${hiddenLowCount === 1 ? "match is" : "matches are"} hidden: scores under 20${jobHasSkills ? ", or none of the required skills" : ""}.`}
                       </span>
-                      <Button type="button" variant="link" className="h-auto p-0 text-[13px] font-semibold" onClick={() => setShowLow(!showLow)}>
+                      <Button type="button" variant="link" className="h-auto min-h-6 p-0 text-[13px] font-semibold pointer-coarse:min-h-11" onClick={() => setShowLow(!showLow)}>
                         {showLow ? "Hide lower matches" : `Show ${hiddenLowCount} lower ${hiddenLowCount === 1 ? "match" : "matches"}`}
                       </Button>
                     </div>
