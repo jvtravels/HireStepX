@@ -132,7 +132,7 @@ export function CandidateHeader({
   ) : null;
 
   return (
-    <header className="min-w-0 border-b border-hx-line px-7 py-5">
+    <header className="min-w-0 border-b border-hx-line px-4 py-4 sm:px-7 sm:py-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
         <div className="min-w-0 flex-1 basis-80">
           <div className="flex items-center gap-3">
@@ -193,7 +193,7 @@ export function CandidateHeader({
       {summary && <p className="m-0 mt-3 max-w-[75ch] text-[14px] leading-snug font-medium text-hx-coal">{summary}</p>}
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
-      <div className="mt-4 min-w-0 border-t border-hx-line pt-4">
+      <div className="mt-3 min-w-0 border-t border-hx-line pt-3 sm:mt-4 sm:pt-4">
         {contactWithheld ? (
           <ContactUnavailable reason={withheldReason} />
         ) : candidate.unlocked ? (

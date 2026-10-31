@@ -243,7 +243,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
 
         <section aria-labelledby="candidate-sections-heading" className="flex min-w-0 flex-col">
           <h2 id="candidate-sections-heading" className="sr-only">Candidate details</h2>
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-hx-line px-7">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3 border-b border-hx-line px-4 sm:px-7">
             <StatusTabs tabs={tabs} value={tab} onChange={selectTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
           </div>
           <div key={tab} id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`} className="mx-swap">
