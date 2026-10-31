@@ -137,10 +137,12 @@ export function compareRows(a: RequirementSummary, b: RequirementSummary, sort: 
     case "topMatches":
       return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches || a.aiScreening.evaluated - b.aiScreening.evaluated);
     case "created": {
-      /* Default view: live jobs lead, closed ones sink below them whichever way the dates run,
-         so a finished job never sits between active pipelines. */
+      /* Default view, in priority order: live jobs before closed ones, jobs that have candidates
+         before empty ones (the pipeline someone can act on), then newest first. Closed and empty
+         jobs stay at the bottom whichever way the dates are sorted. */
       const closed = Number(a.status === "closed") - Number(b.status === "closed");
-      return closed || dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      const empty = Number(a.candidateCount === 0) - Number(b.candidateCount === 0);
+      return closed || empty || dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     }
   }
 }
