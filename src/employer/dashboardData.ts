@@ -168,6 +168,8 @@ export interface RecommendedCard {
   missingSkills: string[];
   requiredCount: number;
   yearsExperience: number | null;
+  /** Months from role dates, else stored years times 12; what the card shows. */
+  experienceMonths: number | null;
   /** Seniority, industry and notice period: the non-identifying facts that tell
    *  masked candidates apart. Empty when the profile has none. */
   traits: string[];
@@ -227,8 +229,9 @@ export function buildRecommendedCards(
       missingSkills: job.skills.filter((s) => !matchedSet.has(s)),
       requiredCount: job.skills.length,
       yearsExperience: c.yearsExperience,
+      experienceMonths: c.experienceMonths ?? (c.yearsExperience != null ? c.yearsExperience * 12 : null),
       traits: c.traits ?? [],
-      experienceFit: experienceFit(c.yearsExperience, job.experienceMin, job.experienceMax),
+      experienceFit: experienceFit(c.experienceMonths != null ? c.experienceMonths / 12 : c.yearsExperience, job.experienceMin, job.experienceMax),
       experienceAsk: experienceAsk(job.experienceMin, job.experienceMax),
       matchScore: score,
       createdAt,

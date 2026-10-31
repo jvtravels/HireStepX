@@ -252,6 +252,8 @@ export interface StrongMatchCandidate {
   name: string;
   initials: string;
   yearsExperience: number | null;
+  /** Total months from the role dates (overlaps once); the dashboard shows this so it matches the job table. */
+  experienceMonths?: number | null;
   skills: string[];
   /** The job's listed skills this candidate covers, decided server-side with
    *  the same rule as the detail page's count. */

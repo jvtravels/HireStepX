@@ -45,6 +45,7 @@ import { emailShell, hero, button, dataCard, escapeHtml } from "./_email-theme";
 import { employerMarketingParts, isSuppressed, preferenceDepsFromEnv } from "./_unsubscribe";
 import { pickRequirementsToRematch, fetchRematchBacklog, type OpenRequirementForRematch } from "./_incremental-rematch-helpers";
 import { isSuspended } from "./_employer-trust";
+import { roleDateMonths } from "../src/employer/roleDates";
 import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
 import {
   MAX_POOL_SCAN,
@@ -322,11 +323,11 @@ async function handleGet(userId: string, headers: Record<string, string>): Promi
           return (await profilesRes.json().catch(() => [])) as Array<{ id: string; name: string; target_role: string | null; resume_data: unknown }>;
         });
         for (const row of profileBatches.flat()) profileById.set(row.id, row);
-        const detailsById = new Map<string, { name: string; yearsExperience: number | null; skills: string[]; traits: string[] }>(
+        const detailsById = new Map<string, { name: string; yearsExperience: number | null; experienceMonths: number | null; skills: string[]; traits: string[] }>(
           topCandidateIds.map((id) => {
             const profile = profileById.get(id);
             const detail = extractResumeDetail(profile?.resume_data);
-            return [id, { name: profile?.name ?? "", yearsExperience: detail.yearsExperience, skills: extractSkills(profile?.resume_data), traits: candidateTraits(detail, profile?.name ?? "") }];
+            return [id, { name: profile?.name ?? "", yearsExperience: detail.yearsExperience, experienceMonths: roleDateMonths(detail.experience) ?? (detail.yearsExperience != null ? detail.yearsExperience * 12 : null), skills: extractSkills(profile?.resume_data), traits: candidateTraits(detail, profile?.name ?? "") }];
           }),
         );
         aiScreeningByRequirement = buildAiScreeningByRequirement(matchStats, detailsById);

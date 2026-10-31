@@ -25,6 +25,7 @@ import { Badge, ScoreChip, STRONG_MATCH_THRESHOLD } from "./_atoms";
 import { StageCell } from "./_stageCell";
 import { PrimaryLink, OutlineLink } from "./_consoleParts";
 import type { RequirementSummary } from "./mockData";
+import { formatTenure } from "./roleDates";
 import {
   RANGE_LABEL, buildFunnel, interviewSlot, jobHealth, pipelineStage, sortJobs, jobsNeedingAttentionFirst,
   type DashboardRange, type DashboardJobPipeline, type FunnelStep, type JobSortKey, type SortDir, type DashboardUpcomingInterview,
@@ -463,11 +464,11 @@ function ExperienceCell({ c }: { c: RecommendedCard }) {
   return (
     <div className="min-w-0">
       <div className={COL_LABEL}>Experience</div>
-      {c.yearsExperience === null ? (
+      {c.experienceMonths === null ? (
         <p className="m-0 mt-1 text-[13px] text-hx-ink-soft @min-[960px]:mt-0">Not listed</p>
       ) : (
         <p className="m-0 mt-1 text-[13px] leading-[1.5] text-hx-ink-soft @min-[960px]:mt-0">
-          <span className="font-semibold text-hx-coal">{c.yearsExperience} {c.yearsExperience === 1 ? "year" : "years"}</span>
+          <span className="font-semibold text-hx-coal">{formatTenure(c.experienceMonths)}</span>
           {fit && <span className={fit.cls}>{" \u00b7 "}{fit.word} {c.experienceAsk}</span>}
         </p>
       )}

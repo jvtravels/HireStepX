@@ -132,6 +132,7 @@ export interface StrongMatchCandidate {
   name: string;
   initials: string;
   yearsExperience: number | null;
+  experienceMonths?: number | null;
   skills: string[];
   /** Server's own list of the job's skills this candidate covers. */
   requiredSkillsMatched?: string[];
