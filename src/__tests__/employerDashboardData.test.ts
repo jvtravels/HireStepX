@@ -233,6 +233,13 @@ describe("buildInsights", () => {
     expect(out.map((i) => i.tone)).toEqual(["positive", "attention", "neutral"]);
     expect(out.every((i) => i.cta.length > 0)).toBe(true);
   });
+  it("never claims the skills are unrelated, and asks for more skills only when there are few", () => {
+    const few = buildInsights([job("r2", { skills: ["a"] })], [], NOW).find((i) => i.id === "no-strong");
+    expect(few?.body).toContain("Add 5 to 8 skills");
+    const many = buildInsights([job("r2", { skills: ["a", "b", "c", "d"] })], [], NOW).find((i) => i.id === "no-strong");
+    expect(many?.body).toContain("Check the skills match");
+    expect(many?.body).not.toContain("broadening");
+  });
   it("is empty for an account with nothing to say", () => {
     expect(buildInsights([], [], NOW)).toEqual([]);
   });

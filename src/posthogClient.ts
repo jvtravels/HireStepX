@@ -152,6 +152,7 @@ export async function initPostHog(): Promise<PostHog | null> {
         disable_session_recording: true,
         mask_all_text: true,
         mask_all_element_attributes: true,
+        before_send: (event) => (event ? scrubEventUrls(event) : event),
         loaded: () => {
           _sdk = ph;
           if (hasConsent()) { _instance = ph; flushPending(ph); }
@@ -175,6 +176,24 @@ export async function initPostHog(): Promise<PostHog | null> {
   })();
 
   return _initPromise;
+}
+
+/* Employer URLs carry a candidate id (/employer/requirements/<job>/candidates/<id>);
+   analytics should know the page, not which candidate an employer opened. */
+const CANDIDATE_PATH_RE = /(\/candidates\/)[^/?#]+/g;
+
+export function scrubCandidateUrl(url: string): string {
+  return url.replace(CANDIDATE_PATH_RE, "$1:id");
+}
+
+export function scrubEventUrls<E extends { properties?: Record<string, unknown> }>(event: E): E {
+  const props = event.properties;
+  if (!props) return event;
+  for (const key of ["$current_url", "$pathname", "$referrer"]) {
+    const v = props[key];
+    if (typeof v === "string") props[key] = scrubCandidateUrl(v);
+  }
+  return event;
 }
 
 /* Founder/dogfooding account(s) that generate disproportionate real traffic
