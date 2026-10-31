@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { cn } from "cn";
 import { useEmployerData, type CandidateReview, type ReviewRating } from "@/employer/EmployerDataContext";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { HelpText, OutlineCta } from "@/employer/_atoms";
 import { Panel } from "@/employer/_panelParts";
@@ -124,7 +125,11 @@ export function TeamReview({ reviews, onReview }: { reviews: TeamReviewsState; o
   return (
     <Panel id="team-review-heading" title="Team review">
       {loading ? (
-        <HelpText>Loading reviews…</HelpText>
+        <div role="status" className="grid gap-2.5">
+          <span className="sr-only">Loading reviews…</span>
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
       ) : failed || !data ? (
         <div>
           <HelpText tone="error">Couldn't load team reviews.</HelpText>
