@@ -294,7 +294,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
                 </Stat>
               )}
               {avg != null && <Stat label="Average skill score" hint={`out of 100, mean of ${evidence?.skills.length ?? 0} graded skills`}>{avg}</Stat>}
-              {verified.length > 0 && <Stat label="Verified skills" hint={`of ${verified.length} checked in graded answers`}>{verifiedCount}</Stat>}
+              {verified.length > 0 && <Stat label="Verified skills" hint={`confirmed in graded answers, of ${verified.length} skills checked`}>{verifiedCount}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (
               <div className="mt-5 grid gap-3 border-t border-hx-line pt-4">

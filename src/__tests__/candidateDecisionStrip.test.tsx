@@ -31,7 +31,7 @@ describe("DecisionStrip on a resume-only candidate", () => {
     render(<DecisionStrip candidate={{ ...candidate, sessionsCompleted: 1 }} requirement={requirement} matched={[]} evidence={evidence} />);
     const text = screen.getByLabelText("At a glance").textContent ?? "";
     expect(text).toContain("Graded in practice: 1 session, latest 17 Oct 2026");
-    expect(text).toContain("Best answer, 88 out of 100: Question 2");
+    expect(text).toContain("Best single answer, 88 out of 100: Question 2");
     expect(text).not.toContain("Question 3");
   });
 

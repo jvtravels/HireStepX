@@ -28,7 +28,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
           {best && (
             <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1.5">
               <p className="m-0 min-w-0 max-w-[60ch] text-[13px] text-hx-coal [overflow-wrap:anywhere]">
-                <span className="font-semibold">Best answer, {best.score} out of 100:</span> {cleanQuestionText(best.question)}
+                <span className="font-semibold">Best single answer, {best.score} out of 100:</span> {cleanQuestionText(best.question)}
               </p>
               {best.star && <StarMarks star={best.star} />}
             </div>
