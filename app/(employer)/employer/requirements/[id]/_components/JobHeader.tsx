@@ -12,10 +12,8 @@ import { MetaLine, PanelButton, type MetaPart } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
-import { budgetLabel, experienceLabel, previewText, whereLabel } from "./requirementFormat";
+import { budgetLabel, experienceLabel, whereLabel } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
-
-const DESCRIPTION_PREVIEW = 120;
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
   success: "bg-hx-success-100 text-hx-success-ink",
@@ -64,7 +62,7 @@ export default function JobHeader({
 }) {
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [descOpen, setDescOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   // On phones the brief sits behind a button so the candidates, the reason for opening this page, come into view sooner.
   const [briefOpen, setBriefOpen] = useState(false);
@@ -74,8 +72,6 @@ export default function JobHeader({
   const meta = metaParts(requirement);
   const description = requirement.description ?? "";
   const responsibilities = requirement.responsibilities?.trim() ?? "";
-  const preview = previewText(description, DESCRIPTION_PREVIEW);
-  const shownDescription = expanded || !preview.truncated ? description.trim() : `${preview.text.replace(/\n{2,}/g, "\n")}…`;
 
   return (
     <header className="flex min-w-0 flex-col px-7 py-5">
@@ -146,36 +142,30 @@ export default function JobHeader({
         </div>
       )}
 
-      <div
-        id="job-brief"
-        className={cn(
-          "mt-4 grid min-w-0 content-start gap-x-8 gap-y-5 border-t border-hx-line pt-4",
-          requirementsSlot && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]",
-          !briefOpen && "max-lg:hidden",
-        )}
-      >
-        <div className="min-w-0">
-          {description && (
-            <p className="m-0 max-w-[75ch] text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">
-              {shownDescription}
-              {preview.truncated && (
-                <>
-                  {" "}
-                  <PanelButton expanded={expanded} onClick={() => setExpanded((v) => !v)}>
-                    {expanded ? "View less" : "View more"}
-                  </PanelButton>
-                </>
+      <div id="job-brief" className={cn("mt-4 flex min-w-0 flex-col gap-4 border-t border-hx-line pt-4", !briefOpen && "max-lg:hidden")}>
+        {requirementsSlot && <div className="min-w-0">{requirementsSlot}</div>}
+        {(description || responsibilities) && (
+          <div className="min-w-0">
+            {/* The employer wrote this text, so on a laptop it stays closed; the candidates are the work on this page. */}
+            <h2 className="m-0 max-lg:hidden">
+              <PanelButton expanded={descOpen} controls="job-description" onClick={() => setDescOpen((v) => !v)}>
+                Job description
+                <ChevronDownIcon size={15} aria-hidden="true" className={cn("transition-transform duration-150 motion-reduce:transition-none", descOpen && "rotate-180")} />
+              </PanelButton>
+            </h2>
+            <div id="job-description" className={cn("min-w-0 max-w-[75ch] lg:mt-3", !descOpen && "lg:hidden")}>
+              {description && (
+                <p className="m-0 text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{description.trim()}</p>
               )}
-            </p>
-          )}
-          {responsibilities && (
-            <div className={cn(description && "mt-4")}>
-              <h2 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-coal">Responsibilities</h2>
-              <p className="m-0 max-w-[75ch] text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{responsibilities}</p>
+              {responsibilities && (
+                <div className={cn(description && "mt-4")}>
+                  <h3 className="m-0 mb-1.5 text-[13px] font-semibold text-hx-coal">Responsibilities</h3>
+                  <p className="m-0 text-[13.5px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]">{responsibilities}</p>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        {requirementsSlot && <div className="min-w-0 lg:border-l lg:border-hx-line lg:pl-8">{requirementsSlot}</div>}
+          </div>
+        )}
       </div>
 
       {insightsSlot && <div className="mt-4 border-t border-hx-line pt-4">{insightsSlot}</div>}
