@@ -43,7 +43,7 @@ export function formatDueDate(dueDate: string): string {
 export function DueCell({ dueDate, closed = false }: { dueDate: string | null; closed?: boolean }) {
   if (!dueDate) {
     return (
-      <span className="text-[14px] text-hx-ink-soft">Not set</span>
+      <span className="text-[14px] text-hx-ink-soft">No deadline</span>
     );
   }
   const left = daysUntil(dueDate);

@@ -54,9 +54,9 @@ describe("MatchesCell", () => {
 });
 
 describe("DueCell", () => {
-  it("shows Not set instead of an em dash", () => {
+  it("shows No deadline instead of an em dash", () => {
     const { container } = render(<DueCell dueDate={null} />);
-    expect(container.textContent).toBe("Not set");
+    expect(container.textContent).toBe("No deadline");
   });
 });
 
