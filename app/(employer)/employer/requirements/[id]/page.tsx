@@ -633,7 +633,7 @@ export default function RequirementDetailPage() {
                   {!loadingMore && (requirement.total ?? candidates.length) > candidates.length && (
                     <div className="mx-7 mb-3">
                       <InlineNotice tone="info" live={false}>
-                        Showing {candidates.length} of {requirement.total} candidates. Narrow the shortlist with search and filters, or close out candidates you have already decided on.
+                        Loaded the top {candidates.length} of {requirement.total} matches, ranked by score. Use search and filters to narrow the list, or close out candidates you have already decided on.
                       </InlineNotice>
                     </div>
                   )}
