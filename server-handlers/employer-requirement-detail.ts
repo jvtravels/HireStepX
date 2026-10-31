@@ -56,6 +56,7 @@ import {
   paginate,
   loadRankedVisibleMatches,
   nextUnlockBatchQuote,
+  loadNoRequiredSkillMatchIds,
   scrubLockedResume,
   maskedCandidateName,
   checkEmployerAllowance,
@@ -260,7 +261,8 @@ export default async function handler(req: Request): Promise<Response> {
     const gated = await loadRankedVisibleMatches(SUPABASE_URL, serviceHeaders(), employerId, allMatches, blockedRead);
     if (!gated) throw new Error("candidate consent read failed");
     const { ranked: visibleMatches, optedOut } = gated;
-    const nextUnlockBatch = nextUnlockBatchQuote(visibleMatches);
+    /* Started now, awaited with the other reads: a serial call here added a round trip to every page load. */
+    const noRequiredSkillLoad = loadNoRequiredSkillMatchIds(SUPABASE_URL, serviceHeaders(), visibleMatches, requirement.skills);
 
     const pageParams = parsePagination(new URL(req.url).searchParams);
     const paged = paginate(visibleMatches, pageParams);
@@ -356,7 +358,8 @@ export default async function handler(req: Request): Promise<Response> {
       const rows = (await res.json().catch(() => [])) as Array<{ candidate_user_id: string }>;
       for (const r of Array.isArray(rows) ? rows : []) unlockedElsewhere.add(r.candidate_user_id);
     }));
-    await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds(), loadTouches(), loadUnlockedElsewhere()]);
+    const [, , , , , , noRequiredSkill] = await Promise.all([loadProfiles(), loadSessions(), loadResumeFiles(), loadRefunds(), loadTouches(), loadUnlockedElsewhere(), noRequiredSkillLoad]);
+    const nextUnlockBatch = nextUnlockBatchQuote(visibleMatches, noRequiredSkill);
 
     const candidates = pageMatches.map((m) => {
       const profile = profileById.get(m.candidate_user_id);

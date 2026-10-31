@@ -15,7 +15,8 @@ import { chunk, inList, fetchKeyset } from "./_employer-matching-helpers";
 import { STRONG_MATCH_THRESHOLD } from "./_requirement-match-helpers";
 import {
   asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
-  buildActivityFeed, type DashboardMatchRow, type StatusEventRow,
+  buildActivityFeed, buildAuditActivity, mergeActivity, DASHBOARD_AUDIT_ACTIONS,
+  type AuditFeedRow, type DashboardMatchRow, type StatusEventRow,
 } from "./_employer-dashboard-helpers";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -66,7 +67,7 @@ export default async function handler(req: Request): Promise<Response> {
   const since = new Date(now - 2 * range * DAY_MS).toISOString();
 
   try {
-    const [requirements, events, activity] = await Promise.all([
+    const [requirements, events, activity, auditRows] = await Promise.all([
       readRows<{ id: string; title: string; created_at: string; status: string | null }>(
         `${SUPABASE_URL}/rest/v1/employer_requirements?employer_id=eq.${employer}&select=id,title,created_at,status&order=created_at.desc&limit=500`,
       ),
@@ -76,6 +77,10 @@ export default async function handler(req: Request): Promise<Response> {
       readRows<{ requirement_id: string; created_at: string }>(
         `${SUPABASE_URL}/rest/v1/employer_requirement_activity?employer_id=eq.${employer}&select=requirement_id,created_at&order=created_at.desc&limit=500`,
       ),
+      // Best effort: a failed read leaves the feed with status moves only.
+      readRows<AuditFeedRow>(
+        `${SUPABASE_URL}/rest/v1/employer_audit_log?employer_id=eq.${employer}&action=in.(${DASHBOARD_AUDIT_ACTIONS.join(",")})&select=id,actor_user_id,actor_email,action,meta,created_at&order=created_at.desc&limit=12`,
+      ).catch(() => [] as AuditFeedRow[]),
     ]);
 
     const ids = requirements.map((r) => r.id);
@@ -120,7 +125,7 @@ export default async function handler(req: Request): Promise<Response> {
       },
       upcomingInterviews: upcoming.slice(0, 4),
       recommended: rankForReview(strongRefs).slice(0, 12),
-      activity: buildActivityFeed(events, matchById, 6),
+      activity: mergeActivity(buildActivityFeed(events, matchById, 6), buildAuditActivity(auditRows, auth.userId)),
     };
     return new Response(JSON.stringify(body), { status: 200, headers });
   } catch (err) {

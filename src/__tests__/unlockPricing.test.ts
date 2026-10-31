@@ -50,10 +50,11 @@ describe("unlockRateNote", () => {
     expect(note.batchHint).toBeNull();
   });
 
-  it("charges a partial batch the single price for each candidate", () => {
+  it("charges a partial batch the single price for each candidate, capped at the batch price", () => {
     const note = unlockRateNote(6, batchUnlockPrice(6).amountPaise);
-    expect(batchUnlockPrice(6).amountPaise).toBe(6 * 5_900);
-    expect(note.perCandidate).toBe("₹59");
+    expect(batchUnlockPrice(6).amountPaise).toBe(UNLOCK_BATCH_PRICE_PAISE);
+    expect(batchUnlockPrice(5).amountPaise).toBe(5 * 5_900);
+    expect(note.perCandidate).toBe("₹49.83");
     expect(note.savings).toBeNull();
   });
 
@@ -74,6 +75,7 @@ describe("partial-batch pricing (owner decision, Oct 31 2026)", () => {
 
   it("the flat batch price only applies to a full bucket", () => {
     expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE).amountPaise).toBe(UNLOCK_BATCH_PRICE_PAISE);
-    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE - 1).amountPaise).toBe(UNLOCK_SINGLE_PRICE_PAISE * (UNLOCK_BUNDLE_SIZE - 1));
+    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE - 1).amountPaise).toBe(UNLOCK_BATCH_PRICE_PAISE);
+    expect(batchUnlockPrice(2).amountPaise).toBe(UNLOCK_SINGLE_PRICE_PAISE * 2);
   });
 });

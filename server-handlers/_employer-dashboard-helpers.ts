@@ -197,7 +197,7 @@ export interface StatusEventRow {
 
 export interface ActivityItem {
   id: string;
-  actor: "You" | "Candidate" | "HireStepX";
+  actor: "You" | "Team" | "Candidate" | "HireStepX";
   text: string;
   createdAt: string;
   href: string | null;
@@ -226,4 +226,56 @@ export function buildActivityFeed(
     });
   }
   return out;
+}
+
+/* ── Team activity from the audit log ── */
+
+/** Audit actions worth a line on the dashboard: what teammates did that the
+ *  status-event feed cannot see. Status moves are left out; they already come
+ *  from match_status_events and would show twice. */
+export const DASHBOARD_AUDIT_ACTIONS = ["member.invited", "member.joined", "candidate.reviewed", "candidate.note_updated", "job.created"] as const;
+
+export interface AuditFeedRow {
+  id: string;
+  actor_user_id: string | null;
+  actor_email: string | null;
+  action: string;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+const metaText = (m: Record<string, unknown> | null, key: string): string | null => {
+  const v = m?.[key];
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+};
+
+/** "You" for the viewer, otherwise the teammate's email name. */
+function actorLabel(row: AuditFeedRow, viewerId: string): string {
+  if (row.actor_user_id === viewerId) return "You";
+  const local = row.actor_email?.split("@")[0]?.trim();
+  return local || "A teammate";
+}
+
+export function buildAuditActivity(rows: AuditFeedRow[], viewerId: string): ActivityItem[] {
+  const out: ActivityItem[] = [];
+  for (const row of rows) {
+    const who = actorLabel(row, viewerId);
+    const candidate = metaText(row.meta, "candidateName") ?? "a candidate";
+    let text: string | null = null;
+    switch (row.action) {
+      case "member.invited": text = `${who} invited ${metaText(row.meta, "email") ?? "a teammate"} to the team`; break;
+      case "member.joined": text = `${who} joined the team`; break;
+      case "candidate.reviewed": text = `${who} reviewed ${candidate}`; break;
+      case "candidate.note_updated": text = `${who} updated notes on ${candidate}`; break;
+      case "job.created": text = `${who} posted ${metaText(row.meta, "title") ?? metaText(row.meta, "jobTitle") ?? "a job"}`; break;
+    }
+    if (!text) continue;
+    out.push({ id: `audit-${row.id}`, actor: who === "You" ? "You" : "Team", text, createdAt: row.created_at, href: null });
+  }
+  return out;
+}
+
+/** Newest first across both sources, trimmed to `limit`. */
+export function mergeActivity(a: ActivityItem[], b: ActivityItem[], limit = 6): ActivityItem[] {
+  return [...a, ...b].sort((x, y) => Date.parse(y.createdAt) - Date.parse(x.createdAt)).slice(0, limit);
 }

@@ -35,7 +35,7 @@ describe("nextUnlockBatchQuote", () => {
     expect(q.end).toBe(20);
     expect(q.count).toBe(9);
     expect(q.matchIds).not.toContain("m12");
-    expect(q.amountPaise).toBe(9 * 5900);
+    expect(q.amountPaise).toBe(29_900);
   });
 
   it("never fills a paid batch with untouched weak fits hidden from the list", () => {

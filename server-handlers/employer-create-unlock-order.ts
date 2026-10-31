@@ -31,7 +31,7 @@ import {
   slog,
 } from "./_shared";
 import { singleUnlockPrice, batchUnlockPrice, formatPaise, creditToApply } from "./_unlock-pricing";
-import { loadRankedVisibleMatches, nextUnlockBatchQuote } from "./_employer-matching-helpers";
+import { loadRankedVisibleMatches, loadNoRequiredSkillMatchIds, nextUnlockBatchQuote } from "./_employer-matching-helpers";
 import { razorpayBasicAuth } from "./_razorpay-auth";
 import { requireEmployerPermission } from "./_employer-team-helpers";
 import { loadEmployerMatchAccess, loadAuthIdentity, DENIED_STATUS } from "./_entitlements";
@@ -68,6 +68,7 @@ const LOCK_TTL = 15; // seconds
 interface RequirementRow {
   id: string;
   status: string;
+  skills?: string[] | null;
   employers?: { website?: string | null; suspended_at?: string | null; verification_tier?: string | null } | null;
 }
 
@@ -233,7 +234,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else {
       const reqRes = await fetch(
         `${SUPABASE_URL}/rest/v1/employer_requirements?id=eq.${encodeURIComponent(requirementId)}&employer_id=eq.${encodeURIComponent(employerId)}` +
-          `&select=id,status,employers(website,suspended_at,verification_tier)`,
+          `&select=id,status,skills,employers(website,suspended_at,verification_tier)`,
         { headers: sh },
       );
       const reqRows = (await reqRes.json().catch(() => [])) as RequirementRow[];
@@ -267,7 +268,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // window and price here match the "Unlock N–M" button the employer saw.
       const gated = await loadRankedVisibleMatches(SUPABASE_URL, sh, employerId, matches);
       if (!gated) throw new Error("candidate consent read failed");
-      const quote = nextUnlockBatchQuote(gated.ranked);
+      const noSkill = await loadNoRequiredSkillMatchIds(SUPABASE_URL, sh, gated.ranked, reqRows[0].skills);
+      const quote = nextUnlockBatchQuote(gated.ranked, noSkill);
       if (!quote) {
         if (matches.some((m) => !m.unlocked)) {
           return res.status(409).json({

@@ -48,7 +48,7 @@ export function unlockFeeSentence(): string {
 
 /** The partial-batch rule from batchUnlockPrice(), spelled out. */
 export function proratedRemainderSentence(): string {
-  return `The ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} price applies only when you unlock ${UNLOCK_BUNDLE_SIZE} candidates together. If fewer than ${UNLOCK_BUNDLE_SIZE} are left locked in a batch, each one is ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}.`;
+  return `Unlocking ${UNLOCK_BUNDLE_SIZE} candidates together is ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}. If fewer than ${UNLOCK_BUNDLE_SIZE} are left locked in a batch, each one is ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}, and you never pay more than ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} for a batch.`;
 }
 
 /** Worked example for the marketing page, computed from the real price table so it can never drift. */
@@ -56,7 +56,7 @@ export function workedPricingExampleSentence(): string {
   const singles = 3;
   const perBatchCandidate = UNLOCK_BATCH_PRICE_PAISE / UNLOCK_BUNDLE_SIZE;
   const tenSinglyPaise = UNLOCK_BUNDLE_SIZE * UNLOCK_SINGLE_PRICE_PAISE;
-  return `Unlock ${singles} candidates one at a time: ${singles} × ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} = ${formatPaise(singles * UNLOCK_SINGLE_PRICE_PAISE)}. Unlock a full batch of ${UNLOCK_BUNDLE_SIZE}: ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, which is ${formatPaise(perBatchCandidate)} a candidate. Unlocking those same ${UNLOCK_BUNDLE_SIZE} one at a time would cost ${formatPaise(tenSinglyPaise)}.`;
+  return `Unlock ${singles} candidates one at a time: ${singles} × ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} = ${formatPaise(singles * UNLOCK_SINGLE_PRICE_PAISE)}. Unlock a full batch of ${UNLOCK_BUNDLE_SIZE}: ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, which is ${formatPaise(perBatchCandidate)} a candidate. Unlocking those same ${UNLOCK_BUNDLE_SIZE} one at a time would cost ${formatPaise(tenSinglyPaise)} without the cap.`;
 }
 
 export const PAY_AS_YOU_GO_SENTENCE =

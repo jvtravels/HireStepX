@@ -37,7 +37,7 @@ export interface DashboardRecommendedRef {
 
 export interface DashboardActivityItem {
   id: string;
-  actor: "You" | "Candidate" | "HireStepX";
+  actor: "You" | "Team" | "Candidate" | "HireStepX";
   text: string;
   createdAt: string;
   href: string | null;

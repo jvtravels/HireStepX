@@ -3,8 +3,9 @@
    UNLOCK_BUNDLE_SIZE for a flat UNLOCK_BATCH_PRICE_PAISE — see the
    "Employers" design canvas (EmployersDashboard.tsx), which is the
    source of truth this mirrors. Fewer than a full batch is always charged
-   per candidate at UNLOCK_SINGLE_PRICE_PAISE (owner decision, Oct 31 2026):
-   ₹59 for one, ₹299 only when UNLOCK_BUNDLE_SIZE are unlocked together. */
+   per candidate at UNLOCK_SINGLE_PRICE_PAISE (owner decision, Oct 31 2026),
+   but never above the batch price (Nov 1 2026): ₹59 for one, and no order of
+   up to UNLOCK_BUNDLE_SIZE costs more than ₹299. */
 
 export const UNLOCK_BUNDLE_SIZE = 10;
 export const UNLOCK_BATCH_PRICE_PAISE = 29_900; // ₹299 per batch of UNLOCK_BUNDLE_SIZE candidates
@@ -24,10 +25,12 @@ const PER_CANDIDATE_BATCH_PAISE = Math.round(UNLOCK_BATCH_PRICE_PAISE / UNLOCK_B
 /** `count` is how many still-locked candidates a batch order will actually
     unlock. A full bucket of UNLOCK_BUNDLE_SIZE charges the flat batch price;
     a smaller remainder (some of the bucket already individually unlocked, or
-    a final partial bucket) is charged at the single price for each one. */
+    a final partial bucket) is charged at the single price for each one,
+    capped at the batch price. */
 export function batchUnlockPrice(count: number = UNLOCK_BUNDLE_SIZE): UnlockPrice {
   const clamped = Math.max(1, Math.min(count, UNLOCK_BUNDLE_SIZE));
-  const amountPaise = clamped === UNLOCK_BUNDLE_SIZE ? UNLOCK_BATCH_PRICE_PAISE : UNLOCK_SINGLE_PRICE_PAISE * clamped;
+  // Capped at the batch price: nine at ₹59 would cost more than the ten-pack.
+  const amountPaise = Math.min(UNLOCK_BATCH_PRICE_PAISE, UNLOCK_SINGLE_PRICE_PAISE * clamped);
   const label = clamped === UNLOCK_BUNDLE_SIZE
     ? `Unlock batch of ${UNLOCK_BUNDLE_SIZE}`
     : `Unlock ${clamped} candidate${clamped === 1 ? "" : "s"}`;
@@ -54,7 +57,7 @@ export interface UnlockRateNote { perCandidate: string; savings: string | null; 
     ₹29.90 a head against ₹59 singly, which the flat total alone doesn't reveal. */
 export function unlockRateNote(count: number, amountPaise: number): UnlockRateNote {
   if (count < UNLOCK_BUNDLE_SIZE) {
-    return { perCandidate: formatPaise(UNLOCK_SINGLE_PRICE_PAISE), savings: null, batchHint: `Unlocking ${UNLOCK_BUNDLE_SIZE} at once costs ${formatPaise(PER_CANDIDATE_BATCH_PAISE)} each.` };
+    return { perCandidate: formatPaise(count > 1 ? Math.round(amountPaise / count) : UNLOCK_SINGLE_PRICE_PAISE), savings: null, batchHint: `Unlocking ${UNLOCK_BUNDLE_SIZE} at once costs ${formatPaise(PER_CANDIDATE_BATCH_PAISE)} each.` };
   }
   const saved = UNLOCK_SINGLE_PRICE_PAISE * count - amountPaise;
   return {

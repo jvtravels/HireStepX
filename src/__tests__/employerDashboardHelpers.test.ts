@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildAuditActivity, mergeActivity,
   asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
   buildActivityFeed, activityText, candidateInitials, type DashboardMatchRow,
 } from "../../server-handlers/_employer-dashboard-helpers";
@@ -121,5 +122,32 @@ describe("activity feed", () => {
   it("derives initials from a real name or the match id", () => {
     expect(candidateInitials("Adarsh Kori", "x")).toBe("AK");
     expect(candidateInitials("Candidate #a1b2c3", "a1b2c3d4")).toBe("A1");
+  });
+});
+
+describe("team activity on the dashboard feed", () => {
+  const row = (id: string, action: string, actor: string, email: string, at: string, meta: Record<string, unknown> = {}) =>
+    ({ id, actor_user_id: actor, actor_email: email, action, meta, created_at: at });
+
+  it("words each team action and says You for the viewer", () => {
+    const items = buildAuditActivity([
+      row("1", "candidate.reviewed", "me", "me@x.com", "2026-10-30T10:00:00Z", { candidateName: "Asha K." }),
+      row("2", "member.invited", "u2", "priya@x.com", "2026-10-30T09:00:00Z", { email: "ravi@x.com" }),
+      row("3", "job.created", "u2", "priya@x.com", "2026-10-30T08:00:00Z", { title: "Designer" }),
+      row("4", "company.profile_updated", "me", "me@x.com", "2026-10-30T07:00:00Z"),
+    ], "me");
+    expect(items.map((i) => i.text)).toEqual([
+      "You reviewed Asha K.",
+      "priya invited ravi@x.com to the team",
+      "priya posted Designer",
+    ]);
+    expect(items.map((i) => i.actor)).toEqual(["You", "Team", "Team"]);
+  });
+
+  it("merges with status moves newest first and trims to the limit", () => {
+    const a = [{ id: "s1", actor: "You" as const, text: "old", createdAt: "2026-10-01T00:00:00Z", href: null }];
+    const b = [{ id: "t1", actor: "Team" as const, text: "new", createdAt: "2026-10-02T00:00:00Z", href: null }];
+    expect(mergeActivity(a, b, 1).map((i) => i.id)).toEqual(["t1"]);
+    expect(mergeActivity(a, b).map((i) => i.id)).toEqual(["t1", "s1"]);
   });
 });

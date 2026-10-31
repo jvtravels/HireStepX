@@ -15,6 +15,7 @@
 import {
   scoreCandidateMatch,
   hasMatchSignal,
+  requiredSkillsCoverage,
   type CandidatePoolRow,
   type RequirementInput,
 } from "./_requirement-match-helpers";
@@ -1117,13 +1118,56 @@ export interface UnlockBatchQuote {
   lockedRemaining: number;
 }
 
+/** How far down the ranking the "meets none of the required skills" check looks.
+ *  Resume bodies are heavy, so it stops after a few windows; a batch never
+ *  reaches further than that in practice. */
+const NO_SKILL_LOOKAHEAD = UNLOCK_BUNDLE_SIZE * 6;
+
+/** Match ids the list hides because the candidate lists none of the job's
+ *  required skills (see isLowMatch in candidateTableModel.ts). The batch must
+ *  skip the same rows so the employer never pays for someone the list tucked
+ *  away. Empty when the job lists no skills or the read fails: the batch then
+ *  falls back to the score bar alone, and the order re-derives the same set. */
+export async function loadNoRequiredSkillMatchIds(
+  supabaseUrl: string,
+  headers: Headers,
+  ranked: Array<{ id: string; candidate_user_id: string; unlocked: boolean; match_score: number; candidate_status?: string | null }>,
+  requiredSkills: string[] | null | undefined,
+  fetchImpl: typeof fetch = fetch,
+): Promise<Set<string>> {
+  const none = new Set<string>();
+  if (!requiredSkills || requiredSkills.length === 0) return none;
+  const candidates = ranked
+    .filter((r) => !r.unlocked && (r.candidate_status ?? "shortlisted") === "shortlisted" && r.match_score >= LOW_MATCH_SCORE_BAR)
+    .slice(0, NO_SKILL_LOOKAHEAD);
+  const idsByCandidate = new Map<string, string[]>();
+  for (const r of candidates) idsByCandidate.set(r.candidate_user_id, [...(idsByCandidate.get(r.candidate_user_id) ?? []), r.id]);
+  try {
+    for (const batch of chunk(Array.from(idsByCandidate.keys()), 100)) {
+      const res = await fetchImpl(`${supabaseUrl}/rest/v1/profiles?id=in.(${inList(batch)})&select=id,target_role,resume_data`, { headers });
+      if (!res.ok) return new Set<string>();
+      const rows = (await res.json().catch(() => [])) as Array<{ id: string; target_role: string | null; resume_data: unknown }>;
+      for (const row of rows) {
+        const { met, total } = requiredSkillsCoverage({ target_role: row.target_role ?? "", resume_data: row.resume_data }, requiredSkills);
+        if (total > 0 && met === 0) for (const id of idsByCandidate.get(row.id) ?? []) none.add(id);
+      }
+    }
+  } catch {
+    return new Set<string>();
+  }
+  return none;
+}
+
 /** The first rank window of UNLOCK_BUNDLE_SIZE that still has a locked row,
  *  with the locked ids and the exact price the order will charge. */
-export function nextUnlockBatchQuote(allRanked: Array<{ id: string; unlocked: boolean; match_score?: number; candidate_status?: string | null }>): UnlockBatchQuote | null {
+export function nextUnlockBatchQuote(
+  allRanked: Array<{ id: string; unlocked: boolean; match_score?: number; candidate_status?: string | null }>,
+  noRequiredSkillIds: Set<string> = new Set(),
+): UnlockBatchQuote | null {
   /* A weak fit nobody has acted on is tucked away in the list, so a paid batch must never
      fill up with them: the employer pays for the top matches they can see. Keep the bar in
      step with LOW_MATCH_BAR in candidateTableModel.ts. */
-  const ranked = allRanked.filter((r) => r.unlocked || (r.candidate_status ?? "shortlisted") !== "shortlisted" || (r.match_score ?? Number.POSITIVE_INFINITY) >= LOW_MATCH_SCORE_BAR);
+  const ranked = allRanked.filter((r) => !noRequiredSkillIds.has(r.id)).filter((r) => r.unlocked || (r.candidate_status ?? "shortlisted") !== "shortlisted" || (r.match_score ?? Number.POSITIVE_INFINITY) >= LOW_MATCH_SCORE_BAR);
   for (let start = 0; start < ranked.length; start += UNLOCK_BUNDLE_SIZE) {
     const block = ranked.slice(start, start + UNLOCK_BUNDLE_SIZE);
     const locked = block.filter((r) => !r.unlocked);
