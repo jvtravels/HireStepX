@@ -130,10 +130,12 @@ export function pickRequirementsToRematch<T extends RematchableRequirement>(
     scores slowly. */
 export const REMATCH_MAX_AGE_MS = 7 * 86_400_000;
 
-/** Bump to the deploy date whenever scoring changes. A requirement last matched
-    before this moment is due on the next sweep, so stored scores never keep
-    reflecting a retired formula for up to REMATCH_MAX_AGE_MS. */
-export const MATCH_ALGORITHM_EPOCH_MS = Date.parse("2026-10-31T00:00:00Z");
+/** Bump to the moment a scoring change finished deploying, not the date: a job
+    matched earlier that day still ran the old formula and would be skipped as
+    fresh. A requirement last matched before this moment is due on the next
+    sweep, so stored scores never keep reflecting a retired formula for up to
+    REMATCH_MAX_AGE_MS. */
+export const MATCH_ALGORITHM_EPOCH_MS = Date.parse("2026-10-31T17:00:00Z");
 
 /** Latest time any candidate input to matching changed (migration 0057):
     a number, null when nothing has changed yet, or "unknown" when the column is
