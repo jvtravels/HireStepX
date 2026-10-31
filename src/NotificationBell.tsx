@@ -52,7 +52,7 @@ export default function NotificationBell({
         <CountBadge count={feed.unreadCount} />
       </Button>
       <span role="status" aria-live="polite" className="sr-only">{feed.announcement}</span>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
+      <SheetContent side="right" className="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md">
         <SheetHeader className="gap-3 border-b border-border px-5 pt-5 pb-3">
           <SheetTitle className="pr-10 text-xl font-semibold tracking-tight">{view === "settings" ? "Notification preferences" : "Notifications"}</SheetTitle>
           <SheetDescription className="sr-only">Recent activity on your account.</SheetDescription>
