@@ -303,7 +303,7 @@ export function ActiveJobsCard({
     return (
       <TableHead className={`${TH} ${center ? "px-2 text-center" : ""} ${className}`} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
         <div className={`flex items-center gap-1 ${center ? "justify-center" : ""}`}>
-          <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded font-semibold hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
+          <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded text-left font-semibold whitespace-normal hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
             {label}
             <Icon size={12} aria-hidden="true" className={active ? "" : "opacity-50"} />
           </button>
@@ -327,16 +327,16 @@ export function ActiveJobsCard({
       ) : (
         <>
           <div className={`hidden border-t border-hx-line @min-[700px]:block ${BLEED}`}>
-            <Table className="text-[13px]">
+            <Table className="table-fixed text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  {sortHead("title", "Job title", false, undefined, "min-w-[220px]")}
-                  {sortHead("status", "Status", false)}
-                  {sortHead("evaluated", "Evaluated", true)}
-                  {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`)}
-                  {sortHead("interviewing", "Interviewing", true)}
-                  {sortHead("hired", "Hired", true)}
-                  <TableHead className={`${TH} w-12`}><span className="sr-only">Actions</span></TableHead>
+                  {sortHead("title", "Job title", false)}
+                  {sortHead("status", "Status", false, undefined, "w-[168px]")}
+                  {sortHead("evaluated", "Evaluated", true, undefined, "w-[88px]")}
+                  {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`, "w-[96px]")}
+                  {sortHead("interviewing", "Interviewing", true, undefined, "w-[104px]")}
+                  {sortHead("hired", "Hired", true, undefined, "w-[72px]")}
+                  <TableHead className={`${TH} w-[48px]`}><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -351,7 +351,7 @@ export function ActiveJobsCard({
                       onFocus={() => prefetchRequirementDetail(j.id)}
                       onClick={(e) => { if (!(e.target as HTMLElement).closest("a, button, [role='menuitem']")) router.push(`/employer/requirements/${j.id}`); }}
                     >
-                      <TableCell className={`${TD} min-w-[220px] whitespace-normal`}>
+                      <TableCell className={`${TD} whitespace-normal`}>
                         <HoverPrefetchLink href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</HoverPrefetchLink>
                         <JobMeta job={j} health={health} />
                       </TableCell>
