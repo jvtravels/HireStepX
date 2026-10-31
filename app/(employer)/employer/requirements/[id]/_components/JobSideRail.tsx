@@ -1,10 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ActivityIcon,
   CalendarClockIcon,
   CheckCircle2Icon,
+  ChevronDownIcon,
   CodeXmlIcon,
   FileCheckIcon,
   HourglassIcon,
@@ -100,6 +101,7 @@ export default function JobSideRail({
   onStageChange: Parameters<typeof StageCell>[0]["onChange"];
 }) {
   const r = requirement;
+  const [open, setOpen] = useState(false);
   const canEdit = !readOnly && !suspended;
   const preferences = [
     { label: "Industry", value: r.preferredIndustry || null },
@@ -111,7 +113,26 @@ export default function JobSideRail({
   const hasPreferences = preferences.some((p) => p.value != null);
 
   return (
-    <aside aria-label="Job summary" className="grid min-w-0 content-start divide-y divide-hx-line border-t border-hx-line sm:max-[1439px]:grid-cols-2 sm:max-[1439px]:divide-x sm:max-[1439px]:divide-y-0 min-[1440px]:border-t-0 min-[1440px]:border-l">
+    <aside aria-label="Job summary" className="min-w-0 border-t border-hx-line min-[1440px]:border-t-0 min-[1440px]:border-l">
+      {/* Under 1440px the rail would push the candidates below the fold, so it
+          collapses behind one row. From 1440px it is a permanent column. */}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls="job-summary-panels"
+        className="flex min-h-11 w-full cursor-pointer items-center justify-between border-0 bg-transparent px-5 py-2.5 text-left text-[13px] font-semibold text-hx-coal focus-visible:outline-2 focus-visible:-outline-offset-2 min-[1440px]:hidden"
+      >
+        Job details and preferences
+        <ChevronDownIcon size={16} aria-hidden="true" className={cn("text-hx-ink-soft transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")} />
+      </button>
+      <div
+        id="job-summary-panels"
+        className={cn(
+          "grid min-w-0 content-start divide-y divide-hx-line sm:max-[1439px]:grid-cols-2 sm:max-[1439px]:divide-x sm:max-[1439px]:divide-y-0 max-[1439px]:border-t max-[1439px]:border-hx-line",
+          !open && "max-[1439px]:hidden",
+        )}
+      >
       <Panel id="details-heading" title="Job details">
         <KeyValueList>
           <Rows
@@ -142,6 +163,7 @@ export default function JobSideRail({
           <p className="m-0 text-[13px] text-hx-ink-soft">No preferences set. Anyone who matches the requirements can appear.</p>
         )}
       </Panel>
+      </div>
     </aside>
   );
 }
