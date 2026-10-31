@@ -316,15 +316,15 @@ export function describeDelivery(d: EvidenceDelivery | null | undefined): Delive
   const read = (value: number, scored: { note: string; tone: DeliveryTone }) => (sparse || value === 0 ? unreliable : scored);
   if (d.paceWpm != null) {
     const w = d.paceWpm;
-    rows.push({ id: "pace", label: "Speaking pace", value: `${w} wpm`, hint: "Easy to follow is roughly 110 to 170 words a minute.", ...(sparse ? unreliable : w < 110 ? { note: "Slow", tone: "warning" as const } : w > 170 ? { note: "Fast", tone: "warning" as const } : { note: "Easy to follow", tone: "success" as const }) });
+    rows.push({ id: "pace", label: "Speaking pace", value: sparse ? "Not measured" : `${w} wpm`, hint: "Easy to follow is roughly 110 to 170 words a minute.", ...(sparse ? unreliable : w < 110 ? { note: "Slow", tone: "warning" as const } : w > 170 ? { note: "Fast", tone: "warning" as const } : { note: "Easy to follow", tone: "success" as const }) });
   }
   if (d.fillersPerMin != null) {
     const f = d.fillersPerMin;
-    rows.push({ id: "fillers", label: "Filler words", value: `${f} / min`, hint: "Counts um, uh, like, you know, so, basically and similar.", ...read(f, f <= 3 ? { note: "Low", tone: "success" } : f <= 6 ? { note: "Moderate", tone: "warning" } : { note: "High", tone: "error" }) });
+    rows.push({ id: "fillers", label: "Filler words", value: sparse || f === 0 ? "Not measured" : `${f} / min`, hint: "Counts um, uh, like, you know, so, basically and similar.", ...read(f, f <= 3 ? { note: "Low", tone: "success" } : f <= 6 ? { note: "Moderate", tone: "warning" } : { note: "High", tone: "error" }) });
   }
   if (d.responseSec != null) {
     const s = d.responseSec;
-    rows.push({ id: "response", label: "Time to start answering", value: `${s}s`, hint: "Median pause between the question ending and the answer starting.", ...read(s, s <= 3 ? { note: "Quick", tone: "success" } : s <= 6 ? { note: "Considered", tone: "neutral" } : { note: "Slow to start", tone: "warning" }) });
+    rows.push({ id: "response", label: "Time to start answering", value: sparse || s === 0 ? "Not measured" : `${s}s`, hint: "Median pause between the question ending and the answer starting.", ...read(s, s <= 3 ? { note: "Quick", tone: "success" } : s <= 6 ? { note: "Considered", tone: "neutral" } : { note: "Slow to start", tone: "warning" }) });
   }
   if (d.pausePct != null) {
     const p = d.pausePct;
@@ -337,7 +337,7 @@ export function describeDelivery(d: EvidenceDelivery | null | undefined): Delive
   return rows;
 }
 
-export const VERDICT_LABEL: Record<EvidenceQuestion["verdict"], string> = { strong: "Strong", complete: "Complete", partial: "Partial", weak: "Weak", skipped: "Skipped" };
+export const VERDICT_LABEL: Record<EvidenceQuestion["verdict"], string> = { strong: "Strong", complete: "Adequate", partial: "Partial", weak: "Weak", skipped: "Skipped" };
 export const VERDICT_TONE: Record<EvidenceQuestion["verdict"], "success" | "warning" | "error" | "neutral"> = { strong: "success", complete: "success", partial: "warning", weak: "error", skipped: "neutral" };
 export const DIFFICULTY_LABEL: Record<NonNullable<EvidenceQuestion["difficulty"]>, string> = { warmup: "Warm-up", standard: "Standard", hard: "Hard" };
 export const LENGTH_LABEL: Record<NonNullable<EvidenceQuestion["length"]>["verdict"], string> = { "too-brief": "Too brief", right: "Right length", "too-long": "Too long" };

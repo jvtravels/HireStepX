@@ -66,6 +66,8 @@ export default function MessageComposer({
   const fileRef = useRef<HTMLInputElement>(null);
   const disabled = block !== null;
   const busy = sending || attaching;
+  // The notice already says why; a greyed-out form below it only adds noise.
+  const noticeOnly = block === "unlock" || block === "suspended";
 
   return (
     <div style={{ padding: "12px 16px", borderTop: `1px solid ${t.line}`, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -104,6 +106,8 @@ export default function MessageComposer({
         </p>
       )}
 
+      {!noticeOnly && (
+        <>
       <Label htmlFor={textId} className="sr-only">
         Message to {counterpartName}
       </Label>
@@ -165,6 +169,8 @@ export default function MessageComposer({
           <SendIcon aria-hidden="true" /> {sending ? "Sending…" : "Send"}
         </Button>
       </div>
+        </>
+      )}
       <span role="status" className="sr-only">
         {sending ? "Sending message" : attaching ? "Uploading attachment" : ""}
       </span>

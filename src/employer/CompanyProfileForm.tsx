@@ -192,6 +192,7 @@ export default function CompanyProfileForm({
           autoComplete="url"
           autoCapitalize="none"
           spellCheck={false}
+          maxLength={200}
           value={website}
           onChange={(e) => { setWebsite(e.target.value); setWebsiteServerError(null); setSaved(false); }}
           onBlur={() => setWebsiteTouched(true)}

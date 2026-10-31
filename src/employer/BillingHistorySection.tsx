@@ -124,17 +124,17 @@ export default function BillingHistorySection() {
         <TableRow className="hover:bg-transparent">
           <TableHead>Date</TableHead>
           <TableHead>Candidates</TableHead>
-          <TableHead>Invoice</TableHead>
+          <TableHead className="hidden sm:table-cell">Invoice no.</TableHead>
           <TableHead className="text-right">Amount</TableHead>
-          <TableHead className="w-px"><span className="sr-only">Invoice</span></TableHead>
+          <TableHead className="w-px"><span className="sr-only">Actions</span></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {purchases.map((p) => (
           <TableRow key={p.id} className="hover:bg-transparent">
             <TableCell className="whitespace-nowrap tabular-nums">{new Date(p.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</TableCell>
-            <TableCell className="max-w-[260px] truncate">{describe(p)}</TableCell>
-            <TableCell className="tabular-nums text-hx-ink-soft">
+            <TableCell className="max-w-[140px] truncate sm:max-w-[260px]">{describe(p)}</TableCell>
+            <TableCell className="hidden tabular-nums text-hx-ink-soft sm:table-cell">
               {p.invoiceNo ?? (purchaseAmounts(p).cashPaise === 0
                 ? "Credit redemption"
                 : isInvoicePending(p)

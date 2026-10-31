@@ -39,8 +39,9 @@ export function ZeroMatchState({ canEdit, requirementId }: { canEdit: boolean; r
         ) : undefined
       }
     >
-      No candidates currently practising on HireStepX match this job closely enough to shortlist. Try widening the location or
-      notice period, or check back as more candidates practise this week. We re-run matching every night.
+      No candidates currently practising on HireStepX match this job closely enough to shortlist.{" "}
+      {canEdit ? "Try relaxing a requirement such as location or notice period, or check" : "Check"} back as more candidates
+      practise this week. We re-run matching every night.
     </EmptyNote>
   );
 }
