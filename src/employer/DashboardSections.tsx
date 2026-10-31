@@ -297,11 +297,11 @@ export function ActiveJobsCard({
   const shown = ordered.slice(0, JOBS_SHOWN);
   const toggleSort = (key: JobSortKey) => setSort((cur) => (cur?.key === key ? { key, dir: cur.dir === "desc" ? "asc" : "desc" } : { key, dir: key === "title" ? "asc" : "desc" }));
   const SORT_LABEL: Record<JobSortKey, string> = { title: "job title", status: "status", evaluated: "evaluated", recommended: "strong matches", interviewing: "interviewing", hired: "hired" };
-  const sortHead = (key: JobSortKey, label: string, center: boolean, hint?: string) => {
+  const sortHead = (key: JobSortKey, label: string, center: boolean, hint?: string, className = "") => {
     const active = sort?.key === key;
     const Icon = !active ? ChevronsUpDownIcon : sort.dir === "asc" ? ArrowUpIcon : ArrowDownIcon;
     return (
-      <TableHead className={`${TH} ${center ? "text-center" : ""}`} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
+      <TableHead className={`${TH} ${center ? "px-2 text-center" : ""} ${className}`} aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}>
         <div className={`flex items-center gap-1 ${center ? "justify-center" : ""}`}>
           <button type="button" onClick={() => toggleSort(key)} className={`inline-flex items-center gap-1 rounded font-semibold hover:text-hx-coal ${active ? "text-hx-coal" : ""}`}>
             {label}
@@ -330,7 +330,7 @@ export function ActiveJobsCard({
             <Table className="text-[13px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  {sortHead("title", "Job title", false)}
+                  {sortHead("title", "Job title", false, undefined, "min-w-[220px]")}
                   {sortHead("status", "Status", false)}
                   {sortHead("evaluated", "Evaluated", true)}
                   {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`)}
@@ -351,17 +351,17 @@ export function ActiveJobsCard({
                       onFocus={() => prefetchRequirementDetail(j.id)}
                       onClick={(e) => { if (!(e.target as HTMLElement).closest("a, button, [role='menuitem']")) router.push(`/employer/requirements/${j.id}`); }}
                     >
-                      <TableCell className={`${TD} whitespace-normal`}>
+                      <TableCell className={`${TD} min-w-[220px] whitespace-normal`}>
                         <HoverPrefetchLink href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</HoverPrefetchLink>
                         <JobMeta job={j} health={health} />
                       </TableCell>
                       <TableCell className={TD}>
                         <JobStatusBadge job={j} pipeline={p} />
                       </TableCell>
-                      <TableCell className={`${TD} text-center`}>{j.aiScreening.evaluated}</TableCell>
-                      <TableCell className={`${TD} text-center`}>{j.aiScreening.topMatches}</TableCell>
-                      <TableCell className={`${TD} text-center`}>{p ? p.interviewing : "n/a"}</TableCell>
-                      <TableCell className={`${TD} text-center`}>{p ? p.hired : "n/a"}</TableCell>
+                      <TableCell className={`${TD} px-2 text-center`}>{j.aiScreening.evaluated}</TableCell>
+                      <TableCell className={`${TD} px-2 text-center`}>{j.aiScreening.topMatches}</TableCell>
+                      <TableCell className={`${TD} px-2 text-center`}>{p ? p.interviewing : "n/a"}</TableCell>
+                      <TableCell className={`${TD} px-2 text-center`}>{p ? p.hired : "n/a"}</TableCell>
                       <TableCell className={`${TD} px-1 text-right`}>{rowActions(j)}</TableCell>
                     </TableRow>
                   );
