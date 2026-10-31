@@ -9,7 +9,6 @@ import {
   ChevronDownIcon,
   LockIcon,
   MessageCircleIcon,
-  MoreVerticalIcon,
   RotateCcwIcon,
   SendIcon,
   UserRoundCheckIcon,
@@ -408,18 +407,14 @@ export default function CandidateRow({
             </Tooltip>
           )}
           {showMessageInMenu && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" aria-label={`Actions for ${name}`} className="size-8 text-hx-ink-soft pointer-coarse:size-11">
-                  <MoreVerticalIcon size={16} aria-hidden="true" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" disabled={suspended} onClick={onMessage} aria-label={`Message candidate: ${name}`} className="size-8 text-hx-ink-soft pointer-coarse:size-11">
+                  <SendIcon size={16} aria-hidden="true" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem disabled={suspended} onSelect={onMessage}>
-                  <SendIcon className="size-4" aria-hidden="true" /> Message candidate
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">Message candidate</TooltipContent>
+            </Tooltip>
           )}
         </div>
       </TableCell>

@@ -76,7 +76,6 @@ export default function EmployerJobsPage() {
     () => Array.from(new Set(requirements.map((r) => r.department).filter((v): v is string => !!v))).sort(),
     [requirements],
   );
-  const hasAnyDepartment = departmentOptions.length > 0;
   const openCount = useMemo(() => requirements.filter((r) => r.status !== "closed").length, [requirements]);
   const atJobLimit = openCount >= limits.openRequirements;
 
@@ -329,7 +328,7 @@ export default function EmployerJobsPage() {
             <div className="max-sm:hidden">
               <JobsTable
                 rows={pageRows}
-                hasAnyDepartment={hasAnyDepartment}
+                hasAnyDepartment={departmentOptions.length > 1}
                 sort={sort}
                 onSortChange={setSort}
                 readOnly={suspended}

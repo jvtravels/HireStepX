@@ -258,6 +258,14 @@ export default function EmployerMessagesV2() {
     if (mobile) requestAnimationFrame(() => threadHeadingRef.current?.focus());
   };
 
+  // On a wide screen the thread pane would otherwise sit empty; open the newest conversation once.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (mobile || autoOpened.current || activeMatchId || !conversations?.length) return;
+    autoOpened.current = true;
+    setActiveMatchId(conversations[0].matchId);
+  }, [mobile, conversations, activeMatchId]);
+
   const backToList = () => {
     restoreFocusRef.current = activeMatchId;
     setActiveMatchId(null);

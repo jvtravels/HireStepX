@@ -141,7 +141,8 @@ export function CandidateHeader({
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="m-0 text-[20px] leading-tight font-semibold text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
-              <CandidateStatusChip status={candidate.candidateStatus} />
+              {/* The stepper below names the stage from 640px up; the chip stands in on a phone. */}
+              <span className="min-[640px]:hidden"><CandidateStatusChip status={candidate.candidateStatus} /></span>
               {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
               {response === "declined" && !withdrew && <Badge tone="error">Declined contact</Badge>}
               {withdrew && <Badge tone="error">Withdrew from employer contact</Badge>}
