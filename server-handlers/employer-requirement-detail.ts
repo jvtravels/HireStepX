@@ -41,6 +41,7 @@ import { loadLastTouch, type LastTouch } from "./_employer-last-touch";
 import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, requiredSkillsMatched, type RequirementInput } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, resumeOwnName } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
+import { tidyName, tidyRole } from "../src/displayText";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
 import {
@@ -387,7 +388,7 @@ export default async function handler(req: Request): Promise<Response> {
       /* Name and contact details must never leave the server for a Locked
          match; masking only in the client is cosmetic. Employer and school
          names are withheld too (see redactResumeDetailForLock). */
-      const name = unlocked ? profile?.name || "Candidate" : maskedCandidateName(m.id);
+      const name = unlocked ? (profile?.name ? tidyName(profile.name) : "Candidate") : maskedCandidateName(m.id);
       // For a paid match the resume body stays (it is the paid snapshot) but
       // its own phone, LinkedIn and any email/number/link written into its
       // free text are contact details too, so they go with the rest.
@@ -398,7 +399,7 @@ export default async function handler(req: Request): Promise<Response> {
       return {
         id: m.id,
         name,
-        targetRole: profile?.target_role || "Not specified",
+        targetRole: profile?.target_role ? tidyRole(profile.target_role) : "Not specified",
         city: (unlocked ? extractResumeLocation(profile?.resume_data) : coarsenLockedCity(extractResumeLocation(profile?.resume_data))) || "Not specified",
         matchScore: m.match_score,
         rosterScore: m.roster_score,

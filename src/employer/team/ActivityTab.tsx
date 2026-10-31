@@ -11,6 +11,7 @@ import type { useTeamActivity } from "../useTeam";
 import { dayBucket, describeEvent, type ActivityGroup } from "../teamActivity";
 
 const GROUP_LABEL: Record<ActivityGroup, string> = { members: "Team", jobs: "Jobs", candidates: "Candidates", company: "Company" };
+import { tidyName } from "../../displayText";
 import { EmptyBlock, PAD, PersonAvatar, muted } from "./TeamParts";
 
 const GROUPS: Array<{ id: ActivityGroup | ""; label: string }> = [
@@ -48,19 +49,20 @@ export default function ActivityTab({
       <div className={PAD} style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", paddingTop: 12, paddingBottom: 12, borderBottom: `1px solid ${t.line}` }}>
         <SegmentedControl
           ariaLabel="Filter by area"
+          wrap={false}
           value={filter.group}
           onChange={(group) => onFilter({ ...filter, group })}
           options={GROUPS.map((g) => ({ value: g.id, label: g.label }))}
         />
-        <label style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+        <label className="max-sm:w-full" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
           Member
           <NativeSelect
             value={filter.actor}
             onChange={(e) => onFilter({ ...filter, actor: e.target.value })}
-            className="min-w-44"
+            className="min-w-44 max-sm:flex-1"
           >
             <option value="">Everyone</option>
-            {members.map((m) => <option key={m.userId} value={m.userId}>{m.name || m.email}</option>)}
+            {members.map((m) => <option key={m.userId} value={m.userId}>{m.name ? tidyName(m.name) : m.email}</option>)}
           </NativeSelect>
         </label>
       </div>
@@ -84,9 +86,9 @@ export default function ActivityTab({
                   const d = describeEvent(e);
                   return (
                     <li key={e.id} className={PAD} style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingTop: 12, paddingBottom: 12, borderTop: i === 0 ? "none" : `1px solid ${t.line}` }}>
-                      <PersonAvatar seed={e.actor.userId ?? "system"} label={e.actor.name} size={28} />
+                      <PersonAvatar seed={e.actor.userId ?? "system"} label={tidyName(e.actor.name)} size={28} />
                       <p style={{ fontFamily: f.sans, fontSize: 14, color: t.coal, margin: 0, flex: 1, minWidth: 0, lineHeight: 1.5, paddingTop: 3, overflowWrap: "anywhere" }}>
-                        <strong style={{ fontWeight: 600 }}>{e.actor.name}</strong>
+                        <strong style={{ fontWeight: 600 }}>{tidyName(e.actor.name)}</strong>
                         {e.actor.removed && <span style={{ color: t.inkSoft }}> (removed)</span>}{" "}
                         {d.verb}
                         {d.subject && <> <strong style={{ fontWeight: 600 }}>{d.subject}</strong></>}

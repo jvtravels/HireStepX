@@ -783,12 +783,15 @@ export function SegmentedControl<T extends string>({
   value,
   onChange,
   ariaLabel,
+  wrap = true,
 }: {
   options: { value: T; label: string }[];
   value: T;
   onChange: (next: T) => void;
   /** Names the group for screen readers (e.g. "Work mode"). */
   ariaLabel?: string;
+  /** false keeps one row and scrolls sideways instead of orphaning a chip on a second row. */
+  wrap?: boolean;
 }) {
   return (
     <ToggleGroup
@@ -797,13 +800,13 @@ export function SegmentedControl<T extends string>({
       onValueChange={(next) => next && onChange(next as T)}
       aria-label={ariaLabel}
       spacing={0.5}
-      className="flex-wrap rounded-[11px] bg-hx-soft p-[3px]"
+      className={`rounded-[11px] bg-hx-soft p-[3px] ${wrap ? "flex-wrap" : "max-w-full flex-nowrap overflow-x-auto"}`}
     >
       {options.map((opt) => (
         <ToggleGroupItem
           key={opt.value}
           value={opt.value}
-          className="h-auto min-h-9 rounded-lg border border-transparent px-4 py-2 text-[13px] font-semibold text-hx-neutral-ink hover:bg-transparent hover:text-hx-neutral-ink data-[state=on]:border-hx-line data-[state=on]:bg-white data-[state=on]:text-hx-indigo-deep pointer-coarse:min-h-11"
+          className="h-auto min-h-9 rounded-lg border border-transparent px-4 py-2 text-[13px] font-semibold shrink-0 text-hx-neutral-ink hover:bg-transparent hover:text-hx-neutral-ink data-[state=on]:border-hx-line data-[state=on]:bg-white data-[state=on]:text-hx-indigo-deep pointer-coarse:min-h-11"
         >
           {opt.label}
         </ToggleGroupItem>

@@ -11,6 +11,7 @@ import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { assignableRoles, canManageMember, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
 import type { TeamMember } from "../useTeam";
 import { relativeTime } from "../teamActivity";
+import { tidyName } from "../../displayText";
 import { PAD, PersonAvatar, RoleMenu, muted } from "./TeamParts";
 
 export type MemberCommand =
@@ -78,7 +79,7 @@ export default function MembersTab({
           <div role="row"><p role="cell" style={{ ...muted, padding: "32px 16px", textAlign: "center" }}>No one matches &ldquo;{query.trim()}&rdquo;.</p></div>
         )}
         {visible.map((m, i) => {
-          const label = m.name || m.email;
+          const label = m.name ? tidyName(m.name) : m.email;
           const roleOptions = m.isYou || !canManageMember(myRole, m.role) ? [] : assignableRoles(myRole);
           const canRemove = !m.isYou && canManageMember(myRole, m.role);
           const canTransfer = !m.isYou && myRole === "owner" && m.role !== "owner";
