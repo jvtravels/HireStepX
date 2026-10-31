@@ -27,7 +27,7 @@ describe("MatchesCell", () => {
     renderCell(<MatchesCell r={job({ evaluated: 12, totalMatched: 12, scoreLow: 48, scoreHigh: 91, topMatches: 3, strongAvgScore: 82 })} />);
     expect(screen.getByText("12 candidates matched")).toBeTruthy();
     expect(screen.getByText("3 strong")).toBeTruthy();
-    expect(screen.getByText("82% avg")).toBeTruthy();
+    expect(screen.getByText("avg 82/100")).toBeTruthy();
     expect(screen.getByRole("button", { name: "About these matches" })).toBeTruthy();
     expect(screen.queryByText("Scores 48 to 91%")).toBeNull();
   });
