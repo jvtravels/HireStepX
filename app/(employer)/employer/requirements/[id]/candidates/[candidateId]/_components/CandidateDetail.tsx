@@ -224,7 +224,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
           suspended={suspended}
           resumeFileName={resumeFileName}
           fit={fit}
-          summary={buildEvidenceSummary(candidate, requirement, matched)}
+          summary={buildEvidenceSummary(candidate, requirement, matched, d.evidence)}
           onUnlock={openUnlock}
           requests={requests}
           reviews={reviews}

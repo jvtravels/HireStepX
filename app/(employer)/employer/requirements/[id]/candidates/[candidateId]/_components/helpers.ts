@@ -37,6 +37,15 @@ export function evidenceAverage(evidence: CandidateEvidence | null): number | nu
   return Math.round(evidence.skills.reduce((sum, s) => sum + s.score, 0) / evidence.skills.length);
 }
 
+/** The one practice number for this page: the mean of the graded sessions we can list, so the header,
+ *  summary and Practice history agree. The stored roster average also covers sessions that are not
+ *  graded for employers, so it is only the fallback while evidence is missing (locked or loading). */
+export function gradedScore(candidate: Pick<Candidate, "rosterScore" | "sessionsCompleted">, evidence: CandidateEvidence | null): number | null {
+  const trend = evidence?.sessionTrend ?? [];
+  if (trend.length > 0) return Math.round(trend.reduce((sum, t) => sum + t.score, 0) / trend.length);
+  return interviewScore(candidate);
+}
+
 export const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
 export const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
 
@@ -455,9 +464,9 @@ export function noticePhrase(noticePeriod: string | null | undefined): string | 
 
 /** One line of facts for the top of the candidate page. Built from stored fields only, so it never
  *  states anything the data does not hold; parts we have no data for are left out. */
-export function buildEvidenceSummary(candidate: Candidate, requirement: Pick<Requirement, "skills">, matched: string[]): string | null {
+export function buildEvidenceSummary(candidate: Candidate, requirement: Pick<Requirement, "skills">, matched: string[], evidence: CandidateEvidence | null = null): string | null {
   const parts: string[] = [];
-  const score = interviewScore(candidate);
+  const score = gradedScore(candidate, evidence);
   if (score != null) parts.push(`Overall interview score ${score} out of 100, across ${plural(candidate.sessionsCompleted, "practice interview")}`);
   if (requirement.skills.length > 0) parts.push(`${matched.length} of ${requirement.skills.length} required skills`);
   if (candidate.city && candidate.city !== "Not specified") parts.push(candidate.city);
@@ -494,7 +503,7 @@ export function buildProfileSummary(candidate: Candidate, requirement: Pick<Requ
   }
   if (primary.length > 0) out.push(`Deepest in ${list(primary, 4)}.`);
 
-  const score = interviewScore(candidate);
+  const score = gradedScore(candidate, evidence);
   if (score != null) {
     const ranked = [...(evidence?.skills ?? [])].sort((a, b) => b.score - a.score);
     const best = ranked[0];

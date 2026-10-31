@@ -5,7 +5,6 @@ import AnimatedNumber from "@/AnimatedNumber";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { interviewScore } from "@/employer/_jobDetailHelpers";
 import { Badge, FAIR_MATCH_THRESHOLD, OutlineCta, STRONG_MATCH_THRESHOLD } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
@@ -16,7 +15,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -259,7 +258,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
 function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, requestUi }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void; requirementTitle: string; requestUi: RequestUi }) {
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
-  const overall = interviewScore(candidate);
+  const overall = gradedScore(candidate, evidence);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const verifiedCount = verified.filter((c) => c.verified).length;
