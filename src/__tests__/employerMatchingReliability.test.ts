@@ -398,7 +398,7 @@ describe("single-candidate resume rematch", () => {
   });
 
   it("removes the untouched row when the new profile falls below the floor, and leaves a paid one alone", async () => {
-    const weak = { id: "a", name: "A", target_role: "Backend Developer", resume_data: { skills: ["React"] } };
+    const weak = { id: "a", name: "A", target_role: "Backend Developer", resume_data: { skills: ["Excel"] } };
     const calls = makeSim({
       profiles: [weak], backlog: [backlogRow],
       matches: [{ id: "m1", candidate_user_id: "a", match_score: 70, unlocked: false }],

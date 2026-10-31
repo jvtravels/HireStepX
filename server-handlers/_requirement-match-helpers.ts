@@ -456,13 +456,18 @@ function fitInputs(candidate: Pick<CandidatePoolRow, "target_role" | "resume_dat
      carries the role. */
   const titleTokens = new Set(tokenize(req.title, { stripStopwords: true }));
   const reqTokens = titleTokens;
-  const reqSkillTokens = new Set([...titleTokens, ...(req.skills || []).flatMap((s) => tokenize(s))]);
   const roleTokens = new Set(tokenize(candidate.target_role || ""));
-  const skillTokens = new Set(extractSkills(candidate.resume_data).flatMap((s) => tokenize(s)));
+
+  /* Skill fit is the same coverage the employer is shown ("4 of 4 required
+     skills"): per listed skill, with skill families and the half-token rule,
+     over the candidate's role and skills. A separate stricter token ratio here
+     let a candidate who fits every listed skill score 39 beside a label that
+     said they met them all. */
+  const skillUnits = requiredSkillUnits((req.skills || []).filter((s) => s.trim()), req.title);
+  const skillHits = unitsCovered(candidateSkillTokens(candidate), skillUnits);
+  const skillOverlap = skillUnits.length > 0 ? skillHits / skillUnits.length : 0;
 
   const roleOverlap = intersectionRatio(reqTokens, roleTokens);
-  const skillOverlap = intersectionRatio(reqSkillTokens, skillTokens);
-  const skillHits = intersectionHits(reqSkillTokens, skillTokens);
 
   const reqLocation = req.location.toLowerCase();
   const candidateLocation = extractResumeLocation(candidate.resume_data).toLowerCase();
