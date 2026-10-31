@@ -5,6 +5,7 @@ import AnimatedNumber from "@/AnimatedNumber";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
+import { interviewScore } from "@/employer/_jobDetailHelpers";
 import { Badge, FAIR_MATCH_THRESHOLD, OutlineCta, STRONG_MATCH_THRESHOLD } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
@@ -258,6 +259,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
 function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, requestUi }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void; requirementTitle: string; requestUi: RequestUi }) {
   const { evidence } = state;
   const avg = evidenceAverage(evidence);
+  const overall = interviewScore(candidate);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
   const verifiedCount = verified.filter((c) => c.verified).length;
@@ -283,7 +285,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
         {hasEvidence ? (
           <div className="@container">
             <StatGrid className="@xl:grid-cols-4">
-              <Stat label="Interviews" hint={last ? `Latest ${last}` : undefined}>{candidate.sessionsCompleted} graded</Stat>
+              <Stat label="Interviews" hint={[overall != null ? `Overall score ${overall} out of 100` : null, last ? `latest ${last}` : null].filter(Boolean).join(", ") || undefined}>{candidate.sessionsCompleted} graded</Stat>
               {evidence?.readiness && (
                 <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>
                   <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-snug", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
