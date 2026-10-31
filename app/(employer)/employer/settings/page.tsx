@@ -21,6 +21,11 @@ import {
 } from "@/employer/_accountHelpers";
 import { PageHeader, FlatSection, ActionRow, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection, icons } from "@/settingsSections";
 
+const SECTION_LINKS: ReadonlyArray<readonly [string, string]> = [
+  ["company", "Company"], ["notifications", "Notifications"], ["billing", "Billing"], ["sounds", "Sounds"],
+  ["shortcuts", "Shortcuts"], ["account", "Account"], ["data", "Your data"], ["danger", "Danger zone"],
+];
+
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
    onboarding uses, which re-derives the tier on the server. GSTIN and the invoice name are
@@ -121,7 +126,13 @@ export default function EmployerSettingsPage() {
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
 
-        <FlatSection split title="Company profile">
+        <nav aria-label="Settings sections" className="flex gap-1 overflow-x-auto border-b px-5 py-2" style={{ borderColor: t.line }}>
+          {SECTION_LINKS.map(([id, label]) => (
+            <a key={id} href={`#${id}`} className="inline-flex min-h-[32px] shrink-0 items-center rounded-md px-3 text-[13px] font-medium text-muted-foreground no-underline hover:bg-muted hover:text-foreground">{label}</a>
+          ))}
+        </nav>
+
+        <FlatSection split title="Company profile" id="company">
           <div className="max-w-[640px]">
             {formLocked && (
               <p role="status" style={{ fontFamily: f.sans, fontSize: 13, color: t.errorInk, margin: "0 0 16px", lineHeight: 1.5 }}>
@@ -146,23 +157,23 @@ export default function EmployerSettingsPage() {
           </div>
         </FlatSection>
 
-        <FlatSection split title="Email preferences">
+        <FlatSection split title="Notifications" id="notifications">
+          <h3 className="m-0 text-sm font-semibold text-foreground">Email</h3>
           <EmailPreferencesSection audience="employer" />
-        </FlatSection>
-
-        <FlatSection split title="Notifications">
-          <NotificationPreferences audience="employer" />
+          <div className="mt-6">
+            <NotificationPreferences audience="employer" embedded />
+          </div>
         </FlatSection>
 
         <FlatSection split title="Billing history" id="billing">
           <BillingHistorySection />
         </FlatSection>
 
-        <FlatSection split title="Sounds">
+        <FlatSection split title="Sounds" id="sounds">
           <SoundsSection />
         </FlatSection>
 
-        <FlatSection split title="Keyboard shortcuts">
+        <FlatSection split title="Keyboard shortcuts" id="shortcuts">
           <ActionRow
             last
             icon={<KeyboardIcon size={18} aria-hidden="true" />}
@@ -172,7 +183,7 @@ export default function EmployerSettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection split title="Account">
+        <FlatSection split title="Account" id="account">
           <AccountSection
             resetLoading={resetLoading} resetSent={resetSent}
             handlePasswordReset={handlePasswordReset}
@@ -180,7 +191,7 @@ export default function EmployerSettingsPage() {
           />
         </FlatSection>
 
-        <FlatSection split title="Your data">
+        <FlatSection split title="Your data" id="data">
           <ActionRow
             last
             icon={icons.download}
@@ -191,7 +202,7 @@ export default function EmployerSettingsPage() {
           {exportNote && <p role="status" className="m-0 mt-2 text-[13px] text-destructive">{exportNote}</p>}
         </FlatSection>
 
-        <FlatSection split title="Danger zone" last>
+        <FlatSection split title="Danger zone" id="danger" last>
           <DangerZoneSection
             authUser={user}
             confirmDelete={confirmDelete} setConfirmDelete={setConfirmDelete}

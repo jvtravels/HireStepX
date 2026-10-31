@@ -13,7 +13,8 @@ const EMPLOYER_DESCRIPTIONS: Partial<Record<Category, string>> = {
   billing: "Payment receipts, unlocks and refunds",
 };
 
-export default function NotificationPreferences({ audience }: { audience: Audience }) {
+/* `embedded` is for a page section that already supplies the h2 and padding. */
+export default function NotificationPreferences({ audience, embedded }: { audience: Audience; embedded?: boolean }) {
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
@@ -40,8 +41,10 @@ export default function NotificationPreferences({ audience }: { audience: Audien
   }
 
   return (
-    <div className="flex max-w-2xl flex-col gap-1 p-4">
-      <h2 className="m-0 text-base font-semibold text-foreground">In-app notifications</h2>
+    <div className={embedded ? "flex flex-col gap-1" : "flex max-w-2xl flex-col gap-1 p-4"}>
+      {embedded
+        ? <h3 className="m-0 text-sm font-semibold text-foreground">In your inbox</h3>
+        : <h2 className="m-0 text-base font-semibold text-foreground">In-app notifications</h2>}
       <p className="m-0 mb-3 text-[13px] text-muted-foreground">
         Choose what appears in your inbox. Payment problems and other critical alerts always come through.
       </p>
