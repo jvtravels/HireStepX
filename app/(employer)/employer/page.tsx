@@ -325,8 +325,10 @@ function EmployerDashboard() {
             <DashboardFunnel data={dashboard} openJobs={openRequirements} recommendedTotal={recommendedTotal} range={range} busy={refreshing} />
             <div aria-busy={refreshing} className="mx-busy grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_minmax(300px,380px)]">
               <div className="min-w-0 divide-y divide-hx-line min-[1100px]:border-r min-[1100px]:border-hx-line">
+                {/* People waiting on a decision come before the jobs table; with none waiting, the table leads. */}
+                {recommendedCards.length > 0 && <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />}
                 <ActiveJobsCard jobs={openRequirements} pipeline={dashboard?.jobs ?? null} now={now} rowActions={rowActions} />
-                <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />
+                {recommendedCards.length === 0 && <RecommendedCandidatesCard cards={recommendedCards} total={dashboard?.totals.awaitingReview ?? recommendedCards.length} />}
               </div>
               <div className="min-w-0 divide-y divide-hx-line border-t border-hx-line min-[1100px]:border-t-0">
                 <UpcomingInterviewsCard items={dashboard?.upcomingInterviews ?? []} />
