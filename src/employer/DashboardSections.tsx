@@ -225,7 +225,8 @@ function FunnelStepItem({ step, range, border }: { step: FunnelStep; range: Dash
 
 function OpenJobsItem({ jobs, border }: { jobs: RequirementSummary[]; border: string }) {
   const withMatches = jobs.filter((j) => j.aiScreening.topMatches > 0).length;
-  const detail = jobs.length > 0 && withMatches > 0 ? `${withMatches} with strong ${withMatches === 1 ? "match" : "matches"}` : null;
+  const strongTotal = jobs.reduce((n, j) => n + j.aiScreening.topMatches, 0);
+  const detail = jobs.length > 0 && strongTotal > 0 ? `${strongTotal} strong ${strongTotal === 1 ? "match" : "matches"} across ${withMatches} ${withMatches === 1 ? "job" : "jobs"}` : null;
   return (
     <li className={`${FUNNEL_CELL} ${border}`}>
       <p className="sr-only">{jobs.length} open {jobs.length === 1 ? "job" : "jobs"}{detail ? `, ${detail}` : ""}</p>
