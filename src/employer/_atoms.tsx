@@ -559,6 +559,7 @@ export function AutocompleteInput({
   onChange,
   placeholder,
   suggestions,
+  emptySuggestions,
   ariaLabel,
   id,
   describedBy,
@@ -569,18 +570,24 @@ export function AutocompleteInput({
   onChange: (next: string) => void;
   placeholder?: string;
   suggestions: string[];
+  /** Shown instead of a random sample while the field is empty. */
+  emptySuggestions?: string[];
 } & FieldA11y) {
   const [focused, setFocused] = React.useState(false);
   const [selectedIdx, setSelectedIdx] = React.useState(-1);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const listboxId = React.useId();
-  const diverseSample = React.useMemo(() => sampleDiverse(suggestions, 8), [suggestions]);
+  const diverseSample = React.useMemo(() => emptySuggestions ?? sampleDiverse(suggestions, 8), [suggestions, emptySuggestions]);
 
   const q = value.trim().toLowerCase();
+  // Prefix matches first, so typing "prod" offers "Product Manager" before "Reproduction Engineer".
   const filtered = focused
     ? q.length === 0
       ? diverseSample
-      : suggestions.filter((s) => s.toLowerCase().includes(q)).slice(0, 8)
+      : [
+          ...suggestions.filter((s) => s.toLowerCase().startsWith(q)),
+          ...suggestions.filter((s) => !s.toLowerCase().startsWith(q) && s.toLowerCase().includes(q)),
+        ].slice(0, 8)
     : [];
   const open = filtered.length > 0;
   const rect = useDropdownRect(inputRef, open, [value]);

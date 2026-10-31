@@ -50,8 +50,11 @@ import {
 } from "./_requirementFormHelpers";
 import { CITY_SUGGESTIONS } from "../../data/city-tiers";
 import { ROLE_SUGGESTIONS } from "@/onboardingData";
+
 import { COMPANY_SUGGESTIONS } from "../../data/company-suggestions";
 import { COLLEGE_SUGGESTIONS, DOMAIN_SUGGESTIONS, INDUSTRY_SUGGESTIONS, SKILL_SUGGESTIONS } from "../../data/requirement-suggestions";
+
+const COMMON_JOB_TITLES = ["Software Engineer", "Senior Software Engineer", "Frontend Engineer", "Backend Engineer", "Product Manager", "Data Analyst", "Product Designer", "Sales Executive"];
 
 const SELECT_FIELD = "h-11 w-full rounded-[10px] border-hx-line bg-white px-3.5 text-sm text-hx-coal";
 
@@ -306,7 +309,7 @@ export function RequirementForm({
       <div style={flexRow}>
       <div style={cell(1, 280)}>
         <FieldLabel required htmlFor="rf-title">Job title</FieldLabel>
-        <AutocompleteInput id="rf-title" value={draft.title} onChange={(v) => set("title", v)} onBlur={() => touch("title")} invalid={!!shown("title")} describedBy={describe("title")} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} />
+        <AutocompleteInput id="rf-title" value={draft.title} onChange={(v) => set("title", v)} onBlur={() => touch("title")} invalid={!!shown("title")} describedBy={describe("title")} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} emptySuggestions={COMMON_JOB_TITLES} />
         {fieldError("title")}
       </div>
 

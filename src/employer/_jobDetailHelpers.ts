@@ -278,7 +278,7 @@ export function jobStatusPill(status: Requirement["status"]): { label: string; t
   switch (status) {
     case "ready":
     case "partial":
-      return { label: "Active", tone: "success" };
+      return { label: "Open", tone: "success" };
     case "generating":
       return { label: "Matching", tone: "brand" };
     case "closed":

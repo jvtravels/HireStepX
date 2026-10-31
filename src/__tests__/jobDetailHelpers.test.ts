@@ -116,7 +116,7 @@ describe("tabs", () => {
 
 describe("job summaries", () => {
   it("maps job status to a pill", () => {
-    expect(jobStatusPill("ready").label).toBe("Active");
+    expect(jobStatusPill("ready").label).toBe("Open");
     expect(jobStatusPill("closed").tone).toBe("neutral");
   });
 

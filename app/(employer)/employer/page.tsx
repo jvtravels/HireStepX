@@ -297,7 +297,7 @@ function EmployerDashboard() {
     <div style={{ minWidth: 0 }}>
       {canCreate && statsReady && (
         <EmployerHeaderAction>
-          <PostJobLink />
+          <PostJobLink iconOnlyOnPhone />
         </EmployerHeaderAction>
       )}
       <div className="mx-stagger overflow-hidden rounded-2xl border border-hx-line bg-white">

@@ -47,11 +47,11 @@ export function PrimaryLink(props: { href: string; children: React.ReactNode; ic
 }
 
 /** The one "Post a job" button for every employer surface, so it never differs between pages. */
-export function PostJobLink({ children = "Post a job", full = false }: { children?: React.ReactNode; full?: boolean }) {
+export function PostJobLink({ children = "Post a job", full = false, iconOnlyOnPhone = false }: { children?: React.ReactNode; full?: boolean; iconOnlyOnPhone?: boolean }) {
   return (
     <CtaLink href="/employer/requirements/new" full={full}>
       <PlusIcon size={16} strokeWidth={2.5} aria-hidden="true" />
-      {children}
+      {iconOnlyOnPhone ? <span className="max-[560px]:sr-only">{children}</span> : children}
     </CtaLink>
   );
 }
