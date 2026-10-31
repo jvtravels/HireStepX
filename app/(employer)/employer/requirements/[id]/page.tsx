@@ -105,7 +105,8 @@ export default function RequirementDetailPage() {
   const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => Math.max(1, Math.floor(Number(searchParams.get("page"))) || 1));
+  const pageResetReady = useRef(false);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [unlockTarget, setUnlockTarget] = useState<UnlockTarget | null>(null);
   const [evidenceId, setEvidenceId] = useState<string | null>(null);
@@ -258,6 +259,11 @@ export default function RequirementDetailPage() {
   const lowCount = useMemo(() => candidates.filter((c) => isLowMatch(c, jobHasSkills)).length, [candidates, jobHasSkills]);
 
   useEffect(() => {
+    // Skip the first run so a ?page=N link keeps its page; later view changes start from page 1.
+    if (!pageResetReady.current) {
+      pageResetReady.current = true;
+      return;
+    }
     setPage(1);
   }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId, showLow, strongOnly, allSkills]);
 
@@ -325,10 +331,12 @@ export default function RequirementDetailPage() {
 
   useEffect(() => {
     const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId, showLow, strongOnly, allSkills });
+    if (page > 1) next.set("page", String(page));
+    else next.delete("page");
     const query = next.toString();
     if (query === window.location.search.replace(/^\?/, "")) return;
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId, showLow, strongOnly, allSkills]);
+  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId, showLow, strongOnly, allSkills, page]);
 
   const openCandidate = useCallback((id: string) => router.push(`/employer/requirements/${params.id}/candidates/${id}`), [router, params.id]);
   const sel = useShortlistSelection({ filtered: filteredSorted, pageRows, onOpen: openCandidate });

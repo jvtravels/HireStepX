@@ -270,7 +270,7 @@ export default function CompanyProfileForm({
             onBlur={() => setGstinTouched(true)}
             aria-invalid={gstinError ? true : undefined}
             aria-describedby={`${gstinId}-${gstinError ? "err" : "help"}`}
-            placeholder="27AAPFU0939F1ZV"
+            placeholder="e.g. 27AAPFU0939F1ZV"
             disabled={disabled}
             className={GSTIN_CLASS}
           />
