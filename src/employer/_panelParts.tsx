@@ -195,7 +195,7 @@ export function InfoTip({ label, compact, children }: { label: string; compact?:
         <button
           type="button"
           aria-label={label}
-          className={cn("inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent p-1 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11", compact && "pointer-coarse:-m-3.5")}
+          className={cn("inline-flex cursor-pointer items-center justify-center rounded-md border-0 bg-transparent size-6 p-0 text-hx-ink-soft focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:size-11", compact && "pointer-coarse:-m-3.5")}
         >
           <InfoIcon size={12} aria-hidden="true" />
         </button>
