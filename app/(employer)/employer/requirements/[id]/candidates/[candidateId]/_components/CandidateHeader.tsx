@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
-import { BriefcaseIcon, CalendarClockIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, PhoneIcon, WalletIcon } from "lucide-react";
-import { cn } from "cn";
+import { BriefcaseIcon, CalendarClockIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MoreVerticalIcon, PhoneIcon, UsersIcon, WalletIcon, XCircleIcon } from "lucide-react";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Badge, CandidateStatusChip } from "@/employer/_atoms";
 import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
@@ -152,13 +152,32 @@ export function CandidateHeader({
         <div className="flex flex-wrap items-center gap-2">
           <MatchSignal score={candidate.matchScore} fit={fit} />
           {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
-          {reviews.enabled && (
-            <Button type="button" variant="outline" onClick={onReview} disabled={suspended || !reviews.data} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>
-              {reviews.data?.mine ? `Your review: ${REVIEW_LABEL[reviews.data.mine.rating]}` : "Review"}
-            </Button>
-          )}
-          {canReject && <Button type="button" variant="outline" onClick={onReject} disabled={suspended} className={cn("pointer-coarse:h-11", HEADER_ACTION)}>Reject</Button>}
           <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} onReopen={onReopen} />
+          {((reviews.enabled) || canReject) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button type="button" variant="outline" size="icon" aria-label={`More actions for ${displayName}`} className="text-hx-ink-soft pointer-coarse:size-11">
+                  <MoreVerticalIcon size={16} aria-hidden="true" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {reviews.enabled && (
+                  <DropdownMenuItem disabled={suspended || !reviews.data} onSelect={onReview}>
+                    <UsersIcon size={14} aria-hidden="true" /> {reviews.data?.mine ? `Your review: ${REVIEW_LABEL[reviews.data.mine.rating]}` : "Review"}
+                  </DropdownMenuItem>
+                )}
+                {canReject && (
+                  <DropdownMenuItem
+                    disabled={suspended}
+                    className="text-destructive focus:bg-destructive/10 focus:text-destructive [&_svg]:text-destructive"
+                    onSelect={onReject}
+                  >
+                    <XCircleIcon size={14} aria-hidden="true" /> Reject
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
