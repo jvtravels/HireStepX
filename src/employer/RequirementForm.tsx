@@ -342,8 +342,9 @@ export function RequirementForm({
 
         <div style={cell(1, 150)}>
           <FieldLabel htmlFor="rf-open">Open positions</FieldLabel>
-          <NumberField id="rf-open" value={draft.openPositions} onChange={(v) => set("openPositions", v)} onBlur={() => touch("openPositions")} maxDigits={3} placeholder="1" invalid={!!shown("openPositions")} describedBy={describe("openPositions")} />
+          <NumberField id="rf-open" value={draft.openPositions} onChange={(v) => set("openPositions", v)} onBlur={() => touch("openPositions")} maxDigits={3} placeholder="1" invalid={!!shown("openPositions")} describedBy={describe("openPositions", "rf-open-help")} />
           {fieldError("openPositions")}
+          {!shown("openPositions") && <HelpText id="rf-open-help" live={false}>Whole numbers only.</HelpText>}
         </div>
         <div style={cell(1, 190)}>
           <FieldLabel htmlFor="rf-due">Application deadline</FieldLabel>

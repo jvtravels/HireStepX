@@ -188,7 +188,7 @@ function TeamConsole() {
             </p>
           )}
 
-          <div role="tablist" aria-label="Team sections" style={{ display: "flex", gap: 24, marginBottom: -1, overflowX: "auto" }}>
+          <div role="tablist" aria-label="Team sections" className="gap-4 min-[420px]:gap-6" style={{ display: "flex", marginBottom: -1, overflowX: "auto" }}>
             {tabs.map((tb, i) => {
               const on = tab === tb.id;
               const attention = tb.id === "invites" && (tb.count ?? 0) > 0;
