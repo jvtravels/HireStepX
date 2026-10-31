@@ -81,9 +81,9 @@ export function formatExperience(months: number): string {
   return months % 12 === 0 ? formatYears(months / 12) : formatTenure(months);
 }
 
-export function experienceMonthsOf(r: { experience: ReadonlyArray<{ period: string }>; yearsExperience: number | null } | null | undefined): number | null {
+export function experienceMonthsOf(r: { experience: ReadonlyArray<{ period: string }>; yearsExperience: number | null; roleMonths?: number | null } | null | undefined): number | null {
   if (!r) return null;
-  return roleDateMonths(r.experience ?? []) ?? (r.yearsExperience != null ? r.yearsExperience * 12 : null);
+  return r.roleMonths ?? roleDateMonths(r.experience ?? []) ?? (r.yearsExperience != null ? r.yearsExperience * 12 : null);
 }
 
 /** Mean months per role across the entries whose period can be read; null when none can. */

@@ -17,6 +17,7 @@ export interface CandidateResumeDetail {
   headline: string | null;
   seniorityLevel: string | null;
   yearsExperience: number | null;
+  roleMonths?: number | null;
   keyAchievements: string[];
   industries: string[];
   experience: Array<{

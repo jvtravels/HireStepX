@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { experienceMonthsOf, formatExperience, roleDateMonths } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 
+import { extractResumeDetail, redactResumeDetailForLock } from "../../server-handlers/_resume-detail-helpers";
+
 const NOW = new Date(2026, 9, 31);
 
 describe("role-date experience (owner decision, Oct 31 2026)", () => {
@@ -25,5 +27,11 @@ describe("role-date experience (owner decision, Oct 31 2026)", () => {
     expect(formatExperience(24)).toBe("2 years");
     expect(formatExperience(16)).toBe("1 yr 4 mo");
     expect(formatExperience(7)).toBe("7 mo");
+  });
+  it("keeps the exact month total on a locked profile whose dates are coarsened to the year", () => {
+    const detail = extractResumeDetail({ topSkills: [], experiences: [{ title: "Dev", company: "Acme Labs", start: "Jan 2024", end: "May 2025" }] });
+    const locked = redactResumeDetailForLock(detail, "Some Person");
+    expect(locked.experience[0].period).toBe("2024 – 2025");
+    expect(experienceMonthsOf(locked)).toBe(roleDateMonths(detail.experience));
   });
 });

@@ -5,6 +5,7 @@
    same duck-typing check server-handlers/_requirement-match-helpers.ts
    already uses to tell them apart. */
 
+import { roleDateMonths } from "../src/employer/roleDates";
 import { readAvailabilityConfirmedAt, readWorkModePref, sharedCtcBand } from "./_ctc-band";
 
 export interface ResumeExperienceEntry {
@@ -43,6 +44,8 @@ export interface ResumeDetail {
   headline: string | null;
   seniorityLevel: string | null;
   yearsExperience: number | null;
+  /** Months worked from the exact role dates, set when a locked profile's dates are coarsened to the year so the figure stays accurate. */
+  roleMonths?: number | null;
   keyAchievements: string[];
   industries: string[];
   experience: ResumeExperienceEntry[];
@@ -180,6 +183,7 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
   const clean = (t: string) => scrubEntities(scrubName(t, realName), entities);
   return {
     ...detail,
+    roleMonths: roleDateMonths(detail.experience),
     summary: clean(detail.summary),
     headline: detail.headline ? clean(detail.headline) : detail.headline,
     keyAchievements: detail.keyAchievements.map(clean),
