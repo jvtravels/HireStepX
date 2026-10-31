@@ -15,7 +15,7 @@ import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
 import { budgetLabel, experienceLabel, previewText, whereLabel } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
 
-const DESCRIPTION_PREVIEW = 420;
+const DESCRIPTION_PREVIEW = 120;
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
   success: "bg-hx-success-100 text-hx-success-ink",
