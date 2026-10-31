@@ -113,7 +113,7 @@ interface AppShellFrameProps {
 
 /* Colour lives in classes, not inline style, so the hover state can win. */
 const CRUMB_LINK =
-  "cursor-pointer rounded-sm text-hx-ink-soft underline decoration-transparent decoration-1 underline-offset-[3px] transition-[color,text-decoration-color] duration-150 ease-out hover:text-hx-coal hover:decoration-current focus-visible:text-hx-coal motion-reduce:transition-none";
+  "min-h-6 leading-6 cursor-pointer rounded-sm text-hx-ink-soft underline decoration-transparent decoration-1 underline-offset-[3px] transition-[color,text-decoration-color] duration-150 ease-out hover:text-hx-coal hover:decoration-current focus-visible:text-hx-coal motion-reduce:transition-none";
 
 export default function AppShellFrame({
   homeHref, navAriaLabel, navItems, activeId, onNavigate, onNavHover,
@@ -308,20 +308,20 @@ export default function AppShellFrame({
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
               {/* On narrow phones only the current (last) crumb is shown; the ancestors are reachable via the sidebar and browser back. */}
-              <BreadcrumbItem className="h-5 shrink-0 overflow-hidden whitespace-nowrap max-[560px]:hidden">
+              <BreadcrumbItem className="h-6 shrink-0 overflow-hidden whitespace-nowrap max-[560px]:hidden">
                 <BreadcrumbLink href={breadcrumbRoot.path} onClick={crumbClick(breadcrumbRoot.path)} className={CRUMB_LINK} style={{ display: "flex", alignItems: "center" }}>
                   {breadcrumbRoot.label}
                 </BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator className="max-[560px]:hidden" />
               {extraCrumbs && extraCrumbs.length > 0 ? (
-                <BreadcrumbItem className="h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[560px]:hidden">
+                <BreadcrumbItem className="h-6 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[560px]:hidden">
                   <BreadcrumbLink href={pageLabelPath ?? breadcrumbRoot.path} onClick={crumbClick(pageLabelPath ?? breadcrumbRoot.path)} className={CRUMB_LINK} style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {pageLabel}
                   </BreadcrumbLink>
                 </BreadcrumbItem>
               ) : (
-                <BreadcrumbItem className="h-5 min-w-0 overflow-hidden whitespace-nowrap">
+                <BreadcrumbItem className="h-6 min-w-0 overflow-hidden whitespace-nowrap">
                   <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                     {pageLabel}
                   </BreadcrumbPage>
@@ -332,7 +332,7 @@ export default function AppShellFrame({
                 return (
                   <Fragment key={`${crumb.label}-${i}`}>
                     <BreadcrumbSeparator className="max-[560px]:hidden" />
-                    <BreadcrumbItem className={isLast || !crumb.path ? "h-5 min-w-0 overflow-hidden whitespace-nowrap" : "h-5 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[560px]:hidden"}>
+                    <BreadcrumbItem className={isLast || !crumb.path ? "h-6 min-w-0 overflow-hidden whitespace-nowrap" : "h-6 min-w-0 shrink-[3] overflow-hidden whitespace-nowrap max-[560px]:hidden"}>
                       {isLast || !crumb.path ? (
                         <BreadcrumbPage style={{ fontSize: 13, fontWeight: 600, color: c.ink, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "block" }}>
                           {crumb.label}
