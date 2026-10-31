@@ -89,94 +89,97 @@ export default function Composer({
         <p className="m-0 text-xs text-muted-foreground">This candidate isn&apos;t unlocked yet. If sending fails, unlock them first.</p>
       )}
 
-      <div className="@container rounded-xl border border-input bg-background transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30 has-[textarea:disabled]:bg-muted/50">
-        <label htmlFor={`${uid}-text`} className="sr-only">Message to {counterpartName}</label>
-        <textarea
-          ref={textRef}
-          id={`${uid}-text`}
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-          placeholder={disabled ? "Messaging unavailable" : `Message ${counterpartName}`}
-          rows={2}
-          disabled={disabled}
-          aria-describedby={disabled ? blockId : hintId}
-          className="block max-h-48 min-h-16 w-full resize-none rounded-t-xl border-0 bg-transparent px-3 pt-2.5 pb-1 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"
-          onKeyDown={(e) => {
-            // isComposing: Enter confirms an IME candidate (Hindi/Tamil/etc.), it must not send.
-            if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-              e.preventDefault();
-              if (!busy && !disabled && draft.trim()) onSend();
-            }
-          }}
-        />
-        <div className="flex items-center gap-1 px-2 pb-2">
-          <input
-            ref={fileRef}
-            type="file"
-            className="sr-only"
-            tabIndex={-1}
-            aria-hidden="true"
-            disabled={disabled || attaching}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (file) onAttach(file);
+      {/* A blocked thread shows only the reason: a greyed-out form under it is dead UI and repeats the message. */}
+      {!disabled && (
+        <div className="@container rounded-xl border border-input bg-background transition-shadow focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30 has-[textarea:disabled]:bg-muted/50">
+          <label htmlFor={`${uid}-text`} className="sr-only">Message to {counterpartName}</label>
+          <textarea
+            ref={textRef}
+            id={`${uid}-text`}
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            placeholder={`Message ${counterpartName}`}
+            rows={2}
+            disabled={disabled}
+            aria-describedby={hintId}
+            className="block max-h-48 min-h-16 w-full resize-none rounded-t-xl border-0 bg-transparent px-3 pt-2.5 pb-1 text-base leading-relaxed text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed md:text-sm"
+            onKeyDown={(e) => {
+              // isComposing: Enter confirms an IME candidate (Hindi/Tamil/etc.), it must not send.
+              if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                e.preventDefault();
+                if (!busy && !disabled && draft.trim()) onSend();
+              }
             }}
           />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={disabled || attaching}
-            aria-label="Attach a file, 8 MB maximum"
-            title="Attach a file (max 8 MB)"
-            onClick={() => fileRef.current?.click()}
-            className="gap-1.5 text-muted-foreground pointer-coarse:h-11"
-          >
-            {attaching ? <Spinner className="size-4" /> : <PaperclipIcon aria-hidden="true" className="size-4" />}
-            <span className="hidden sm:inline">{attaching ? "Uploading…" : "Attach"}</span>
-          </Button>
-          <Popover open={repliesOpen} onOpenChange={setRepliesOpen}>
-            <PopoverTrigger asChild>
-              <Button type="button" variant="ghost" size="sm" disabled={disabled} className="gap-1.5 text-muted-foreground pointer-coarse:h-11">
-                <SparklesIcon aria-hidden="true" className="size-4" />
-                <span className="hidden sm:inline">Quick replies</span>
-                <span className="sr-only sm:hidden">Quick replies</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-80 p-1">
-              <p className="m-0 px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">Insert a template, then edit before sending</p>
-              <ul role="list" className="m-0 list-none p-0">
-                {quickReplies.map((text) => (
-                  <li key={text}>
-                    <button
-                      type="button"
-                      onClick={() => insertReply(text)}
-                      className="w-full rounded-md px-2 py-2 text-left text-[13px] leading-snug text-foreground hover:bg-muted pointer-coarse:min-h-11"
-                    >
-                      {text}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </PopoverContent>
-          </Popover>
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <span id={hintId} className="hidden px-2 text-xs whitespace-nowrap text-muted-foreground @xl:inline">
-              <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
-            </span>
+          <div className="flex items-center gap-1 px-2 pb-2">
+            <input
+              ref={fileRef}
+              type="file"
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden="true"
+              disabled={disabled || attaching}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) onAttach(file);
+              }}
+            />
             <Button
               type="button"
+              variant="ghost"
               size="sm"
-              onClick={onSend}
-              disabled={disabled || busy || !draft.trim()}
-              className="gap-1.5 px-3 pointer-coarse:h-11"
+              disabled={disabled || attaching}
+              aria-label="Attach a file, 8 MB maximum"
+              title="Attach a file (max 8 MB)"
+              onClick={() => fileRef.current?.click()}
+              className="gap-1.5 text-muted-foreground pointer-coarse:h-11"
             >
-              <SendIcon aria-hidden="true" className="size-4" /> {sending ? "Sending…" : "Send"}
+              {attaching ? <Spinner className="size-4" /> : <PaperclipIcon aria-hidden="true" className="size-4" />}
+              <span className="hidden sm:inline">{attaching ? "Uploading…" : "Attach"}</span>
             </Button>
+            <Popover open={repliesOpen} onOpenChange={setRepliesOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="ghost" size="sm" disabled={disabled} className="gap-1.5 text-muted-foreground pointer-coarse:h-11">
+                  <SparklesIcon aria-hidden="true" className="size-4" />
+                  <span className="hidden sm:inline">Quick replies</span>
+                  <span className="sr-only sm:hidden">Quick replies</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" className="w-80 p-1">
+                <p className="m-0 px-2 pt-1.5 pb-1 text-xs font-medium text-muted-foreground">Insert a template, then edit before sending</p>
+                <ul role="list" className="m-0 list-none p-0">
+                  {quickReplies.map((text) => (
+                    <li key={text}>
+                      <button
+                        type="button"
+                        onClick={() => insertReply(text)}
+                        className="w-full rounded-md px-2 py-2 text-left text-[13px] leading-snug text-foreground hover:bg-muted pointer-coarse:min-h-11"
+                      >
+                        {text}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </PopoverContent>
+            </Popover>
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              <span id={hintId} className="hidden px-2 text-xs whitespace-nowrap text-muted-foreground @xl:inline">
+                <kbd className="font-sans font-semibold">Enter</kbd> to send · <kbd className="font-sans font-semibold">Shift+Enter</kbd> new line
+              </span>
+              <Button
+                type="button"
+                size="sm"
+                onClick={onSend}
+                disabled={disabled || busy || !draft.trim()}
+                className="gap-1.5 px-3 pointer-coarse:h-11"
+              >
+                <SendIcon aria-hidden="true" className="size-4" /> {sending ? "Sending…" : "Send"}
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
       <span role="status" className="sr-only">{sending ? "Sending message" : attaching ? "Uploading attachment" : ""}</span>
     </div>
   );
