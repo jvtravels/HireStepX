@@ -86,8 +86,8 @@ export function CandidateNav({
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {others.length > 0 && !condensed && (
           <Select value="" onValueChange={(v) => v && onCompare(v)}>
-            <SelectTrigger size="sm" aria-label="Compare with another candidate" className="border-hx-line bg-white text-sm max-sm:hidden">
-              <SelectValue placeholder="Compare with…" />
+            <SelectTrigger size="sm" aria-label="Compare with another candidate" className="border-hx-line bg-white text-sm max-sm:w-[104px] pointer-coarse:h-11">
+              <SelectValue placeholder="Compare…" />
             </SelectTrigger>
             <SelectContent align="end">
               {others.map((o) => (
