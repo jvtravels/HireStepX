@@ -3,6 +3,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { track } from "@vercel/analytics";
 import { Button } from "@/components/ui/button";
 import LoadingScreen from "./_LoadingScreen";
+import { clearLocalAccountData } from "./_appStorage";
 import { routeSkeletonFor } from "./routeSkeletons";
 import { getSupabase, preloadSupabase, supabaseConfigured, getProfile, upsertProfile, authHeaders, type Profile } from "./supabase";
 import {
@@ -1183,6 +1184,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Listen for auth state changes
       const { data: { subscription } } = client.auth.onAuthStateChange(async (event, session) => {
         if (event === "INITIAL_SESSION") return;
+        // Covers sign-outs that never go through logout(): expired or revoked
+        // sessions, device-token rotation, sign-out from another tab.
+        if (event === "SIGNED_OUT") clearLocalAccountData();
         // Allow PASSWORD_RECOVERY events — user is resetting their password
         if (event === "PASSWORD_RECOVERY") return;
         // During signup, suppress SIGNED_IN to prevent premature redirect
@@ -1643,12 +1647,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     // Clear stored session tokens BEFORE signOut to prevent the routing guard
     // from re-restoring the session via hasStoredSession() retry logic
-    try {
-      for (let i = localStorage.length - 1; i >= 0; i--) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith("sb-") && key.endsWith("-auth-token")) localStorage.removeItem(key);
-      }
-    } catch { /* expected */ }
+    clearLocalAccountData();
     if (supabaseConfigured) { const client = await getSupabase(); await client.auth.signOut().catch(() => {}); }
     clearSessionStart();
     track("logout");
@@ -1746,6 +1745,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { type } = event.data || {};
       if (type === "logout") {
         // Another tab logged out — sync this tab with an explanation
+        clearLocalAccountData();
         setUser(null);
         setSessionExpiryWarning("You were signed out on another tab or device.");
         setTimeout(() => setSessionExpiryWarning(null), 8000);

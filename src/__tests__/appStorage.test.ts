@@ -34,3 +34,20 @@ describe("clearAppOwnedStorage", () => {
     expect(clearAppOwnedStorage(fakeStorage({}))).toBe(0);
   });
 });
+
+describe("clearLocalAccountData", () => {
+  it("removes cached account data from local and session storage but keeps cookie consent", async () => {
+    const { clearLocalAccountData } = await import("../_appStorage");
+    localStorage.setItem("hirestepx_cache_sessions_u1", "[]");
+    localStorage.setItem("sb-x-auth-token", "t");
+    localStorage.setItem("hirestepx_cookie_consent", "granted");
+    localStorage.setItem("other_app_key", "keep");
+    sessionStorage.setItem("hirestepx_google_token", "g");
+    clearLocalAccountData();
+    expect(localStorage.getItem("hirestepx_cache_sessions_u1")).toBeNull();
+    expect(localStorage.getItem("sb-x-auth-token")).toBeNull();
+    expect(sessionStorage.getItem("hirestepx_google_token")).toBeNull();
+    expect(localStorage.getItem("hirestepx_cookie_consent")).toBe("granted");
+    expect(localStorage.getItem("other_app_key")).toBe("keep");
+  });
+});

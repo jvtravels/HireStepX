@@ -211,13 +211,34 @@ export interface CalendarEvent {
 
 /* ─── Profile helpers ─── */
 
+/* Named, not "*": the browser receives exactly the fields the app reads, and a
+   column added to the table later never reaches the client by accident. Typed
+   against Profile so the list can't drift from the interface. */
+export const PROFILE_COLUMNS = [
+  "id", "name", "email", "target_role", "target_company", "city", "industry", "interview_date",
+  "experience_level", "learning_style", "preferred_session_length", "interview_types",
+  "resume_file_name", "resume_text", "resume_data", "resume_version_id", "portfolio_links",
+  "practice_timestamps", "avatar_url", "subscription_tier", "subscription_start", "subscription_end",
+  "cancel_at_period_end", "subscription_paused", "has_completed_onboarding", "razorpay_payment_id",
+  "razorpay_subscription_id", "referral_code", "referred_by", "deleted_at", "created_at",
+  "is_profile_public", "sessions_started_lifetime", "started_session_ids", "started_session_ts",
+  "re_engage_sent", "last_summary_email_at",
+] as const satisfies readonly (keyof Profile)[];
+
+const UNDEFINED_COLUMN = "42703";
+
 export async function getProfile(userId: string): Promise<Profile | null> {
   const client = await getSupabase();
-  const { data, error } = await client
+  let { data, error } = await client
     .from("profiles")
-    .select("*")
+    .select(PROFILE_COLUMNS.join(","))
     .eq("id", userId)
-    .maybeSingle();
+    .maybeSingle<Profile>();
+  /* A database that has not run every migration lacks some column. Sign-in must
+     not break on that, so fall back to the full row once. */
+  if (error?.code === UNDEFINED_COLUMN) {
+    ({ data, error } = await client.from("profiles").select("*").eq("id", userId).maybeSingle<Profile>());
+  }
   if (error) {
     console.warn("[supabase] getProfile error:", error.message, error.code, "for user:", userId);
   }

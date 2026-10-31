@@ -20,3 +20,11 @@ export function clearAppOwnedStorage(storage: Pick<Storage, "length" | "key" | "
   for (const key of doomed) storage.removeItem(key);
   return doomed.length;
 }
+
+/** Everything the browser keeps for the signed-in account (cached sessions,
+    payments, hiring activity, tokens). Sign-out runs this so the next person at a
+    shared computer inherits nothing; cookie consent is kept. */
+export function clearLocalAccountData(): void {
+  try { clearAppOwnedStorage(localStorage); } catch { /* storage unavailable */ }
+  try { clearAppOwnedStorage(sessionStorage); } catch { /* storage unavailable */ }
+}
