@@ -75,7 +75,7 @@ export default function ViewMenu({
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" collisionPadding={16} className="max-h-[min(80vh,560px)] w-[min(300px,calc(100vw-32px))] gap-0 overflow-y-auto p-4">
+      <PopoverContent align="end" collisionPadding={16} className="max-h-[min(560px,var(--radix-popover-content-available-height))] w-[min(300px,calc(100vw-32px))] gap-0 overflow-y-auto p-4">
         <div className="mb-4">
           <div id="view-sort-label" className={SECTION}>Sort by</div>
           <RadioGroup aria-labelledby="view-sort-label" value={sortKnown ? sortValue : ""} onValueChange={(v) => { const next = SORT_OPTIONS.find((s) => s.value === v); if (next) onSortChange(next.sort); }}>

@@ -154,13 +154,24 @@ export default function ThreadLog({
                 {m.body && <p className="m-0 text-sm leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap text-foreground">{m.body}</p>}
                 {m.attachmentPath && <AttachmentCard message={m} onOpen={onOpenAttachment} />}
                 {own && m.id === lastOwnId && <p className="m-0 mt-0.5 text-xs text-muted-foreground">Delivered</p>}
+                {/* Touch has no hover, so the button is always visible; it sits under the text instead of over it so long messages stay readable. */}
+                {!own && onReport && (
+                  <button
+                    type="button"
+                    onClick={() => onReport(m.id)}
+                    aria-label={`Report message from ${otherName} sent ${new Date(m.createdAt).toLocaleString()}`}
+                    className="mt-1 hidden min-h-11 items-center gap-1 rounded-md px-1 text-xs text-muted-foreground hover:text-foreground pointer-coarse:flex"
+                  >
+                    <FlagIcon aria-hidden="true" className="size-3" /> Report
+                  </button>
+                )}
               </div>
               {!own && onReport && (
                 <button
                   type="button"
                   onClick={() => onReport(m.id)}
                   aria-label={`Report message from ${otherName} sent ${new Date(m.createdAt).toLocaleString()}`}
-                  className="absolute top-1 right-3 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:min-h-11 pointer-coarse:opacity-100"
+                  className="absolute top-1 right-3 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 hover:text-foreground focus-visible:opacity-100 pointer-coarse:hidden"
                 >
                   <FlagIcon aria-hidden="true" className="size-3" /> Report
                 </button>

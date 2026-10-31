@@ -79,7 +79,7 @@ const ROWS: CompareRow[] = [
     label: "Target role",
     same: (c) => `${c.targetRole}|${c.city}`,
     render: (c) => (
-      <span style={cellText}>
+      <span style={cellText} className="line-clamp-2" title={c.targetRole || undefined}>
         {[c.targetRole, c.city].filter((v) => v && v !== "Not specified").join(" · ") || <span style={{ color: t.inkFaint }}>Not specified</span>}
       </span>
     ),
@@ -296,7 +296,7 @@ export default function ComparePage() {
             </TableCaption>
             <TableHeader>
               <TableRow className={CMP_ROW}>
-                <TableCell className={cn(CMP_CELL, "bg-hx-row")}>
+                <TableCell className={cn(CMP_CELL, "sticky left-0 z-[2] bg-hx-row")}>
                   <span className="sr-only">Attribute</span>
                 </TableCell>
                 {chosen.map((c) => (
@@ -312,7 +312,7 @@ export default function ComparePage() {
             <TableBody>
               {visibleRows.map((row) => (
                 <TableRow key={row.label} className={CMP_ROW}>
-                  <TableHead scope="row" className={cn(CMP_CELL, "h-auto w-[30%] font-semibold text-hx-ink-soft min-[481px]:w-[28%]")}>
+                  <TableHead scope="row" className={cn(CMP_CELL, "sticky left-0 z-[1] h-auto w-[30%] bg-white font-semibold text-hx-ink-soft shadow-[1px_0_0_var(--color-hx-line)] min-[481px]:w-[28%]")}>
                     {row.label}
                   </TableHead>
                   {chosen.map((c) => (

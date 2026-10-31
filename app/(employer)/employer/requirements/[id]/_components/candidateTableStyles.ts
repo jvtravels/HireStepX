@@ -37,7 +37,8 @@ export const CAND_TABLE_CSS = `
   .cand-td { display: block; white-space: normal !important; width: auto !important; max-width: none !important; padding: 0 !important; height: auto !important; flex: 0 1 auto; order: 3; font-size: ${textSize.base}px; }
   .cand-td[data-label]::before { content: attr(data-label); display: block; font-size: ${textSize.sm}px; color: ${t.inkFaint}; margin-bottom: 2px; }
   .cand-td[data-label] { align-self: flex-start; }
-  .cand-td-name { order: 1; flex: 1 1 140px !important; min-width: 0; }
+  /* 200px basis: when the Unlock button would squeeze the name below that, the button wraps to its own row instead. */
+  .cand-td-name { order: 1; flex: 1 1 200px !important; min-width: 0; }
   .cand-td-act { order: 2; flex: 0 0 auto; margin-left: auto; }
   .cand-td-fit { flex: 1 1 100%; padding-top: 10px !important; border-top: 1px solid ${t.line}; }
 }

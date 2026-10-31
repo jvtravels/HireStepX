@@ -240,8 +240,15 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     : "Dashboard";
   const leafCrumbs = !breadcrumbExtra?.length && ["Post a job", "Compare candidates", "Edit job", "Hiring outcome"].includes(sectionTitle) ? [{ label: sectionTitle }] : undefined;
   const pageTitle = breadcrumbExtra?.length ? breadcrumbExtra[breadcrumbExtra.length - 1].label : sectionTitle;
+  // Next streams the root-layout title in after hydration and can overwrite ours on a hard load, so the title is re-asserted
+  // whenever <head> changes (a no-op once it matches, so there is no loop).
   useEffect(() => {
-    document.title = `${pageTitle} · HireStepX`;
+    const want = `${pageTitle} · HireStepX`;
+    const apply = () => { if (document.title !== want) document.title = want; };
+    apply();
+    const observer = new MutationObserver(apply);
+    observer.observe(document.head, { childList: true, characterData: true, subtree: true });
+    return () => observer.disconnect();
   }, [pageTitle, pathname]);
 
   const handleLogout = async () => {
