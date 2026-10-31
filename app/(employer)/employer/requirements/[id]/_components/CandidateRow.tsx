@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import {
   CalendarPlusIcon,
   CheckIcon,
@@ -58,6 +58,7 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
   const total = matched.length + gaps.length;
   const rounded = Math.round(score);
   const slots = skillChipSlots(matched, gaps, VISIBLE_CHIPS);
+  const summaryId = useId();
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <span className="text-[13px] text-hx-ink-soft tabular-nums">
@@ -68,22 +69,22 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
           <TooltipTrigger asChild>
             <button
               type="button"
-              aria-label={`${[...slots.matched, ...slots.gaps].join(" ")}${slots.hidden > 0 ? ` +${slots.hidden}` : ""}. ${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
+              aria-describedby={summaryId}
               className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {slots.matched.map((skill) => (
-                <span key={`has-${skill}`} aria-hidden="true" className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
+                <span key={`has-${skill}`} className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
                   <CheckIcon size={10} strokeWidth={3} className="shrink-0" />
                   <span className="truncate">{skill}</span>
                 </span>
               ))}
               {slots.gaps.map((skill) => (
-                <span key={`miss-${skill}`} aria-hidden="true" className={cn(CHIP, "border border-dashed border-hx-line bg-white text-hx-ink-soft")}>
+                <span key={`miss-${skill}`} className={cn(CHIP, "border border-dashed border-hx-line bg-white text-hx-ink-soft")}>
                   <span className="truncate">{skill}</span>
                 </span>
               ))}
               {slots.hidden > 0 && (
-                <span aria-hidden="true" className="shrink-0 text-[12px] text-hx-ink-soft tabular-nums">
+                <span className="shrink-0 text-[12px] text-hx-ink-soft tabular-nums">
                   +{slots.hidden}
                 </span>
               )}
@@ -97,6 +98,7 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
           </TooltipContent>
         </Tooltip>
       )}
+      {total > 0 && <span id={summaryId} className="sr-only">{`${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}</span>}
     </div>
   );
 }
@@ -187,6 +189,7 @@ export default function CandidateRow({
     window.location.assign(file.url);
   };
   const practised = practisedLabel(candidate.lastActiveDaysAgo);
+  const evidenceId = useId();
   // The server refuses an invite for a candidate who declined or withdrew, so don't offer it.
   const moves = writeOff ? [] : nextCandidateStatuses(candidate.candidateStatus).filter((m) => m !== "interview_invited" || canInviteCandidate(candidate));
   const forwardMoves = moves.filter((m) => !MOVE_COPY[m].closes);
@@ -277,7 +280,7 @@ export default function CandidateRow({
             <button
               type="button"
               onClick={onViewEvidence}
-              aria-label={`${score != null ? `${score}/100 · ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : "No interviews yet"}. Evidence for ${name}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}
+              aria-describedby={evidenceId}
               className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {score != null ? (
@@ -289,6 +292,7 @@ export default function CandidateRow({
                 <span className="text-[13px] text-hx-ink-soft group-hover:underline">No interviews yet</span>
               )}
             </button>
+            <span id={evidenceId} className="sr-only">{`Evidence for ${name}${practised ? `, ${practised.toLowerCase()}` : ""}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}</span>
             {sourceLabels.length > 0 &&
               (candidate.unlocked ? (
                 <span className="flex flex-wrap items-center text-[12px] text-hx-ink-soft">
@@ -298,7 +302,7 @@ export default function CandidateRow({
                       onClick={() => (candidate.hasResumeFile ? void openResume() : router.push(profileHref))}
                       disabled={resumeBusy}
                       aria-label={candidate.hasResumeFile ? `Download ${name}'s resume` : `View ${name}'s resume on their profile`}
-                      className="cursor-pointer border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
+                      className="inline-flex min-h-6 cursor-pointer items-center border-0 bg-transparent p-0 text-[12px] text-hx-indigo underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-wait disabled:opacity-60 pointer-coarse:min-h-11"
                     >
                       Resume
                     </button>
