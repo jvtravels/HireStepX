@@ -47,7 +47,7 @@ function BackLink({ requirementId }: { requirementId: string }) {
   return (
     <Link
       href={`/employer/requirements/${requirementId}`}
-      className="cmp-back inline-flex items-center gap-1 pointer-coarse:min-h-11"
+      className="cmp-back inline-flex min-h-6 items-center gap-1 pointer-coarse:min-h-11"
       style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.indigo, textDecoration: "none" }}
     >
       <ArrowLeftIcon size={14} aria-hidden="true" /> Back to shortlist
@@ -58,7 +58,7 @@ function BackLink({ requirementId }: { requirementId: string }) {
 function NameCell({ candidate, requirementId }: { candidate: Candidate; requirementId: string }) {
   return (
     <div style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>
-      <Link href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`} className="cmp-name-link">
+      <Link href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`} className="cmp-name-link inline-flex min-h-6 items-center pointer-coarse:min-h-11">
         {candidateDisplayName(candidate)}
       </Link>
     </div>
