@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import StatusTabs from "@/components/StatusTabs";
@@ -170,7 +170,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
       {suspended && <div className="border-b border-hx-line px-7 py-4"><SuspendedBanner /></div>}
       {d.notice && !dialog && <div className="border-b border-hx-line px-7 py-4"><ActionNoticeAlert notice={d.notice} shortlistHref={shortlistHref} /></div>}
 
-      {dialogOpened.current && <CandidateDialogsHost
+      {dialogOpened.current && <Suspense fallback={null}><CandidateDialogsHost
         dialog={dialog}
         onClose={() => setDialog(null)}
         displayName={maskedName(candidate)}
@@ -180,16 +180,16 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
         changeStatus={d.changeStatus}
         candidateId={candidate.id}
         currentStatus={candidate.candidateStatus}
-      />}
+      /></Suspense>}
 
       <TeamReviewDialog open={reviewOpen} onOpenChange={setReviewOpen} reviews={reviews} displayName={maskedName(candidate)} />
 
-      {unlockOpened.current && <UnlockDialog
+      {unlockOpened.current && <Suspense fallback={null}><UnlockDialog
         target={unlockOpen ? { mode: "single", matchId: candidate.id } : null}
         access={access}
         onClose={() => setUnlockOpen(false)}
         onUnlocked={() => void d.refresh()}
-      />}
+      /></Suspense>}
 
       <div className="flex min-w-0 flex-col">
         {shortlist && (
@@ -247,6 +247,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
             <StatusTabs tabs={tabs} value={tab} onChange={selectTab} label="Candidate sections" idPrefix="candtab" panelId="candtab-panel" className="shrink-0" />
           </div>
           <div key={tab} id="candtab-panel" role="tabpanel" aria-labelledby={`candtab-tab-${tab}`} className="mx-swap">
+            <Suspense fallback={<PageSkeleton label="Loading…" padded />}>
             {tab === "overview" && (
               <OverviewTab
                 candidate={candidate}
@@ -263,6 +264,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
             )}
             {tab === "practice" && <PracticeTab evidence={d.evidence} candidate={candidate} state={evidenceState} requestUi={requestUi} requirementTitle={requirement.title} />}
             {tab === "resume" && <ResumeTab candidate={candidate} />}
+            </Suspense>
           </div>
         </section>
       </div>
