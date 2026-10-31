@@ -23,7 +23,7 @@ const COLS = "minmax(0, 1fr) 132px 112px 40px";
 const SEARCH_FROM = 6;
 
 export default function MembersTab({
-  members, myRole, compact, soleOwner, onCommand, busyId,
+  members, myRole, compact, soleOwner, onCommand, busyId, onInvite,
 }: {
   members: TeamMember[];
   myRole: EmployerRole;
@@ -31,6 +31,8 @@ export default function MembersTab({
   soleOwner: boolean;
   onCommand: (cmd: MemberCommand) => void;
   busyId: string | null;
+  /** Set when the viewer may invite and a seat is free; shows the first-invite prompt for a solo team. */
+  onInvite?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -174,6 +176,12 @@ export default function MembersTab({
         })}
       </div>
       </div>
+      {members.length === 1 && onInvite && (
+        <div className={PAD} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingTop: 16, paddingBottom: 16, borderTop: `1px solid ${t.line}`, background: t.creamRaised }}>
+          <p style={{ ...muted, fontSize: 13, margin: 0 }}>You're the only one here. Invite a teammate to review candidates with you.</p>
+          <Button type="button" variant="outline" size="lg" className="h-9 px-4" onClick={onInvite}>Invite teammate</Button>
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );
