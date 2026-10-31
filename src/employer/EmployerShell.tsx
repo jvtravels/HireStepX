@@ -218,7 +218,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!isConsole) return;
     let live = true;
-    void fetchCredit().then((c) => { if (live && c) setCreditPaise(c.balancePaise); }).catch(() => {});
+    void fetchCredit({ maxAgeMs: 30_000 }).then((c) => { if (live && c) setCreditPaise(c.balancePaise); }).catch(() => {});
     return () => { live = false; };
   }, [isConsole, fetchCredit, pathname]);
 

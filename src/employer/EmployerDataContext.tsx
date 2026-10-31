@@ -311,7 +311,8 @@ interface EmployerDataContextValue {
   fetchCandidateResumeUrl: (matchId: string) => Promise<{ url: string; fileName: string } | null>;
   fetchRequirementActivity: (id: string) => Promise<RequirementActivity[] | null>;
   fetchUnlockHistory: () => Promise<UnlockPurchase[] | null>;
-  fetchCredit: () => Promise<CreditSummary | null>;
+  /** Shares a request already in flight. `maxAgeMs` accepts a balance fetched that recently; omit it when the number gates a payment. */
+  fetchCredit: (opts?: { maxAgeMs?: number }) => Promise<CreditSummary | null>;
   fetchDashboard: (range: DashboardRange) => Promise<EmployerDashboardData | null>;
   refreshRequirements: () => Promise<void>;
   listConversations: () => Promise<ConversationSummary[] | null>;
@@ -618,6 +619,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const createUnlockOrderResult = useCallback(async (request: UnlockRequest): Promise<EmployerApiResult<UnlockOrder>> => {
     captureClientEvent("employer_unlock_started", { mode: request.mode, tier: tierRef.current });
     const res = await apiFetch<UnlockOrder>("/api/employer-create-unlock-order", request, { method: "POST" });
+    creditCache.current = null;
     if (res.ok && res.data) return { ok: true, data: res.data };
     const err = toApiError(res, res.status === 403 ? SUSPENDED_MESSAGE : "Couldn't start payment. Please try again.");
     if (res.status === 429 && err.limit !== undefined) {
@@ -633,6 +635,7 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
 
   const verifyUnlockPayment = useCallback(async (payload: VerifyPayload) => {
     const res = await apiFetch<VerifyResult>("/api/employer-verify-unlock-payment", payload, { method: "POST" });
+    creditCache.current = null;
     if (res.ok && res.data) {
       invalidateDetails();
       captureClientEvent("employer_unlock_completed", { unlocked: res.data.candidates.length, tier: tierRef.current });
@@ -839,10 +842,21 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     return res.data.purchases as UnlockPurchase[];
   }, []);
 
-  const fetchCredit = useCallback(async (): Promise<CreditSummary | null> => {
-    const res = await getWithRetry("/api/employer-credit");
-    if (!res || !res.ok || !isRecord(res.data) || typeof res.data.balancePaise !== "number") return null;
-    return { balancePaise: res.data.balancePaise, events: Array.isArray(res.data.events) ? (res.data.events as CreditEvent[]) : [] };
+  const creditCache = useRef<{ at: number; value: CreditSummary } | null>(null);
+  const creditInFlight = useRef<Promise<CreditSummary | null> | null>(null);
+  const fetchCredit = useCallback(async (opts?: { maxAgeMs?: number }): Promise<CreditSummary | null> => {
+    const cached = creditCache.current;
+    if (opts?.maxAgeMs && cached && Date.now() - cached.at < opts.maxAgeMs) return cached.value;
+    if (creditInFlight.current) return creditInFlight.current;
+    const p = (async () => {
+      const res = await getWithRetry("/api/employer-credit");
+      if (!res || !res.ok || !isRecord(res.data) || typeof res.data.balancePaise !== "number") return null;
+      const value = { balancePaise: res.data.balancePaise, events: Array.isArray(res.data.events) ? (res.data.events as CreditEvent[]) : [] };
+      creditCache.current = { at: Date.now(), value };
+      return value;
+    })().finally(() => { creditInFlight.current = null; });
+    creditInFlight.current = p;
+    return p;
   }, []);
 
   const fetchDashboard = useCallback(async (range: DashboardRange): Promise<EmployerDashboardData | null> => {
