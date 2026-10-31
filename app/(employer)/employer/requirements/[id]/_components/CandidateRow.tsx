@@ -49,7 +49,7 @@ const MATCH_TEXT = { strong: "text-hx-success-ink", fair: "text-hx-warning-ink",
 
 const VISIBLE_CHIPS = 3;
 
-const CHIP = "inline-flex min-w-0 max-w-24 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
+const CHIP = "inline-flex min-w-0 max-w-20 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
 
 /* One cell for the whole skills story: the overall score, then the required skills
    as chips (filled when the resume has them, dashed and muted when it does not).
