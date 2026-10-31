@@ -20,7 +20,7 @@ const req = { title: "Backend Engineer", skills: ["Node", "SQL", "Go"] };
 describe("buildProfileSummary", () => {
   it("composes resume, skills, hiring and gap facts without company names or the candidate's own text", () => {
     const out = buildProfileSummary(candidate({}, { noticePeriod: "30 days", expectedCtc: "24 LPA", workModePref: "hybrid", openToRelocate: true }), req, ["Node"], null)!;
-    expect(out).toContain("Senior candidate with 6 years of experience across Fintech, based in Pune, most recently Backend Engineer.");
+    expect(out).toContain("Senior candidate with 4 years of experience across Fintech, based in Pune, most recently Backend Engineer.");
     expect(out).toContain("Covers 1 of 3 skills this role asks for (Node); missing SQL, Go.");
     expect(out).toContain("Deepest in");
     expect(out).toContain("30-day notice, expects 24 LPA");

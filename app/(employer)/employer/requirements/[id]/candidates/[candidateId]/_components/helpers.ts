@@ -87,14 +87,42 @@ function monthIndex(token: string): number | null {
   return y ? Number(y[1]) * 12 : null;
 }
 
-/** Months covered by "Sep 2025 – Jul 2026" / "2021 – Present"; null if unparseable. */
-export function periodMonths(period: string, now = new Date()): number | null {
+function periodRange(period: string, now: Date): [number, number] | null {
   const parts = period.split(/\s[-–—]\s|\sto\s/i);
   if (parts.length !== 2) return null;
   const start = monthIndex(parts[0]);
   const end = /present|current|now/i.test(parts[1]) ? now.getFullYear() * 12 + now.getMonth() : monthIndex(parts[1]);
   if (start == null || end == null || end < start) return null;
-  return Math.max(1, end - start);
+  return [start, Math.max(end, start + 1)];
+}
+
+/** Months covered by "Sep 2025 – Jul 2026" / "2021 – Present"; null if unparseable. */
+export function periodMonths(period: string, now = new Date()): number | null {
+  const range = periodRange(period, now);
+  return range ? range[1] - range[0] : null;
+}
+
+/** Total months worked, adding up the role dates with overlaps counted once. Null when no role has readable dates. */
+export function roleDateMonths(experience: ReadonlyArray<{ period: string }>, now = new Date()): number | null {
+  const ranges = experience.map((e) => periodRange(e.period, now)).filter((r): r is [number, number] => r != null).sort((a, b) => a[0] - b[0]);
+  if (ranges.length === 0) return null;
+  let total = 0;
+  let [curStart, curEnd] = ranges[0];
+  for (const [a, b] of ranges.slice(1)) {
+    if (a <= curEnd) curEnd = Math.max(curEnd, b);
+    else { total += curEnd - curStart; curStart = a; curEnd = b; }
+  }
+  return total + (curEnd - curStart);
+}
+
+/** The one experience figure shown everywhere: role dates when readable (owner decision, Oct 31 2026), else the resume's stored whole years. */
+export function formatExperience(months: number): string {
+  return months % 12 === 0 ? formatYears(months / 12) : formatTenure(months);
+}
+
+export function experienceMonthsOf(r: { experience: ReadonlyArray<{ period: string }>; yearsExperience: number | null } | null | undefined): number | null {
+  if (!r) return null;
+  return roleDateMonths(r.experience ?? []) ?? (r.yearsExperience != null ? r.yearsExperience * 12 : null);
 }
 
 /** Mean months per role across the entries whose period can be read; null when none can. */
@@ -118,7 +146,8 @@ export function buildResumeInsights(candidate: Candidate, unmatched: string[]): 
   const latest = r?.experience[0];
   const seniority = r?.seniorityLevel && !candidate.targetRole.toLowerCase().includes(r.seniorityLevel.toLowerCase()) ? r.seniorityLevel : null;
   const lead = [seniority, candidate.targetRole].filter(Boolean).join(" ");
-  const years = r?.yearsExperience != null ? ` with ${r.yearsExperience} year${r.yearsExperience === 1 ? "" : "s"} of experience` : "";
+  const expMonths = experienceMonthsOf(r);
+  const years = expMonths != null ? ` with ${formatExperience(expMonths)} of experience` : "";
   const recent = latest?.company ? `, most recently ${latest.title || "in a role"} at ${latest.company}${latest.period ? ` (${latest.period})` : ""}` : "";
   const snapshot = `${lead || "Candidate"}${years}${recent}.`;
 
@@ -203,17 +232,19 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
   }
 
   const { experienceMin: min, experienceMax: max } = requirement;
-  if (r?.yearsExperience != null && (min != null || max != null)) {
-    const y = r.yearsExperience;
+  const expMonths = experienceMonthsOf(r);
+  if (expMonths != null && (min != null || max != null)) {
+    const y = expMonths / 12;
+    const gap = (n: number) => formatExperience(Math.round(n * 12));
     const below = min != null && y < min;
     const above = max != null && y > max;
     const status: FitStatus = !below && !above ? "meets" : (below && y >= min - 1) || (above && y <= max + 2) ? "partial" : "gap";
     const reason = below
-      ? `${formatYears(min - y)} short of the ${formatYears(min)} asked.`
+      ? `${gap(min - y)} short of the ${formatYears(min)} asked.`
       : above
-        ? `${formatYears(y - max)} above the ${formatYears(max)} ceiling.`
-        : `${formatYears(y)} sits inside the range asked.`;
-    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatYears(y), status, reason, source: "resume" });
+        ? `${gap(y - max)} above the ${formatYears(max)} ceiling.`
+        : `${formatExperience(expMonths)} sits inside the range asked.`;
+    rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatExperience(expMonths), status, reason, source: "resume" });
   }
 
   const hasCity = !!candidate.city && candidate.city !== "Not specified";
@@ -485,7 +516,8 @@ export function buildProfileSummary(candidate: Candidate, requirement: Pick<Requ
   const list = (xs: string[], n = 3) => xs.slice(0, n).join(", ");
 
   const seniority = r?.seniorityLevel?.trim().toLowerCase();
-  const years = r?.yearsExperience != null ? formatYears(r.yearsExperience) : null;
+  const expMonthsOut = experienceMonthsOf(r);
+  const years = expMonthsOut != null ? formatExperience(expMonthsOut) : null;
   const where = candidate.city && candidate.city !== "Not specified" ? candidate.city : null;
   const latestTitle = r?.experience[0]?.title?.trim();
   const who = [`${seniority ? `${seniority} candidate` : "Candidate"}${years ? ` with ${years} of experience` : ""}${r?.industries?.length ? ` across ${list(r.industries, 2)}` : ""}`, where && `based in ${where}`, latestTitle && `most recently ${latestTitle}`].filter(Boolean).join(", ");
@@ -536,7 +568,7 @@ export function buildCandidateSummary(candidate: Candidate, requirement: Require
     `${maskedName(candidate)} for ${requirement.title}`,
     `Match: ${candidate.matchScore} out of 100 (${candidateSignal(candidate.matchScore, fit).label.toLowerCase()})${fitHeadline(fit) ? `, ${fitHeadline(fit)}` : ""}`,
     `Stage: ${CANDIDATE_STATUS_LABEL[candidate.candidateStatus]}`,
-    resume?.yearsExperience != null && `Experience: ${formatYears(resume.yearsExperience)}${resume.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}`,
+    experienceMonthsOf(resume ?? null) != null && `Experience: ${formatExperience(experienceMonthsOf(resume ?? null) ?? 0)}${resume?.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}`,
     candidate.city && candidate.city !== "Not specified" && `Location: ${candidate.city}`,
     matched.length > 0 && `Matched skills: ${matched.join(", ")}`,
     missing.length > 0 && `Missing skills: ${missing.join(", ")}`,

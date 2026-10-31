@@ -4,6 +4,7 @@ import type { Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate, RequirementStage } from "@/employer/mockData";
 import { formatNumber } from "@/utils";
 import { calendarDaysUntil } from "@/employer/dueDate";
+import { experienceMonthsOf, formatTenure } from "../candidates/[candidateId]/_components/helpers";
 
 export function experienceLabel(min: number | null, max: number | null): string | null {
   if (min == null && max == null) return null;
@@ -142,8 +143,8 @@ export function initials(name: string): string {
 }
 
 export function candidateSubtitle(c: Candidate): string {
-  const years = c.resume?.yearsExperience;
-  const experience = years != null ? `${years} ${years === 1 ? "yr" : "yrs"}` : null;
+  const months = experienceMonthsOf(c.resume);
+  const experience = months != null ? formatTenure(months) : null;
   return [c.targetRole, experience, c.city].filter((part) => part && part !== "Not specified").join(" · ");
 }
 
