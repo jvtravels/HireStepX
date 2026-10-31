@@ -182,3 +182,13 @@ describe("hasAdvancedValues", () => {
     expect(hasAdvancedValues(valid({ customSkillSets: ["Bespoke"] }))).toBe(true);
   });
 });
+
+import { thinJobHint } from "../employer/_requirementFormHelpers";
+describe("thinJobHint", () => {
+  it("hints on thin input and stays quiet on a solid job", () => {
+    expect(thinJobHint(0, 50)).toMatch(/Few skills/);
+    expect(thinJobHint(1, 500)).toMatch(/fewer than 3/);
+    expect(thinJobHint(6, 50)).toMatch(/longer description/);
+    expect(thinJobHint(6, 500)).toBeNull();
+  });
+});

@@ -32,3 +32,13 @@ export function splitLogoDataUrl(dataUrl: string | null): { logoBase64?: string;
   const mime = dataUrl.slice(0, comma).match(/^data:(.+);base64$/)?.[1];
   return { logoBase64: dataUrl.slice(comma + 1), logoContentType: mime };
 }
+
+const PLACEHOLDER_NAMES = new Set(["test", "demo", "sample", "company", "my company", "abc", "xyz", "na", "n/a"]);
+
+/** A name or website candidates would read as filler. Empty values return false: they mean "not loaded yet" more often than "left blank". */
+export function looksLikePlaceholderProfile(companyName: string, website: string): boolean {
+  const name = companyName.trim().toLowerCase();
+  if (name && (name.length < 3 || PLACEHOLDER_NAMES.has(name))) return true;
+  const host = website.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
+  return host === "hirestepx.com";
+}

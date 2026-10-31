@@ -45,12 +45,12 @@ export function firstShortlistJob(jobs: readonly RequirementSummary[]): Requirem
 }
 
 /** The three setup steps, derived from what the employer has actually done. `reviewed` and `unlocked` are null while unknown, which counts as not done. */
-export function deriveOnboardingSteps({ jobs, reviewed, unlocked }: { jobs: readonly RequirementSummary[]; reviewed: boolean | null; unlocked: boolean | null }): ChecklistStep[] {
+export function deriveOnboardingSteps({ jobs, reviewed, unlocked, profilePlaceholder = false }: { jobs: readonly RequirementSummary[]; reviewed: boolean | null; unlocked: boolean | null; profilePlaceholder?: boolean }): ChecklistStep[] {
   const target = firstShortlistJob(jobs);
   const shortlistHref = target ? `/employer/requirements/${target.id}` : "/employer/jobs";
   const hasCandidates = jobs.some((j) => j.candidateCount > 0);
   const hasUnlocked = unlocked === true;
-  return [
+  const steps: ChecklistStep[] = [
     {
       label: "Post your first job",
       body: "Tell us the job title, location, and notice-period preference, and we'll start matching candidates against it.",
@@ -75,4 +75,15 @@ export function deriveOnboardingSteps({ jobs, reviewed, unlocked }: { jobs: read
       cta: "Review strong matches",
     },
   ];
+  /* Candidates see the company name and website on every job, so filler there costs trust. A nudge, never a gate. */
+  if (profilePlaceholder) {
+    steps.push({
+      label: "Complete your company profile",
+      body: "Candidates see your company name and website on each job. Add the real ones so they trust the posting.",
+      done: false,
+      href: "/employer/settings",
+      cta: "Edit company profile",
+    });
+  }
+  return steps;
 }

@@ -55,6 +55,7 @@ export default function EmployerJobsPage() {
   const [experienceFilter, setExperienceFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [salaryFilter, setSalaryFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
+  const [showArchived, setShowArchived] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -76,6 +77,7 @@ export default function EmployerJobsPage() {
     () => Array.from(new Set(requirements.map((r) => r.department).filter((v): v is string => !!v))).sort(),
     [requirements],
   );
+  const archivedCount = requirements.length - requirements.filter((r) => r.status !== "closed").length;
   const openCount = useMemo(() => requirements.filter((r) => r.status !== "closed").length, [requirements]);
   const atJobLimit = openCount >= limits.openRequirements;
 
@@ -93,6 +95,8 @@ export default function EmployerJobsPage() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = requirements.filter((r) => {
+      /* Archived jobs stay out of the default list so tests and filled roles do not clutter it; the toggle brings them back. */
+      if (!showArchived && r.status === "closed") return false;
       if (q && !`${r.title} ${locationText(r)} ${r.skills.join(" ")}`.toLowerCase().includes(q)) return false;
       if (stageFilter.length > 0 && !stageFilter.includes(STAGE_LABEL[r.stage])) return false;
       if (locationFilter && !(r.locations.length > 0 ? r.locations : [r.location]).includes(locationFilter)) return false;
@@ -107,7 +111,7 @@ export default function EmployerJobsPage() {
       return true;
     });
     return [...list].sort((a, b) => compareRows(a, b, sort));
-  }, [requirements, search, stageFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort]);
+  }, [requirements, showArchived, search, stageFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort]);
 
   useEffect(() => { setPage(1); }, [search, stageFilter, locationFilter, jobTypeFilter, departmentFilter, dueFilter, experienceFilter, salaryFilter, sort, rowsPerPage]);
 
@@ -234,6 +238,11 @@ export default function EmployerJobsPage() {
           suggestedFilters={suggestedFilters}
         />
       </div>
+      {archivedCount > 0 && (
+        <Button variant="outline" aria-pressed={showArchived} className="pointer-coarse:h-11" onClick={() => setShowArchived((v) => !v)}>
+          {showArchived ? "Hide archived" : `Show archived (${archivedCount})`}
+        </Button>
+      )}
       <AdvancedFiltersPopover
         stageOptions={stageOptions}
         stage={stageFilter}

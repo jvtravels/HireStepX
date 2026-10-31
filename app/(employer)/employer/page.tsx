@@ -20,6 +20,7 @@ import {
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
+import { looksLikePlaceholderProfile } from "@/employer/_companyProfileHelpers";
 import { deriveOnboardingSteps, hasOpenedProfile, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
 
@@ -207,7 +208,7 @@ function OnboardingChecklist({ steps, onDismiss }: { steps: ChecklistStep[]; onD
 function EmployerDashboard() {
   const {
     requirements, requirementsLoading, requirementsError, refreshRequirements,
-    companyName, fetchDashboard, fetchUnlockHistory, limits, suspended,
+    companyName, companyWebsite, fetchDashboard, fetchUnlockHistory, limits, suspended,
   } = useEmployerData();
   const [range, setRange] = useState<DashboardRange>(DEFAULT_DASHBOARD_RANGE);
   const [dashboard, setDashboard] = useState<EmployerDashboardData | null>(null);
@@ -277,7 +278,7 @@ function EmployerDashboard() {
     });
     return () => { cancelled = true; };
   }, [hasJobs, fetchUnlockHistory]);
-  const onboardingSteps: ChecklistStep[] = deriveOnboardingSteps({ jobs: requirements, reviewed: hasProgressedCandidate(dashboard, openedProfile), unlocked });
+  const onboardingSteps: ChecklistStep[] = deriveOnboardingSteps({ jobs: requirements, reviewed: hasProgressedCandidate(dashboard, openedProfile), unlocked, profilePlaceholder: looksLikePlaceholderProfile(companyName, companyWebsite) });
   const hideChecklist = () => {
     setChecklistHidden(true);
     try {
@@ -287,7 +288,7 @@ function EmployerDashboard() {
   // Once a job exists the checklist is a reminder above the dashboard, only once everything its
   // steps read has loaded (so the done count and the card never change after it appears) and a
   // step is still open; it can be hidden for good.
-  const showSetupReminder = !suspended && statsReady && hasJobs && unlocked === false && prefsRead && (dashboard !== null || dashboardState === "failed") && !checklistHidden;
+  const showSetupReminder = !suspended && statsReady && hasJobs && (unlocked === false || onboardingSteps.some((s) => !s.done)) && unlocked !== null && prefsRead && (dashboard !== null || dashboardState === "failed") && !checklistHidden;
   // The checklist stands in for the dashboard only while there is nothing to
   // show. Once a job exists the real dashboard renders, even if the employer
   // hasn't unlocked a candidate yet.

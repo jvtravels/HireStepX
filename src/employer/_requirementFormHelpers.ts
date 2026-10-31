@@ -233,3 +233,14 @@ export const normalizeNoticePeriod = (v: string): string => LEGACY_NOTICE[v] ?? 
 /* ── Retired local draft storage key (cleared on load) ── */
 
 export const DRAFT_STORAGE_KEY = "hsx-employer-requirement-draft-v1";
+
+export const THIN_DESCRIPTION_LENGTH = 200;
+export const THIN_SKILL_COUNT = 3;
+
+/** A soft hint (never a block) for the two inputs that decide whether a job finds anyone: skills and description. */
+export function thinJobHint(skillCount: number, descriptionLength: number): string | null {
+  if (skillCount < THIN_SKILL_COUNT && descriptionLength < THIN_DESCRIPTION_LENGTH) return "Few skills and a short description make it hard to tell candidates apart. Add 5 to 8 skills and a few more lines to see better matches.";
+  if (skillCount < THIN_SKILL_COUNT) return "With fewer than 3 skills, scores barely separate candidates. Add 5 to 8 skills for sharper matches.";
+  if (descriptionLength < THIN_DESCRIPTION_LENGTH) return "A longer description gives us more to compare with each resume. A few more lines help.";
+  return null;
+}

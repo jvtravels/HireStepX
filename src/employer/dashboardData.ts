@@ -130,7 +130,7 @@ export function buildInsights(
       id: "no-strong",
       tone: "attention",
       title: "Jobs with no strong match",
-      body: `${noMatches[0].title}${noMatches.length > 1 ? ` and ${noMatches.length - 1} more have` : " has"} no strong matches. Try broadening skills or location.`,
+      body: `${noMatches[0].title}${noMatches.length > 1 ? ` and ${noMatches.length - 1} more have` : " has"} no strong matches. ${noMatches[0].skills.length < 3 ? "Add 5 to 8 skills and a fuller description." : "Try broadening skills or location."}`,
       cta: "Edit job",
       href: `/employer/requirements/${noMatches[0].id}/edit`,
     });

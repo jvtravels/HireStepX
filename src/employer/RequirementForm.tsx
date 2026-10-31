@@ -44,6 +44,7 @@ import {
   hasAdvancedValues,
   initialDraft,
   needsDuration,
+  thinJobHint,
   validateDraft,
   type FieldKey,
   type FormStep,
@@ -306,6 +307,7 @@ export function RequirementForm({
   const noticeOptions = NOTICE_PERIOD_OPTIONS.includes(draft.noticePeriodPref) ? NOTICE_PERIOD_OPTIONS : [...NOTICE_PERIOD_OPTIONS, draft.noticePeriodPref];
   const showDuration = needsDuration(draft.employmentType);
   const descLen = draft.description.length;
+  const thinHint = draft.skills.length === 0 && descLen === 0 ? null : thinJobHint(draft.skills.length, descLen);
 
   const roleBasics = (
     <>
@@ -408,6 +410,7 @@ export function RequirementForm({
         <FieldLabel htmlFor="rf-skills">Required skills</FieldLabel>
         <TagAutocompleteInput id="rf-skills" describedBy="rf-skills-help" values={draft.skills} onChange={(v) => set("skills", v)} placeholder="React, TypeScript, System design…" suggestions={SKILL_SUGGESTIONS} />
         <HelpText id="rf-skills-help" live={false}>Pick a suggestion or type your own and press Enter. Five to eight skills match best{draft.skills.length > 0 ? ` (${draft.skills.length} added)` : ""}.</HelpText>
+        {thinHint && <p id="rf-thin-hint" role="status" className="m-0 mt-1.5 text-[13px] text-hx-warning-ink">{thinHint}</p>}
       </div>
 
       <div>
