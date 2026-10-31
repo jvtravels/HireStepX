@@ -5,9 +5,10 @@ import { DownloadIcon, KeyboardIcon, RefreshCwIcon, SlidersHorizontalIcon } from
 import { cn } from "cn";
 import type { Sort } from "@/components/SortableHead";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { CONTACT_FILTER_OPTIONS, SORT_OPTIONS, type ContactFilter, type SortColumn } from "./candidateTableModel";
+import { CONTACT_FILTER_OPTIONS, SORT_OPTIONS, STRONG_MATCH_BAR, type ContactFilter, type SortColumn } from "./candidateTableModel";
 
 const SECTION = "mb-2 text-[12px] font-semibold text-hx-ink-soft";
 const OPTION = "flex min-h-8 cursor-pointer items-center gap-2 text-[14px] text-hx-coal pointer-coarse:min-h-11";
@@ -20,6 +21,11 @@ export default function ViewMenu({
   location,
   onLocationChange,
   locationOptions,
+  strongOnly,
+  onStrongOnlyChange,
+  allSkills,
+  onAllSkillsChange,
+  showSkillsFilter,
   sort,
   onSortChange,
   activeCount,
@@ -34,6 +40,11 @@ export default function ViewMenu({
   location: string;
   onLocationChange: (v: string) => void;
   locationOptions: string[];
+  strongOnly: boolean;
+  onStrongOnlyChange: (v: boolean) => void;
+  allSkills: boolean;
+  onAllSkillsChange: (v: boolean) => void;
+  showSkillsFilter: boolean;
   sort: Sort<SortColumn>;
   onSortChange: (s: Sort<SortColumn>) => void;
   activeCount: number;
@@ -86,6 +97,21 @@ export default function ViewMenu({
               </label>
             ))}
           </RadioGroup>
+        </div>
+        <div className="mb-4">
+          <div id="view-fit-label" className={SECTION}>Fit</div>
+          <div role="group" aria-labelledby="view-fit-label" className="flex flex-col">
+            <label className={OPTION}>
+              <Checkbox checked={strongOnly} onCheckedChange={(v) => onStrongOnlyChange(v === true)} />
+              Strong matches ({STRONG_MATCH_BAR}+)
+            </label>
+            {showSkillsFilter && (
+              <label className={OPTION}>
+                <Checkbox checked={allSkills} onCheckedChange={(v) => onAllSkillsChange(v === true)} />
+                Has all required skills
+              </label>
+            )}
+          </div>
         </div>
         {locationOptions.length > 1 && (
           <div className="mb-4">

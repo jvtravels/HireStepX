@@ -13,9 +13,11 @@ export interface ShortlistView {
   sort: Sort<SortColumn>;
   insight: string | null;
   showLow: boolean;
+  strongOnly: boolean;
+  allSkills: boolean;
 }
 
-export const DEFAULT_VIEW: ShortlistView = { tab: null, search: "", contact: "all", location: "all", sort: DEFAULT_SORT, insight: null, showLow: false };
+export const DEFAULT_VIEW: ShortlistView = { tab: null, search: "", contact: "all", location: "all", sort: DEFAULT_SORT, insight: null, showLow: false, strongOnly: false, allSkills: false };
 
 const TABS: readonly CandidateTab[] = ["all", "interviewing", "hired", "not_a_fit"];
 const CONTACTS: readonly ContactFilter[] = ["all", "locked", "unlocked"];
@@ -41,6 +43,8 @@ export function parseShortlistView(params: Params): ShortlistView {
     sort: parseSort(params.get("sort")),
     insight: params.get("insight") || null,
     showLow: params.get("low") === "1",
+    strongOnly: params.get("fit") === "strong",
+    allSkills: params.get("skills") === "all",
   };
 }
 
@@ -58,5 +62,7 @@ export function writeShortlistView(base: URLSearchParams, view: ShortlistView): 
   set("sort", view.sort.column === DEFAULT_SORT.column && view.sort.direction === DEFAULT_SORT.direction ? null : `${view.sort.column}.${view.sort.direction}`);
   set("insight", view.insight);
   set("low", view.showLow ? "1" : null);
+  set("fit", view.strongOnly ? "strong" : null);
+  set("skills", view.allSkills ? "all" : null);
   return next;
 }

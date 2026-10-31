@@ -29,4 +29,15 @@ describe("low match bar", () => {
     expect(filterCandidates(list, { ...base, jobHasSkills: true }).map((c) => c.id)).toEqual(["a"]);
     expect(filterCandidates(list, { ...base, jobHasSkills: true, showLow: true }).map((c) => c.id)).toEqual(["a", "b", "c"]);
   });
+
+  it("narrows to strong matches and to candidates with every required skill", () => {
+    const list = [
+      cand({ id: "a", matchScore: 70, requiredSkillsMet: 3, requiredSkillsTotal: 3 }),
+      cand({ id: "b", matchScore: 30, requiredSkillsMet: 3, requiredSkillsTotal: 3 }),
+      cand({ id: "c", matchScore: 60, requiredSkillsMet: 2, requiredSkillsTotal: 3 }),
+    ];
+    expect(filterCandidates(list, { ...base, jobHasSkills: true, strongOnly: true }).map((c) => c.id)).toEqual(["a", "c"]);
+    expect(filterCandidates(list, { ...base, jobHasSkills: true, allSkills: true }).map((c) => c.id)).toEqual(["a", "b"]);
+    expect(filterCandidates(list, { ...base, jobHasSkills: true, strongOnly: true, allSkills: true }).map((c) => c.id)).toEqual(["a"]);
+  });
 });

@@ -123,9 +123,9 @@ describe("shortlist URL state", () => {
   });
 
   it("round-trips tab, search, filters, sort and insight", () => {
-    const view = { tab: "interviewing" as const, search: "react dev", contact: "unlocked" as const, location: "Pune", sort: { column: "name" as const, direction: "asc" as const }, insight: "stale", showLow: true };
+    const view = { tab: "interviewing" as const, search: "react dev", contact: "unlocked" as const, location: "Pune", sort: { column: "name" as const, direction: "asc" as const }, insight: "stale", showLow: true, strongOnly: true, allSkills: true };
     const qs = writeShortlistView(new URLSearchParams(), view);
-    expect(qs.toString()).toBe("tab=interviewing&q=react+dev&contact=unlocked&loc=Pune&sort=name.asc&insight=stale&low=1");
+    expect(qs.toString()).toBe("tab=interviewing&q=react+dev&contact=unlocked&loc=Pune&sort=name.asc&insight=stale&low=1&fit=strong&skills=all");
     expect(parseShortlistView(qs)).toEqual(view);
   });
 

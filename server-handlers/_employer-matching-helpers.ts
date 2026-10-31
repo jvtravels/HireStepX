@@ -1103,6 +1103,9 @@ export function rankVisibleMatches<T extends RankableMatch>(
     .sort((x, y) => y.match_score - x.match_score || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
 }
 
+/** Below this score an untouched candidate is excluded from the paid "unlock 10" batch. */
+export const LOW_MATCH_SCORE_BAR = 20;
+
 export interface UnlockBatchQuote {
   /** 1-based rank range of the batch window (visible rank). */
   start: number;
@@ -1116,7 +1119,11 @@ export interface UnlockBatchQuote {
 
 /** The first rank window of UNLOCK_BUNDLE_SIZE that still has a locked row,
  *  with the locked ids and the exact price the order will charge. */
-export function nextUnlockBatchQuote(ranked: Array<{ id: string; unlocked: boolean }>): UnlockBatchQuote | null {
+export function nextUnlockBatchQuote(allRanked: Array<{ id: string; unlocked: boolean; match_score?: number; candidate_status?: string | null }>): UnlockBatchQuote | null {
+  /* A weak fit nobody has acted on is tucked away in the list, so a paid batch must never
+     fill up with them: the employer pays for the top matches they can see. Keep the bar in
+     step with LOW_MATCH_BAR in candidateTableModel.ts. */
+  const ranked = allRanked.filter((r) => r.unlocked || (r.candidate_status ?? "shortlisted") !== "shortlisted" || (r.match_score ?? Number.POSITIVE_INFINITY) >= LOW_MATCH_SCORE_BAR);
   for (let start = 0; start < ranked.length; start += UNLOCK_BUNDLE_SIZE) {
     const block = ranked.slice(start, start + UNLOCK_BUNDLE_SIZE);
     const locked = block.filter((r) => !r.unlocked);

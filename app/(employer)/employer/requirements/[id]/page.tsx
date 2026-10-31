@@ -49,6 +49,7 @@ import { MAX_SELECTION, compareHref, planBulkMove, type BulkTarget } from "./_co
 import { parseShortlistView, writeShortlistView } from "./_components/shortlistUrlState";
 import {
   CONTACT_FILTER_OPTIONS,
+  STRONG_MATCH_BAR,
   compareCandidates,
   filterCandidates,
   type ContactFilter,
@@ -98,6 +99,8 @@ export default function RequirementDetailPage() {
   const [insightId, setInsightId] = useState<string | null>(initialView.insight);
   const [sort, setSort] = useState<Sort<SortColumn>>(initialView.sort);
   const [showLow, setShowLow] = useState(initialView.showLow);
+  const [strongOnly, setStrongOnly] = useState(initialView.strongOnly);
+  const [allSkills, setAllSkills] = useState(initialView.allSkills);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [pendingBulk, setPendingBulk] = useState<BulkTarget | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
@@ -223,8 +226,8 @@ export default function RequirementDetailPage() {
   const insights = useMemo(() => (requirement ? jobInsights(requirement) : []), [requirement]);
   const activeInsight = insights.find((i) => i.id === insightId) ?? null;
 
-  const activeFilterCount = (contactFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0);
-  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all" || activeInsight != null;
+  const activeFilterCount = (contactFilter !== "all" ? 1 : 0) + (locationFilter !== "all" ? 1 : 0) + (strongOnly ? 1 : 0) + (allSkills ? 1 : 0);
+  const hasActiveFilters = search.trim() !== "" || contactFilter !== "all" || locationFilter !== "all" || strongOnly || allSkills || activeInsight != null;
 
   const suggestedFilters = useMemo(() => {
     const suggestions: Array<{ label: string; apply: () => void }> = [];
@@ -238,23 +241,25 @@ export default function RequirementDetailPage() {
   const appliedChips: Array<{ key: string; label: string; remove: () => void }> = [];
   if (contactFilter !== "all") appliedChips.push({ key: "contact", label: CONTACT_FILTER_OPTIONS.find((o) => o.value === contactFilter)?.label ?? contactFilter, remove: () => setContactFilter("all") });
   if (locationFilter !== "all") appliedChips.push({ key: "location", label: locationFilter, remove: () => setLocationFilter("all") });
+  if (strongOnly) appliedChips.push({ key: "strong", label: `Strong matches ${STRONG_MATCH_BAR}+`, remove: () => setStrongOnly(false) });
+  if (allSkills) appliedChips.push({ key: "skills", label: "Has all required skills", remove: () => setAllSkills(false) });
   if (activeInsight) appliedChips.push({ key: "insight", label: activeInsight.label, remove: () => setInsightId(null) });
 
   const jobHasSkills = (requirement?.skills.length ?? 0) + (requirement?.customSkillSets.length ?? 0) > 0;
   const filteredSorted = useMemo(
-    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow, jobHasSkills }).sort((a, b) => compareCandidates(a, b, sort)),
-    [candidates, search, contactFilter, locationFilter, tab, sort, activeInsight, showLow, jobHasSkills],
+    () => filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow, jobHasSkills, strongOnly, allSkills }).sort((a, b) => compareCandidates(a, b, sort)),
+    [candidates, search, contactFilter, locationFilter, tab, sort, activeInsight, showLow, jobHasSkills, strongOnly, allSkills, strongOnly, allSkills],
   );
   // How many weak fits the bar is hiding right now, so the row can say so and offer them.
   const hiddenLowCount = useMemo(
-    () => (showLow ? 0 : filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow: true, jobHasSkills }).length - filteredSorted.length),
+    () => (showLow ? 0 : filterCandidates(candidates, { search, contact: contactFilter, location: locationFilter, tab, insight: activeInsight?.filter ?? null, showLow: true, jobHasSkills, strongOnly, allSkills }).length - filteredSorted.length),
     [candidates, search, contactFilter, locationFilter, tab, activeInsight, showLow, jobHasSkills, filteredSorted.length],
   );
   const lowCount = useMemo(() => candidates.filter((c) => isLowMatch(c, jobHasSkills)).length, [candidates, jobHasSkills]);
 
   useEffect(() => {
     setPage(1);
-  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId, showLow]);
+  }, [search, contactFilter, locationFilter, tab, sort, rowsPerPage, insightId, showLow, strongOnly, allSkills]);
 
   const totalPages = Math.max(1, Math.ceil(filteredSorted.length / rowsPerPage));
   const pageSafe = Math.min(page, totalPages);
@@ -319,11 +324,11 @@ export default function RequirementDetailPage() {
   };
 
   useEffect(() => {
-    const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId, showLow });
+    const next = writeShortlistView(new URLSearchParams(window.location.search), { tab: tabChoice, search, contact: contactFilter, location: locationFilter, sort, insight: insightId, showLow, strongOnly, allSkills });
     const query = next.toString();
     if (query === window.location.search.replace(/^\?/, "")) return;
     window.history.replaceState(window.history.state, "", `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
-  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId, showLow]);
+  }, [tabChoice, search, contactFilter, locationFilter, sort, insightId, showLow, strongOnly, allSkills]);
 
   const openCandidate = useCallback((id: string) => router.push(`/employer/requirements/${params.id}/candidates/${id}`), [router, params.id]);
   const sel = useShortlistSelection({ filtered: filteredSorted, pageRows, onOpen: openCandidate });
@@ -374,6 +379,8 @@ export default function RequirementDetailPage() {
   const clearFilters = () => {
     setSearch("");
     setShowLow(false);
+    setStrongOnly(false);
+    setAllSkills(false);
     setContactFilter("all");
     setLocationFilter("all");
     setInsightId(null);
@@ -483,6 +490,11 @@ export default function RequirementDetailPage() {
                     onContactChange={setContactFilter}
                     location={locationFilter}
                     onLocationChange={setLocationFilter}
+                    strongOnly={strongOnly}
+                    onStrongOnlyChange={setStrongOnly}
+                    allSkills={allSkills}
+                    onAllSkillsChange={setAllSkills}
+                    showSkillsFilter={jobHasSkills}
                     locationOptions={locationOptions}
                     sort={sort}
                     onSortChange={setSort}

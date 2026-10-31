@@ -38,6 +38,22 @@ describe("nextUnlockBatchQuote", () => {
     expect(q.amountPaise).toBe(9 * 5900);
   });
 
+  it("never fills a paid batch with untouched weak fits hidden from the list", () => {
+    const strong = Array.from({ length: 12 }, (_, i) => m(`s${i}`, `c${i}`, 80 - i));
+    const weak = [m("w1", "x1", 19), m("w2", "x2", 5)];
+    const q = nextUnlockBatchQuote([...strong, ...weak])!;
+    expect(q.matchIds).toHaveLength(10);
+    expect(q.matchIds.every((id) => id.startsWith("s"))).toBe(true);
+    expect(q.lockedRemaining).toBe(12);
+    expect(nextUnlockBatchQuote(weak)).toBeNull();
+  });
+
+  it("keeps a weak fit the employer already moved or unlocked", () => {
+    const moved = { ...m("w1", "x1", 5), candidate_status: "interviewing" };
+    const q = nextUnlockBatchQuote([m("s0", "c0", 80), moved, m("w2", "x2", 5)])!;
+    expect(q.matchIds).toEqual(["s0", "w1"]);
+  });
+
   it("reports locked rows across the whole shortlist, not just the window", () => {
     const q = nextUnlockBatchQuote(rows)!;
     expect(q.count).toBe(9);
