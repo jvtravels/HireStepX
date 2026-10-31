@@ -253,6 +253,8 @@ export default function ComparePage() {
           </p>
         </header>
         <div className="flex flex-col gap-4 border-b border-hx-line px-7 py-5 max-sm:px-4">
+          {/* Side by side on a laptop so the table starts above the fold. */}
+          <div className="grid gap-x-8 gap-y-4 min-[1024px]:grid-cols-2 min-[1024px]:items-start">
           <div>
             <h2 className="m-0 text-[15px] font-semibold text-hx-coal">How they differ</h2>
             {summary.differences.length > 0 ? (
@@ -275,6 +277,7 @@ export default function ComparePage() {
               </InsightList>
             </div>
           )}
+          </div>
           <p className="m-0 text-[13px] text-hx-ink-soft">
             Worked out from the figures below. HireStepX shows where candidates differ and does not pick a hire for you. Interview scores reflect practice, not job performance.
           </p>

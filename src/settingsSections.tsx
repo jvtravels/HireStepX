@@ -256,16 +256,17 @@ type EmailPrefs = Record<EmailPrefKey, boolean>;
 export function EmailPreferencesSection({ audience }: { audience: "candidate" | "employer" }) {
   const [prefs, setPrefs] = useState<EmailPrefs | null>(null);
   const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let live = true;
     apiFetch<{ prefs: EmailPrefs }>("/api/email-preferences", {}).then((res) => {
       if (!live) return;
-      if (res.ok && res.data) setPrefs(res.data.prefs);
+      if (res.ok && res.data) { setPrefs(res.data.prefs); setError(""); }
       else setError("Couldn't load your email preferences.");
     });
     return () => { live = false; };
-  }, []);
+  }, [attempt]);
 
   async function toggle(key: EmailPrefKey, receive: boolean) {
     if (!prefs) return;
@@ -319,7 +320,9 @@ export function EmailPreferencesSection({ audience }: { audience: "candidate" | 
         ))}
       </div>
       {error && (
-        <p role="alert" style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.ember }}>{error}</p>
+        <p role="alert" style={{ margin: "8px 0 0", fontFamily: font.ui, fontSize: 13, color: c.ember }}>
+          {error}{!prefs && <> <button type="button" onClick={() => setAttempt((n) => n + 1)} style={{ background: "none", border: 0, padding: 0, font: "inherit", color: "inherit", textDecoration: "underline", cursor: "pointer" }}>Try again</button></>}
+        </p>
       )}
     </div>
   );
