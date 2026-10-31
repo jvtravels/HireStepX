@@ -154,7 +154,7 @@ export default function JobsTable({
                       <HoverPrefetchLink
                         href={href}
                         className="hover:underline"
-                        style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal, textDecoration: "none", overflowWrap: "anywhere" }}
+                        style={{ display: "inline-flex", alignItems: "center", minHeight: 24, fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal, textDecoration: "none", overflowWrap: "anywhere" }}
                       >
                         {r.title}
                       </HoverPrefetchLink>
