@@ -112,7 +112,10 @@ const requiredStar: CSSProperties = { color: t.indigo };
 const errorText: CSSProperties = { fontFamily: f.sans, fontSize: textSize.base, color: t.errorInk, margin: 0 };
 const cardStyle: CSSProperties = { background: t.white, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "clip" };
 const actionRow: CSSProperties = { display: "flex", alignItems: "center", gap: 12, flexShrink: 0 };
-const cardHeader: CSSProperties = { position: "sticky", top: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "20px 28px", background: t.white, borderBottom: `1px solid ${t.line}` };
+/* Phones: the header scrolls away and the actions dock to the bottom edge, so the form keeps the whole screen. */
+const HEADER_CLASS = "sticky top-0 z-20 max-sm:static";
+const ACTIONS_CLASS = "max-sm:fixed max-sm:inset-x-0 max-sm:bottom-0 max-sm:z-30 max-sm:justify-end max-sm:border-t max-sm:border-hx-line max-sm:bg-white max-sm:px-4 max-sm:py-3 max-sm:pb-[max(12px,env(safe-area-inset-bottom))] max-sm:[&>*]:flex-1";
+const cardHeader: CSSProperties = { display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", columnGap: 28, rowGap: 10, padding: "20px 28px", background: t.white, borderBottom: `1px solid ${t.line}` };
 const formTitle: CSSProperties = { outline: "none", fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, lineHeight: "28px" };
 const stackedSections: CSSProperties = { display: "flex", flexDirection: "column", gap: 26 };
 
@@ -576,16 +579,16 @@ export function RequirementForm({
     return (
       <form onSubmit={handleSubmit} noValidate>
         <div style={cardStyle}>
-          <div style={cardHeader}>
+          <div className={HEADER_CLASS} style={cardHeader}>
             <h1 style={formTitle}>Edit job</h1>
-            <div style={actionRow}>
+            <div className={ACTIONS_CLASS} style={actionRow}>
               <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
               <PrimaryCta type="submit" disabled={submitting}>
                 {submitting ? "Saving…" : "Save changes"}
               </PrimaryCta>
             </div>
           </div>
-          <div style={bodyPadding}>
+          <div className="max-sm:pb-28" style={bodyPadding}>
             {requiredNote}
             <ErrorSummary errors={attempted ? errors : {}} scope="all" onJump={focusField} />
             {section("Job basics", roleBasics)}
@@ -616,14 +619,14 @@ export function RequirementForm({
   return (
     <form onSubmit={handleSubmit} noValidate>
       <div style={cardStyle}>
-        <div style={cardHeader}>
+        <div className={HEADER_CLASS} style={cardHeader}>
           <h1 style={formTitle}>Post a job</h1>
           <h2 ref={stepHeadingRef} tabIndex={-1} className="sr-only">
             {STEP_LABELS[step]}
           </h2>
           <span className="sr-only">Step {step} of {LAST_STEP}</span>
           <StepNav step={step} onGoTo={goTo} />
-          <div style={actionRow}>
+          <div className={ACTIONS_CLASS} style={actionRow}>
             {step > 1 && <OutlineCta size="sm" onClick={() => goTo((step - 1) as FormStep)}>Back</OutlineCta>}
             <OutlineCta size="sm" onClick={leave}>Cancel</OutlineCta>
             {step < LAST_STEP ? (
@@ -633,7 +636,7 @@ export function RequirementForm({
             )}
           </div>
         </div>
-        <div style={bodyPadding}>
+        <div className="max-sm:pb-28" style={bodyPadding}>
           <ErrorSummary errors={attempted ? errors : {}} scope={step} onJump={focusField} />
           {step === 1 ? (
             <div style={stackedSections}>

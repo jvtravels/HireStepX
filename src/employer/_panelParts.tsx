@@ -120,10 +120,12 @@ export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: 
   );
 }
 
-export type ChipTone = "danger" | "primary" | "neutral" | "present" | "missing";
+export type ChipTone = "danger" | "required" | "primary" | "neutral" | "present" | "missing";
 
 const CHIP_TONE: Record<ChipTone, string> = {
   danger: "bg-hx-error-100 text-hx-error-ink",
+  /* Solid, not red: red means "missing" elsewhere in the console. */
+  required: "bg-hx-indigo text-white",
   primary: "bg-hx-indigo-100 text-hx-indigo",
   neutral: "bg-hx-soft text-hx-neutral-ink",
   present: "bg-hx-success-100 text-hx-success-ink",

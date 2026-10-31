@@ -355,7 +355,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
         headerActionsRef={setHeaderSlot}
         banners={<><JoinedBanner /><VerificationBanner /></>}
       >
-        <div className={"flex min-h-0 w-full min-w-0 flex-1 flex-col"}>
+        <div className="mx-auto flex min-h-0 w-full min-w-0 max-w-[1680px] flex-1 flex-col">
           {isSelfCardedRoute(pathname ?? "") ? pageBody : DETAIL_ROUTE.test(pathname ?? "") ? (
             <div className="mb-16 box-border flex min-h-full w-full min-w-0 flex-none flex-col overflow-clip rounded-2xl border border-hx-line bg-white">
               <InWhiteCardProvider value>{pageBody}</InWhiteCardProvider>

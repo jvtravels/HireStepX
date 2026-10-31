@@ -136,8 +136,12 @@ export function compareRows(a: RequirementSummary, b: RequirementSummary, sort: 
       return dir * (due(a) - due(b));
     case "topMatches":
       return dir * (a.aiScreening.topMatches - b.aiScreening.topMatches || a.aiScreening.evaluated - b.aiScreening.evaluated);
-    case "created":
-      return dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    case "created": {
+      /* Default view: live jobs lead, closed ones sink below them whichever way the dates run,
+         so a finished job never sits between active pipelines. */
+      const closed = Number(a.status === "closed") - Number(b.status === "closed");
+      return closed || dir * (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    }
   }
 }
 

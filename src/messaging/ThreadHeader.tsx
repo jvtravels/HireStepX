@@ -27,13 +27,13 @@ export default function ThreadHeader({
   name, masked, title, subtitle, badges, actions, headingRef, favorite, onToggleFavorite, onBack, railOpen, onToggleRail,
 }: ThreadHeaderProps) {
   return (
-    <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-3">
+    <header className="flex shrink-0 flex-wrap items-center gap-3 border-b border-border bg-background px-4 py-3 max-sm:gap-x-2 max-sm:gap-y-2 max-sm:py-2">
       {onBack && (
         <Button type="button" variant="ghost" size="icon" aria-label="Back to conversations" onClick={onBack} className="-ml-2 size-11 shrink-0">
           <ArrowLeftIcon aria-hidden="true" className="size-5" />
         </Button>
       )}
-      <Avatar size="lg" aria-hidden="true">
+      <Avatar size="lg" aria-hidden="true" className="max-sm:hidden">
         <AvatarFallback className="text-sm font-medium">{masked ? "?" : initialsOf(name)}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1 basis-48">
@@ -43,8 +43,9 @@ export default function ThreadHeader({
         </div>
         <p className="m-0 mt-0.5 truncate text-[13px] text-muted-foreground">{subtitle}</p>
       </div>
+      {/* Phones: the primary actions take their own full-width row under the name; star and details stay beside it. */}
+      {actions && <div className="flex items-center gap-1.5 max-sm:order-last max-sm:w-full max-sm:[&>*]:flex-1">{actions}</div>}
       <div className="flex items-center gap-1.5">
-        {actions}
         <Button
           type="button"
           variant="ghost"

@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleAlertIcon, SparklesIcon, StarIcon } from "lucide-react";
+import { AsteriskIcon, SparklesIcon, StarIcon } from "lucide-react";
 import { skillTiers } from "@/employer/_jobDetailHelpers";
 import { SkillChip, type ChipTone } from "@/employer/_panelParts";
 import type { Requirement } from "@/employer/EmployerDataContext";
@@ -33,7 +33,7 @@ export function hasKeyRequirements(r: Requirement): boolean {
 export default function KeyRequirements({ requirement }: { requirement: Requirement }) {
   const { mustHave, other, niceToHave } = skillTiers(requirement);
   const tiers = [
-    mustHave.length > 0 && <Tier key="must" title="Must have" icon={<CircleAlertIcon size={12} />} tone="danger" skills={mustHave} iconClass="bg-hx-error-100 text-hx-error-ink" />,
+    mustHave.length > 0 && <Tier key="must" title="Must have" icon={<AsteriskIcon size={12} />} tone="required" skills={mustHave} iconClass="bg-hx-indigo text-white" />,
     other.length > 0 && <Tier key="oth" title="Important" icon={<StarIcon size={12} />} tone="primary" skills={other} iconClass="bg-hx-indigo-100 text-hx-indigo" />,
     niceToHave.length > 0 && <Tier key="nice" title="Nice to have" icon={<SparklesIcon size={12} />} tone="neutral" skills={niceToHave} iconClass="bg-hx-soft text-hx-neutral-ink" />,
   ].filter(Boolean);
