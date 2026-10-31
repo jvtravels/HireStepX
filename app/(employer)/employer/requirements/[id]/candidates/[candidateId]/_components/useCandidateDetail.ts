@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 import type { Requirement, CandidateEvidence, EmployerApiError } from "@/employer/EmployerDataContext";
 import type { CandidateStatus } from "@/employer/mockData";
@@ -82,9 +82,18 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
 
   const candidate = requirement?.candidates.find((c) => c.id === matchId);
   const candidateId = candidate?.id;
-  // Only a true flip (unlock) refetches; the flag arriving as false once the
-  // job loads must not repeat a request that is already in flight.
-  const unlockedNow = candidate?.unlocked === true;
+  // Only a locked-to-unlocked flip refetches (to reveal the quotes). The flag
+  // first arriving as true when the job loads is not a flip: the evidence
+  // request is already in flight, so repeating it just doubles the load.
+  const unlockState = candidate ? candidate.unlocked === true : null;
+  const lastUnlock = useRef<{ id: string; unlocked: boolean } | null>(null);
+  const [unlockFlips, setUnlockFlips] = useState(0);
+  useEffect(() => {
+    if (unlockState === null) return;
+    const last = lastUnlock.current;
+    if (last && last.id === matchId && !last.unlocked && unlockState) setUnlockFlips((n) => n + 1);
+    lastUnlock.current = { id: matchId, unlocked: unlockState };
+  }, [unlockState, matchId]);
 
   // Starts from the URL's match id, alongside the job detail rather than after
   // it; the endpoint checks ownership itself. Re-fetching on unlock reveals the quotes.
@@ -102,7 +111,7 @@ export function useCandidateDetail(requirementId: string, matchId: string) {
     return () => {
       active = false;
     };
-  }, [matchId, unlockedNow, evidenceNonce, fetchCandidateEvidence]);
+  }, [matchId, unlockFlips, evidenceNonce, fetchCandidateEvidence]);
 
   const reloadEvidence = useCallback(() => setEvidenceNonce((n) => n + 1), []);
   const clearNotice = useCallback(() => patchScope({ notice: null }), [patchScope]);

@@ -9,6 +9,7 @@
 
 import { useEmployerData } from "./EmployerDataContext";
 import Link from "next/link";
+import HoverPrefetchLink from "@/employer/HoverPrefetchLink";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { LightbulbIcon, ClockIcon, TrendingUpIcon, ArrowDownIcon, ArrowUpIcon, ChevronsUpDownIcon, SearchXIcon, ArrowRightIcon, SparklesIcon, UserIcon } from "lucide-react";
@@ -351,7 +352,7 @@ export function ActiveJobsCard({
                       onClick={(e) => { if (!(e.target as HTMLElement).closest("a, button, [role='menuitem']")) router.push(`/employer/requirements/${j.id}`); }}
                     >
                       <TableCell className={`${TD} whitespace-normal`}>
-                        <Link href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</Link>
+                        <HoverPrefetchLink href={`/employer/requirements/${j.id}`} className="inline-block py-0.5 font-semibold text-hx-coal no-underline hover:underline">{j.title}</HoverPrefetchLink>
                         <JobMeta job={j} health={health} />
                       </TableCell>
                       <TableCell className={TD}>

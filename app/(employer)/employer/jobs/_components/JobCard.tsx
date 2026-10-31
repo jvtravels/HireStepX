@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import HoverPrefetchLink from "@/employer/HoverPrefetchLink";
 import type { RequirementSummary, RequirementStage } from "@/employer/mockData";
 import { Badge } from "@/employer/_atoms";
 import { StageCell } from "@/employer/_stageCell";
@@ -21,12 +21,12 @@ export default function JobCard({ r, readOnly, onStage, actions }: { r: Requirem
   return (
     <li style={{ padding: 16, borderBottom: `1px solid ${t.line}` }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <Link href={`/employer/requirements/${r.id}`} style={{ flex: 1, minWidth: 0, minHeight: 44, textAlign: "left", textDecoration: "none", color: "inherit" }}>
+        <HoverPrefetchLink href={`/employer/requirements/${r.id}`} style={{ flex: 1, minWidth: 0, minHeight: 44, textAlign: "left", textDecoration: "none", color: "inherit" }}>
           <span style={{ display: "block", fontFamily: f.sans, fontSize: textSize.md, fontWeight: 600, color: t.coal, overflowWrap: "anywhere" }}>{r.title}</span>
           {(budget || jobType) && (
             <span style={{ display: "block", fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 2 }}>{[budget, jobType].filter(Boolean).join(" · ")}</span>
           )}
-        </Link>
+        </HoverPrefetchLink>
         <div style={{ margin: "-6px -8px -6px 0", flexShrink: 0 }}>{actions}</div>
       </div>
       {r.skills.length > 0 && (

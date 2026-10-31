@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import HoverPrefetchLink from "@/employer/HoverPrefetchLink";
 import { motion, useReducedMotion } from "motion/react";
 import { InfoIcon } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -151,13 +151,13 @@ export default function JobsTable({
                 >
                   <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <Link
+                      <HoverPrefetchLink
                         href={href}
                         className="hover:underline"
                         style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal, textDecoration: "none", overflowWrap: "anywhere" }}
                       >
                         {r.title}
-                      </Link>
+                      </HoverPrefetchLink>
                     </div>
                     {(budget || jobType) && (
                       <div style={{ display: "flex", alignItems: "center", gap: 6, fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 2 }}>
