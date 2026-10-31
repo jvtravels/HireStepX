@@ -68,7 +68,7 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
           <TooltipTrigger asChild>
             <button
               type="button"
-              aria-label={`${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
+              aria-label={`${[...slots.matched, ...slots.gaps].join(" ")}${slots.hidden > 0 ? ` +${slots.hidden}` : ""}. ${matched.length} of ${total} required skills.${matched.length > 0 ? ` Has ${matched.join(", ")}.` : ""}${gaps.length > 0 ? ` Missing ${gaps.join(", ")}.` : ""}`}
               className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {slots.matched.map((skill) => (
@@ -277,7 +277,7 @@ export default function CandidateRow({
             <button
               type="button"
               onClick={onViewEvidence}
-              aria-label={`Evidence for ${name}: ${score != null ? `interview score ${score} out of 100 across ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : "no graded interviews"}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}
+              aria-label={`${score != null ? `${score}/100 · ${evidence.interviews} ${evidence.interviews === 1 ? "interview" : "interviews"}${practised ? `, ${practised.toLowerCase()}` : ""}` : "No interviews yet"}. Evidence for ${name}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}
               className="group flex cursor-pointer flex-col items-start rounded-md border-0 bg-transparent p-0 text-left focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {score != null ? (

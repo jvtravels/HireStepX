@@ -526,7 +526,7 @@ export default function RequirementDetailPage() {
                     size="sm"
                     icon={<LockIcon size={13} aria-hidden="true" />}
                     disabled={suspended}
-                    ariaLabel={`Unlock ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"} for ${formatPaise(nextLockedBatch.amountPaise)}`}
+                    ariaLabel={`Unlock ${nextLockedBatch.count} · ${formatPaise(nextLockedBatch.amountPaise)}, reveals ${nextLockedBatch.count} candidate${nextLockedBatch.count === 1 ? "" : "s"}`}
                     onClick={() =>
                       setUnlockTarget({
                         mode: "batch",
