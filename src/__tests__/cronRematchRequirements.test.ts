@@ -188,6 +188,10 @@ describe("cron-rematch-requirements", () => {
   });
 
   describe("only requirements whose inputs changed or that are stale", () => {
+    // Fixed clock after MATCH_ALGORITHM_EPOCH_MS: "matched 1 day ago" must not
+    // depend on how soon after the epoch the suite happens to run.
+    beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date("2026-12-01T00:00:00Z")); });
+    afterEach(() => { vi.useRealTimers(); });
     const day = 86_400_000;
     const agoIso = (d: number) => new Date(Date.now() - d * day).toISOString();
     const installProbe = (rows: unknown[], probe: { ok: boolean; body: unknown }) => {
