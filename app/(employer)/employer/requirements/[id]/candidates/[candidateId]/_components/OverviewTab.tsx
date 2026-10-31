@@ -15,7 +15,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, formatYears, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -202,7 +202,10 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   if (workPref) facts.push({ label: "Work preference", value: workPref, selfReported: true });
   if (r.primaryDomain) {
     const primaryYears = r.domainYears?.find((d) => d.domain.toLowerCase() === r.primaryDomain?.toLowerCase())?.years;
-    facts.push({ label: "Domain", value: primaryYears ? `${r.primaryDomain} (${formatYears(primaryYears)})` : r.primaryDomain });
+    // Self-reported domain years can exceed the dated roles; never show more than the header's experience.
+    const totalMonths = experienceMonthsOf(r);
+    const domainMonths = primaryYears ? (totalMonths != null ? Math.min(primaryYears * 12, totalMonths) : primaryYears * 12) : null;
+    facts.push({ label: "Domain", value: domainMonths ? `${r.primaryDomain} (${formatExperience(domainMonths)})` : r.primaryDomain });
   }
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
