@@ -265,7 +265,7 @@ export default function CandidateRow({
         <SkillMatch score={candidate.matchScore} matched={matched} gaps={gaps} noneMet={candidate.requiredSkillsMet === 0} />
       </TableCell>
       {showAvailability && (
-        <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal" data-label="Availability">
+        <TableCell role="cell" className="cand-td px-3 py-3 align-middle whitespace-normal min-[768px]:max-[1439px]:hidden" data-label="Availability">
           <DotLabel tone={availability.tone}>{availability.label}</DotLabel>
         </TableCell>
       )}

@@ -394,9 +394,14 @@ function questionWords(text: string): Set<string> {
 /** Drops a later question that repeats an earlier one (the interviewer sometimes re-asks with
  *  near-identical wording), so the list and its counts don't double-count one prompt. */
 /** The strongest graded answer to lead with: highest score, ties go to the one covering more STAR parts. */
+/** The interviewer's opening line ("Hi, thanks for making the time... I'll be your interviewer") is rapport, not an assessed answer. */
+export function isOpeningSmallTalk(question: string): boolean {
+  return /^\s*(hi|hello|hey|good (morning|afternoon|evening))\b/i.test(question) || /thanks for (making|taking) the time|i'?ll be your interviewer/i.test(question);
+}
+
 export function bestGradedAnswer(questions: EvidenceQuestion[] | undefined): EvidenceQuestion | null {
   const starCount = (q: EvidenceQuestion) => (q.star ? Object.values(q.star).filter(Boolean).length : 0);
-  const pool = (questions ?? []).filter((q) => q.verdict !== "skipped" && q.question.trim());
+  const pool = (questions ?? []).filter((q) => q.verdict !== "skipped" && q.question.trim() && !isOpeningSmallTalk(q.question));
   if (pool.length === 0) return null;
   return [...pool].sort((a, b) => b.score - a.score || starCount(b) - starCount(a))[0];
 }

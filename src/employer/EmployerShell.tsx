@@ -231,6 +231,7 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
   const sectionTitle =
     pathname === "/employer/settings" ? "Settings"
     : pathname === "/employer/messages" ? "Messages"
+    : pathname === "/employer/team" ? "Team"
     : pathname === "/employer/requirements/new" ? "Post a job"
     : pathname?.endsWith("/compare") ? "Compare candidates"
     : pathname?.endsWith("/edit") ? "Edit job"

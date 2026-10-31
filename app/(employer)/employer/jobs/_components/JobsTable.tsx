@@ -35,6 +35,16 @@ tr:hover > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.
   .jobs-col-dept { display: none; }
   .jobs-table { min-width: 1100px; }
 }
+/* Laptop widths: Experience (4th from the end) drops out and the rest tighten so Due date and Actions stay on screen
+   without sideways scrolling. Experience is still on the job page and in the filters. */
+@container (max-width: 1119px) {
+  .jobs-table { min-width: 0; }
+  .jobs-table :is(th, td):nth-last-child(4) { display: none; }
+  .jobs-table :is(th, td):first-child { width: 280px !important; min-width: 0 !important; }
+  .jobs-table :is(th, td):nth-last-child(6) { width: 150px !important; }
+  .jobs-table :is(th, td):nth-last-child(5) { width: 200px !important; }
+  .jobs-table :is(th, td):nth-last-child(3), .jobs-table :is(th, td):nth-last-child(2) { width: 110px !important; }
+}
 `;
 
 /** Row-wide click is a pointer convenience only; the title link is the real

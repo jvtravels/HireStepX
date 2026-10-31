@@ -467,7 +467,7 @@ export default function RequirementDetailPage() {
                 label="Candidate groups"
                 idPrefix="cand"
                 panelId="cand-panel"
-                className="shrink-0"
+                className="max-w-full shrink-0"
               />
             )}
             <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center justify-end gap-2.5 min-[1100px]:flex-nowrap">

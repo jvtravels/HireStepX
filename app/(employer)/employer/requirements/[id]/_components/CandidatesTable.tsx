@@ -177,7 +177,7 @@ export default function CandidatesTable({
                   Role match
                 </SortableHead>
                 {showAvailability && (
-                  <TableHead className={`${PLAIN_HEAD} w-[13%] min-w-[120px]`}>
+                  <TableHead className={`${PLAIN_HEAD} hidden w-[13%] min-w-[120px] min-[1440px]:table-cell`}>
                     <span className="inline-flex items-center gap-0.5">
                       Availability
                       <InfoTip label="About Availability">The candidate's own notice period, as written on their resume. We show their words when we can't read a number.</InfoTip>
