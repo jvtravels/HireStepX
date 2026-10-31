@@ -18,13 +18,15 @@ export const CAND_TABLE_CSS = `
 @media (min-width: 768px) {
   .cand-td-act, .cand-th-act { position: sticky; right: 0; z-index: 1; background: ${t.white}; box-shadow: inset 1px 0 0 ${t.line}; }
   .cand-th-act { background: ${t.rowTint}; }
-  .rq-row:hover .cand-td-act { background: ${t.rowTint}; }
+  .rq-row:hover .cand-td-act, .rq-row[data-selected="true"] .cand-td-act { background: ${t.rowTint}; }
 }
 /* Sticky column headers need the table to be wide enough to never scroll sideways: a horizontal scroll
    box would also become the vertical scroll parent and the header would stop following the page. */
 @media (min-width: 1240px) {
+  /* No sideways scroll here, so the sticky divider would only draw a stray strip at the right edge. */
+  .cand-td-act { box-shadow: none; }
   .cand-thead th { position: sticky; top: var(--cand-sticky-top, 0px); z-index: 2; background: ${t.rowTint}; box-shadow: inset 0 -1px 0 ${t.line}; }
-  .cand-thead .cand-th-act { z-index: 3; box-shadow: inset 1px 0 0 ${t.line}, inset 0 -1px 0 ${t.line}; }
+  .cand-thead .cand-th-act { z-index: 3; box-shadow: inset 0 -1px 0 ${t.line}; }
 }
 @media (max-width: 767px) {
   .cand-shell { border: 0 !important; background: transparent !important; overflow: visible !important; flex: 0 0 auto !important; min-height: auto !important; }
