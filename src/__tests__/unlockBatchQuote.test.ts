@@ -35,7 +35,7 @@ describe("nextUnlockBatchQuote", () => {
     expect(q.end).toBe(20);
     expect(q.count).toBe(9);
     expect(q.matchIds).not.toContain("m12");
-    expect(q.amountPaise).toBe(9 * 2990);
+    expect(q.amountPaise).toBe(9 * 5900);
   });
 
   it("reports locked rows across the whole shortlist, not just the window", () => {

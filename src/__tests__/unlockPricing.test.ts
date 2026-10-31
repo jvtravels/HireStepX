@@ -50,10 +50,11 @@ describe("unlockRateNote", () => {
     expect(note.batchHint).toBeNull();
   });
 
-  it("prorates a partial batch", () => {
+  it("charges a partial batch the single price for each candidate", () => {
     const note = unlockRateNote(6, batchUnlockPrice(6).amountPaise);
-    expect(note.perCandidate).toBe("₹29.90");
-    expect(note.savings).toContain("₹174.60");
+    expect(batchUnlockPrice(6).amountPaise).toBe(6 * 5_900);
+    expect(note.perCandidate).toBe("₹59");
+    expect(note.savings).toBeNull();
   });
 
   it("points a single unlock at the batch rate", () => {
@@ -64,18 +65,15 @@ describe("unlockRateNote", () => {
   });
 });
 
-describe("lone-leftover pricing (documented product decision)", () => {
-  /* A batch-mode order for a single leftover candidate is prorated to the batch
-   * per-head rate (₹29.90), which is HALF the ₹59 single-unlock price. Left as is
-   * on purpose: pricing is a product call, not a payments-correctness fix. This
-   * pins the behaviour so any change to it is deliberate and visible. */
-  it("a one-candidate batch order costs the per-head batch rate, below the single price", () => {
-    expect(batchUnlockPrice(1).amountPaise).toBe(2_990);
-    expect(batchUnlockPrice(1).amountPaise).toBeLessThan(singleUnlockPrice().amountPaise);
+describe("partial-batch pricing (owner decision, Oct 31 2026)", () => {
+  /* ₹59 for each candidate unlocked on their own, ₹299 only when ten are
+   * unlocked together. Fewer than ten left in a batch are ₹59 each. */
+  it("a one-candidate batch order costs the single price", () => {
+    expect(batchUnlockPrice(1).amountPaise).toBe(singleUnlockPrice().amountPaise);
   });
 
   it("the flat batch price only applies to a full bucket", () => {
     expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE).amountPaise).toBe(UNLOCK_BATCH_PRICE_PAISE);
-    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE - 1).amountPaise).toBe(2_990 * (UNLOCK_BUNDLE_SIZE - 1));
+    expect(batchUnlockPrice(UNLOCK_BUNDLE_SIZE - 1).amountPaise).toBe(UNLOCK_SINGLE_PRICE_PAISE * (UNLOCK_BUNDLE_SIZE - 1));
   });
 });

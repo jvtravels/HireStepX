@@ -26,7 +26,7 @@ describe("employer offer copy", () => {
 
   it("derives prices from the pricing constants", () => {
     expect(unlockFeeSentence()).toContain(formatPaise(UNLOCK_BATCH_PRICE_PAISE));
-    expect(unlockFeeSentence()).toContain(`batches of ${UNLOCK_BUNDLE_SIZE}`);
+    expect(unlockFeeSentence()).toContain(`${UNLOCK_BUNDLE_SIZE} together`);
     expect(proratedRemainderSentence()).toContain(`fewer than ${UNLOCK_BUNDLE_SIZE}`);
   });
 

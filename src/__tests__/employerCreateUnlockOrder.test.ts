@@ -564,12 +564,12 @@ describe("employer-create-unlock-order — batch mode", () => {
     expect((insert?.body as { match_ids: string[] }).match_ids).toEqual(ids(10));
   });
 
-  it("prices a partial bucket proportionally (5 candidates -> ₹149.50)", async () => {
+  it("prices a partial bucket at ₹59 each (5 candidates -> ₹295)", async () => {
     world.matches = ids(5).map((id, i) => ({ id, score: 90 - i }));
     const res = mockRes();
     await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
-    expect(razorpayCall()?.body).toMatchObject({ amount: 14950 });
-    expect((res.body as Record<string, unknown>).amount).toBe(14950);
+    expect(razorpayCall()?.body).toMatchObject({ amount: 29500 });
+    expect((res.body as Record<string, unknown>).amount).toBe(29500);
   });
 
   it("skips fully-unlocked buckets and targets only the still-locked candidates of the next one", async () => {
@@ -578,7 +578,7 @@ describe("employer-create-unlock-order — batch mode", () => {
     const res = mockRes();
     await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
     expect(res.statusCode).toBe(200);
-    expect(razorpayCall()?.body).toMatchObject({ amount: 5980 });
+    expect(razorpayCall()?.body).toMatchObject({ amount: 11800 });
     const insert = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
     expect((insert?.body as { match_ids: string[] }).match_ids).toEqual([all[11], all[12]]);
   });
@@ -592,7 +592,7 @@ describe("employer-create-unlock-order — batch mode", () => {
     expect(res.statusCode).toBe(200);
     const insert = calls.find((c) => c.method === "POST" && c.url.endsWith("/rest/v1/employer_unlock_orders"));
     expect((insert?.body as { match_ids: string[] }).match_ids).toEqual([all[0], all[3]]);
-    expect(razorpayCall()?.body).toMatchObject({ amount: 5980 });
+    expect(razorpayCall()?.body).toMatchObject({ amount: 11800 });
   });
 
   it("409s no_eligible_candidates when every candidate in the bucket is unavailable", async () => {
@@ -640,25 +640,25 @@ describe("employer-create-unlock-order — batch mode", () => {
     const res = mockRes();
     await handler(mockReq({ mode: "batch", requirementId: REQ, expectedAmountPaise: 11960 }), res);
     expect(res.statusCode).toBe(409);
-    expect(res.body).toMatchObject({ code: "price_changed", quote: { count: 3, amountPaise: 8970 } });
+    expect(res.body).toMatchObject({ code: "price_changed", quote: { count: 3, amountPaise: 17700 } });
     expect(razorpayCall()).toBeUndefined();
   });
 
   it("orders when the client's expected amount matches the server quote", async () => {
     world.matches = ids(4).map((id, i) => ({ id, score: 90 - i }));
     const res = mockRes();
-    await handler(mockReq({ mode: "batch", requirementId: REQ, expectedAmountPaise: 11960 }), res);
+    await handler(mockReq({ mode: "batch", requirementId: REQ, expectedAmountPaise: 23600 }), res);
     expect(res.statusCode).toBe(200);
-    expect(razorpayCall()?.body).toMatchObject({ amount: 11960 });
+    expect(razorpayCall()?.body).toMatchObject({ amount: 23600 });
   });
 
   it("reuses an existing unpaid order for exactly the same batch", async () => {
     world.matches = ids(3).map((id, i) => ({ id, score: 90 - i }));
-    world.openOrders = [openOrder({ razorpay_order_id: "order_batch_existing", mode: "batch", match_ids: ids(3), amount: 8970 })];
+    world.openOrders = [openOrder({ razorpay_order_id: "order_batch_existing", mode: "batch", match_ids: ids(3), amount: 17700 })];
     const res = mockRes();
     await handler(mockReq({ mode: "batch", requirementId: REQ }), res);
     expect(res.statusCode).toBe(200);
-    expect(res.body).toMatchObject({ orderId: "order_batch_existing", reused: true, amount: 8970 });
+    expect(res.body).toMatchObject({ orderId: "order_batch_existing", reused: true, amount: 17700 });
     expect(razorpayCall()).toBeUndefined();
   });
 });

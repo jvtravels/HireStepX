@@ -10,7 +10,7 @@
 
    Pure module: no I/O, safe to import from server and client components. */
 
-import { UNLOCK_BUNDLE_SIZE, UNLOCK_BATCH_PRICE_PAISE, UNLOCK_SINGLE_PRICE_PAISE, batchUnlockPrice, formatPaise } from "../../server-handlers/_unlock-pricing";
+import { UNLOCK_BUNDLE_SIZE, UNLOCK_BATCH_PRICE_PAISE, UNLOCK_SINGLE_PRICE_PAISE, formatPaise } from "../../server-handlers/_unlock-pricing";
 
 /** Mirrors NO_RESPONSE_DAYS in server-handlers/_employer-credit.ts (asserted in a test). */
 export const CREDIT_NO_RESPONSE_DAYS = 14;
@@ -43,19 +43,18 @@ export const REVEALED_ON_UNLOCK: readonly string[] = [
 ];
 
 export function unlockFeeSentence(): string {
-  return `Candidates are unlocked in batches of ${UNLOCK_BUNDLE_SIZE} for ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} (a smaller remainder is charged in proportion), or one at a time for ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}.`;
+  return `Unlock one candidate for ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}, or ${UNLOCK_BUNDLE_SIZE} together for ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}.`;
 }
 
-/** The prorating rule from batchUnlockPrice(), spelled out. */
+/** The partial-batch rule from batchUnlockPrice(), spelled out. */
 export function proratedRemainderSentence(): string {
-  const each = formatPaise(batchUnlockPrice(1).amountPaise);
-  return `If fewer than ${UNLOCK_BUNDLE_SIZE} candidates are left locked in a batch (some already unlocked one at a time, or a final partial batch), you pay ${each} for each one left instead of the full batch price.`;
+  return `The ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)} price applies only when you unlock ${UNLOCK_BUNDLE_SIZE} candidates together. If fewer than ${UNLOCK_BUNDLE_SIZE} are left locked in a batch, each one is ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)}.`;
 }
 
 /** Worked example for the marketing page, computed from the real price table so it can never drift. */
 export function workedPricingExampleSentence(): string {
   const singles = 3;
-  const perBatchCandidate = batchUnlockPrice(1).amountPaise;
+  const perBatchCandidate = UNLOCK_BATCH_PRICE_PAISE / UNLOCK_BUNDLE_SIZE;
   const tenSinglyPaise = UNLOCK_BUNDLE_SIZE * UNLOCK_SINGLE_PRICE_PAISE;
   return `Unlock ${singles} candidates one at a time: ${singles} × ${formatPaise(UNLOCK_SINGLE_PRICE_PAISE)} = ${formatPaise(singles * UNLOCK_SINGLE_PRICE_PAISE)}. Unlock a full batch of ${UNLOCK_BUNDLE_SIZE}: ${formatPaise(UNLOCK_BATCH_PRICE_PAISE)}, which is ${formatPaise(perBatchCandidate)} a candidate. Unlocking those same ${UNLOCK_BUNDLE_SIZE} one at a time would cost ${formatPaise(tenSinglyPaise)}.`;
 }
