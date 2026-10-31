@@ -288,6 +288,7 @@ export default function ComparePage() {
         <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
           <Table
             data-cols={chosen.length}
+            style={{ maxWidth: 220 + chosen.length * 400 }}
             containerClassName="overflow-visible"
             className="min-w-[560px] table-fixed border-collapse text-base data-[cols=2]:max-[480px]:min-w-0"
           >
