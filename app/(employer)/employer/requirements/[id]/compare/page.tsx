@@ -304,7 +304,7 @@ export default function ComparePage() {
                   <TableHead key={c.id} scope="col" className={cn(CMP_CELL, "h-auto bg-hx-row font-bold")}>
                     <NameCell candidate={c} requirementId={requirement.id} />
                     {(summary.leads.get(c.id) ?? 0) > 0 && (
-                      <div className="mt-1 text-[13px] font-normal text-hx-ink-soft">Highest on {summary.leads.get(c.id)} of 4 measures</div>
+                      <div className="mt-1 text-[13px] font-normal text-hx-ink-soft">Clear lead on {summary.leads.get(c.id)} of 4 measures</div>
                     )}
                   </TableHead>
                 ))}
