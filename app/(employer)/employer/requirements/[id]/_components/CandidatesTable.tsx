@@ -95,7 +95,7 @@ export default function CandidatesTable({
 
   return (
     <>
-      <div className="mb-3 md:hidden">
+      <div className="mb-3 px-7 md:hidden">
         <label htmlFor="cand-mobile-sort" className="mb-1 block text-[13px] text-hx-ink-soft">
           Sort candidates
         </label>

@@ -478,10 +478,10 @@ export default function RequirementDetailPage() {
                 className="max-w-full shrink-0"
               />
             )}
-            <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center justify-end gap-2.5 min-[1100px]:flex-nowrap">
+            <div className="flex min-w-0 flex-[1_1_auto] flex-wrap items-center justify-end gap-2.5 max-sm:justify-start min-[1100px]:flex-nowrap">
               {hasList && (
                 <>
-                  <div className="min-w-36 max-w-80 flex-[1_1_220px]">
+                  <div className="min-w-36 max-w-80 flex-[1_1_220px] max-sm:max-w-none max-sm:basis-full">
                     <SearchWithSuggestions
                       id="candidates-search"
                       label="Search candidates"
