@@ -122,10 +122,10 @@ function HistoryPanel({ trend, sessions }: { trend: NonNullable<CandidateEvidenc
   const delta = last - first;
   return (
     <Panel id="history-heading" title="Practice history">
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">Overall score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total.</p>
+      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">Score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total. The overall score shown elsewhere on this page covers all of them, so it can differ from the latest interview.</p>
       <KeyValueList>
-        <KeyValueRow label="Latest"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
-        <KeyValueRow label="Best"><span className="tabular-nums">{best} / 100</span></KeyValueRow>
+        <KeyValueRow label="Latest interview"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
+        <KeyValueRow label="Best interview"><span className="tabular-nums">{best} / 100</span></KeyValueRow>
         <KeyValueRow label="Since first">
           {trend.length > 1 ? (
             <span className="inline-flex items-center gap-1 tabular-nums">
