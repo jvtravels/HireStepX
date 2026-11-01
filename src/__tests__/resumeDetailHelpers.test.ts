@@ -95,6 +95,16 @@ describe("redactResumeDetailForLock", () => {
     expect(redacted.currentCtc).toBe("₹22 LPA");
   });
 
+  it("keeps ordinary job words even when a project or school is listed under that word", () => {
+    const detail = extractResumeDetail({
+      topSkills: [],
+      summary: "Software Engineering Intern at Meesho",
+      experiences: [{ title: "Intern", company: "Meesho", start: "2024", end: "2025", topProjects: ["Engineering"] }],
+    });
+    const redacted = redactResumeDetailForLock(detail, "Jane Doe");
+    expect(redacted.summary).toBe("Software Engineering Intern at [withheld]");
+  });
+
   it.each(["Mohd.Jaleel Khan", "Jaleel. K", "Mohammed-Jaleel Khan", "Jaleel_Khan Sk"])("removes the name when the profile name is written as %j", (profileName) => {
     const detail = extractResumeDetail({ skills: [], summary: "Jaleel is an aspiring Design Lead." });
     const redacted = redactResumeDetailForLock(detail, profileName);

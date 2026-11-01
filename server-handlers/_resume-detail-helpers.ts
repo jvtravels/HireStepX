@@ -165,9 +165,20 @@ function lockedEntityNames(detail: ResumeDetail): string[] {
   return [...names].sort((a, b) => b.length - a.length);
 }
 
+// A project or school listed as just "Engineering" or "Design" would otherwise
+// blank that ordinary word out of every headline ("Software [withheld] Intern").
+const COMMON_WORDS = new Set([
+  "engineering", "engineer", "software", "design", "designer", "development", "developer", "data", "product", "management",
+  "manager", "marketing", "sales", "technology", "science", "computer", "business", "analytics", "operations", "finance",
+  "intern", "internship", "project", "projects", "student", "university", "college", "institute", "school", "services", "solutions",
+]);
+
 function scrubEntities(text: string, names: string[]): string {
   let out = text;
-  for (const n of names) out = out.replace(new RegExp(`(?<![\\w])${escapeRegExp(n)}(?![\\w])`, "gi"), ENTITY_PLACEHOLDER);
+  for (const n of names) {
+    if (COMMON_WORDS.has(n.trim().toLowerCase())) continue;
+    out = out.replace(new RegExp(`(?<![\\w])${escapeRegExp(n)}(?![\\w])`, "gi"), ENTITY_PLACEHOLDER);
+  }
   return out;
 }
 
