@@ -42,8 +42,11 @@ describe("buildJobPostingJsonLd", () => {
 
 describe("meta title and description", () => {
   it("adds work mode and falls back to a short title", () => {
-    expect(openingMetaTitle(base)).toBe("Sales Executive (Hybrid, Pune, Maharashtra) | HireStepX");
+    expect(openingMetaTitle(base)).toBe("Sales Executive, Hybrid, Pune, Maharashtra | HireStepX");
     expect(openingMetaTitle({ ...base, title: "x".repeat(70) })).toBe(`${"x".repeat(70)} | HireStepX`);
+  });
+  it("does not stack brackets on titles that already have one", () => {
+    expect(openingMetaTitle({ ...base, title: "Frontend Developer (React)", workMode: "remote", location: "Remote" })).toBe("Frontend Developer (React), Remote | HireStepX");
   });
   it("stays within a snippet-friendly length", () => {
     for (const o of [base, ...STATIC_OPENINGS]) expect(openingMetaDescription(o).length).toBeLessThanOrEqual(200);

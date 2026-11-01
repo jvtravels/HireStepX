@@ -50,10 +50,10 @@ export function buildJobPostingJsonLd(o: PublicOpening) {
   };
 }
 
-/** "Title, Remote, 1 to 2 years | Open Role on HireStepX", trimmed to stay under ~60 chars of useful text. */
+/** "Title, Hybrid, Pune | HireStepX". Commas, not brackets: many titles already end in a bracket. */
 export function openingMetaTitle(o: PublicOpening): string {
   const bits = [o.workMode ? WORK_MODE_LABEL[o.workMode] : "", o.location && o.workMode !== "remote" ? o.location : ""].filter(Boolean);
-  const head = bits.length ? `${o.title} (${bits.join(", ")})` : o.title;
+  const head = bits.length ? `${o.title}, ${bits.join(", ")}` : o.title;
   const full = `${head} | HireStepX`;
   return full.length <= 62 ? full : `${o.title} | HireStepX`;
 }
