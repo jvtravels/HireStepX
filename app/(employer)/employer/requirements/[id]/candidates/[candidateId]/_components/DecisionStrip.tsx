@@ -2,7 +2,7 @@ import { CheckIcon, TriangleAlertIcon } from "lucide-react";
 import { cn } from "cn";
 import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
-import { buildDecisionBrief, overlapReason, poolStanding, scoreReason } from "./fitExtras";
+import { buildDecisionBrief, poolStanding } from "./fitExtras";
 import { bestGradedAnswer, buildRoleFit, cleanQuestionText, formatSessionDate } from "./helpers";
 import { StarMarks } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
@@ -12,9 +12,10 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const brief = buildDecisionBrief(rows);
   const hasPractice = candidate.sessionsCompleted > 0 || !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
-  const reason = scoreReason(rows, hasPractice) ?? (candidate.matchBreakdown ? overlapReason(candidate.matchBreakdown, hasPractice) : null);
+  /* The criteria count and gaps already sit in the Fit panel below, so only what it lacks is said here. */
+  const resumeOnly = !hasPractice && (rows.length > 0 || !!candidate.matchBreakdown);
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
-  if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !reason) return null;
+  if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !resumeOnly) return null;
   const best = bestGradedAnswer(evidence?.questions);
   const sessions = candidate.sessionsCompleted;
   const when = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
@@ -35,10 +36,10 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
           )}
         </div>
       )}
-      {reason && (
+      {resumeOnly && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-          <p className="m-0 text-[13px] text-hx-coal">Score {candidate.matchScore}: {reason}</p>
-          {!hasPractice && requestUi && (
+          <p className="m-0 text-[13px] text-hx-coal">No graded practice yet, so the score reflects the resume only.</p>
+          {requestUi && (
             <ItemRequest candidate={candidate} ui={requestUi} label="Ask them to practise this role" preset={{ kind: "practice", topic: `Interview practice for ${requirement.title}`.slice(0, 120) }} />
           )}
         </div>

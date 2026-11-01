@@ -6,18 +6,16 @@ const requirement: any = { id: "r", title: "Backend Engineer", skills: ["Go", "S
 const candidate: any = { id: "c1", matchScore: 31, city: "Not specified", resume: { yearsExperience: 4, education: [], experience: [], industries: [] } };
 
 describe("DecisionStrip on a resume-only candidate", () => {
-  it("explains the score and says practice is missing", () => {
+  it("says practice is missing without repeating the Fit panel", () => {
     render(<DecisionStrip candidate={candidate} requirement={requirement} matched={[]} evidence={null} />);
     const text = screen.getByLabelText("At a glance").textContent ?? "";
-    expect(text).toContain("Score 31:");
-    expect(text).toContain("gaps in required skills");
-    expect(text).toContain("No graded practice yet");
+    expect(text).not.toContain("criteria fully met");
+    expect(text).toContain("No graded practice yet, so the score reflects the resume only.");
   });
 
   it("does not claim practice is missing when a graded session exists but detailed evidence is empty", () => {
     render(<DecisionStrip candidate={{ ...candidate, sessionsCompleted: 1 }} requirement={requirement} matched={[]} evidence={null} />);
     const text = screen.getByLabelText("At a glance").textContent ?? "";
-    expect(text).toContain("Score 31:");
     expect(text).not.toContain("No graded practice yet");
     expect(text).not.toContain("Ask them to practise");
   });

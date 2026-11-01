@@ -273,12 +273,12 @@ describe("buildEvidenceSummary", () => {
 
   it("joins only the facts the profile holds", () => {
     const c = candidate({ rosterScore: 78.4, sessionsCompleted: 3, city: "Delhi" }, { noticePeriod: "30 days" });
-    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Overall interview score 78 out of 100, across 3 practice interviews, 3 of 4 required skills, Delhi, 30-day notice.");
+    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Overall interview score 78 out of 100, across 3 practice interviews, Delhi, 30-day notice.");
   });
 
   it("skips the interview clause without graded sessions and the city when unknown", () => {
     const c = candidate({ rosterScore: 50, sessionsCompleted: 0, city: "Not specified" }, { noticePeriod: "Immediate" });
-    expect(buildEvidenceSummary(c, req, [])).toBe("0 of 4 required skills, Immediate joiner.");
+    expect(buildEvidenceSummary(c, req, [])).toBe("Immediate joiner.");
   });
 
   it("uses singular wording and months for long notice", () => {
