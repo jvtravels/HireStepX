@@ -30,7 +30,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
               <p className="m-0 min-w-0 max-w-[60ch] text-[13px] text-hx-coal [overflow-wrap:anywhere]">
                 <span className="font-semibold">Best single answer, {best.score} out of 100:</span> {cleanQuestionText(best.question)}
               </p>
-              {best.star && <StarMarks star={best.star} />}
+              {best.star && <StarMarks star={best.star} score={best.score} />}
             </div>
           )}
         </div>

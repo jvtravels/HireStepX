@@ -79,8 +79,10 @@ const STAR_LETTERS = [
   { key: "R", name: "Result" },
 ] as const;
 
-export function StarMarks({ star }: { star: NonNullable<EvidenceQuestion["star"]> }) {
+/** `score` hides a contradiction: a strong answer with no STAR part found is a question the framework does not fit (technical, factual), not a failure. */
+export function StarMarks({ star, score }: { star: NonNullable<EvidenceQuestion["star"]>; score?: number | null }) {
   const missing = STAR_LETTERS.filter((l) => !star[l.key]).map((l) => l.name);
+  if (missing.length === STAR_LETTERS.length && typeof score === "number" && score >= 70) return null;
   return (
     <span className="inline-flex items-center gap-1">
       <span className="sr-only">{missing.length === 0 ? "Covers all four STAR parts" : `Missing STAR parts: ${missing.join(", ")}`}</span>
