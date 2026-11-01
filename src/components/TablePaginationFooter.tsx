@@ -32,6 +32,7 @@ export function TablePaginationFooter({
   page,
   totalPages,
   onPageChange,
+  hiddenNote,
 }: {
   /* Singular noun for the count copy, e.g. "session" or "opportunity". */
   entityLabel: string;
@@ -46,6 +47,8 @@ export function TablePaginationFooter({
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  /* Rows kept out of the table on purpose, e.g. "1 archived". Shown after the count. */
+  hiddenNote?: string;
 }) {
   const plural = (n: number) => (n === 1 ? entityLabel : entityLabelPlural ?? `${entityLabel}s`);
   // Everything fits on the smallest page size, so paging controls would only be noise.
@@ -54,8 +57,9 @@ export function TablePaginationFooter({
     <div style={{ flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px", borderTop: `1px solid ${T.line}`, flexWrap: "wrap", gap: 12 }}>
       <span style={{ fontFamily: F.sans, fontSize: 13, color: T.inkFaint }}>
         {filteredCount === totalCount
-          ? `${totalCount} ${plural(totalCount)} total`
+          ? hiddenNote ? `${totalCount} ${plural(totalCount)}` : `${totalCount} ${plural(totalCount)} total`
           : `Showing ${filteredCount} of ${totalCount} ${plural(totalCount)}`}
+        {hiddenNote ? `, ${hiddenNote}` : ""}
       </span>
       {!singlePage && <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", gap: "8px 16px", minWidth: 0, maxWidth: "100%" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

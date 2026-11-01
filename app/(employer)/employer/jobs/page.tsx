@@ -353,7 +353,8 @@ export default function EmployerJobsPage() {
       <TablePaginationFooter
         entityLabel="job"
         entityLabelPlural="jobs"
-        totalCount={requirements.length}
+        totalCount={showArchived ? requirements.length : requirements.length - archivedCount}
+        hiddenNote={!showArchived && archivedCount > 0 ? `${archivedCount} archived` : undefined}
         filteredCount={filtered.length}
         rowsPerPage={rowsPerPage}
         onRowsPerPageChange={setRowsPerPage}
