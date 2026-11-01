@@ -92,7 +92,7 @@ export default function MessagesBell({
           type="button"
           variant="outline"
           aria-label={unreadCount > 0 ? `Messages (${unreadCount} unread)` : "Messages"}
-          className="size-10 min-h-0 min-w-0 p-0"
+          className="size-10 p-0" data-touch="square"
           style={{ position: "relative", flexShrink: 0 }}
         >
           <MessageSquareIcon size={16} aria-hidden="true" style={{ color: T.coal }} />

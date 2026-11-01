@@ -362,6 +362,8 @@ body {
   button { min-height: 44px; }
   /* Switches/checkboxes/radios are buttons too; their hit area is already extended with ::after, so the blanket 44px would stretch them into tall pills. */
   button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; min-width: 0; }
+  /* Opt-out for square icon buttons that are already 40px: the blanket 44px made them tall and narrow. */
+  button[data-touch="square"] { min-height: 0; min-width: 0; }
 }
 
 /* ─── Keyframe Animations ─── */
@@ -895,6 +897,7 @@ input[type="range"]::-moz-range-thumb {
 
   button, a { min-height: 44px; }
   button[role="switch"], button[role="checkbox"], button[role="radio"] { min-height: 0; }
+  button[data-touch="square"] { min-height: 0; }
 
   .session-detail-grid { grid-template-columns: 1fr !important; }
   .session-detail-header { flex-direction: column !important; gap: 16px !important; }

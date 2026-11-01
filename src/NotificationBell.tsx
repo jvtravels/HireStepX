@@ -45,7 +45,7 @@ export default function NotificationBell({
         type="button"
         variant="outline"
         aria-label={feed.unreadCount > 0 ? `Notifications (${feed.unreadCount} unread)` : "Notifications"}
-        className="relative size-10 min-h-0 min-w-0 shrink-0 p-0"
+        className="relative size-10 shrink-0 p-0" data-touch="square"
         onClick={() => setOpen(true)}
       >
         <BellIcon size={16} aria-hidden="true" />
