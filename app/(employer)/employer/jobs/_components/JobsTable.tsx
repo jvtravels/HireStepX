@@ -27,10 +27,10 @@ const JOBS_TABLE_CSS = `
 .jobs-table { min-width: 1200px; }
 .jobs-table :is(th, td):first-child { position: sticky; left: 0; z-index: 1; background: ${t.white}; box-shadow: 1px 0 0 ${t.line}; }
 .jobs-table thead th:first-child { z-index: 3; background: ${t.rowTint}; }
-.jobs-table tbody tr:hover > td:first-child { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
+.jobs-table tbody tr:is(:hover, :has([aria-expanded="true"])) > td:first-child { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
 .jobs-col-act { position: sticky; right: 0; z-index: 1; background: ${t.white}; box-shadow: -1px 0 0 ${t.line}; }
 thead .jobs-col-act { background: ${t.rowTint}; z-index: 3; }
-tr:hover > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
+tr:is(:hover, :has([aria-expanded="true"])) > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
 @container (max-width: 1299px) {
   .jobs-col-dept { display: none; }
   .jobs-table { min-width: 1100px; }
