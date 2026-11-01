@@ -192,7 +192,7 @@ export default function CandidatesTable({
                   minWidth={150}
                   sort={sort}
                   onSortChange={onSortChange}
-                  after={<InfoTip label="About Evidence">The average score from graded HireStepX mock interviews, out of 100, and how many interviews it comes from. Below it, the other sources on file: resume, GitHub and portfolio links. Interview scores measure practice performance and are separate from the job match. Select a row's evidence to see the per-skill report.</InfoTip>}
+                  after={<InfoTip label="About Evidence">The average score from graded HireStepX mock interviews, out of 100, and how many interviews it comes from. Below it, the other sources on file: resume, GitHub and portfolio links. Interview scores measure practice performance and are separate from the job match, so their colours use their own scale: green 70 and above, amber 50 to 69, red below 50. Select a row's evidence to see the per-skill report.</InfoTip>}
                 >
                   Evidence
                 </SortableHead>
