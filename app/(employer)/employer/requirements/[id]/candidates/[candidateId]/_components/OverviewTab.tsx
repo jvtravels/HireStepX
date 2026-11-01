@@ -296,7 +296,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
                 </Stat>
               )}
               {avg != null && <Stat label="Average skill score" hint={`out of 100, across ${evidence?.skills.length ?? 0} interview skills (communication, depth, ownership and so on)`}>{avg}</Stat>}
-              {verified.length > 0 && <Stat label="Verified skills" hint={`of the ${verified.length} job skills tested, how many they proved in answers`}>{verifiedCount}</Stat>}
+              {verified.length > 0 && <Stat label="Verified skills" hint="Skills they proved in their answers, out of every skill tested across their interviews. This can include skills this job does not ask for.">{verifiedCount} of {verified.length}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (
               <div className="mt-5 grid gap-3 border-t border-hx-line pt-4">
