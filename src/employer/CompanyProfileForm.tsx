@@ -277,7 +277,7 @@ export default function CompanyProfileForm({
           {gstinError ? (
             <HelpText id={`${gstinId}-err`} tone="error">{gstinError}</HelpText>
           ) : (
-            <HelpText id={`${gstinId}-help`}>Printed on every invoice so you can claim input tax credit. You can add it later in Settings.</HelpText>
+            <HelpText id={`${gstinId}-help`}>Printed on every invoice so you can claim input tax credit.{idPrefix === "settings" ? "" : " You can add it later in Settings."}</HelpText>
           )}
         </div>
         <div>
