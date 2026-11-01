@@ -305,8 +305,8 @@ export default function AppShellFrame({
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
           {isMobile && (
-            <Link href={homeHref} aria-label="HireStepX home" style={{ display: "inline-flex", flexShrink: 0 }}>
-              <Image src="/favicon.svg" alt="" width={24} height={24} style={{ height: 24, width: 24 }} />
+            <Link href={homeHref} aria-label="HireStepX home" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Image src="/favicon.svg" alt="" width={28} height={28} style={{ height: 28, width: 28, borderRadius: 6 }} />
             </Link>
           )}
           <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
