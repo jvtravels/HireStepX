@@ -79,6 +79,8 @@ export const CRON_PATH_HEARTBEAT: Record<string, string | null> = {
   "/api/send-interview-reminders": "send-interview-reminders",
   "/api/reset-expired-subscriptions": "reset-expired-subscriptions",
   "/api/uptime-check": null,
+  /* Best-effort search-engine ping; a missed day only delays Bing, and the sitemap covers it. */
+  "/api/cron/indexnow-openings": null,
   "/api/re-engage-users": "re-engage-users",
   "/api/cleanup-deleted-accounts": "cleanup-deleted-accounts",
   "/api/send-abandonment-emails": "send-abandonment-emails",
