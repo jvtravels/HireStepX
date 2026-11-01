@@ -28,6 +28,7 @@
 
 import { NextResponse } from "next/server";
 import { isUnknownEmployerPath } from "./src/employerRoutes";
+import { isEmployerConsolePath, reportOnlyCsp } from "./server-handlers/_csp-report-helpers";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
 
@@ -236,6 +237,11 @@ export async function proxy(request: NextRequest) {
   // and set the CSP + hardening response headers on the final response.
   function withCsp(response: NextResponse): NextResponse {
     response.headers.set("Content-Security-Policy", csp);
+    // Employer-console trial: the same policy without 'unsafe-inline' in report-only
+    // mode, so we learn which inline scripts need a nonce before enforcing it.
+    if (isEmployerConsolePath(pathname)) {
+      response.headers.set("Content-Security-Policy-Report-Only", reportOnlyCsp(csp));
+    }
     // Cross-origin isolation: prevent cross-origin window.opener access and
     // restrict how this page can be embedded by other origins.
     response.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
