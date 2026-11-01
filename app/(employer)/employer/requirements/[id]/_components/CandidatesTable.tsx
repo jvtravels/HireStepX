@@ -95,8 +95,8 @@ export default function CandidatesTable({
 
   return (
     <>
-      <div className="mb-3 px-7 md:hidden">
-        <label htmlFor="cand-mobile-sort" className="mb-1 block text-[13px] text-hx-ink-soft">
+      <div className="mb-3 flex items-center gap-3 px-7 md:hidden">
+        <label htmlFor="cand-mobile-sort" className="sr-only">
           Sort candidates
         </label>
         <Select
@@ -106,7 +106,7 @@ export default function CandidatesTable({
             if (next) onSortChange(next.sort);
           }}
         >
-          <SelectTrigger id="cand-mobile-sort" className="h-11 w-full border-hx-line bg-white px-3 text-[14px] text-hx-coal"><SelectValue /></SelectTrigger>
+          <SelectTrigger id="cand-mobile-sort" className="h-11 min-w-0 flex-1 border-hx-line bg-white px-3 text-[14px] text-hx-coal"><SelectValue /></SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map((o) => (
               <SelectItem key={o.value} value={o.value}>
@@ -116,7 +116,7 @@ export default function CandidatesTable({
           </SelectContent>
         </Select>
         {!readOnly && !suspended && (
-          <label htmlFor="select-page-mobile" className="mt-2 flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-hx-coal">
+          <label htmlFor="select-page-mobile" className="flex min-h-11 shrink-0 cursor-pointer items-center gap-2 text-[13px] font-semibold text-hx-coal">
             <Checkbox
               id="select-page-mobile"
               checked={pageState === "all"}
@@ -124,7 +124,7 @@ export default function CandidatesTable({
               disabled={rows.length === 0 || (selectionFull && pageState === "none")}
               className="shrink-0 size-6"
             />
-            Select all on this page
+            Select all<span className="sr-only"> on this page</span>
           </label>
         )}
       </div>
