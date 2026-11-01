@@ -13,6 +13,8 @@ export interface StatusTabItem<K extends string> {
   key: K;
   label: string;
   count?: number;
+  /* Plain-words meaning of the count, e.g. "answers graded"; shown on hover and read by screen readers. */
+  countLabel?: string;
   icon?: ReactNode;
 }
 
@@ -101,12 +103,14 @@ export default function StatusTabs<K extends string>({
               {tab.label}
               {tab.count != null && (
                 <span
+                  title={tab.countLabel ? `${tab.count} ${tab.countLabel}` : undefined}
                   className={cn(
                     "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-px text-xs font-medium tabular-nums",
                     active ? "bg-foreground/10 text-foreground" : "bg-muted text-muted-foreground",
                   )}
                 >
                   {tab.count}
+                  {tab.countLabel && <span className="sr-only"> {tab.countLabel}</span>}
                 </span>
               )}
             </TabsTrigger>

@@ -134,7 +134,7 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const answerCount = dedupeQuestions(d.evidence?.questions ?? []).length;
   const tabs = [
     { key: "overview" as const, label: "Overview" },
-    { key: "practice" as const, label: "Evidence", count: answerCount > 0 ? answerCount : undefined },
+    { key: "practice" as const, label: "Evidence", count: answerCount > 0 ? answerCount : undefined, countLabel: answerCount === 1 ? "graded answer" : "graded answers" },
     { key: "resume" as const, label: "Resume" },
   ];
   const copy = async (text: string, done: string) => {
