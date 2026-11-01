@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect, useMemo, useRef } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { authHeaders } from "@/supabase";
 import { apiFetch } from "@/apiClient";
 import type { CandidateRequestDto, CreateRequestBody } from "./_candidateRequestTypes";
@@ -10,6 +10,8 @@ import { setGa4UserProperties } from "@/ga4Events";
 import { isDashboardData, type EmployerDashboardData, type DashboardRange } from "./dashboardData";
 import type { InvoiceSnapshot } from "../../server-handlers/_unlock-tax";
 import { RequirementSummary, Requirement, Candidate, RequirementStage, RequirementFormValues, CandidateStatus, ArchiveDisposition } from "./mockData";
+
+const TEAMS_HINT_KEY = "hx-employer-teams-enabled";
 
 export const DEFAULT_DASHBOARD_RANGE: DashboardRange = 30;
 
@@ -482,6 +484,12 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
   const [suspended, setSuspended] = useState(false);
   const [deletionPending, setDeletionPending] = useState(false);
   const [teamsEnabled, setTeamsEnabled] = useState(false);
+  /* The flag arrives with the company profile; remembering the last answer keeps the Team link from popping in and shifting the sidebar. */
+  useLayoutEffect(() => {
+    try {
+      if (localStorage.getItem(TEAMS_HINT_KEY) === "1") setTeamsEnabled(true);
+    } catch { /* storage blocked: the link just appears when the profile answers */ }
+  }, []);
   const [requirements, setRequirements] = useState<RequirementSummary[]>([]);
   const [requirementsLoaded, setRequirementsLoaded] = useState(false);
   const [requirementsError, setRequirementsError] = useState(false);
@@ -509,7 +517,11 @@ export function EmployerDataProvider({ children }: { children: React.ReactNode }
     setLimits(parseLimits(data.limits, tier));
     setSuspended(data.suspended === true);
     setDeletionPending(data.deletionPending === true);
-    setTeamsEnabled(isRecord(data.features) && data.features.teams === true);
+    const teams = isRecord(data.features) && data.features.teams === true;
+    setTeamsEnabled(teams);
+    try {
+      localStorage.setItem(TEAMS_HINT_KEY, teams ? "1" : "0");
+    } catch { /* storage blocked */ }
   }, []);
 
   const refreshCompanyStatus = useCallback(async () => {
