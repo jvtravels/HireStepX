@@ -332,11 +332,11 @@ export function ActiveJobsCard({
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   {sortHead("title", "Job title", false)}
-                  {sortHead("status", "Status", false, undefined, "w-[168px]")}
-                  {sortHead("evaluated", "Evaluated", true, undefined, "w-[88px]")}
-                  {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`, "w-[96px]")}
-                  {sortHead("interviewing", "Interviewing", true, undefined, "w-[104px]")}
-                  {sortHead("hired", "Hired", true, undefined, "w-[72px]")}
+                  {sortHead("status", "Status", false, undefined, "w-[max(168px,15%)]")}
+                  {sortHead("evaluated", "Evaluated", true, undefined, "w-[max(88px,10%)]")}
+                  {sortHead("recommended", "Strong matches", true, `A strong match scores ${STRONG_MATCH_THRESHOLD}% or higher against this job. When a job shows 0, the candidates evaluated so far scored lower.`, "w-[max(96px,10%)]")}
+                  {sortHead("interviewing", "Interviewing", true, undefined, "w-[max(104px,10%)]")}
+                  {sortHead("hired", "Hired", true, undefined, "w-[max(72px,8%)]")}
                   <TableHead className={`${TH} w-[48px]`}><span className="sr-only">Actions</span></TableHead>
                 </TableRow>
               </TableHeader>
