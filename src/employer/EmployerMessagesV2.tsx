@@ -584,6 +584,7 @@ export default function EmployerMessagesV2() {
                 ...(active.matchScore != null ? [{ label: "Match", value: <ScoreChip score={active.matchScore} /> }] : []),
               ]}
               interviewAt={context?.interviewScheduledAt ?? null}
+              interviewCancelled={inviteClosed}
               messages={messages}
               onOpenAttachment={openAttachment}
             >

@@ -13,13 +13,15 @@ export interface RailFact {
 interface ContextRailProps {
   facts: RailFact[];
   interviewAt: string | null;
+  /** The candidate declined or withdrew, so the booked time no longer stands. */
+  interviewCancelled?: boolean;
   messages: ThreadMessage[];
   onOpenAttachment: (messageId: string) => void;
   /** Side-specific actions, e.g. the employer's evidence shortcut. */
   children?: ReactNode;
 }
 
-export default function ContextRail({ facts, interviewAt, messages, onOpenAttachment, children }: ContextRailProps) {
+export default function ContextRail({ facts, interviewAt, interviewCancelled = false, messages, onOpenAttachment, children }: ContextRailProps) {
   const files = messages.filter((m) => m.attachmentPath);
   return (
     <div className="flex flex-col gap-5 p-4">
@@ -40,9 +42,10 @@ export default function ContextRail({ facts, interviewAt, messages, onOpenAttach
           <h3 id="rail-interview" className="m-0 mb-1 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             <CalendarIcon aria-hidden="true" className="size-3.5" /> Interview
           </h3>
-          <p className="m-0 text-sm font-medium text-foreground">
+          <p className={interviewCancelled ? "m-0 text-sm font-medium text-muted-foreground line-through" : "m-0 text-sm font-medium text-foreground"}>
             {formatInterviewWhen(interviewAt)}
           </p>
+          {interviewCancelled && <p className="m-0 mt-1 text-xs font-semibold text-muted-foreground">Cancelled. The candidate is no longer taking part.</p>}
         </section>
       )}
 
