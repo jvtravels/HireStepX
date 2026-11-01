@@ -501,7 +501,7 @@ export default function EmployerMessagesV2() {
                 Send Interview Invite
               </PrimaryCta>
             )}
-            {!["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && (
+            {!inviteClosed && !["hired", "rejected", "not_a_fit"].includes(active.candidateStatus) && (
               <OutlineCta size="sm" disabled={suspended} title={suspendedTitle} onClick={() => { setRejectNote(""); setRejectError(null); setRejectOpen(true); }}>
                 Reject
               </OutlineCta>
