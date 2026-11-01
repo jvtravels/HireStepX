@@ -291,7 +291,7 @@ export default function CandidateRow({
                 <span className="text-[13px] text-hx-ink-soft group-hover:underline">No interviews yet</span>
               )}
             </button>
-            <span id={evidenceId} className="sr-only">{`Evidence for ${name}${practised ? `, ${practised.toLowerCase()}` : ""}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}</span>
+            <span id={evidenceId} className="sr-only">{`Evidence for ${name}${practised ? `, ${(score != null ? practised : practised.replace(/^Practised/, "Active")).toLowerCase()}` : ""}${!candidate.unlocked && sourceLabels.length > 0 ? `. Also ${sourceLabels.join(", ")}` : ""}. View evidence report`}</span>
             {sourceLabels.length > 0 &&
               (candidate.unlocked ? (
                 <span className="flex flex-wrap items-center text-[12px] text-hx-ink-soft">
