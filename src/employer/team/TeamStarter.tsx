@@ -30,9 +30,9 @@ export default function TeamStarter({ roles, seatsLeft, onInvite }: { roles: Inv
           <UserPlusIcon aria-hidden="true" /> Invite your first teammate
         </Button>
       </div>
-      <ul style={{ listStyle: "none", margin: "20px 0 0", padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 0, border: `1px solid ${t.line}`, borderRadius: 12, background: t.white, overflow: "hidden" }}>
-        {shown.map((r, i) => (
-          <li key={r} style={{ padding: "14px 16px", borderLeft: i === 0 ? "none" : `1px solid ${t.line}` }}>
+      <ul style={{ listStyle: "none", margin: "20px 0 0", padding: 0, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, border: `1px solid ${t.line}`, borderRadius: 12, background: t.line, overflow: "hidden" }}>
+        {shown.map((r) => (
+          <li key={r} style={{ padding: "14px 16px", background: t.white }}>
             <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{ROLE_LABEL[r]}</div>
             <div style={{ ...muted, fontSize: 12, marginTop: 2 }}>{WHO[r]}</div>
             <div style={{ ...muted, fontSize: 12, marginTop: 8 }}>{ROLE_BLURB[r]}</div>

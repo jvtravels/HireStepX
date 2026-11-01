@@ -150,6 +150,7 @@ function TeamConsole() {
   const seatsFull = seatsUsed >= team.limits.maxTeamSize;
   const openInvite = () => { setInviting(true); setTab("members"); };
   const who = companyName || "this company";
+  const showStarter = canInvite && !panelOpen && !seatsFull && team.members.length === 1 && pendingInvites.length === 0;
 
   return (
     <div style={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -169,7 +170,7 @@ function TeamConsole() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} />
-              {canInvite && !panelOpen && (
+              {canInvite && !panelOpen && !(showStarter && tab === "members") && (
                 <Button type="button" size="default" className="gap-2" disabled={seatsFull} onClick={openInvite}>
                   <UserPlusIcon aria-hidden="true" /> Invite teammate
                 </Button>
@@ -214,7 +215,7 @@ function TeamConsole() {
               busyId={busyId}
             />
           )}
-          {tab === "members" && canInvite && !panelOpen && !seatsFull && team.members.length === 1 && pendingInvites.length === 0 && (
+          {tab === "members" && showStarter && (
             <TeamStarter roles={team.assignableRoles} seatsLeft={team.limits.maxTeamSize - seatsUsed} onInvite={openInvite} />
           )}
           {tab === "invites" && canInvite && (
