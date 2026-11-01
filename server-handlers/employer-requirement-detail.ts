@@ -41,6 +41,7 @@ import { loadLastTouch, type LastTouch } from "./_employer-last-touch";
 import { extractResumeLocation, explainMatch, extractSkills, requiredSkillsCoverage, requiredSkillsMatched, type RequirementInput } from "./_requirement-match-helpers";
 import { extractResumeDetail, redactResumeDetailForLock, coarsenLockedCity, resumeOwnName } from "./_resume-detail-helpers";
 import { later } from "./_employer-dashboard-helpers";
+import { gradedAverageForRole } from "./_employer-candidate-evidence-helpers";
 import { tidyName, tidyRole } from "../src/displayText";
 import { runMatching, logRequirementActivity } from "./employer-requirements";
 import { requireEmployerPermission, writeAuditLog, type EmployerContext } from "./_employer-team-helpers";
@@ -405,7 +406,7 @@ export default async function handler(req: Request): Promise<Response> {
         targetRole: profile?.target_role ? tidyRole(profile.target_role) : "Not specified",
         city: (unlocked ? extractResumeLocation(profile?.resume_data) : coarsenLockedCity(extractResumeLocation(profile?.resume_data))) || "Not specified",
         matchScore: m.match_score,
-        rosterScore: m.roster_score,
+        rosterScore: gradedAverageForRole(sessionRowsByUser.get(m.candidate_user_id) ?? [], requirement.title) ?? m.roster_score,
         matchBreakdown,
         // null when the job lists no skills or the profile could not be read. 0 is
         // a real answer: the candidate is reviewable but covers none of them.

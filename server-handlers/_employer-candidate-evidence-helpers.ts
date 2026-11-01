@@ -364,6 +364,15 @@ export function extractSessionTrend(rows: SessionRow[], limit = 8): SessionTrend
     .slice(-limit);
 }
 
+/** The one interview score an employer sees: the mean of the candidate's graded sessions for this
+ *  job's role (the same sessions the Evidence tab trend lists). The job table and the candidate page
+ *  header both use it, so they cannot disagree. Null when no such session exists. */
+export function gradedAverageForRole(rows: SessionRow[], requirementTitle: string | null | undefined): number | null {
+  const trend = extractSessionTrend(selectSessionsForRole(rows, requirementTitle).rows);
+  if (trend.length === 0) return null;
+  return Math.round(trend.reduce((sum, t) => sum + t.score, 0) / trend.length);
+}
+
 /** Computes the SAME 4-capability "2+ sessions at 70+" verification bar the
  *  candidate dashboard shows (src/dashboardData.ts), from this one
  *  candidate's rows — unlike latestSessionByUser() this deliberately does

@@ -3,6 +3,7 @@ import {
   extractEvidenceSkills,
   extractReadinessBand,
   extractSessionTrend,
+  gradedAverageForRole,
   extractQuestionBreakdown,
   extractDeliveryMetrics,
   latestSessionByUser,
@@ -469,5 +470,25 @@ describe("computeRoundsForCandidate", () => {
 
   it("ignores other users' sessions", () => {
     expect(computeRoundsForCandidate([row({ user_id: "u2" })], "u1")).toEqual([]);
+  });
+});
+
+describe("gradedAverageForRole", () => {
+  const row = (score: number, target_role: string, type = "behavioral"): SessionRow => ({
+    user_id: "u1", created_at: new Date(2026, 0, score).toISOString(), report_json: {}, score, target_role, type,
+  });
+
+  it("averages the graded sessions the Evidence trend lists", () => {
+    const rows = [row(40, "Product Designer"), row(60, "Product Designer")];
+    expect(gradedAverageForRole(rows, "Product Designer")).toBe(50);
+  });
+
+  it("ignores other-role and negotiation sessions", () => {
+    const rows = [row(40, "Product Designer"), row(90, "Backend Engineer"), row(95, "Product Designer", "negotiation")];
+    expect(gradedAverageForRole(rows, "Product Designer")).toBe(40);
+  });
+
+  it("is null when no graded session fits the job", () => {
+    expect(gradedAverageForRole([], "Product Designer")).toBeNull();
   });
 });
