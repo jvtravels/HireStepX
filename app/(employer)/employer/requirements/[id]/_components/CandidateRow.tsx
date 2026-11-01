@@ -381,7 +381,7 @@ export default function CandidateRow({
           {substep && <span className="text-[11.5px] text-hx-ink-soft">{substep}</span>}
         </div>
       </TableCell>
-      <TableCell role="cell" className="cand-td cand-td-act w-px whitespace-nowrap px-2 py-3 align-middle">
+      <TableCell role="cell" className="cand-td cand-td-act w-px whitespace-nowrap py-3 pr-4 pl-2 align-middle">
         <div className="flex items-center justify-end gap-0.5">
           {primary && primary.icon === LockIcon && (
             <Button

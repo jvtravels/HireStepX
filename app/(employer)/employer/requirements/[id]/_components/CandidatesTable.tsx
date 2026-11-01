@@ -209,7 +209,7 @@ export default function CandidatesTable({
                 >
                   Stage
                 </SortableHead>
-                <TableHead className="cand-th-act w-px whitespace-nowrap px-2">
+                <TableHead className="cand-th-act w-px whitespace-nowrap pr-4 pl-2">
                   <span className="sr-only">Actions</span>
                 </TableHead>
               </TableRow>
