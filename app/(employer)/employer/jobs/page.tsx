@@ -238,7 +238,7 @@ export default function EmployerJobsPage() {
           label="Search jobs"
           value={search}
           onChange={setSearch}
-          placeholder="Search jobs, places, skills"
+          placeholder="Search jobs"
           storageKey={RECENT_SEARCHES_KEY}
           suggestedFilters={suggestedFilters}
         />
