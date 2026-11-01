@@ -5,6 +5,7 @@ import { skillTiers } from "@/employer/_jobDetailHelpers";
 import { SkillChip, type ChipTone } from "@/employer/_panelParts";
 import type { Requirement } from "@/employer/EmployerDataContext";
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 function Tier({ title, icon, tone, skills, iconClass }: { title: string; icon: ReactNode; tone: ChipTone; skills: string[]; iconClass: string }) {
   return (
@@ -44,6 +45,23 @@ export default function KeyRequirements({ requirement }: { requirement: Requirem
         Key requirements
       </h2>
       <div className="flex flex-col gap-3">{tiers}</div>
+    </section>
+  );
+}
+
+/** Shown in place of the block when a job lists no skills: without them every candidate scores about the same. */
+export function AddSkillsPrompt({ requirementId }: { requirementId: string }) {
+  return (
+    <section aria-labelledby="key-requirements-heading" className="min-w-0">
+      <h2 id="key-requirements-heading" className="m-0 mb-1.5 text-[13px] font-semibold text-hx-ink-soft">
+        Key requirements
+      </h2>
+      <p className="m-0 text-[13px] leading-snug text-hx-ink-soft">
+        No required skills yet, so candidates are hard to tell apart.{" "}
+        <Link href={`/employer/requirements/${requirementId}/edit`} className="font-semibold text-hx-indigo hover:underline">
+          Add required skills
+        </Link>
+      </p>
     </section>
   );
 }

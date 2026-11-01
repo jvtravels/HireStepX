@@ -33,7 +33,7 @@ import MessagesDialog from "./_components/MessagesDialog";
 import JobOverview, { hasRoleDetails } from "./_components/JobOverview";
 import JobHeader from "./_components/JobHeader";
 import JobSideRail, { JobInsights } from "./_components/JobSideRail";
-import KeyRequirements, { hasKeyRequirements } from "./_components/KeyRequirements";
+import KeyRequirements, { AddSkillsPrompt, hasKeyRequirements } from "./_components/KeyRequirements";
 import { useJobActions } from "./_components/useJobActions";
 import { FailedState, GeneratingState, ZeroMatchState } from "./_components/StatusStates";
 import UnlockDialog from "./_components/UnlockDialog";
@@ -455,7 +455,7 @@ export default function RequirementDetailPage() {
         onReopen={reopen}
         onReload={load}
         expandedContent={hasRoleDetails(requirement) ? <JobOverview requirement={requirement} /> : null}
-        requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : null}
+        requirementsSlot={hasKeyRequirements(requirement) ? <KeyRequirements requirement={requirement} /> : readOnly ? null : <AddSkillsPrompt requirementId={requirement.id} />}
         insightsSlot={insights.length > 0 ? <JobInsights insights={insights} activeInsightId={activeInsight?.id ?? null} onSelectInsight={selectInsight} /> : null}
       />
       <JobSideRail requirement={requirement} readOnly={readOnly} suspended={suspended} onStageChange={changeStage} />
