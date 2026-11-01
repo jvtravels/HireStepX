@@ -366,7 +366,9 @@ export async function proxy(request: NextRequest) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-nonce", nonce);
     requestHeaders.set("Content-Security-Policy", csp);
-    return withCsp(NextResponse.rewrite(request.nextUrl.clone(), { status: 404, request: { headers: requestHeaders } }));
+    const url = request.nextUrl.clone();
+    url.pathname = "/employer-missing";
+    return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
   }
 
   return nextWithNonce();
