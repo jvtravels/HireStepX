@@ -46,7 +46,7 @@ export default function ConversationList({
         <div className="flex items-baseline justify-between gap-2">
           <h1 className="m-0 text-lg font-semibold tracking-tight text-foreground">{title}</h1>
           <span className="text-xs text-muted-foreground">
-            {unreadCount > 0 ? `${unreadCount} unread` : `${total} ${total === 1 ? "conversation" : "conversations"}`}
+            {`${total} ${total === 1 ? "conversation" : "conversations"}`}
           </span>
         </div>
         <div className="relative">
