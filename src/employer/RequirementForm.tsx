@@ -456,13 +456,13 @@ export function RequirementForm({
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-colleges">Preferred colleges</FieldLabel>
         <TagAutocompleteInput id="rf-colleges" values={draft.preferredColleges} onChange={(v) => set("preferredColleges", v)} placeholder="IIT Bombay, BITS Pilani, Any NIT…" suggestions={COLLEGE_SUGGESTIONS} />
-        <HelpText id="rf-colleges-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+        <HelpText id="rf-colleges-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
       </div>
 
       <div style={cell(1, 320)}>
         <FieldLabel htmlFor="rf-targets">Target companies</FieldLabel>
         <TagAutocompleteInput id="rf-targets" values={draft.targetCompanies} onChange={(v) => set("targetCompanies", v)} placeholder="Companies you'd like candidates to come from" suggestions={COMPANY_SUGGESTIONS} />
-        <HelpText id="rf-targets-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+        <HelpText id="rf-targets-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
       </div>
       </div>
 
@@ -504,7 +504,7 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-domain">Preferred domain</FieldLabel>
               <AutocompleteInput id="rf-domain" value={draft.preferredDomain} onChange={(v) => set("preferredDomain", v)} placeholder="Payments, Growth, Platform…" suggestions={DOMAIN_SUGGESTIONS} />
-              <HelpText id="rf-domain-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+              <HelpText id="rf-domain-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
             </div>
           </div>
 
@@ -518,12 +518,12 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-schedule">Work schedule</FieldLabel>
               <Input id="rf-schedule" value={draft.workSchedule} onChange={(e) => set("workSchedule", e.target.value)} placeholder="Mon–Fri, 9 AM–6 PM" autoComplete="off" className={FIELD_CLASS} />
-              <HelpText id="rf-schedule-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+              <HelpText id="rf-schedule-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
             </div>
             <div>
               <FieldLabel htmlFor="rf-availability">Availability</FieldLabel>
               <Input id="rf-availability" value={draft.availability} onChange={(e) => set("availability", e.target.value)} placeholder="Immediate, 2 weeks…" autoComplete="off" className={FIELD_CLASS} />
-              <HelpText id="rf-availability-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+              <HelpText id="rf-availability-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
             </div>
           </div>
 
@@ -531,11 +531,11 @@ export function RequirementForm({
             <div>
               <FieldLabel htmlFor="rf-relevant">Relevant experience</FieldLabel>
               <Input id="rf-relevant" value={draft.relevantExperience} onChange={(e) => set("relevantExperience", e.target.value)} placeholder="3+ years in a similar role" autoComplete="off" className={FIELD_CLASS} />
-              <HelpText id="rf-relevant-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+              <HelpText id="rf-relevant-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
             </div>
             <div style={checkboxCell}>
               <Checkbox label="Portfolio required" checked={draft.portfolioRequired} onChange={(v) => set("portfolioRequired", v)} />
-              <HelpText id="rf-portfolio-help" live={false}>Saved on this job for your reference. Not shown to candidates or used for matching.</HelpText>
+              <HelpText id="rf-portfolio-help" live={false}>For your notes only. Not shown to candidates and does not change matching.</HelpText>
             </div>
           </div>
 

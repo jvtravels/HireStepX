@@ -37,6 +37,11 @@ export function buildGa4InitScript(gaId: string): string {
             try { hsxAds = JSON.parse(localStorage.getItem('${CONSENT_KEY}') || '{}').advertising === true ? 'granted' : 'denied'; } catch (e) {}
             gtag('consent', 'update', { analytics_storage: 'granted', ad_storage: hsxAds, ad_user_data: hsxAds, ad_personalization: hsxAds });
             gtag('js', new Date());
-            gtag('config', '${gaId}', { anonymize_ip: true });
+            function hsxScrub(u){ return u.replace(/(\\/candidates\\/)[^\\/?#]+/, '$1:id').replace(/(\\/requirements\\/)[^\\/?#]+/, '$1:id'); }
+            function hsxSetLoc(){ try { gtag('set', 'page_location', hsxScrub(location.href)); } catch (e) {} }
+            hsxSetLoc();
+            ['pushState', 'replaceState'].forEach(function (m) { var o = history[m]; history[m] = function () { var r = o.apply(this, arguments); hsxSetLoc(); return r; }; });
+            window.addEventListener('popstate', hsxSetLoc);
+            gtag('config', '${gaId}', { anonymize_ip: true, page_location: hsxScrub(location.href) });
           `;
 }
