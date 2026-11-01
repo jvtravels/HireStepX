@@ -189,14 +189,17 @@ export function NextActionCard({ action }: { action: NextAction }) {
     <section aria-labelledby="next-action-heading" className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-hx-line bg-hx-soft px-7 py-4">
       <div className="flex min-w-0 flex-[1_1_320px] items-start gap-3">
         <span aria-hidden="true" className="mx-pop inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-hx-indigo-100 text-hx-indigo">
-          <SparklesIcon size={18} />
+          <LightbulbIcon size={18} />
         </span>
         <div className="min-w-0">
           <h2 id="next-action-heading" className="m-0 text-[15px] font-bold text-hx-coal [overflow-wrap:anywhere]">{action.title}</h2>
           <p className="m-0 mt-0.5 text-[13px] leading-normal text-hx-ink-soft">{action.body}</p>
         </div>
       </div>
-      <PrimaryLink href={action.href} icon={<ArrowRightIcon size={14} aria-hidden="true" className="mx-nudge" />}>{action.cta}</PrimaryLink>
+      <div className="flex items-center gap-4">
+        {action.secondary && <Link href={action.secondary.href} className="text-[13px] font-medium text-hx-ink-soft underline underline-offset-2 hover:text-hx-coal">{action.secondary.label}</Link>}
+        <PrimaryLink href={action.href} icon={<ArrowRightIcon size={14} aria-hidden="true" className="mx-nudge" />}>{action.cta}</PrimaryLink>
+      </div>
     </section>
   );
 }

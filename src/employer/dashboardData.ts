@@ -272,6 +272,8 @@ export interface NextAction {
   body: string;
   cta: string;
   href: string;
+  /** Quieter second route, e.g. the whole waiting list next to "review top candidate". */
+  secondary?: { label: string; href: string };
 }
 
 const SOON_MS = 48 * 3_600_000;
@@ -304,6 +306,7 @@ export function buildNextAction(
       body: waitingFact(longestWaiting, now),
       cta: topCandidate ? "Review top candidate" : "Review candidates",
       href: topCandidate ? `/employer/requirements/${topCandidate.requirementId}/candidates/${topCandidate.matchId}` : "/employer/jobs",
+      ...(awaitingReview > 1 && topCandidate ? { secondary: { label: `See all ${awaitingReview}`, href: "/employer/jobs?stage=ready_for_review" } } : {}),
     };
   }
   const failed = jobs.find((j) => j.status === "failed");

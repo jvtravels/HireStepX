@@ -56,6 +56,11 @@ export default function EmployerJobsPage() {
   const [salaryFilter, setSalaryFilter] = useState<NumberRange>(EMPTY_RANGE);
   const [sort, setSort] = useState<Sort<SortColumn>>(DEFAULT_SORT);
   const [showArchived, setShowArchived] = useState(false);
+  // Dashboard links here with ?stage=ready_for_review to show jobs that have candidates waiting.
+  useEffect(() => {
+    const stage = new URLSearchParams(window.location.search).get("stage");
+    if (stage === "ready_for_review") setStageFilter([STAGE_LABEL.ready_for_review]);
+  }, []);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
