@@ -15,6 +15,7 @@ import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import { ConfirmDialog, PAD, SeatMeter, muted, type ConfirmSpec } from "@/employer/team/TeamParts";
 import InvitePanel from "@/employer/team/InvitePanel";
 import MembersTab, { type MemberCommand } from "@/employer/team/MembersTab";
+import TeamStarter from "@/employer/team/TeamStarter";
 import InvitesTab from "@/employer/team/InvitesTab";
 import ActivityTab from "@/employer/team/ActivityTab";
 import RolesDialog from "@/employer/team/RolesTab";
@@ -212,6 +213,9 @@ function TeamConsole() {
               onCommand={onCommand}
               busyId={busyId}
             />
+          )}
+          {tab === "members" && canInvite && !panelOpen && !seatsFull && team.members.length === 1 && pendingInvites.length === 0 && (
+            <TeamStarter roles={team.assignableRoles} seatsLeft={team.limits.maxTeamSize - seatsUsed} onInvite={openInvite} />
           )}
           {tab === "invites" && canInvite && (
             <InvitesTab
