@@ -48,7 +48,7 @@ const MATCH_TEXT = { strong: "text-hx-success-ink", fair: "text-hx-warning-ink",
 
 const VISIBLE_CHIPS = 3;
 
-const CHIP = "inline-flex min-w-0 max-w-20 items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
+const CHIP = "inline-flex min-w-0 max-w-[9rem] items-center gap-1 rounded-full px-2 py-0.5 text-[12px] leading-4";
 
 /* One cell for the whole skills story: the overall score, then the required skills
    as chips (filled when the resume has them, dashed and muted when it does not).
@@ -69,7 +69,7 @@ function SkillMatch({ score, matched, gaps, noneMet }: { score: number; matched:
             <button
               type="button"
               aria-describedby={summaryId}
-              className="flex w-full min-w-0 cursor-default items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left min-h-6 focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
+              className="flex w-full min-w-0 cursor-default flex-wrap items-center gap-1 rounded-md border-0 bg-transparent p-0 text-left min-h-6 focus-visible:outline-2 focus-visible:outline-offset-2 pointer-coarse:min-h-11"
             >
               {slots.matched.map((skill) => (
                 <span key={`has-${skill}`} className={cn(CHIP, "bg-hx-indigo-100 text-hx-indigo")}>
@@ -252,7 +252,7 @@ export default function CandidateRow({
               </HoverCardContent>
             </HoverCard>
             {subtitle && (
-              <div className="mt-0.5 truncate text-[12.5px] text-hx-ink-soft" title={subtitle}>
+              <div className="mt-0.5 line-clamp-2 text-[12.5px] leading-snug text-hx-ink-soft" title={subtitle}>
                 {subtitle}
               </div>
             )}
