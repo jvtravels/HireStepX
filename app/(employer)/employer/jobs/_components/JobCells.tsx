@@ -108,6 +108,7 @@ export function MatchesCell({ r }: { r: RequirementSummary }) {
         {total} {total === 1 ? "candidate" : "candidates"} matched
         <InfoTip label="About these matches">{notes.join(" ")}</InfoTip>
       </div>
+      {capped && <span style={mutedText}>Showing the best {s.evaluated}</span>}
       {s.topMatches > 0 && (
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone="brand">{s.topMatches} strong</Badge>

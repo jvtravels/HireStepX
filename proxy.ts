@@ -27,6 +27,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { isUnknownEmployerPath } from "./src/employerRoutes";
 import type { NextRequest } from "next/server";
 import { isAllowedOnGate } from "./src/middlewareGate";
 
@@ -359,6 +360,13 @@ export async function proxy(request: NextRequest) {
       url.port = "";
       return withCsp(NextResponse.redirect(url, 307));
     }
+  }
+
+  if (isUnknownEmployerPath(pathname)) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set("x-nonce", nonce);
+    requestHeaders.set("Content-Security-Policy", csp);
+    return withCsp(NextResponse.rewrite(request.nextUrl.clone(), { status: 404, request: { headers: requestHeaders } }));
   }
 
   return nextWithNonce();
