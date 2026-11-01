@@ -3,7 +3,7 @@
 import { Fragment, useMemo } from "react";
 import { ActivityIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge, SegmentedControl } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import type { ActivityFilter, TeamMember } from "../useTeam";
@@ -13,6 +13,9 @@ import { dayBucket, describeEvent, type ActivityGroup } from "../teamActivity";
 const GROUP_LABEL: Record<ActivityGroup, string> = { members: "Team", jobs: "Jobs", candidates: "Candidates", company: "Company" };
 import { tidyName } from "../../displayText";
 import { EmptyBlock, PAD, PersonAvatar, muted } from "./TeamParts";
+
+/* Radix Select rejects an empty item value, so "Everyone" travels as a sentinel. */
+const EVERYONE = "__everyone__";
 
 const GROUPS: Array<{ id: ActivityGroup | ""; label: string }> = [
   { id: "", label: "All" },
@@ -54,17 +57,16 @@ export default function ActivityTab({
           onChange={(group) => onFilter({ ...filter, group })}
           options={GROUPS.map((g) => ({ value: g.id, label: g.label }))}
         />
-        <label className="max-sm:w-full" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
-          Member
-          <NativeSelect
-            value={filter.actor}
-            onChange={(e) => onFilter({ ...filter, actor: e.target.value })}
-            className="min-w-44 max-sm:flex-1"
-          >
-            <option value="">Everyone</option>
-            {members.map((m) => <option key={m.userId} value={m.userId}>{m.name ? tidyName(m.name) : m.email}</option>)}
-          </NativeSelect>
-        </label>
+        <div className="max-sm:w-full" style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8, fontFamily: f.sans, fontSize: 13, color: t.inkSoft }}>
+          <span id="activity-member-label">Member</span>
+          <Select value={filter.actor || EVERYONE} onValueChange={(v) => onFilter({ ...filter, actor: v === EVERYONE ? "" : v })}>
+            <SelectTrigger aria-labelledby="activity-member-label" className="h-9 min-w-44 border-hx-line bg-white text-sm text-hx-coal max-sm:flex-1"><SelectValue /></SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value={EVERYONE}>Everyone</SelectItem>
+              {members.map((m) => <SelectItem key={m.userId} value={m.userId}>{m.name ? tidyName(m.name) : m.email}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {error && events.length === 0 ? (
