@@ -612,6 +612,11 @@ export function KeyInsightsCard({ insights }: { insights: DashboardInsight[] }) 
   );
 }
 
+/* Email addresses are the subject of most lines; weight sets them apart from the verb. */
+function emphasiseEmails(text: string): ReactNode {
+  return text.split(/([^\s@]+@[^\s@]+\.[^\s@]+)/).map((part, i) => (i % 2 === 1 ? <span key={i} className="font-medium">{part}</span> : part));
+}
+
 export function RecentActivityCard({ items }: { items: DashboardActivityItem[] }) {
   return (
     <section aria-labelledby="activity-heading" className={CARD}>
@@ -619,13 +624,20 @@ export function RecentActivityCard({ items }: { items: DashboardActivityItem[] }
       {items.length === 0 ? (
         <EmptyState className={EMPTY} title="No activity yet" description="Moves you make on candidates, like inviting or hiring, are logged here." />
       ) : (
-        <ul className={`${LIST} mx-stagger flex flex-col gap-1`}>
+        <ul className={`${LIST} mx-stagger flex flex-col`}>
           {items.map((a) => (
-            <li key={a.id} className="flex justify-between gap-3 text-[13px] leading-[1.45] text-hx-coal">
-              {a.href
-                ? <Link href={a.href} className="inline-block min-h-6 py-0.5 text-hx-coal no-underline hover:underline [overflow-wrap:anywhere]">{a.text}</Link>
-                : <span className="py-0.5">{a.text}</span>}
-              <span className="whitespace-nowrap py-0.5 text-[12px] text-hx-ink-soft">{hoursOrDaysAgo(a.createdAt)}</span>
+            <li key={a.id} className="flex items-start gap-3 border-t border-hx-line py-3 first:border-t-0 first:pt-1 last:pb-0">
+              <span aria-hidden="true" className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-hx-row text-hx-ink-soft">
+                {a.actor === "HireStepX" ? <SparklesIcon size={14} /> : <UserIcon size={14} />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[13.5px] leading-[1.5] text-hx-coal [overflow-wrap:anywhere]">
+                  {a.href
+                    ? <Link href={a.href} className="text-hx-coal no-underline hover:underline">{emphasiseEmails(a.text)}</Link>
+                    : emphasiseEmails(a.text)}
+                </p>
+                <p className="m-0 mt-0.5 text-[12px] text-hx-ink-soft">{hoursOrDaysAgo(a.createdAt)}</p>
+              </div>
             </li>
           ))}
         </ul>
