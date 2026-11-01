@@ -196,7 +196,7 @@ export default function CandidateRow({
   const canInvite = moves.includes("interview_invited");
   const primary: PrimaryAction | null =
     !candidate.unlocked && !readOnly
-      ? { label: candidate.unlockedOnOtherJob ? `Unlock for this job, ${unlockPrice}` : `Unlock for ${unlockPrice}`, icon: LockIcon, disabled: suspended, onSelect: onUnlock }
+      ? { label: `Unlock for ${unlockPrice}`, icon: LockIcon, disabled: suspended, onSelect: onUnlock }
       : canInvite
         ? { label: "Invite to interview", icon: CalendarPlusIcon, disabled: false, onSelect: () => onStageChange("interview_invited") }
         : canMessage
@@ -389,7 +389,8 @@ export default function CandidateRow({
               variant="outline"
               disabled={primary.disabled}
               onClick={primary.onSelect}
-              aria-label={`${primary.label}: ${name}`}
+              aria-label={`${candidate.unlockedOnOtherJob ? `Unlock for this job, ${unlockPrice}` : primary.label}: ${name}`}
+              title={candidate.unlockedOnOtherJob ? "Already unlocked on another of your jobs. Unlocking is per job." : undefined}
               className="h-9 gap-1.5 px-3 text-[13px] font-semibold text-hx-indigo pointer-coarse:h-11"
             >
               <LockIcon size={14} aria-hidden="true" />
