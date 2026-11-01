@@ -17,9 +17,9 @@ import InvitePanel from "@/employer/team/InvitePanel";
 import MembersTab, { type MemberCommand } from "@/employer/team/MembersTab";
 import InvitesTab from "@/employer/team/InvitesTab";
 import ActivityTab from "@/employer/team/ActivityTab";
-import RolesTab from "@/employer/team/RolesTab";
+import RolesDialog from "@/employer/team/RolesTab";
 
-type TabId = "members" | "invites" | "roles" | "activity";
+type TabId = "members" | "invites" | "activity";
 
 /* /employer/team — one company, many people. Everyone on the team can see who
    is on it; owners and admins also invite, change roles, and read the activity
@@ -67,7 +67,6 @@ function TeamConsole() {
   const tabs: Array<{ id: TabId; label: string; count?: number }> = [
     { id: "members", label: "Members", count: team.members.length },
     ...(canInvite ? [{ id: "invites" as const, label: "Invites", count: pendingInvites.length }] : []),
-    { id: "roles" as const, label: "Roles" },
     ...(canSeeActivity ? [{ id: "activity" as const, label: "Activity" }] : []),
   ];
 
@@ -157,7 +156,10 @@ function TeamConsole() {
         <header className={PAD} style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>Team</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>Team</h1>
+                <RolesDialog myRole={myRole} members={team.members} />
+              </div>
               <p style={{ ...muted, fontSize: 14, marginTop: 2 }}>
                 {canInvite
                   ? `Who can work in ${who} on HireStepX, and what they can do.`
@@ -222,7 +224,6 @@ function TeamConsole() {
               busyId={busyId}
             />
           )}
-          {tab === "roles" && <RolesTab myRole={myRole} members={team.members} />}
           {tab === "activity" && canSeeActivity && (
             <ActivityTab activity={activity} filter={filter} onFilter={setFilter} members={team.members} />
           )}

@@ -1,10 +1,11 @@
 "use client";
 
-import { CheckIcon, MinusIcon } from "lucide-react";
+import { CheckIcon, CircleHelpIcon, MinusIcon } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
 import { can, ROLE_BLURB, ROLE_LABEL, type EmployerRole } from "../../../server-handlers/_employer-team-helpers";
 import type { TeamMember } from "../useTeam";
-import { PAD, RoleBadge, muted } from "./TeamParts";
+import { RoleBadge, muted } from "./TeamParts";
 
 const ROLES: EmployerRole[] = ["owner", "admin", "member", "viewer"];
 
@@ -21,12 +22,26 @@ const ROWS: Array<{ label: string; allowed: (role: EmployerRole) => boolean }> =
 
 const sectionTitle: React.CSSProperties = { fontFamily: f.sans, fontSize: 14, fontWeight: 600, color: t.coal, margin: 0 };
 
-export default function RolesTab({ myRole, members }: { myRole: EmployerRole; members: TeamMember[] }) {
+export default function RolesDialog({ myRole, members }: { myRole: EmployerRole; members: TeamMember[] }) {
   const counts = new Map<EmployerRole, number>(ROLES.map((r) => [r, members.filter((m) => m.role === r).length]));
 
   return (
-    <div>
-      <section aria-labelledby="roles-who" className={PAD} style={{ paddingBlock: 20 }}>
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          aria-label="About roles and permissions"
+          title="Roles and permissions"
+          className="inline-flex size-6 cursor-pointer items-center justify-center rounded-full border-0 bg-transparent p-0 pointer-coarse:size-9"
+          style={{ color: t.inkSoft }}
+        >
+          <CircleHelpIcon size={16} aria-hidden="true" />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto sm:max-w-2xl">
+        <DialogTitle style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal }}>Roles and permissions</DialogTitle>
+        <DialogDescription style={{ ...muted, fontSize: 13, marginTop: 2 }}>What each role means, and what people in it can do.</DialogDescription>
+      <section aria-labelledby="roles-who" style={{ paddingBlock: 16 }}>
         <h2 id="roles-who" style={sectionTitle}>Roles</h2>
         <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
           {ROLES.map((r, i) => {
@@ -47,7 +62,7 @@ export default function RolesTab({ myRole, members }: { myRole: EmployerRole; me
         </ul>
       </section>
 
-      <section aria-labelledby="roles-can" className={PAD} style={{ paddingBottom: 24, borderTop: `1px solid ${t.line}`, paddingTop: 20, overflowX: "auto" }}>
+      <section aria-labelledby="roles-can" style={{ borderTop: `1px solid ${t.line}`, paddingTop: 16, overflowX: "auto" }}>
         <h2 id="roles-can" style={sectionTitle}>What each role can do</h2>
         <p className="min-[560px]:hidden" style={{ margin: "4px 0 0", fontSize: 12, color: t.inkSoft }}>Swipe sideways to see every role.</p>
         <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse", fontFamily: f.sans, marginTop: 8 }}>
@@ -82,6 +97,7 @@ export default function RolesTab({ myRole, members }: { myRole: EmployerRole; me
           </tbody>
         </table>
       </section>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
