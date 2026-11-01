@@ -297,13 +297,18 @@ export default function AppShellFrame({
 
         {/* Top bar — sidebar toggle + current page label */}
         <header style={{
-          display: "flex", alignItems: "center", gap: 12,
+          display: "flex", alignItems: "center", gap: isMobile ? 8 : 12,
           padding: isMobile ? "0 8px" : "0 16px",
           height: 62, boxSizing: "border-box", flexShrink: 0,
           background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 8,
           marginTop: 8, marginBottom: 16,
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
+          {isMobile && (
+            <Link href={homeHref} aria-label="HireStepX home" style={{ display: "inline-flex", flexShrink: 0 }}>
+              <Image src="/favicon.svg" alt="" width={24} height={24} style={{ height: 24, width: 24 }} />
+            </Link>
+          )}
           <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import StatusTabs from "@/components/StatusTabs";
 import { useToast } from "@/Toast";
 import { useMaxWidth } from "@/hooks/useMaxWidth";
 import { useEmployerData } from "@/employer/EmployerDataContext";
@@ -44,7 +45,6 @@ function TeamConsole() {
   const [confirm, setConfirm] = useState<ConfirmSpec | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [filter, setFilter] = useState<ActivityFilter>({ actor: "", group: "" });
-  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
   const myRole = team?.me.role ?? "viewer";
   const canInvite = can(myRole, "team.invite");
@@ -146,15 +146,6 @@ function TeamConsole() {
     }
   };
 
-  const onTabKey = (e: React.KeyboardEvent, index: number) => {
-    const dir = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
-    if (!dir) return;
-    e.preventDefault();
-    const next = tabs[(index + dir + tabs.length) % tabs.length];
-    setTab(next.id);
-    tabRefs.current[next.id]?.focus();
-  };
-
   const seatsUsed = team.members.length + team.invites.filter((i) => i.state === "pending").length;
   const seatsFull = seatsUsed >= team.limits.maxTeamSize;
   const openInvite = () => { setInviting(true); setTab("members"); };
@@ -176,7 +167,7 @@ function TeamConsole() {
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} />
               {canInvite && !panelOpen && (
-                <Button type="button" size="lg" className="h-9 gap-2 px-4" disabled={seatsFull} onClick={openInvite}>
+                <Button type="button" size="default" className="gap-2" disabled={seatsFull} onClick={openInvite}>
                   <UserPlusIcon aria-hidden="true" /> Invite teammate
                 </Button>
               )}
@@ -188,44 +179,15 @@ function TeamConsole() {
             </p>
           )}
 
-          <div role="tablist" aria-label="Team sections" className="gap-4 min-[420px]:gap-6" style={{ display: "flex", marginBottom: -1, overflowX: "auto" }}>
-            {tabs.map((tb, i) => {
-              const on = tab === tb.id;
-              const attention = tb.id === "invites" && (tb.count ?? 0) > 0;
-              return (
-                <button
-                  key={tb.id}
-                  ref={(el) => { tabRefs.current[tb.id] = el; }}
-                  role="tab"
-                  type="button"
-                  id={`team-tab-${tb.id}`}
-                  aria-selected={on}
-                  aria-controls="team-panel"
-                  tabIndex={on ? 0 : -1}
-                  onClick={() => setTab(tb.id)}
-                  onKeyDown={(e) => onTabKey(e, i)}
-                  className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--btn-primary)]"
-                  style={{
-                    background: "none", border: 0, cursor: "pointer", padding: "10px 0 12px", whiteSpace: "nowrap",
-                    fontFamily: f.sans, fontSize: 14, fontWeight: on ? 600 : 500, color: on ? t.coal : t.inkSoft,
-                    borderBottom: `2px solid ${on ? t.indigo : "transparent"}`, transition: "color 150ms ease-out",
-                  }}
-                >
-                  {tb.label}
-                  {tb.count !== undefined && (
-                    <span
-                      style={{
-                        marginLeft: 6, padding: "1px 7px", borderRadius: 999, fontSize: 12, fontWeight: 600, fontVariantNumeric: "tabular-nums",
-                        background: attention ? t.indigo100 : t.creamSoft, color: attention ? t.indigoDeep : t.inkSoft,
-                      }}
-                    >
-                      {tb.count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <StatusTabs
+            tabs={tabs.map((tb) => ({ key: tb.id, label: tb.label, count: tb.count }))}
+            value={tab}
+            onChange={setTab}
+            label="Team sections"
+            idPrefix="team"
+            panelId="team-panel"
+            listClassName="-mx-1 gap-1"
+          />
         </header>
         <div style={{ borderTop: `1px solid ${t.line}` }} />
 

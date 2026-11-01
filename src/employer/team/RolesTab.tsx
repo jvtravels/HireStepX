@@ -49,6 +49,7 @@ export default function RolesTab({ myRole, members }: { myRole: EmployerRole; me
 
       <section aria-labelledby="roles-can" className={PAD} style={{ paddingBottom: 24, borderTop: `1px solid ${t.line}`, paddingTop: 20, overflowX: "auto" }}>
         <h2 id="roles-can" style={sectionTitle}>What each role can do</h2>
+        <p className="min-[560px]:hidden" style={{ margin: "4px 0 0", fontSize: 12, color: t.inkSoft }}>Swipe sideways to see every role.</p>
         <table style={{ width: "100%", minWidth: 520, borderCollapse: "collapse", fontFamily: f.sans, marginTop: 8 }}>
           <thead>
             <tr>

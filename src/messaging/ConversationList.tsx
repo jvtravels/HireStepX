@@ -5,6 +5,7 @@ import { AlertCircleIcon, SearchIcon, StarIcon, XIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import StatusPill from "./StatusPill";
 import { initialsOf, listTime, type InboxFilter, type InboxItem } from "./helpers";
@@ -70,25 +71,16 @@ export default function ConversationList({
             </button>
           )}
         </div>
-        <div role="group" aria-label="Filter conversations" className="flex gap-1.5">
-          {CHIPS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              aria-pressed={filter === c.id}
-              onClick={() => onFilterChange(c.id)}
-              className={cn(
-                "h-7 rounded-full border px-3 text-xs font-medium transition-colors pointer-coarse:h-9",
-                filter === c.id
-                  ? "border-[var(--btn-primary)] bg-[var(--btn-primary)] text-[var(--btn-primary-foreground)]"
-                  : "border-border bg-background text-muted-foreground hover:bg-muted",
-              )}
-            >
-              {c.label}
-              {c.id === "unread" && unreadCount > 0 ? ` ${unreadCount}` : ""}
-            </button>
-          ))}
-        </div>
+        <Tabs value={filter} onValueChange={(v) => onFilterChange(v as InboxFilter)}>
+          <TabsList aria-label="Filter conversations" className="w-full">
+            {CHIPS.map((c) => (
+              <TabsTrigger key={c.id} value={c.id}>
+                {c.label}
+                {c.id === "unread" && unreadCount > 0 ? ` ${unreadCount}` : ""}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
 
       {refreshFailed && (
