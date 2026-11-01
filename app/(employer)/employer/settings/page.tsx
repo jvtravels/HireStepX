@@ -21,11 +21,6 @@ import {
 } from "@/employer/_accountHelpers";
 import { PageHeader, FlatSection, ActionRow, SoundsSection, EmailPreferencesSection, AccountSection, DangerZoneSection, icons } from "@/settingsSections";
 
-const SECTION_LINKS: ReadonlyArray<readonly [string, string]> = [
-  ["company", "Company"], ["notifications", "Notifications"], ["billing", "Billing"], ["sounds", "Sounds"],
-  ["shortcuts", "Shortcuts"], ["account", "Account"], ["data", "Your data"], ["danger", "Danger zone"],
-];
-
 /* /employer/settings — edit the company profile submitted during
    onboarding. Saving re-runs the same POST /api/employer-profile upsert
    onboarding uses, which re-derives the tier on the server. GSTIN and the invoice name are
@@ -125,12 +120,6 @@ export default function EmployerSettingsPage() {
     <div style={{ width: "100%" }}>
       <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
         <PageHeader title="Settings" desc="Update your company profile, manage your account security, review your purchases and set notification sounds." />
-
-        <nav aria-label="Settings sections" className="flex gap-1 overflow-x-auto border-b px-5 py-2" style={{ borderColor: t.line }}>
-          {SECTION_LINKS.map(([id, label]) => (
-            <a key={id} href={`#${id}`} className="inline-flex min-h-[32px] shrink-0 items-center rounded-md px-3 text-[13px] font-medium text-muted-foreground no-underline hover:bg-muted hover:text-foreground">{label}</a>
-          ))}
-        </nav>
 
         <FlatSection split title="Company profile" id="company">
           <div className="max-w-[640px]">
