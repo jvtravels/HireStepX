@@ -78,7 +78,7 @@ function VerifiedPanel({ capabilities }: { capabilities: NonNullable<CandidateEv
       title="Verified skills"
       action={<InfoTip label="What verified means">Verified means a score of 70 or more on the skill across 2 or more graded sessions.</InfoTip>}
     >
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{count} of {capabilities.length} verified across repeated sessions.</p>
+      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{count} of {capabilities.length} verified. A separate check from the latest-interview scores: a skill is proven only when it holds up across repeated sessions.</p>
       <KeyValueList>
         {capabilities.map((cap) => (
           <KeyValueRow key={cap.key} label={cap.label}>
@@ -200,7 +200,7 @@ export function PracticeTab({
               weight: 2 + skills.length * 1.5,
               node: (
                 <Panel id="skills-heading" title="Skill scores">
-                  <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}, from the most recent completed session.</p>
+                  <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}. How the latest interview was graded on each dimension.</p>
                   <div className="grid gap-3.5">
                     {skills.map((s) => (
                       <MeterRow key={s.name} label={s.name} value={s.score} />
