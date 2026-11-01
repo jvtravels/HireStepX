@@ -162,7 +162,7 @@ function TeamConsole() {
 
   return (
     <div style={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
-      <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden", flex: 1, display: "flex", flexDirection: "column" }}>
+      <div style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden", flex: "1 0 auto", display: "flex", flexDirection: "column" }}>
         <header className={PAD} style={{ paddingTop: 20, display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
             <div style={{ minWidth: 0 }}>
