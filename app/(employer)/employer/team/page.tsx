@@ -209,7 +209,6 @@ function TeamConsole() {
               soleOwner={myRole === "owner" && owners <= 1}
               onCommand={onCommand}
               busyId={busyId}
-              onInvite={canInvite && !seatsFull ? openInvite : undefined}
             />
           )}
           {tab === "invites" && canInvite && (

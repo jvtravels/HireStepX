@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { LogOutIcon, MoreHorizontalIcon, SearchIcon, UserMinusIcon, UserPlusIcon, CrownIcon } from "lucide-react";
+import { LogOutIcon, MoreHorizontalIcon, SearchIcon, UserMinusIcon, CrownIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { assignableRoles, canManageMember, ROLE_BLURB, ROLE_LABEL, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
+import { assignableRoles, canManageMember, type EmployerRole, type InvitableRole } from "../../../server-handlers/_employer-team-helpers";
 import type { TeamMember } from "../useTeam";
 import { relativeTime } from "../teamActivity";
 import { tidyName } from "../../displayText";
@@ -24,7 +24,7 @@ const COLS = "minmax(0, 1fr) 132px 112px 40px";
 const SEARCH_FROM = 6;
 
 export default function MembersTab({
-  members, myRole, compact, soleOwner, onCommand, busyId, onInvite,
+  members, myRole, compact, soleOwner, onCommand, busyId,
 }: {
   members: TeamMember[];
   myRole: EmployerRole;
@@ -32,8 +32,6 @@ export default function MembersTab({
   soleOwner: boolean;
   onCommand: (cmd: MemberCommand) => void;
   busyId: string | null;
-  /** Set when the viewer may invite and a seat is free; shows the first-invite prompt for a solo team. */
-  onInvite?: () => void;
 }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -177,27 +175,6 @@ export default function MembersTab({
         })}
       </div>
       </div>
-      {members.length === 1 && onInvite && (
-        <section aria-labelledby="solo-team-heading" className={PAD} style={{ paddingTop: 24, paddingBottom: 24, borderTop: `1px solid ${t.line}`, background: t.creamRaised }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-            <div style={{ minWidth: 0, maxWidth: 520 }}>
-              <h2 id="solo-team-heading" style={{ fontFamily: f.sans, fontSize: 15, fontWeight: 600, color: t.coal, margin: 0 }}>Hire together</h2>
-              <p style={{ ...muted, marginTop: 2 }}>Invite the people who help you hire. Everyone sees the same jobs and candidates, and you choose what each person can do.</p>
-            </div>
-            <Button type="button" size="lg" className="h-9 gap-2 px-4" onClick={onInvite}>
-              <UserPlusIcon aria-hidden="true" /> Invite teammate
-            </Button>
-          </div>
-          <ul className="m-0 mt-4 grid list-none gap-3 p-0 sm:grid-cols-3">
-            {(["admin", "member", "viewer"] as const).map((r) => (
-              <li key={r} style={{ border: `1px solid ${t.line}`, borderRadius: 12, background: t.white, padding: "12px 14px" }}>
-                <div style={{ fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{ROLE_LABEL[r]}</div>
-                <p style={{ ...muted, fontSize: 12, marginTop: 2 }}>{ROLE_BLURB[r]}</p>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </div>
     </TooltipProvider>
   );
