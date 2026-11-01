@@ -82,7 +82,7 @@ export default function JobsTable({
         <style>{JOBS_TABLE_CSS}</style>
         <Table aria-label="Posted jobs" className="table-fixed jobs-table" containerClassName="overflow-visible" style={{ width: "100%" }}>
           <TableHeader>
-            <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 1 }}>
+            <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 4 }}>
               {/* table-fixed computes column widths from these first-row
                   declarations — but per-cell minWidth is NOT a reliable
                   floor when a column's own width is a percentage: Chrome
