@@ -217,7 +217,6 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
     : "";
   const action = (
     <div className="flex items-center gap-3">
-      {hasEvidence && <span className="text-[12px] font-medium text-hx-ink-soft">Graded in practice</span>}
       {hasEvidence && <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton>}
       <InfoTip label="How practice evidence is scored">
         {PROVENANCE}. This is practice performance, not an employment check.
