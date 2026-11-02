@@ -222,7 +222,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
         )}
         {(notShared.length > 0 || missingHiring.length > 0) && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared yet: {notShared.join(", ").toLowerCase().replace(/^./, (c) => c.toUpperCase())}.</p>}
+            {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared yet: {notShared.join(", ").toLowerCase().replace(/ctc/g, "CTC").replace(/^./, (c) => c.toUpperCase())}.</p>}
             {missingHiring.length > 0 && (
               <ItemRequest
                 candidate={candidate}
