@@ -201,7 +201,7 @@ export function PracticeTab({
               key: "skills",
               weight: 2 + skills.length * 1.5,
               node: (
-                <Panel id="skills-heading" title="Skill scores" info={<InfoTip label="How skill scores work">{PROVENANCE}. How the latest interview was graded on each dimension.</InfoTip>}>
+                <Panel id="skills-heading" title="Skill scores" info={<InfoTip label="How skill scores work">{PROVENANCE}. How the latest interview was graded on each dimension. The dimensions come from the practice role the candidate chose, so they may not match this job exactly.</InfoTip>}>
                   <div className="grid gap-3.5">
                     {skills.map((s) => (
                       <MeterRow key={s.name} label={s.name} value={s.score} />
