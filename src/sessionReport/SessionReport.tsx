@@ -50,12 +50,14 @@ import { useEvalStage } from "../useEvalStage";
    family inference + duration parsing. Kept local so the entry stays
    self-contained. */
 
-function roleToFamily(role: string | undefined): RoleFamily {
+/* Whole-word matches only: substring checks put "Software Development Engineer"
+   in the PM family ("develo-pm-ent") and "HTML" in data ("ml"). */
+export function roleToFamily(role: string | undefined): RoleFamily {
   const r = (role || "").toLowerCase();
-  if (r.includes("pm") || r.includes("product")) return "pm";
-  if (r.includes("manager") || r.includes("lead") || r.includes("director")) return "em";
-  if (r.includes("data") || r.includes("ml") || r.includes("ai")) return "data";
-  if (r.includes("hr") || r.includes("behavior")) return "behavioral";
+  if (/\b(pm|product)\b/.test(r)) return "pm";
+  if (/\b(manager|lead|director)\b/.test(r)) return "em";
+  if (/\b(data|ml|ai)\b/.test(r)) return "data";
+  if (/\b(hr|behavior|behavioral)\b/.test(r)) return "behavioral";
   return "swe";
 }
 
