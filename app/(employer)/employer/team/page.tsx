@@ -15,7 +15,6 @@ import { PageSkeleton, ErrorPanel } from "@/employer/_consoleParts";
 import { ConfirmDialog, PAD, SeatMeter, muted, type ConfirmSpec } from "@/employer/team/TeamParts";
 import InvitePanel from "@/employer/team/InvitePanel";
 import MembersTab, { type MemberCommand } from "@/employer/team/MembersTab";
-import TeamStarter from "@/employer/team/TeamStarter";
 import InvitesTab from "@/employer/team/InvitesTab";
 import ActivityTab from "@/employer/team/ActivityTab";
 import RolesDialog from "@/employer/team/RolesTab";
@@ -150,7 +149,6 @@ function TeamConsole() {
   const seatsFull = seatsUsed >= team.limits.maxTeamSize;
   const openInvite = () => { setInviting(true); setTab("members"); };
   const who = companyName || "this company";
-  const showStarter = canInvite && !panelOpen && !seatsFull && team.members.length === 1 && pendingInvites.length === 0;
 
   return (
     <div style={{ width: "100%", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
@@ -170,7 +168,7 @@ function TeamConsole() {
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
               <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} />
-              {canInvite && !panelOpen && !(showStarter && tab === "members") && (
+              {canInvite && !panelOpen && (
                 <Button type="button" size="default" className="gap-2" disabled={seatsFull} onClick={openInvite}>
                   <UserPlusIcon aria-hidden="true" /> Invite teammate
                 </Button>
@@ -214,9 +212,6 @@ function TeamConsole() {
               onCommand={onCommand}
               busyId={busyId}
             />
-          )}
-          {tab === "members" && showStarter && (
-            <TeamStarter roles={team.assignableRoles} seatsLeft={team.limits.maxTeamSize - seatsUsed} onInvite={openInvite} />
           )}
           {tab === "invites" && canInvite && (
             <InvitesTab
