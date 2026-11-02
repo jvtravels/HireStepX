@@ -137,11 +137,11 @@ export const muted: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, co
 export const PAD = "px-4 sm:px-[clamp(1.25rem,1.5vw,1.75rem)]";
 
 /* Seats are a hard cap, so the meter is quiet until the team is nearly full. */
-export function SeatMeter({ used, max }: { used: number; max: number }) {
+export function SeatMeter({ used, max, members, pending }: { used: number; max: number; members: number; pending: number }) {
   const pct = Math.min(100, Math.round((used / Math.max(max, 1)) * 100));
   const nearFull = pct >= 80;
   return (
-    <div style={{ minWidth: 132 }}>
+    <div style={{ minWidth: 132 }} title="Members and pending invites each take a seat">
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, fontFamily: f.sans, fontSize: 12, color: t.inkSoft }}>
         <span>Seats</span>
         <span style={{ color: nearFull ? t.warningInk : t.coal, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{used} of {max}</span>
@@ -156,6 +156,9 @@ export function SeatMeter({ used, max }: { used: number; max: number }) {
       >
         <div style={{ width: `${pct}%`, height: "100%", borderRadius: 999, background: nearFull ? t.warningInk : t.indigo, transition: "width 200ms ease-out" }} />
       </div>
+      <p style={{ fontFamily: f.sans, fontSize: 12, color: t.inkSoft, margin: "6px 0 0" }}>
+        {members} {members === 1 ? "member" : "members"}{pending > 0 ? ` + ${pending} pending ${pending === 1 ? "invite" : "invites"}` : ""}
+      </p>
     </div>
   );
 }

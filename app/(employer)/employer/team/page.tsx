@@ -167,7 +167,7 @@ function TeamConsole() {
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-              <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} />
+              <SeatMeter used={seatsUsed} max={team.limits.maxTeamSize} members={team.members.length} pending={seatsUsed - team.members.length} />
               {canInvite && !panelOpen && (
                 <Button type="button" size="default" className="gap-2" disabled={seatsFull} onClick={openInvite}>
                   <UserPlusIcon aria-hidden="true" /> Invite teammate
