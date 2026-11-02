@@ -472,44 +472,6 @@ export function buildEvidenceSummary(candidate: Candidate, _requirement: Pick<Re
   return parts.length > 0 ? `${parts.join(", ")}.` : null;
 }
 
-/** HireStepX's read of a candidate as up to three plain lines an employer can scan: who they are, how they
- *  match the posting's skills, and how they did in practice. Each line exists only when its data does, and
- *  company names stay out so it is as safe for a locked candidate as the rest of the page. */
-export function buildProfileSummary(candidate: Candidate, requirement: Pick<Requirement, "title" | "skills">, matched: string[], evidence: CandidateEvidence | null): string[] | null {
-  const r = candidate.resume;
-  if (!r) return null;
-  const lines: string[] = [];
-  const list = (xs: string[], n = 3) => xs.slice(0, n).join(", ");
-
-  const seniority = r.seniorityLevel?.trim();
-  const months = experienceMonthsOf(r);
-  const years = months != null && months >= 12 ? formatExperience(months) : null;
-  const where = candidate.city && candidate.city !== "Not specified" ? candidate.city : null;
-  const degree = r.education[0]?.degree?.trim();
-  const primary = (r.skillsDetailed ?? []).filter((s) => s.depth === "primary").map((s) => displaySkillName(s.name));
-  const level = seniority ? `${seniority[0].toUpperCase()}${seniority.slice(1).toLowerCase()}-level` : null;
-  const who = [level && years ? `${level}, ${years} of experience` : level ?? (years ? `${years} of experience` : degree), where && `in ${where}`, primary.length > 0 && `strongest in ${list(primary, 3)}`].filter(Boolean).join(", ");
-  if (who) lines.push(`${who[0].toUpperCase()}${who.slice(1)}.`);
-
-  if (requirement.skills.length > 0) {
-    const missing = requirement.skills.filter((s) => !matched.includes(s));
-    lines.push(missing.length === 0
-      ? `Has all ${requirement.skills.length} skills this job asks for.`
-      : `Has ${matched.length} of ${requirement.skills.length} skills this job asks for; missing ${list(missing)}.`);
-  }
-
-  const score = gradedScore(candidate, evidence);
-  if (score != null) {
-    const n = candidate.sessionsCompleted;
-    const best = bestGradedAnswer(evidence?.questions);
-    const verdict = evidence?.readiness ? `, ${READINESS_LABEL[evidence.readiness.band].toLowerCase()}` : "";
-    lines.push(`Did ${n} graded practice interview${n === 1 ? "" : "s"}${best ? `, best answer ${best.score}/100` : ""}${verdict}.`);
-  } else {
-    lines.push("No graded practice interview yet.");
-  }
-  return lines.length > 0 ? lines : null;
-}
-
 export function buildCandidateSummary(candidate: Candidate, requirement: Requirement, matched: string[], evidence: CandidateEvidence | null, url: string): string {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
   const fit = summarizeFit(rows);
