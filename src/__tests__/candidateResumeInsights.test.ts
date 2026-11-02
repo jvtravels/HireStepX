@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, buildEvidenceSummary, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, sortFitRows, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, isRealDegree, isSoftSkill, shortRole, buildEvidenceSummary, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, sortFitRows, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
@@ -279,7 +279,7 @@ describe("buildEvidenceSummary", () => {
 
   it("joins only the facts the profile holds", () => {
     const c = candidate({ rosterScore: 78.4, sessionsCompleted: 3, city: "Delhi" }, { noticePeriod: "30 days" });
-    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("Delhi, 30-day notice.");
+    expect(buildEvidenceSummary(c, req, ["Figma", "Python", "SQL"])).toBe("30-day notice.");
   });
 
   it("skips the interview clause without graded sessions and the city when unknown", () => {
@@ -289,10 +289,31 @@ describe("buildEvidenceSummary", () => {
 
   it("uses singular wording and months for long notice", () => {
     const c = candidate({ rosterScore: 60, sessionsCompleted: 1, city: "Pune" }, { noticePeriod: "2 months" });
-    expect(buildEvidenceSummary(c, { skills: [] }, [])).toBe("Pune, 2-month notice.");
+    expect(buildEvidenceSummary(c, { skills: [] }, [])).toBe("2-month notice.");
   });
 
   it("is null when nothing is known", () => {
     expect(buildEvidenceSummary(candidate({ sessionsCompleted: 0, city: "Not specified" }, { noticePeriod: null }), { skills: [] }, [])).toBeNull();
+  });
+});
+
+describe("profile display cleanup", () => {
+  it("treats traits as soft skills but not tools", () => {
+    expect(isSoftSkill("Teamwork")).toBe(true);
+    expect(isSoftSkill("Fast Learning")).toBe(true);
+    expect(isSoftSkill("Problem Solving")).toBe(true);
+    expect(isSoftSkill("React")).toBe(false);
+  });
+  it("keeps only the job-title part of a pitch-style role", () => {
+    expect(shortRole("Motivated BCA (Honours) Student | Aspiring Software Developer")).toBe("Motivated BCA (Honours) Student");
+    expect(shortRole("Software Developer")).toBe("Software Developer");
+  });
+  it("rejects a month stored as a degree", () => {
+    expect(isRealDegree("Sep")).toBe(false);
+    expect(isRealDegree("Bachelor of Engineering")).toBe(true);
+  });
+  it("drops skill years that exceed the total experience", () => {
+    expect(skillChipLabel({ name: "Java", yearsUsed: 5 }, 1)).toBe("Java");
+    expect(skillChipLabel({ name: "Java", yearsUsed: 1 }, 1)).toBe("Java · 1 yr");
   });
 });

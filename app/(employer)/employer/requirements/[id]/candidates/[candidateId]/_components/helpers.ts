@@ -430,9 +430,25 @@ export function displaySkillName(name: string): string {
   return name.replace(/\.(js|ts)$/i, (_, ext: string) => `.${ext.toLowerCase()}`);
 }
 
-export function skillChipLabel(s: Pick<DetailedSkill, "name" | "yearsUsed">): string {
+/** Traits, not skills: they crowd out the tools an employer is scanning for. */
+export function isSoftSkill(name: string): boolean {
+  return /^(teamwork|team player|fast learning?|quick learner|problem[- ]solving|communication|leadership|time management|adaptability|hard ?working|creativity|critical thinking)$/i.test(name.trim());
+}
+
+/** The part of a headline-style role before any "|" separator, so a pitch does not stand in for a job title. */
+export function shortRole(role: string): string {
+  const first = role.split("|")[0]?.trim() ?? "";
+  return first.length > 0 && first.length <= 60 ? first : role.slice(0, 60).trim();
+}
+
+/** A degree field holding a month ("Sep") is a parsing slip, not a qualification. */
+export function isRealDegree(degree: string): boolean {
+  return degree.trim().length > 3 && !/^(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*$/i.test(degree.trim());
+}
+
+export function skillChipLabel(s: Pick<DetailedSkill, "name" | "yearsUsed">, maxYears?: number | null): string {
   const name = displaySkillName(s.name);
-  if (!s.yearsUsed) return name;
+  if (!s.yearsUsed || (maxYears != null && s.yearsUsed > maxYears + 1)) return name;
   return `${name} · ${s.yearsUsed} ${s.yearsUsed === 1 ? "yr" : "yrs"}`;
 }
 
@@ -475,7 +491,6 @@ export function buildEvidenceSummary(candidate: Candidate, _requirement: Pick<Re
   const parts: string[] = [];
   /* Neither skill coverage nor the practice score is repeated here: the match score beside the name
      is the one headline number, and the summary and At a glance rows state practice results. */
-  if (candidate.city && candidate.city !== "Not specified") parts.push(candidate.city);
   const notice = noticePhrase(candidate.resume?.noticePeriod);
   if (notice) parts.push(notice);
   return parts.length > 0 ? `${parts.join(", ")}.` : null;

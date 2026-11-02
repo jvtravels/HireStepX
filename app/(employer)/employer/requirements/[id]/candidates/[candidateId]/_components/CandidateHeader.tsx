@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { BriefcaseIcon, CalendarClockIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MoreVerticalIcon, PhoneIcon, UsersIcon, WalletIcon, XCircleIcon } from "lucide-react";
+import { BriefcaseIcon, CalendarClockIcon, ClockIcon, ExternalLinkIcon, LockIcon, MailIcon, MapPinIcon, MoreVerticalIcon, PhoneIcon, UsersIcon, WalletIcon, XCircleIcon } from "lucide-react";
 import type { Candidate } from "@/employer/mockData";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -8,7 +8,7 @@ import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
-import { candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, type FitSummary } from "./helpers";
+import { candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, shortRole, type FitSummary } from "./helpers";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
@@ -113,7 +113,8 @@ export function CandidateHeader({
       : null;
 
   const meta: MetaPart[] = [];
-  if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: candidate.targetRole });
+  if (candidate.targetRole) meta.push({ icon: BriefcaseIcon, text: shortRole(candidate.targetRole) });
+  if (candidate.city && candidate.city !== "Not specified") meta.push({ icon: MapPinIcon, text: candidate.city });
   const experienceMonths = experienceMonthsOf(resume ?? null);
   if (experienceMonths != null) meta.push({ icon: BriefcaseIcon, text: `${formatExperience(experienceMonths)} experience${resume?.seniorityLevel ? `, ${resume.seniorityLevel}` : ""}` });
   for (const d of dealBreakerParts(resume)) meta.push({ icon: d.key === "notice" ? CalendarClockIcon : WalletIcon, text: d.text });

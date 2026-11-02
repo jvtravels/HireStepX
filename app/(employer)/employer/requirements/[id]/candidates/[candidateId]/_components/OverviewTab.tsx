@@ -14,7 +14,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, gradedScore, gradedSessionLabel, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, gradedScore, gradedSessionLabel, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, experienceMonthsOf, isRealDegree, isSoftSkill, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -151,7 +151,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   if (!r) return null;
   const latest = r.experience[0];
   const latestRole = latest ? [latest.title, latest.company].filter(Boolean).join(" at ") : "";
-  const edu = r.education[0];
+  const edu = r.education.find((e) => isRealDegree(e.degree));
   const eduText = edu ? [edu.degree, edu.school].filter(Boolean).join(", ") : "";
   const avgTenureMonths = averageTenureMonths(r.experience);
   const facts: Array<{ label: string; value: string; selfReported?: boolean; missing?: boolean }> = [];
@@ -169,7 +169,8 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   if (workPref) facts.push({ label: "Work preference", value: workPref, selfReported: true });
   /* No years here: self-reported domain years disagree with the dated experience in the header. */
   if (r.primaryDomain) facts.push({ label: "Domain", value: r.primaryDomain });
-  if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
+  /* One dated role says nothing about tenure, so it is not shown as an average. */
+  if (avgTenureMonths != null && r.experience.length >= 2) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
   const shownFacts = facts.filter((f) => !f.missing);
   const notShared = facts.filter((f) => f.missing).map((f) => f.label);
@@ -310,9 +311,11 @@ function HighlightsPanel({ candidate }: { candidate: Candidate }) {
 function SkillsPanel({ candidate, requiredSkills, onOpenResume }: { candidate: Candidate; requiredSkills: string[]; onOpenResume: () => void }) {
   const required = new Set(requiredSkills.map((s) => displaySkillName(s).toLowerCase()));
   const isOther = (name: string) => !required.has(displaySkillName(name).toLowerCase());
-  const detailed = (candidate.resume?.skillsDetailed ?? []).filter((s) => isOther(s.name));
-  const groups = groupSkillsByDepth(detailed).slice(0, 2).map((g) => ({ label: g.label, items: g.skills.slice(0, 8).map(skillChipLabel), more: Math.max(0, g.skills.length - 8) }));
-  const fallback = (candidate.resume?.skillsDetailed ?? []).length === 0 ? candidate.skills.filter(isOther).slice(0, 12).map(displaySkillName) : [];
+  const totalMonths = experienceMonthsOf(candidate.resume ?? null);
+  const maxYears = totalMonths != null ? totalMonths / 12 : null;
+  const detailed = (candidate.resume?.skillsDetailed ?? []).filter((s) => isOther(s.name) && !isSoftSkill(s.name));
+  const groups = groupSkillsByDepth(detailed).slice(0, 2).map((g) => ({ label: g.label, items: g.skills.slice(0, 8).map((s) => skillChipLabel(s, maxYears)), more: Math.max(0, g.skills.length - 8) }));
+  const fallback = (candidate.resume?.skillsDetailed ?? []).length === 0 ? candidate.skills.filter((s) => isOther(s) && !isSoftSkill(s)).slice(0, 12).map(displaySkillName) : [];
   if (groups.length === 0 && fallback.length === 0) return null;
   const industries = (candidate.resume?.industries ?? []).slice(0, 4);
   const trimmed = requiredSkills.length > 0;
