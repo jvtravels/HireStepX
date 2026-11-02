@@ -167,6 +167,16 @@ batch lifts the measured numbers.
 - **File length**: ESLint warns at 1500 LOC. Split by role when you
   hit it — negotiation extracted from InterviewPanels is the pattern.
 
+## Responsive rule
+
+- **Desktop responsiveness** — every desktop screen (marketing, candidate,
+  employer console, admin) must work at 1280, 1366, 1440, 1728, 1920 and
+  2560px wide, plus phone (375). Side panels and rails must account for the
+  nav and list columns beside them (size by the room left for the main
+  content, not the viewport alone). No horizontal scroll, no clipped or
+  cramped main column, and content capped to a sensible max width on 1920
+  and 2560. Check each of these widths before calling UI work done.
+
 ## Testing conventions
 
 - Unit tests next to the unit under test: `src/__tests__/foo.test.ts`
