@@ -66,13 +66,13 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
         <div id={bodyId} className="grid gap-3 pb-4 pl-7.5">
           {q.answerText && (
             <div className="grid gap-1">
-              <h4 className="m-0 text-[12px] font-semibold text-hx-ink-soft">Their answer</h4>
+              <h4 className="m-0 text-[13px] font-semibold text-hx-coal">Their answer</h4>
               <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{q.answerText}</p>
             </div>
           )}
           {q.explanation && (
             <div className="grid gap-1">
-              <h4 className="m-0 text-[12px] font-semibold text-hx-ink-soft">How it was graded</h4>
+              <h4 className="m-0 text-[13px] font-semibold text-hx-coal">How it was graded</h4>
               <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed text-hx-ink-soft [overflow-wrap:anywhere]">{q.explanation}</p>
             </div>
           )}

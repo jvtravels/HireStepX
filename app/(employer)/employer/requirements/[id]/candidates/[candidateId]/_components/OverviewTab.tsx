@@ -173,7 +173,7 @@ function ClampedText({ text }: { text: string }) {
   const long = text.length > 300;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-ink-soft [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
       {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
@@ -216,7 +216,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   return (
     <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
-        {r.headline && <p className="m-0 text-[14px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
+        {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
         {shownFacts.length > 0 && (
           <p className="m-0 -mb-1 text-[12px] font-medium text-hx-ink-soft">Self-reported by the candidate, from their profile and resume</p>
         )}
@@ -242,7 +242,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
         {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
         {summary && (
           <div className="grid gap-1.5">
-            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">In the candidate's words</h3>
+            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">In the candidate's words</h3>
             <ClampedText text={summary} />
           </div>
         )}
@@ -373,14 +373,14 @@ function SkillsPanel({ candidate, requiredSkills, onOpenResume }: { candidate: C
       <div className="grid gap-4">
         {groups.map((g) => (
           <div key={g.label} className="grid gap-2">
-            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">{g.label}{g.more > 0 ? `, ${g.more} more` : ""}</h3>
+            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">{g.label}{g.more > 0 ? `, ${g.more} more` : ""}</h3>
             <ChipList label={g.label} items={g.items} />
           </div>
         ))}
         {fallback.length > 0 && <ChipList label="Skills" items={fallback} />}
         {industries.length > 0 && (
           <div className="grid gap-2 border-t border-hx-line pt-4">
-            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">Industries</h3>
+            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Industries</h3>
             <ChipList label="Industries" items={industries} />
           </div>
         )}
