@@ -1,178 +1,26 @@
 "use client";
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { ArrowLeftIcon, CheckIcon, MessageCircleQuestionIcon, ScaleIcon, SearchXIcon, TrendingUpIcon, UserXIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ArrowLeftIcon } from "lucide-react";
 import { useEmployerBreadcrumb } from "@/employer/EmployerShell";
 import { useEmployerData, type Requirement } from "@/employer/EmployerDataContext";
-import type { Candidate } from "@/employer/mockData";
-import { tokens as t, fonts as f, textSize } from "@/auth/_tokens";
-import { CandidateStatusChip, ScoreChip } from "@/employer/_atoms";
-import { InsightList, InsightRow, SkillChip } from "@/employer/_panelParts";
 import { EmptyNote, ErrorRetry, LinkCta } from "@/employer/_requirementAtoms";
 import { PageSkeleton } from "@/employer/_consoleParts";
-import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
-import { agoFromDays, candidateDisplayName } from "../_components/requirementFormat";
 import { MIN_COMPARE, parseCompareIds } from "../_components/shortlistSelection";
-import { metricLeaders, sameAcross, summarizeComparison, type CompareMetric } from "../_components/compareInsights";
-import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
-
-const DIFFERENCE_ICON: Record<string, ReactNode> = {
-  lead: <TrendingUpIcon size={16} />,
-  no: <UserXIcon size={16} />,
-  shared: <SearchXIcon size={16} />,
-  split: <ScaleIcon size={16} />,
-};
-
-const COMPARE_CSS = `
-.cmp-back:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-.cmp-name-link { color: inherit; text-decoration: none; }
-.cmp-name-link:hover { text-decoration: underline; }
-.cmp-name-link:focus-visible { outline: 2px solid ${t.indigo}; outline-offset: 2px; border-radius: 4px; }
-`;
-
-const CMP_CELL = "whitespace-normal break-words px-3 py-2.5 align-top [overflow-wrap:anywhere] min-[481px]:px-7 min-[481px]:py-3.5";
-const CMP_ROW = "border-hx-line hover:bg-transparent";
-
-const cellText = { fontFamily: f.sans, fontSize: textSize.base, color: t.coal } as const;
-const faintText = { ...cellText, color: t.inkFaint } as const;
-const SCORE_TEXT = { success: "text-hx-success-ink", warning: "text-hx-warning-ink", error: "text-hx-error-ink" } as const;
-const mutedText = { fontFamily: f.sans, fontSize: textSize.sm, color: t.inkFaint, marginTop: 4 } as const;
+import { CompareBoard } from "../_components/CompareBoard";
 
 function BackLink({ requirementId }: { requirementId: string }) {
   return (
     <Link
       href={`/employer/requirements/${requirementId}`}
-      className="cmp-back inline-flex min-h-6 items-center gap-1 pointer-coarse:min-h-11"
-      style={{ fontFamily: f.sans, fontSize: textSize.base, fontWeight: 600, color: t.indigo, textDecoration: "none" }}
+      className="inline-flex min-h-6 items-center gap-1 rounded text-[14px] font-semibold text-hx-indigo no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo pointer-coarse:min-h-11"
     >
       <ArrowLeftIcon size={14} aria-hidden="true" /> Back to shortlist
     </Link>
   );
 }
-
-function NameCell({ candidate, requirementId }: { candidate: Candidate; requirementId: string }) {
-  return (
-    <div style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal }}>
-      <Link href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`} className="cmp-name-link inline-flex min-h-6 items-center pointer-coarse:min-h-11">
-        {candidateDisplayName(candidate)}
-      </Link>
-    </div>
-  );
-}
-
-interface CompareRow {
-  label: string;
-  render: (c: Candidate, requiredSkills: string[]) => ReactNode;
-  /** Set when the row has a numeric measure where one candidate can clearly lead. */
-  metric?: CompareMetric;
-  /** What "the same" means for this row, so the differences-only view can hide it. */
-  same: (c: Candidate, requiredSkills: string[]) => string;
-}
-
-const ROWS: CompareRow[] = [
-  {
-    label: "Target role",
-    same: (c) => `${c.targetRole}|${c.city}`,
-    render: (c) => (
-      <span style={cellText} className="line-clamp-2" title={c.targetRole || undefined}>
-        {[c.targetRole, c.city].filter((v) => v && v !== "Not specified").join(" · ") || <span style={{ color: t.inkFaint }}>Not specified</span>}
-      </span>
-    ),
-  },
-  {
-    label: "Match score",
-    metric: "match",
-    same: (c) => String(Math.round(c.matchScore)),
-    render: (c) => (
-      <>
-        <ScoreChip score={c.matchScore} />
-        {c.matchBreakdown && (
-          <div style={mutedText}>
-            Resume overlap: role {c.matchBreakdown.roleMatch}% · skill wording {c.matchBreakdown.skillMatch}% · location {c.matchBreakdown.locationMatch}%
-          </div>
-        )}
-      </>
-    ),
-  },
-  {
-    label: "Required skills",
-    metric: "skills",
-    same: (c, required) => candidateSkillFit(c, required).matched.slice().sort().join(","),
-    render: (c, required) => {
-      const { matched, gaps } = candidateSkillFit(c, required);
-      return (
-        <>
-          <span style={cellText}>
-            <strong>{matched.length}</strong> of {matched.length + gaps.length}
-          </span>
-          {gaps.length > 0 && <div style={mutedText}>Missing: {gaps.join(", ")}</div>}
-        </>
-      );
-    },
-  },
-  {
-    // The same figure and rule as the shortlist's evidence column: a never-practised candidate has no score, not a default 50.
-    label: "Interview score",
-    metric: "interview",
-    same: (c) => String(interviewScore(c)),
-    render: (c) => {
-      const score = interviewScore(c);
-      if (score == null) return <span style={faintText}>No graded interviews</span>;
-      return (
-        <span className={SCORE_TEXT[scoreTone(score)]} style={{ fontFamily: cellText.fontFamily, fontSize: cellText.fontSize }}>
-          <strong>{score}</strong>/100
-        </span>
-      );
-    },
-  },
-  {
-    label: "Practice sessions",
-    metric: "sessions",
-    same: (c) => String(c.sessionsCompleted),
-    render: (c) => (
-      <>
-        <span style={cellText}>
-          <strong>{c.sessionsCompleted}</strong>
-        </span>
-        <div style={mutedText}>Last active {c.lastActiveDaysAgo < 0 ? "unknown" : agoFromDays(c.lastActiveDaysAgo)}</div>
-      </>
-    ),
-  },
-  {
-    label: "Pipeline status",
-    same: (c) => String(c.candidateStatus ?? ""),
-    render: (c) => (
-      <>
-        {c.candidateStatus ? <CandidateStatusChip status={c.candidateStatus} /> : <span style={{ ...cellText, color: t.inkFaint }}>Not set</span>}
-        {c.interviewScheduledAt && (
-          <div style={mutedText}>Interview {new Date(c.interviewScheduledAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</div>
-        )}
-        {c.candidateStatusNote && <div style={mutedText}>Private note: {c.candidateStatusNote}</div>}
-      </>
-    ),
-  },
-  {
-    label: "Skills",
-    same: (c) => c.skills.slice().sort().join(","),
-    render: (c) =>
-      c.skills.length ? (
-        <ul style={{ display: "flex", gap: 6, flexWrap: "wrap", listStyle: "none", margin: 0, padding: 0 }}>
-          {c.skills.map((s) => (
-            <li key={s}>
-              <SkillChip>{displaySkillName(s)}</SkillChip>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <span style={{ ...cellText, color: t.inkFaint }}>None listed</span>
-      ),
-  },
-];
 
 export default function ComparePage() {
   const params = useParams<{ id: string }>();
@@ -180,7 +28,6 @@ export default function ComparePage() {
   const { fetchRequirementDetail } = useEmployerData();
   const [requirement, setRequirement] = useState<Requirement | null>(null);
   const [loading, setLoading] = useState(true);
-  const [diffOnly, setDiffOnly] = useState(false);
 
   const load = useCallback(() => {
     let active = true;
@@ -215,7 +62,6 @@ export default function ComparePage() {
   if (chosen.length < MIN_COMPARE) {
     return (
       <>
-        <style>{COMPARE_CSS}</style>
         <EmptyNote
           pageLevel
           title="Pick two or three candidates to compare"
@@ -228,114 +74,10 @@ export default function ComparePage() {
     );
   }
 
-  const names = chosen.map(candidateDisplayName);
-  const namesLabel = names.length === 2 ? `${names[0]} and ${names[1]}` : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-
-  const summary = summarizeComparison(chosen, requirement.skills);
-  const leaders = new Map<CompareMetric, Set<string>>(
-    (["match", "skills", "interview", "sessions"] as CompareMetric[]).map((m) => [m, metricLeaders(chosen, requirement.skills, m)]),
-  );
-  const rows = ROWS.filter((row) => row.label !== "Required skills" || requirement.skills.length > 0);
-  const visibleRows = diffOnly ? rows.filter((row) => !sameAcross(chosen, (c) => row.same(c, requirement.skills))) : rows;
-
   return (
-    <div style={{ minWidth: 0 }}>
-      <style>{COMPARE_CSS}</style>
-      <section aria-label={`Comparison of ${namesLabel}`} style={{ background: t.white, border: `1px solid ${t.line}`, borderRadius: 16, overflow: "hidden" }}>
-        <header style={{ padding: "20px 28px", borderBottom: `1px solid ${t.line}` }}>
-          <BackLink requirementId={requirement.id} />
-          <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: "10px 0 0", overflowWrap: "anywhere" }}>
-            Comparing candidates for {requirement.title}
-          </h1>
-          <p style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, margin: "4px 0 0", maxWidth: 640 }}>
-            {chosen.some((c) => !c.unlocked)
-              ? "Names and contact details of locked candidates stay hidden until you unlock them from the shortlist."
-              : "Side by side on match, interview evidence and pipeline status."}
-          </p>
-        </header>
-        <div className="flex flex-col gap-4 border-b border-hx-line px-7 py-5 max-sm:px-4">
-          {/* Side by side on a laptop so the table starts above the fold. */}
-          <div className="grid gap-x-8 gap-y-4 min-[1024px]:grid-cols-2 min-[1024px]:items-start">
-          <div>
-            <h2 className="m-0 text-[15px] font-semibold text-hx-coal">How they differ</h2>
-            {summary.differences.length > 0 ? (
-              <InsightList className="mt-3">
-                {summary.differences.map((n) => (
-                  <InsightRow key={n.id} tone={n.tone} icon={DIFFERENCE_ICON[n.id.split("-")[0]] ?? <ScaleIcon size={16} />} title={n.title} body={n.body} />
-                ))}
-              </InsightList>
-            ) : (
-              <p className="m-0 mt-2 text-[14px] text-hx-ink-soft">These candidates are close on every measure we compare. Use the interview to separate them.</p>
-            )}
-          </div>
-          {summary.questions.length > 0 && (
-            <div>
-              <h2 className="m-0 text-[15px] font-semibold text-hx-coal">Worth asking in the interview</h2>
-              <InsightList className="mt-3">
-                {summary.questions.map((n) => (
-                  <InsightRow key={n.id} tone={n.tone} icon={<MessageCircleQuestionIcon size={16} />} title={n.title} body={n.body} />
-                ))}
-              </InsightList>
-            </div>
-          )}
-          </div>
-          <p className="m-0 text-[13px] text-hx-ink-soft">
-            Worked out from the figures below. HireStepX shows where candidates differ and does not pick a hire for you. Interview scores reflect practice, not job performance.
-          </p>
-          <label htmlFor="cmp-diff-only" className="flex min-h-11 w-fit cursor-pointer items-center gap-2.5 text-[14px] font-semibold text-hx-coal">
-            <Checkbox id="cmp-diff-only" checked={diffOnly} onCheckedChange={(v) => setDiffOnly(v === true)} className="shrink-0" />
-            Show differences only
-          </label>
-        </div>
-        {/* Keyboard users can only scroll an overflow region they can focus. */}
-        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-        <div className="overflow-x-auto focus-visible:outline-2 focus-visible:-outline-offset-2" tabIndex={0} role="region" aria-label="Comparison table. Scroll sideways to see every candidate.">
-          <Table
-            data-cols={chosen.length}
-            style={{ maxWidth: 220 + chosen.length * 400 }}
-            containerClassName="overflow-visible"
-            className="min-w-[560px] table-fixed border-collapse text-base data-[cols=2]:max-[480px]:min-w-0"
-          >
-            <TableCaption className="sr-only">
-              Side-by-side comparison of {namesLabel} for {requirement.title}
-            </TableCaption>
-            <TableHeader>
-              <TableRow className={CMP_ROW}>
-                <TableHead scope="col" className={cn(CMP_CELL, "sticky left-0 z-[2] h-auto bg-hx-row")}>
-                  <span className="sr-only">Attribute</span>
-                </TableHead>
-                {chosen.map((c) => (
-                  <TableHead key={c.id} scope="col" className={cn(CMP_CELL, "h-auto bg-hx-row font-bold")}>
-                    <NameCell candidate={c} requirementId={requirement.id} />
-                    {(summary.leads.get(c.id) ?? 0) > 0 && (
-                      <div className="mt-1 text-[13px] font-normal text-hx-ink-soft">Clear lead on {summary.leads.get(c.id)} of 4 measures</div>
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {visibleRows.map((row) => (
-                <TableRow key={row.label} className={CMP_ROW}>
-                  <TableHead scope="row" className={cn(CMP_CELL, "sticky left-0 z-[1] h-auto w-[30%] bg-white font-semibold text-hx-ink-soft shadow-[1px_0_0_var(--color-hx-line)] min-[481px]:w-[28%]")}>
-                    {row.label}
-                  </TableHead>
-                  {chosen.map((c) => (
-                    <TableCell key={c.id} className={CMP_CELL}>
-                      {row.render(c, requirement.skills)}
-                      {row.metric && leaders.get(row.metric)?.has(c.id) && (
-                        <div className="mt-1 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo">
-                          <CheckIcon size={13} aria-hidden="true" /> Highest
-                        </div>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      </section>
+    <div className="flex min-w-0 flex-col gap-3">
+      <BackLink requirementId={requirement.id} />
+      <CompareBoard requirementId={requirement.id} requirementTitle={requirement.title} required={requirement.skills} chosen={chosen} />
     </div>
   );
 }
