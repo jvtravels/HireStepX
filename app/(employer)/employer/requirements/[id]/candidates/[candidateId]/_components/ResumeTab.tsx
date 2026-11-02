@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { TrendingUpIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemSeparator, ItemTitle } from "@/components/ui/item";
 import type { Candidate } from "@/employer/mockData";
-import { Panel } from "@/employer/_panelParts";
+import { InfoTip, Panel } from "@/employer/_panelParts";
 import { BalancedColumns, ChipList, IconList, MutedText } from "./parts";
 import { averageTenureMonths, formatTenure, groupSkillsByDepth, periodMonths, skillChipLabel, displaySkillName } from "./helpers";
 
@@ -93,10 +93,9 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             key: "employment",
             weight: 2 + (resume?.experience ?? []).reduce((n, e) => n + 2 + (e.topProjects?.length ?? 0) + (e.bullets?.length ?? 0) + (e.scope ? 1 : 0), 0),
             node: (
-              <Panel id="employment-heading" title="Employment history">
+              <Panel id="employment-heading" title="Employment history" info={avg != null && resume && resume.experience.length > 1 ? <InfoTip label="Average time per role">{resume.experience.length} roles, average {formatTenure(avg)} per role.</InfoTip> : undefined}>
                 {resume?.experience.length ? (
                   <div className="grid gap-3">
-                    {avg != null && resume.experience.length > 1 && <p className="m-0 text-[13px] text-hx-ink-soft">{resume.experience.length} roles, average {formatTenure(avg)} per role.</p>}
                     <Entries
                       label="Employment history"
                       rows={resume.experience.map((e, i) => {
