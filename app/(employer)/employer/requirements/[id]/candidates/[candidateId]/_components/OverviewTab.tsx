@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { CheckIcon, MinusIcon, TargetIcon, TrendingUpIcon, XIcon } from "lucide-react";
 import { cn } from "cn";
-import AnimatedNumber from "@/AnimatedNumber";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CandidateEvidence, Requirement } from "@/employer/EmployerDataContext";
 import type { Candidate } from "@/employer/mockData";
-import { Badge, FAIR_MATCH_THRESHOLD, OutlineCta, STRONG_MATCH_THRESHOLD } from "@/employer/_atoms";
+import { Badge, OutlineCta } from "@/employer/_atoms";
 import { InfoTip, KeyValueList, KeyValueRow, MeterRow, Panel, PanelButton, Stat, StatGrid } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { ChipList, IconList, MutedText } from "./parts";
@@ -15,7 +14,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -56,14 +55,11 @@ function FitMark({ status }: { status: FitStatus }) {
   );
 }
 
-const SIGNAL_TONE = { strong: "success", fair: "warning", low: "neutral" } as const;
-
 const SEGMENT_CLS: Record<FitStatus, string> = { meets: "bg-hx-success", partial: "bg-hx-warning", gap: "bg-hx-error" };
 
 function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requestUi, analysisClear, onOpenPractice, onOpenResume }: { onOpenPractice: () => void; onOpenResume: () => void; candidate: Candidate; requirement: Requirement; matched: string[]; unmatched: string[]; evidence: CandidateEvidence | null; requestUi: RequestUi; analysisClear: boolean }) {
   const rows = sortFitRows(buildRoleFit(candidate, requirement, matched, evidence));
   const fit = summarizeFit(rows);
-  const signal = candidateSignal(candidate.matchScore, fit);
   const caption = [
     fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`,
     fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`,
@@ -71,19 +67,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
     analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
-    <Panel id="match-heading" title="Fit for this job" action={<Badge tone={SIGNAL_TONE[signal.key]}>{signal.label}</Badge>}>
+    <Panel id="match-heading" title="Fit for this job">
       <div className="grid gap-5">
         <div className="@container">
-          <div className="grid gap-5 @xl:grid-cols-[auto_minmax(0,1fr)] @xl:items-center @xl:gap-10">
-            <div className="grid gap-1.5">
-              <p className="m-0 flex items-baseline gap-2">
-                <span className="text-[44px] leading-none font-semibold tracking-[-0.03em] tabular-nums text-hx-coal"><AnimatedNumber value={candidate.matchScore} /></span>
-                <span className="text-[13px] text-hx-ink-soft">
-                  out of 100{candidate.sessionsCompleted > 0 ? `, based on ${candidate.sessionsCompleted} graded session${candidate.sessionsCompleted === 1 ? "" : "s"}` : ""}
-                </span>
-              </p>
-              <p className="m-0 text-[12px] text-hx-ink-soft tabular-nums">{STRONG_MATCH_THRESHOLD}+ strong, {FAIR_MATCH_THRESHOLD} to {STRONG_MATCH_THRESHOLD - 1} fair, under {FAIR_MATCH_THRESHOLD} low</p>
-            </div>
+          <div className="grid gap-5">
             {fit.total > 0 && (
               <div className="grid gap-2">
                 <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit, rows)}</p>
