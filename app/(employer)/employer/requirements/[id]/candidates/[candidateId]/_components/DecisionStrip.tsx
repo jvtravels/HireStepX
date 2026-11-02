@@ -4,8 +4,7 @@ import { PanelButton } from "@/employer/_panelParts";
 import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import { poolStanding } from "./fitExtras";
-import { bestGradedAnswer, buildRoleFit, cleanQuestionText, formatSessionDate, gradedSessionLabel } from "./helpers";
-import { StarMarks } from "./parts";
+import { buildRoleFit, formatSessionDate, gradedSessionLabel } from "./helpers";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 
 function ClampedText({ text }: { text: string }) {
@@ -24,7 +23,7 @@ function ClampedText({ text }: { text: string }) {
   }, [text, open]);
   return (
     <div className="grid justify-items-start gap-1">
-      <p ref={ref} className={cn("m-0 text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", !open && "line-clamp-3")}>{text}</p>
+      <p ref={ref} className={cn("m-0 text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", !open && "line-clamp-3 @[48rem]:line-clamp-5")}>{text}</p>
       {(cut || open) && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
@@ -39,7 +38,6 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
   const summary = candidate.resume?.summary?.trim();
   if (!hasPractice && !standing && !resumeOnly && !summary) return null;
-  const best = bestGradedAnswer(evidence?.questions);
   const sessions = gradedSessionLabel(candidate, evidence);
   const when = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
   return (
@@ -53,17 +51,6 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
               <dt className="font-medium text-hx-ink-soft">Practice sessions</dt>
               <dd className="m-0 text-hx-coal">
                 {sessions !== "0" ? `${sessions} graded for this role` : "Graded practice evidence"}{when ? `, latest ${when}` : ""}
-              </dd>
-            </>
-          )}
-          {hasPractice && best && (
-            <>
-              <dt className="font-medium text-hx-ink-soft">Best answer</dt>
-              <dd className="m-0 flex min-w-0 items-center justify-between gap-x-4 text-hx-coal">
-                <span className="min-w-0 flex-1 truncate" title={cleanQuestionText(best.question)}>
-                  <span className="font-semibold tabular-nums">{best.score}/100</span> · {cleanQuestionText(best.question)}
-                </span>
-                {best.star && <StarMarks star={best.star} score={best.score} />}
               </dd>
             </>
           )}

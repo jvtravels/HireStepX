@@ -14,7 +14,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, gradedScore, gradedSessionLabel, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, gradedScore, gradedSessionLabel, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -167,13 +167,8 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   else facts.push({ label: "Expected CTC", value: "Not shared", missing: true });
   const workPref = [r.workModePref ? { onsite: "On-site", hybrid: "Hybrid", remote: "Remote" }[r.workModePref] : null, r.openToRelocate ? "open to relocating" : null].filter(Boolean).join(", ");
   if (workPref) facts.push({ label: "Work preference", value: workPref, selfReported: true });
-  if (r.primaryDomain) {
-    const primaryYears = r.domainYears?.find((d) => d.domain.toLowerCase() === r.primaryDomain?.toLowerCase())?.years;
-    // Self-reported domain years can exceed the dated roles; never show more than the header's experience.
-    const totalMonths = experienceMonthsOf(r);
-    const domainMonths = primaryYears ? (totalMonths != null ? Math.min(primaryYears * 12, totalMonths) : primaryYears * 12) : null;
-    facts.push({ label: "Domain", value: domainMonths ? `${r.primaryDomain}, ${formatExperience(domainMonths)} in this field` : r.primaryDomain });
-  }
+  /* No years here: self-reported domain years disagree with the dated experience in the header. */
+  if (r.primaryDomain) facts.push({ label: "Domain", value: r.primaryDomain });
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
   const shownFacts = facts.filter((f) => !f.missing);
@@ -289,7 +284,7 @@ function StandoutPanel({ evidence, onOpenPractice }: { evidence: CandidateEviden
               <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
               <span className="min-w-0 [overflow-wrap:anywhere]">{q.text}</span>
             </div>
-            <p className="m-0 text-[13px] leading-normal text-hx-ink-soft italic [overflow-wrap:anywhere]">&ldquo;{q.quote}&rdquo;</p>
+            <p className="m-0 text-[13px] leading-normal text-hx-ink-soft [overflow-wrap:anywhere]">&ldquo;{q.quote}&rdquo;</p>
           </li>
         ))}
       </ul>
@@ -453,13 +448,13 @@ export function OverviewTab({
         <RequestsPanel state={requestUi.state} disabled={requestUi.disabled} />
         <div className="grid min-w-0 divide-y divide-hx-line @3xl:grid-cols-2 @3xl:divide-x @3xl:divide-y-0 @3xl:[&:has(>:only-child)]:grid-cols-1">
           <AnalysisPanel candidate={candidate} insights={insights} requestUi={requestUi} />
-          <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
         </div>
       </div>
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
         <ProfilePanel candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} onOpenResume={onOpenResume} requestUi={requestUi} />
         <HighlightsPanel candidate={candidate} />
         <SkillsPanel candidate={candidate} requiredSkills={requirement.skills} onOpenResume={onOpenResume} />
+        <InterviewKitPanel candidate={candidate} requirement={requirement} unmatched={unmatched} />
       </div>
     </div>
   );

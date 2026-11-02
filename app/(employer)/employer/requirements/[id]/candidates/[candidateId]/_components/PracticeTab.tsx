@@ -227,7 +227,7 @@ export function PracticeTab({
                             <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
                             <span>{q.text}</span>
                           </ItemTitle>
-                          <ItemDescription className="line-clamp-none text-[13px] italic">&ldquo;{q.quote}&rdquo;</ItemDescription>
+                          <ItemDescription className="line-clamp-none text-[13px]">&ldquo;{q.quote}&rdquo;</ItemDescription>
                         </ItemContent>
                       </Item>
                     ))}

@@ -20,7 +20,7 @@ describe("DecisionStrip on a resume-only candidate", () => {
     expect(text).not.toContain("Ask them to practise");
   });
 
-  it("leads with the best graded answer and a trust label", () => {
+  it("shows the graded session count for this role once evidence is loaded", () => {
     const q = (idx: number, score: number, star: any) => ({ idx, question: `Question ${idx}`, score, verdict: "complete", difficulty: null, star, length: null });
     const evidence: any = {
       sessionDate: "2026-10-17T10:00:00Z",
@@ -29,8 +29,13 @@ describe("DecisionStrip on a resume-only candidate", () => {
     render(<DecisionStrip candidate={{ ...candidate, sessionsCompleted: 1 }} requirement={requirement} matched={[]} evidence={evidence} />);
     const text = screen.getByLabelText("At a glance").textContent ?? "";
     expect(text).toContain("1 graded for this role, latest 17 Oct 2026");
-    expect(text).toContain("88/100 · Question 2");
-    expect(text).not.toContain("Question 3");
+    expect(text).not.toContain("Best answer");
+  });
+
+  it("does not show the all-roles session count while evidence is still loading", () => {
+    render(<DecisionStrip candidate={{ ...candidate, sessionsCompleted: 115 }} requirement={requirement} matched={[]} evidence={null} />);
+    const text = screen.getByLabelText("At a glance").textContent ?? "";
+    expect(text).not.toContain("115");
   });
 
   it("shows no best answer or trust label without practice", () => {

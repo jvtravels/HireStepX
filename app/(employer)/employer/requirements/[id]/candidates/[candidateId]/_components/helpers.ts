@@ -51,7 +51,8 @@ export function gradedScore(candidate: Pick<Candidate, "rosterScore" | "sessions
 export function gradedSessionLabel(candidate: Pick<Candidate, "sessionsCompleted">, evidence: CandidateEvidence | null): string {
   const n = evidence?.sessionTrend?.length ?? 0;
   if (n > 0) return n >= 8 ? "8+" : String(n);
-  return String(candidate.sessionsCompleted);
+  /* sessionsCompleted counts every role, so it must not be shown as "for this role" before the evidence loads. */
+  return evidence ? String(candidate.sessionsCompleted) : "0";
 }
 
 

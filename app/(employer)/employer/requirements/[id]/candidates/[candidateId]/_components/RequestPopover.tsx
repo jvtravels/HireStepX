@@ -315,7 +315,7 @@ export function RequestButton({ pendingCount, ...triggerProps }: { pendingCount:
       className="inline-flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full border border-hx-line bg-white px-2.5 text-[12px] font-medium text-hx-ink-soft transition-colors hover:bg-hx-indigo-100 hover:text-hx-indigo focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pointer-coarse:h-11 pointer-coarse:px-4"
     >
       <PlusIcon size={14} aria-hidden="true" />
-      Request
+      Ask candidate
       {pendingCount > 0 && <span className="tabular-nums text-hx-ink-soft">({pendingCount} waiting)</span>}
     </button>
   );
