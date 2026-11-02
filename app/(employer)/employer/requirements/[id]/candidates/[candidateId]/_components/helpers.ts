@@ -555,3 +555,20 @@ export function dealBreakerParts(r: Candidate["resume"]): { key: "notice" | "pay
   if (ask) out.push({ key: "pay", text: `Expects ${ask}` });
   return out;
 }
+
+/** The server blanks employer and school names with "[withheld]" while a candidate is locked;
+ *  that reads as broken data, so show it as plain words instead. */
+const HIDDEN_NAME = "a hidden company";
+function softenText(v: string): string {
+  return v.includes("[withheld]") ? v.replaceAll("[withheld]", HIDDEN_NAME) : v;
+}
+function softenDeep<T>(v: T): T {
+  if (typeof v === "string") return softenText(v) as T;
+  if (Array.isArray(v)) return v.map(softenDeep) as T;
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, softenDeep(x)])) as T;
+  return v;
+}
+export function softenWithheld<C extends { resume?: unknown }>(candidate: C): C {
+  if (!candidate?.resume) return candidate;
+  return { ...candidate, resume: softenDeep(candidate.resume) };
+}

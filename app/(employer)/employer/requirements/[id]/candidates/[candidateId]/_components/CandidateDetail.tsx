@@ -12,7 +12,7 @@ import { useEmployerAccess } from "@/employer/_useEmployerAccess";
 import { ErrorRetry, EmptyNote, LinkCta, SuspendedBanner } from "@/employer/_requirementAtoms";
 import { PageSkeleton } from "@/employer/_consoleParts";
 import { CandidateHeader } from "./CandidateHeader";
-import { buildCandidateSummary, buildEvidenceSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, summarizeFit } from "./helpers";
+import { buildCandidateSummary, buildEvidenceSummary, buildRoleFit, dedupeQuestions, maskedName, matchedSkillCount, rankCandidates, shortlistPosition, softenWithheld, summarizeFit } from "./helpers";
 import { CandidateNav } from "./CandidateNav";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { useCandidateShortcuts } from "./useCandidateShortcuts";
@@ -70,7 +70,8 @@ export default function CandidateDetail({ requirementId, matchId }: { requiremen
   const requests = useCandidateRequests(matchId);
   const reviews = useTeamReviews(matchId);
 
-  const { requirement, candidate } = d;
+  const { requirement } = d;
+  const candidate = useMemo(() => (d.candidate ? softenWithheld(d.candidate) : d.candidate), [d.candidate]);
   const shortlistHref = `/employer/requirements/${requirementId}`;
   const ready = !!candidate && !d.unavailable;
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { averageTenureMonths, isRealDegree, isSoftSkill, shortRole, buildEvidenceSummary, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, sortFitRows, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
+import { averageTenureMonths, isRealDegree, softenWithheld, isSoftSkill, shortRole, buildEvidenceSummary, buildResumeInsights, buildRoleFit, cleanQuestionText, dedupeQuestions, describeDelivery, employerCapabilities, formatTenure, formatYears, matchedSkillCount, groupSkillsByDepth, noticeDays, skillChipLabel, sortFitRows, summarizeFit, summarizeQuestions } from "../../app/(employer)/employer/requirements/[id]/candidates/[candidateId]/_components/helpers";
 import type { CandidateEvidence, EvidenceQuestion } from "../employer/EmployerDataContext";
 import type { Candidate, Requirement } from "../employer/mockData";
 
@@ -315,5 +315,19 @@ describe("profile display cleanup", () => {
   it("drops skill years that exceed the total experience", () => {
     expect(skillChipLabel({ name: "Java", yearsUsed: 5 }, 1)).toBe("Java");
     expect(skillChipLabel({ name: "Java", yearsUsed: 1 }, 1)).toBe("Java · 1 yr");
+  });
+});
+
+describe("softenWithheld", () => {
+  it("turns the server placeholder into plain words everywhere in the resume", () => {
+    const c = { id: "1", resume: { summary: "PM at [withheld], drives growth.", keyAchievements: ["Led [withheld] launch"], experience: [{ title: "PM", company: "" }] } };
+    const out = softenWithheld(c as never) as unknown as typeof c;
+    expect(out.resume.summary).toBe("PM at a hidden company, drives growth.");
+    expect(out.resume.keyAchievements[0]).toBe("Led a hidden company launch");
+    expect(out.resume.experience[0].company).toBe("");
+  });
+  it("leaves a candidate with no resume alone", () => {
+    const c: { id: string; resume?: undefined } = { id: "2" };
+    expect(softenWithheld(c)).toBe(c);
   });
 });
