@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { TrendingUpIcon } from "lucide-react";
+import { SparklesIcon, TrendingUpIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemSeparator, ItemTitle } from "@/components/ui/item";
 import type { Candidate } from "@/employer/mockData";
 import { InfoTip, Panel } from "@/employer/_panelParts";
@@ -16,7 +16,7 @@ function Entries({ rows, label }: { rows: EntryRow[]; label: string }) {
           {i > 0 && <ItemSeparator className="my-0" />}
           <Item role="listitem" size="sm" className="items-start justify-between gap-4 px-0">
             <ItemContent>
-              <ItemTitle className="text-[13px]">{r.title}</ItemTitle>
+              <ItemTitle className="text-[15px] font-semibold">{r.title}</ItemTitle>
               {r.sub && <ItemDescription className="line-clamp-none text-[13px]">{r.sub}</ItemDescription>}
               {r.extra}
             </ItemContent>
@@ -62,7 +62,6 @@ function SkillsBlock({ candidate }: { candidate: Candidate }) {
     return candidate.skills.length ? <ChipList label="Skills" items={candidate.skills.map(displaySkillName)} /> : <MutedText>No tools or skills listed on this resume.</MutedText>;
   }
   const groups = groupSkillsByDepth(detailed);
-  const recent = detailed.filter((s) => s.recent).map((s) => s.name);
   return (
     <div className="grid gap-4">
       {groups.map((g) => (
@@ -71,9 +70,12 @@ function SkillsBlock({ candidate }: { candidate: Candidate }) {
           <ChipList label={g.label} items={g.skills.map(skillChipLabel)} />
         </div>
       ))}
-      {recent.length > 0 && <p className="m-0 text-[12px] text-hx-ink-soft">Used in the last 12 months: {recent.join(", ")}.</p>}
     </div>
   );
+}
+
+function recentSkillNames(candidate: Candidate): string[] {
+  return (candidate.resume?.skillsDetailed ?? []).filter((s) => s.recent).map((s) => s.name);
 }
 
 export function ResumeTab({ candidate }: { candidate: Candidate }) {
@@ -83,6 +85,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
   const avg = resume ? averageTenureMonths(resume.experience) : null;
   const progression = (resume?.promotionSignals ?? []).filter((p) => p.trim());
   const hasStory = progression.length > 0;
+  const recent = recentSkillNames(candidate);
   const strengths = (resume?.interviewStrengths ?? []).filter((t) => t.trim());
 
   return (
@@ -100,7 +103,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
                       label="Employment history"
                       rows={resume.experience.map((e, i) => {
                         const months = periodMonths(e.period);
-                        return { key: `${e.company}-${e.period}-${i}`, title: e.title || "Role", sub: e.company, when: e.period, note: months != null ? formatTenure(months) : undefined, extra: <RoleDetail role={e} /> };
+                        return { key: `${e.company}-${e.period}-${i}`, title: e.title || "Role", sub: e.company, when: e.period.replace(/^(\d{4})\s*[–-]\s*\1$/, "$1"), note: months != null ? formatTenure(months) : undefined, extra: <RoleDetail role={e} /> };
                       })}
                     />
                   </div>
@@ -116,6 +119,29 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             node: (
               <Panel id="education-heading" title="Education">
                 <Entries label="Education" rows={resume.education.map((ed, i) => ({ key: `${ed.school}-${ed.degree}-${i}`, title: ed.degree, sub: ed.school, when: ed.year }))} />
+              </Panel>
+            ),
+          },
+          {
+            key: "skills",
+            weight: 3 + Math.ceil((resume?.skillsDetailed.length || candidate.skills.length) / 4) + (resume?.industries.length ? 2 : 0) + (resume?.certifications.length ? 2 : 0),
+            node: (
+              <Panel id="skills-heading" title="Skills" info={recent.length > 0 ? <InfoTip label="Recently used skills">Used in the last 12 months: {recent.join(", ")}.</InfoTip> : undefined}>
+                <div className="grid gap-4">
+                  <SkillsBlock candidate={candidate} />
+                  {!!resume?.industries.length && (
+                    <div className="grid gap-2 border-t border-hx-line pt-4">
+                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Industries</h3>
+                      <ChipList label="Industries" items={resume.industries} />
+                    </div>
+                  )}
+                  {!!resume?.certifications.length && (
+                    <div className="grid gap-2 border-t border-hx-line pt-4">
+                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Certifications</h3>
+                      <ChipList label="Certifications" items={resume.certifications} />
+                    </div>
+                  )}
+                </div>
               </Panel>
             ),
           },
@@ -145,30 +171,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             weight: 2 + strengths.length * 2,
             node: (
               <Panel id="strengths-heading" title="Strengths predicted from resume">
-                <IconList label="Strengths predicted from resume" items={strengths} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
-              </Panel>
-            ),
-          },
-          {
-            key: "skills",
-            weight: 3 + Math.ceil((resume?.skillsDetailed.length || candidate.skills.length) / 4) + (resume?.industries.length ? 2 : 0) + (resume?.certifications.length ? 2 : 0),
-            node: (
-              <Panel id="skills-heading" title="Skills">
-                <div className="grid gap-4">
-                  <SkillsBlock candidate={candidate} />
-                  {!!resume?.industries.length && (
-                    <div className="grid gap-2 border-t border-hx-line pt-4">
-                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Industries</h3>
-                      <ChipList label="Industries" items={resume.industries} />
-                    </div>
-                  )}
-                  {!!resume?.certifications.length && (
-                    <div className="grid gap-2 border-t border-hx-line pt-4">
-                      <h3 className="m-0 text-[13px] font-semibold text-hx-coal">Certifications</h3>
-                      <ChipList label="Certifications" items={resume.certifications} />
-                    </div>
-                  )}
-                </div>
+                <IconList label="Strengths predicted from resume" items={strengths} icon={SparklesIcon} iconClassName="size-4 text-hx-ink-soft" />
               </Panel>
             ),
           },
