@@ -90,26 +90,23 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
               {rows.map((row) => (
                 <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0">
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-hx-coal">{row.label}</div>
-                      <div className="text-[12px] text-hx-ink-soft [overflow-wrap:anywhere]">Asks for {row.asked}</div>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="text-[13px] font-medium text-hx-coal">{row.label}</span>
+                      <InfoTip label={`About ${row.label}`}>
+                        Asks for {row.asked}. {row.reason} {FIT_SOURCE_LABEL[row.source]}.
+                      </InfoTip>
+                      {row.source !== "profile" && (
+                        <PanelButton onClick={row.source === "practice" ? onOpenPractice : onOpenResume}>
+                          {row.source === "practice" ? "See practice evidence" : "See in resume"}
+                        </PanelButton>
+                      )}
                     </div>
                     <div className="flex shrink-0 items-center gap-3">
                       <span className="max-w-36 text-right text-[13px] font-medium text-hx-coal [overflow-wrap:anywhere]">{row.has}</span>
                       <FitMark status={row.status} />
                     </div>
                   </div>
-                  <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">
-                    {row.reason} <span>{FIT_SOURCE_LABEL[row.source]}.</span>
-                    {row.source !== "profile" && (
-                      <>
-                        {" "}
-                        <PanelButton onClick={row.source === "practice" ? onOpenPractice : onOpenResume}>
-                          {row.source === "practice" ? "See practice evidence" : "See in resume"}
-                        </PanelButton>
-                      </>
-                    )}
-                  </p>
+                  {row.status !== "meets" && <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">{row.reason}</p>}
                   {row.id === "skills" && (matched.length > 0 || unmatched.length > 0) && (
                     <div className="grid gap-2">
                       <div className="flex flex-wrap gap-1.5">
