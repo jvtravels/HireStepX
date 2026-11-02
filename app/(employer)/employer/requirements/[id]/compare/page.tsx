@@ -75,7 +75,7 @@ export default function ComparePage() {
   }
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div className="flex min-w-0 flex-col gap-3 px-4 pt-4 pb-6 md:px-7">
       <BackLink requirementId={requirement.id} />
       <CompareBoard requirementId={requirement.id} requirementTitle={requirement.title} required={requirement.skills} chosen={chosen} />
     </div>
