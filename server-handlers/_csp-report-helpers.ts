@@ -17,6 +17,14 @@ export function isEmployerConsolePath(pathname: string): boolean {
   return pathname === "/employer" || pathname.startsWith("/employer/");
 }
 
+/* The trial only needs a sample of page loads to name the inline scripts; sending the header on
+   every load added about three report calls to each employer page, slow ones on weak connections. */
+export const CSP_TRIAL_SAMPLE_RATE = 0.05;
+
+export function shouldSendCspTrial(pathname: string, random: number): boolean {
+  return isEmployerConsolePath(pathname) && random < CSP_TRIAL_SAMPLE_RATE;
+}
+
 /* Candidate and job ids in a page address are replaced so reports carry no ids. */
 function stripIds(raw: unknown): string {
   if (typeof raw !== "string") return "";

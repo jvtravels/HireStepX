@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { reportOnlyCsp, isEmployerConsolePath, summarizeCspReports } from "../../server-handlers/_csp-report-helpers";
+import { reportOnlyCsp, isEmployerConsolePath, shouldSendCspTrial, summarizeCspReports } from "../../server-handlers/_csp-report-helpers";
 import handler from "../../server-handlers/csp-report";
 
 describe("reportOnlyCsp", () => {
@@ -61,5 +61,13 @@ describe("csp-report handler", () => {
   it("rejects bad JSON and wrong methods", async () => {
     expect((await handler(post("{nope"))).status).toBe(400);
     expect((await handler(new Request("https://x/api/csp-report"))).status).toBe(405);
+  });
+});
+
+describe("shouldSendCspTrial", () => {
+  it("sends the trial header on a small sample of employer loads only", () => {
+    expect(shouldSendCspTrial("/employer/jobs", 0.01)).toBe(true);
+    expect(shouldSendCspTrial("/employer/jobs", 0.5)).toBe(false);
+    expect(shouldSendCspTrial("/dashboard", 0.01)).toBe(false);
   });
 });
