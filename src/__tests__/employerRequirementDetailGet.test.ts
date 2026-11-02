@@ -141,12 +141,12 @@ describe("GET employer-requirement-detail — masking", () => {
     expect(raw).not.toContain("github.com/priya");
   });
 
-  it("withholds employer and school names and a small-town city for a locked match", async () => {
+  it("shows the employer but withholds school names and a small-town city for a locked match", async () => {
     install({ matches: [m(1)] });
     const c = (await get()).body.candidates[0];
     expect(c.city).toBe("Not specified");
-    expect(JSON.stringify(c)).not.toMatch(/Razorpay|IIT|Jodhpur/);
-    expect((c.resume as { experience: Array<Record<string, unknown>> }).experience[0]).toMatchObject({ title: "Frontend Dev", company: "", period: "2020 - 2022" });
+    expect(JSON.stringify(c)).not.toMatch(/IIT|Jodhpur/);
+    expect((c.resume as { experience: Array<Record<string, unknown>> }).experience[0]).toMatchObject({ title: "Frontend Dev", company: "Razorpay", period: "2020 - 2022" });
   });
 
   it("returns real name and contact only for an unlocked match", async () => {
