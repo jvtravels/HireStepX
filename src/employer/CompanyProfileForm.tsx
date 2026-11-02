@@ -304,9 +304,12 @@ export default function CompanyProfileForm({
         {saved ? "Saved." : ""}
       </p>
 
-      <PrimaryCta full={idPrefix !== "settings"} type="submit" loading={saving} disabled={disabled}>
-        {saving ? busyLabel : submitLabel}
-      </PrimaryCta>
+      {/* The form is a flex column, so a bare button would stretch; Settings keeps it its natural width. */}
+      <div style={idPrefix === "settings" ? { alignSelf: "flex-start" } : undefined}>
+        <PrimaryCta full={idPrefix !== "settings"} type="submit" loading={saving} disabled={disabled}>
+          {saving ? busyLabel : submitLabel}
+        </PrimaryCta>
+      </div>
     </form>
   );
 }
