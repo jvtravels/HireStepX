@@ -374,7 +374,7 @@ export async function proxy(request: NextRequest) {
     requestHeaders.set("Content-Security-Policy", csp);
     const url = request.nextUrl.clone();
     url.pathname = "/employer-missing";
-    return withCsp(NextResponse.rewrite(url, { request: { headers: requestHeaders } }));
+    return withCsp(NextResponse.rewrite(url, { status: 404, request: { headers: requestHeaders } }));
   }
 
   return nextWithNonce();
