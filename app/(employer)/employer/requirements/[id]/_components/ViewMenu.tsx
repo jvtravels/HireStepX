@@ -106,8 +106,8 @@ export default function ViewMenu({
               Strong matches ({STRONG_MATCH_BAR}+)
             </label>
             {showSkillsFilter && (
-              <label className={OPTION}>
-                <Checkbox checked={allSkills} onCheckedChange={(v) => onAllSkillsChange(v === true)} />
+              <label htmlFor="view-all-skills" className={OPTION}>
+                <Checkbox id="view-all-skills" checked={allSkills} onCheckedChange={(v) => onAllSkillsChange(v === true)} />
                 Has all required skills
               </label>
             )}
