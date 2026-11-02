@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { storePendingReferralCode, storePendingConsent, clearPendingConsent, useAuth } from "../AuthContext";
 import { getAuthToken } from "../supabase";
+import { resolveAccountHome } from "./accountHome";
 import { tokens as t, fonts as f, shadows } from "./_tokens";
 import {
   Field,
@@ -120,7 +121,6 @@ export default function Login() {
   const nextParam = searchParams?.get("next") ?? null;
   const intent = classifyAuthIntent(nextParam);
   const isInviteFlow = intent.kind === "invite";
-  const isEmployerFlow = intent.kind === "employer";
 
   // Re-capture a referral code forwarded through the verification-email
   // redirect (verify-email.ts appends ?ref= for us). The signup browser's
@@ -160,13 +160,7 @@ export default function Login() {
       try {
         const token = await getAuthToken();
         if (token) {
-          const res = await fetch("/api/employer-profile", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const data: { status?: string } = await res.json();
-            if (data.status && data.status !== "none") dest = "/employer";
-          }
+          dest = (await resolveAccountHome(token)) ?? dest;
         }
       } catch {
         /* fall back to the candidate redirect */
@@ -475,17 +469,10 @@ export default function Login() {
                   your{" "}
                   team
                 </>
-              ) : isEmployerFlow ? (
-                <>
-                  Hire{" "}
-                  faster{" "}
-                  with proof
-                </>
               ) : (
                 <>
-                  Clarity{" "}
-                  wins{" "}
-                  interviews
+                  Welcome{" "}
+                  back
                 </>
               )}
             </h1>
@@ -503,9 +490,7 @@ export default function Login() {
             >
               {isInviteFlow
                 ? "Sign in to accept your team invite."
-                : isEmployerFlow
-                ? "Sign in to review your shortlist of candidates who've already been scored on real interview practice."
-                : "Practise interviews with an AI coach. Get scored, structured feedback after every session."}
+                : "Sign in to continue. We take you to the right place for your account."}
             </p>
           </div>
 
@@ -761,7 +746,7 @@ export default function Login() {
                       </>
                     ) : (
                       <>
-                        {isInviteFlow ? "Continue to your invite" : isEmployerFlow ? "Continue to your roster" : "Continue to practise"}
+                        {isInviteFlow ? "Continue to your invite" : "Log in"}
                         <svg
                           className="hsx-login-cta-arrow"
                           width="16"

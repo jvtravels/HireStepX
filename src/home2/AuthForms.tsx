@@ -11,6 +11,7 @@ import {
   useAuth,
 } from "../AuthContext";
 import { getAuthToken } from "../supabase";
+import { resolveAccountHome } from "../auth/accountHome";
 import { isPlausibleWebsite, WEBSITE_FORMAT_MESSAGE } from "../employer/_companyProfileHelpers";
 import { emailDomain, isFreeMailDomain } from "../../server-handlers/_employer-trust";
 import { PasswordChecklist, PasswordStrengthMeter } from "../auth/_fields";
@@ -281,7 +282,6 @@ export function StagingLoginForm() {
   const nextParam = searchParams?.get("next") ?? null;
   const intent = classifyAuthIntent(nextParam);
   const isInviteFlow = intent.kind === "invite";
-  const isEmployerFlow = intent.kind === "employer";
 
   useEffect(() => {
     const ref = searchParams?.get("ref") ?? null;
@@ -307,11 +307,7 @@ export function StagingLoginForm() {
       try {
         const token = await getAuthToken();
         if (token) {
-          const res = await fetch("/api/employer-profile", { headers: { Authorization: `Bearer ${token}` } });
-          if (res.ok) {
-            const data: { status?: string } = await res.json();
-            if (data.status && data.status !== "none") dest = "/employer";
-          }
+          dest = (await resolveAccountHome(token)) ?? dest;
         }
       } catch {
         /* fall back to the candidate redirect */
@@ -455,7 +451,7 @@ export function StagingLoginForm() {
       <style>{authFormsCss}</style>
       <h1 id="login-heading">Welcome back</h1>
       <p className="hx-sub">
-        {isInviteFlow ? "Log in to accept your team invite." : isEmployerFlow ? "Log in to review your shortlist of scored candidates." : "Log in to pick up your practice."}
+        {isInviteFlow ? "Log in to accept your team invite." : "Log in to continue. We take you to the right place for your account."}
       </p>
       {googleHint && (
         <div role="status" aria-live="polite" className="hx-banner ok">
@@ -540,7 +536,7 @@ export function StagingLoginForm() {
           <span>Keep me signed in for 30 days. Not for shared devices.</span>
         </label>
         <button type="submit" className="hx-btn" disabled={!canSubmit} aria-busy={loading}>
-          {loading ? "Signing in…" : isEmployerFlow ? "Continue to your roster" : "Log in"}
+          {loading ? "Signing in…" : "Log in"}
         </button>
       </form>
       <p className="hx-legal">
