@@ -8,12 +8,12 @@ import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
-import { HEADER_ACTION, candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, type FitSummary } from "./helpers";
+import { candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, type FitSummary } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
-import { ResumeDownload } from "./ResumeDownload";
+import { ResumeDownloadItem } from "./ResumeDownload";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { agoFromDays } from "../../../_components/requirementFormat";
 
@@ -152,9 +152,8 @@ export function CandidateHeader({
 
         <div className="flex flex-wrap items-center gap-2">
           <MatchSignal score={candidate.matchScore} fit={fit} />
-          {resumeFileName && <ResumeDownload matchId={candidate.id} fileName={resumeFileName} className={HEADER_ACTION} />}
           <PrimaryCandidateAction candidate={candidate} declined={declined} suspended={suspended} onUnlock={onUnlock} onInvite={onInvite} onReopen={onReopen} />
-          {((reviews.enabled) || canReject) && (
+          {(resumeFileName || reviews.enabled || canReject) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button type="button" variant="outline" size="icon" aria-label={`More actions for ${displayName}`} className="text-hx-ink-soft pointer-coarse:size-11">
@@ -162,6 +161,7 @@ export function CandidateHeader({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
+                {resumeFileName && <ResumeDownloadItem matchId={candidate.id} fileName={resumeFileName} />}
                 {reviews.enabled && (
                   <DropdownMenuItem disabled={suspended || !reviews.data} onSelect={onReview}>
                     <UsersIcon size={14} aria-hidden="true" /> {reviews.data?.mine ? `Your review: ${REVIEW_LABEL[reviews.data.mine.rating]}` : "Review"}

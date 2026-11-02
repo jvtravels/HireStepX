@@ -1,35 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { Download, LoaderCircle } from "lucide-react";
-import { cn } from "cn";
-import { Button } from "@/components/ui/button";
+import { Download } from "lucide-react";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/Toast";
 import { useEmployerData } from "@/employer/EmployerDataContext";
 
-export function ResumeDownload({ matchId, fileName, size = "default", className }: { matchId: string; fileName: string; size?: "default" | "sm"; className?: string }) {
+/* Lives in the header's More menu so the one primary action stays the invite. */
+export function ResumeDownloadItem({ matchId, fileName }: { matchId: string; fileName: string }) {
   const { fetchCandidateResumeUrl } = useEmployerData();
-  const [busy, setBusy] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const { toast } = useToast();
 
   async function download() {
-    setBusy(true);
-    setFailed(false);
     const file = await fetchCandidateResumeUrl(matchId);
-    setBusy(false);
     if (!file) {
-      setFailed(true);
+      toast("Couldn't prepare the file. Try again.", "error");
       return;
     }
     window.location.assign(file.url);
   }
 
   return (
-    <div className="flex flex-col items-start gap-1">
-      <Button variant="outline" size={size} onClick={() => void download()} disabled={busy} title={fileName} className={cn("pointer-coarse:h-11", className)}>
-        {busy ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Download aria-hidden="true" />}
-        Download resume
-      </Button>
-      <p role="status" className="text-[12px] text-destructive empty:hidden">{failed ? "Couldn't prepare the file. Try again." : ""}</p>
-    </div>
+    <DropdownMenuItem title={fileName} onSelect={() => void download()}>
+      <Download size={14} aria-hidden="true" /> Download resume
+    </DropdownMenuItem>
   );
 }
