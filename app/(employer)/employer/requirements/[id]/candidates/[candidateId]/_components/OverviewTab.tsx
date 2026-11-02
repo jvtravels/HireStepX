@@ -85,10 +85,10 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
           </div>
         </div>
         {rows.length > 0 && (
-          <div className="border-t border-hx-line pt-2">
-            <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
+          <div className="@container border-t border-hx-line pt-2">
+            <ul aria-label="Criteria compared with the posting" className="m-0 grid list-none grid-cols-1 items-start p-0 @[46rem]:grid-cols-2 @[46rem]:gap-x-10">
               {rows.map((row) => (
-                <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0">
+                <li key={row.id} className="grid gap-2.5 border-b border-hx-line py-3 last:border-b-0 last:pb-0 @[46rem]:border-b-0 @[46rem]:py-2.5">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
                       <span className="text-[13px] font-medium text-hx-coal">{row.label}</span>
