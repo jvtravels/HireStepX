@@ -343,6 +343,7 @@ export default function EmployerJobsPage() {
               <JobsTable
                 rows={pageRows}
                 hasAnyDepartment={departmentOptions.length > 1}
+                hasAnyDueDate={requirements.some((r) => !!r.dueDate)}
                 sort={sort}
                 onSortChange={setSort}
                 readOnly={suspended}

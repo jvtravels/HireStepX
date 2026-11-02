@@ -31,6 +31,9 @@ const JOBS_TABLE_CSS = `
 .jobs-col-act { position: sticky; right: 0; z-index: 1; background: ${t.white}; box-shadow: -1px 0 0 ${t.line}; }
 thead .jobs-col-act { background: ${t.rowTint}; z-index: 3; }
 tr:is(:hover, :has([aria-expanded="true"])) > .jobs-col-act { background: color-mix(in srgb, var(--muted) 50%, ${t.white}); }
+/* No job has a deadline: the whole column would only repeat "No deadline". Due date is the second-to-last cell
+   (Actions is last), and display:none keeps the nth-last-child rules below pointing at the right columns. */
+.jobs-no-due :is(th, td):nth-last-child(2) { display: none; }
 @container (max-width: 1299px) {
   .jobs-col-dept { display: none; }
   .jobs-table { min-width: 1100px; }
@@ -57,10 +60,11 @@ function shouldIgnoreRowClick(e: React.MouseEvent<HTMLElement>): boolean {
 }
 
 export default function JobsTable({
-  rows, hasAnyDepartment, sort, onSortChange, readOnly, onStage, onOpen, rowActions,
+  rows, hasAnyDepartment, hasAnyDueDate, sort, onSortChange, readOnly, onStage, onOpen, rowActions,
 }: {
   rows: RequirementSummary[];
   hasAnyDepartment: boolean;
+  hasAnyDueDate: boolean;
   sort: Sort<SortColumn>;
   onSortChange: (s: Sort<SortColumn>) => void;
   readOnly: boolean;
@@ -80,7 +84,7 @@ export default function JobsTable({
   return (
         <>
         <style>{JOBS_TABLE_CSS}</style>
-        <Table aria-label="Posted jobs" className="table-fixed jobs-table" containerClassName="overflow-visible" style={{ width: "100%" }}>
+        <Table aria-label="Posted jobs" className={hasAnyDueDate ? "table-fixed jobs-table" : "table-fixed jobs-table jobs-no-due"} containerClassName="overflow-visible" style={{ width: "100%" }}>
           <TableHeader>
             <TableRow style={{ background: t.rowTint, height: 40, position: "sticky", top: 0, zIndex: 4 }}>
               {/* table-fixed computes column widths from these first-row
