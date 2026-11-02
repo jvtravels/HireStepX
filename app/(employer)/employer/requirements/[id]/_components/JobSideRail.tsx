@@ -121,7 +121,7 @@ export default function JobSideRail({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="job-summary-panels"
-        className="flex min-h-11 w-full cursor-pointer items-center justify-between border-0 bg-transparent px-5 py-2.5 text-left text-[13px] font-semibold text-hx-coal focus-visible:outline-2 focus-visible:-outline-offset-2 min-[1440px]:hidden"
+        className="flex min-h-11 w-full cursor-pointer items-center justify-between border-0 bg-transparent px-7 py-2.5 text-left text-[13px] font-semibold text-hx-coal focus-visible:outline-2 focus-visible:-outline-offset-2 min-[1440px]:hidden"
       >
         Job details and preferences
         <ChevronDownIcon size={16} aria-hidden="true" className={cn("text-hx-ink-soft transition-transform duration-150 motion-reduce:transition-none", open && "rotate-180")} />

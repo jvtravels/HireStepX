@@ -7,12 +7,13 @@ import { cn } from "cn";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Requirement } from "@/employer/EmployerDataContext";
-import { jobStatusPill, type JobStatusTone } from "@/employer/_jobDetailHelpers";
-import { MetaLine, PanelButton, type MetaPart } from "@/employer/_panelParts";
+import { jobStatusPill, skillTiers, type JobStatusTone } from "@/employer/_jobDetailHelpers";
+import { STAGE_LABEL } from "@/employer/_atoms";
+import { MetaLine, PanelButton, SkillChip, type MetaPart } from "@/employer/_panelParts";
 import { InlineNotice } from "@/employer/_requirementAtoms";
 import { EMPLOYMENT_TYPE_LABEL, WORK_MODE_LABEL } from "@/hiringMatchFormat";
 import { ArchiveDialog, UnlockHistoryDialog } from "./JobDialogs";
-import { budgetLabel, experienceLabel, whereLabel } from "./requirementFormat";
+import { budgetLabel, experienceLabel, timeAgoLabel, whereLabel } from "./requirementFormat";
 import type { JobMessage } from "./useJobActions";
 
 const STATUS_TONE: Record<JobStatusTone, string> = {
@@ -37,6 +38,30 @@ export function metaParts(r: Requirement): MetaPart[] {
     [IndianRupeeIcon, budgetLabel(r)],
   ];
   return parts.filter((p): p is [LucideIcon, string] => !!p[1]).map(([icon, text]) => ({ icon, text }));
+}
+
+const GLANCE_SKILLS = 4;
+
+/** Phone only: the stage, posting age and must-have skills, which otherwise sit behind two collapsed rows. */
+function PhoneGlance({ requirement }: { requirement: Requirement }) {
+  const { mustHave } = skillTiers(requirement);
+  const shown = mustHave.slice(0, GLANCE_SKILLS);
+  const stage = requirement.status === "closed" ? null : STAGE_LABEL[requirement.stage];
+  const posted = timeAgoLabel(requirement.createdAt);
+  const facts = [stage && `Stage: ${stage}`, posted && `Posted ${posted}`].filter(Boolean).join(" · ");
+  return (
+    <div className="mt-3 flex min-w-0 flex-col gap-2 lg:hidden">
+      <p className="m-0 text-[13px] text-hx-ink-soft">{facts}</p>
+      {shown.length > 0 && (
+        <ul aria-label="Must-have skills" className="m-0 flex list-none flex-wrap items-center gap-1.5 p-0">
+          {shown.map((sk) => (
+            <li key={sk}><SkillChip tone="required">{sk}</SkillChip></li>
+          ))}
+          {mustHave.length > shown.length && <li className="text-[12px] text-hx-ink-soft">+{mustHave.length - shown.length} more</li>}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export default function JobHeader({
@@ -87,6 +112,7 @@ export default function JobHeader({
             </span>
           </div>
           <MetaLine parts={meta} className="mt-3" />
+          {!briefOpen && <PhoneGlance requirement={requirement} />}
         </div>
 
         <div className="flex items-center gap-2">
