@@ -476,8 +476,9 @@ export function buildEvidenceSummary(candidate: Candidate, _requirement: Pick<Re
  *  tenure, graded practice, hiring facts and fit. Sentences are only emitted for data that exists, and
  *  company names stay out so it is as safe for a locked candidate as the rest of the page. The
  *  candidate's own summary is shown separately and labelled as theirs. */
-export function buildProfileSummary(candidate: Candidate, requirement: Pick<Requirement, "title" | "skills">, matched: string[], evidence: CandidateEvidence | null): string | null {
+export function buildProfileSummary(candidate: Candidate, _requirement: Pick<Requirement, "title" | "skills">, _matched: string[], _evidence: CandidateEvidence | null): string | null {
   const r = candidate.resume;
+  if (!r) return null;
   const out: string[] = [];
   const list = (xs: string[], n = 3) => xs.slice(0, n).join(", ");
 
@@ -492,34 +493,9 @@ export function buildProfileSummary(candidate: Candidate, requirement: Pick<Requ
   const tenure = r ? averageTenureMonths(r.experience) : null;
   if (tenure != null && (r?.experience.length ?? 0) >= 2) out.push(`Stays about ${formatTenure(tenure)} per role.`);
 
+  /* Scores, skill counts and what is not shared sit in their own cards, so the summary says who this is. */
   const primary = (r?.skillsDetailed ?? []).filter((s) => s.depth === "primary").map((s) => displaySkillName(s.name));
-  const missing = requirement.skills.filter((s) => !matched.includes(s));
-  if (requirement.skills.length > 0) {
-    const cover = `Covers ${matched.length} of ${requirement.skills.length} skills this role asks for${matched.length > 0 ? ` (${list(matched, 4)})` : ""}`;
-    out.push(`${cover}${missing.length > 0 ? `; missing ${list(missing)}` : ""}.`);
-  }
   if (primary.length > 0) out.push(`Deepest in ${list(primary, 4)}.`);
-
-  const score = gradedScore(candidate, evidence);
-  if (score != null) {
-    const ranked = [...(evidence?.skills ?? [])].sort((a, b) => b.score - a.score);
-    const best = ranked[0];
-    const weak = ranked.length > 1 ? ranked[ranked.length - 1] : null;
-    const verdict = evidence?.readiness ? `, rated ${READINESS_LABEL[evidence.readiness.band].toLowerCase()}` : "";
-    const spread = best ? `; strongest on ${best.name} (${best.score})${weak && weak.score < best.score ? `, weakest on ${weak.name} (${weak.score})` : ""}` : "";
-    out.push(`Scored ${score} across ${candidate.sessionsCompleted} graded practice interview${candidate.sessionsCompleted === 1 ? "" : "s"}${verdict}${spread}.`);
-  } else {
-    out.push("Has not completed a graded practice interview yet.");
-  }
-
-  const ctc = r?.expectedCtc ?? r?.expectedCtcBand;
-  const notice = noticePhrase(r?.noticePeriod);
-  const mode = r?.workModePref ? { onsite: "on-site", hybrid: "hybrid", remote: "remote" }[r.workModePref as "onsite" | "hybrid" | "remote"] : null;
-  const terms = [notice, ctc && `expects ${ctc}`, mode && `prefers ${mode} work`, r?.openToRelocate && "open to relocating"].filter(Boolean);
-  if (terms.length > 0) out.push(`${terms.join(", ").replace(/^./, (c) => c.toUpperCase())}.`);
-
-  const unshared = [!r?.noticePeriod && "notice period", !r?.currentCtc && "current CTC", !ctc && "expected CTC"].filter(Boolean);
-  if (unshared.length > 0) out.push(`Not yet shared: ${unshared.join(", ")}.`);
 
   return out.length > 0 ? out.join(" ") : null;
 }

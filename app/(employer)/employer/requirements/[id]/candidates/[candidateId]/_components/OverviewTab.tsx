@@ -204,13 +204,8 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   return (
     <Panel id="profile-heading" title="Profile" action={<span className="inline-flex items-center gap-1"><InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip><PanelButton onClick={onOpenResume}>Full resume</PanelButton></span>}>
       <div className="grid gap-4">
-        {hxSummary && (
-          <div className="grid gap-1.5">
-            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">HireStepX summary</h3>
-            <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{hxSummary}</p>
-          </div>
-        )}
-        {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
+        {r.headline && <p className="m-0 text-[14px] font-medium leading-snug text-hx-coal">{r.headline}</p>}
+        {hxSummary && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{hxSummary}</p>}
         {shownFacts.length > 0 && (
           <KeyValueList>
             {shownFacts.map((f) => (
@@ -221,16 +216,19 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
             ))}
           </KeyValueList>
         )}
-        {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared: {notShared.join(", ")}.</p>}
-        {missingHiring.length > 0 && (
-          <ItemRequest
-            candidate={candidate}
-            ui={requestUi}
-            preset={{ kind: "contact", fields: missingHiring }}
-            label={missingHiring.length === 1 ? "Ask the candidate to share this" : "Ask the candidate to share these"}
-          />
+        {(notShared.length > 0 || missingHiring.length > 0) && (
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared yet: {notShared.join(", ").toLowerCase().replace(/^./, (c) => c.toUpperCase())}.</p>}
+            {missingHiring.length > 0 && (
+              <ItemRequest
+                candidate={candidate}
+                ui={requestUi}
+                preset={{ kind: "contact", fields: missingHiring }}
+                label="Ask them to share"
+              />
+            )}
+          </div>
         )}
-        {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
         {summary && (
           <div className="grid gap-1.5">
             <h3 className="m-0 text-[13px] font-semibold text-hx-coal">In the candidate's words</h3>
