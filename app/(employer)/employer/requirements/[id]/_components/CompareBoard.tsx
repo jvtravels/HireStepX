@@ -219,11 +219,13 @@ function Identity({ candidate, requirementId, wins }: { candidate: Candidate; re
   return (
     <div className="flex min-w-0 flex-col gap-2 px-3 py-3 md:px-5 md:py-4">
       <div className="flex min-w-0 items-center gap-2.5">
-        <Avatar size="lg" className="max-md:hidden">
-          <AvatarFallback className="bg-hx-indigo-100 text-[14px] font-semibold text-hx-indigo">
-            {candidate.unlocked ? initials(candidate.name) : <UserIcon size={16} aria-hidden="true" />}
-          </AvatarFallback>
-        </Avatar>
+        <div className="hidden md:block">
+          <Avatar size="lg">
+            <AvatarFallback className="bg-hx-indigo-100 text-[14px] font-semibold text-hx-indigo">
+              {candidate.unlocked ? initials(candidate.name) : <UserIcon size={16} aria-hidden="true" />}
+            </AvatarFallback>
+          </Avatar>
+        </div>
         <div className="min-w-0">
           <Link
             href={`/employer/requirements/${requirementId}/candidates/${candidate.id}`}
