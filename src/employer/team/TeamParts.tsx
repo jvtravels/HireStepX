@@ -134,7 +134,7 @@ export function ConfirmDialog({ spec, onClose }: { spec: ConfirmSpec | null; onC
 
 export const muted: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, color: t.inkSoft, margin: 0, lineHeight: 1.5 };
 
-export const PAD = "px-4 sm:px-7";
+export const PAD = "px-4 sm:px-[clamp(1.25rem,1.5vw,1.75rem)]";
 
 /* Seats are a hard cap, so the meter is quiet until the team is nearly full. */
 export function SeatMeter({ used, max }: { used: number; max: number }) {
