@@ -142,17 +142,6 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
   );
 }
 
-function ClampedText({ text }: { text: string }) {
-  const [open, setOpen] = useState(false);
-  const long = text.length > 300;
-  return (
-    <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
-      {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
-    </div>
-  );
-}
-
 function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null; onOpenResume: () => void; requestUi: RequestUi }) {
   const r = candidate.resume;
   if (!r) return null;
@@ -185,8 +174,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   if (eduText) facts.push({ label: "Education", value: eduText });
   const shownFacts = facts.filter((f) => !f.missing);
   const notShared = facts.filter((f) => f.missing).map((f) => f.label);
-  const summary = r.summary?.trim();
-  if (!summary && facts.length === 0) return null;
+  if (facts.length === 0) return null;
   return (
     <Panel id="profile-heading" title="Profile" action={<span className="inline-flex items-center gap-1"><InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip><PanelButton onClick={onOpenResume}>Full resume</PanelButton></span>}>
       <div className="grid gap-4">
@@ -211,12 +199,6 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
                 label="Ask them to share"
               />
             )}
-          </div>
-        )}
-        {summary && (
-          <div className="grid gap-1.5">
-            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">In the candidate's words</h3>
-            <ClampedText text={summary} />
           </div>
         )}
       </div>
