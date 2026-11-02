@@ -66,7 +66,7 @@ describe("extractResumeDetail", () => {
 });
 
 describe("redactResumeDetailForLock", () => {
-  it("hides identity, contact and employer names but keeps role, tenure and level signals", () => {
+  it("hides identity and contact but keeps employer, role, tenure and level signals", () => {
     const detail = extractResumeDetail({
       topSkills: ["Figma"],
       summary: "Product Manager at Meesho, drives strategy for Valmo.",
@@ -82,12 +82,12 @@ describe("redactResumeDetailForLock", () => {
 
     const redacted = redactResumeDetailForLock(detail, "Jane Doe");
 
-    expect(redacted.summary).toBe("Product Manager at [withheld], drives strategy for Valmo.");
-    expect(redacted.headline).toBe("Senior PM @ [withheld]");
+    expect(redacted.summary).toBe("Product Manager at Meesho, drives strategy for Valmo.");
+    expect(redacted.headline).toBe("Senior PM @ Meesho");
     expect(redacted.keyAchievements).toEqual(["Led a 4-person team"]);
     expect(redacted.linkedin).toBeNull();
     expect(redacted.phone).toBeNull();
-    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "", period: "2022 – Present" }]);
+    expect(redacted.experience).toEqual([{ title: "Product Manager", company: "Meesho", period: "2022 – Present" }]);
     expect(redacted.seniorityLevel).toBe("Senior");
     expect(redacted.yearsExperience).toBe(6);
     expect(redacted.industries).toEqual(["E-commerce"]);
@@ -102,7 +102,7 @@ describe("redactResumeDetailForLock", () => {
       experiences: [{ title: "Intern", company: "Meesho", start: "2024", end: "2025", topProjects: ["Engineering"] }],
     });
     const redacted = redactResumeDetailForLock(detail, "Jane Doe");
-    expect(redacted.summary).toBe("Software Engineering Intern at [withheld]");
+    expect(redacted.summary).toBe("Software Engineering Intern at Meesho");
   });
 
   it.each(["Mohd.Jaleel Khan", "Jaleel. K", "Mohammed-Jaleel Khan", "Jaleel_Khan Sk"])("removes the name when the profile name is written as %j", (profileName) => {
@@ -209,18 +209,18 @@ describe("redactResumeDetailForLock entity names", () => {
   });
   const withSchool = { ...detail, education: [{ degree: "M.Tech", school: "IIT Madras", year: "2019" }] };
 
-  it("removes employer, school, partner and project names from structure and prose", () => {
+  it("keeps employer names but removes school, partner and project names from structure and prose", () => {
     const locked = redactResumeDetailForLock(withSchool, "Jane Doe");
-    expect(JSON.stringify(locked)).not.toMatch(/Razorpay|Zerodha|Orion|Madras/);
-    expect(locked.experience[0]).toEqual({ title: "Data Analyst", company: "", period: "2020 – 2022", scope: "Owned reporting for [withheld] merchants", teamSize: 4 });
+    expect(JSON.stringify(locked)).not.toMatch(/Zerodha|Orion|Madras/);
+    expect(locked.experience[0]).toEqual({ title: "Data Analyst", company: "Razorpay", period: "2020 – 2022", scope: "Owned reporting for Razorpay merchants", teamSize: 4 });
     expect(locked.education[0]).toEqual({ degree: "M.Tech", school: "", year: "2019" });
   });
 
-  it("matches whole words only, so a short name does not gut longer words", () => {
+  it("matches whole words only, so a short partner name does not gut longer words", () => {
     const d = extractResumeDetail({
       topSkills: [],
       summary: "Knows metadata pipelines and worked at Meta.",
-      experiences: [{ title: "Engineer", company: "Meta", start: "2020", end: "2022" }],
+      experiences: [{ title: "Engineer", company: "Acme", start: "2020", end: "2022", partners: ["Meta"] }],
     });
     expect(redactResumeDetailForLock(d, "Jane").summary).toBe("Knows metadata pipelines and worked at [withheld].");
   });
@@ -297,8 +297,7 @@ describe("richer resume detail", () => {
     const locked = scrubLockedResume(redactResumeDetailForLock(original, "Jane Doe"));
     const json = JSON.stringify(locked);
     expect(json).not.toMatch(/Jane|Doe|jane@/);
-    expect(json).not.toContain("Flipkart");
-    expect(locked.experience[0]).toMatchObject({ company: "", teamSize: 8 });
+    expect(locked.experience[0]).toMatchObject({ company: "Flipkart", teamSize: 8 });
     expect(locked.experience[0]).not.toHaveProperty("partners");
     expect(locked.skillsDetailed).toHaveLength(2);
   });
@@ -338,7 +337,7 @@ describe("locked resume aliasing and period coarsening", () => {
       ],
     } as never);
     const locked = redactResumeDetailForLock(base, "Jane Doe");
-    expect(locked.summary).not.toMatch(/infosys|tcs/i);
+    expect(locked.summary).toMatch(/infosys/i);
     expect(locked.experience[0].period).toBe("2018 – 2021");
   });
 });

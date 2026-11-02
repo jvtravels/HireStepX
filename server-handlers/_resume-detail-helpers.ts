@@ -157,7 +157,6 @@ function lockedEntityNames(detail: ResumeDetail): string[] {
     for (const alias of entityAliases(t)) names.add(alias);
   };
   for (const e of detail.experience) {
-    add(e.company);
     e.partners?.forEach(add);
     e.topProjects?.forEach(add);
   }
@@ -204,7 +203,7 @@ export function redactResumeDetailForLock(detail: ResumeDetail, realName: string
     interviewStrengths: detail.interviewStrengths.map(clean),
     experience: detail.experience.map((e) => ({
       title: clean(e.title),
-      company: "",
+      company: e.company,
       period: coarsenPeriod(e.period),
       ...(e.scope ? { scope: clean(e.scope) } : {}),
       ...(e.teamSize !== undefined ? { teamSize: e.teamSize } : {}),
