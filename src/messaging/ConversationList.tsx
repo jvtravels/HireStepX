@@ -74,7 +74,7 @@ export default function ConversationList({
         <Tabs value={filter} onValueChange={(v) => onFilterChange(v as InboxFilter)}>
           <TabsList aria-label="Filter conversations" className="w-full">
             {CHIPS.map((c) => (
-              <TabsTrigger key={c.id} value={c.id}>
+              <TabsTrigger key={c.id} value={c.id} aria-controls={undefined}>
                 {c.label}
                 {c.id === "unread" && unreadCount > 0 ? ` ${unreadCount}` : ""}
               </TabsTrigger>
