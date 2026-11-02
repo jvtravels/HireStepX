@@ -214,12 +214,9 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   const summary = r.summary?.trim();
   if (!summary && !r.headline && facts.length === 0) return null;
   return (
-    <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
+    <Panel id="profile-heading" title="Profile" action={<span className="inline-flex items-center gap-1"><InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip><PanelButton onClick={onOpenResume}>Full resume</PanelButton></span>}>
       <div className="grid gap-4">
         {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
-        {shownFacts.length > 0 && (
-          <p className="m-0 -mb-1 text-[12px] font-medium text-hx-ink-soft">Self-reported by the candidate, from their profile and resume</p>
-        )}
         {shownFacts.length > 0 && (
           <KeyValueList>
             {shownFacts.map((f) => (
