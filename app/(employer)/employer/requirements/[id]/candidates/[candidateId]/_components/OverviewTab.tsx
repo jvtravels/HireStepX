@@ -156,7 +156,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   const avgTenureMonths = averageTenureMonths(r.experience);
   const facts: Array<{ label: string; value: string; selfReported?: boolean; missing?: boolean }> = [];
   const missingHiring = missingHiringFacts(candidate);
-  if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period})` : latestRole });
+  if (latestRole) facts.push({ label: "Latest role", value: latest?.period ? `${latestRole} (${latest.period.replace(/^(\d{4})\s*[–-]\s*\1$/, "$1")})` : latestRole });
   const confirmed = availabilityConfirmedLabel(r.availabilityConfirmedAt);
   if (r.noticePeriod) facts.push({ label: "Notice period", value: confirmed ? `${r.noticePeriod} (${confirmed.text.toLowerCase()})` : r.noticePeriod, selfReported: true });
   else facts.push({ label: "Notice period", value: "Not shared", missing: true });
@@ -441,7 +441,7 @@ export function OverviewTab({
   const insights = buildResumeInsights(candidate, unmatched);
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
   return (
-    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_clamp(22rem,34%,34rem)] lg:divide-x lg:divide-y-0">
+    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_clamp(24rem,36%,34rem)] lg:divide-x lg:divide-y-0">
       <div className="@container flex min-w-0 flex-col divide-y divide-hx-line">
         <DecisionStrip candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} requestUi={requestUi} />
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
