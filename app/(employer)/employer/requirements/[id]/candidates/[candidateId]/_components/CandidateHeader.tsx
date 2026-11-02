@@ -8,7 +8,6 @@ import { canInviteToInterview } from "@/employer/InterviewInviteDialog";
 import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
-import { relativeTime } from "@/employer/teamActivity";
 import { HEADER_ACTION, candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, type FitSummary } from "./helpers";
 import { PipelineStepper } from "./CandidatePipeline";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
@@ -184,11 +183,6 @@ export function CandidateHeader({
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
         <MetaLine parts={meta} className="text-[13px] text-hx-ink-soft" />
-        {candidate.lastUpdatedBy && (
-          <p className="m-0 text-[12px] text-hx-ink-soft">
-            Last updated by {candidate.lastUpdatedBy.isYou ? "you" : candidate.lastUpdatedBy.name}, {relativeTime(candidate.lastUpdatedBy.at).toLowerCase()}
-          </p>
-        )}
         <PipelineStepper status={candidate.candidateStatus} className="max-[639px]:hidden" />
       </div>
       {summary && <p className="m-0 mt-3 max-w-[75ch] text-[14px] leading-snug font-medium text-hx-coal">{summary}</p>}
