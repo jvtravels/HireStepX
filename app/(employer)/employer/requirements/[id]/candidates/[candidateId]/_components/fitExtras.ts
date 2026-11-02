@@ -126,6 +126,7 @@ export interface DecisionBrief { strengths: string[]; risks: Array<{ text: strin
 
 const SHORT: Record<string, (r: FitRow) => string> = {
   skills: (r) => `${r.has} required skills`,
+  experience: (r) => `${r.has} experience, job asks ${r.asked}`,
   pay: (r) => `Pay ${r.has} vs ${r.asked.toLowerCase().startsWith("up to") ? "budget " + r.asked.toLowerCase() : "budget " + r.asked}`,
 };
 
