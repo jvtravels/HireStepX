@@ -50,8 +50,7 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
 function DeliveryPanel({ delivery }: { delivery: CandidateEvidence["delivery"] }) {
   const rows = describeDelivery(delivery);
   return (
-    <Panel id="delivery-heading" title="How they speak">
-      <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">Measured from the timing and wording of the latest spoken interview.</p>
+    <Panel id="delivery-heading" title="How they speak" info={<InfoTip label="How speaking is measured">Measured from the timing and wording of the latest spoken interview.</InfoTip>}>
       <ul aria-label="Spoken delivery" className="m-0 flex list-none flex-col p-0">
         {rows.map((r) => (
           <li key={r.id} className="flex items-center justify-between gap-3 border-b border-hx-line py-2.5 last:border-b-0 last:pb-0">
@@ -121,8 +120,7 @@ function HistoryPanel({ trend, sessions }: { trend: NonNullable<CandidateEvidenc
   const best = Math.max(...trend.map((t) => t.score));
   const delta = last - first;
   return (
-    <Panel id="history-heading" title="Practice history">
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">Score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total. {sessions > 1 ? "The overall score shown elsewhere on this page is their average." : ""}</p>
+    <Panel id="history-heading" title="Practice history" info={<InfoTip label="About practice history">Score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total. {sessions > 1 ? "The overall score shown elsewhere on this page is their average." : ""}</InfoTip>}>
       <KeyValueList>
         <KeyValueRow label="Latest interview"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
         <KeyValueRow label="Best interview"><span className="tabular-nums">{best} / 100</span></KeyValueRow>
@@ -198,8 +196,7 @@ export function PracticeTab({
               key: "skills",
               weight: 2 + skills.length * 1.5,
               node: (
-                <Panel id="skills-heading" title="Skill scores">
-                  <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{PROVENANCE}. How the latest interview was graded on each dimension.</p>
+                <Panel id="skills-heading" title="Skill scores" info={<InfoTip label="How skill scores work">{PROVENANCE}. How the latest interview was graded on each dimension.</InfoTip>}>
                   <div className="grid gap-3.5">
                     {skills.map((s) => (
                       <MeterRow key={s.name} label={s.name} value={s.score} />
@@ -212,8 +209,7 @@ export function PracticeTab({
               key: "quotes",
               weight: 2 + quotes.length * 3,
               node: (
-                <Panel id="quotes-heading" title="Standout lines">
-                  <p className="m-0 mb-2 text-[13px] text-hx-ink-soft">The strongest and weakest moments, quoted from their answers.</p>
+                <Panel id="quotes-heading" title="Standout lines" info={<InfoTip label="About standout lines">The strongest and weakest moments, quoted from their answers.</InfoTip>}>
                   <ItemGroup className="gap-0">
                     {quotes.map((q, i) => (
                       <Item key={i} role="listitem" size="sm" className="items-start border-0 border-t border-hx-line px-0 first:border-t-0">
