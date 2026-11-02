@@ -31,8 +31,9 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pl-7.5 text-[12px] text-hx-ink-soft">
         {q.difficulty && <span>{DIFFICULTY_LABEL[q.difficulty]} question</span>}
-        {q.star && q.difficulty !== "warmup" && <StarMarks star={q.star} score={q.score} />}
-        {q.length && <span>{LENGTH_LABEL[q.length.verdict]}, {q.length.wordCount} {q.length.wordCount === 1 ? "word" : "words"}</span>}
+        {q.verdict === "skipped" && <span>No answer given</span>}
+        {q.verdict !== "skipped" && q.star && q.difficulty !== "warmup" && <StarMarks star={q.star} score={q.score} />}
+        {q.verdict !== "skipped" && q.length && <span>{LENGTH_LABEL[q.length.verdict]}, {q.length.wordCount} {q.length.wordCount === 1 ? "word" : "words"}</span>}
       </div>
     </div>
   );
@@ -52,8 +53,8 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
       ) : (
         <div className="py-3.5">{head}</div>
       )}
-      {(q.verdict === "weak" || q.verdict === "partial" || q.verdict === "skipped") && (
-        <div className="pb-3 pl-7.5">
+      {(q.verdict === "weak" || q.verdict === "skipped") && (
+        <div className="-mt-1.5 pb-3.5 pl-7.5">
           <ItemRequest
             candidate={candidate}
             ui={requestUi}
@@ -89,12 +90,11 @@ export function QuestionBreakdown({ questions, candidate, requestUi }: { questio
     <Panel
       id="questions-heading"
       title="Answer by answer"
-      action={<InfoTip label="How answers are graded">{PROVENANCE}. Scores are out of 100 and shown for the most recent completed interview.</InfoTip>}
+      action={<InfoTip label="How answers are graded">{PROVENANCE}. Scores are out of 100 and shown for the most recent completed interview. The warm-up question is not counted in the totals above.</InfoTip>}
     >
       {summary && (
         <p className="m-0 mb-1 text-[13px] text-hx-ink-soft">
-          <span className="font-semibold text-hx-coal tabular-nums">{summary.count}</span> answered in the latest interview, averaging <span className="font-semibold text-hx-coal tabular-nums">{summary.avg}</span> out of 100.{" "}
-          {summary.strong} strong or complete{summary.weak > 0 ? `, ${summary.weak} weak` : ""}
+          <span className="font-semibold text-hx-coal tabular-nums">{summary.count}</span> of {list.filter((q) => q.difficulty !== "warmup").length} answered. {summary.strong} strong or complete{summary.weak > 0 ? `, ${summary.weak} weak` : ""}
           {summary.starCounted > 0 ? `. ${summary.fullStar} of ${summary.starCounted} cover all four STAR parts` : ""}.
         </p>
       )}

@@ -1,3 +1,4 @@
+import { cn } from "cn";
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react";
 import { Item, ItemContent, ItemDescription, ItemGroup, ItemTitle } from "@/components/ui/item";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
@@ -22,7 +23,7 @@ function ReadinessPanel({ evidence, sessions }: { evidence: CandidateEvidence; s
       title="Interview readiness"
       action={<InfoTip label="How readiness is scored">{PROVENANCE}. This is practice performance, not an employment check.</InfoTip>}
     >
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">
+      <p className="m-0 mb-3 text-[13px] text-hx-ink-soft">
         {sessions} graded session{sessions === 1 ? "" : "s"}{last ? `, latest on ${last}` : ""}.
       </p>
       <KeyValueList>
@@ -75,9 +76,11 @@ function VerifiedPanel({ capabilities }: { capabilities: NonNullable<CandidateEv
     <Panel
       id="verified-heading"
       title="Verified skills"
-      action={<InfoTip label="What verified means">Verified means a score of 70 or more on the skill across 2 or more graded sessions.</InfoTip>}
+      action={<InfoTip label="What verified means">A skill is verified when it scores 70 or more across 2 or more graded sessions. This is separate from the latest-interview scores.</InfoTip>}
     >
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{count} of {capabilities.length} verified. A separate check from the latest-interview scores: a skill is proven only when it holds up across repeated sessions.</p>
+      {count === 0 ? (
+        <p className="m-0 text-[13px] text-hx-ink-soft">None of {capabilities.length} skills verified yet. Needs 2 or more sessions at 70+.</p>
+      ) : (
       <KeyValueList>
         {capabilities.map((cap) => (
           <KeyValueRow key={cap.key} label={cap.label}>
@@ -85,6 +88,7 @@ function VerifiedPanel({ capabilities }: { capabilities: NonNullable<CandidateEv
           </KeyValueRow>
         ))}
       </KeyValueList>
+      )}
     </Panel>
   );
 }
@@ -95,9 +99,9 @@ function RoundsPanel({ rounds }: { rounds: NonNullable<CandidateEvidence["rounds
     <Panel
       id="rounds-heading"
       title="Interview rounds"
-      action={<InfoTip label="What cleared means">A round is cleared after 2 or more graded sessions of that interview type scoring 70 or more.</InfoTip>}
+      action={<InfoTip label="What cleared means">A round is cleared after 2 or more graded sessions of that interview type scoring 70 or more. Only sessions graded by HireStepX count.</InfoTip>}
     >
-      <p className="m-0 mb-3.5 text-[13px] text-hx-ink-soft">{cleared} of {rounds.length} practised round{rounds.length === 1 ? "" : "s"} cleared.</p>
+      <p className="m-0 mb-3 text-[13px] text-hx-ink-soft">{cleared} of {rounds.length} practised round{rounds.length === 1 ? "" : "s"} cleared.</p>
       <KeyValueList>
         {rounds.map((r) => (
           <KeyValueRow key={r.key} label={r.label}>
@@ -109,7 +113,6 @@ function RoundsPanel({ rounds }: { rounds: NonNullable<CandidateEvidence["rounds
           </KeyValueRow>
         ))}
       </KeyValueList>
-      <p className="m-0 mt-3.5 text-[12px] text-hx-ink-soft">Only sessions graded by HireStepX on the server count.</p>
     </Panel>
   );
 }
@@ -121,21 +124,23 @@ function HistoryPanel({ trend, sessions }: { trend: NonNullable<CandidateEvidenc
   const delta = last - first;
   return (
     <Panel id="history-heading" title="Practice history" info={<InfoTip label="About practice history">Score of each graded interview, oldest first. {sessions} session{sessions === 1 ? "" : "s"} in total. {sessions > 1 ? "The overall score shown elsewhere on this page is their average." : ""}</InfoTip>}>
-      <KeyValueList>
-        <KeyValueRow label="Latest interview"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
-        <KeyValueRow label="Best interview"><span className="tabular-nums">{best} / 100</span></KeyValueRow>
-        <KeyValueRow label="Since first">
-          {trend.length > 1 ? (
-            <span className="inline-flex items-center gap-1 tabular-nums">
-              {delta > 0 ? <TrendingUpIcon size={14} aria-hidden="true" className="text-hx-success" /> : delta < 0 ? <TrendingDownIcon size={14} aria-hidden="true" className="text-hx-error" /> : null}
-              {delta > 0 ? "+" : ""}{delta}
-            </span>
-          ) : (
-            <span className="font-normal text-hx-ink-soft">One session</span>
-          )}
-        </KeyValueRow>
-      </KeyValueList>
-      <ol aria-label="Sessions" className="m-0 mt-4 grid list-none gap-3.5 border-t border-hx-line p-0 pt-4">
+      {trend.length > 1 && (
+        <KeyValueList>
+          <KeyValueRow label="Latest interview"><span className="tabular-nums">{last} / 100</span></KeyValueRow>
+          <KeyValueRow label="Best interview"><span className="tabular-nums">{best} / 100</span></KeyValueRow>
+          <KeyValueRow label="Since first">
+            {trend.length > 1 ? (
+              <span className="inline-flex items-center gap-1 tabular-nums">
+                {delta > 0 ? <TrendingUpIcon size={14} aria-hidden="true" className="text-hx-success" /> : delta < 0 ? <TrendingDownIcon size={14} aria-hidden="true" className="text-hx-error" /> : null}
+                {delta > 0 ? "+" : ""}{delta}
+              </span>
+            ) : (
+              <span className="font-normal text-hx-ink-soft">One session</span>
+            )}
+          </KeyValueRow>
+        </KeyValueList>
+      )}
+      <ol aria-label="Sessions" className={cn("m-0 grid list-none gap-3.5 p-0", trend.length > 1 && "mt-4 border-t border-hx-line pt-4")}>
         {trend.map((t, i) => (
           <li key={`${t.date}-${i}`}>
             <MeterRow label={`${formatSessionDate(t.date)}${t.focus ? ` · ${t.focus}` : t.type ? ` · ${t.type}` : ""}`} value={t.score} />
@@ -226,10 +231,10 @@ export function PracticeTab({
                 </Panel>
               ),
             },
-            verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
+            verified.length > 0 && { key: "verified", weight: verified.some((c) => c.verified) ? 2 + verified.length : 2, node: <VerifiedPanel capabilities={verified} /> },
             deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
             rounds.length > 0 && { key: "rounds", weight: 2 + rounds.length, node: <RoundsPanel rounds={rounds} /> },
-            trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
+            trend.length > 0 && { key: "history", weight: trend.length > 1 ? 6 + trend.length * 1.5 : 3, node: <HistoryPanel trend={trend} sessions={sessions} /> },
           ]}
         />
         {questions.length > 0 && <QuestionBreakdown questions={questions} candidate={candidate} requestUi={requestUi} />}

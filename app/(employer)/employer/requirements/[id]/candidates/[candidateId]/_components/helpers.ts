@@ -402,7 +402,7 @@ export function employerCapabilities<T extends { key: string }>(capabilities: T[
 export interface QuestionSummary { count: number; avg: number; strong: number; weak: number; fullStar: number; starCounted: number }
 
 export function summarizeQuestions(questions: EvidenceQuestion[]): QuestionSummary | null {
-  const answered = questions.filter((q) => q.verdict !== "skipped");
+  const answered = questions.filter((q) => q.verdict !== "skipped" && q.difficulty !== "warmup");
   if (answered.length === 0) return null;
   const withStar = answered.filter((q) => q.star && q.difficulty !== "warmup");
   return {
