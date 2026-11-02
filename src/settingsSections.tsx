@@ -1069,7 +1069,7 @@ export const DangerZoneSection = memo(function DangerZoneSection(props: DangerZo
     }}>
       {!confirmDelete ? (
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ minWidth: 0, flex: 1 }}>
+          <div className="min-w-0 flex-1">
             <div style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ember, marginBottom: 2 }}>Delete account</div>
             <div style={subHeaderHint}>{employer ? "Removes your company account, jobs and conversations. Payment records are kept for tax. A 7-day grace period lets you cancel by logging in." : "Removes your account and all data. A 7-day grace period lets you cancel by logging in."}</div>
           </div>

@@ -181,7 +181,7 @@ export default function AppShellFrame({
           title-tooltip over page content, and the visible SidebarTrigger
           already covers the toggle action. */}
       <Sidebar collapsible="icon" className="border-none">
-        <aside aria-label="Navigation sidebar" style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+        <aside aria-label="Navigation sidebar" className="flex h-full flex-col">
         <SidebarHeader className="px-3 pt-4 pb-3">
           <Link href={homeHref} className="pl-1.5 group-data-[collapsible=icon]:pl-0" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
             <Image src="/wordmark.png" alt="HireStepX" width={387} height={108} priority className="group-data-[collapsible=icon]:hidden" style={{ height: 32, width: "auto" }} />
@@ -273,7 +273,7 @@ export default function AppShellFrame({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" side="top" style={{ width: 240 }}>
               <DropdownMenuLabel className="p-0 font-normal">
-                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px" }}>
+                <div className="flex items-center gap-2 px-2 py-1">
                   <Avatar className="rounded-md size-8 shrink-0">
                     <AvatarFallback className="rounded-md" style={{ background: T.copper, color: T.white, fontFamily: F.sans, fontSize: 14, fontWeight: 500 }}>
                       {initial}
@@ -318,11 +318,11 @@ export default function AppShellFrame({
         }}>
           <SidebarTrigger aria-label="Toggle navigation" style={{ color: c.ink }} />
           {isMobile && (
-            <Link href={homeHref} aria-label="HireStepX home" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Image src="/favicon.svg" alt="" width={28} height={28} style={{ height: 28, width: 28, borderRadius: 6 }} />
+            <Link href={homeHref} aria-label="HireStepX home" className="inline-flex shrink-0 items-center justify-center">
+              <Image src="/favicon.svg" alt="" width={28} height={28} className="size-7 rounded-md" />
             </Link>
           )}
-          <Separator orientation="vertical" style={{ height: 16, alignSelf: "center", flexShrink: 0 }} />
+          <Separator orientation="vertical" className="h-4 shrink-0 self-center" />
           <Breadcrumb style={{ flex: 1, minWidth: 0 }}>
             <BreadcrumbList style={{ fontFamily: F.sans, fontSize: 13, flexWrap: "nowrap", overflow: "hidden", alignItems: "center" }}>
               {/* On narrow phones only the current (last) crumb is shown; the ancestors are reachable via the sidebar and browser back. */}

@@ -41,9 +41,9 @@ export default function RolesDialog({ myRole, members }: { myRole: EmployerRole;
       <DialogContent className="max-h-[85vh] gap-0 overflow-y-auto sm:max-w-2xl">
         <DialogTitle style={{ fontFamily: f.sans, fontSize: 18, fontWeight: 600, color: t.coal }}>Roles and permissions</DialogTitle>
         <DialogDescription style={{ ...muted, fontSize: 13, marginTop: 2 }}>What each role means, and what people in it can do.</DialogDescription>
-      <section aria-labelledby="roles-who" style={{ paddingBlock: 16 }}>
+      <section aria-labelledby="roles-who" className="py-4">
         <h2 id="roles-who" style={sectionTitle}>Roles</h2>
-        <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0 }}>
+        <ul className="m-0 mt-2 list-none p-0">
           {ROLES.map((r, i) => {
             const n = counts.get(r) ?? 0;
             return (
@@ -74,7 +74,7 @@ export default function RolesDialog({ myRole, members }: { myRole: EmployerRole;
               {ROLES.map((r) => (
                 <th key={r} scope="col" style={{ width: 88, textAlign: "center", padding: "0 0 10px", fontSize: 12, fontWeight: 600, color: r === myRole ? t.indigoDeep : t.coal }}>
                   {ROLE_LABEL[r]}
-                  {r === myRole && <span style={{ display: "block", fontSize: 11, fontWeight: 500, color: t.inkSoft }}>You</span>}
+                  {r === myRole && <span className="block text-[11px] font-medium text-hx-ink-soft">You</span>}
                 </th>
               ))}
             </tr>
@@ -84,7 +84,7 @@ export default function RolesDialog({ myRole, members }: { myRole: EmployerRole;
               <tr key={row.label} style={{ borderTop: `1px solid ${t.line}` }}>
                 <th scope="row" style={{ textAlign: "left", padding: "10px 12px 10px 0", fontSize: 13, fontWeight: 400, color: t.coal }}>{row.label}</th>
                 {ROLES.map((r) => (
-                  <td key={r} style={{ textAlign: "center", padding: "10px 0" }}>
+                  <td key={r} className="py-2.5 text-center">
                     {row.allowed(r) ? (
                       <CheckIcon size={16} aria-label="Allowed" style={{ color: t.successInk, display: "inline-block" }} />
                     ) : (

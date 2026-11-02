@@ -90,7 +90,7 @@ export function RoleMenu({
       <DropdownMenuContent align="start" className="w-72">
         {options.map((r) => (
           <DropdownMenuItem key={r} onClick={() => { if (r !== role) onSelect(r); }} className="items-start gap-3 py-2">
-            <span style={{ flex: 1, minWidth: 0 }}>
+            <span className="min-w-0 flex-1">
               <span style={{ display: "block", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal }}>{ROLE_LABEL[r]}</span>
               <span style={{ display: "block", fontFamily: f.sans, fontSize: 12, color: t.inkSoft, lineHeight: 1.45, marginTop: 2 }}>{ROLE_BLURB[r]}</span>
             </span>
