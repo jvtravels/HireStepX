@@ -173,7 +173,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   const notShared = facts.filter((f) => f.missing).map((f) => f.label);
   if (facts.length === 0) return null;
   return (
-    <Panel id="profile-heading" title="Profile" action={<span className="inline-flex items-center gap-1"><InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip><PanelButton onClick={onOpenResume}>Full resume</PanelButton></span>}>
+    <Panel id="profile-heading" title="Profile" info={<InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip>} action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
         {shownFacts.length > 0 && (
           <KeyValueList>
@@ -215,17 +215,14 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
   const trendLine = trend.length > 1
     ? `Latest session ${trend[trend.length - 1].score}, best session ${Math.max(...trend.map((t) => t.score))}, ${trend[trend.length - 1].score - trend[0].score >= 0 ? "+" : ""}${trend[trend.length - 1].score - trend[0].score} since first session`
     : "";
-  const action = (
-    <div className="flex items-center gap-3">
-      {hasEvidence && <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton>}
-      <InfoTip label="How practice evidence is scored">
-        {PROVENANCE}. This is practice performance, not an employment check.
-      </InfoTip>
-    </div>
+  const info = (
+    <InfoTip label="How practice evidence is scored">
+      {PROVENANCE}. This is practice performance, not an employment check.
+    </InfoTip>
   );
 
   return (
-    <Panel id="evidence-heading" title="Practice snapshot" action={action}>
+    <Panel id="evidence-heading" title="Practice snapshot" info={info} action={hasEvidence ? <PanelButton onClick={onOpenPractice}>See every answer and score</PanelButton> : undefined}>
       <EvidenceStatus state={state}>
         {hasEvidence ? (
           <div className="@container">

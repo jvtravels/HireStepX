@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 export function Panel({
   id,
   title,
+  info,
   action,
   children,
   className,
@@ -22,6 +23,7 @@ export function Panel({
 }: {
   id: string;
   title: string;
+  info?: ReactNode;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -30,9 +32,12 @@ export function Panel({
   return (
     <section aria-labelledby={id} className={cn("min-w-0 px-7 py-6", className)}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-        <h2 id={id} className={cn("m-0 text-[15px] font-semibold text-hx-coal", headingClassName)}>
-          {title}
-        </h2>
+        <div className="flex items-center gap-1">
+          <h2 id={id} className={cn("m-0 text-[15px] font-semibold text-hx-coal", headingClassName)}>
+            {title}
+          </h2>
+          {info}
+        </div>
         {action}
       </div>
       {children}
