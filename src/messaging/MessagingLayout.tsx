@@ -20,7 +20,8 @@ interface MessagingLayoutProps {
   banner?: ReactNode;
 }
 
-export const RAIL_BREAKPOINT = 1180;
+/* Counts the nav (~256px) and list (320px) beside the rail, so the thread keeps ~550px. */
+export const RAIL_BREAKPOINT = 1440;
 
 export interface RailState {
   open: boolean;
@@ -59,7 +60,7 @@ export default function MessagingLayout({ list, thread, rail, railState, narrow,
           </section>
         )}
         {inlineRail && (
-          <aside aria-label="Conversation details" className="hidden min-h-0 w-72 shrink-0 overflow-y-auto border-l border-border bg-background min-[1180px]:block">
+          <aside aria-label="Conversation details" className="hidden min-h-0 w-72 shrink-0 overflow-y-auto border-l border-border bg-background min-[1440px]:block">
             {rail}
           </aside>
         )}
