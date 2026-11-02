@@ -97,6 +97,18 @@ describe("fetchers", () => {
     expect(await loadAuthIdentity("u", {}, "x", vi.fn().mockResolvedValue(res({}, false)))).toEqual({ email: null, emailConfirmed: false });
     expect(await loadAuthIdentity("u", {}, "x", vi.fn().mockRejectedValue(new Error("net")))).toEqual({ email: null, emailConfirmed: false });
   });
+  it("loadAuthIdentity gives up on a silent request instead of waiting forever", async () => {
+    // A fetch that only settles when the deadline signal fires, like the real one.
+    const silent = vi.fn((_url: string, init?: RequestInit) => new Promise<Response>((_, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new Error("timeout")));
+    }));
+    vi.useFakeTimers();
+    try {
+      const pending = loadAuthIdentity("u", {}, "x", silent as unknown as typeof fetch);
+      await vi.advanceTimersByTimeAsync(4_001);
+      expect(await pending).toEqual({ email: null, emailConfirmed: false });
+    } finally { vi.useRealTimers(); }
+  });
 });
 
 describe("loadEmployerMatchAccess", () => {

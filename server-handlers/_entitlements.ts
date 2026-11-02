@@ -209,7 +209,7 @@ export async function loadAuthIdentity(
   fetchImpl: typeof fetch = fetch,
 ): Promise<AuthIdentity> {
   try {
-    const res = await fetchImpl(`${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { headers });
+    const res = await fetchImpl(`${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { headers, signal: AbortSignal.timeout(4000) });
     if (!res.ok) return { email: null, emailConfirmed: false };
     const user = (await res.json().catch(() => null)) as { email?: string | null; email_confirmed_at?: string | null } | null;
     return { email: user?.email ?? null, emailConfirmed: !!user?.email_confirmed_at };

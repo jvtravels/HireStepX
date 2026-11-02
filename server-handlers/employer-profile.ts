@@ -242,7 +242,7 @@ const EMPLOYER_COLUMNS = "id,company_name,website,logo_path,status,submitted_at,
 
 async function fetchEmployer(userId: string): Promise<EmployerRow | null> {
   const read = (columns: string) =>
-    fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=${columns}`, { headers: serviceHeaders() });
+    fetch(`${SUPABASE_URL}/rest/v1/employers?id=eq.${encodeURIComponent(userId)}&select=${columns}`, { headers: serviceHeaders(), signal: AbortSignal.timeout(6000) });
   let res = await read(`${EMPLOYER_COLUMNS},gstin,billing_name`);
   // 400 = billing columns not migrated yet: fall back so the profile still loads.
   if (res.status === 400) res = await read(EMPLOYER_COLUMNS);
