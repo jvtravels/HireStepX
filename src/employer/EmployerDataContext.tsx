@@ -402,6 +402,36 @@ function reportFetchTiming(url: string, startedAt: number, serverTiming: string 
   });
 }
 
+/** A request silent for this long is usually a dead connection, not slow work; a second identical read is sent beside it. */
+const HEDGE_AFTER_MS = 6_000;
+
+/** Reads only. The first request is left running (the server may just be slow) and whichever answers first wins,
+ *  so a hung socket costs ~6s instead of the full attempt timeout, without restarting heavy work. */
+export function fetchHedged(url: string, headers: HeadersInit, signal: AbortSignal): Promise<Response> {
+  return new Promise<Response>((resolve, reject) => {
+    let pending = 1;
+    let settled = false;
+    const hedgeController = new AbortController();
+    const onFail = (err: unknown) => {
+      if (settled) return;
+      if (--pending === 0) { settled = true; reject(err); }
+    };
+    const onOk = (res: Response) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(hedgeTimer);
+      resolve(res);
+    };
+    const hedgeTimer = setTimeout(() => {
+      if (settled) return;
+      pending++;
+      fetch(url, { headers, signal: hedgeController.signal }).then(onOk, onFail);
+    }, HEDGE_AFTER_MS);
+    signal.addEventListener("abort", () => { hedgeController.abort(); clearTimeout(hedgeTimer); }, { once: true });
+    fetch(url, { headers, signal }).then(onOk, (err) => { clearTimeout(hedgeTimer); onFail(err); });
+  });
+}
+
 /** GET with exponential backoff. Only transient failures retry (network error,
  *  5xx); a 4xx is a real answer and returns immediately. 429 is not retried:
  *  the limiter's window outlasts our backoff, so retrying only spends the
@@ -415,7 +445,7 @@ export async function getWithRetry(url: string): Promise<{ ok: boolean; status: 
     try {
       const headers = await authHeaders();
       const startedAt = performance.now();
-      const res = await fetch(url, { headers, signal: controller.signal });
+      const res = await fetchHedged(url, headers, controller.signal);
       const data: unknown = await res.json().catch(() => null);
       if (res.ok) reportFetchTiming(url, startedAt, res.headers.get("server-timing"));
       if (res.status < 500 || last) {
