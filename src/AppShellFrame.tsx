@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef, useState, useEffect } from "react";
+import { Fragment, useLayoutEffect, type CSSProperties, useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -159,7 +159,8 @@ export default function AppShellFrame({
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
     <TooltipProvider delayDuration={0}>
-    <SidebarProvider open={navOpen} onOpenChange={setNavOpen} className="app-vh" style={{ background: c.surface, overflow: "hidden" }}>
+    {/* Fluid menu width: 208px at 1280, growing with the window to the full 256px by about 1600. */}
+    <SidebarProvider open={navOpen} onOpenChange={setNavOpen} className="app-vh" style={{ background: c.surface, overflow: "hidden", "--sidebar-width": "clamp(13rem, 16vw, 16rem)" } as CSSProperties}>
       <a href={`#${mainId}`} style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.accent, color: c.graphite,
