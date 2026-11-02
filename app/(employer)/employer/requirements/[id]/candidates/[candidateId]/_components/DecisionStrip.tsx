@@ -1,8 +1,6 @@
-import { CheckIcon, TriangleAlertIcon } from "lucide-react";
-import { cn } from "cn";
 import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
-import { buildDecisionBrief, poolStanding } from "./fitExtras";
+import { poolStanding } from "./fitExtras";
 import { bestGradedAnswer, buildRoleFit, cleanQuestionText, formatSessionDate } from "./helpers";
 import { StarMarks } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
@@ -10,12 +8,11 @@ import { ItemRequest, type RequestUi } from "./RequestPopover";
 /** One glance before the detail: who this is against the pool, what speaks for them, what to check first. */
 export function DecisionStrip({ candidate, requirement, matched, evidence, requestUi }: { candidate: Candidate; requirement: Requirement; matched: string[]; evidence: CandidateEvidence | null; requestUi?: RequestUi }) {
   const rows = buildRoleFit(candidate, requirement, matched, evidence);
-  const brief = buildDecisionBrief(rows);
   const hasPractice = candidate.sessionsCompleted > 0 || !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   /* The criteria count and gaps already sit in the Fit panel below, so only what it lacks is said here. */
   const resumeOnly = !hasPractice && (rows.length > 0 || !!candidate.matchBreakdown);
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
-  if (brief.strengths.length === 0 && brief.risks.length === 0 && !standing && !resumeOnly) return null;
+  if (!hasPractice && !standing && !resumeOnly) return null;
   const best = bestGradedAnswer(evidence?.questions);
   const sessions = candidate.sessionsCompleted;
   const when = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
@@ -61,40 +58,6 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
             <ItemRequest candidate={candidate} ui={requestUi} label="Ask them to practise this role" preset={{ kind: "practice", topic: `Interview practice for ${requirement.title}`.slice(0, 120) }} />
           )}
         </div>
-      )}
-      {(brief.strengths.length > 0 || brief.risks.length > 0) && (
-        <dl className="m-0 grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px]">
-          {brief.strengths.length > 0 && (
-            <>
-              <dt className="font-medium text-hx-ink-soft">Strengths</dt>
-              <dd className="m-0">
-                <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                  {brief.strengths.map((t) => (
-                    <li key={t} className="flex items-start gap-2 text-hx-coal">
-                      <CheckIcon size={15} aria-hidden="true" className="mt-0.5 shrink-0 text-hx-success" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </>
-          )}
-          {brief.risks.length > 0 && (
-            <>
-              <dt className="font-medium text-hx-ink-soft">Check first</dt>
-              <dd className="m-0">
-                <ul className="m-0 flex list-none flex-col gap-1 p-0">
-                  {brief.risks.map((r) => (
-                    <li key={r.text} className="flex items-start gap-2 text-hx-coal">
-                      <TriangleAlertIcon size={15} aria-hidden="true" className={cn("mt-0.5 shrink-0", r.gap ? "text-hx-error" : "text-hx-warning")} />
-                      {r.text}
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </>
-          )}
-        </dl>
       )}
     </section>
   );
