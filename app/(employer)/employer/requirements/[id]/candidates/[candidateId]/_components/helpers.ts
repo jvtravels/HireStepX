@@ -159,10 +159,6 @@ export function sortFitRows(rows: FitRow[]): FitRow[] {
   return [...rows].sort((a, b) => FIT_RANK[a.status] - FIT_RANK[b.status]);
 }
 
-function plural(n: number, one: string, many = `${one}s`): string {
-  return `${n} ${n === 1 ? one : many}`;
-}
-
 const BAND_RANK = { leanHire: 1, hire: 2, strongHire: 3 } as const;
 
 /** Days implied by a free-text notice period ("30 days", "2 months", "Immediate"); null when unreadable. */
@@ -466,11 +462,10 @@ export function noticePhrase(noticePeriod: string | null | undefined): string | 
 
 /** One line of facts for the top of the candidate page. Built from stored fields only, so it never
  *  states anything the data does not hold; parts we have no data for are left out. */
-export function buildEvidenceSummary(candidate: Candidate, _requirement: Pick<Requirement, "skills">, _matched: string[], evidence: CandidateEvidence | null = null): string | null {
+export function buildEvidenceSummary(candidate: Candidate, _requirement: Pick<Requirement, "skills">, _matched: string[], _evidence: CandidateEvidence | null = null): string | null {
   const parts: string[] = [];
-  const score = gradedScore(candidate, evidence);
-  if (score != null) parts.push(`Overall interview score ${score} out of 100, across ${plural(candidate.sessionsCompleted, "practice interview")}`);
-  /* Skill coverage is not repeated here: the At a glance bullets and the Fit panel already state it. */
+  /* Neither skill coverage nor the practice score is repeated here: the match score beside the name
+     is the one headline number, and the summary and At a glance rows state practice results. */
   if (candidate.city && candidate.city !== "Not specified") parts.push(candidate.city);
   const notice = noticePhrase(candidate.resume?.noticePeriod);
   if (notice) parts.push(notice);
