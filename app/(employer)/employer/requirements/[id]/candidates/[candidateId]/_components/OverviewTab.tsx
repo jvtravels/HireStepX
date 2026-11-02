@@ -64,7 +64,6 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
     fit.gaps.length > 0 && `Gap: ${fit.gaps.join(", ")}.`,
     fit.close.length > 0 && `Close: ${fit.close.join(", ")}.`,
     candidate.matchScore < 100 && !candidate.matchBreakdown && "The score also weighs practice results and recent activity.",
-    analysisClear && "No concerns flagged on the resume.",
   ].filter(Boolean).join(" ");
   return (
     <Panel id="match-heading" title="Fit for this job">
@@ -73,7 +72,15 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
           <div className="grid gap-5">
             {fit.total > 0 && (
               <div className="grid gap-2">
-                <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit, rows)}</p>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5">
+                  <p className="m-0 text-[15px] font-semibold text-hx-coal tabular-nums">{fitHeadline(fit, rows)}</p>
+                  {analysisClear && (
+                    <span className="inline-flex items-center gap-1 text-[13px] text-hx-ink-soft">
+                      <CheckIcon size={13} strokeWidth={2.5} aria-hidden="true" className="text-hx-success-ink" />
+                      No resume concerns
+                    </span>
+                  )}
+                </div>
                 <div aria-hidden="true" className="flex gap-1">
                   {rows.map((row, i) => (
                     <span key={row.id} style={{ animationDelay: `${160 + i * 45}ms` }} className={cn("mx-seg h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
