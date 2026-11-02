@@ -84,7 +84,8 @@ export function StarMarks({ star, score }: { star: NonNullable<EvidenceQuestion[
   const missing = STAR_LETTERS.filter((l) => !star[l.key]).map((l) => l.name);
   if (missing.length === STAR_LETTERS.length && typeof score === "number" && score >= 70) return null;
   return (
-    <span className="inline-flex items-center gap-1">
+    <span className="inline-flex items-center gap-1" title="STAR answer structure: Situation, Task, Action, Result. Highlighted letters were covered.">
+      <span className="mr-0.5 text-[11px] font-medium text-hx-ink-soft" aria-hidden="true">STAR</span>
       <span className="sr-only">{missing.length === 0 ? "Covers all four STAR parts" : `Missing STAR parts: ${missing.join(", ")}`}</span>
       {STAR_LETTERS.map((l) => (
         <span
