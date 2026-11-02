@@ -31,7 +31,7 @@ export function Panel({
 }) {
   return (
     <section aria-labelledby={id} className={cn("min-w-0 px-7 py-6", className)}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
         <div className="flex items-center gap-1">
           <h2 id={id} className={cn("m-0 text-[15px] font-semibold text-hx-coal", headingClassName)}>
             {title}
