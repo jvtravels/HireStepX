@@ -79,7 +79,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                     <span key={row.id} style={{ animationDelay: `${160 + i * 45}ms` }} className={cn("mx-seg h-1.5 flex-1 rounded-full", SEGMENT_CLS[row.status])} />
                   ))}
                 </div>
-                {caption && <p className="m-0 text-[13px] text-hx-ink-soft">{caption}</p>}
+                {caption && <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">{caption}</p>}
               </div>
             )}
           </div>
@@ -99,7 +99,7 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
                       <FitMark status={row.status} />
                     </div>
                   </div>
-                  <p className="m-0 text-[13px] text-hx-ink-soft">
+                  <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">
                     {row.reason} <span>{FIT_SOURCE_LABEL[row.source]}.</span>
                     {row.source !== "profile" && (
                       <>
@@ -202,7 +202,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
         )}
         {(notShared.length > 0 || missingHiring.length > 0) && (
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            {notShared.length > 0 && <p className="m-0 text-[13px] text-hx-ink-soft">Not shared yet: {notShared.join(", ").toLowerCase().replace(/ctc/g, "CTC").replace(/^./, (c) => c.toUpperCase())}.</p>}
+            {notShared.length > 0 && <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">Not shared yet: {notShared.join(", ").toLowerCase().replace(/ctc/g, "CTC").replace(/^./, (c) => c.toUpperCase())}.</p>}
             {missingHiring.length > 0 && (
               <ItemRequest
                 candidate={candidate}
@@ -252,15 +252,15 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
         {hasEvidence ? (
           <div className="@container">
             <StatGrid className="@xl:grid-cols-4">
-              <Stat label="Practice score" hint={[`${gradedSessionLabel(candidate, evidence)} graded for this role`, last ? `latest ${last}` : null].join(", ")}>{overall ?? "–"}<span className="text-[13px] font-normal text-hx-ink-soft"> / 100</span></Stat>
+              <Stat label="Practice score" tip={`Average of ${gradedSessionLabel(candidate, evidence)} graded practice interview${gradedSessionLabel(candidate, evidence) === "1" ? "" : "s"} for this role${last ? `, latest ${last}` : ""}.`}>{overall ?? "–"}<span className="text-[13px] font-normal text-hx-ink-soft"> / 100</span></Stat>
               {evidence?.readiness && (
-                <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>
+                <Stat label="Readiness" tip={`Based on practice interviews, with ${evidence.readiness.confidence} confidence.`}>
                   <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-snug", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
                     {READINESS_LABEL[evidence.readiness.band]}
                   </span>
                 </Stat>
               )}
-              {verified.length > 0 && <Stat label="Verified skills" hint="Skills they proved in their answers, out of every skill tested across their interviews. This can include skills this job does not ask for.">{verifiedCount} of {verified.length}</Stat>}
+              {verified.length > 0 && <Stat label="Verified skills" tip="Skills they proved in their answers, out of every skill tested across their interviews. This can include skills this job does not ask for.">{verifiedCount} of {verified.length}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (
               <div className="mt-5 grid gap-3 border-t border-hx-line pt-4">
@@ -307,7 +307,7 @@ function StandoutPanel({ evidence, onOpenPractice }: { evidence: CandidateEviden
               <Badge tone={q.kind === "redFlag" ? "error" : "success"}>{q.kind === "redFlag" ? "Flag" : "Win"}</Badge>
               <span className="min-w-0 [overflow-wrap:anywhere]">{q.text}</span>
             </div>
-            <p className="m-0 text-[13px] leading-relaxed text-hx-ink-soft italic [overflow-wrap:anywhere]">&ldquo;{q.quote}&rdquo;</p>
+            <p className="m-0 text-[13px] leading-normal text-hx-ink-soft italic [overflow-wrap:anywhere]">&ldquo;{q.quote}&rdquo;</p>
           </li>
         ))}
       </ul>
@@ -407,7 +407,7 @@ function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidat
           </div>
         )}
         {empties.length > 0 && (
-          <p className={cn("m-0 text-[13px] text-hx-ink-soft", filled.length > 0 && "mt-4 border-t border-hx-line pt-4")}>{empties.map((c) => c.empty).join(" ")}</p>
+          <p className={cn("m-0 text-[13px] leading-normal text-hx-ink-soft", filled.length > 0 && "mt-4 border-t border-hx-line pt-4")}>{empties.map((c) => c.empty).join(" ")}</p>
         )}
       </div>
     </Panel>
@@ -428,7 +428,7 @@ function InterviewKitPanel({ candidate, requirement, unmatched }: { candidate: C
   };
   return (
     <Panel id="kit-heading" title="Interview kit" action={<PanelButton onClick={() => void copy()}>{copied ? "Copied" : "Copy questions"}</PanelButton>}>
-      <ol className="m-0 grid list-decimal gap-2 pl-5 text-[13px] leading-snug text-hx-coal">
+      <ol className="m-0 grid list-decimal gap-2 pl-5 text-[13px] leading-normal text-hx-coal">
         {questions.map((q) => <li key={q}>{q}</li>)}
       </ol>
     </Panel>

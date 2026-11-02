@@ -87,10 +87,13 @@ export function StatGrid({ children, className }: { children: ReactNode; classNa
   return <dl className={cn("m-0 grid grid-cols-2 gap-x-4 gap-y-4", className)}>{children}</dl>;
 }
 
-export function Stat({ label, hint, children }: { label: string; hint?: ReactNode; children: ReactNode }) {
+export function Stat({ label, hint, tip, children }: { label: string; hint?: ReactNode; /** Longer explanation, kept in a tooltip so the card stays short. */ tip?: ReactNode; children: ReactNode }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[12px] text-hx-ink-soft">{label}</dt>
+      <dt className="flex items-center gap-0.5 text-[12px] text-hx-ink-soft">
+        {label}
+        {tip && <InfoTip label={`About ${label.toLowerCase()}`} compact>{tip}</InfoTip>}
+      </dt>
       <dd className="m-0 mt-0.5 min-w-0">
         <span className="block text-[15px] leading-snug font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</span>
         {hint && <span className="mt-0.5 block text-[12px] leading-snug text-hx-ink-soft">{hint}</span>}
