@@ -191,7 +191,6 @@ export function PracticeTab({
   return (
     <EvidenceStatus state={state}>
       <div className="flex min-w-0 flex-col divide-y divide-hx-line">
-        {questions.length > 0 && <QuestionBreakdown questions={questions} candidate={candidate} requestUi={requestUi} />}
         <BalancedColumns
           items={[
             !!evidence && hasReadiness && { key: "readiness", weight: 4 + (evidence.starCompleteness ? 1 : 0), node: <ReadinessPanel evidence={evidence} sessions={sessions} /> },
@@ -209,10 +208,6 @@ export function PracticeTab({
                 </Panel>
               ),
             },
-            deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
-            verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
-            rounds.length > 0 && { key: "rounds", weight: 2 + rounds.length, node: <RoundsPanel rounds={rounds} /> },
-            trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
             quotes.length > 0 && {
               key: "quotes",
               weight: 2 + quotes.length * 3,
@@ -235,8 +230,13 @@ export function PracticeTab({
                 </Panel>
               ),
             },
+            verified.length > 0 && { key: "verified", weight: 2 + verified.length, node: <VerifiedPanel capabilities={verified} /> },
+            deliveryRows > 0 && { key: "delivery", weight: 2 + deliveryRows * 1.5, node: <DeliveryPanel delivery={evidence?.delivery} /> },
+            rounds.length > 0 && { key: "rounds", weight: 2 + rounds.length, node: <RoundsPanel rounds={rounds} /> },
+            trend.length > 0 && { key: "history", weight: 6 + trend.length * 1.5, node: <HistoryPanel trend={trend} sessions={sessions} /> },
           ]}
         />
+        {questions.length > 0 && <QuestionBreakdown questions={questions} candidate={candidate} requestUi={requestUi} />}
       </div>
     </EvidenceStatus>
   );
