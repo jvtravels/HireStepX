@@ -483,7 +483,7 @@ export function OverviewTab({
   const insights = buildResumeInsights(candidate, unmatched);
   const analysisClear = insights.strengths.length + insights.concerns.length + insights.validate.length === 0;
   return (
-    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)] lg:divide-x lg:divide-y-0">
+    <div className="grid min-w-0 divide-y divide-hx-line lg:grid-cols-[minmax(0,1fr)_clamp(22rem,34%,34rem)] lg:divide-x lg:divide-y-0">
       <div className="@container flex min-w-0 flex-col divide-y divide-hx-line">
         <DecisionStrip candidate={candidate} requirement={requirement} matched={matched} evidence={state.evidence} requestUi={requestUi} />
         <MatchPanel candidate={candidate} requirement={requirement} matched={matched} unmatched={unmatched} evidence={state.evidence} requestUi={requestUi} analysisClear={analysisClear} onOpenPractice={onOpenPractice} onOpenResume={onOpenResume} />
