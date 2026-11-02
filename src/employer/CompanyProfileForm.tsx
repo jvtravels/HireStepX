@@ -18,7 +18,7 @@ import {
 } from "@/employer/_companyProfileHelpers";
 
 const legendStyle: React.CSSProperties = { fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.coal, padding: 0, marginBottom: 12 };
-const GSTIN_CLASS = cn(FIELD_CLASS, "font-mono tracking-[0.04em]");
+const GSTIN_CLASS = cn(FIELD_CLASS, "font-mono tracking-[0.04em] placeholder:font-sans placeholder:tracking-normal");
 
 /* The one company-profile form, used by first-run onboarding and by Settings.
    Both POST the same upsert, so they share validation, the logo picker and the
@@ -304,7 +304,7 @@ export default function CompanyProfileForm({
         {saved ? "Saved." : ""}
       </p>
 
-      <PrimaryCta full type="submit" loading={saving} disabled={disabled}>
+      <PrimaryCta full={idPrefix !== "settings"} type="submit" loading={saving} disabled={disabled}>
         {saving ? busyLabel : submitLabel}
       </PrimaryCta>
     </form>

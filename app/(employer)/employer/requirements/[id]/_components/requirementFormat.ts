@@ -44,6 +44,18 @@ export function timeAgoLabel(iso: string | null | undefined, now: number = Date.
   return agoFromDays(Math.floor(diffMs / 86_400_000));
 }
 
+/* "1mo ago" alone cannot say when a job went live; from a week on, add the calendar date. */
+export function postedLabel(iso: string | null | undefined, now: number = Date.now()): string | null {
+  const ago = timeAgoLabel(iso, now);
+  if (!ago || !iso) return ago;
+  const then = new Date(DATE_ONLY.test(iso) ? `${iso}T00:00:00` : iso);
+  if (now - then.getTime() < 7 * 86_400_000) return ago;
+  const sameYear = then.getFullYear() === new Date(now).getFullYear();
+  const month = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][then.getMonth()];
+  const date = `${then.getDate()} ${month}${sameYear ? "" : ` ${then.getFullYear()}`}`;
+  return `${ago} · ${date}`;
+}
+
 export function agoFromDays(days: number): string {
   if (days < 1) return "today";
   if (days === 1) return "yesterday";

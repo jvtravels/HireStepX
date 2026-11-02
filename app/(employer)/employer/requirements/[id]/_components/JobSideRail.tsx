@@ -27,7 +27,7 @@ import {
   PanelLink,
 } from "@/employer/_panelParts";
 import type { JobInsight } from "@/employer/_jobDetailHelpers";
-import { dueLabel, STAGE_HINT, timeAgoLabel } from "./requirementFormat";
+import { dueLabel, postedLabel, STAGE_HINT } from "./requirementFormat";
 
 const INSIGHT_ICON: Record<string, LucideIcon> = {
   strong: CheckCircle2Icon,
@@ -137,7 +137,7 @@ export default function JobSideRail({
         <KeyValueList>
           <Rows
             rows={[
-              { label: "Posted", value: timeAgoLabel(r.createdAt) },
+              { label: "Posted", value: postedLabel(r.createdAt) },
               { label: "Openings", value: r.openPositions != null ? String(r.openPositions) : null },
               { label: "Due", value: dueText(r) },
             ]}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { budgetLabel, candidateResponseOf, canInviteCandidate, canMessageCandidate, closedSummary, isFinalStatus, practisedLabel, previewText, reversibilityNote, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
+import { budgetLabel, candidateResponseOf, canInviteCandidate, canMessageCandidate, closedSummary, isFinalStatus, postedLabel, practisedLabel, previewText, reversibilityNote, timeAgoLabel, whereLabel } from "../../app/(employer)/employer/requirements/[id]/_components/requirementFormat";
 import type { Candidate } from "../employer/mockData";
 
 const NOW = new Date("2026-10-15T12:00:00").getTime();
@@ -121,5 +121,14 @@ describe("candidate gating helpers", () => {
     expect(reversibilityNote("rejected")).toMatch(/reopen/i);
     expect(reversibilityNote("hired")).toMatch(/final/i);
     expect(reversibilityNote("interviewing")).not.toMatch(/final|undone/i);
+  });
+});
+
+describe("postedLabel", () => {
+  it("keeps the short form inside a week and adds the date from a week on", () => {
+    expect(postedLabel("2026-10-12", NOW)).toBe("3d ago");
+    expect(postedLabel("2026-09-15", NOW)).toBe("1mo ago · 15 Sep");
+    expect(postedLabel("2025-09-15", NOW)).toBe("1y ago · 15 Sep 2025");
+    expect(postedLabel(null, NOW)).toBeNull();
   });
 });
