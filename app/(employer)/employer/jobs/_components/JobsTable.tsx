@@ -98,7 +98,7 @@ export default function JobsTable({
                   data to show, so hidden-column space isn't stranded. */}
               <SortableHead column="title" columnLabel={COLUMN_LABEL.title} defaultDirection="asc" width={hasAnyDepartment ? 260 : 320} minWidth={220} sort={sort} onSortChange={setSort}>Job</SortableHead>
               {hasAnyDepartment && (
-                <TableHead className="jobs-col-dept" style={{ width: 100, padding: "0 20px", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
+                <TableHead className="jobs-col-dept" style={{ width: 100, padding: "0 clamp(20px, 1.5vw, 28px)", fontFamily: f.sans, fontSize: 13, fontWeight: 600, color: t.inkSoft }}>Department</TableHead>
               )}
               <SortableHead
                 column="stage"
@@ -149,7 +149,7 @@ export default function JobsTable({
                   className="cursor-pointer"
                   style={{ minHeight: 72 }}
                 >
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <HoverPrefetchLink
                         href={href}
@@ -198,7 +198,7 @@ export default function JobsTable({
                     )}
                   </TableCell>
                   {hasAnyDepartment && (
-                    <TableCell className="jobs-col-dept" style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                    <TableCell className="jobs-col-dept" style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                       {r.department ? (
                         <span style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{r.department}</span>
                       ) : (
@@ -206,7 +206,7 @@ export default function JobsTable({
                       )}
                     </TableCell>
                   )}
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     <StageCell
                       stage={r.stage}
                       hasEvaluatedCandidates={r.aiScreening.evaluated > 0}
@@ -214,13 +214,13 @@ export default function JobsTable({
                       frozen={isClosed || readOnly} closed={isClosed} matchedOnce={r.status === "zero"}
                     />
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     <MatchesCell r={r} />
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     {exp ? <Badge tone="neutral">{exp}</Badge> : <Badge tone="neutral">Any experience</Badge>}
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     <div style={{ fontFamily: f.sans, fontSize: textSize.md, fontWeight: 500, color: t.coal }}>{locationText(r) || "Not specified"}</div>
                     {mode && mode !== locationText(r) && (
                       <div style={{ fontFamily: f.sans, fontSize: textSize.base, color: t.inkSoft, marginTop: 1 }}>
@@ -228,7 +228,7 @@ export default function JobsTable({
                       </div>
                     )}
                   </TableCell>
-                  <TableCell style={{ padding: "12px 20px", verticalAlign: "top", whiteSpace: "normal" }}>
+                  <TableCell style={{ padding: "12px clamp(20px, 1.5vw, 28px)", verticalAlign: "top", whiteSpace: "normal" }}>
                     <DueCell dueDate={r.dueDate} closed={r.status === "closed"} />
                   </TableCell>
                   <TableCell className="jobs-col-act" style={{ padding: "12px 10px", verticalAlign: "top", textAlign: "right" }} onClick={(e) => e.stopPropagation()}>

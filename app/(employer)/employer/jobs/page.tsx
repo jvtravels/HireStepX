@@ -171,7 +171,7 @@ export default function EmployerJobsPage() {
 
   const shell = (body: React.ReactNode, filters?: React.ReactNode) => (
     <div style={{ background: t.white, display: "flex", flexDirection: "column", flex: 1, minHeight: 0, borderRadius: 16, border: `1px solid ${t.line}`, overflow: "hidden" }}>
-      <div className="px-4 py-3.5 sm:px-5 sm:py-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
+      <div className="px-4 py-3.5 sm:px-[clamp(1.25rem,1.5vw,1.75rem)] sm:py-4" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${t.line}`, flexWrap: "wrap", gap: 12 }}>
         <div style={{ flexShrink: 0 }}>
           <h1 style={{ fontFamily: f.sans, fontSize: 20, fontWeight: 600, color: t.coal, margin: 0, letterSpacing: "-0.01em", lineHeight: "28px" }}>Jobs</h1>
           {!requirementsLoading && requirements.length > 0 && (
