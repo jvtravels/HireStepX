@@ -15,7 +15,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -212,8 +212,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   const shownFacts = facts.filter((f) => !f.missing);
   const notShared = facts.filter((f) => f.missing).map((f) => f.label);
   const summary = r.summary?.trim();
-  const hxSummary = buildProfileSummary(candidate, requirement, matched, evidence);
-  if (!hxSummary && !summary && !r.headline && facts.length === 0) return null;
+  if (!summary && !r.headline && facts.length === 0) return null;
   return (
     <Panel id="profile-heading" title="Profile" action={<PanelButton onClick={onOpenResume}>Full resume</PanelButton>}>
       <div className="grid gap-4">
@@ -241,12 +240,6 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
           />
         )}
         {facts.some((f) => f.selfReported) && <p className="m-0 text-[12px] text-hx-ink-soft">Notice period and CTC are as the candidate entered them.</p>}
-        {hxSummary && (
-          <div className="grid gap-1.5 border-t border-hx-line pt-4">
-            <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">HireStepX summary</h3>
-            <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{hxSummary}</p>
-          </div>
-        )}
         {summary && (
           <div className="grid gap-1.5">
             <h3 className="m-0 text-[12px] font-medium text-hx-ink-soft">In the candidate's words</h3>
