@@ -14,7 +14,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, employerCapabilities, gradedScore, gradedSessionLabel, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -84,19 +84,6 @@ function MatchPanel({ candidate, requirement, matched, unmatched, evidence, requ
             )}
           </div>
         </div>
-        {candidate.matchBreakdown && (
-          <div className="@container grid gap-3 border-t border-hx-line pt-4">
-            <p className="m-0 flex items-center gap-1 text-[13px] font-medium text-hx-coal">
-              Resume overlap
-              <InfoTip label="About resume overlap">How much of this resume overlaps the posting. These are inputs, not shares of the score: practice results and recent activity are weighed too, so they do not add up to it. Skill wording overlap compares the words of the posting's skills with the resume text, so it can differ from the "required skills" count below, which checks each listed skill.</InfoTip>
-            </p>
-            <div className="grid gap-x-8 gap-y-3.5 @xl:grid-cols-3">
-              <MeterRow label="Role overlap" value={candidate.matchBreakdown.roleMatch} tone="indigo" />
-              <MeterRow label="Skill wording overlap" value={candidate.matchBreakdown.skillMatch} tone="indigo" />
-              <MeterRow label="Location fit" value={candidate.matchBreakdown.locationMatch} tone="indigo" />
-            </div>
-          </div>
-        )}
         {rows.length > 0 && (
           <div className="border-t border-hx-line pt-2">
             <ul aria-label="Criteria compared with the posting" className="m-0 flex list-none flex-col p-0">
@@ -239,7 +226,6 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
 
 function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, requestUi }: { candidate: Candidate; state: EvidenceState; onOpenPractice: () => void; requirementTitle: string; requestUi: RequestUi }) {
   const { evidence } = state;
-  const avg = evidenceAverage(evidence);
   const overall = gradedScore(candidate, evidence);
   const hasEvidence = !!(evidence?.readiness || evidence?.starCompleteness || evidence?.skills.length || evidence?.questions?.length);
   const verified = employerCapabilities(evidence?.verifiedCapabilities ?? []);
@@ -266,7 +252,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
         {hasEvidence ? (
           <div className="@container">
             <StatGrid className="@xl:grid-cols-4">
-              <Stat label="Interviews" hint={[overall != null ? `Overall score ${overall} out of 100` : null, last ? `latest ${last}` : null].filter(Boolean).join(", ") || undefined}>{candidate.sessionsCompleted} graded</Stat>
+              <Stat label="Practice score" hint={[`${gradedSessionLabel(candidate, evidence)} graded for this role`, last ? `latest ${last}` : null].join(", ")}>{overall ?? "–"}<span className="text-[13px] font-normal text-hx-ink-soft"> / 100</span></Stat>
               {evidence?.readiness && (
                 <Stat label="Readiness" hint={`${evidence.readiness.confidence} confidence`}>
                   <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-snug", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
@@ -274,7 +260,6 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
                   </span>
                 </Stat>
               )}
-              {avg != null && <Stat label="Average skill score" hint={`out of 100, across ${evidence?.skills.length ?? 0} interview skills (communication, depth, ownership and so on)`}>{avg}</Stat>}
               {verified.length > 0 && <Stat label="Verified skills" hint="Skills they proved in their answers, out of every skill tested across their interviews. This can include skills this job does not ask for.">{verifiedCount} of {verified.length}</Stat>}
             </StatGrid>
             {topSkills.length > 0 && (

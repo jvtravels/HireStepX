@@ -46,6 +46,14 @@ export function gradedScore(candidate: Pick<Candidate, "rosterScore" | "sessions
   return interviewScore(candidate);
 }
 
+/** Sessions for THIS job's role. The stored count covers every role the candidate ever practised, so it
+ *  is only the fallback while evidence is missing; the trend is capped at 8, hence "8+". */
+export function gradedSessionLabel(candidate: Pick<Candidate, "sessionsCompleted">, evidence: CandidateEvidence | null): string {
+  const n = evidence?.sessionTrend?.length ?? 0;
+  if (n > 0) return n >= 8 ? "8+" : String(n);
+  return String(candidate.sessionsCompleted);
+}
+
 export const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
 export const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
 
@@ -206,11 +214,13 @@ export function buildRoleFit(candidate: Candidate, requirement: Requirement, mat
     const gap = (n: number) => formatExperience(Math.round(n * 12));
     const below = min != null && y < min;
     const above = max != null && y > max;
-    const status: FitStatus = !below && !above ? "meets" : (below && y >= min - 1) || (above && y <= max + 2) ? "partial" : "gap";
+    /* More experience than asked is shown as fact, never as a warning: years are an age proxy, and
+       whether a senior hire fits the pay and scope is the employer's call, not a flag. */
+    const status: FitStatus = !below ? "meets" : y >= min - 1 ? "partial" : "gap";
     const reason = below
       ? `${gap(min - y)} short of the ${formatYears(min)} asked.`
       : above
-        ? `${gap(y - max)} above the ${formatYears(max)} ceiling.`
+        ? `${gap(y - max)} more than the ${formatYears(max)} asked.`
         : `${formatExperience(expMonths)} sits inside the range asked.`;
     rows.push({ id: "experience", label: "Experience", asked: experienceAsk(min, max), has: formatExperience(expMonths), status, reason, source: "resume" });
   }

@@ -194,6 +194,12 @@ describe("buildRoleFit location and copy", () => {
     expect(formatYears(3)).toBe("3 years");
   });
 
+  it("shows extra experience as a strength, never a warning", () => {
+    const row = buildRoleFit(candidate({}, { yearsExperience: 9 }), req, [], null).find((r) => r.id === "experience");
+    expect(row?.status).toBe("meets");
+    expect(row?.reason).toContain("more than the 5 years asked");
+  });
+
   it("labels the average-coverage figure as coverage, not full answers", () => {
     const evidence = { starCompleteness: { pct: 40, questionsConsidered: 5 } } as unknown as CandidateEvidence;
     expect(buildRoleFit(candidate(), req, [], evidence).find((r) => r.id === "star")?.label).toBe("STAR coverage");

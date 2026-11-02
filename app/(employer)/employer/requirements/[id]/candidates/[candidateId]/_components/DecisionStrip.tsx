@@ -1,7 +1,7 @@
 import type { Candidate, Requirement } from "@/employer/mockData";
 import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import { poolStanding } from "./fitExtras";
-import { bestGradedAnswer, buildRoleFit, cleanQuestionText, formatSessionDate } from "./helpers";
+import { bestGradedAnswer, buildRoleFit, cleanQuestionText, formatSessionDate, gradedSessionLabel } from "./helpers";
 import { StarMarks } from "./parts";
 import { ItemRequest, type RequestUi } from "./RequestPopover";
 
@@ -14,7 +14,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
   const standing = poolStanding(candidate.matchScore, (requirement.candidates ?? []).filter((c) => c.id !== candidate.id));
   if (!hasPractice && !standing && !resumeOnly) return null;
   const best = bestGradedAnswer(evidence?.questions);
-  const sessions = candidate.sessionsCompleted;
+  const sessions = gradedSessionLabel(candidate, evidence);
   const when = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
   return (
     <section aria-label="At a glance" className="grid min-w-0 gap-3 border-b border-hx-line bg-white px-7 py-5 @container">
@@ -24,7 +24,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
             <>
               <dt className="font-medium text-hx-ink-soft">Practice sessions</dt>
               <dd className="m-0 text-hx-coal">
-                {sessions > 0 ? `${sessions} graded` : "Graded practice evidence"}{when ? `, latest ${when}` : ""}
+                {sessions !== "0" ? `${sessions} graded for this role` : "Graded practice evidence"}{when ? `, latest ${when}` : ""}
               </dd>
             </>
           )}
