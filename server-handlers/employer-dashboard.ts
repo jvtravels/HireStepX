@@ -11,10 +11,10 @@
 export const config = { runtime: "edge" };
 
 import { withAuthAndRateLimit, corsHeaders, withRequestId, slog } from "./_shared";
-import { chunk, inList, fetchKeyset } from "./_employer-matching-helpers";
+import { chunk, inList, fetchKeyset, loadBlockedCandidateIds, loadOptedOutCandidateIds, loadEvidenceFlags } from "./_employer-matching-helpers";
 import { STRONG_MATCH_THRESHOLD } from "./_requirement-match-helpers";
 import {
-  asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
+  asDashboardRange, filterReviewableMatches, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
   buildActivityFeed, buildAuditActivity, mergeActivity, DASHBOARD_AUDIT_ACTIONS,
   type AuditFeedRow, type DashboardMatchRow, type StatusEventRow,
 } from "./_employer-dashboard-helpers";
@@ -87,7 +87,7 @@ export default async function handler(req: Request): Promise<Response> {
     const matches: DashboardMatchRow[] = [];
     for (const batch of chunk(ids, 20)) {
       const r = await fetchKeyset<DashboardMatchRow & Record<string, unknown>>({
-        baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_status,interview_scheduled_at,candidate_status_updated_at,created_at,unlocked,unlocked_candidate_name,match_score`,
+        baseUrl: `${SUPABASE_URL}/rest/v1/requirement_matches?requirement_id=in.(${inList(batch)})&select=id,requirement_id,candidate_status,interview_scheduled_at,candidate_status_updated_at,created_at,unlocked,unlocked_candidate_name,match_score,candidate_user_id`,
         headers: serviceHeaders(), keyField: "id", pageSize: 1000, maxRows: 5000,
       });
       if (r.failed) throw new Error("dashboard matches read failed");
@@ -105,7 +105,18 @@ export default async function handler(req: Request): Promise<Response> {
     // A closed job can no longer hire, so its shortlist is not "waiting for your decision".
     const openIds = new Set(requirements.filter((r) => r.status !== "closed").map((r) => r.id));
     const openMatches = matches.filter((m) => openIds.has(m.requirement_id));
-    const strongRefs = selectRecentRecommended(openMatches, STRONG_MATCH_THRESHOLD, 500);
+    // Same consent and evidence rules as the Jobs list, so both show one number.
+    const strongCandidateIds = Array.from(new Set(openMatches.filter((m) => m.match_score >= STRONG_MATCH_THRESHOLD && m.candidate_user_id).map((m) => m.candidate_user_id as string)));
+    const svc = serviceHeaders();
+    const [blocked, optedOut, evidence] = strongCandidateIds.length > 0
+      ? await Promise.all([
+          loadBlockedCandidateIds(SUPABASE_URL, svc, auth.userId),
+          loadOptedOutCandidateIds(SUPABASE_URL, svc, strongCandidateIds),
+          loadEvidenceFlags(SUPABASE_URL, svc, strongCandidateIds),
+        ])
+      : [new Set<string>(), new Set<string>(), new Map<string, boolean>()];
+    const reviewable = filterReviewableMatches(openMatches, blocked, optedOut, evidence);
+    const strongRefs = selectRecentRecommended(reviewable, STRONG_MATCH_THRESHOLD, 500);
     const oldest = strongRefs.reduce<(typeof strongRefs)[number] | null>((a, r) => (!a || Date.parse(r.createdAt) < Date.parse(a.createdAt) ? r : a), null);
 
     const body = {
@@ -119,7 +130,7 @@ export default async function handler(req: Request): Promise<Response> {
       },
       trends: {
         jobs: buildTrend(requirements.map((r) => r.created_at), now, range),
-        recommended: buildTrend(openMatches.filter((m) => m.match_score >= STRONG_MATCH_THRESHOLD && m.created_at).map((m) => m.created_at as string), now, range),
+        recommended: buildTrend(reviewable.filter((m) => m.match_score >= STRONG_MATCH_THRESHOLD && m.created_at).map((m) => m.created_at as string), now, range),
         interviews: buildTrend(eventTimes(["interview_invited", "interviewing"]), now, range),
         hired: buildTrend(eventTimes(["hired"]), now, range),
       },

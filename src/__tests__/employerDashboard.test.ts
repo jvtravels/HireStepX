@@ -31,9 +31,18 @@ const PROD_COLUMNS: Record<string, string[]> = {
     "id", "requirement_id", "candidate_user_id", "match_score", "unlocked", "unlocked_at", "created_at",
     "candidate_status", "candidate_status_updated_at", "interview_scheduled_at", "unlocked_candidate_name",
   ],
+  employer_blocks: ["candidate_user_id", "employer_id"],
+  profiles: ["id", "employer_visibility", "deleted_at", "resume_data"],
 };
 
-function mockTables(tables: Record<string, unknown[]>, failTable?: string) {
+function mockTables(given: Record<string, unknown[]>, failTable?: string) {
+  // Every matched candidate has a profile with a resume unless a test says otherwise.
+  const matchRows = (given.requirement_matches ?? []) as Array<{ candidate_user_id?: string }>;
+  const tables: Record<string, unknown[]> = {
+    employer_blocks: [],
+    profiles: matchRows.filter((m) => m.candidate_user_id).map((m) => ({ id: m.candidate_user_id })),
+    ...given,
+  };
   global.fetch = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     const table = Object.keys(tables).find((t) => url.includes(`/rest/v1/${t}?`));
@@ -67,9 +76,9 @@ describe("employer-dashboard handler", () => {
       ],
       employer_requirement_activity: [{ requirement_id: "r1", created_at: iso(-2) }],
       requirement_matches: [
-        { id: "m1aaaaaa", requirement_id: "r1", candidate_status: "interviewing", interview_scheduled_at: iso(2), candidate_status_updated_at: iso(-1), created_at: iso(-5), unlocked: false, unlocked_candidate_name: null, match_score: 80 },
-        { id: "m2bbbbbb", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-1), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
-        { id: "m3cccccc", requirement_id: "r1", candidate_status: "hired", interview_scheduled_at: null, candidate_status_updated_at: iso(-4), created_at: iso(-9), unlocked: true, unlocked_candidate_name: "Riya Shah", match_score: 90 },
+        { id: "m1aaaaaa", candidate_user_id: "c-m1aaaaaa", requirement_id: "r1", candidate_status: "interviewing", interview_scheduled_at: iso(2), candidate_status_updated_at: iso(-1), created_at: iso(-5), unlocked: false, unlocked_candidate_name: null, match_score: 80 },
+        { id: "m2bbbbbb", candidate_user_id: "c-m2bbbbbb", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-1), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
+        { id: "m3cccccc", candidate_user_id: "c-m3cccccc", requirement_id: "r1", candidate_status: "hired", interview_scheduled_at: null, candidate_status_updated_at: iso(-4), created_at: iso(-9), unlocked: true, unlocked_candidate_name: "Riya Shah", match_score: 90 },
       ],
     });
 
@@ -96,14 +105,29 @@ describe("employer-dashboard handler", () => {
       match_status_events: [],
       employer_requirement_activity: [],
       requirement_matches: [
-        { id: "m1aaaaaa", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-4), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
-        { id: "m2bbbbbb", requirement_id: "r2", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-40), unlocked: false, unlocked_candidate_name: null, match_score: 90 },
+        { id: "m1aaaaaa", candidate_user_id: "c-m1aaaaaa", requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-4), unlocked: false, unlocked_candidate_name: null, match_score: 75 },
+        { id: "m2bbbbbb", candidate_user_id: "c-m2bbbbbb", requirement_id: "r2", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-40), unlocked: false, unlocked_candidate_name: null, match_score: 90 },
       ],
     });
     const body = await (await handler(req("?range=30"))).json();
     expect(body.totals.awaitingReview).toBe(1);
     expect(body.recommended.map((r: { matchId: string }) => r.matchId)).toEqual(["m1aaaaaa"]);
     expect(body.totals.longestWaiting.title).toBe("Backend Engineer");
+  });
+
+  it("counts only strong matches the Jobs list would also show (not blocked, not opted out, with evidence)", async () => {
+    const m = (id: string, cand: string) => ({ id, candidate_user_id: cand, requirement_id: "r1", candidate_status: "shortlisted", interview_scheduled_at: null, candidate_status_updated_at: null, created_at: iso(-2), unlocked: false, unlocked_candidate_name: null, match_score: 70 });
+    mockTables({
+      employer_requirements: [{ id: "r1", title: "Backend Engineer", created_at: iso(-30), status: "ready" }],
+      match_status_events: [],
+      employer_requirement_activity: [],
+      requirement_matches: [m("m1aaaaaa", "ok"), m("m2bbbbbb", "blocked"), m("m3cccccc", "off")],
+      employer_blocks: [{ candidate_user_id: "blocked" }],
+      profiles: [{ id: "ok", employer_visibility: "visible" }, { id: "blocked", employer_visibility: "visible" }, { id: "off", employer_visibility: "off" }],
+    });
+    const body = await (await handler(req("?range=30"))).json();
+    expect(body.totals.awaitingReview).toBe(1);
+    expect(body.recommended.map((r: { matchId: string }) => r.matchId)).toEqual(["m1aaaaaa"]);
   });
 
   it("works for an employer with no jobs, and falls back to a 30-day range", async () => {

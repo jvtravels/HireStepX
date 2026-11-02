@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildAuditActivity, mergeActivity,
   asDashboardRange, buildTrend, summarizeJobs, selectUpcomingInterviews, selectRecentRecommended, rankForReview,
-  buildActivityFeed, activityText, candidateInitials, type DashboardMatchRow,
+  buildActivityFeed, activityText, candidateInitials, filterReviewableMatches, type DashboardMatchRow,
 } from "../../server-handlers/_employer-dashboard-helpers";
 
 const DAY = 86_400_000;
@@ -149,5 +149,27 @@ describe("team activity on the dashboard feed", () => {
     const b = [{ id: "t1", actor: "Team" as const, text: "new", createdAt: "2026-10-02T00:00:00Z", href: null }];
     expect(mergeActivity(a, b, 1).map((i) => i.id)).toEqual(["t1"]);
     expect(mergeActivity(a, b).map((i) => i.id)).toEqual(["t1", "s1"]);
+  });
+});
+
+describe("filterReviewableMatches", () => {
+  const rows = [
+    match({ id: "a", candidate_user_id: "ca" }),
+    match({ id: "b", candidate_user_id: "cb" }),
+    match({ id: "c", candidate_user_id: "cc" }),
+    match({ id: "d", candidate_user_id: "cd" }),
+    match({ id: "e", candidate_user_id: "ce", unlocked: true }),
+  ];
+  const evidence = new Map([["ca", true], ["cb", true], ["cc", false], ["cd", true], ["ce", true]]);
+
+  it("drops blocked, opted-out and no-evidence candidates, but keeps an unlocked one who opted out", () => {
+    const out = filterReviewableMatches(rows, new Set(["cb"]), new Set(["cd", "ce"]), evidence);
+    expect(out.map((m) => m.id)).toEqual(["a", "e"]);
+  });
+
+  it("hides everything when any check could not be read", () => {
+    expect(filterReviewableMatches(rows, null, new Set(), evidence)).toEqual([]);
+    expect(filterReviewableMatches(rows, new Set(), null, evidence)).toEqual([]);
+    expect(filterReviewableMatches(rows, new Set(), new Set(), null)).toEqual([]);
   });
 });

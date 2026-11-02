@@ -53,6 +53,7 @@ export interface DashboardMatchRow {
   unlocked: boolean | null;
   unlocked_candidate_name: string | null;
   match_score: number;
+  candidate_user_id?: string;
 }
 
 export interface JobPipelineRow {
@@ -134,6 +135,25 @@ export function selectUpcomingInterviews(
         scheduledAt: m.interview_scheduled_at as string,
       };
     });
+}
+
+/** The matches the Jobs list also counts: not blocked, not opted out (a
+ *  candidate already unlocked stays visible), and with something to screen.
+ *  Without this the Dashboard counted people the Jobs list had hidden, so the
+ *  two disagreed on "strong matches". Any unreadable check hides everything. */
+export function filterReviewableMatches(
+  matches: DashboardMatchRow[],
+  blocked: Set<string> | null,
+  optedOut: Set<string> | null,
+  evidence: Map<string, boolean> | null,
+): DashboardMatchRow[] {
+  if (!blocked || !optedOut || !evidence) return [];
+  return matches.filter((m) => {
+    const id = m.candidate_user_id;
+    if (!id || blocked.has(id)) return false;
+    if (!m.unlocked && optedOut.has(id)) return false;
+    return evidence.get(id) === true;
+  });
 }
 
 export interface RecommendedRef {
