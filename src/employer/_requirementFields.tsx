@@ -71,7 +71,7 @@ export function NumberField({
       value={value}
       onChange={(e) => onChange(digitsOnly(e.target.value, maxDigits))}
       onBlur={onBlur}
-      placeholder={placeholder}
+      placeholder={placeholder ? `e.g. ${placeholder}` : undefined}
       aria-invalid={invalid || undefined}
       aria-describedby={describedBy}
       className={FIELD_CLASS}

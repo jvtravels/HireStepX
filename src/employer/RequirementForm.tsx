@@ -314,7 +314,7 @@ export function RequirementForm({
       <div style={flexRow}>
       <div style={cell(1, 280)}>
         <FieldLabel required htmlFor="rf-title">Job title</FieldLabel>
-        <AutocompleteInput id="rf-title" value={draft.title} onChange={(v) => set("title", v)} onBlur={() => touch("title")} invalid={!!shown("title")} describedBy={describe("title")} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} emptySuggestions={COMMON_JOB_TITLES} />
+        <AutocompleteInput matchFormFields id="rf-title" value={draft.title} onChange={(v) => set("title", v)} onBlur={() => touch("title")} invalid={!!shown("title")} describedBy={describe("title")} placeholder="Senior Frontend Engineer" suggestions={ROLE_SUGGESTIONS} emptySuggestions={COMMON_JOB_TITLES} />
         {fieldError("title")}
       </div>
 

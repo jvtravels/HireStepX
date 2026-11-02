@@ -2,6 +2,7 @@ import React from "react";
 import { createPortal } from "react-dom";
 import { LoaderCircleIcon, ClipboardListIcon, MessageSquareIcon, CheckCircle2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Badge as UiBadge } from "@/components/ui/badge";
 import { Checkbox as UiCheckbox } from "@/components/ui/checkbox";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -565,6 +566,7 @@ export function AutocompleteInput({
   describedBy,
   invalid,
   onBlur,
+  matchFormFields,
 }: {
   value: string;
   onChange: (next: string) => void;
@@ -572,6 +574,8 @@ export function AutocompleteInput({
   suggestions: string[];
   /** Shown instead of a random sample while the field is empty. */
   emptySuggestions?: string[];
+  /** Use the same size, border and placeholder colour as the other form fields. */
+  matchFormFields?: boolean;
 } & FieldA11y) {
   const [focused, setFocused] = React.useState(false);
   const [selectedIdx, setSelectedIdx] = React.useState(-1);
@@ -598,13 +602,15 @@ export function AutocompleteInput({
     setSelectedIdx(-1);
   };
 
+  const Field = matchFormFields ? Input : "input";
+
   return (
     <div>
-      <input
+      <Field
         ref={inputRef}
         id={id}
         value={value}
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           onChange(e.target.value);
           setSelectedIdx(-1);
         }}
@@ -642,7 +648,8 @@ export function AutocompleteInput({
         aria-label={ariaLabel ?? (id ? undefined : placeholder)}
         aria-describedby={describedBy}
         aria-invalid={invalid || undefined}
-        style={{
+        className={matchFormFields ? FIELD_CLASS : undefined}
+        style={matchFormFields ? undefined : {
           width: "100%",
           padding: "12px 14px",
           borderRadius: 10,
