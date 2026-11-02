@@ -389,7 +389,7 @@ export default function CandidateRow({
               variant="outline"
               disabled={primary.disabled}
               onClick={primary.onSelect}
-              aria-label={`${candidate.unlockedOnOtherJob ? `Unlock for this job, ${unlockPrice}` : primary.label}: ${name}`}
+              aria-label={`${primary.label}: ${name}`}
               title={candidate.unlockedOnOtherJob ? "Already unlocked on another of your jobs. Unlocking is per job." : undefined}
               className="h-9 gap-1.5 px-3 text-[13px] font-semibold text-hx-indigo pointer-coarse:h-11"
             >

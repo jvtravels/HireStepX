@@ -79,6 +79,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
           {aiScreening.strongMatches.map((candidate, i) => (
             <span
               key={candidate.id}
+              aria-hidden="true"
               className="hsx-avatar"
               onMouseEnter={() => setAvatarShifts(i, "in")}
               style={{
@@ -92,6 +93,7 @@ export default function StrongMatchCell({ aiScreening }: { aiScreening: Requirem
           ))}
           {aiScreening.strongMatchExtra > 0 && (
             <span
+              aria-hidden="true"
               className="hsx-avatar"
               onMouseEnter={() => setAvatarShifts(aiScreening.strongMatches.length, "in")}
               style={{
