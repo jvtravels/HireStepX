@@ -179,7 +179,7 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
     // Self-reported domain years can exceed the dated roles; never show more than the header's experience.
     const totalMonths = experienceMonthsOf(r);
     const domainMonths = primaryYears ? (totalMonths != null ? Math.min(primaryYears * 12, totalMonths) : primaryYears * 12) : null;
-    facts.push({ label: "Domain", value: domainMonths ? `${r.primaryDomain} (${formatExperience(domainMonths)})` : r.primaryDomain });
+    facts.push({ label: "Domain", value: domainMonths ? `${r.primaryDomain}, ${formatExperience(domainMonths)} in this field` : r.primaryDomain });
   }
   if (avgTenureMonths != null) facts.push({ label: "Average tenure", value: `${formatTenure(avgTenureMonths)} per role` });
   if (eduText) facts.push({ label: "Education", value: eduText });
