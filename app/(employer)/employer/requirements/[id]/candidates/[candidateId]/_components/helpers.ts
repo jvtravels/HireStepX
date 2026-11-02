@@ -306,13 +306,13 @@ export function fitHeadline(fit: FitSummary, rows?: FitRow[]): string | null {
 
 export type CandidateSignalKey = "strong" | "fair" | "low";
 
-/** The one-word read shown beside the score. It follows the score band only, so the same number reads
- *  the same on every screen; unmet criteria are shown by the criteria card, not by a different label. */
+/** The one-word read shown beside the score. It follows the score band, except that Strong needs at
+ *  least one job criterion fully met: a high score with nothing met reads Fair, never Strong. */
 export function candidateSignal(score: number, fit: FitSummary): { key: CandidateSignalKey; label: string; tone: DotTone } {
   const band = matchBand(score);
-  if (band === "strong") return { key: "strong", label: "Strong match", tone: "good" };
-  const meetsNothing = fit.total > 0 && fit.meets === 0 && fit.close.length === 0;
-  if (band === "fair" && !meetsNothing) return { key: "fair", label: "Fair match", tone: "soon" };
+  const meetsNothing = fit.total > 0 && fit.meets === 0;
+  if (band === "strong" && !meetsNothing) return { key: "strong", label: "Strong match", tone: "good" };
+  if (band !== "low" && !(fit.total > 0 && fit.meets === 0 && fit.close.length === 0)) return { key: "fair", label: "Fair match", tone: "soon" };
   return { key: "low", label: "Low match", tone: "unknown" };
 }
 

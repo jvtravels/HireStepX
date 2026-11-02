@@ -28,7 +28,7 @@ function MatchSignal({ score, fit }: { score: number; fit: FitSummary }) {
         <span className="text-hx-ink-soft">{label.replace(" match", "")}</span>
       </DotLabel>
       <InfoTip label="How the match score works">
-        Out of 100, for this job only, so the same person can score differently on another job. It blends role and skill fit, practice results and recent activity. Strong is 40 and above, Fair is 20 to 39, Low is under 20. Check the gaps under Fit for this job.
+        Out of 100, for this job only, so the same person can score differently on another job. It blends role and skill fit, practice results and recent activity. Strong is 40 and above with at least one job criterion fully met, Fair is 20 to 39, Low is under 20. Check the gaps under Fit for this job.
       </InfoTip>
     </span>
   );
