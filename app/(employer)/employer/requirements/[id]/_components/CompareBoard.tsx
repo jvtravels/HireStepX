@@ -27,6 +27,12 @@ const COLS: Record<number, string> = {
   2: "grid-cols-2 md:grid-cols-[11rem_repeat(2,minmax(0,1fr))]",
   3: "grid-cols-3 md:grid-cols-[11rem_repeat(3,minmax(0,1fr))]",
 };
+const PILL = {
+  positive: "bg-hx-success-100 text-hx-success-ink",
+  action: "bg-hx-indigo-100 text-hx-indigo",
+  attention: "bg-hx-warning-100 text-hx-warning-ink",
+  neutral: "bg-hx-row text-hx-ink-soft",
+} as const;
 const FOCUS = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hx-indigo";
 const SCORE_TEXT = { success: "text-hx-success-ink", warning: "text-hx-warning-ink", error: "text-hx-error-ink" } as const;
 const BAND_TEXT = { Strong: "text-hx-success-ink", Fair: "text-hx-warning-ink", Low: "text-hx-ink-soft" } as const;
@@ -261,54 +267,29 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
   const groups = (["Fit", "Evidence", "Pipeline"] as const).map((g) => ({ g, rows: visible.filter((r) => r.group === g) })).filter((x) => x.rows.length > 0);
 
   const cols = COLS[chosen.length] ?? COLS[3];
+  const locked = chosen.some((c) => !c.unlocked);
   const names = chosen.map(candidateDisplayName);
   const namesLabel = names.length === 2 ? `${names[0]} and ${names[1]}` : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-  const locked = chosen.some((c) => !c.unlocked);
-
+  
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <header>
+      <header className="flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between md:gap-6">
         <h1 className="m-0 text-[22px] leading-8 font-semibold text-hx-coal [overflow-wrap:anywhere]">Compare candidates</h1>
-        <p className="m-0 mt-1 max-w-[640px] text-[14px] leading-5 text-hx-ink-soft">
-          {requirementTitle}
-          {locked ? ". Names and contact details of locked candidates stay hidden until you unlock them from the shortlist." : ". Side by side on match, interview evidence and pipeline status."}
-        </p>
+        <p className="m-0 text-[14px] leading-5 text-hx-ink-soft [overflow-wrap:anywhere]">{requirementTitle}</p>
       </header>
+      {locked && <p className="m-0 -mt-2 text-[13px] text-hx-ink-soft">Names and contact details of locked candidates stay hidden until you unlock them from the shortlist.</p>}
+      {summary.differences.length > 0 && (
+        <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label="Key differences">
+          {summary.differences.map((n) => (
+            <li key={n.id} className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold", PILL[n.tone])}>
+              <span aria-hidden="true" className="shrink-0">{DIFFERENCE_ICON[n.id.split("-")[0]] ?? <ScaleIcon size={16} />}</span>
+              {n.title}
+            </li>
+          ))}
+        </ul>
+      )}
 
-      <section aria-label="How they differ" className="rounded-2xl border border-hx-line bg-white px-4 py-4 md:px-6 md:py-5">
-        {summary.differences.length > 0 ? (
-          <InsightList>
-            {summary.differences.map((n) => (
-              <InsightRow key={n.id} tone={n.tone} icon={DIFFERENCE_ICON[n.id.split("-")[0]] ?? <ScaleIcon size={16} />} title={n.title} body={n.body} className="py-3 first:pt-0 last:pb-0" />
-            ))}
-          </InsightList>
-        ) : (
-          <p className="m-0 text-[14px] text-hx-ink-soft">These candidates are close on every measure we compare. Use the interview to separate them.</p>
-        )}
-        {summary.questions.length > 0 && (
-          <div className="mt-4 border-t border-hx-line pt-3">
-            <button
-              type="button"
-              onClick={() => setShowAsk((v) => !v)}
-              aria-expanded={showAsk}
-              className={cn("inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded border-0 bg-transparent p-0 text-[14px] font-semibold text-hx-indigo pointer-coarse:min-h-11", FOCUS)}
-            >
-              <MessageCircleQuestionIcon size={16} aria-hidden="true" />
-              Worth asking in the interview ({summary.questions.length})
-            </button>
-            {showAsk && (
-              <InsightList className="mt-3">
-                {summary.questions.map((n) => (
-                  <InsightRow key={n.id} tone={n.tone} icon={<MessageCircleQuestionIcon size={16} />} title={n.title} body={n.body} className="py-3 first:pt-0 last:pb-0" />
-                ))}
-              </InsightList>
-            )}
-          </div>
-        )}
-        <p className="m-0 mt-3 text-[12px] leading-[1.5] text-hx-ink-soft">
-          Worked out from the figures below. HireStepX shows where candidates differ and does not pick a hire for you. Interview scores reflect practice, not job performance.
-        </p>
-      </section>
+
 
       <section aria-label={`Comparison of ${namesLabel}`} className="rounded-2xl border border-hx-line bg-white">
         <div role="table" aria-label={`Side-by-side comparison of ${namesLabel} for ${requirementTitle}`} className="min-w-0">
@@ -363,6 +344,41 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
             </button>
           </div>
         )}
+      </section>
+
+      <section aria-label="How they differ, in detail" className="rounded-2xl border border-hx-line bg-white px-4 py-4 md:px-6 md:py-5">
+        {summary.differences.length > 0 ? (
+          <InsightList>
+            {summary.differences.map((n) => (
+              <InsightRow key={n.id} tone={n.tone} icon={DIFFERENCE_ICON[n.id.split("-")[0]] ?? <ScaleIcon size={16} />} title={n.title} body={n.body} className="py-3 first:pt-0 last:pb-0" />
+            ))}
+          </InsightList>
+        ) : (
+          <p className="m-0 text-[14px] text-hx-ink-soft">These candidates are close on every measure we compare. Use the interview to separate them.</p>
+        )}
+        {summary.questions.length > 0 && (
+          <div className="mt-4 border-t border-hx-line pt-3">
+            <button
+              type="button"
+              onClick={() => setShowAsk((v) => !v)}
+              aria-expanded={showAsk}
+              className={cn("inline-flex min-h-8 cursor-pointer items-center gap-1.5 rounded border-0 bg-transparent p-0 text-[14px] font-semibold text-hx-indigo pointer-coarse:min-h-11", FOCUS)}
+            >
+              <MessageCircleQuestionIcon size={16} aria-hidden="true" />
+              Worth asking in the interview ({summary.questions.length})
+            </button>
+            {showAsk && (
+              <InsightList className="mt-3">
+                {summary.questions.map((n) => (
+                  <InsightRow key={n.id} tone={n.tone} icon={<MessageCircleQuestionIcon size={16} />} title={n.title} body={n.body} className="py-3 first:pt-0 last:pb-0" />
+                ))}
+              </InsightList>
+            )}
+          </div>
+        )}
+        <p className="m-0 mt-3 text-[12px] leading-[1.5] text-hx-ink-soft">
+          Worked out from the figures below. HireStepX shows where candidates differ and does not pick a hire for you. Interview scores reflect practice, not job performance.
+        </p>
       </section>
     </div>
   );
