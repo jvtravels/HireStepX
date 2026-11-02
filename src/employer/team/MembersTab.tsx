@@ -179,8 +179,8 @@ export default function MembersTab({
       </div>
       </div>
       {members.length === 1 && onInviteClick && (
-        <div className={PAD} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", paddingTop: 16, paddingBottom: 16, borderTop: `1px solid ${t.line}`, background: t.creamSoft }}>
-          <p style={{ ...muted, margin: 0, maxWidth: 480 }}>
+        <div className={`${PAD} flex flex-wrap items-center justify-between gap-4 border-t border-hx-line bg-hx-soft py-4`}>
+          <p className="m-0 max-w-[480px] text-[13px] leading-normal text-hx-ink-soft">
             It's just you for now. Invite a teammate so they can review candidates, leave notes and message them with you.
           </p>
           <Button type="button" size="lg" className="h-9 px-4" disabled={seatsFull} onClick={onInviteClick}>Invite a teammate</Button>
