@@ -24,7 +24,7 @@ const COLS = "minmax(0, 1fr) 132px 112px 40px";
 const SEARCH_FROM = 6;
 
 export default function MembersTab({
-  members, myRole, compact, soleOwner, onCommand, busyId,
+  members, myRole, compact, soleOwner, onCommand, busyId, onInviteClick, seatsFull,
 }: {
   members: TeamMember[];
   myRole: EmployerRole;
@@ -32,6 +32,9 @@ export default function MembersTab({
   soleOwner: boolean;
   onCommand: (cmd: MemberCommand) => void;
   busyId: string | null;
+  /** Set only when the viewer may invite; shows the add-a-teammate nudge while the team is just them. */
+  onInviteClick?: () => void;
+  seatsFull?: boolean;
 }) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
@@ -175,6 +178,14 @@ export default function MembersTab({
         })}
       </div>
       </div>
+      {members.length === 1 && onInviteClick && (
+        <div className={PAD} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap", paddingTop: 16, paddingBottom: 16, borderTop: `1px solid ${t.line}`, background: t.creamSoft }}>
+          <p style={{ ...muted, margin: 0, maxWidth: 480 }}>
+            It's just you for now. Invite a teammate so they can review candidates, leave notes and message them with you.
+          </p>
+          <Button type="button" size="lg" className="h-9 px-4" disabled={seatsFull} onClick={onInviteClick}>Invite a teammate</Button>
+        </div>
+      )}
     </div>
     </TooltipProvider>
   );
