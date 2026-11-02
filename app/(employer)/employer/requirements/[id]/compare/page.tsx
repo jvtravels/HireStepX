@@ -206,7 +206,7 @@ export default function ComparePage() {
 
   if (!requirement) {
     return (
-      <ErrorRetry title="Couldn't load this comparison" message="We couldn't reach HireStepX, or this job no longer exists." onRetry={() => load()}>
+      <ErrorRetry pageLevel title="Couldn't load this comparison" message="We couldn't reach HireStepX, or this job no longer exists." onRetry={() => load()}>
         <BackLink requirementId={params.id} />
       </ErrorRetry>
     );
@@ -217,6 +217,7 @@ export default function ComparePage() {
       <>
         <style>{COMPARE_CSS}</style>
         <EmptyNote
+          pageLevel
           title="Pick two or three candidates to compare"
           action={<LinkCta variant="outline" href={`/employer/requirements/${requirement.id}`}>Back to shortlist</LinkCta>}
         >
@@ -300,9 +301,9 @@ export default function ComparePage() {
             </TableCaption>
             <TableHeader>
               <TableRow className={CMP_ROW}>
-                <TableCell className={cn(CMP_CELL, "sticky left-0 z-[2] bg-hx-row")}>
+                <TableHead scope="col" className={cn(CMP_CELL, "sticky left-0 z-[2] h-auto bg-hx-row")}>
                   <span className="sr-only">Attribute</span>
-                </TableCell>
+                </TableHead>
                 {chosen.map((c) => (
                   <TableHead key={c.id} scope="col" className={cn(CMP_CELL, "h-auto bg-hx-row font-bold")}>
                     <NameCell candidate={c} requirementId={requirement.id} />

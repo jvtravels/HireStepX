@@ -15,6 +15,7 @@ export default function EmployerError({ error, retry }: { error: Error & { diges
 
   return (
     <ErrorPanel
+      pageLevel
       title="Something went wrong"
       message="This page hit an unexpected problem. Your data is safe. Try again, or head back to your overview."
       onRetry={retry}

@@ -19,15 +19,14 @@ const state: CandidateRequestsState = {
 };
 
 describe("RequestPopover", () => {
-  it("opens when the Request trigger is clicked", async () => {
+  it("opens when the Ask candidate trigger is clicked", async () => {
     const candidate = { unlocked: false, contact: undefined, resume: undefined, portfolioLinks: [] } as any as Candidate;
     render(
       <RequestPopover candidate={candidate} state={state} disabled={false} disabledReason={null}>
         <RequestButton pendingCount={0} />
       </RequestPopover>,
     );
-    fireEvent.pointerDown(screen.getByRole("button", { name: /request/i }), { button: 0, ctrlKey: false });
-    fireEvent.click(screen.getByRole("button", { name: /request/i }));
+    fireEvent.click(screen.getByRole("button", { name: /ask candidate/i }));
     expect(await screen.findByText("Request from candidate")).toBeTruthy();
   });
 });

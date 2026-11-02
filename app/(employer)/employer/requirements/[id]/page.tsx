@@ -400,6 +400,7 @@ export default function RequirementDetailPage() {
     return (
       <ErrorRetry
         flat
+        pageLevel
         title="Couldn't open this job"
         message={
           loadFailed

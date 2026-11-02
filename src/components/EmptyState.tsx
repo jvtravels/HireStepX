@@ -38,6 +38,8 @@ export interface EmptyStateProps {
   description?: ReactNode;
   action?: EmptyStateAction | ReactNode;
   className?: string;
+  /** Announce the title as the page's H1 (whole-page states only; a section state keeps the page's own H1). */
+  pageLevel?: boolean;
   /** Optional style overrides for the outer card. */
   style?: CSSProperties;
 }
@@ -46,12 +48,12 @@ function isActionShape(a: unknown): a is EmptyStateAction {
   return !!a && typeof a === "object" && "label" in (a as object) && "onClick" in (a as object);
 }
 
-export function EmptyState({ icon, title, description, action, className, style }: EmptyStateProps) {
+export function EmptyState({ icon, title, description, action, className, pageLevel, style }: EmptyStateProps) {
   return (
     <Empty className={className} style={style}>
       <EmptyHeader>
         {icon && <EmptyMedia variant="icon">{icon}</EmptyMedia>}
-        <EmptyTitle>{title}</EmptyTitle>
+        <EmptyTitle {...(pageLevel ? { role: "heading", "aria-level": 1 } : {})}>{title}</EmptyTitle>
         {description && <EmptyDescription>{description}</EmptyDescription>}
       </EmptyHeader>
       {action && (

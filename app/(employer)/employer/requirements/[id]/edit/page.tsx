@@ -59,6 +59,7 @@ export default function EditRequirementPage() {
   if (!requirement) {
     return (
       <ErrorRetry
+        pageLevel
         title="Couldn't open this job"
         message="It may have been deleted, or we couldn't reach HireStepX. Try again, or go back to your jobs."
         onRetry={() => load()}

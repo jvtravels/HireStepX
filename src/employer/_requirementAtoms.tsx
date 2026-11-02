@@ -106,6 +106,7 @@ export function ErrorRetry({
   onRetry,
   retrying = false,
   flat = false,
+  pageLevel,
   children,
 }: {
   title: string;
@@ -113,6 +114,7 @@ export function ErrorRetry({
   onRetry?: () => void;
   retrying?: boolean;
   flat?: boolean;
+  pageLevel?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -121,6 +123,7 @@ export function ErrorRetry({
       title={title}
       message={message}
       contained={flat ? false : undefined}
+      pageLevel={pageLevel}
       actions={
         onRetry || children ? (
           <>
@@ -138,8 +141,8 @@ export function ErrorRetry({
 }
 
 /** Empty-state panel: one heading, one sentence of why, optional next step. */
-export function EmptyNote({ title, children, action, flat = false, icon }: { title: string; children: ReactNode; action?: ReactNode; flat?: boolean; icon?: ReactNode }) {
-  return <StatePanel title={title} message={children} actions={action} icon={icon} contained={flat ? false : undefined} />;
+export function EmptyNote({ title, children, action, flat = false, icon, pageLevel }: { title: string; children: ReactNode; action?: ReactNode; flat?: boolean; icon?: ReactNode; pageLevel?: boolean }) {
+  return <StatePanel title={title} message={children} actions={action} icon={icon} contained={flat ? false : undefined} pageLevel={pageLevel} />;
 }
 
 export function LinkCta({ ariaLabel, ...rest }: { href: string; children: ReactNode; icon?: ReactNode; variant?: "primary" | "outline"; size?: "sm" | "md"; ariaLabel?: string }) {

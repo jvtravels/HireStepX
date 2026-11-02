@@ -237,7 +237,8 @@ export default function EmployerShell({ children }: { children: React.ReactNode 
     : pathname?.endsWith("/edit") ? "Edit job"
     : pathname?.endsWith("/outcome") ? "Hiring outcome"
     : pathname === "/employer/jobs" || pathname?.startsWith("/employer/requirements/") ? "Jobs"
-    : "Dashboard";
+    : !pathname || pathname === "/employer" ? "Dashboard"
+    : "Page not found";
   const leafCrumbs = !breadcrumbExtra?.length && ["Post a job", "Compare candidates", "Edit job", "Hiring outcome"].includes(sectionTitle) ? [{ label: sectionTitle }] : undefined;
   const pageTitle = breadcrumbExtra?.length ? breadcrumbExtra[breadcrumbExtra.length - 1].label : sectionTitle;
   // Next streams the root-layout title in after hydration and can overwrite ours on a hard load, so the title is re-asserted

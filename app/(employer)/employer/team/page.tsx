@@ -60,7 +60,7 @@ function TeamConsole() {
 
   if (loading) return <PageSkeleton label="Loading team" variant="list" />;
   if (error || !team) {
-    return <ErrorPanel title="We couldn't load your team" message={error ?? "Check your connection and try again."} onRetry={() => { void reload(); }} />;
+    return <ErrorPanel pageLevel title="We couldn't load your team" message={error ?? "Check your connection and try again."} onRetry={() => { void reload(); }} />;
   }
 
   const owners = team.members.filter((m) => m.role === "owner").length;

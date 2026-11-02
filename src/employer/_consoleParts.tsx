@@ -142,6 +142,7 @@ export function ErrorPanel({
   retryLabel = "Try again",
   action,
   contained,
+  pageLevel,
 }: {
   title?: string;
   message: string;
@@ -149,6 +150,7 @@ export function ErrorPanel({
   retryLabel?: string;
   action?: React.ReactNode;
   contained?: boolean;
+  pageLevel?: boolean;
 }) {
   return (
     <StatePanel
@@ -156,6 +158,7 @@ export function ErrorPanel({
       title={title}
       message={message}
       contained={contained}
+      pageLevel={pageLevel}
       actions={
         onRetry || action ? (
           <>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ArrowLeftIcon, BellIcon, CheckCheckIcon, SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CountBadge from "./CountBadge";
 import NotificationList from "./notifications/NotificationList";
@@ -41,16 +41,17 @@ export default function NotificationBell({
         if (next) void feed.reload();
       }}
     >
-      <Button
-        type="button"
-        variant="outline"
-        aria-label={feed.unreadCount > 0 ? `Notifications (${feed.unreadCount} unread)` : "Notifications"}
-        className="relative size-10 shrink-0 p-0" data-touch="square"
-        onClick={() => setOpen(true)}
-      >
-        <BellIcon size={16} aria-hidden="true" />
-        <CountBadge count={feed.unreadCount} />
-      </Button>
+      <SheetTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          aria-label={feed.unreadCount > 0 ? `Notifications (${feed.unreadCount} unread)` : "Notifications"}
+          className="relative size-10 shrink-0 p-0" data-touch="square"
+        >
+          <BellIcon size={16} aria-hidden="true" />
+          <CountBadge count={feed.unreadCount} />
+        </Button>
+      </SheetTrigger>
       <span role="status" aria-live="polite" className="sr-only">{feed.announcement}</span>
       <SheetContent side="right" className="flex flex-col gap-0 p-0 data-[side=right]:w-full data-[side=right]:sm:max-w-md">
         <SheetHeader className="gap-3 border-b border-border px-5 pt-5 pb-3">

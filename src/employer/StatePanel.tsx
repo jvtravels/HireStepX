@@ -20,6 +20,7 @@ export function StatePanel({
   message,
   actions,
   contained,
+  pageLevel,
 }: {
   tone?: "empty" | "error";
   icon?: React.ReactNode;
@@ -27,6 +28,8 @@ export function StatePanel({
   message: React.ReactNode;
   actions?: React.ReactNode;
   contained?: boolean;
+  /** True when the panel replaces the whole page (404, failed load), so its title is the page's H1. */
+  pageLevel?: boolean;
 }) {
   const inCard = useContext(InWhiteCardContext);
   const ownCard = contained ?? !inCard;
@@ -41,6 +44,7 @@ export function StatePanel({
         className="min-h-[360px] px-6 py-16"
         icon={glyph}
         title={title}
+        pageLevel={pageLevel}
         description={message}
         action={actions ? <div className="flex flex-wrap items-center justify-center gap-3">{actions}</div> : undefined}
       />
