@@ -387,18 +387,23 @@ function reportFetchFailure(url: string, status: number | null) {
   void import("../errorReporter").then((m) => m.reportHandledError(`Employer fetch failed: ${path} ${status ?? "network"}`)).catch(() => {});
 }
 
-/** Only the heavy shortlist reads are timed; one in ten loads is sampled to keep event volume low. */
+/** Heavy shortlist reads are timed, one in ten sampled to keep event volume low. */
 const TIMED_PATHS = new Set(["/api/employer-requirements", "/api/employer-requirement-detail", "/api/employer-candidate-evidence"]);
 const TIMING_SAMPLE_RATE = 0.1;
+/** Any employer read slower than this is always reported, sampled or not, so a stall leaves evidence. */
+export const SLOW_FETCH_MS = 5_000;
 
-function reportFetchTiming(url: string, startedAt: number, serverTiming: string | null) {
+export function reportFetchTiming(url: string, startedAt: number, serverTiming: string | null, random: () => number = Math.random) {
   const path = url.split("?")[0];
-  if (!TIMED_PATHS.has(path) || Math.random() >= TIMING_SAMPLE_RATE) return;
+  const totalMs = Math.round(performance.now() - startedAt);
+  const slow = totalMs >= SLOW_FETCH_MS;
+  if (!slow && (!TIMED_PATHS.has(path) || random() >= TIMING_SAMPLE_RATE)) return;
   const handlerMs = Number(serverTiming?.match(/handler;dur=([\d.]+)/)?.[1]);
   captureClientEvent("employer_api_timing", {
     path,
-    total_ms: Math.round(performance.now() - startedAt),
+    total_ms: totalMs,
     handler_ms: Number.isFinite(handlerMs) ? Math.round(handlerMs) : null,
+    slow,
   });
 }
 
@@ -447,7 +452,7 @@ export async function getWithRetry(url: string): Promise<{ ok: boolean; status: 
       const startedAt = performance.now();
       const res = await fetchHedged(url, headers, controller.signal);
       const data: unknown = await res.json().catch(() => null);
-      if (res.ok) reportFetchTiming(url, startedAt, res.headers.get("server-timing"));
+      reportFetchTiming(url, startedAt, res.headers.get("server-timing"));
       if (res.status < 500 || last) {
         if (res.status >= 500) reportFetchFailure(url, res.status);
         return { ok: res.ok, status: res.status, data };
