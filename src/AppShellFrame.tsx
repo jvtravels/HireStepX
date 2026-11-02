@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useRef } from "react";
+import { Fragment, useLayoutEffect, useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -137,6 +137,18 @@ export default function AppShellFrame({
      Must be a layout effect: a plain effect fires after paint, so the new
      page would flash on-screen at the old scroll offset (its heading
      clipped above the fold) for one frame before snapping to top. */
+  /* Below 1280px the full 256px menu squeezes the page, so it starts as the icon rail
+     and re-opens when the window grows past that. A manual toggle sticks until the
+     window crosses the line again. */
+  const [navOpen, setNavOpen] = useState(true);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 1279px)");
+    const sync = () => setNavOpen(!mql.matches);
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
+  }, []);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
@@ -147,7 +159,7 @@ export default function AppShellFrame({
     // 60-80px gap at the bottom when the bar collapses. The vh value
     // is the fallback for pre-iOS 15.4 / Android <108.
     <TooltipProvider delayDuration={0}>
-    <SidebarProvider className="app-vh" style={{ background: c.surface, overflow: "hidden" }}>
+    <SidebarProvider open={navOpen} onOpenChange={setNavOpen} className="app-vh" style={{ background: c.surface, overflow: "hidden" }}>
       <a href={`#${mainId}`} style={{
         position: "absolute", left: -9999, top: "auto", width: 1, height: 1, overflow: "hidden",
         zIndex: 100, padding: "12px 24px", background: c.accent, color: c.graphite,
