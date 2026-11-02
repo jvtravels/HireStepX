@@ -209,11 +209,12 @@ export function NextActionCard({ action }: { action: NextAction }) {
 const FUNNEL_CELL = "flex min-w-0 flex-col border-hx-line gap-1 px-4 py-4 min-[640px]:px-7 min-[640px]:py-5";
 
 function FunnelStepItem({ step, range, border }: { step: FunnelStep; range: DashboardRange; border: string }) {
+  /* A quiet window reads "None in last 30 days", so no tile looks like it failed to load. */
   const added = step.added === null ? null
-    : step.added <= 0 ? null
+    : step.added <= 0 ? `None in last ${range} days`
     : step.key === "recommended" ? `${step.added} new ${step.added === 1 ? "match" : "matches"} in last ${range} days`
     : `+${step.added} in last ${range} days`;
-  const short = step.added === null || step.added <= 0 ? null : `+${step.added} new`;
+  const short = step.added === null ? null : step.added <= 0 ? "None lately" : `+${step.added} new`;
   return (
     <li className={`${FUNNEL_CELL} ${border}`}>
       <p className="sr-only">{step.value} {step.label}{added ? `, ${added}` : ""}</p>
