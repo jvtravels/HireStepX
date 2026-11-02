@@ -160,7 +160,7 @@ function ClampedText({ text }: { text: string }) {
   const long = text.length > 300;
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
+      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", long && !open && "line-clamp-5")}>{text}</p>
       {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );

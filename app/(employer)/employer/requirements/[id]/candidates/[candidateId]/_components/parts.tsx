@@ -15,7 +15,7 @@ export function IconList({ items, icon: Icon, iconClassName, label, renderAction
             <Icon aria-hidden="true" className={iconClassName} />
           </ItemMedia>
           <ItemContent>
-            <ItemDescription className="line-clamp-none text-[13px] leading-snug text-hx-coal">{text}</ItemDescription>
+            <ItemDescription className="line-clamp-none text-[13px] leading-normal text-hx-coal">{text}</ItemDescription>
             {renderAction?.(text)}
           </ItemContent>
         </Item>
