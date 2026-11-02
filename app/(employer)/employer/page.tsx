@@ -1,26 +1,26 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { EmployerHeaderAction } from "@/employer/EmployerShell";
 import { useEmployerData, DEFAULT_DASHBOARD_RANGE } from "@/employer/EmployerDataContext";
 import { useAuth } from "@/AuthContext";
+import { apiFetch } from "@/apiClient";
+import { authHeaders } from "@/supabase";
+import { ROLE_LABEL, isEmployerRole } from "../../../server-handlers/_employer-team-helpers";
 import { emailDomain, isFreeMailDomain } from "../../../server-handlers/_employer-trust";
-import { tierLadder } from "@/employer/_accountHelpers";
-import { PAY_AS_YOU_GO_SENTENCE, CREDIT_BACK_SENTENCE, unlockFeeSentence } from "@/employer/_employerOffer";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
-import { Eyebrow, EmployerIcon } from "@/employer/_atoms";
+import { EmployerIcon } from "@/employer/_atoms";
 import { Card } from "@/components/ui/card";
 import { PrimaryLink, PostJobLink, ErrorPanel } from "@/employer/_consoleParts";
 import { InlineAlert } from "@/employer/_requirementAtoms";
-import CompanyProfileForm from "@/employer/CompanyProfileForm";
 import {
   DashboardHeader, DashboardFunnel, ActiveJobsCard, RecommendedCandidatesCard,
   UpcomingInterviewsCard, KeyInsightsCard, RecentActivityCard, NextActionCard, DashboardSkeleton,
 } from "@/employer/DashboardSections";
 import { buildInsights, buildNextAction, buildRecommendedCards, type DashboardRange, type EmployerDashboardData } from "@/employer/dashboardData";
-import { looksLikePlaceholderProfile } from "@/employer/_companyProfileHelpers";
+import { defaultCompanyFromEmail, looksLikePlaceholderProfile } from "@/employer/_companyProfileHelpers";
 import { deriveOnboardingSteps, hasOpenedProfile, hasProgressedCandidate, type ChecklistStep } from "@/employer/onboardingSteps";
 import { useJobRowActions } from "./jobs/_components/useJobRowActions";
 
@@ -62,85 +62,102 @@ function WorkEmailRequired({ email }: { email: string }) {
   );
 }
 
-/* What the product costs and what limits apply, before the employer commits. Prices come from
-   _unlock-pricing.ts via _employerOffer.ts, limits from TIER_LIMITS, so this can't drift. */
-function OnboardingCosts() {
+interface PendingInvite { id: string; companyName: string; role: string; inviterName: string | null }
+
+/* Someone invited by email who signed in without using the link has no company yet. Offer the team
+   they were invited to instead of founding a second company that would then block them from joining. */
+function PendingInvites({ invites }: { invites: PendingInvite[] }) {
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const join = useCallback(async (id: string) => {
+    setBusyId(id);
+    setError(null);
+    const res = await apiFetch<{ ok: boolean; role?: string }>("/api/employer-team-accept", { inviteId: id }, { method: "POST" });
+    if (res.ok) {
+      const role = res.data?.role;
+      window.location.assign(isEmployerRole(role) ? `/employer?joined=${role}` : "/employer");
+      return;
+    }
+    const err = res.errorData as { error?: string } | null;
+    setError(err?.error || res.error || "Something went wrong. Please try again.");
+    setBusyId(null);
+  }, []);
+
   return (
-    <section aria-labelledby="onboarding-costs" className="mt-10 flex flex-col gap-4 text-foreground">
-      <div className="text-center"><Eyebrow tone="indigo">What it costs</Eyebrow></div>
-      <h2 id="onboarding-costs" className="sr-only">What it costs</h2>
-      <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">
-        Posting jobs and seeing anonymised, scored shortlists is free. You pay only to unlock a candidate&apos;s name and contact details.
-        {" "}{unlockFeeSentence()} {PAY_AS_YOU_GO_SENTENCE}
-      </p>
-      <p className="m-0 text-[13px] leading-relaxed text-muted-foreground">{CREDIT_BACK_SENTENCE}</p>
-      <div>
-        <p className="m-0 mb-1 text-[13px] font-semibold">Limits by account tier</p>
-        <ul role="list" className="m-0 list-none p-0 text-[13px] leading-relaxed text-muted-foreground">
-          {tierLadder().map((row) => (
-            <li key={row.tier}><strong className="text-foreground">{row.label}:</strong> {row.limits}</li>
-          ))}
-        </ul>
-        <p className="m-0 mt-1 text-[13px] leading-relaxed text-muted-foreground">
-          Sign in with a company email, not Gmail or Yahoo, to start above Basic.
-        </p>
-      </div>
+    <section aria-label="Team invites" className="mx-auto flex w-full max-w-[560px] flex-col gap-3">
+      {invites.map((inv) => (
+        <Card key={inv.id} className={SURFACE}>
+          <div className="flex flex-col gap-3 text-foreground">
+            <h2 className="m-0 text-lg font-medium">Join {inv.companyName || "your team"}</h2>
+            <p className="m-0 text-[14px] leading-relaxed text-muted-foreground">
+              {inv.inviterName ? <><strong className="text-foreground">{inv.inviterName}</strong> invited you</> : "You were invited"}
+              {" "}as {isEmployerRole(inv.role) ? ROLE_LABEL[inv.role] : "a teammate"}. Joining gives you access to their jobs and candidates.
+            </p>
+            <div>
+              <Button type="button" disabled={busyId !== null} onClick={() => { void join(inv.id); }}>
+                {busyId === inv.id ? "Joining…" : `Join ${inv.companyName || "team"}`}
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ))}
+      {error && <p role="alert" className="m-0 text-[13px] text-destructive">{error}</p>}
     </section>
   );
 }
 
+/* There is no company form: a signed-in employer with no company gets one made from what they gave at
+   signup (or their work-email domain) and fixes the name in Settings, where a placeholder is nudged.
+   Pending invites come first, because founding a company would make them its owner and block the join. */
 function CompanyOnboarding() {
   const { user } = useAuth();
-  if (user?.email && isFreeMailDomain(emailDomain(user.email))) return <WorkEmailRequired email={user.email} />;
-  return (
-    <div style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h1 style={{ fontFamily: f.sans, fontSize: "clamp(1.75rem, 4vw, 2.5rem)", fontWeight: 400, letterSpacing: "-0.01em", color: t.coal, margin: "0 0 8px" }}>
-          Tell us about your company
-        </h1>
-        <p style={{ fontFamily: f.sans, fontSize: 15, color: t.inkSoft, margin: 0, lineHeight: 1.6 }}>
-          Add your company name and website, then post a job. Your AI-matched shortlist is built once a job is posted.
-        </p>
-      </div>
-      <Card className={SURFACE}>
-        <CompanyProfileForm
-          idPrefix="onboarding"
-          initialName={user?.pendingCompanyName ?? ""}
-          initialWebsite={user?.pendingCompanyWebsite ?? ""}
-          submitLabel="Create company profile"
-          busyLabel="Setting up…"
-          websiteHelp="Candidates see this on your jobs. Signing in with a work email on this domain raises your limits."
-        />
-      </Card>
+  const { submitCompanyProfileResult } = useEmployerData();
+  const [invites, setInvites] = useState<PendingInvite[] | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const freeMail = !!user?.email && isFreeMailDomain(emailDomain(user.email));
 
-      <section aria-labelledby="onboarding-next" style={{ marginTop: 48 }}>
-        <div id="onboarding-next" style={{ textAlign: "center", marginBottom: 20 }}>
-          <Eyebrow tone="indigo">What happens next</Eyebrow>
-        </div>
-        <ol className="grid list-none grid-cols-1 gap-5 p-0 m-0 min-[480px]:grid-cols-2">
-          {[
-            { icon: <EmployerIcon.Check />, title: "You submit", body: "Company name and website. A logo helps candidates recognize you." },
-            { icon: <EmployerIcon.Arrow />, title: "You post jobs", body: "Get an AI-matched shortlist, with practice results where candidates have them." },
-          ].map((step) => (
-            <li key={step.title} style={{ textAlign: "center" }}>
-              <div
-                aria-hidden="true"
-                style={{
-                  width: 36, height: 36, borderRadius: 10, background: t.indigo100, color: t.indigoDeep,
-                  display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 10px",
-                }}
-              >
-                {step.icon}
-              </div>
-              <div style={{ fontFamily: f.sans, fontSize: 14, fontWeight: 700, color: t.coal, marginBottom: 4 }}>{step.title}</div>
-              <div style={{ fontFamily: f.sans, fontSize: 13, color: t.inkSoft, lineHeight: 1.5 }}>{step.body}</div>
-            </li>
-          ))}
-        </ol>
-      </section>
-      <OnboardingCosts />
-    </div>
-  );
+  useEffect(() => {
+    if (freeMail) return;
+    let live = true;
+    void (async () => {
+      try {
+        const res = await fetch("/api/employer-team-accept?mine=1", { headers: await authHeaders() });
+        const data = res.ok ? ((await res.json()) as { invites?: PendingInvite[] }) : null;
+        if (live) setInvites(data?.invites ?? []);
+      } catch {
+        if (live) setInvites([]);
+      }
+    })();
+    return () => { live = false; };
+  }, [freeMail]);
+
+  useEffect(() => {
+    if (freeMail || !user?.email || invites === null || invites.length > 0) return;
+    const fallback = defaultCompanyFromEmail(user.email);
+    const name = user.pendingCompanyName?.trim() || fallback.companyName;
+    const website = user.pendingCompanyWebsite?.trim() || fallback.website;
+    let live = true;
+    setFailed(false);
+    void submitCompanyProfileResult({ companyName: name, website, gstin: "", billingName: "" }).then((res) => {
+      if (live && !res.ok) setFailed(true);
+    });
+    return () => { live = false; };
+  }, [freeMail, user?.email, user?.pendingCompanyName, user?.pendingCompanyWebsite, invites, attempt, submitCompanyProfileResult]);
+
+  if (freeMail && user?.email) return <WorkEmailRequired email={user.email} />;
+  if (invites && invites.length > 0) return <PendingInvites invites={invites} />;
+  if (failed) {
+    return (
+      <ErrorPanel
+        title="We couldn't set up your workspace"
+        message="Check your connection and try again. Your details are safe."
+        onRetry={() => setAttempt((n) => n + 1)}
+      />
+    );
+  }
+  return <DashboardSkeleton withHeader />;
 }
 
 /** Stands in for the dashboard until the first job exists, then sits above it until each step is done. */

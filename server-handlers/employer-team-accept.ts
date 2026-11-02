@@ -4,7 +4,11 @@
  *      → { state, companyName, role, email, inviterName } so the join page can
  *      say who is inviting you before you sign in. The token is the secret;
  *      a bad or unknown one is a uniform 404 and the endpoint is IP rate-limited.
- * POST /api/employer-team-accept { token } (signed in)
+ * GET  /api/employer-team-accept?mine=1   (signed in)
+ *      → { invites: [{ id, companyName, role, inviterName }] } pending invites addressed to the
+ *      signed-in account's CONFIRMED email, so an invitee who skipped the email link is still
+ *      offered the team instead of the "create a company" form.
+ * POST /api/employer-team-accept { token } or { inviteId } (signed in)
  *      → joins the company. The invite must be pending, and the signed-in
  *      account's CONFIRMED email must equal the invited email, so a leaked
  *      link is useless to anyone else. Single use is enforced by an atomic
@@ -19,7 +23,7 @@ import {
   rateLimitResponse, slog,
 } from "./_shared";
 import {
-  INVITE_ACCEPT_MESSAGE, MAX_TEAM_SIZE, ROLE_LABEL, checkInviteAcceptable, hashInviteToken, inviteState, writeAuditLog,
+  INVITE_ACCEPT_MESSAGE, MAX_TEAM_SIZE, ROLE_LABEL, checkInviteAcceptable, hashInviteToken, inviteState, normalizeEmail, writeAuditLog,
   type InviteRow,
 } from "./_employer-team-helpers";
 import { teamsEnabledFor } from "./_employer-team-gate";
@@ -38,6 +42,15 @@ interface InviteWithCompany extends InviteRow {
 }
 
 const COLS = "id,employer_id,email,role,invited_by,expires_at,accepted_at,revoked_at,employers(company_name,suspended_at)";
+
+async function findInviteById(id: string): Promise<InviteWithCompany | null> {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(id)) return null;
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/employer_invites?id=eq.${id}&select=${COLS}&limit=1`, { headers: serviceHeaders() });
+  if (!res.ok) throw new Error(`invite read failed: ${res.status}`);
+  const inv = ((await res.json()) as InviteWithCompany[])[0] ?? null;
+  if (inv && !(await teamsEnabledFor(inv.employer_id))) return null;
+  return inv;
+}
 
 async function findInvite(token: string): Promise<InviteWithCompany | null> {
   if (!token || token.length < 20 || token.length > 100) return null;
@@ -65,7 +78,7 @@ export default async function handler(req: Request): Promise<Response> {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     return new Response(JSON.stringify({ error: "Server misconfigured" }), { status: 503, headers: corsHeaders(req, { allowGet: true }) });
   }
-  if (req.method === "GET") return preview(req);
+  if (req.method === "GET") return new URL(req.url).searchParams.get("mine") ? mine(req) : preview(req);
   return accept(req);
 }
 
@@ -93,6 +106,35 @@ async function preview(req: Request): Promise<Response> {
   }
 }
 
+async function mine(req: Request): Promise<Response> {
+  const pre = await withAuthAndRateLimit(req, { endpoint: "employer-team-mine", ipLimit: 30, userLimit: 20, maxBytes: 1_000, checkQuota: false, allowGet: true });
+  if (pre instanceof Response) return pre;
+  const headers = { ...pre.headers, ...corsHeaders(req, { allowGet: true }) };
+  const userId = pre.auth.userId;
+  const reply = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
+  if (!userId) return reply({ error: "Unauthorized" }, 401);
+  try {
+    const user = await authUser(userId);
+    const email = normalizeEmail(user.email);
+    if (!email || !user.confirmed) return reply({ invites: [] });
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/employer_invites?email=eq.${encodeURIComponent(email)}&accepted_at=is.null&revoked_at=is.null&expires_at=gt.${encodeURIComponent(new Date().toISOString())}&select=${COLS}&order=created_at.desc&limit=5`,
+      { headers: serviceHeaders() },
+    );
+    if (!res.ok) throw new Error(`invites read failed: ${res.status}`);
+    const rows = (await res.json()) as InviteWithCompany[];
+    const out = [];
+    for (const inv of rows) {
+      if (inv.employers?.suspended_at || !(await teamsEnabledFor(inv.employer_id))) continue;
+      out.push({ id: inv.id, companyName: inv.employers?.company_name ?? "", role: inv.role, inviterName: await inviterName(inv.invited_by, inv.employer_id) });
+    }
+    return reply({ invites: out });
+  } catch (err) {
+    slog.error("employer-team-accept mine threw", { code: "employer_team_mine_error", error: String(err).slice(0, 200), userId });
+    return reply({ invites: [] });
+  }
+}
+
 async function authUser(userId: string): Promise<{ email: string | null; confirmed: boolean; name: string | null }> {
   const res = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${encodeURIComponent(userId)}`, { headers: serviceHeaders() }).catch(() => null);
   if (!res?.ok) return { email: null, confirmed: false, name: null };
@@ -109,8 +151,12 @@ async function accept(req: Request): Promise<Response> {
   if (!userId) return reply({ error: "Unauthorized" }, 401);
 
   try {
-    const body = (await req.json().catch(() => ({}))) as { token?: unknown };
-    const inv = await findInvite(typeof body.token === "string" ? body.token : "");
+    const body = (await req.json().catch(() => ({}))) as { token?: unknown; inviteId?: unknown };
+    // inviteId is safe without the secret token: checkInviteAcceptable still demands the signed-in
+    // account's confirmed email equal the invited one, which is the real proof of ownership.
+    const inv = typeof body.inviteId === "string"
+      ? await findInviteById(body.inviteId)
+      : await findInvite(typeof body.token === "string" ? body.token : "");
     const [user, existing] = await Promise.all([
       authUser(userId),
       fetch(`${SUPABASE_URL}/rest/v1/employer_members?user_id=eq.${encodeURIComponent(userId)}&select=employer_id&limit=1`, { headers: serviceHeaders() }),

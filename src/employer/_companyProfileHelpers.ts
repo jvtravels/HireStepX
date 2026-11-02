@@ -42,3 +42,12 @@ export function looksLikePlaceholderProfile(companyName: string, website: string
   const host = website.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
   return host === "hirestepx.com";
 }
+
+/** A starting company for an employer who signed up without naming one: "priya@acme-labs.co.in" becomes
+ *  "Acme Labs" at acme-labs.co.in. Deliberately plain; the Settings nudge asks them to correct it. */
+export function defaultCompanyFromEmail(email: string): { companyName: string; website: string } {
+  const host = email.split("@")[1]?.trim().toLowerCase() ?? "";
+  const label = host.split(".")[0] ?? "";
+  const companyName = label.split(/[-_]+/).filter(Boolean).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ");
+  return { companyName: companyName || "My company", website: host || "example.com" };
+}

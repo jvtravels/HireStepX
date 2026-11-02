@@ -343,3 +343,37 @@ describe("team invite round trip: send, email, preview, accept", () => {
     expect(db.emails[0].html).toContain("&lt;img");
   });
 });
+
+describe("invitee who skipped the email link", () => {
+  const mine = (as: string) =>
+    acceptHandler(new Request("https://app.test/api/employer-team-accept?mine=1", { headers: { "x-test-user": as } }));
+  const acceptById = (inviteId: string, as: string) =>
+    acceptHandler(new Request("https://app.test/api/employer-team-accept", { method: "POST", headers: { "x-test-user": as }, body: JSON.stringify({ inviteId }) }));
+
+  it("lists the pending invite for the confirmed email and joins by id without the token", async () => {
+    await invite("new@acme.com", "admin");
+    const list = (await (await mine("new-1")).json()) as { invites: Array<{ id: string; companyName: string; role: string; inviterName: string | null }> };
+    expect(list.invites).toEqual([{ id: "inv-1", companyName: "Acme", role: "admin", inviterName: "Priya" }]);
+    // The raw token and the company id never leave in this list.
+    expect(JSON.stringify(list)).not.toContain("co-1");
+
+    const joined = await acceptById("inv-1", "new-1");
+    expect(joined.status).toBe(200);
+    expect(db.members.find((m) => m.user_id === "new-1")).toMatchObject({ employer_id: "co-1", role: "admin" });
+    expect(((await (await mine("new-1")).json()) as { invites: unknown[] }).invites).toHaveLength(0);
+  });
+
+  it("shows nothing to a different or unconfirmed account", async () => {
+    await invite("new@acme.com", "member");
+    expect(((await (await mine("other-1")).json()) as { invites: unknown[] }).invites).toHaveLength(0);
+    expect(((await (await mine("unconfirmed-1")).json()) as { invites: unknown[] }).invites).toHaveLength(0);
+  });
+
+  it("refuses to join by id as someone else or with an unconfirmed email", async () => {
+    await invite("new@acme.com", "member");
+    expect((await acceptById("inv-1", "other-1")).status).toBe(409);
+    expect((await acceptById("inv-1", "unconfirmed-1")).status).toBe(409);
+    expect((await acceptById("bad id!", "new-1")).status).toBe(404);
+    expect(db.members.find((m) => m.user_id === "new-1")).toBeUndefined();
+  });
+});
