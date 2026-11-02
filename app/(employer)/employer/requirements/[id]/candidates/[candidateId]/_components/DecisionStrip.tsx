@@ -22,7 +22,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
   return (
     <section aria-label="At a glance" className="grid min-w-0 gap-3 border-b border-hx-line bg-white px-7 py-5 @container">
       {(hasPractice || standing) && (
-        <dl className="m-0 grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px]">
+        <dl className="m-0 grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px]">
           {hasPractice && (
             <>
               <dt className="font-medium text-hx-ink-soft">Practice sessions</dt>
@@ -35,7 +35,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
             <>
               <dt className="font-medium text-hx-ink-soft">Best answer</dt>
               <dd className="m-0 flex min-w-0 items-center justify-between gap-x-4 text-hx-coal">
-                <span className="min-w-0 max-w-[60ch] truncate" title={cleanQuestionText(best.question)}>
+                <span className="min-w-0 flex-1 truncate" title={cleanQuestionText(best.question)}>
                   <span className="font-semibold tabular-nums">{best.score}/100</span> · {cleanQuestionText(best.question)}
                 </span>
                 {best.star && <StarMarks star={best.star} score={best.score} />}
@@ -63,7 +63,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
         </div>
       )}
       {(brief.strengths.length > 0 || brief.risks.length > 0) && (
-        <dl className="m-0 grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px]">
+        <dl className="m-0 grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px]">
           {brief.strengths.length > 0 && (
             <>
               <dt className="font-medium text-hx-ink-soft">Strengths</dt>
