@@ -1,4 +1,4 @@
-import type { Candidate, CandidateStatus } from "@/employer/mockData";
+import type { Candidate } from "@/employer/mockData";
 import type { Requirement, CandidateEvidence, EvidenceDelivery, EvidenceQuestion } from "@/employer/EmployerDataContext";
 import { availabilityOf, candidateSkillFit, interviewScore } from "@/employer/_jobDetailHelpers";
 import { CANDIDATE_STATUS_LABEL, matchBand } from "@/employer/_atoms";
@@ -54,8 +54,6 @@ export function gradedSessionLabel(candidate: Pick<Candidate, "sessionsCompleted
   return String(candidate.sessionsCompleted);
 }
 
-export const PIPELINE_STEPS: CandidateStatus[] = ["shortlisted", "interview_invited", "interviewing", "hired"];
-export const NEGATIVE_STATUSES: CandidateStatus[] = ["rejected", "not_a_fit", "no_response"];
 
 export function formatSessionDate(iso: string): string {
   const d = new Date(iso);

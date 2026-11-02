@@ -9,7 +9,6 @@ import { readCandidateResponse } from "@/employer/_candidateFields";
 import { DotLabel, InfoTip, MetaLine, type MetaPart } from "@/employer/_panelParts";
 import { PortfolioLinkIcon } from "@/portfolioLinkIcons";
 import { candidateLinks, candidateSignal, dealBreakerParts, experienceMonthsOf, formatExperience, initials, maskedName, type FitSummary } from "./helpers";
-import { PipelineStepper } from "./CandidatePipeline";
 import { PrimaryCandidateAction } from "./PrimaryCandidateAction";
 import { RequestButton, RequestPopover } from "./RequestPopover";
 import type { CandidateRequestsState } from "./useCandidateRequests";
@@ -141,8 +140,7 @@ export function CandidateHeader({
             </div>
             <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
               <h1 className="m-0 text-[20px] leading-tight font-semibold text-hx-coal [overflow-wrap:anywhere]">{displayName}</h1>
-              {/* The stepper below names the stage from 640px up; the chip stands in on a phone. */}
-              <span className="min-[640px]:hidden"><CandidateStatusChip status={candidate.candidateStatus} /></span>
+              <CandidateStatusChip status={candidate.candidateStatus} />
               {response === "interested" && <Badge tone="success">Candidate is interested</Badge>}
               {response === "declined" && !withdrew && <Badge tone="error">Declined contact</Badge>}
               {withdrew && <Badge tone="error">Withdrew from employer contact</Badge>}
@@ -181,9 +179,8 @@ export function CandidateHeader({
           )}
         </div>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+      <div className="mt-3">
         <MetaLine parts={meta} className="text-[13px] text-hx-ink-soft" />
-        <PipelineStepper status={candidate.candidateStatus} className="max-[639px]:hidden" />
       </div>
       {summary && <p className="m-0 mt-3 max-w-[75ch] text-[13px] leading-normal font-medium text-hx-coal">{summary}</p>}
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
