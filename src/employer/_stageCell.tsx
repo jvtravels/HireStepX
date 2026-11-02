@@ -62,7 +62,7 @@ export function StageCell({
 
   if (closed) {
     return (
-      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-hx-soft px-2 py-[3px] text-[13px] font-semibold text-hx-ink-soft">
+      <span className="inline-flex items-center whitespace-nowrap rounded-full bg-hx-soft px-2.5 py-[7px] text-[13px] font-semibold text-hx-ink-soft">
         Closed
       </span>
     );
@@ -76,7 +76,7 @@ export function StageCell({
         transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
         style={{
           display: "inline-flex", alignItems: "center", gap: 4, fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600,
-          padding: "3px 8px", borderRadius: 999, whiteSpace: "nowrap",
+          padding: "7px 10px", borderRadius: 999, whiteSpace: "nowrap",
         }}
       >
         <AnimatePresence mode="wait" initial={false}>
