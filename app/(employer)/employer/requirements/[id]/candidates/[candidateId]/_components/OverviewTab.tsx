@@ -15,7 +15,7 @@ import { DecisionStrip } from "./DecisionStrip";
 import { TeamReview } from "./TeamReview";
 import type { TeamReviewsState } from "./useTeamReviews";
 import { RoleMismatchNotice, hasRoleMismatch } from "./RoleMismatchNotice";
-import { PROVENANCE, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
+import { PROVENANCE, buildProfileSummary, displaySkillName, FIT_SOURCE_LABEL, READINESS_LABEL, averageTenureMonths, experienceMonthsOf, formatExperience, buildResumeInsights, availabilityConfirmedLabel, buildInterviewQuestions, buildRoleFit, candidateSignal, employerCapabilities, evidenceAverage, gradedScore, fitHeadline, formatSessionDate, formatTenure, groupSkillsByDepth, skillChipLabel, sortFitRows, summarizeFit, type FitStatus, type ResumeInsights } from "./helpers";
 
 export type EvidenceState = { evidence: CandidateEvidence | null; loading: boolean; failed: boolean; onRetry: () => void };
 
@@ -212,10 +212,17 @@ function ProfilePanel({ candidate, requirement, matched, evidence, onOpenResume,
   const shownFacts = facts.filter((f) => !f.missing);
   const notShared = facts.filter((f) => f.missing).map((f) => f.label);
   const summary = r.summary?.trim();
-  if (!summary && !r.headline && facts.length === 0) return null;
+  const hxSummary = buildProfileSummary(candidate, requirement, matched, evidence);
+  if (!hxSummary && !summary && !r.headline && facts.length === 0) return null;
   return (
     <Panel id="profile-heading" title="Profile" action={<span className="inline-flex items-center gap-1"><InfoTip label="Where this comes from">Self-reported by the candidate, from their profile and resume.</InfoTip><PanelButton onClick={onOpenResume}>Full resume</PanelButton></span>}>
       <div className="grid gap-4">
+        {hxSummary && (
+          <div className="grid gap-1.5">
+            <h3 className="m-0 text-[13px] font-semibold text-hx-coal">HireStepX summary</h3>
+            <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{hxSummary}</p>
+          </div>
+        )}
         {r.headline && <p className="m-0 text-[13px] font-semibold leading-snug text-hx-coal">{r.headline}</p>}
         {shownFacts.length > 0 && (
           <KeyValueList>
