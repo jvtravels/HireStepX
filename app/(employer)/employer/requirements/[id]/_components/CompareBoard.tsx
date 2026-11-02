@@ -48,6 +48,8 @@ interface CompareRow {
   id: string;
   label: string;
   group: "Fit" | "Evidence" | "Pipeline";
+  /** Set when one candidate can clearly lead, so that cell gets the winner tint. */
+  metric?: CompareMetric;
   /** What "the same" means for this row, so the matching-rows toggle can hide it. */
   same: (c: Candidate, required: string[]) => string;
   render: (c: Candidate, ctx: Ctx) => ReactNode;
@@ -91,6 +93,7 @@ const ROWS: CompareRow[] = [
   },
   {
     id: "match",
+    metric: "match",
     label: "Match score",
     group: "Fit",
     same: (c) => String(Math.round(c.matchScore)),
@@ -113,6 +116,7 @@ const ROWS: CompareRow[] = [
   },
   {
     id: "skills",
+    metric: "skills",
     label: "Required skills",
     group: "Fit",
     same: (c, required) => candidateSkillFit(c, required).matched.slice().sort().join(","),
@@ -144,6 +148,7 @@ const ROWS: CompareRow[] = [
   {
     // The same figure and rule as the shortlist's evidence column: a never-practised candidate has no score, not a default 50.
     id: "interview",
+    metric: "interview",
     label: "Interview score",
     group: "Evidence",
     same: (c) => String(interviewScore(c)),
@@ -172,6 +177,7 @@ const ROWS: CompareRow[] = [
   },
   {
     id: "sessions",
+    metric: "sessions",
     label: "Practice sessions",
     group: "Evidence",
     same: (c) => String(c.sessionsCompleted),
@@ -221,6 +227,8 @@ const ROWS: CompareRow[] = [
 ];
 
 function Identity({ candidate, requirementId, wins }: { candidate: Candidate; requirementId: string; wins: number }) {
+  const score = Math.round(candidate.matchScore);
+  const band = matchBandLabel(score);
   const name = candidateDisplayName(candidate);
   return (
     <div className="flex min-w-0 flex-col gap-2 px-3 py-3 md:px-5 md:py-4">
@@ -241,6 +249,10 @@ function Identity({ candidate, requirementId, wins }: { candidate: Candidate; re
           </Link>
           <div className="hidden text-[13px] leading-5 text-hx-ink-soft md:block">{candidate.targetRole && candidate.targetRole !== "Not specified" ? candidate.targetRole : "Role not specified"}</div>
         </div>
+      </div>
+      <div className="flex items-baseline gap-1.5">
+        <span className={cn("text-[28px] leading-8 font-semibold tabular-nums", BAND_TEXT[band])}>{score}</span>
+        <span className="text-[12px] text-hx-ink-soft">/100 · {band} match</span>
       </div>
       {wins > 0 ? (
         <div className="inline-flex w-fit items-center gap-1 rounded-full bg-hx-success-100 px-2 py-0.5 text-[12px] font-semibold text-hx-success-ink">
@@ -266,6 +278,10 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
   const visible = matchingHidden ? rows.filter((r) => !matching.includes(r)) : rows;
   const groups = (["Fit", "Evidence", "Pipeline"] as const).map((g) => ({ g, rows: visible.filter((r) => r.group === g) })).filter((x) => x.rows.length > 0);
 
+  const mostWins = Math.max(0, ...chosen.map((c) => summary.leads.get(c.id) ?? 0));
+  const topCandidates = chosen.filter((c) => (summary.leads.get(c.id) ?? 0) === mostWins);
+  /** Only one overall leader gets the column highlight; a tie highlights nobody. */
+  const topId = mostWins > 0 && topCandidates.length === 1 ? topCandidates[0].id : null;
   const cols = COLS[chosen.length] ?? COLS[3];
   const locked = chosen.some((c) => !c.unlocked);
   const names = chosen.map(candidateDisplayName);
@@ -299,7 +315,7 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
                 <span className="text-[12px] font-semibold tracking-wide text-hx-ink-soft uppercase">{chosen.length} candidates</span>
               </div>
               {chosen.map((c) => (
-                <div key={c.id} role="columnheader" className="min-w-0 border-hx-line max-md:border-l max-md:first:border-l-0 md:border-l">
+                <div key={c.id} role="columnheader" className={cn("min-w-0 border-hx-line max-md:border-l max-md:first:border-l-0 md:border-l", c.id === topId && "bg-hx-success-100/50")}>
                   <Identity candidate={c} requirementId={requirementId} wins={summary.leads.get(c.id) ?? 0} />
                 </div>
               ))}
@@ -319,7 +335,11 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
                       {row.label}
                     </div>
                     {chosen.map((c) => (
-                      <div key={c.id} role="cell" className="min-w-0 border-hx-line px-3 pt-2 pb-4 max-md:border-l max-md:first:border-l-0 md:border-l md:px-5 md:py-4">
+                      <div
+                        key={c.id}
+                        role="cell"
+                        className={cn("min-w-0 border-hx-line px-3 pt-2 pb-4 max-md:border-l max-md:first:border-l-0 md:border-l md:px-5 md:py-4", row.metric && leaders.get(row.metric)?.has(c.id) && "bg-hx-success-100/40")}
+                      >
                         {row.render(c, ctx)}
                       </div>
                     ))}
