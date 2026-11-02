@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUpIcon, MessageCircleQuestionIcon, ScaleIcon, SearchXIcon, TrendingUpIcon, UserIcon, UserXIcon } from "lucide-react";
+import { ArrowUpIcon, LightbulbIcon, MessageCircleQuestionIcon, ScaleIcon, SearchXIcon, TrendingUpIcon, UserIcon, UserXIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
@@ -13,6 +13,8 @@ import { InsightList, InsightRow, SkillChip } from "@/employer/_panelParts";
 import { candidateSkillFit, interviewScore, scoreTone } from "@/employer/_jobDetailHelpers";
 import { agoFromDays, candidateDisplayName, initials } from "./requirementFormat";
 import { metricLeaders, sameAcross, summarizeComparison, type CompareMetric } from "./compareInsights";
+import { READINESS_LABEL, buildVerdict, evidenceLeaders, useCompareEvidence, type EvidenceState } from "./compareEvidence";
+import type { CandidateEvidence } from "@/employer/EmployerDataContext";
 import { displaySkillName } from "../candidates/[candidateId]/_components/helpers";
 
 const DIFFERENCE_ICON: Record<string, ReactNode> = {
@@ -42,6 +44,8 @@ interface Ctx {
   /** Highest session count in the group, so the sessions bar reads relative to the others. */
   maxSessions: number;
   leaders: Map<CompareMetric, Set<string>>;
+  evidence: Map<string, EvidenceState>;
+  evidenceLeads: ReturnType<typeof evidenceLeaders>;
 }
 
 interface CompareRow {
@@ -50,6 +54,10 @@ interface CompareRow {
   group: "Fit" | "Evidence" | "Pipeline";
   /** Set when one candidate can clearly lead, so that cell gets the winner tint. */
   metric?: CompareMetric;
+  /** Needs graded evidence; with nobody's evidence open or loading the row would only repeat "Unlock to see evidence". */
+  graded?: boolean;
+  /** Same tint for rows whose leader comes from the graded evidence rather than the shortlist figures. */
+  leads?: (id: string, ctx: Ctx) => boolean;
   /** What "the same" means for this row, so the matching-rows toggle can hide it. */
   same: (c: Candidate, required: string[]) => string;
   render: (c: Candidate, ctx: Ctx) => ReactNode;
@@ -79,6 +87,16 @@ function Metric({ value, unit, pct, lead, label }: { value: ReactNode; unit?: st
 
 const Muted = ({ children }: { children: ReactNode }) => <div className="mt-1.5 text-[12px] leading-[1.5] text-hx-ink-soft [overflow-wrap:anywhere]">{children}</div>;
 const Faint = ({ children }: { children: ReactNode }) => <span className="text-[14px] text-hx-ink-soft">{children}</span>;
+
+/** One evidence cell: closed until unlock, a quiet note while loading or when there is nothing graded, otherwise the content. */
+function EvidenceCell({ state, children }: { state: EvidenceState | undefined; children: (e: CandidateEvidence) => ReactNode }) {
+  if (!state || state.status === "loading") return <Faint>Loading evidence</Faint>;
+  if (state.status === "locked") return <Faint>Unlock to see evidence</Faint>;
+  if (state.status === "error") return <Faint>Couldn&apos;t load evidence</Faint>;
+  return <>{children(state.evidence)}</>;
+}
+
+const NO_GRADED = <Faint>No graded interview yet</Faint>;
 
 const ROWS: CompareRow[] = [
   {
@@ -176,6 +194,104 @@ const ROWS: CompareRow[] = [
     },
   },
   {
+    id: "readiness",
+    graded: true,
+    label: "Hire readiness",
+    group: "Evidence",
+    same: (c) => c.id,
+    leads: (id, ctx) => ctx.evidenceLeads.readiness.has(id),
+    render: (c, ctx) => (
+      <EvidenceCell state={ctx.evidence.get(c.id)}>
+        {(e) =>
+          e.readiness ? (
+            <>
+              <div className={cn("text-[18px] leading-6 font-semibold", e.readiness.band === "leanHire" ? "text-hx-warning-ink" : "text-hx-success-ink")}>{READINESS_LABEL[e.readiness.band]}</div>
+              {ctx.evidenceLeads.readiness.has(c.id) && (
+                <div className="mt-1 inline-flex items-center gap-1 text-[12px] font-semibold text-hx-success-ink">
+                  <ArrowUpIcon size={12} aria-hidden="true" /> Leads
+                </div>
+              )}
+              <Muted>{e.readiness.confidence === "high" ? "High" : e.readiness.confidence === "medium" ? "Medium" : "Low"} confidence, from the latest graded interview</Muted>
+            </>
+          ) : (
+            NO_GRADED
+          )
+        }
+      </EvidenceCell>
+    ),
+  },
+  {
+    id: "star",
+    graded: true,
+    label: "Answer structure (STAR)",
+    group: "Evidence",
+    same: (c) => c.id,
+    leads: (id, ctx) => ctx.evidenceLeads.star.has(id),
+    render: (c, ctx) => (
+      <EvidenceCell state={ctx.evidence.get(c.id)}>
+        {(e) =>
+          e.starCompleteness ? (
+            <>
+              <Metric value={e.starCompleteness.pct} unit="%" pct={e.starCompleteness.pct} lead={ctx.evidenceLeads.star.has(c.id)} label={`${e.starCompleteness.pct}% of answers covered situation, task, action and result`} />
+              <Muted>of {e.starCompleteness.questionsConsidered} answers covered situation, task, action and result</Muted>
+            </>
+          ) : (
+            NO_GRADED
+          )
+        }
+      </EvidenceCell>
+    ),
+  },
+  {
+    id: "strengths",
+    graded: true,
+    label: "Best-evidenced skills",
+    group: "Evidence",
+    same: (c) => c.id,
+    render: (c, ctx) => (
+      <EvidenceCell state={ctx.evidence.get(c.id)}>
+        {(e) => {
+          const top = [...e.skills].sort((a, b) => b.score - a.score).slice(0, 3);
+          return top.length > 0 ? (
+            <ul className="m-0 flex list-none flex-wrap gap-1.5 p-0" aria-label="Best-evidenced skills">
+              {top.map((s) => (
+                <li key={s.name}>
+                  <SkillChip tone="present">
+                    {displaySkillName(s.name)} {Math.round(s.score)}
+                  </SkillChip>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            NO_GRADED
+          );
+        }}
+      </EvidenceCell>
+    ),
+  },
+  {
+    id: "quote",
+    graded: true,
+    label: "Strongest answer",
+    group: "Evidence",
+    same: (c) => c.id,
+    render: (c, ctx) => (
+      <EvidenceCell state={ctx.evidence.get(c.id)}>
+        {(e) => {
+          const win = e.quotes.find((q) => q.kind === "win");
+          return win ? (
+            <>
+              <div className="text-[13px] leading-5 font-semibold text-hx-coal [overflow-wrap:anywhere]">{win.text}</div>
+              <blockquote className="m-0 mt-1.5 line-clamp-4 text-[13px] leading-[1.5] text-hx-ink-soft italic [overflow-wrap:anywhere]">&ldquo;{win.quote}&rdquo;</blockquote>
+            </>
+          ) : (
+            NO_GRADED
+          );
+        }}
+      </EvidenceCell>
+    ),
+  },
+  {
     id: "sessions",
     metric: "sessions",
     label: "Practice sessions",
@@ -269,11 +385,15 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
   const [matchingHidden, setMatchingHidden] = useState(true);
   const [showAsk, setShowAsk] = useState(false);
 
+  const evidence = useCompareEvidence(chosen);
+  const evidenceLeads = evidenceLeaders(chosen, evidence);
+  const verdict = buildVerdict(chosen, required, evidence);
   const summary = summarizeComparison(chosen, required);
   const leaders = new Map<CompareMetric, Set<string>>((["match", "skills", "interview", "sessions"] as CompareMetric[]).map((m) => [m, metricLeaders(chosen, required, m)]));
-  const ctx: Ctx = { required, leaders, maxSessions: Math.max(0, ...chosen.map((c) => c.sessionsCompleted)) };
+  const ctx: Ctx = { required, leaders, maxSessions: Math.max(0, ...chosen.map((c) => c.sessionsCompleted)), evidence, evidenceLeads };
 
-  const rows = ROWS.filter((r) => r.id !== "skills" || required.length > 0);
+  const anyEvidence = chosen.some((c) => { const st = evidence.get(c.id)?.status; return st !== "locked"; });
+  const rows = ROWS.filter((r) => (r.id !== "skills" || required.length > 0) && (!r.graded || anyEvidence));
   const matching = rows.filter((r) => sameAcross(chosen, (c) => r.same(c, required)));
   const visible = matchingHidden ? rows.filter((r) => !matching.includes(r)) : rows;
   const groups = (["Fit", "Evidence", "Pipeline"] as const).map((g) => ({ g, rows: visible.filter((r) => r.group === g) })).filter((x) => x.rows.length > 0);
@@ -294,6 +414,16 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
         <p className="m-0 text-[14px] leading-5 text-hx-ink-soft [overflow-wrap:anywhere]">{requirementTitle}</p>
       </header>
       {locked && <p className="m-0 -mt-2 text-[13px] text-hx-ink-soft">Names and contact details of locked candidates stay hidden until you unlock them from the shortlist.</p>}
+      <section aria-label="Summary" className="flex items-start gap-3 rounded-2xl border border-hx-line bg-white px-4 py-4 md:px-6">
+        <span aria-hidden="true" className="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-hx-indigo-100 text-hx-indigo">
+          <LightbulbIcon size={16} />
+        </span>
+        <div className="min-w-0">
+          <p className="m-0 text-[16px] leading-6 font-semibold text-hx-coal [overflow-wrap:anywhere]">{verdict.headline}</p>
+          {verdict.detail && <p className="m-0 mt-1 text-[14px] leading-5 text-hx-ink-soft [overflow-wrap:anywhere]">{verdict.detail}</p>}
+          {verdict.pending && <p className="m-0 mt-1 text-[12px] text-hx-ink-soft" role="status">Loading interview evidence. This summary may update.</p>}
+        </div>
+      </section>
       {summary.differences.length > 0 && (
         <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label="Key differences">
           {summary.differences.map((n) => (
@@ -338,7 +468,7 @@ export function CompareBoard({ requirementId, requirementTitle, required, chosen
                       <div
                         key={c.id}
                         role="cell"
-                        className={cn("min-w-0 border-hx-line px-3 pt-2 pb-4 max-md:border-l max-md:first:border-l-0 md:border-l md:px-5 md:py-4", row.metric && leaders.get(row.metric)?.has(c.id) && "bg-hx-success-100/40")}
+                        className={cn("min-w-0 border-hx-line px-3 pt-2 pb-4 max-md:border-l max-md:first:border-l-0 md:border-l md:px-5 md:py-4", ((row.metric && leaders.get(row.metric)?.has(c.id)) || row.leads?.(c.id, ctx)) && "bg-hx-success-100/40")}
                       >
                         {row.render(c, ctx)}
                       </div>
