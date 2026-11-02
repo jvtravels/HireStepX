@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "cn";
 import { PanelButton } from "@/employer/_panelParts";
 import type { Candidate, Requirement } from "@/employer/mockData";
@@ -10,11 +10,22 @@ import { ItemRequest, type RequestUi } from "./RequestPopover";
 
 function ClampedText({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
-  const long = text.length > 300;
+  const [cut, setCut] = useState(false);
+  const ref = useRef<HTMLParagraphElement>(null);
+  /* Only offer "Show more" when the clamp is actually hiding text at this width. */
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const measure = () => setCut(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [text, open]);
   return (
     <div className="grid justify-items-start gap-1">
-      <p className={cn("m-0 max-w-[75ch] text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", long && !open && "line-clamp-3")}>{text}</p>
-      {long && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
+      <p ref={ref} className={cn("m-0 text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]", !open && "line-clamp-3")}>{text}</p>
+      {(cut || open) && <PanelButton onClick={() => setOpen((v) => !v)} expanded={open}>{open ? "Show less" : "Show more"}</PanelButton>}
     </div>
   );
 }
