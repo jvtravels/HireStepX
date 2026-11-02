@@ -60,7 +60,7 @@ export function RejectDialog({
         {notice && <ActionNoticeAlert notice={notice} shortlistHref={shortlistHref} />}
         <div className="grid gap-4 py-1">
           <fieldset className="m-0 grid gap-2 border-0 p-0">
-            <legend className="mb-2 p-0 text-sm font-medium text-hx-coal">Why? Private, your team only (optional)</legend>
+            <legend className="mb-2 p-0 text-[13px] font-medium text-hx-coal">Why? Private, your team only (optional)</legend>
             <div className="flex flex-wrap gap-1.5">
               {REJECT_REASONS.map((reason) => {
                 const on = reasons.includes(reason);
@@ -86,7 +86,7 @@ export function RejectDialog({
             <Textarea id="reject-note" rows={3} maxLength={1500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="Anything else you want on record. The candidate never sees this." />
           </div>
           <div className="grid gap-2">
-            <label htmlFor="reject-tell" className="flex cursor-pointer items-center gap-2 text-sm font-medium">
+            <label htmlFor="reject-tell" className="flex cursor-pointer items-center gap-2 text-[13px] font-medium">
               <Checkbox id="reject-tell" checked={tellCandidate} onCheckedChange={(v) => setTellCandidate(v === true)} />
               Also send a message to the candidate
             </label>

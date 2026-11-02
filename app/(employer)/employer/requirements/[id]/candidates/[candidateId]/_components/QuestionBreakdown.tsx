@@ -21,7 +21,7 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2.5">
           <span aria-hidden="true" className="mt-px w-5 shrink-0 text-[12px] font-semibold text-hx-ink-soft tabular-nums">{n}</span>
-          <p className="m-0 min-w-0 text-[13px] leading-snug font-medium text-hx-coal [overflow-wrap:anywhere]">{cleanQuestionText(q.question)}</p>
+          <p className="m-0 min-w-0 text-[13px] leading-normal font-medium text-hx-coal [overflow-wrap:anywhere]">{cleanQuestionText(q.question)}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <Badge tone={VERDICT_TONE[q.verdict]}>{VERDICT_LABEL[q.verdict]}</Badge>
@@ -67,13 +67,13 @@ function QuestionRow({ q, n, candidate, requestUi }: { q: EvidenceQuestion; n: n
           {q.answerText && (
             <div className="grid gap-1">
               <h4 className="m-0 text-[13px] font-semibold text-hx-coal">Their answer</h4>
-              <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{q.answerText}</p>
+              <p className="m-0 max-w-[75ch] text-[13px] leading-normal whitespace-pre-line text-hx-coal [overflow-wrap:anywhere]">{q.answerText}</p>
             </div>
           )}
           {q.explanation && (
             <div className="grid gap-1">
               <h4 className="m-0 text-[13px] font-semibold text-hx-coal">How it was graded</h4>
-              <p className="m-0 max-w-[75ch] text-[13px] leading-relaxed text-hx-ink-soft [overflow-wrap:anywhere]">{q.explanation}</p>
+              <p className="m-0 max-w-[75ch] text-[13px] leading-normal text-hx-ink-soft [overflow-wrap:anywhere]">{q.explanation}</p>
             </div>
           )}
         </div>

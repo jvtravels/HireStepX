@@ -95,7 +95,7 @@ export function Stat({ label, hint, tip, children }: { label: string; hint?: Rea
         {tip && <InfoTip label={`About ${label.toLowerCase()}`} compact>{tip}</InfoTip>}
       </dt>
       <dd className="m-0 mt-0.5 min-w-0">
-        <span className="block text-[15px] leading-snug font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</span>
+        <span className="block text-[15px] leading-normal font-semibold tabular-nums text-hx-coal [overflow-wrap:anywhere]">{children}</span>
         {hint && <span className="mt-0.5 block text-[12px] leading-snug text-hx-ink-soft">{hint}</span>}
       </dd>
     </div>
@@ -112,7 +112,7 @@ export interface MetaPart {
 export function MetaLine({ parts, className }: { parts: MetaPart[]; className?: string }) {
   if (parts.length === 0) return null;
   return (
-    <p className={cn("m-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-hx-coal", className)}>
+    <p className={cn("m-0 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-hx-coal", className)}>
       {parts.map(({ icon: Icon, text, title }, i) => (
         <span key={i} title={title} className="inline-flex items-center gap-1.5">
           <Icon size={15} aria-hidden="true" className="shrink-0 text-hx-ink-soft" />
@@ -249,7 +249,7 @@ export function InsightRow({
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[14px] font-semibold leading-5 text-hx-coal">{title}</span>
+        <span className="block text-[15px] font-semibold leading-5 text-hx-coal">{title}</span>
         <span className="mt-1 block text-[13px] leading-[1.55] text-hx-ink-soft [overflow-wrap:anywhere]">{body}</span>
         {href && cta && (
           <span className="mt-2 inline-flex items-center gap-1 text-[13px] font-semibold text-hx-indigo group-hover:underline">

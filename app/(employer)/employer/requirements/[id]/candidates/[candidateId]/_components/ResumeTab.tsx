@@ -43,10 +43,10 @@ function RoleDetail({ role }: { role: Role }) {
   if (!role.scope && meta.length === 0 && points.length === 0) return null;
   return (
     <div className="mt-1.5 grid gap-1.5">
-      {role.scope && <p className="m-0 text-[13px] leading-snug text-hx-coal">{role.scope}</p>}
+      {role.scope && <p className="m-0 text-[13px] leading-normal text-hx-coal">{role.scope}</p>}
       {meta.length > 0 && <p className="m-0 text-[12px] text-hx-ink-soft">{meta.join(" · ")}</p>}
       {points.length > 0 && (
-        <ul className="m-0 grid list-disc gap-1 pl-4 text-[13px] leading-snug text-hx-coal marker:text-hx-ink-soft">
+        <ul className="m-0 grid list-disc gap-1 pl-4 text-[13px] leading-normal text-hx-coal marker:text-hx-ink-soft">
           {points.map((t) => (
             <li key={t}>{t}</li>
           ))}
@@ -135,7 +135,7 @@ export function ResumeTab({ candidate }: { candidate: Candidate }) {
             node: (
               <Panel id="progression-heading" title="Career progression">
                 <div className="grid gap-3">
-                  {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-relaxed text-hx-coal">{resume.careerTrajectory}</p>}
+                  {resume?.careerTrajectory && <p className="m-0 text-[13px] leading-normal text-hx-coal">{resume.careerTrajectory}</p>}
                   <IconList label="Promotions and growth" items={progression} icon={TrendingUpIcon} iconClassName="size-4 text-hx-success" />
                 </div>
               </Panel>

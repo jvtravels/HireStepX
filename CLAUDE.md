@@ -167,6 +167,25 @@ batch lifts the measured numbers.
 - **File length**: ESLint warns at 1500 LOC. Split by role when you
   hit it — negotiation extracted from InterviewPanels is the pattern.
 
+## Employer type and colour spec (one style per use, no variants)
+
+Sizes allowed in the employer console: 12, 13, 15, 20 px only. No 11, 14, 16, `text-sm`, `text-xs`.
+
+| Use | Size / weight | Colour | Line height |
+|---|---|---|---|
+| Page title (h1) | 20 / 600 | `text-hx-coal` | `leading-tight` |
+| Section title (Panel, At a glance) | 15 / 600 | `text-hx-coal` | default |
+| Stat value, fit headline | 15 / 600, `tabular-nums` | `text-hx-coal` | `leading-snug` |
+| Sub-heading, row title | 13 / 600 | `text-hx-coal` | `leading-normal` |
+| Body | 13 / 400 | `text-hx-coal` | `leading-normal` |
+| Secondary / helper | 13 / 400 | `text-hx-ink-soft` | `leading-normal` |
+| Field or stat label, caption | 12 / 400 | `text-hx-ink-soft` | default |
+| Chip, badge | 12 / 500 | tone pair (`hx-success-100` + `hx-success-ink` etc.) | none |
+| Link, action text | 13 / 500 | `text-hx-indigo` | `leading-normal` |
+| Warning / error text | 13 / 400 | `text-hx-warning-ink` / `text-hx-error-ink` | `leading-normal` |
+
+Only `leading-normal` for body text (no snug or relaxed). Use `font-medium` or `font-semibold` for emphasis, never bold or italic. Use `Stat`, `Panel`, `Badge` and `MetaLine` from `src/employer/_panelParts.tsx` and `_atoms.tsx` instead of restyling.
+
 ## Responsive rule
 
 - **Desktop responsiveness** — every desktop screen (marketing, candidate,

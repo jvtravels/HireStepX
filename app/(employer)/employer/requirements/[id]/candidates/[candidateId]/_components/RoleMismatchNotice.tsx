@@ -15,7 +15,7 @@ export function RoleMismatchNotice({ evidence, candidate, requirementTitle, requ
       <p className="m-0 text-[13px] font-semibold text-hx-coal">
         {fit?.practicedFor ? `Practised for ${fit.practicedFor}, not ${requirementTitle}` : `Practised for a different role than ${requirementTitle}`}
       </p>
-      <p className="m-0 text-[13px] leading-relaxed text-hx-ink-soft">
+      <p className="m-0 text-[13px] leading-normal text-hx-ink-soft">
         Their graded interviews{when ? ` (latest ${when})` : ""} are for another role, so we do not show them as evidence for this one. The resume and match breakdown still apply.
       </p>
       <div>

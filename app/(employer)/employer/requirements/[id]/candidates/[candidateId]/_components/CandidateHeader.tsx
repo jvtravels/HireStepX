@@ -185,7 +185,7 @@ export function CandidateHeader({
         <MetaLine parts={meta} className="text-[13px] text-hx-ink-soft" />
         <PipelineStepper status={candidate.candidateStatus} className="max-[639px]:hidden" />
       </div>
-      {summary && <p className="m-0 mt-3 max-w-[75ch] text-[14px] leading-snug font-medium text-hx-coal">{summary}</p>}
+      {summary && <p className="m-0 mt-3 max-w-[75ch] text-[13px] leading-normal font-medium text-hx-coal">{summary}</p>}
       {blockedReason && <p className="m-0 mt-3 text-right text-[12px] text-hx-ink-soft">{blockedReason}</p>}
 
       <div className="mt-3 min-w-0 border-t border-hx-line pt-3 sm:mt-4 sm:pt-4">

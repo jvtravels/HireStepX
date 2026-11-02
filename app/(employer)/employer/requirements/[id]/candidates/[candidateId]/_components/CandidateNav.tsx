@@ -77,7 +77,7 @@ export function CandidateNav({
 
       {condensed && (
         <div className="flex min-w-0 flex-1 items-center gap-2.5">
-          <span className="truncate text-[14px] font-semibold text-hx-coal">{maskedName(candidate)}</span>
+          <span className="truncate text-[13px] font-semibold text-hx-coal">{maskedName(candidate)}</span>
           <span className="text-[13px] text-hx-ink-soft tabular-nums max-sm:hidden">{candidate.matchScore} match</span>
           <span className="max-md:hidden"><CandidateStatusChip status={candidate.candidateStatus} /></span>
         </div>
@@ -86,7 +86,7 @@ export function CandidateNav({
       <div className="ml-auto flex shrink-0 items-center gap-2">
         {others.length > 0 && !condensed && (
           <Select value="" onValueChange={(v) => v && onCompare(v)}>
-            <SelectTrigger size="sm" aria-label="Compare with another candidate" className="border-hx-line bg-white text-sm max-sm:w-[104px] pointer-coarse:h-11">
+            <SelectTrigger size="sm" aria-label="Compare with another candidate" className="border-hx-line bg-white text-[13px] max-sm:w-[104px] pointer-coarse:h-11">
               <SelectValue placeholder="Compare…" />
             </SelectTrigger>
             <SelectContent align="end">

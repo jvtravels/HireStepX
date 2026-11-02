@@ -27,7 +27,7 @@ function ReviewLine({ r, you }: { r: CandidateReview; you?: boolean }) {
           <strong>{LABEL[r.rating]}</strong>
           <span className="text-hx-neutral-ink"> · {you ? "You" : r.reviewerEmail || "A teammate"} · {relativeTime(r.updatedAt)}</span>
         </p>
-        <p className="m-0 mt-0.5 break-words text-[13px] leading-relaxed text-hx-neutral-ink">{r.reason}</p>
+        <p className="m-0 mt-0.5 break-words text-[13px] leading-normal text-hx-neutral-ink">{r.reason}</p>
       </div>
     </li>
   );
@@ -96,10 +96,10 @@ export function TeamReviewDialog({ open, onOpenChange, reviews, displayName }: {
               maxLength={MAX}
               rows={4}
               onChange={(e) => setReason(e.target.value)}
-              className="min-w-0 resize-y rounded-lg border border-hx-line p-2.5 text-sm text-hx-coal"
+              className="min-w-0 resize-y rounded-lg border border-hx-line p-2.5 text-[13px] text-hx-coal"
             />
           </label>
-          <span className="text-right text-xs text-hx-neutral-ink">{reason.length}/{MAX}</span>
+          <span className="text-right text-[12px] text-hx-neutral-ink">{reason.length}/{MAX}</span>
           {error && <HelpText tone="error">{error}</HelpText>}
         </div>
         <DialogFooter>

@@ -255,7 +255,7 @@ function PracticeSnapshot({ candidate, state, onOpenPractice, requirementTitle, 
               <Stat label="Practice score" tip={`Average of ${gradedSessionLabel(candidate, evidence)} graded practice interview${gradedSessionLabel(candidate, evidence) === "1" ? "" : "s"} for this role${last ? `, latest ${last}` : ""}.`}>{overall ?? "–"}<span className="text-[13px] font-normal text-hx-ink-soft"> / 100</span></Stat>
               {evidence?.readiness && (
                 <Stat label="Readiness" tip={`Based on practice interviews, with ${evidence.readiness.confidence} confidence.`}>
-                  <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-snug", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
+                  <span className={cn("inline-flex items-center rounded-md px-2 py-0.5 text-[13px] leading-normal", evidence.readiness.band === "leanHire" ? "bg-hx-warning-100 text-hx-warning-ink" : "bg-hx-success-100 text-hx-success-ink")}>
                     {READINESS_LABEL[evidence.readiness.band]}
                   </span>
                 </Stat>
@@ -380,7 +380,7 @@ function AnalysisPanel({ candidate, insights, requestUi }: { candidate: Candidat
               <div key={c.id} className="min-w-0">
                 <h3 className="m-0 mb-2 flex items-center gap-2 text-[13px] font-semibold text-hx-coal">
                   {c.title}
-                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-hx-soft px-1.5 py-0.5 text-[11px] leading-none font-medium text-hx-neutral-ink tabular-nums">{c.items.length}</span>
+                  <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-hx-soft px-1.5 py-0.5 text-[12px] leading-none font-medium text-hx-neutral-ink tabular-nums">{c.items.length}</span>
                 </h3>
                 <IconList
                   label={c.title}

@@ -29,7 +29,7 @@ export function ResumeDownload({ matchId, fileName, size = "default", className 
         {busy ? <LoaderCircle aria-hidden="true" className="animate-spin" /> : <Download aria-hidden="true" />}
         Download resume
       </Button>
-      <p role="status" className="text-xs text-destructive empty:hidden">{failed ? "Couldn't prepare the file. Try again." : ""}</p>
+      <p role="status" className="text-[12px] text-destructive empty:hidden">{failed ? "Couldn't prepare the file. Try again." : ""}</p>
     </div>
   );
 }

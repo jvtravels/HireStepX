@@ -162,7 +162,7 @@ export function RequestPopover({
       <PopoverContent align={align} className="w-[22rem] max-w-[calc(100vw-2rem)] gap-3 p-4">
         <div>
           <h3 className="m-0 text-[13px] font-semibold text-hx-coal">{preset ? (preset.fields?.length && preset.fields.every(isHiringField) ? "Hiring details" : REQUEST_KIND_LABEL[preset.kind]) : "Request from candidate"}</h3>
-          <p className="m-0 mt-1 text-[13px] leading-snug text-hx-ink-soft">{lockedNote}</p>
+          <p className="m-0 mt-1 text-[13px] leading-normal text-hx-ink-soft">{lockedNote}</p>
         </div>
 
         {!preset && (

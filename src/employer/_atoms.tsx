@@ -107,7 +107,7 @@ export const BADGE_TONE_CLASS: Record<BadgeTone, string> = {
 /** The one status/label chip for the employer console, built on the shared Badge. */
 export function Badge({ tone, className, children, ...rest }: { tone: BadgeTone } & Omit<React.ComponentProps<typeof UiBadge>, "variant">) {
   return (
-    <UiBadge {...rest} className={cn("h-auto gap-1.5 px-2.5 py-1 text-xs font-semibold", BADGE_TONE_CLASS[tone] ?? BADGE_TONE_CLASS.neutral, className)}>
+    <UiBadge {...rest} className={cn("h-auto gap-1.5 px-2.5 py-1 text-[12px] font-medium", BADGE_TONE_CLASS[tone] ?? BADGE_TONE_CLASS.neutral, className)}>
       {children}
     </UiBadge>
   );

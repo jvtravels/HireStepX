@@ -18,7 +18,7 @@ export function DecisionStrip({ candidate, requirement, matched, evidence, reque
   const when = evidence?.sessionDate ? formatSessionDate(evidence.sessionDate) : "";
   return (
     <section aria-labelledby="glance-heading" className="grid min-w-0 gap-3 border-b border-hx-line bg-white px-7 py-5 @container">
-      <h2 id="glance-heading" className="m-0 text-[13px] font-semibold text-hx-coal">At a glance</h2>
+      <h2 id="glance-heading" className="m-0 text-[15px] font-semibold text-hx-coal">At a glance</h2>
       {(hasPractice || standing) && (
         <dl className="m-0 grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-x-4 gap-y-2 text-[13px] leading-normal">
           {hasPractice && (
