@@ -47,7 +47,7 @@ export function TLDRHero({
     verdict = `You moved the offer from ₹${opening} LPA up to ₹${closing} LPA, ₹${r1(delta * 4)}L extra over four years before tax.${askGap !== null ? ` You closed ${askGap}% of the gap to your stated ask.` : ""}`;
   } else if (outcome.outcome === "accepted" && delta === 0) {
     verdict = counterNamed
-      ? `You countered at ₹${candidateAsk} LPA but accepted their opening ₹${closing} LPA — they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
+      ? `You countered at ₹${candidateAsk} LPA but accepted their opening ₹${closing} LPA, they held firm and you took it without further movement. Comparable candidates keep pushing 15 to 35% above the opening before accepting.`
       : `You accepted at ₹${closing} LPA, the same as their first offer. No counter, no movement. Comparable candidates typically push 15 to 35% above the opening number.`;
   } else if (outcome.outcome === "accepted") {
     /* R-1 residual (2026-07-13, live staging — report 03bbe2b9, Flipkart EM):
@@ -61,7 +61,7 @@ export function TLDRHero({
      * ONLY when the deal did not close. State the accept plainly and DON'T
      * fabricate a delta we can't compute. */
     verdict = counterNamed
-      ? `You accepted the ${role} offer${atCompany(company)} — you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
+      ? `You accepted the ${role} offer${atCompany(company)}, you'd countered at ₹${candidateAsk} LPA. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`
       : `You accepted the ${role} offer${atCompany(company)}. The exact offer movement wasn't captured this session, so the panels below work from the kernel's own record of where you landed.`;
   } else if (outcome.outcome === "walked_away") {
     /* `closing` can be null when the candidate walked before any offer
@@ -84,9 +84,9 @@ export function TLDRHero({
      * offer session must point at RESTARTING the conversation, not reopening a
      * non-existent offer. */
     verdict = !counterNamed
-      ? `No deal closed, and no counter on the table — you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. What to do next has an email draft to restart the conversation.`
+      ? `No deal closed, and no counter on the table, you explored ${offers.length} offer point${offers.length !== 1 ? "s" : ""} but ended with ₹0 gained. The single biggest miss was never naming a number. What to do next has an email draft to restart the conversation.`
       : offers.length > 0
-        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in — you're walking away with ₹0 gained. The email draft under What to do next reopens it before the offer lapses.`
+        ? `No deal closed. You countered at ₹${candidateAsk} LPA against their ₹${opening} LPA opening, but the conversation ended with nothing locked in, you're walking away with ₹0 gained. The email draft under What to do next reopens it before the offer lapses.`
         : `No deal closed. You named ₹${candidateAsk} LPA, but no offer ever came back and the conversation ended with ₹0 gained. What to do next has an email draft to restart the conversation.`;
   }
 
@@ -209,7 +209,7 @@ export function TLDRHero({
     hint:
       dealClosed
         ? phaseCount === TOTAL_PHASES
-          ? "you closed the deal — every stage reached"
+          ? "you closed the deal, every stage reached"
           : `you closed the deal, but skipped ${skipped} stage${skipped === 1 ? "" : "s"} along the way`
         : walkedAway
           ? phaseCount === TOTAL_PHASES
@@ -244,7 +244,7 @@ export function TLDRHero({
         value: `+${askPct}%`,
         hint: offerMoved
           ? `your counter-ask above their opening offer`
-          : `your counter-ask above their opening — the offer didn't move`,
+          : `your counter-ask above their opening, the offer didn't move`,
         tone: askPct >= 25 ? "good" : askPct >= 10 ? "warn" : "bad",
       });
     } else if (askedFor !== null) {

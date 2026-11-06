@@ -282,7 +282,7 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
           </h1>
           <p style={{ ...lead, fontSize: 19 }}>
             Total-CTC ranges for software engineers across{" "}
-            <strong style={{ color: t.coal }}>{stats.companyCount} companies</strong> hiring in India — including{" "}
+            <strong style={{ color: t.coal }}>{stats.companyCount} companies</strong> hiring in India, including{" "}
             <strong style={{ color: t.coal }}>{stats.emergingCount} emerging AI-native startups and new unicorns</strong>{" "}
             (Sarvam, Moglix, Navi, Zepto and more) that have almost no public compensation data anywhere else.
             Every band links to a full per-company breakdown with sources and a verification date.
@@ -308,7 +308,7 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
             {stats.topPayer && (
               <StatCard
                 value={`${lpa(stats.topPayer.seniorMax)} LPA`}
-                label={`Highest senior band — ${stats.topPayer.label}`}
+                label={`Highest senior band, ${stats.topPayer.label}`}
               />
             )}
           </div>
@@ -373,15 +373,15 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
               equity), not just base. Each company&rsquo;s band is cross-referenced from up to four sources:
             </p>
             <ul style={{ margin: "0 0 14px", paddingLeft: 22, lineHeight: 1.7 }}>
-              <li><strong style={{ color: t.coal }}>Levels.fyi</strong> — self-reported total-comp for product companies.</li>
-              <li><strong style={{ color: t.coal }}>AmbitionBox &amp; Glassdoor</strong> — India-specific self-reported ranges (directional; corrected for the known upward variable-pay bias).</li>
-              <li><strong style={{ color: t.coal }}>DRHP / annual filings</strong> — for listed and recently-IPO&rsquo;d companies, the most authoritative source.</li>
-              <li><strong style={{ color: t.coal }}>Offer-letter aggregation</strong> — for emerging startups with no public dataset yet.</li>
+              <li><strong style={{ color: t.coal }}>Levels.fyi</strong>: self-reported total-comp for product companies.</li>
+              <li><strong style={{ color: t.coal }}>AmbitionBox &amp; Glassdoor</strong>: India-specific self-reported ranges (directional; corrected for the known upward variable-pay bias).</li>
+              <li><strong style={{ color: t.coal }}>DRHP / annual filings</strong>: for listed and recently-IPO&rsquo;d companies, the most authoritative source.</li>
+              <li><strong style={{ color: t.coal }}>Offer-letter aggregation</strong>: for emerging startups with no public dataset yet.</li>
             </ul>
             <p style={{ margin: 0 }}>
               Every per-company page carries its own source list and a <em>last-verified</em> date. Figures are refreshed
               quarterly; the most recent verification in this dataset is {updatedLabel}. Treat emerging-startup bands as
-              directional — anchor negotiations to the lower half and validate with a recruiter.
+              directional, anchor negotiations to the lower half and validate with a recruiter.
             </p>
           </div>
         </div>
@@ -394,7 +394,7 @@ export function SalaryReport2026({ rows, stats, updatedLabel }: SalaryReport2026
         accent="Then earn it."
       >
         <p style={{ fontFamily: fonts.sans, fontSize: 17, lineHeight: 1.6, color: t.creamMuted, maxWidth: "52ch", margin: "0 auto 28px" }}>
-          Knowing the band is half the battle — the other half is interviewing well enough to land the top of it. Practice
+          Knowing the band is half the battle, the other half is interviewing well enough to land the top of it. Practice
           a full voice mock interview with scored STAR feedback, free.
         </p>
         <div style={{ display: "flex", justifyContent: "center" }}>

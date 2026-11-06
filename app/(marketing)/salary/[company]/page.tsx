@@ -155,7 +155,7 @@ export async function generateMetadata({
   const baseTitle = isBroadRoster
     ? headlineRange
       ? `${label} ${salaryIn} 2026: ${firstRoleTitle} ${headlineRange} (+${roleSections.length - 1} More Roles)`
-      : `${label} Salary Guide${inIndia ? " India" : ""} 2026 — ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
+      : `${label} Salary Guide${inIndia ? " India" : ""} 2026, ${roleSections.length} Roles (${firstRoleTitle} to ${lastRole})`
     : headlineRange
       ? `${label} ${salaryIn} 2026: ${firstRoleTitle} ${headlineRange}`
       : page.searchPhrase;

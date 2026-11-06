@@ -35,7 +35,7 @@ export function RouteFocusManager() {
       // ensuring assertive live regions re-read even for identical titles.
       setTimeout(() => {
         announcer.textContent = document.title
-          ? `Navigated to ${document.title.replace(/ ?[|·—–-] .*$/, "").trim()}`
+          ? `Navigated to ${document.title.replace(/ ?[|·, –-] .*$/, "").trim()}`
           : "Page loaded";
       }, 50);
     }

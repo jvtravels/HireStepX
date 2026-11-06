@@ -660,7 +660,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-1 (0–3 yrs)", min: 25, max: 40, note: "Bengaluru base; pre-IPO ESOPs at Series-F" },
       { role: "SDE-2 (3–6 yrs)", min: 38, max: 58, note: "Significant ESOP grants; CRED values retention" },
       { role: "SDE-3 / Senior (6+ yrs)", min: 50, max: 75, note: "Top-decile in India market; very selective hiring" },
-    ]} caption="CRED India 2026; Bengaluru; pre-IPO ESOPs; highly selective — low offer volume" />
+    ]} caption="CRED India 2026; Bengaluru; pre-IPO ESOPs; highly selective, low offer volume" />
   ),
 
   /* meesho-interview-questions-2026: Meesho shorter guide */
@@ -794,7 +794,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
   "accenture-interview-questions-2026||Accenture hiring tracks and the interview process": (
     <RoundFlow rounds={[
       { label: "Cognitive & Technical Assessment", duration: "90 min", detail: "Verbal, quant, logical reasoning + 15 coding MCQs" },
-      { label: "Communication Assessment", duration: "30 min", detail: "Versant spoken English test — hidden eliminator" },
+      { label: "Communication Assessment", duration: "30 min", detail: "Versant spoken English test, hidden eliminator" },
       { label: "Technical Interview", duration: "45 min", detail: "OOP, DBMS, OS, one DSA question (ASE track only)" },
       { label: "HR Round", duration: "20 min", detail: "Motivation, relocation, joining timeline" },
     ]} />
@@ -802,10 +802,10 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
   "accenture-interview-questions-2026||Accenture compensation 2026": (
     <SalaryLadder maxLPA={22} rows={[
       { role: "Associate Software Engineer (ASE)", min: 4.5, max: 5.5, note: "Standard track" },
-      { role: "Software Engineer (SE — packaged campus)", min: 6.5, max: 9, note: "Merit/referral track" },
+      { role: "Software Engineer (SE, packaged campus)", min: 6.5, max: 9, note: "Merit/referral track" },
       { role: "SE with 2–3 yrs exp (lateral)", min: 9, max: 14 },
       { role: "SSE / Tech Lead (5+ yrs)", min: 14, max: 22 },
-    ]} caption="Accenture India CTC 2026 — variable component ~15% of fixed" />
+    ]} caption="Accenture India CTC 2026, variable component ~15% of fixed" />
   ),
 
   /* cognizant-interview-questions-2026: Hiring tracks and compensation */
@@ -823,7 +823,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "GenC Elevate (Programmer Analyst)", min: 5.5, max: 7, note: "Elevated campus track" },
       { role: "Programmer Analyst (2–3 yrs)", min: 7, max: 11 },
       { role: "Senior Programmer Analyst (4–6 yrs)", min: 11, max: 18 },
-    ]} caption="Cognizant India CTC 2026 — annual appraisal cycles in March" />
+    ]} caption="Cognizant India CTC 2026, annual appraisal cycles in March" />
   ),
 
   /* wipro-interview-questions-2026: Tracks and compensation */
@@ -845,7 +845,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
         { label: "Onsite Opportunity", values: ["Moderate", "High", "High"] },
         { label: "Bangalore Strength", values: ["Strong", "Moderate", "Strong"] },
       ]}
-      caption="Service IT comparison for freshers India 2026 — NTH = National Talent Hunt"
+      caption="Service IT comparison for freshers India 2026, NTH = National Talent Hunt"
     />
   ),
 
@@ -925,8 +925,8 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
   "upstox-interview-questions-2026||Upstox Interview Process": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "90 min", detail: "2–3 DSA problems; Medium–Hard, time complexity focus" },
-      { label: "Technical Round 1 — DSA & CS", duration: "60 min", detail: "Graph/DP deep dive, OS, concurrency" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "System design: trade engine, order book, low-latency feeds" },
+      { label: "Technical Round 1, DSA & CS", duration: "60 min", detail: "Graph/DP deep dive, OS, concurrency" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "System design: trade engine, order book, low-latency feeds" },
       { label: "Culture / Leadership Round", duration: "30 min", detail: "Ownership, zero-to-one work, trading domain awareness" },
     ]} />
   ),
@@ -936,7 +936,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 28, max: 40 },
       { role: "Senior / Staff SDE (5+ yrs)", min: 38, max: 55 },
       { role: "Engineering Manager (6+ yrs)", min: 45, max: 70 },
-    ]} caption="Upstox salary India 2026 — ESOPs add meaningful upside pre-IPO" />
+    ]} caption="Upstox salary India 2026, ESOPs add meaningful upside pre-IPO" />
   ),
 
   /* meta-india-interview-questions-2026: FAANG process */
@@ -944,8 +944,8 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, motivation, timeline clarification" },
       { label: "Coding Screen (HackerRank / Live)", duration: "45 min", detail: "2 LeetCode-style problems, Medium difficulty" },
-      { label: "Virtual Onsite — Coding ×2", duration: "45 min each", detail: "2 problems per round; arrays, graphs, DP heavily tested" },
-      { label: "Virtual Onsite — System Design", duration: "60 min", detail: "Design at scale: social graph, news feed, ads delivery" },
+      { label: "Virtual Onsite, Coding ×2", duration: "45 min each", detail: "2 problems per round; arrays, graphs, DP heavily tested" },
+      { label: "Virtual Onsite, System Design", duration: "60 min", detail: "Design at scale: social graph, news feed, ads delivery" },
       { label: "Jedi (Behavioral) Round", duration: "45 min", detail: "Meta values: Move Fast, Be Direct, Focus on Impact" },
     ]} />
   ),
@@ -955,15 +955,15 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SWE E4 / SDE-2 (2–5 yrs)", min: 60, max: 90 },
       { role: "SWE E5 / Senior (5–8 yrs)", min: 80, max: 120 },
       { role: "SWE E6 / Staff (8+ yrs)", min: 110, max: 180 },
-    ]} caption="Meta India total compensation 2026 — includes base + RSU (3yr cliff)" />
+    ]} caption="Meta India total compensation 2026, includes base + RSU (3yr cliff)" />
   ),
 
   /* scaler-interview-questions-2026: EdTech product company */
   "scaler-interview-questions-2026||Scaler Interview Process and DSA Emphasis": (
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "90 min", detail: "3 DSA problems; Medium–Hard; Strong DSA bar" },
-      { label: "Technical Round 1 — DSA + CS", duration: "60 min", detail: "Graph, DP, OS, concurrency deep dive" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "EdTech platform design: live classes, progress tracking" },
+      { label: "Technical Round 1, DSA + CS", duration: "60 min", detail: "Graph, DP, OS, concurrency deep dive" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "EdTech platform design: live classes, progress tracking" },
       { label: "Culture Fit / Mission Alignment", duration: "30 min", detail: "Teaching philosophy, product thinking, impact mindset" },
     ]} />
   ),
@@ -973,7 +973,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 25, max: 38 },
       { role: "Senior SDE (5+ yrs)", min: 35, max: 52 },
       { role: "Engineering Manager (6+ yrs)", min: 45, max: 65 },
-    ]} caption="Scaler Academy salary India 2026 — mission-driven culture, ESOPs offered" />
+    ]} caption="Scaler Academy salary India 2026, mission-driven culture, ESOPs offered" />
   ),
 
   /* vedantu-interview-questions-2026: Real-time video platform */
@@ -981,7 +981,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Coding Assessment", duration: "75 min", detail: "2–3 DSA problems; Medium difficulty; real-time constraints" },
       { label: "Technical Round 1", duration: "60 min", detail: "DSA, real-time systems, WebRTC basics, backend APIs" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Design live tutoring platform, video streaming, whiteboard" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Design live tutoring platform, video streaming, whiteboard" },
       { label: "Founder / Culture Round", duration: "30 min", detail: "EdTech mission, product sense, working in ambiguity" },
     ]} />
   ),
@@ -991,7 +991,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 22, max: 35 },
       { role: "Senior SDE (5+ yrs)", min: 32, max: 48 },
       { role: "Engineering Lead (6+ yrs)", min: 42, max: 60 },
-    ]} caption="Vedantu salary India 2026 — ESOPs available; post-layoff team is leaner" />
+    ]} caption="Vedantu salary India 2026, ESOPs available; post-layoff team is leaner" />
   ),
 
   /* optiver-interview-questions-india-2026: Quant trading firm */
@@ -1010,7 +1010,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "Software Developer (SDE-1 equiv)", min: 25, max: 45 },
       { role: "Senior Software Developer", min: 45, max: 80 },
       { role: "Quant Researcher (experienced)", min: 60, max: 120 },
-    ]} caption="Optiver India compensation 2026 — year-end bonus is most significant component" />
+    ]} caption="Optiver India compensation 2026, year-end bonus is most significant component" />
   ),
 
   /* millennium-management-interview-india-2026: HF quant */
@@ -1028,15 +1028,15 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "Quant Researcher (Junior)", min: 35, max: 70 },
       { role: "Senior Software Engineer", min: 55, max: 100 },
       { role: "Senior Quant Researcher", min: 80, max: 160 },
-    ]} caption="Millennium Management India 2026 — bonus comp dominates; base is conservative" />
+    ]} caption="Millennium Management India 2026, bonus comp dominates; base is conservative" />
   ),
 
   /* zepto-interview-questions-2026: Quick commerce */
   "zepto-interview-questions-2026||Zepto Interview Process": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "90 min", detail: "2–3 DSA problems; graph, greedy, DP; Medium–Hard" },
-      { label: "Technical Round 1 — DSA + CS", duration: "60 min", detail: "Algorithms, OS, concurrency, API design" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "Dark store routing, inventory management, real-time tracking" },
+      { label: "Technical Round 1, DSA + CS", duration: "60 min", detail: "Algorithms, OS, concurrency, API design" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "Dark store routing, inventory management, real-time tracking" },
       { label: "Leadership / Culture Round", duration: "30 min", detail: "Ownership, speed, zero-to-one problem-solving" },
     ]} />
   ),
@@ -1046,7 +1046,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 28, max: 42 },
       { role: "Senior SDE (5+ yrs)", min: 38, max: 55 },
       { role: "Engineering Manager (6+ yrs)", min: 48, max: 70 },
-    ]} caption="Zepto salary India 2026 — pre-IPO ESOPs available; hyper-growth environment" />
+    ]} caption="Zepto salary India 2026, pre-IPO ESOPs available; hyper-growth environment" />
   ),
 
   /* blinkit-interview-questions-2026: Quick commerce / Zomato */
@@ -1054,7 +1054,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "90 min", detail: "2–3 DSA problems; graphs, sorting, greedy" },
       { label: "Technical Round 1", duration: "60 min", detail: "DSA deep dive, backend design, database schema" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "10-minute delivery routing, dark store fulfillment systems" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "10-minute delivery routing, dark store fulfillment systems" },
       { label: "Zomato Culture / Bar-Raiser Round", duration: "30 min", detail: "Ownership, hustle, cross-functional thinking" },
     ]} />
   ),
@@ -1064,15 +1064,15 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 30, max: 44 },
       { role: "Senior SDE (5+ yrs)", min: 40, max: 58 },
       { role: "Engineering Manager (6+ yrs)", min: 50, max: 75 },
-    ]} caption="Blinkit salary India 2026 — RSUs are listed Zomato shares (4yr vest)" />
+    ]} caption="Blinkit salary India 2026, RSUs are listed Zomato shares (4yr vest)" />
   ),
 
   /* browserstack-interview-questions-2026: Testing infra */
   "browserstack-interview-questions-2026||BrowserStack Interview Process": (
     <RoundFlow rounds={[
       { label: "Coding Assessment", duration: "90 min", detail: "2–3 DSA + 1 systems-thinking problem; Java/Python/Go" },
-      { label: "Technical Round 1 — DSA + OS", duration: "60 min", detail: "Algorithms, concurrency, browser internals" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Distributed testing infra, test-runner orchestration, real device cloud" },
+      { label: "Technical Round 1, DSA + OS", duration: "60 min", detail: "Algorithms, concurrency, browser internals" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Distributed testing infra, test-runner orchestration, real device cloud" },
       { label: "Culture / Leadership Round", duration: "30 min", detail: "Remote-first culture, product thinking, customer obsession" },
     ]} />
   ),
@@ -1082,7 +1082,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 30, max: 42 },
       { role: "Senior SDE (5+ yrs)", min: 38, max: 55 },
       { role: "Staff Engineer / EM (7+ yrs)", min: 50, max: 75 },
-    ]} caption="BrowserStack salary India 2026 — remote-first, ESOPs in pre-IPO range" />
+    ]} caption="BrowserStack salary India 2026, remote-first, ESOPs in pre-IPO range" />
   ),
 
   /* physicswallah-interview-questions-2026: EdTech unicorn */
@@ -1090,7 +1090,7 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "75 min", detail: "2–3 DSA problems; backend-heavy; Python/Java" },
       { label: "Technical Round 1", duration: "60 min", detail: "DSA, system efficiency, backend APIs" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Video streaming at scale, content delivery for low-bandwidth India" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Video streaming at scale, content delivery for low-bandwidth India" },
       { label: "Founder Culture Round", duration: "30 min", detail: "Frugal engineering, mission alignment, hustle" },
     ]} />
   ),
@@ -1100,15 +1100,15 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 18, max: 30 },
       { role: "Senior SDE (5+ yrs)", min: 28, max: 42 },
       { role: "Engineering Manager (6+ yrs)", min: 35, max: 55 },
-    ]} caption="PhysicsWallah salary India 2026 — ESOPs partially offset lower cash comp" />
+    ]} caption="PhysicsWallah salary India 2026, ESOPs partially offset lower cash comp" />
   ),
 
   /* sharechat-interview-questions-2026: Social media / ML */
   "sharechat-interview-questions-2026||ShareChat Interview Process": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "90 min", detail: "2–3 DSA problems; graph, DP; focus on optimization" },
-      { label: "Technical Round 1 — DSA + ML", duration: "60 min", detail: "Algorithms, ML system design basics, recommendation concepts" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "Feed ranking, content moderation at 200M+ users, Indic NLP infra" },
+      { label: "Technical Round 1, DSA + ML", duration: "60 min", detail: "Algorithms, ML system design basics, recommendation concepts" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "Feed ranking, content moderation at 200M+ users, Indic NLP infra" },
       { label: "Culture / Leadership Round", duration: "30 min", detail: "Building for Bharat, ownership, ambiguity tolerance" },
     ]} />
   ),
@@ -1118,16 +1118,16 @@ export const SECTION_VISUALS_2: Record<string, ReactNode> = {
       { role: "SDE-2 / MLE-2 (2–5 yrs)", min: 28, max: 40 },
       { role: "Senior SDE / Senior MLE (5+ yrs)", min: 38, max: 55 },
       { role: "Staff / EM (7+ yrs)", min: 50, max: 72 },
-    ]} caption="ShareChat salary India 2026 — ESOPs available; ML engineers at premium" />
+    ]} caption="ShareChat salary India 2026, ESOPs available; ML engineers at premium" />
   ),
 
   /* nvidia-india-interview-questions-2026: Chip design / software */
   "nvidia-india-interview-questions-2026||Nvidia India Interview Process": (
     <RoundFlow rounds={[
       { label: "Phone / Technical Screen", duration: "60 min", detail: "Role-specific: CUDA concepts, driver stack, or deep learning infra" },
-      { label: "Technical Interview 1 — Algorithms", duration: "60 min", detail: "C++ data structures, memory management, parallel programming" },
-      { label: "Technical Interview 2 — Domain Depth", duration: "60 min", detail: "GPU architecture, CUDA optimization, or ML framework internals" },
-      { label: "Technical Interview 3 — Design", duration: "60 min", detail: "System design; scalable ML training infra or driver architecture" },
+      { label: "Technical Interview 1, Algorithms", duration: "60 min", detail: "C++ data structures, memory management, parallel programming" },
+      { label: "Technical Interview 2, Domain Depth", duration: "60 min", detail: "GPU architecture, CUDA optimization, or ML framework internals" },
+      { label: "Technical Interview 3, Design", duration: "60 min", detail: "System design; scalable ML training infra or driver architecture" },
       { label: "HR / Manager Round", duration: "30 min", detail: "Team fit, research mindset, long-term trajectory" },
     ]} />
   ),

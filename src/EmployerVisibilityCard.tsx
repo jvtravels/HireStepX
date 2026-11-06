@@ -58,7 +58,7 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
         : "You're hidden from employers.");
     } else {
       setState(previous);
-      showToast(`Couldn't update employer visibility — ${result.error}`);
+      showToast(`Couldn't update employer visibility, ${result.error}`);
     }
   }, [showToast]);
 
@@ -108,7 +108,7 @@ export default function EmployerVisibilityCard({ showToast }: { showToast: (msg:
 
       {/* Polite live region so screen-reader users hear the saved state, not just a toast. */}
       <p aria-live="polite" style={{ ...bodyText, fontWeight: 600, color: t.coal }}>
-        {loadState === "ready" && (saving ? "Saving…" : visible ? "Status: on — employers can find your masked profile" : "Status: hidden from employers")}
+        {loadState === "ready" && (saving ? "Saving…" : visible ? "Status: on, employers can find your masked profile" : "Status: hidden from employers")}
       </p>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>

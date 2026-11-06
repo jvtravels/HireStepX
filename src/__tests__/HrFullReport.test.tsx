@@ -119,7 +119,7 @@ describe("HrFullReport", () => {
     expect(screen.getByText(/Counter-offer commitment: clear/)).toBeInTheDocument();
 
     // Section 03 — Motivation rewrite (both cards).
-    expect(screen.getByText("Your 'why this company' — rewritten")).toBeInTheDocument();
+    expect(screen.getByText("Your 'why this company', rewritten")).toBeInTheDocument();
     expect(screen.getByText("What you said")).toBeInTheDocument();
     expect(screen.getByText("What HR wants to hear")).toBeInTheDocument();
 
@@ -132,7 +132,7 @@ describe("HrFullReport", () => {
     expect(screen.getByText("The 3 things HR is waiting on")).toBeInTheDocument();
     expect(screen.getByText(/Logistics data \(notice period, comp, BGV\)/)).toBeInTheDocument();
     // Motivation section is fully suppressed when there's no hrReport.
-    expect(screen.queryByText("Your 'why this company' — rewritten")).not.toBeInTheDocument();
+    expect(screen.queryByText("Your 'why this company', rewritten")).not.toBeInTheDocument();
   });
 
   it("edge: empty skills → dimension gate shown, hero shows role/company", () => {

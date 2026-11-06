@@ -267,7 +267,7 @@ export default async function InterviewPrepPage({
         items: Array.from({ length: totalCompanyPages }, (_, i) => i + 1).map((n) => ({
           label: `Page ${n}`,
           href: companyPageHref(n),
-          meta: groupsWithPages.filter((g) => groupStartPage(g.slug) === n).map((g) => g.heading.split(" — ")[0].split(",")[0]).join(", ") || undefined,
+          meta: groupsWithPages.filter((g) => groupStartPage(g.slug) === n).map((g) => g.heading.split(", ")[0].split(",")[0]).join(", ") || undefined,
         })),
         initial: 60,
       }]

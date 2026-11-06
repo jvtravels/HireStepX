@@ -185,7 +185,7 @@ Once I have a clearer picture, I'd like to come back with a specific number. Cou
 Best,
 <Your name>
 
-— — —
+, , , 
 Before you send: name a specific counter number in your follow-up call. Look up the band on Levels.fyi or
 Glassdoor for "${role}" at ${company ? `companies similar to ${company}` : "similar companies"} this quarter. A defended range
 ("I was anchoring at ₹X–Y based on what I'm seeing") is stronger than a single number.`;

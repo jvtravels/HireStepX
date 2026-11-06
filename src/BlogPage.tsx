@@ -768,7 +768,7 @@ function BlogPostPage({ post, related, afterContent }: { post: BlogPost; related
               path are required on every major content page). */}
           <section style={{ marginTop: 48, paddingTop: 28, borderTop: `1px solid ${t.line}` }}>
             <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0 }}>
-              This guide combines candidate-reported interview experiences (from platforms like AmbitionBox and Glassdoor, and direct submissions) with practice questions compiled by the HireStepX team to help you rehearse — the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
+              This guide combines candidate-reported interview experiences (from platforms like AmbitionBox and Glassdoor, and direct submissions) with practice questions compiled by the HireStepX team to help you rehearse, the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
               <Link href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
                 methodology
               </Link>{" "}

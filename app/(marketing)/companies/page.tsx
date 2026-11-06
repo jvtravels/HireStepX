@@ -40,7 +40,7 @@ export async function generateMetadata({
   const pageNum = Math.max(1, parseInt(page ?? "1", 10) || 1);
 
   const title = `${totalCompanies} Company Interview Questions India 2026 | HireStepX`;
-  const ogTitle = `${totalCompanies} Company Interview Questions — India 2026`;
+  const ogTitle = `${totalCompanies} Company Interview Questions, India 2026`;
 
   return {
     title,

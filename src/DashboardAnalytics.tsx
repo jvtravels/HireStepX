@@ -253,7 +253,7 @@ export default function AnalyticsPage() {
             <div>
               <span style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 600, color: c.ivory }}>Practice your weakest area</span>
               <span style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, display: "block" }}>
-                {weakestType.type} — averaging {weakestType.avgScore} across {weakestType.count} session{weakestType.count !== 1 ? "s" : ""}
+                {weakestType.type}, averaging {weakestType.avgScore} across {weakestType.count} session{weakestType.count !== 1 ? "s" : ""}
               </span>
             </div>
           </div>
@@ -420,7 +420,7 @@ export default function AnalyticsPage() {
 
         <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "24px 28px" }}>
           <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Skill Radar</h3>
-          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 12 }}>{sk.length > 0 ? "Current vs first session — dashed line shows where you started" : "Complete sessions to see your skill radar"}</p>
+          <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 12 }}>{sk.length > 0 ? "Current vs first session, dashed line shows where you started" : "Complete sessions to see your skill radar"}</p>
           {sk.length > 0 ? (
             <div style={{ display: "flex", gap: 28, alignItems: "center" }}>
               <div style={{ flex: "1 1 55%", minWidth: 0 }}>
@@ -568,7 +568,7 @@ export default function AnalyticsPage() {
       {/* ─── Practice Consistency ─── */}
       <div style={{ background: c.carbon, boxShadow: shadow.md, borderRadius: 14, border: `1px solid ${c.border}`, padding: "24px 28px", marginBottom: 24 }}>
         <h3 style={{ fontFamily: font.ui, fontSize: 14, fontWeight: 600, color: c.ivory, marginBottom: 4 }}>Practice Consistency</h3>
-        <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 16 }}>Sessions per week — {range.days === 0 ? "all time" : `last ${range.label}`}</p>
+        <p style={{ fontFamily: font.ui, fontSize: 12, color: c.stone, marginBottom: 16 }}>Sessions per week, {range.days === 0 ? "all time" : `last ${range.label}`}</p>
         <div style={{ display: "flex", gap: 6, alignItems: "flex-end", height: 100 }}>
           {weeklyData.map((w, i) => (
             <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>

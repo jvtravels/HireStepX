@@ -45,7 +45,7 @@ export async function generateMetadata({
   return {
     title: `${totalQuestionSets} Real Interview Question Sets: 200+ Companies 2026`,
     description:
-      `${totalQuestionSets} question sets covering Google, Amazon, TCS, Razorpay, Flipkart, McKinsey & 200+ more — practice out loud with AI voice feedback and get scored. 2 sessions free.`,
+      `${totalQuestionSets} question sets covering Google, Amazon, TCS, Razorpay, Flipkart, McKinsey & 200+ more, practice out loud with AI voice feedback and get scored. 2 sessions free.`,
     keywords: [
       "interview questions",
       "company interview questions",
@@ -61,7 +61,7 @@ export async function generateMetadata({
     ...(isCanonicalVariant ? {} : { robots: { index: false, follow: true } }),
     openGraph: {
       type: "website",
-      title: `${totalQuestionSets} Real Interview Question Sets — 200+ Companies`,
+      title: `${totalQuestionSets} Real Interview Question Sets, 200+ Companies`,
       description:
         `${totalQuestionSets} question sets for 200+ companies. Practice answering them out loud with AI voice feedback.`,
       url: "https://hirestepx.com/questions",
@@ -71,7 +71,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${totalQuestionSets} Real Interview Question Sets — 200+ Companies`,
+      title: `${totalQuestionSets} Real Interview Question Sets, 200+ Companies`,
       description: `${totalQuestionSets} question sets for 200+ companies. Practice with AI voice feedback.`,
       images: ["https://hirestepx.com/opengraph-image"],
     },

@@ -9,7 +9,7 @@ import HomepageV2 from "@/marketing-v2/HomepageV2";
 export const metadata: Metadata = {
   title: "HireStepX: AI Interview Practice Platform for India",
   description:
-    "HireStepX is India's AI interview practice platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies — voice AI scores your answers. 2 sessions free.",
+    "HireStepX is India's AI interview practice platform. Practice for TCS, Google, Flipkart, Amazon, and 200+ companies, voice AI scores your answers. 2 sessions free.",
   keywords: [
     "AI interview practice platform India",
     "AI interview coach India",

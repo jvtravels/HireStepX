@@ -456,9 +456,9 @@ export default function DashboardJobs() {
   if (fetchError) {
     const message =
       fetchStatus === 401 || fetchStatus === 403
-        ? "Your session has expired — please sign in again."
+        ? "Your session has expired, please sign in again."
         : fetchStatus === 429
-          ? "Too many requests — please wait a moment and try again."
+          ? "Too many requests, please wait a moment and try again."
           : fetchStatus && fetchStatus >= 500
             ? "Our server is having trouble right now. Please try again shortly."
             : "Something went wrong reaching the server. Check your connection and try again.";

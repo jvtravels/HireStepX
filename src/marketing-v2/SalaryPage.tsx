@@ -33,7 +33,7 @@ const INTRO_SOURCING_VARIANTS = [
   (_companyLabel: string) =>
     `Salary ranges below are sourced primarily from AmbitionBox, with Glassdoor as a secondary cross-check, and reflect total CTC (base + variable + equity) at the 25th–90th percentile of reported offers in India.`,
   (companyLabel: string) =>
-    `The figures below reflect total CTC — base, variable, and equity combined — at the 25th–90th percentile of reported ${companyLabel} offers in India, cross-checked against AmbitionBox and Glassdoor.`,
+    `The figures below reflect total CTC, base, variable, and equity combined, at the 25th–90th percentile of reported ${companyLabel} offers in India, cross-checked against AmbitionBox and Glassdoor.`,
   (companyLabel: string) =>
     `Every band below is total CTC (base + variable + equity), drawn from the 25th–90th percentile of reported offers at ${companyLabel} in India and verified against AmbitionBox and Glassdoor.`,
 ] as const;
@@ -629,7 +629,7 @@ export function SalaryCompanyPage({
                 {roles.length > 1 && (
                   <p style={{ fontFamily: fonts.sans, fontSize: 13, color: t.inkFaint, margin: "10px 0 0" }}>
                     Salary bands for {roles.length} roles at {companyLabel}, from {headlineRole.roleLabel} to{" "}
-                    {roles[roles.length - 1].roleLabel} — see all below.
+                    {roles[roles.length - 1].roleLabel}, see all below.
                   </p>
                 )}
               </div>
@@ -944,7 +944,7 @@ export function SalaryCompanyPage({
               specific numeric salary claims. ── */}
         <div className="sal-container" style={{ ...containerNarrow, marginTop: 56 }}>
           <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0, borderTop: `1px solid ${t.line}`, paddingTop: 24 }}>
-            Salary bands here reflect total CTC drawn from reported offers (primarily AmbitionBox, with Glassdoor as a secondary cross-check), supplemented by company disclosures where available — not a single data point. See our{" "}
+            Salary bands here reflect total CTC drawn from reported offers (primarily AmbitionBox, with Glassdoor as a secondary cross-check), supplemented by company disclosures where available, not a single data point. See our{" "}
             <a href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
               methodology
             </a>{" "}

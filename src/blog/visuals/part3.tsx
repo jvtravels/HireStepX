@@ -8,15 +8,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Software Engineer (3–6 yrs)", min: 40, max: 65 },
       { role: "Staff Engineer / Tech Lead (6+ yrs)", min: 60, max: 95 },
       { role: "Principal Engineer / Manager (8+ yrs)", min: 80, max: 140 },
-    ]} caption="Nvidia India total compensation 2026 — RSUs on 4yr vest; significant upside" />
+    ]} caption="Nvidia India total compensation 2026, RSUs on 4yr vest; significant upside" />
   ),
 
   /* qualcomm-india-interview-questions-2026 (first occurrence, index 71) */
   "qualcomm-india-interview-questions-2026||Qualcomm India Interview Process": (
     <RoundFlow rounds={[
       { label: "Coding / Aptitude Screen", duration: "60 min", detail: "C++ MCQs, pointers, OS concepts, embedded systems basics" },
-      { label: "Technical Round 1 — C++ and OS", duration: "60 min", detail: "Memory management, multithreading, process synchronisation" },
-      { label: "Technical Round 2 — Embedded / Modem", duration: "60 min", detail: "RTOS, driver development, protocol stack (5G/LTE)" },
+      { label: "Technical Round 1, C++ and OS", duration: "60 min", detail: "Memory management, multithreading, process synchronisation" },
+      { label: "Technical Round 2, Embedded / Modem", duration: "60 min", detail: "RTOS, driver development, protocol stack (5G/LTE)" },
       { label: "Design Round", duration: "60 min", detail: "System design: modem firmware architecture or baseband stack" },
       { label: "HR Round", duration: "20 min", detail: "Team fit, Qualcomm values, long-term goals" },
     ]} />
@@ -27,7 +27,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Engineer (2–5 yrs)", min: 28, max: 42 },
       { role: "Staff Engineer (5–8 yrs)", min: 40, max: 60 },
       { role: "Principal Engineer (8+ yrs)", min: 55, max: 90 },
-    ]} caption="Qualcomm India salary 2026 — RSUs vest over 3yr; Hyderabad + Bangalore offices" />
+    ]} caption="Qualcomm India salary 2026, RSUs vest over 3yr; Hyderabad + Bangalore offices" />
   ),
 
   /* apple-india-interview-questions-2026: GCC/MNC */
@@ -35,8 +35,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Phone Screen with Recruiter", duration: "30 min", detail: "Background, role alignment, timeline" },
       { label: "Technical Phone Screen", duration: "60 min", detail: "DSA, iOS/macOS internals or backend systems depending on role" },
-      { label: "Virtual Onsite — Coding ×2", duration: "60 min each", detail: "Swift/C++ depth, algorithms, platform-specific optimisations" },
-      { label: "Virtual Onsite — Domain Round", duration: "60 min", detail: "Core Audio / Security / ML / GPU frameworks based on team" },
+      { label: "Virtual Onsite, Coding ×2", duration: "60 min each", detail: "Swift/C++ depth, algorithms, platform-specific optimisations" },
+      { label: "Virtual Onsite, Domain Round", duration: "60 min", detail: "Core Audio / Security / ML / GPU frameworks based on team" },
       { label: "Behavioral / Hiring Manager", duration: "45 min", detail: "Apple values: quality, privacy by design, cross-team influence" },
     ]} />
   ),
@@ -46,7 +46,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SWE ICT3 / Senior (3–6 yrs)", min: 50, max: 80 },
       { role: "SWE ICT4 / Staff (6–9 yrs)", min: 75, max: 120 },
       { role: "SWE ICT5+ / Principal (9+ yrs)", min: 110, max: 170 },
-    ]} caption="Apple India GCC total compensation 2026 — stock is core; bonus ~10% base" />
+    ]} caption="Apple India GCC total compensation 2026, stock is core; bonus ~10% base" />
   ),
 
   /* netflix-india-interview-questions-2026: Streaming giant */
@@ -54,26 +54,26 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, role alignment, compensation conversation upfront" },
       { label: "Technical Phone Screen", duration: "60 min", detail: "DSA (Medium–Hard), streaming infra or backend systems" },
-      { label: "Virtual Onsite — Coding ×2", duration: "60 min each", detail: "Hard-level problems, time complexity focus" },
-      { label: "Virtual Onsite — System Design", duration: "60 min", detail: "Content delivery, encoding pipeline, recommendation infra at scale" },
+      { label: "Virtual Onsite, Coding ×2", duration: "60 min each", detail: "Hard-level problems, time complexity focus" },
+      { label: "Virtual Onsite, System Design", duration: "60 min", detail: "Content delivery, encoding pipeline, recommendation infra at scale" },
       { label: "Culture (Netflix Memo) Round", duration: "45 min", detail: "Radical candor, high performance bar, context not control" },
     ]} />
   ),
   "netflix-india-interview-questions-2026||Netflix India Salary and Compensation Philosophy": (
     <SalaryLadder maxLPA={120} rows={[
-      { role: "Software Engineer L4 (2–4 yrs)", min: 50, max: 80, note: "All cash — no RSUs" },
+      { role: "Software Engineer L4 (2–4 yrs)", min: 50, max: 80, note: "All cash, no RSUs" },
       { role: "Senior Software Engineer L5 (4–7 yrs)", min: 75, max: 120 },
       { role: "Staff Engineer L6 (7+ yrs)", min: 110, max: 180 },
       { role: "Principal Engineer L7 (10+ yrs)", min: 160, max: 250 },
-    ]} caption="Netflix India 2026 — all salary, no equity; top-of-market cash philosophy" />
+    ]} caption="Netflix India 2026, all salary, no equity; top-of-market cash philosophy" />
   ),
 
   /* barclays-india-interview-questions-2026: Capital markets tech */
   "barclays-india-interview-questions-2026||Barclays India Interview Process": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "75 min", detail: "Aptitude, Java/C++ MCQs, DSA coding problem" },
-      { label: "Technical Round 1 — Core CS", duration: "60 min", detail: "OOP, concurrency, database, algorithms" },
-      { label: "Technical Round 2 — Domain", duration: "60 min", detail: "Capital markets: trade lifecycle, FX, fixed income basics" },
+      { label: "Technical Round 1, Core CS", duration: "60 min", detail: "OOP, concurrency, database, algorithms" },
+      { label: "Technical Round 2, Domain", duration: "60 min", detail: "Capital markets: trade lifecycle, FX, fixed income basics" },
       { label: "HR / Values Round", duration: "30 min", detail: "Barclays values: respect, integrity, service, excellence" },
     ]} />
   ),
@@ -83,15 +83,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Associate (2–5 yrs)", min: 14, max: 22 },
       { role: "AVP (5–8 yrs)", min: 22, max: 35 },
       { role: "VP (8+ yrs)", min: 32, max: 55 },
-    ]} caption="Barclays India GCC salary 2026 — bonus 10–30% of base; stable environment" />
+    ]} caption="Barclays India GCC salary 2026, bonus 10–30% of base; stable environment" />
   ),
 
   /* oyo-interview-questions-2026: Hospitality tech */
   "oyo-interview-questions-2026||OYO Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "90 min", detail: "2–3 DSA problems; graph, DP; backend-heavy" },
-      { label: "Technical Round 1 — DSA", duration: "60 min", detail: "Algorithm depth, time complexity, backend patterns" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Hotel inventory management, dynamic pricing, booking engine" },
+      { label: "Technical Round 1, DSA", duration: "60 min", detail: "Algorithm depth, time complexity, backend patterns" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Hotel inventory management, dynamic pricing, booking engine" },
       { label: "Culture / Leadership Round", duration: "30 min", detail: "Ownership, operating in adversity, hospitality domain awareness" },
     ]} />
   ),
@@ -101,15 +101,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 22, max: 35 },
       { role: "Senior SDE (5+ yrs)", min: 32, max: 48 },
       { role: "Engineering Manager (6+ yrs)", min: 42, max: 62 },
-    ]} caption="OYO salary India 2026 — restructured company, stronger engineering culture post-2024" />
+    ]} caption="OYO salary India 2026, restructured company, stronger engineering culture post-2024" />
   ),
 
   /* myntra-interview-questions-2026: Fashion e-commerce */
   "myntra-interview-questions-2026||Myntra Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "90 min", detail: "2–3 DSA problems; arrays, graphs, DP" },
-      { label: "Technical Round 1 — DSA", duration: "60 min", detail: "Algorithm depth, time/space complexity discussion" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Product recommendation engine, search ranking, supply chain" },
+      { label: "Technical Round 1, DSA", duration: "60 min", detail: "Algorithm depth, time/space complexity discussion" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Product recommendation engine, search ranking, supply chain" },
       { label: "Flipkart Bar-Raiser / Culture Round", duration: "45 min", detail: "Flipkart values, ownership, scale thinking" },
     ]} />
   ),
@@ -119,15 +119,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 30, max: 44 },
       { role: "Senior SDE (5+ yrs)", min: 40, max: 58 },
       { role: "Engineering Manager (6+ yrs)", min: 50, max: 72 },
-    ]} caption="Myntra salary India 2026 — Flipkart group pre-IPO RSUs add significant upside" />
+    ]} caption="Myntra salary India 2026, Flipkart group pre-IPO RSUs add significant upside" />
   ),
 
   /* makemytrip-interview-questions-2026 (second post in Company Guides with this name) */
   "makemytrip-interview-questions-2026||MakeMyTrip Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Coding Assessment", duration: "90 min", detail: "2–3 DSA problems; graphs, hashing, greedy" },
-      { label: "Technical Round 1 — DSA", duration: "60 min", detail: "Algorithm deep dive, backend API patterns" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "Flight/hotel search, GDS integration, dynamic pricing" },
+      { label: "Technical Round 1, DSA", duration: "60 min", detail: "Algorithm deep dive, backend API patterns" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "Flight/hotel search, GDS integration, dynamic pricing" },
       { label: "Culture / Leadership Round", duration: "30 min", detail: "Ownership, travel domain awareness, cross-team collaboration" },
     ]} />
   ),
@@ -137,15 +137,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 26, max: 38 },
       { role: "Senior SDE (5+ yrs)", min: 35, max: 52 },
       { role: "Engineering Manager (6+ yrs)", min: 45, max: 65 },
-    ]} caption="MakeMyTrip salary India 2026 — Gurugram HQ; travel sector rebound post-2024" />
+    ]} caption="MakeMyTrip salary India 2026, Gurugram HQ; travel sector rebound post-2024" />
   ),
 
   /* nykaa-interview-questions-2026 (second post) */
   "nykaa-interview-questions-2026||Nykaa Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "75 min", detail: "2 DSA problems; Medium difficulty; Python/Java" },
-      { label: "Technical Round 1 — DSA + Backend", duration: "60 min", detail: "Algorithms, REST API design, database schema" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "E-commerce catalogue, beauty product recommendation, inventory" },
+      { label: "Technical Round 1, DSA + Backend", duration: "60 min", detail: "Algorithms, REST API design, database schema" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "E-commerce catalogue, beauty product recommendation, inventory" },
       { label: "Culture / PM Round", duration: "30 min", detail: "Product thinking, fashion tech domain, growth mindset" },
     ]} />
   ),
@@ -155,7 +155,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 22, max: 32 },
       { role: "Senior SDE (5+ yrs)", min: 30, max: 45 },
       { role: "Engineering Manager (6+ yrs)", min: 40, max: 58 },
-    ]} caption="Nykaa salary India 2026 — listed company; RSUs in NSE-traded stock" />
+    ]} caption="Nykaa salary India 2026, listed company; RSUs in NSE-traded stock" />
   ),
 
   /* bcg-india-interview-questions-2026: MBB consulting */
@@ -174,7 +174,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Consultant (2–4 yrs post-MBA)", min: 32, max: 50 },
       { role: "Project Leader (4–7 yrs)", min: 50, max: 80 },
       { role: "Principal (7+ yrs)", min: 80, max: 130 },
-    ]} caption="BCG India total compensation 2026 — bonus 20–40% of base; travel-heavy role" />
+    ]} caption="BCG India total compensation 2026, bonus 20–40% of base; travel-heavy role" />
   ),
 
   /* bain-india-interview-questions-2026: MBB consulting */
@@ -191,16 +191,16 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Consultant (Post-MBA / 3+ yrs)", min: 28, max: 48 },
       { role: "Case Team Leader (5–8 yrs)", min: 50, max: 80 },
       { role: "Manager / Principal (8+ yrs)", min: 80, max: 140 },
-    ]} caption="Bain India salary 2026 — performance bonus 20–50%; 2-yr MBA sponsorship possible" />
+    ]} caption="Bain India salary 2026, performance bonus 20–50%; 2-yr MBA sponsorship possible" />
   ),
 
   /* de-shaw-india-interview-questions-2026: Quant hedge fund */
   "de-shaw-india-interview-questions-2026||D.E. Shaw India Interview Process": (
     <RoundFlow rounds={[
-      { label: "Codevita / Online Assessment", duration: "90 min", detail: "Math, algorithms, and probability questions — VERY hard" },
-      { label: "Technical Interview 1 — Algorithms", duration: "60 min", detail: "C++ depth, STL, competitive-level DSA" },
-      { label: "Technical Interview 2 — Quant Math", duration: "60 min", detail: "Probability, statistics, combinatorics, expected value" },
-      { label: "Technical Interview 3 — Systems", duration: "60 min", detail: "Low-latency systems, memory management, network protocols" },
+      { label: "Codevita / Online Assessment", duration: "90 min", detail: "Math, algorithms, and probability questions, VERY hard" },
+      { label: "Technical Interview 1, Algorithms", duration: "60 min", detail: "C++ depth, STL, competitive-level DSA" },
+      { label: "Technical Interview 2, Quant Math", duration: "60 min", detail: "Probability, statistics, combinatorics, expected value" },
+      { label: "Technical Interview 3, Systems", duration: "60 min", detail: "Low-latency systems, memory management, network protocols" },
       { label: "HR / Culture Round", duration: "30 min", detail: "Research mindset, intellectual curiosity, team fit" },
     ]} />
   ),
@@ -210,15 +210,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Quant Researcher (Entry)", min: 30, max: 55 },
       { role: "Senior Software Developer", min: 50, max: 85 },
       { role: "Senior Quant Researcher", min: 75, max: 150 },
-    ]} caption="D.E. Shaw India 2026 — year-end bonus multiples of 1–3x base are common" />
+    ]} caption="D.E. Shaw India 2026, year-end bonus multiples of 1–3x base are common" />
   ),
 
   /* citadel-india-interview-questions-2026: HFT */
   "citadel-india-interview-questions-2026||Citadel India Interview Process": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "60 min", detail: "Hard algorithmic coding; C++ preferred" },
-      { label: "Technical Round 1 — C++ and OS", duration: "60 min", detail: "Memory management, concurrency, cache behaviour" },
-      { label: "Technical Round 2 — Quant Concepts", duration: "60 min", detail: "Probability, statistics, market intuition, brain teasers" },
+      { label: "Technical Round 1, C++ and OS", duration: "60 min", detail: "Memory management, concurrency, cache behaviour" },
+      { label: "Technical Round 2, Quant Concepts", duration: "60 min", detail: "Probability, statistics, market intuition, brain teasers" },
       { label: "System Design Round", duration: "60 min", detail: "Ultra-low-latency trading systems, lock-free data structures" },
       { label: "HR / Culture Round", duration: "30 min", detail: "Intellectual rigor, performance mindset, team fit" },
     ]} />
@@ -229,15 +229,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Quant Researcher (Entry)", min: 40, max: 80 },
       { role: "Senior Software Engineer", min: 70, max: 120 },
       { role: "Quant Portfolio Researcher", min: 100, max: 250 },
-    ]} caption="Citadel India 2026 — base + discretionary bonus; PnL-linked rewards at senior levels" />
+    ]} caption="Citadel India 2026, base + discretionary bonus; PnL-linked rewards at senior levels" />
   ),
 
   /* angel-one-interview-questions-2026: Indian fintech broking */
   "angel-one-interview-questions-2026||Angel One Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Coding Round", duration: "75 min", detail: "2 DSA problems; Medium difficulty; Python/Java" },
-      { label: "Technical Round 1 — DSA + Backend", duration: "60 min", detail: "Algorithms, API design, SQL, trading domain basics" },
-      { label: "Technical Round 2 — Design", duration: "60 min", detail: "Order matching engine, portfolio analytics, real-time market data" },
+      { label: "Technical Round 1, DSA + Backend", duration: "60 min", detail: "Algorithms, API design, SQL, trading domain basics" },
+      { label: "Technical Round 2, Design", duration: "60 min", detail: "Order matching engine, portfolio analytics, real-time market data" },
       { label: "Leadership / Culture Round", duration: "30 min", detail: "Ownership, fintech domain, customer-first thinking" },
     ]} />
   ),
@@ -247,14 +247,14 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 20, max: 30 },
       { role: "Senior SDE (5+ yrs)", min: 28, max: 42 },
       { role: "Tech Lead / Engineering Manager (6+ yrs)", min: 38, max: 58 },
-    ]} caption="Angel One salary India 2026 — BSE/NSE-listed RSUs; strong fintech domain exposure" />
+    ]} caption="Angel One salary India 2026, BSE/NSE-listed RSUs; strong fintech domain exposure" />
   ),
 
   /* atlassian-india-interview-questions-2026 (first occurrence, index 84) */
   "atlassian-india-interview-questions-2026||Atlassian India Interview Process 2026": (
     <RoundFlow rounds={[
       { label: "Karat Screen", duration: "60 min", detail: "2 DSA problems via Karat interviewer; Medium difficulty" },
-      { label: "Technical Round — Coding", duration: "60 min", detail: "Data structures, system thinking, code quality emphasis" },
+      { label: "Technical Round, Coding", duration: "60 min", detail: "Data structures, system thinking, code quality emphasis" },
       { label: "System Design Round", duration: "60 min", detail: "Jira / Confluence-style product design, multi-tenant SaaS" },
       { label: "TEAM Values Round", duration: "45 min", detail: "Open company, no bull, play as a team, build balance" },
       { label: "Hiring Manager Round", duration: "30 min", detail: "Role alignment, team fit, long-term goals" },
@@ -266,7 +266,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 38, max: 55 },
       { role: "Senior SDE (5+ yrs)", min: 52, max: 75 },
       { role: "Staff Engineer / EM (7+ yrs)", min: 70, max: 100 },
-    ]} caption="Atlassian India salary 2026 — TEAM Anywhere = fully remote; RSUs in USD" />
+    ]} caption="Atlassian India salary 2026, TEAM Anywhere = fully remote; RSUs in USD" />
   ),
 
   /* uber-india-interview-questions-2026 (first occurrence, index 85) */
@@ -274,8 +274,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, role fit, timeline" },
       { label: "Coding Screen", duration: "60 min", detail: "2 DSA problems; Medium–Hard; graphs and hashing common" },
-      { label: "Technical Round — Coding ×2", duration: "60 min each", detail: "Algorithms, concurrency, platform-specific patterns" },
-      { label: "Technical Round — System Design", duration: "60 min", detail: "Ride-matching, geospatial indexing, surge pricing system" },
+      { label: "Technical Round, Coding ×2", duration: "60 min each", detail: "Algorithms, concurrency, platform-specific patterns" },
+      { label: "Technical Round, System Design", duration: "60 min", detail: "Ride-matching, geospatial indexing, surge pricing system" },
       { label: "Behavioral / Culture Round", duration: "45 min", detail: "Uber's norms: customer obsession, bold bets, reliability" },
     ]} />
   ),
@@ -285,7 +285,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 40, max: 60 },
       { role: "Senior SDE (5+ yrs)", min: 58, max: 85 },
       { role: "Staff Engineer / EM (7+ yrs)", min: 78, max: 115 },
-    ]} caption="Uber India total compensation 2026 — Bengaluru GCC; strong growth culture" />
+    ]} caption="Uber India total compensation 2026, Bengaluru GCC; strong growth culture" />
   ),
 
   /* linkedin-india-interview-questions-2026: Social/professional network */
@@ -293,7 +293,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, role fit, LinkedIn motivation" },
       { label: "Coding Screen", duration: "60 min", detail: "2 DSA problems; Medium difficulty via CoderPad" },
-      { label: "Technical Round — Coding ×2", duration: "60 min each", detail: "Algorithms, object-oriented design, code quality" },
+      { label: "Technical Round, Coding ×2", duration: "60 min each", detail: "Algorithms, object-oriented design, code quality" },
       { label: "System Design Round", duration: "60 min", detail: "News feed, social graph, job recommendation system design" },
       { label: "Behavioral / Values Round", duration: "45 min", detail: "LinkedIn values: transformation, integrity, collaboration, humor" },
     ]} />
@@ -304,7 +304,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 / E5 (2–5 yrs)", min: 40, max: 62 },
       { role: "Senior SDE / E6 (5–8 yrs)", min: 58, max: 90 },
       { role: "Staff Engineer / E7 (8+ yrs)", min: 82, max: 130 },
-    ]} caption="LinkedIn India salary 2026 — Microsoft RSUs (MSFT stock); Bengaluru office" />
+    ]} caption="LinkedIn India salary 2026, Microsoft RSUs (MSFT stock); Bengaluru office" />
   ),
 
   /* salesforce-india-interview-questions-2026: CRM cloud */
@@ -312,7 +312,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, Salesforce ecosystem awareness, timeline" },
       { label: "Coding Screen", duration: "60 min", detail: "2 DSA problems; Java preferred; Medium difficulty" },
-      { label: "Technical Round — Coding + OOP", duration: "60 min", detail: "Java, OOP design, REST API patterns, multithreading" },
+      { label: "Technical Round, Coding + OOP", duration: "60 min", detail: "Java, OOP design, REST API patterns, multithreading" },
       { label: "System Design Round", duration: "60 min", detail: "CRM systems, multi-tenant SaaS design, event-driven architecture" },
       { label: "Behavioral / Ohana Culture Round", duration: "45 min", detail: "Salesforce values: trust, customer success, innovation, equality" },
     ]} />
@@ -323,7 +323,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "MTS 2 (2–5 yrs)", min: 38, max: 58 },
       { role: "Senior MTS (5–8 yrs)", min: 55, max: 82 },
       { role: "Principal MTS / EM (8+ yrs)", min: 78, max: 115 },
-    ]} caption="Salesforce India salary 2026 — RSUs vest quarterly; Hyderabad + Bengaluru offices" />
+    ]} caption="Salesforce India salary 2026, RSUs vest quarterly; Hyderabad + Bengaluru offices" />
   ),
 
   /* goldman-sachs-india-interview-questions-2026: Investment bank tech */
@@ -331,8 +331,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "HireVue Video Interview", duration: "30 min", detail: "Pre-recorded; motivation, problem-solving scenario, background" },
       { label: "Coding Round", duration: "60 min", detail: "3–4 Medium problems; Java/C++ preferred; CS fundamentals heavy" },
-      { label: "Technical Interview 1 — Algorithms + OS", duration: "60 min", detail: "Data structures, OS concepts, networking, databases" },
-      { label: "Technical Interview 2 — Design", duration: "60 min", detail: "Trading system design, low-latency patterns, data pipelines" },
+      { label: "Technical Interview 1, Algorithms + OS", duration: "60 min", detail: "Data structures, OS concepts, networking, databases" },
+      { label: "Technical Interview 2, Design", duration: "60 min", detail: "Trading system design, low-latency patterns, data pipelines" },
       { label: "HR / Divisional Interview", duration: "30 min", detail: "GS values, division fit, motivation for finance tech" },
     ]} />
   ),
@@ -342,15 +342,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Associate (2–4 yrs)", min: 28, max: 45 },
       { role: "Vice President (5–8 yrs)", min: 45, max: 75 },
       { role: "Executive Director (8+ yrs)", min: 70, max: 120 },
-    ]} caption="Goldman Sachs India 2026 — bonus 20–100% of base; Bengaluru + Hyderabad centres" />
+    ]} caption="Goldman Sachs India 2026, bonus 20–100% of base; Bengaluru + Hyderabad centres" />
   ),
 
   /* jpmorgan-india-interview-questions-2026: Banking tech */
   "jpmorgan-india-interview-questions-2026||JPMorgan India Interview Process": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "75 min", detail: "Aptitude + 2 coding problems (Medium); Java/Python/C++" },
-      { label: "Technical Round 1 — Algorithms", duration: "60 min", detail: "DSA, OOP, databases, REST APIs" },
-      { label: "Technical Round 2 — Domain + Design", duration: "60 min", detail: "Financial systems, risk engine design, trading platform concepts" },
+      { label: "Technical Round 1, Algorithms", duration: "60 min", detail: "DSA, OOP, databases, REST APIs" },
+      { label: "Technical Round 2, Domain + Design", duration: "60 min", detail: "Financial systems, risk engine design, trading platform concepts" },
       { label: "HR / Business Principles Round", duration: "30 min", detail: "JPMC principles: client focus, excellence, integrity" },
     ]} />
   ),
@@ -360,16 +360,16 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Software Engineer Associate (2–4 yrs)", min: 20, max: 32 },
       { role: "Associate (Vice President track, 4–7 yrs)", min: 30, max: 48 },
       { role: "Vice President (7+ yrs)", min: 45, max: 75 },
-    ]} caption="JPMorgan Chase India 2026 — cash bonus 10–30% of base; strong GCC scale" />
+    ]} caption="JPMorgan Chase India 2026, cash bonus 10–30% of base; strong GCC scale" />
   ),
 
   /* adobe-india-interview-questions-2026: Creative cloud */
   "adobe-india-interview-questions-2026||Adobe India Interview Process: All Five Rounds Explained": (
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "90 min", detail: "2–3 DSA problems; Medium–Hard; C++/Java preferred" },
-      { label: "Technical Round 1 — DSA", duration: "60 min", detail: "Algorithms, data structures, time/space complexity depth" },
-      { label: "Technical Round 2 — OOP + LLD", duration: "60 min", detail: "Low-level design: design a parking lot, LRU cache, chess game" },
-      { label: "Technical Round 3 — System Design", duration: "60 min", detail: "HLD: image processing pipeline, creative cloud sync, CDN" },
+      { label: "Technical Round 1, DSA", duration: "60 min", detail: "Algorithms, data structures, time/space complexity depth" },
+      { label: "Technical Round 2, OOP + LLD", duration: "60 min", detail: "Low-level design: design a parking lot, LRU cache, chess game" },
+      { label: "Technical Round 3, System Design", duration: "60 min", detail: "HLD: image processing pipeline, creative cloud sync, CDN" },
       { label: "HR / Hiring Manager Round", duration: "30 min", detail: "Adobe values, cross-functional influence, career goals" },
     ]} />
   ),
@@ -379,16 +379,16 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "MTS 2 / SDE-2 (2–5 yrs)", min: 35, max: 52 },
       { role: "Senior MTS (5–8 yrs)", min: 50, max: 75 },
       { role: "Principal MTS / EM (8+ yrs)", min: 70, max: 105 },
-    ]} caption="Adobe India salary 2026 — RSUs vest quarterly; Noida + Bengaluru offices" />
+    ]} caption="Adobe India salary 2026, RSUs vest quarterly; Noida + Bengaluru offices" />
   ),
 
   /* cisco-india-interview-questions-2026: Networking giant */
   "cisco-india-interview-questions-2026||Cisco India Interview Process: Five Rounds with Networking Focus": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "75 min", detail: "Aptitude + networking MCQs + 1 coding problem" },
-      { label: "Technical Round 1 — CS Fundamentals", duration: "60 min", detail: "OOP, OS, networking basics, one algorithm problem" },
-      { label: "Technical Round 2 — Networking Depth", duration: "60 min", detail: "BGP, OSPF, TCP/IP stack, VLAN, SD-WAN concepts" },
-      { label: "Technical Round 3 — Design / Coding", duration: "60 min", detail: "Network protocol implementation, socket programming, system design" },
+      { label: "Technical Round 1, CS Fundamentals", duration: "60 min", detail: "OOP, OS, networking basics, one algorithm problem" },
+      { label: "Technical Round 2, Networking Depth", duration: "60 min", detail: "BGP, OSPF, TCP/IP stack, VLAN, SD-WAN concepts" },
+      { label: "Technical Round 3, Design / Coding", duration: "60 min", detail: "Network protocol implementation, socket programming, system design" },
       { label: "HR / Hiring Manager Round", duration: "30 min", detail: "Cisco values, team fit, long-term vision" },
     ]} />
   ),
@@ -398,16 +398,16 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Software Engineer (2–5 yrs)", min: 28, max: 42 },
       { role: "Staff Engineer (5–8 yrs)", min: 40, max: 58 },
       { role: "Principal Engineer / EM (8+ yrs)", min: 55, max: 85 },
-    ]} caption="Cisco India salary 2026 — Bengaluru + Chennai offices; strong networking domain" />
+    ]} caption="Cisco India salary 2026, Bengaluru + Chennai offices; strong networking domain" />
   ),
 
   /* oracle-india-interview-questions-2026: Database and cloud */
   "oracle-india-interview-questions-2026||Oracle India Interview Process: Five Rounds with Database and Java Focus": (
     <RoundFlow rounds={[
       { label: "Online Coding Test", duration: "90 min", detail: "2–3 DSA problems + Java MCQs; database SQL section" },
-      { label: "Technical Round 1 — Java Depth", duration: "60 min", detail: "Java core, JVM internals, concurrency, collections" },
-      { label: "Technical Round 2 — Database", duration: "60 min", detail: "Oracle SQL, PL/SQL, query optimisation, indexing, RAC" },
-      { label: "Technical Round 3 — System Design", duration: "60 min", detail: "Distributed database design, OCI architecture, microservices" },
+      { label: "Technical Round 1, Java Depth", duration: "60 min", detail: "Java core, JVM internals, concurrency, collections" },
+      { label: "Technical Round 2, Database", duration: "60 min", detail: "Oracle SQL, PL/SQL, query optimisation, indexing, RAC" },
+      { label: "Technical Round 3, System Design", duration: "60 min", detail: "Distributed database design, OCI architecture, microservices" },
       { label: "HR / Manager Round", duration: "30 min", detail: "Oracle culture, product pride, career growth path" },
     ]} />
   ),
@@ -417,7 +417,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Software Engineer (2–5 yrs)", min: 30, max: 48 },
       { role: "Staff Engineer (5–8 yrs)", min: 45, max: 65 },
       { role: "Principal Engineer / EM (8+ yrs)", min: 60, max: 95 },
-    ]} caption="Oracle India salary 2026 — Bengaluru + Hyderabad + Pune offices; OCI growth role" />
+    ]} caption="Oracle India salary 2026, Bengaluru + Hyderabad + Pune offices; OCI growth role" />
   ),
 
   /* thoughtworks-india-interview-questions-2026: Consultancy / craft */
@@ -425,7 +425,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Technical Aptitude Test (TAT)", duration: "90 min", detail: "Analytical puzzles, basic coding, logical reasoning" },
       { label: "Coding and Pairing Round", duration: "90 min", detail: "TDD exercise in your language; code quality and XP practices matter" },
-      { label: "Technical Interview — Design + Case", duration: "60 min", detail: "OOP design, system architecture, consulting scenario" },
+      { label: "Technical Interview, Design + Case", duration: "60 min", detail: "OOP design, system architecture, consulting scenario" },
       { label: "Culture / Values Interview", duration: "60 min", detail: "Social justice awareness, XP/agile conviction, collaboration style" },
     ]} />
   ),
@@ -435,15 +435,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Application Developer (1–3 yrs)", min: 12, max: 20 },
       { role: "Senior Consultant (3–6 yrs)", min: 18, max: 30 },
       { role: "Principal Consultant (6+ yrs)", min: 28, max: 45 },
-    ]} caption="ThoughtWorks India salary 2026 — 20–30% below market; strong craft brand offset" />
+    ]} caption="ThoughtWorks India salary 2026, 20–30% below market; strong craft brand offset" />
   ),
 
   /* sap-labs-india-interview-questions-2026: SAP enterprise software */
   "sap-labs-india-interview-questions-2026||SAP Labs India Interview Process: Structure and What Each Round Tests": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "75 min", detail: "Aptitude + ABAP/Java/Python MCQs + 1 coding problem" },
-      { label: "Technical Round 1 — Algorithms + CS", duration: "60 min", detail: "DSA, OOP, database design, REST APIs" },
-      { label: "Technical Round 2 — SAP Domain", duration: "60 min", detail: "SAP HANA, S/4HANA, BTP, ABAP (for product roles); architecture" },
+      { label: "Technical Round 1, Algorithms + CS", duration: "60 min", detail: "DSA, OOP, database design, REST APIs" },
+      { label: "Technical Round 2, SAP Domain", duration: "60 min", detail: "SAP HANA, S/4HANA, BTP, ABAP (for product roles); architecture" },
       { label: "Hiring Manager / Design Round", duration: "60 min", detail: "Product architecture, enterprise SaaS design, cross-team scope" },
       { label: "HR Round", duration: "20 min", detail: "SAP values, Bengaluru / Pune preference, career goals" },
     ]} />
@@ -454,7 +454,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Developer (2–5 yrs)", min: 24, max: 40 },
       { role: "Senior Developer (5–8 yrs)", min: 38, max: 55 },
       { role: "Principal Developer / Architect (8+ yrs)", min: 52, max: 80 },
-    ]} caption="SAP Labs India salary 2026 — Bengaluru HQ; strong enterprise product ownership" />
+    ]} caption="SAP Labs India salary 2026, Bengaluru HQ; strong enterprise product ownership" />
   ),
 
   /* atlassian-india-interview-questions-2026 (second occurrence, index 95) — duplicate slug, use same key approach */
@@ -470,10 +470,10 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   ),
   "atlassian-india-interview-questions-2026||Atlassian's TEAM Values: What the Values Round Actually Tests": (
     <FrameworkSteps steps={[
-      { number: "T", label: "Open company, no bull", hint: "Radical transparency — share information broadly, question decisions respectfully" },
+      { number: "T", label: "Open company, no bull", hint: "Radical transparency, share information broadly, question decisions respectfully" },
       { number: "E", label: "Build with heart and balance", hint: "Sustainable pace, genuine care for people, avoid burnout" },
       { number: "A", label: "Play as a team", hint: "Diverse inclusion, collaborate across time zones, TEAM Anywhere ethos" },
-      { number: "M", label: "Don't #@!% the customer", hint: "Customer obsession — quality that respects users' trust" },
+      { number: "M", label: "Don't #@!% the customer", hint: "Customer obsession, quality that respects users' trust" },
     ]} />
   ),
 
@@ -481,8 +481,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "paypal-india-interview-questions-2026||PayPal India Interview Process: Payments-Specific System Design": (
     <RoundFlow rounds={[
       { label: "Online Coding Assessment", duration: "90 min", detail: "2–3 DSA problems; Java/Python; payments domain MCQs" },
-      { label: "Technical Round 1 — Algorithms + CS", duration: "60 min", detail: "DSA, concurrency, REST APIs, database design" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "Payments processing, fraud detection, idempotency in financial APIs" },
+      { label: "Technical Round 1, Algorithms + CS", duration: "60 min", detail: "DSA, concurrency, REST APIs, database design" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "Payments processing, fraud detection, idempotency in financial APIs" },
       { label: "Hiring Manager / Behavioural Round", duration: "45 min", detail: "PayPal mission, global financial inclusion, ownership" },
     ]} />
   ),
@@ -492,15 +492,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 35, max: 52 },
       { role: "Senior SDE (5–8 yrs)", min: 50, max: 72 },
       { role: "Staff SDE / EM (8+ yrs)", min: 68, max: 100 },
-    ]} caption="PayPal India salary 2026 — Chennai + Bengaluru offices; full product ownership" />
+    ]} caption="PayPal India salary 2026, Chennai + Bengaluru offices; full product ownership" />
   ),
 
   /* walmart-global-tech-india-interview-questions-2026: Retail tech */
   "walmart-global-tech-india-interview-questions-2026||Walmart Global Tech India Interview Process": (
     <RoundFlow rounds={[
       { label: "Online Coding Assessment", duration: "90 min", detail: "2–3 DSA problems; Java preferred; supply chain domain basics" },
-      { label: "Technical Round 1 — Algorithms", duration: "60 min", detail: "DSA, OOP, concurrency, REST API design" },
-      { label: "Technical Round 2 — System Design", duration: "60 min", detail: "E-commerce search, inventory management, fulfillment routing" },
+      { label: "Technical Round 1, Algorithms", duration: "60 min", detail: "DSA, OOP, concurrency, REST API design" },
+      { label: "Technical Round 2, System Design", duration: "60 min", detail: "E-commerce search, inventory management, fulfillment routing" },
       { label: "Behavioral / Culture Round", duration: "45 min", detail: "Walmart values: service, excellence, respect, integrity" },
     ]} />
   ),
@@ -510,15 +510,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 35, max: 52 },
       { role: "Senior SDE (5–8 yrs)", min: 48, max: 70 },
       { role: "Staff SDE / EM (8+ yrs)", min: 65, max: 95 },
-    ]} caption="Walmart Global Tech India 2026 — Bengaluru office; strong retail domain product ownership" />
+    ]} caption="Walmart Global Tech India 2026, Bengaluru office; strong retail domain product ownership" />
   ),
 
   /* qualcomm-india-interview-questions-2026 (second occurrence, index 98) */
   "qualcomm-india-interview-questions-2026||Qualcomm India Interview Process: What Makes It Different": (
     <RoundFlow rounds={[
       { label: "Technical Phone Screen", duration: "60 min", detail: "C++ coding, embedded systems basics, OS concepts" },
-      { label: "Technical Round 1 — C++ and OS", duration: "60 min", detail: "Memory management, threading, RTOS concepts, driver stack" },
-      { label: "Technical Round 2 — Domain Depth", duration: "60 min", detail: "5G/LTE modem stack, DSP, QDSP6 processor architecture" },
+      { label: "Technical Round 1, C++ and OS", duration: "60 min", detail: "Memory management, threading, RTOS concepts, driver stack" },
+      { label: "Technical Round 2, Domain Depth", duration: "60 min", detail: "5G/LTE modem stack, DSP, QDSP6 processor architecture" },
       { label: "System Design Round", duration: "60 min", detail: "Firmware architecture, baseband system design" },
       { label: "HR Round", duration: "20 min", detail: "Qualcomm values, team fit, long-term goals" },
     ]} />
@@ -529,15 +529,15 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Engineer (2–5 yrs)", min: 28, max: 44 },
       { role: "Staff Engineer (5–8 yrs)", min: 42, max: 62 },
       { role: "Principal Engineer (8+ yrs)", min: 58, max: 92 },
-    ]} caption="Qualcomm India salary 2026 — RSUs on 3yr vest; semiconductor domain premium" />
+    ]} caption="Qualcomm India salary 2026, RSUs on 3yr vest; semiconductor domain premium" />
   ),
 
   /* vmware-india-interview-questions-2026: Virtualisation / Broadcom */
   "vmware-india-interview-questions-2026||VMware India Interview Process": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "75 min", detail: "C / C++ / Java MCQs + OS concepts + 1 coding problem" },
-      { label: "Technical Round 1 — CS Fundamentals", duration: "60 min", detail: "OS internals, virtualisation basics, networking, DSA" },
-      { label: "Technical Round 2 — Virtualisation Depth", duration: "60 min", detail: "Hypervisor design, VMware vSphere, storage virtualisation, Kubernetes" },
+      { label: "Technical Round 1, CS Fundamentals", duration: "60 min", detail: "OS internals, virtualisation basics, networking, DSA" },
+      { label: "Technical Round 2, Virtualisation Depth", duration: "60 min", detail: "Hypervisor design, VMware vSphere, storage virtualisation, Kubernetes" },
       { label: "System Design Round", duration: "60 min", detail: "Distributed infrastructure design, container orchestration" },
       { label: "HR / Manager Round", duration: "30 min", detail: "Broadcom-VMware transition awareness, team fit, growth mindset" },
     ]} />
@@ -548,7 +548,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Senior Software Engineer (2–5 yrs)", min: 28, max: 42 },
       { role: "Staff Engineer (5–8 yrs)", min: 40, max: 58 },
       { role: "Principal Engineer (8+ yrs)", min: 55, max: 82 },
-    ]} caption="VMware India salary 2026 — post-Broadcom acquisition; Pune + Bengaluru offices" />
+    ]} caption="VMware India salary 2026, post-Broadcom acquisition; Pune + Bengaluru offices" />
   ),
 
   /* uber-india-interview-questions-2026 (second occurrence, index 100) */
@@ -568,7 +568,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SDE-2 (2–5 yrs)", min: 42, max: 62 },
       { role: "Senior SDE (5–8 yrs)", min: 60, max: 88 },
       { role: "Staff Engineer / EM (8+ yrs)", min: 82, max: 120 },
-    ]} caption="Uber India total compensation 2026 — Bengaluru GCC; strong systems scale culture" />
+    ]} caption="Uber India total compensation 2026, Bengaluru GCC; strong systems scale culture" />
   ),
 
   /* airbnb-india-interview-questions-2026: Travel tech */
@@ -587,7 +587,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "SWE L4 (2–5 yrs)", min: 52, max: 78 },
       { role: "Senior SWE L5 (5–8 yrs)", min: 72, max: 108 },
       { role: "Staff SWE L6 (8+ yrs)", min: 100, max: 150 },
-    ]} caption="Airbnb India GCC salary 2026 — Bengaluru office; RSUs in USD; travel perks" />
+    ]} caption="Airbnb India GCC salary 2026, Bengaluru office; RSUs in USD; travel perks" />
   ),
 
   /* stripe-india-interview-questions-2026: Fintech infra */
@@ -595,7 +595,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <RoundFlow rounds={[
       { label: "Recruiter Screen", duration: "30 min", detail: "Background, Stripe motivation, compensation alignment" },
       { label: "Coding Screen", duration: "60 min", detail: "2 DSA problems via CoderPad; Python/Ruby/Go" },
-      { label: "Technical Round — Bug Fix / Code Review", duration: "60 min", detail: "Stripe-specific: review a buggy codebase, find and fix issues" },
+      { label: "Technical Round, Bug Fix / Code Review", duration: "60 min", detail: "Stripe-specific: review a buggy codebase, find and fix issues" },
       { label: "System Design Round", duration: "60 min", detail: "Payment processing reliability, idempotency, webhook delivery" },
       { label: "Behavioral / Mission Round", duration: "45 min", detail: "Stripe mission: increase GDP of the internet; ownership at scale" },
     ]} />
@@ -606,7 +606,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "L4 Software Engineer (2–5 yrs)", min: 52, max: 80 },
       { role: "L5 Senior Engineer (5–8 yrs)", min: 75, max: 110 },
       { role: "L6 Staff Engineer (8+ yrs)", min: 100, max: 155 },
-    ]} caption="Stripe India 2026 — Bengaluru office; pre-IPO equity; above-market cash comp" />
+    ]} caption="Stripe India 2026, Bengaluru office; pre-IPO equity; above-market cash comp" />
   ),
 
   /* ── Technical ── */
@@ -632,11 +632,11 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* java-interview-questions-freshers-india-2026: Study roadmap for Java freshers */
   "java-interview-questions-freshers-india-2026||Java 8+ Features: Modern Fresher Questions": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Lambda & Streams", hint: "Filter, map, collect — asked at virtually every Java fresher interview" },
+      { number: "01", label: "Lambda & Streams", hint: "Filter, map, collect, asked at virtually every Java fresher interview" },
       { number: "02", label: "Optional", hint: "Null-safety idioms; differentiate from null checks" },
       { number: "03", label: "Default & Static Methods in Interfaces", hint: "Why they exist and backward compatibility" },
       { number: "04", label: "Date/Time API", hint: "LocalDate, LocalDateTime vs old java.util.Date" },
-      { number: "05", label: "Functional Interfaces", hint: "Predicate, Function, Consumer, Supplier — know all four" },
+      { number: "05", label: "Functional Interfaces", hint: "Predicate, Function, Consumer, Supplier, know all four" },
     ]} />
   ),
 
@@ -645,7 +645,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Know built-ins cold", hint: "sorted(), enumerate(), zip(), collections.defaultdict, heapq" },
       { number: "02", label: "List comprehensions", hint: "Interviewers expect Pythonic one-liners; avoid verbose loops where possible" },
-      { number: "03", label: "String methods", hint: "split, join, strip, startswith — common in array/string problems" },
+      { number: "03", label: "String methods", hint: "split, join, strip, startswith, common in array/string problems" },
       { number: "04", label: "Complexity awareness", hint: "Know that dict/set ops are O(1); list.insert is O(n)" },
     ]} />
   ),
@@ -654,8 +654,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "sql-interview-questions-freshers-india-2026||Window Functions: The Advanced Level": (
     <FrameworkSteps steps={[
       { number: "01", label: "ROW_NUMBER()", hint: "Deduplicate rows, rank within a partition" },
-      { number: "02", label: "RANK() / DENSE_RANK()", hint: "Difference matters — gaps vs no-gaps in ties" },
-      { number: "03", label: "LAG() / LEAD()", hint: "Compare a row to its predecessor/successor — classic interview problem" },
+      { number: "02", label: "RANK() / DENSE_RANK()", hint: "Difference matters, gaps vs no-gaps in ties" },
+      { number: "03", label: "LAG() / LEAD()", hint: "Compare a row to its predecessor/successor, classic interview problem" },
       { number: "04", label: "SUM() OVER / AVG() OVER", hint: "Running totals and moving averages without GROUP BY" },
       { number: "05", label: "PARTITION BY vs ORDER BY", hint: "Explain how they divide and order rows within a window" },
     ]} />
@@ -665,20 +665,20 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "cpp-interview-questions-freshers-india-2026||STL: Standard Template Library": (
     <FrameworkSteps steps={[
       { number: "01", label: "vector", hint: "Dynamic array; know push_back, resize, reserve, iterator invalidation" },
-      { number: "02", label: "map / unordered_map", hint: "Ordered vs hash — know time complexity of each" },
+      { number: "02", label: "map / unordered_map", hint: "Ordered vs hash, know time complexity of each" },
       { number: "03", label: "set / multiset", hint: "Unique sorted elements; use for range queries" },
       { number: "04", label: "stack / queue / priority_queue", hint: "Know which problems map to each container" },
-      { number: "05", label: "Algorithms", hint: "sort, binary_search, lower_bound, upper_bound — memorise signatures" },
+      { number: "05", label: "Algorithms", hint: "sort, binary_search, lower_bound, upper_bound, memorise signatures" },
     ]} />
   ),
 
   /* javascript-interview-questions-india-2026: JS interview key framework */
   "javascript-interview-questions-india-2026||Event Loop, Async, and Promises": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Call Stack", hint: "Synchronous execution — LIFO; understand how frames push and pop" },
-      { number: "02", label: "Web APIs / Node APIs", hint: "setTimeout, fetch — offloaded here, not in the JS thread" },
+      { number: "01", label: "Call Stack", hint: "Synchronous execution, LIFO; understand how frames push and pop" },
+      { number: "02", label: "Web APIs / Node APIs", hint: "setTimeout, fetch, offloaded here, not in the JS thread" },
       { number: "03", label: "Callback / Task Queue", hint: "Macrotasks: setTimeout callbacks land here" },
-      { number: "04", label: "Microtask Queue", hint: "Promise .then() runs before the next macrotask — higher priority" },
+      { number: "04", label: "Microtask Queue", hint: "Promise .then() runs before the next macrotask, higher priority" },
       { number: "05", label: "Event Loop", hint: "Picks from microtask queue first, then task queue, repeat" },
     ]} />
   ),
@@ -690,7 +690,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { number: "02", label: "Estimate Scale", hint: "DAU, QPS, storage; back-of-envelope in 2 minutes" },
       { number: "03", label: "High-Level Design", hint: "Draw boxes: clients, load balancer, API servers, DB, cache" },
       { number: "04", label: "Deep-Dive Components", hint: "Pick 2–3 critical components; discuss trade-offs in depth" },
-      { number: "05", label: "Handle Bottlenecks", hint: "Caching, sharding, async queues, CDN — show you think at scale" },
+      { number: "05", label: "Handle Bottlenecks", hint: "Caching, sharding, async queues, CDN, show you think at scale" },
       { number: "06", label: "Wrap Up", hint: "Summarise design, mention what you'd do differently with more time" },
     ]} />
   ),
@@ -736,7 +736,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { number: "02", label: "API Design", hint: "Define endpoints or function signatures before drawing boxes" },
       { number: "03", label: "Data Model", hint: "What tables or collections, key fields, relationships" },
       { number: "04", label: "High-Level Architecture", hint: "Client → Server → DB; add cache and queue if relevant" },
-      { number: "05", label: "Trade-off Discussion", hint: "SQL vs NoSQL, monolith vs services — state your reasoning" },
+      { number: "05", label: "Trade-off Discussion", hint: "SQL vs NoSQL, monolith vs services, state your reasoning" },
     ]} />
   ),
 
@@ -754,9 +754,9 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* business-analyst-interview-questions-india-2026: BA skill breakdown */
   "business-analyst-interview-questions-india-2026||What Indian BA Interviews Test": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Requirements Elicitation", hint: "User stories, use cases, acceptance criteria — know the formats" },
+      { number: "01", label: "Requirements Elicitation", hint: "User stories, use cases, acceptance criteria, know the formats" },
       { number: "02", label: "Process Mapping", hint: "As-Is vs To-Be; BPMN or flowchart; gap analysis" },
-      { number: "03", label: "SQL / Data Analysis", hint: "Basic JOINs, GROUP BY, aggregations — always tested" },
+      { number: "03", label: "SQL / Data Analysis", hint: "Basic JOINs, GROUP BY, aggregations, always tested" },
       { number: "04", label: "Stakeholder Management", hint: "STAR stories: aligning conflicting stakeholders, managing expectations" },
       { number: "05", label: "Domain Knowledge", hint: "Banking: SWIFT, IBAN, KYC; E-commerce: catalogues, orders, returns" },
     ]} />
@@ -769,7 +769,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Salesforce Developer (3–5 yrs)", min: 10, max: 20 },
       { role: "Salesforce Architect / Lead", min: 20, max: 35 },
       { role: "Certified Technical Architect (CTA)", min: 30, max: 40, note: "Rare; high demand" },
-    ]} caption="India 2026 — product and service company Salesforce roles" />
+    ]} caption="India 2026, product and service company Salesforce roles" />
   ),
 
   /* ui-ux-designer-interview-questions-india-2026: design interview process */
@@ -788,7 +788,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Statistics & Probability", hint: "Distributions, hypothesis testing, p-value, confidence intervals" },
       { number: "02", label: "ML Algorithms", hint: "Decision trees, gradient boosting, regularisation, bias-variance" },
-      { number: "03", label: "SQL", hint: "Aggregations, JOINs, window functions — tested at every company" },
+      { number: "03", label: "SQL", hint: "Aggregations, JOINs, window functions, tested at every company" },
       { number: "04", label: "Python / Pandas", hint: "Data wrangling, feature engineering, visualisation" },
       { number: "05", label: "Business Case / Product Intuition", hint: "Interpret an A/B test, diagnose a metric drop, recommend action" },
     ]} />
@@ -801,7 +801,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Smart Contract / Solidity Dev (2–4 yrs)", min: 14, max: 25 },
       { role: "Blockchain Architect / Lead (4–7 yrs)", min: 22, max: 40 },
       { role: "DeFi Protocol Engineer (Senior)", min: 30, max: 50, note: "Often USD-remote roles" },
-    ]} caption="India 2026 — includes fintech and Web3-native employers" />
+    ]} caption="India 2026, includes fintech and Web3-native employers" />
   ),
 
   /* fullstack-developer-interview-questions-india-2026: full-stack approach */
@@ -822,7 +822,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "Penetration Tester / VAPT (2–4 yrs)", min: 8, max: 18 },
       { role: "Security Engineer / Cloud Security (3–6 yrs)", min: 15, max: 28 },
       { role: "CISO / Security Architect (8+ yrs)", min: 25, max: 35, note: "CISSP / CISM strongly preferred" },
-    ]} caption="India 2026 — BFSI and product companies pay premium for certified professionals" />
+    ]} caption="India 2026, BFSI and product companies pay premium for certified professionals" />
   ),
 
   /* android-developer-interview-questions-india-2026: Android prep areas */
@@ -830,7 +830,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "MVVM Pattern", hint: "ViewModel, LiveData / StateFlow, repository layer separation" },
       { number: "02", label: "Clean Architecture", hint: "Domain, data, presentation layers; dependency rule" },
-      { number: "03", label: "Dependency Injection", hint: "Hilt / Dagger 2 — know how to scope and provide dependencies" },
+      { number: "03", label: "Dependency Injection", hint: "Hilt / Dagger 2, know how to scope and provide dependencies" },
       { number: "04", label: "Navigation Component", hint: "NavGraph, safe args, deep links" },
       { number: "05", label: "WorkManager", hint: "Background tasks, chaining, constraints" },
     ]} />
@@ -838,7 +838,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
 
   /* dsa-preparation-for-interviews-india-2026: 90-day plan */
   "dsa-preparation-for-interviews-india-2026||The 90-day DSA study plan for Indian engineers": (
-    <PrepTimeline caption="90-day DSA plan — from zero to product-company ready" phases={[
+    <PrepTimeline caption="90-day DSA plan, from zero to product-company ready" phases={[
       { period: "Days 1–20", label: "Foundations", tasks: ["Arrays, strings, hashmaps", "Two pointers and sliding window", "Binary search"], milestone: "30 easy problems solved" },
       { period: "Days 21–45", label: "Core Data Structures", tasks: ["Linked lists, stacks, queues", "Trees and BST operations", "Heaps and priority queues"], milestone: "50 medium problems solved" },
       { period: "Days 46–70", label: "Graphs & DP", tasks: ["BFS/DFS, Dijkstra", "Union-Find", "1D and 2D dynamic programming"], milestone: "80 medium problems solved" },
@@ -851,17 +851,17 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Coding Before Clarifying", hint: "Always ask about constraints, edge cases, and expected output first" },
       { number: "02", label: "Silent Solving", hint: "Think aloud; interviewers evaluate your process, not just your answer" },
-      { number: "03", label: "Jumping to Optimal", hint: "State a brute-force approach first, then optimise — shows structured thinking" },
-      { number: "04", label: "Ignoring Edge Cases", hint: "Empty input, negative numbers, single element — mention them proactively" },
+      { number: "03", label: "Jumping to Optimal", hint: "State a brute-force approach first, then optimise, shows structured thinking" },
+      { number: "04", label: "Ignoring Edge Cases", hint: "Empty input, negative numbers, single element, mention them proactively" },
     ]} />
   ),
 
   /* nodejs-interview-questions-india-2026: Node.js core concepts */
   "nodejs-interview-questions-india-2026||Core Node.js concepts most commonly tested": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Event Loop", hint: "6 phases: timers, I/O callbacks, idle, poll, check, close — know the order" },
+      { number: "01", label: "Event Loop", hint: "6 phases: timers, I/O callbacks, idle, poll, check, close, know the order" },
       { number: "02", label: "Non-blocking I/O", hint: "Why Node.js handles concurrency differently from thread-per-request models" },
-      { number: "03", label: "Streams", hint: "Readable, Writable, Duplex, Transform — memory-efficient large data processing" },
+      { number: "03", label: "Streams", hint: "Readable, Writable, Duplex, Transform, memory-efficient large data processing" },
       { number: "04", label: "Cluster / Worker Threads", hint: "Scaling CPU-bound work; difference between the two approaches" },
       { number: "05", label: "Error Handling", hint: "process.on('uncaughtException') vs domain vs async/await try-catch patterns" },
     ]} />
@@ -880,8 +880,8 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* postgresql-interview-questions-india-2026: PostgreSQL concepts */
   "postgresql-interview-questions-india-2026||PostgreSQL-specific concepts": (
     <FrameworkSteps steps={[
-      { number: "01", label: "MVCC", hint: "Multi-Version Concurrency Control — how PG handles reads without locking" },
-      { number: "02", label: "Indexes", hint: "B-tree, GIN, GiST, BRIN — when to use each type" },
+      { number: "01", label: "MVCC", hint: "Multi-Version Concurrency Control, how PG handles reads without locking" },
+      { number: "02", label: "Indexes", hint: "B-tree, GIN, GiST, BRIN, when to use each type" },
       { number: "03", label: "EXPLAIN ANALYZE", hint: "Read query plans; identify seq scans, index scans, hash joins" },
       { number: "04", label: "Partial & Expression Indexes", hint: "Index on filtered subset or computed expression for performance" },
       { number: "05", label: "Vacuuming & Autovacuum", hint: "Dead tuple cleanup; why neglecting it causes bloat and slowdowns" },
@@ -892,9 +892,9 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "microservices-interview-questions-india-2026||Core microservices concepts tested in interviews": (
     <FrameworkSteps steps={[
       { number: "01", label: "Service Decomposition", hint: "Domain-driven design, bounded contexts, when NOT to split services" },
-      { number: "02", label: "Inter-service Communication", hint: "Sync (REST/gRPC) vs async (Kafka/RabbitMQ) — trade-offs" },
+      { number: "02", label: "Inter-service Communication", hint: "Sync (REST/gRPC) vs async (Kafka/RabbitMQ), trade-offs" },
       { number: "03", label: "Service Discovery", hint: "Client-side (Eureka) vs server-side (Kubernetes Service)" },
-      { number: "04", label: "Circuit Breaker", hint: "Resilience4j / Hystrix — fail-fast and prevent cascade failures" },
+      { number: "04", label: "Circuit Breaker", hint: "Resilience4j / Hystrix, fail-fast and prevent cascade failures" },
       { number: "05", label: "Distributed Tracing", hint: "OpenTelemetry, Jaeger, correlation IDs across services" },
     ]} />
   ),
@@ -902,18 +902,18 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* oop-interview-questions-india-2026: OOP principles */
   "oop-interview-questions-india-2026||SOLID principles with examples": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Single Responsibility", hint: "One class, one reason to change — separate Order and Invoice" },
-      { number: "O", label: "Open/Closed", hint: "Open for extension, closed for modification — use interfaces/abstract classes" },
+      { number: "S", label: "Single Responsibility", hint: "One class, one reason to change, separate Order and Invoice" },
+      { number: "O", label: "Open/Closed", hint: "Open for extension, closed for modification, use interfaces/abstract classes" },
       { number: "L", label: "Liskov Substitution", hint: "Subtypes must be substitutable for their base types without breaking" },
       { number: "I", label: "Interface Segregation", hint: "Many small interfaces beat one fat interface" },
-      { number: "D", label: "Dependency Inversion", hint: "Depend on abstractions, not concretions — enables easy mocking" },
+      { number: "D", label: "Dependency Inversion", hint: "Depend on abstractions, not concretions, enables easy mocking" },
     ]} />
   ),
 
   /* operating-systems-interview-questions-india-2026: OS topics */
   "operating-systems-interview-questions-india-2026||Scheduling and synchronisation": (
     <FrameworkSteps steps={[
-      { number: "01", label: "CPU Scheduling Algorithms", hint: "FCFS, SJF, Round Robin, Priority Scheduling — know trade-offs" },
+      { number: "01", label: "CPU Scheduling Algorithms", hint: "FCFS, SJF, Round Robin, Priority Scheduling, know trade-offs" },
       { number: "02", label: "Mutex vs Semaphore", hint: "Mutex: binary ownership lock; Semaphore: signalling between threads" },
       { number: "03", label: "Deadlock", hint: "Four Coffman conditions; prevention via ordering or timeout" },
       { number: "04", label: "Monitors", hint: "High-level synchronisation construct; Java's synchronized block" },
@@ -935,11 +935,11 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* computer-networking-interview-questions-india-2026: networking concepts */
   "computer-networking-interview-questions-india-2026||OSI model and TCP/IP stack": (
     <FrameworkSteps steps={[
-      { number: "07", label: "Application Layer", hint: "HTTP, HTTPS, DNS, SMTP — what engineers interact with daily" },
-      { number: "04", label: "Transport Layer", hint: "TCP (reliable, ordered) vs UDP (fast, lossy) — when to use each" },
+      { number: "07", label: "Application Layer", hint: "HTTP, HTTPS, DNS, SMTP, what engineers interact with daily" },
+      { number: "04", label: "Transport Layer", hint: "TCP (reliable, ordered) vs UDP (fast, lossy), when to use each" },
       { number: "03", label: "Network Layer", hint: "IP addressing, routing, subnets, NAT" },
       { number: "02", label: "Data Link Layer", hint: "MAC addresses, ARP, Ethernet frames" },
-      { number: "01", label: "Physical Layer", hint: "Bits over wire/fiber — rarely asked but good to mention" },
+      { number: "01", label: "Physical Layer", hint: "Bits over wire/fiber, rarely asked but good to mention" },
     ]} />
   ),
 
@@ -947,7 +947,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "spring-boot-interview-questions-india-2026||Spring Boot auto-configuration and REST": (
     <FrameworkSteps steps={[
       { number: "01", label: "Auto-configuration", hint: "@EnableAutoConfiguration scans classpath; @ConditionalOnClass enables features" },
-      { number: "02", label: "Starter POMs", hint: "spring-boot-starter-web, -data-jpa, -security — aggregate dependencies" },
+      { number: "02", label: "Starter POMs", hint: "spring-boot-starter-web, -data-jpa, -security, aggregate dependencies" },
       { number: "03", label: "@RestController", hint: "@Controller + @ResponseBody; difference matters for view vs JSON responses" },
       { number: "04", label: "Exception Handling", hint: "@ControllerAdvice + @ExceptionHandler for centralised error responses" },
       { number: "05", label: "Actuator", hint: "/health, /metrics, /env endpoints for production observability" },
@@ -961,14 +961,14 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { number: "02", label: "Storage", hint: "S3 storage classes, EBS vs EFS vs S3, lifecycle policies" },
       { number: "03", label: "Database", hint: "RDS multi-AZ vs read replicas, DynamoDB partition key design, ElastiCache" },
       { number: "04", label: "Networking", hint: "VPC, subnets, security groups vs NACLs, Route 53 routing policies" },
-      { number: "05", label: "IAM", hint: "Policies, roles, trust relationships — principle of least privilege" },
+      { number: "05", label: "IAM", hint: "Policies, roles, trust relationships, principle of least privilege" },
     ]} />
   ),
 
   /* golang-interview-questions-india-2026: Go preparation areas */
   "golang-interview-questions-india-2026||Go concurrency patterns and common pitfalls": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Goroutines", hint: "Lightweight threads; understand goroutine leaks — always provide a way to exit" },
+      { number: "01", label: "Goroutines", hint: "Lightweight threads; understand goroutine leaks, always provide a way to exit" },
       { number: "02", label: "Channels", hint: "Buffered vs unbuffered; direction-typed channels in function signatures" },
       { number: "03", label: "select statement", hint: "Multiplex channel operations; default case for non-blocking receive" },
       { number: "04", label: "sync.WaitGroup", hint: "Wait for a set of goroutines to finish; don't copy a WaitGroup" },
@@ -979,10 +979,10 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* api-design-best-practices-india-2026: API design approach */
   "api-design-best-practices-india-2026||REST API naming and URL conventions": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Resource-Centric URLs", hint: "/users/{id}/orders not /getOrdersForUser — nouns, not verbs" },
+      { number: "01", label: "Resource-Centric URLs", hint: "/users/{id}/orders not /getOrdersForUser, nouns, not verbs" },
       { number: "02", label: "HTTP Verbs", hint: "GET (read), POST (create), PUT (replace), PATCH (partial update), DELETE" },
       { number: "03", label: "Status Codes", hint: "200/201/204 for success; 400 bad request; 401/403; 404; 409 conflict; 500" },
-      { number: "04", label: "Versioning", hint: "URI (/v1/) vs header versioning — URI is simpler for Indian company contexts" },
+      { number: "04", label: "Versioning", hint: "URI (/v1/) vs header versioning, URI is simpler for Indian company contexts" },
       { number: "05", label: "Pagination", hint: "Cursor-based for large datasets; limit/offset for simpler use cases" },
     ]} />
   ),
@@ -990,9 +990,9 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* leetcode-study-plan-india-2026: 3-month LeetCode plan */
   "leetcode-study-plan-india-2026||Month 1: Foundations (Arrays, Strings, Hashmaps, Two Pointers)": (
     <PrepTimeline caption="3-month LeetCode study plan for Indian product companies" phases={[
-      { period: "Month 1", label: "Foundations", tasks: ["Arrays & strings — 25 problems", "Hashmaps & sets — 15 problems", "Two pointers & sliding window — 15 problems", "Binary search — 10 problems"], milestone: "65 problems, patterns recognised" },
-      { period: "Month 2", label: "Trees, Graphs & DP", tasks: ["Binary trees BFS/DFS — 20 problems", "Graphs (adjacency list, BFS, DFS, union-find) — 20 problems", "1D DP — 15 problems", "2D DP / interval DP — 10 problems"], milestone: "130 problems, DP patterns solid" },
-      { period: "Month 3", label: "Advanced & Company Prep", tasks: ["Heaps, tries, segment trees — 15 problems", "Backtracking & greedy — 15 problems", "Company-tagged sets (Flipkart/Razorpay/Google) — 30 problems", "Timed mock contests weekly"], milestone: "190+ problems, interview-ready" },
+      { period: "Month 1", label: "Foundations", tasks: ["Arrays & strings, 25 problems", "Hashmaps & sets, 15 problems", "Two pointers & sliding window, 15 problems", "Binary search, 10 problems"], milestone: "65 problems, patterns recognised" },
+      { period: "Month 2", label: "Trees, Graphs & DP", tasks: ["Binary trees BFS/DFS, 20 problems", "Graphs (adjacency list, BFS, DFS, union-find), 20 problems", "1D DP, 15 problems", "2D DP / interval DP, 10 problems"], milestone: "130 problems, DP patterns solid" },
+      { period: "Month 3", label: "Advanced & Company Prep", tasks: ["Heaps, tries, segment trees, 15 problems", "Backtracking & greedy, 15 problems", "Company-tagged sets (Flipkart/Razorpay/Google), 30 problems", "Timed mock contests weekly"], milestone: "190+ problems, interview-ready" },
     ]} />
   ),
 
@@ -1000,9 +1000,9 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "python-interview-questions-india-2026||Python fundamentals tested at all interview levels": (
     <FrameworkSteps steps={[
       { number: "01", label: "Data Types & Mutability", hint: "list vs tuple vs set vs dict; mutable default argument trap" },
-      { number: "02", label: "GIL", hint: "Global Interpreter Lock — why threads don't give CPU parallelism in CPython" },
+      { number: "02", label: "GIL", hint: "Global Interpreter Lock, why threads don't give CPU parallelism in CPython" },
       { number: "03", label: "Generators", hint: "yield vs return; memory-efficient iteration; generator expressions" },
-      { number: "04", label: "Comprehensions", hint: "List, dict, set comprehensions — write them faster than the interviewer expects" },
+      { number: "04", label: "Comprehensions", hint: "List, dict, set comprehensions, write them faster than the interviewer expects" },
       { number: "05", label: "Error Handling", hint: "try/except/else/finally; raising custom exceptions; context managers" },
     ]} />
   ),
@@ -1010,9 +1010,9 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* java-interview-questions-india-2026: Java topics breakdown */
   "java-interview-questions-india-2026||Core Java questions most tested in India": (
     <FrameworkSteps steps={[
-      { number: "01", label: "OOP Pillars", hint: "Encapsulation, inheritance, polymorphism, abstraction — with Java examples" },
+      { number: "01", label: "OOP Pillars", hint: "Encapsulation, inheritance, polymorphism, abstraction, with Java examples" },
       { number: "02", label: "String Internals", hint: "String pool, StringBuilder vs StringBuffer, immutability" },
-      { number: "03", label: "equals() and hashCode()", hint: "Contract — if equals is true, hashCodes must match; used in HashMap" },
+      { number: "03", label: "equals() and hashCode()", hint: "Contract, if equals is true, hashCodes must match; used in HashMap" },
       { number: "04", label: "Exception Hierarchy", hint: "Checked vs unchecked; when to use each; custom exceptions" },
       { number: "05", label: "JVM Memory", hint: "Heap vs stack; Eden, Survivor, Old Gen; GC types (G1, ZGC)" },
     ]} />
@@ -1021,7 +1021,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   /* system-design-interview-beginner-india-2026: 6-step SD framework */
   "system-design-interview-beginner-india-2026||The 6-step framework for any system design question": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Clarify Scope", hint: "Ask about users, features, scale — never assume, always confirm" },
+      { number: "01", label: "Clarify Scope", hint: "Ask about users, features, scale, never assume, always confirm" },
       { number: "02", label: "Capacity Estimation", hint: "QPS, storage, bandwidth back-of-envelope in 2 minutes" },
       { number: "03", label: "System Interface", hint: "Define core APIs before designing infrastructure" },
       { number: "04", label: "Data Model", hint: "Tables, relationships, choice of SQL vs NoSQL" },
@@ -1045,7 +1045,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "useState", hint: "Batching, functional updates, lazy initialiser pattern" },
       { number: "02", label: "useEffect", hint: "Cleanup, dependency array rules; common bug: missing deps" },
-      { number: "03", label: "useMemo / useCallback", hint: "Memoisation — know when they add overhead vs help" },
+      { number: "03", label: "useMemo / useCallback", hint: "Memoisation, know when they add overhead vs help" },
       { number: "04", label: "useContext", hint: "Avoid prop drilling; performance pitfall of large context objects" },
       { number: "05", label: "Custom Hooks", hint: "Extract logic into reusable hooks; show a useFetch or useDebounce example" },
     ]} />
@@ -1057,7 +1057,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { number: "01", label: "Type vs Interface", hint: "Interface is extendable and mergeable; type supports unions and mapped types" },
       { number: "02", label: "Generics", hint: "Write reusable, type-safe functions and classes; constrain with extends" },
       { number: "03", label: "Union & Intersection Types", hint: "A | B vs A & B; discriminated unions for type narrowing" },
-      { number: "04", label: "Utility Types", hint: "Partial, Required, Pick, Omit, Record, ReturnType — use these, don't rewrite" },
+      { number: "04", label: "Utility Types", hint: "Partial, Required, Pick, Omit, Record, ReturnType, use these, don't rewrite" },
       { number: "05", label: "Type Guards", hint: "typeof, instanceof, in, custom type predicates (is Type)" },
     ]} />
   ),
@@ -1066,10 +1066,10 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
   "git-interview-questions-india-2026||Branching and Merging": (
     <FrameworkSteps steps={[
       { number: "01", label: "Feature Branches", hint: "branch per feature; short-lived branches merge faster with fewer conflicts" },
-      { number: "02", label: "Merge vs Rebase", hint: "Merge preserves history; rebase creates linear history — know trade-offs" },
+      { number: "02", label: "Merge vs Rebase", hint: "Merge preserves history; rebase creates linear history, know trade-offs" },
       { number: "03", label: "Squash Commits", hint: "Clean up WIP commits before merging into main" },
       { number: "04", label: "Conflict Resolution", hint: "Accept ours / theirs / both; always understand the code, don't just accept" },
-      { number: "05", label: "Pull Request Workflow", hint: "Branch → PR → review → CI green → merge — standard in Indian product companies" },
+      { number: "05", label: "Pull Request Workflow", hint: "Branch → PR → review → CI green → merge, standard in Indian product companies" },
     ]} />
   ),
 
@@ -1092,14 +1092,14 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { role: "JavaScript/Node.js Developer (1–3 yrs)", min: 5, max: 14 },
       { role: "Go Developer (2–4 yrs)", min: 12, max: 28, note: "Smaller pool, higher premium" },
       { role: "Python ML Engineer (3–5 yrs)", min: 18, max: 45, note: "GenAI demand drives premium" },
-    ]} caption="India 2026 — product companies; IT services pay 30–40% less" />
+    ]} caption="India 2026, product companies; IT services pay 30–40% less" />
   ),
 
   /* acing-online-assessment-india-2026: OA strategy steps */
   "acing-online-assessment-india-2026||Time Management Strategy": (
     <FrameworkSteps steps={[
       { number: "01", label: "Read All Questions First", hint: "Spend 2 min scanning all problems; start with highest confidence, not first in list" },
-      { number: "02", label: "Partial Credit First", hint: "A brute-force solution that passes 60% test cases beats zero — always submit something" },
+      { number: "02", label: "Partial Credit First", hint: "A brute-force solution that passes 60% test cases beats zero, always submit something" },
       { number: "03", label: "Time Box per Problem", hint: "Allocate time per problem upfront; move on if stuck; return if time allows" },
       { number: "04", label: "Dry-Run Before Submit", hint: "Walk through 2 examples mentally; check array bounds and null cases" },
     ]} />
@@ -1131,7 +1131,7 @@ export const SECTION_VISUALS_3: Record<string, ReactNode> = {
       { number: "01", label: "Sprint Planning", hint: "Team selects backlog items; estimates using story points or T-shirt sizing" },
       { number: "02", label: "Daily Scrum", hint: "15-min standup: what I did, what I'll do, blockers" },
       { number: "03", label: "Sprint Review", hint: "Demo working software to stakeholders; gather feedback" },
-      { number: "04", label: "Sprint Retrospective", hint: "What went well, what to improve, action items — held after review" },
+      { number: "04", label: "Sprint Retrospective", hint: "What went well, what to improve, action items, held after review" },
       { number: "05", label: "Backlog Refinement", hint: "Ongoing session to groom and prioritise stories before next sprint" },
     ]} />
   ),

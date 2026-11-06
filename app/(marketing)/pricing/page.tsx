@@ -45,7 +45,7 @@ const BREADCRUMB_SCHEMA = {
 const PRICING_TIERS = [
   { name: "Free",         price: "0",  description: "2 practice sessions, no card required",                          anchor: "free" },
   { name: "Per session",  price: "9",  description: "Single mock interview session, credit never expires",             anchor: "per-session" },
-  { name: "Sprint Pack",  price: "39", description: "5 sessions, valid for 30 days, one-time purchase — buy again anytime", anchor: "sprint-pack" },
+  { name: "Sprint Pack",  price: "39", description: "5 sessions, valid for 30 days, one-time purchase, buy again anytime", anchor: "sprint-pack" },
 ] as const;
 
 const tierPrices = PRICING_TIERS.map((t) => Number(t.price));

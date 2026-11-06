@@ -249,7 +249,7 @@ export default function Onboarding() {
     // (resumeParsing would have been true) vs a restore.
     if (resumeParsing) return;
     draftToastFiredRef.current = true;
-    setDraftToast(`Welcome back — we kept your resume (${fileName})`);
+    setDraftToast(`Welcome back, we kept your resume (${fileName})`);
     // 3.5s auto-dismiss (was 5s — too long, felt stuck). The toast
     // also has a manual close button now so it can't feel stuck.
     const t = setTimeout(() => setDraftToast(null), 3500);
@@ -275,7 +275,7 @@ export default function Onboarding() {
     function handleMouseLeave(e: MouseEvent) {
       if (e.clientY < 20 && !exitFiredRef.current) {
         exitFiredRef.current = true;
-        setDraftToast("Your resume is saved — take your time, it'll be here when you get back.");
+        setDraftToast("Your resume is saved, take your time, it'll be here when you get back.");
         setTimeout(() => setDraftToast(null), 6000);
       }
     }
@@ -478,7 +478,7 @@ export default function Onboarding() {
     track("resume_upload_started", { sizeBytes: file.size, ext: file.name.split(".").pop()?.toLowerCase() || "" });
     if (file.size > 10 * 1024 * 1024) {
       const mb = (file.size / (1024 * 1024)).toFixed(1);
-      setResumeError(`Your file is ${mb} MB. Max is 10 MB — try compressing your PDF (e.g. smallpdf.com/compress-pdf) or export at lower quality.`);
+      setResumeError(`Your file is ${mb} MB. Max is 10 MB, try compressing your PDF (e.g. smallpdf.com/compress-pdf) or export at lower quality.`);
       track("resume_upload_failed", { reason: "too_large", sizeBytes: file.size });
       return;
     }
@@ -517,9 +517,9 @@ export default function Onboarding() {
           throw new Error("Image files aren't supported. Please upload a PDF, DOCX, or TXT resume.");
         }
         if (fileExt === "pdf") {
-          throw new Error("This looks like a scanned PDF — we can't extract its text. Try exporting from your resume builder as a searchable PDF, or save as DOCX and re-upload.");
+          throw new Error("This looks like a scanned PDF, we can't extract its text. Try exporting from your resume builder as a searchable PDF, or save as DOCX and re-upload.");
         }
-        throw new Error("Very little text was extracted. The file may be empty or corrupted — try re-exporting as a PDF or DOCX.");
+        throw new Error("Very little text was extracted. The file may be empty or corrupted, try re-exporting as a PDF or DOCX.");
       }
       // Mirror the server's 50,000-char ceiling (analyze-resume.ts rejects
       // longer text with a 400) on the client. A resume this long is almost
@@ -762,7 +762,7 @@ export default function Onboarding() {
       startingRef.current = false;
       setDraftToast(dest === "skip"
         ? "Saved. You can come back anytime from Settings."
-        : "Couldn't navigate — try again, or refresh the page.");
+        : "Couldn't navigate, try again, or refresh the page.");
     }
   };
 
@@ -879,7 +879,7 @@ export default function Onboarding() {
       : null;
   const roleMismatchWarning =
     mismatchResult && mismatchResult.severity === "hard"
-      ? `Heads up — your resume reads "${resumeTitleForMismatch}" but you've entered "${targetRole}". You can continue; the interviewer will probe the pivot.`
+      ? `Heads up, your resume reads "${resumeTitleForMismatch}" but you've entered "${targetRole}". You can continue; the interviewer will probe the pivot.`
       : null;
 
   return (

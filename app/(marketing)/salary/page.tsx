@@ -36,7 +36,7 @@ export async function generateMetadata({
   return {
     title,
     description:
-      `${count} companies with real CTC ranges — TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs & more. AmbitionBox + Glassdoor sourced, India 2026.`,
+      `${count} companies with real CTC ranges, TCS, Infosys, Razorpay, Google, Amazon, Meta, Goldman Sachs & more. AmbitionBox + Glassdoor sourced, India 2026.`,
     keywords: [
       "software engineer salary India 2026",
       "TCS salary freshers 2026",
@@ -186,7 +186,7 @@ export default async function SalaryIndexPage({
           }}
         >
           <span style={{ fontFamily: fonts.sans, fontSize: 13.5, color: t.coal, lineHeight: 1.5 }}>
-            <strong style={{ color: t.copper }}>New for 2026 —</strong> the Indian Startup Engineer Salary Report,
+            <strong style={{ color: t.copper }}>New for 2026, </strong> the Indian Startup Engineer Salary Report,
             covering AI startups like Sarvam, Moglix and Navi no one else has data on.
           </span>{" "}
           <span style={{ fontFamily: fonts.sans, fontSize: 13.5, fontWeight: 600, color: t.copper, whiteSpace: "nowrap" }}>

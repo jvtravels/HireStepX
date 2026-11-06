@@ -89,7 +89,7 @@ export default function MessagesV2() {
     const url = await fetchMessageAttachmentUrl(messageId);
     if (!url) {
       win?.close();
-      toast("Couldn't open attachment — please try again", "error");
+      toast("Couldn't open attachment, please try again", "error");
       return;
     }
     if (win) win.location.href = url;
@@ -181,7 +181,7 @@ export default function MessagesV2() {
     const sent = await apiSendMessage(activeMatchId, { body: text });
     setSending(false);
     if (!sent) {
-      toast("Couldn't send message — please try again", "error");
+      toast("Couldn't send message, please try again", "error");
       return;
     }
     playUiSound("send");
@@ -193,7 +193,7 @@ export default function MessagesV2() {
   const handleAttach = async (file: File) => {
     if (!activeMatchId) return;
     if (file.size > 8_000_000) {
-      toast("File is too large — 8MB max", "error");
+      toast("File is too large, 8MB max", "error");
       return;
     }
     setAttaching(true);
@@ -222,7 +222,7 @@ export default function MessagesV2() {
     });
     setAttaching(false);
     if (!sent) {
-      toast("Attachment uploaded but failed to send — please try again", "error");
+      toast("Attachment uploaded but failed to send, please try again", "error");
       return;
     }
     playUiSound("send");

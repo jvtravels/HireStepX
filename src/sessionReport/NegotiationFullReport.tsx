@@ -111,7 +111,7 @@ function buildTranscript(outcome: NegotiationOutcome, role: string, company: str
     "",
   ];
   questions.forEach((q, i) => {
-    lines.push(`— Turn ${i + 1} —`);
+    lines.push(`, Turn ${i + 1}, `);
     if (q.text) lines.push(`AI: ${q.text}`);
     const answerText = (q.answer || []).map(seg => seg.text).join(" ").trim();
     if (answerText) lines.push(`You: ${answerText}`);

@@ -23,7 +23,7 @@ export async function generateMetadata({
      actual indexed post count. */
   const count = BLOG_META.length;
   const title = `${count} Interview Prep Guides India 2026 | HireStepX`;
-  const ogTitle = `${count} Interview Preparation Guides — India 2026`;
+  const ogTitle = `${count} Interview Preparation Guides, India 2026`;
 
   return {
     title,

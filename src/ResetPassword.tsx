@@ -327,7 +327,7 @@ export default function ResetPassword() {
   const passwordError = passwordTouched
     ? pwV.message ||
       (passwordHasEdgeWhitespace(password)
-        ? "Password has leading or trailing spaces — check your paste."
+        ? "Password has leading or trailing spaces, check your paste."
         : null)
     : null;
   const confirmError =
@@ -364,7 +364,7 @@ export default function ResetPassword() {
     const breach = await checkPasswordBreached(password);
     if (breach.breached) {
       setError(
-        "This password is too common — attackers already know it. Try a different one.",
+        "This password is too common, attackers already know it. Try a different one.",
       );
       setLoading(false);
       return;
@@ -374,7 +374,7 @@ export default function ResetPassword() {
     // that block HIBP shouldn't be permanently locked out of password
     // reset; instead we surface an ops signal.
     if (breach.unknown) {
-      console.warn("[reset-password] HIBP breach check unreachable — proceeding without verification");
+      console.warn("[reset-password] HIBP breach check unreachable, proceeding without verification");
     }
     // Wrap each Supabase call in a timeout race so a hung network
     // request can't leave the user stuck forever on "Updating..."
@@ -1181,7 +1181,7 @@ export default function ResetPassword() {
                       />
                     </svg>
                     {expired ? (
-                      "Link expired — request a new one."
+                      "Link expired, request a new one."
                     ) : (
                       <>For your security, this link expires in {expiryLabel}.</>
                     )}

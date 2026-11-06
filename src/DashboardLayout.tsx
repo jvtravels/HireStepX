@@ -307,7 +307,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
             {tierKnown && isStarter && user?.subscriptionEnd && (
               <span
                 aria-label={user.cancelAtPeriodEnd
-                  ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })} — access until then`
+                  ? `Plan ends ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}, access until then`
                   : `Sprint Pack valid till ${new Date(user.subscriptionEnd).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 style={{ marginLeft: "auto", fontFamily: font.ui, fontSize: 12, whiteSpace: "nowrap",
                   color: user.cancelAtPeriodEnd ? c.ember : c.inkSoft,
@@ -491,7 +491,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
                 <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.ember} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
               )}
               <AlertDescription style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: paymentBanner === "success" ? c.sage : c.ember }}>
-                {paymentBanner === "success" ? "Payment successful! Your account has been upgraded." : "Payment was not completed. No charges were made — you can try again anytime."}
+                {paymentBanner === "success" ? "Payment successful! Your account has been upgraded." : "Payment was not completed. No charges were made, you can try again anytime."}
               </AlertDescription>
             </div>
             <Button variant="ghost" size="icon-xs" onClick={() => setPaymentBanner(null)} aria-label="Dismiss banner">
@@ -516,7 +516,7 @@ export default function DashboardLayout({ children }: { children?: React.ReactNo
         {isOffline && (
           <Alert className="mb-4 flex flex-row items-center gap-2" style={{ background: c.creamSoft, borderColor: "rgba(126,141,152,0.2)", animation: "slideDown 0.2s ease" }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c.inkSoft} strokeWidth="2" strokeLinecap="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-            <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline — your work is saved on this device and will sync when you&apos;re back</AlertDescription>
+            <AlertDescription style={{ fontFamily: font.ui, fontSize: 12, color: c.inkSoft }}>You&apos;re offline, your work is saved on this device and will sync when you&apos;re back</AlertDescription>
           </Alert>
         )}
         </>

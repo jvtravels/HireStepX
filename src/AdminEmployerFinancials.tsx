@@ -68,7 +68,7 @@ export default function AdminEmployerFinancials({ getToken, setToken }: Props) {
 
   return (
     <div style={card}>
-      <p style={heading}>Employers — pay-as-you-go unlocks</p>
+      <p style={heading}>Employers, pay-as-you-go unlocks</p>
       {readErrors.length > 0 && (
         <p role="alert" style={banner(true)}>
           Could not read: {readErrors.join(", ")}. The figures below are incomplete, not zero. Reload, and check Supabase status if this persists.

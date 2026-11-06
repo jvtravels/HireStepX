@@ -46,7 +46,7 @@ function SkipWithReason({
   const remaining = Math.max(0, skipBudget - skipsUsed);
   const tooltip =
     skipBudget === 0
-      ? "Skips aren't allowed in this interview type — every turn matters."
+      ? "Skips aren't allowed in this interview type, every turn matters."
       : !canSkip
         ? `You've used your ${skipBudget} skip${skipBudget === 1 ? "" : "s"}. Work through this one, even partially.`
         : `${remaining} skip${remaining === 1 ? "" : "s"} left`;
@@ -129,7 +129,7 @@ function SkipWithReason({
             onClick={() => { setOpen(false); onConfirm("no_reason"); }}
             style={{ display: "block", textAlign: "left", width: "100%", fontStyle: "italic", color: e.inkSoft }}
           >
-            Just skip — no reason
+            Just skip, no reason
           </Button>
         </div>
       )}
@@ -682,7 +682,7 @@ export function Composer({
 
       {/* Hint */}
       {isCurrentFollowUp && (
-        <CanvasHintBubble>This is a follow-up — be specific.</CanvasHintBubble>
+        <CanvasHintBubble>This is a follow-up, be specific.</CanvasHintBubble>
       )}
       {/* Salary-neg tactic recognition. Run the AI question through
           the tactic detector and surface the coaching note for the

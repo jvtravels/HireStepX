@@ -5,21 +5,21 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
   /* fresher-resume-tips-india-2026: framework steps */
   "fresher-resume-tips-india-2026||The Section Order That Works in India": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Contact + Links", hint: "Name, phone, email, LinkedIn, and GitHub — all on one line at the top" },
-      { number: "02", label: "Education", hint: "Degree, college, CGPA, and year — if CGPA < 7.0, place this lower on the page" },
-      { number: "03", label: "Skills", hint: "Languages, frameworks, tools, and databases — match keywords from the JD" },
+      { number: "01", label: "Contact + Links", hint: "Name, phone, email, LinkedIn, and GitHub, all on one line at the top" },
+      { number: "02", label: "Education", hint: "Degree, college, CGPA, and year, if CGPA < 7.0, place this lower on the page" },
+      { number: "03", label: "Skills", hint: "Languages, frameworks, tools, and databases, match keywords from the JD" },
       { number: "04", label: "Projects", hint: "2-3 projects with tech stack, your specific role, and a measurable outcome each" },
       { number: "05", label: "Internships / Experience", hint: "If you have any, put above Projects; add what you built and what impact it had" },
-      { number: "06", label: "Achievements / Extras", hint: "Competitive programming ranks, hackathon wins, certifications — keep it brief" },
+      { number: "06", label: "Achievements / Extras", hint: "Competitive programming ranks, hackathon wins, certifications, keep it brief" },
     ]} />
   ),
   "fresher-resume-tips-india-2026||ATS Optimisation for Indian Companies": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Use standard section headings", hint: "'Experience', 'Education', 'Skills' — ATS fails on creative names like 'My Journey'" },
+      { number: "01", label: "Use standard section headings", hint: "'Experience', 'Education', 'Skills', ATS fails on creative names like 'My Journey'" },
       { number: "02", label: "Match JD keywords exactly", hint: "If the JD says 'REST APIs', your resume should say 'REST APIs', not 'web services'" },
-      { number: "03", label: "No tables or columns", hint: "ATS parsers scramble multi-column layouts — use a single-column template" },
+      { number: "03", label: "No tables or columns", hint: "ATS parsers scramble multi-column layouts, use a single-column template" },
       { number: "04", label: "Submit as PDF unless asked otherwise", hint: "PDFs preserve formatting; .docx files can reformat badly on different Word versions" },
-      { number: "05", label: "Spell out abbreviations once", hint: "'Machine Learning (ML)' — the ATS may search for either form" },
+      { number: "05", label: "Spell out abbreviations once", hint: "'Machine Learning (ML)', the ATS may search for either form" },
     ]} />
   ),
 
@@ -40,67 +40,67 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
         { label: "Cognizant", values: ["CoCubes", "Quant + Verbal + Logical", "Yes (1 Q)"] },
         { label: "Accenture", values: ["ACAT", "Cognitive + Technical + Communication", "No"] },
       ]}
-      caption="Aptitude test platform and format by company — 2026 India campus season"
+      caption="Aptitude test platform and format by company, 2026 India campus season"
     />
   ),
 
   /* group-discussion-tips-india-2026: framework steps */
   "group-discussion-tips-india-2026||How to Initiate a GD Without Sounding Scripted": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Define the topic", hint: "Start by clarifying what the topic means — sets the frame and buys 10 seconds of thinking time" },
-      { number: "02", label: "State the two sides briefly", hint: "'This topic has merits on both sides — on one hand X, on the other Y…'" },
-      { number: "03", label: "Give your opening stance", hint: "Take a position with 1 supporting reason — don't stay neutral in the opening" },
-      { number: "04", label: "Invite others in", hint: "'I'd like to hear others' views on this…' — shows leadership, not insecurity" },
+      { number: "01", label: "Define the topic", hint: "Start by clarifying what the topic means, sets the frame and buys 10 seconds of thinking time" },
+      { number: "02", label: "State the two sides briefly", hint: "'This topic has merits on both sides, on one hand X, on the other Y…'" },
+      { number: "03", label: "Give your opening stance", hint: "Take a position with 1 supporting reason, don't stay neutral in the opening" },
+      { number: "04", label: "Invite others in", hint: "'I'd like to hear others' views on this…', shows leadership, not insecurity" },
     ]} />
   ),
 
   /* tier-2-college-it-career-india-2026: off-campus strategy steps */
   "tier-2-college-it-career-india-2026||Off-Campus Application Strategy": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Build a GitHub portfolio first", hint: "2-3 live projects with READMEs — this substitutes for a brand-name college in screening" },
+      { number: "01", label: "Build a GitHub portfolio first", hint: "2-3 live projects with READMEs, this substitutes for a brand-name college in screening" },
       { number: "02", label: "Get an AMCAT / CoCubes score", hint: "A percentile of 80+ makes you eligible for off-campus drives from 50+ companies" },
-      { number: "03", label: "Apply to mass off-campus drives", hint: "TCS NextStep, Infosys InfyTQ, Wipro Talent Hunt — free to apply, no college filter" },
+      { number: "03", label: "Apply to mass off-campus drives", hint: "TCS NextStep, Infosys InfyTQ, Wipro Talent Hunt, free to apply, no college filter" },
       { number: "04", label: "Use LinkedIn actively", hint: "Connect with recruiters at target companies, post projects, and ask for referrals from alumni" },
-      { number: "05", label: "Target service IT first, then product", hint: "Service IT hires in volume regardless of college tier — use it as a stepping stone" },
+      { number: "05", label: "Target service IT first, then product", hint: "Service IT hires in volume regardless of college tier, use it as a stepping stone" },
     ]} />
   ),
 
   /* hr-round-questions-india-2026: HR evaluation framework */
   "hr-round-questions-india-2026||What HR Rounds Actually Evaluate": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Culture fit", hint: "HR checks if your working style, values, and attitude match the team — answer authentically, not generically" },
+      { number: "01", label: "Culture fit", hint: "HR checks if your working style, values, and attitude match the team, answer authentically, not generically" },
       { number: "02", label: "Communication clarity", hint: "Can you articulate your thoughts without rambling? Short, structured answers score well" },
-      { number: "03", label: "Stability signals", hint: "HR watches for flight risk — show genuine interest in the role, not just the salary" },
-      { number: "04", label: "Self-awareness", hint: "Questions on weakness and failure test if you can reflect honestly — scripted perfect answers raise red flags" },
-      { number: "05", label: "Closing intent", hint: "HR assesses if you'll accept the offer — have a clear, positive answer ready for 'How soon can you join?'" },
+      { number: "03", label: "Stability signals", hint: "HR watches for flight risk, show genuine interest in the role, not just the salary" },
+      { number: "04", label: "Self-awareness", hint: "Questions on weakness and failure test if you can reflect honestly, scripted perfect answers raise red flags" },
+      { number: "05", label: "Closing intent", hint: "HR assesses if you'll accept the offer, have a clear, positive answer ready for 'How soon can you join?'" },
     ]} />
   ),
   "hr-round-questions-india-2026||The High-Stakes HR Questions": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Tell me about yourself", hint: "Present → Past → Future in 90 seconds — end with why this role fits your direction" },
-      { number: "02", label: "Why should we hire you?", hint: "3 specific strengths that match the JD + 1 differentiator — not a generic answer" },
+      { number: "01", label: "Tell me about yourself", hint: "Present → Past → Future in 90 seconds, end with why this role fits your direction" },
+      { number: "02", label: "Why should we hire you?", hint: "3 specific strengths that match the JD + 1 differentiator, not a generic answer" },
       { number: "03", label: "What is your biggest weakness?", hint: "Real weakness + concrete steps you are taking to improve + visible progress" },
-      { number: "04", label: "Where do you see yourself in 5 years?", hint: "Align with the company's growth path — show ambition without implying you'll leave in 1 year" },
-      { number: "05", label: "Why are you leaving your current role?", hint: "Pull reasons (growth, learning, new challenge) — never criticise your current employer" },
+      { number: "04", label: "Where do you see yourself in 5 years?", hint: "Align with the company's growth path, show ambition without implying you'll leave in 1 year" },
+      { number: "05", label: "Why are you leaving your current role?", hint: "Pull reasons (growth, learning, new challenge), never criticise your current employer" },
     ]} />
   ),
 
   /* fresher-resume-india-2026: structure + ATS framework */
   "fresher-resume-india-2026||Fresher Resume Structure": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Header", hint: "Name (large), phone, email, LinkedIn, GitHub — one clean line, no photo" },
-      { number: "02", label: "Education", hint: "Degree, college, CGPA, and year — if CGPA < 7.0, de-emphasise by placing it lower" },
-      { number: "03", label: "Technical Skills", hint: "Languages, frameworks, tools, cloud platforms — mirror the exact words in target JDs" },
+      { number: "01", label: "Header", hint: "Name (large), phone, email, LinkedIn, GitHub, one clean line, no photo" },
+      { number: "02", label: "Education", hint: "Degree, college, CGPA, and year, if CGPA < 7.0, de-emphasise by placing it lower" },
+      { number: "03", label: "Technical Skills", hint: "Languages, frameworks, tools, cloud platforms, mirror the exact words in target JDs" },
       { number: "04", label: "Projects", hint: "2-3 projects: title, tech stack, your role, and a measurable outcome each" },
       { number: "05", label: "Achievements", hint: "Competitive programming ranks (CodeChef, Codeforces), hackathon wins, or certifications" },
     ]} />
   ),
   "fresher-resume-india-2026||ATS Optimisation for Indian Fresher Resumes": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Single-column layout only", hint: "Multi-column tables break ATS parsers — every Indian IT company ATS fails on them" },
-      { number: "02", label: "Standard section titles", hint: "Use 'Skills', 'Experience', 'Education' — creative names like 'My Toolkit' are invisible to ATS" },
-      { number: "03", label: "Exact keyword matching", hint: "Copy skills verbatim from the JD — 'React.js' not 'ReactJS' if the JD says the former" },
-      { number: "04", label: "Spell out acronyms", hint: "'Machine Learning (ML)' — include both forms since ATS may search either" },
+      { number: "01", label: "Single-column layout only", hint: "Multi-column tables break ATS parsers, every Indian IT company ATS fails on them" },
+      { number: "02", label: "Standard section titles", hint: "Use 'Skills', 'Experience', 'Education', creative names like 'My Toolkit' are invisible to ATS" },
+      { number: "03", label: "Exact keyword matching", hint: "Copy skills verbatim from the JD, 'React.js' not 'ReactJS' if the JD says the former" },
+      { number: "04", label: "Spell out acronyms", hint: "'Machine Learning (ML)', include both forms since ATS may search either" },
       { number: "05", label: "Submit as PDF", hint: "PDF preserves layout; .docx files reflow unpredictably across Word versions" },
     ]} />
   ),
@@ -109,16 +109,16 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
   "campus-to-corporate-india-2026||The First 30 Days: Learn Before You Lead": (
     <FrameworkSteps steps={[
       { number: "01", label: "Observe before acting", hint: "Understand team norms, communication style, and unwritten rules before suggesting changes" },
-      { number: "02", label: "Ask structured questions", hint: "Batch your questions, do your own research first, then ask: 'I tried X and Y — is Z the right approach?'" },
-      { number: "03", label: "Deliver your first task early", hint: "Under-promise and over-deliver on your first assigned task — sets a strong first impression" },
-      { number: "04", label: "Build relationships deliberately", hint: "Introduce yourself to 2-3 colleagues per week — relationships open doors to better projects" },
-      { number: "05", label: "Document everything", hint: "Keep notes on processes, system setup, and decisions — you'll need them when onboarding the next fresher" },
+      { number: "02", label: "Ask structured questions", hint: "Batch your questions, do your own research first, then ask: 'I tried X and Y, is Z the right approach?'" },
+      { number: "03", label: "Deliver your first task early", hint: "Under-promise and over-deliver on your first assigned task, sets a strong first impression" },
+      { number: "04", label: "Build relationships deliberately", hint: "Introduce yourself to 2-3 colleagues per week, relationships open doors to better projects" },
+      { number: "05", label: "Document everything", hint: "Keep notes on processes, system setup, and decisions, you'll need them when onboarding the next fresher" },
     ]} />
   ),
   "campus-to-corporate-india-2026||Performance in the First Year": (
     <PrepTimeline caption="Performance milestones to target in your first year at an IT company" phases={[
       { period: "Month 1-3", label: "Onboarding and training", tasks: ["Complete mandatory training (Lex, TCS iEvolve, etc.)", "Get development environment set up and deploy first code", "Understand team's tech stack and codebase structure"], milestone: "First code merged or first task delivered" },
-      { period: "Month 4-6", label: "Independent contribution", tasks: ["Own small features or bug fixes end-to-end", "Participate in code reviews — both giving and receiving", "Raise blockers proactively, don't stay stuck silently"], milestone: "First quarterly review — aim for 'Meets Expectations' or above" },
+      { period: "Month 4-6", label: "Independent contribution", tasks: ["Own small features or bug fixes end-to-end", "Participate in code reviews, both giving and receiving", "Raise blockers proactively, don't stay stuck silently"], milestone: "First quarterly review, aim for 'Meets Expectations' or above" },
       { period: "Month 7-9", label: "Visibility and learning", tasks: ["Volunteer for one cross-team initiative or demo", "Start a relevant certification (AWS, GCP, etc.)", "Track your contributions for appraisal evidence"], milestone: "Certification in progress or completed" },
       { period: "Month 10-12", label: "Appraisal prep", tasks: ["Write your self-assessment with specific examples and metrics", "Have a career conversation with your manager", "Identify skill gaps to address in Year 2"], milestone: "Mid-year or annual appraisal discussion done" },
     ]} />
@@ -134,7 +134,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior Backend (5-8 yr)", min: 28, max: 55 },
       { role: "Staff / Principal (8-12 yr)", min: 45, max: 90 },
       { role: "Engineering Manager / Architect", min: 55, max: 120 },
-    ]} caption="India backend developer salaries 2026 — product companies at upper band, IT services at lower" />
+    ]} caption="India backend developer salaries 2026, product companies at upper band, IT services at lower" />
   ),
 
   "backend-developer-salary-india-2026||Salary by Technology Stack": (
@@ -177,7 +177,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level Full Stack (3-5 yr)", min: 18, max: 40 },
       { role: "Senior Full Stack (5-8 yr)", min: 30, max: 65 },
       { role: "Staff / Lead Full Stack (8+ yr)", min: 50, max: 110 },
-    ]} caption="India full-stack developer salaries 2026 — product startups at upper band" />
+    ]} caption="India full-stack developer salaries 2026, product startups at upper band" />
   ),
 
   "full-stack-developer-salary-india-2026||Salary by Stack: Which Full Stack Combination Pays Most": (
@@ -220,7 +220,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior DevOps (5-8 yr)", min: 28, max: 60 },
       { role: "Principal / Platform Eng (8+ yr)", min: 50, max: 90 },
       { role: "Head of Infrastructure", min: 70, max: 120 },
-    ]} caption="India DevOps engineer salaries 2026 — cloud-native product companies at upper band" />
+    ]} caption="India DevOps engineer salaries 2026, cloud-native product companies at upper band" />
   ),
 
   "devops-engineer-salary-india-2026||What Companies Pay Best for DevOps in India": (
@@ -263,7 +263,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior MLE (5-8 yr)", min: 38, max: 75 },
       { role: "Staff MLE / Research Eng (8-12 yr)", min: 65, max: 105 },
       { role: "Principal / ML Architect", min: 90, max: 130 },
-    ]} caption="India ML engineer salaries 2026 — GenAI/LLM specialisation commands highest premium" />
+    ]} caption="India ML engineer salaries 2026, GenAI/LLM specialisation commands highest premium" />
   ),
 
   "machine-learning-engineer-salary-india-2026||Salary by ML Specialisation": (
@@ -338,7 +338,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior Cloud / Platform Engineer", min: 28, max: 60 },
       { role: "Cloud Architect", min: 45, max: 85 },
       { role: "Principal Cloud Architect / CCoE Lead", min: 70, max: 120 },
-    ]} caption="India cloud computing salaries 2026 — certifications + FinOps skills push into upper bands" />
+    ]} caption="India cloud computing salaries 2026, certifications + FinOps skills push into upper bands" />
   ),
 
   /* top-product-companies-bengaluru-2026: Industry Insights */
@@ -381,7 +381,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "SDE-2 / Mid-Level (3-6 yr)", min: 30, max: 65 },
       { role: "SDE-3 / Senior (6-10 yr)", min: 50, max: 90 },
       { role: "Staff / Principal (10+ yr)", min: 75, max: 110 },
-    ]} caption="Indian product company salaries — Bengaluru 2026. Includes base + variable + pre-IPO equity value" />
+    ]} caption="Indian product company salaries, Bengaluru 2026. Includes base + variable + pre-IPO equity value" />
   ),
 
   /* best-fintech-companies-india-2026: Industry Insights */
@@ -423,7 +423,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level SDE (2-5 yr)", min: 22, max: 50 },
       { role: "Senior SDE (5-8 yr)", min: 40, max: 75 },
       { role: "Staff Engineer (8+ yr)", min: 60, max: 100 },
-    ]} caption="Consumer fintech (Groww, Zerodha, Upstox, CRED) engineer salaries — India 2026" />
+    ]} caption="Consumer fintech (Groww, Zerodha, Upstox, CRED) engineer salaries, India 2026" />
   ),
 
   /* software-engineer-salary-india-2026: Industry Insights */
@@ -434,7 +434,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior Systems Eng (3-6 yr)", min: 10, max: 20 },
       { role: "Lead / Specialist (6-10 yr)", min: 16, max: 32 },
       { role: "Manager / Architect (10+ yr)", min: 25, max: 40 },
-    ]} caption="IT Services company salaries (TCS, Infosys, Wipro, HCL, Cognizant) — India 2026" />
+    ]} caption="IT Services company salaries (TCS, Infosys, Wipro, HCL, Cognizant), India 2026" />
   ),
 
   "software-engineer-salary-india-2026||FAANG India and Global Product Companies": (
@@ -504,7 +504,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
 
   /* campus-placement-guide-india-2026: Industry Insights */
   "campus-placement-guide-india-2026||Timeline: When to Start and What to Do Each Semester": (
-    <PrepTimeline caption="Campus placement preparation — 2-year roadmap for 2026 batch" phases={[
+    <PrepTimeline caption="Campus placement preparation, 2-year roadmap for 2026 batch" phases={[
       {
         period: "3rd Year S1",
         label: "Foundation",
@@ -572,7 +572,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level Engineer (3-6 yr)", min: 28, max: 60 },
       { role: "Senior Engineer (6-10 yr)", min: 45, max: 85 },
       { role: "Staff / Principal (10+ yr)", min: 70, max: 110 },
-    ]} caption="Hyderabad enterprise tech and SaaS salaries 2026 — SAP Labs, Oracle, Qualcomm, Nvidia" />
+    ]} caption="Hyderabad enterprise tech and SaaS salaries 2026, SAP Labs, Oracle, Qualcomm, Nvidia" />
   ),
 
   /* top-tech-companies-pune-2026: Industry Insights */
@@ -610,10 +610,10 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
 
   "top-tech-companies-pune-2026||Pune vs Bengaluru vs Hyderabad: Which City Should You Choose?": (
     <SalaryLadder maxLPA={80} rows={[
-      { role: "Pune — Average SWE (all levels)", min: 8, max: 45, note: "15–20% lower cost of living" },
-      { role: "Hyderabad — Average SWE (all levels)", min: 8, max: 65, note: "No state income tax" },
-      { role: "Bengaluru — Average SWE (all levels)", min: 10, max: 80, note: "Highest pay, highest rent" },
-    ]} caption="City comparison — effective take-home is closer due to cost-of-living differences" />
+      { role: "Pune, Average SWE (all levels)", min: 8, max: 45, note: "15–20% lower cost of living" },
+      { role: "Hyderabad, Average SWE (all levels)", min: 8, max: 65, note: "No state income tax" },
+      { role: "Bengaluru, Average SWE (all levels)", min: 10, max: 80, note: "Highest pay, highest rent" },
+    ]} caption="City comparison, effective take-home is closer due to cost-of-living differences" />
   ),
 
   /* top-tech-companies-chennai-2026: Industry Insights */
@@ -624,7 +624,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level Product Eng (3-5 yr)", min: 18, max: 40 },
       { role: "Senior Product Eng (5-8 yr)", min: 32, max: 65 },
       { role: "Staff / Principal (8+ yr)", min: 50, max: 80 },
-    ]} caption="Chennai tech salaries 2026 — 20–25% lower cost of living vs Bengaluru improves effective value" />
+    ]} caption="Chennai tech salaries 2026, 20–25% lower cost of living vs Bengaluru improves effective value" />
   ),
 
   "top-tech-companies-chennai-2026||Freshworks: Chennai's NASDAQ-Listed Product Company": (
@@ -667,7 +667,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level SDE (3-6 yr)", min: 22, max: 50 },
       { role: "Senior SDE (6-9 yr)", min: 38, max: 72 },
       { role: "Staff / Principal / EM (9+ yr)", min: 58, max: 90 },
-    ]} caption="NCR (Gurugram + Noida) tech salaries 2026 — travel tech, fintech, enterprise tech clusters" />
+    ]} caption="NCR (Gurugram + Noida) tech salaries 2026, travel tech, fintech, enterprise tech clusters" />
   ),
 
   "top-tech-companies-ncr-delhi-2026||Gurugram: India's Travel Tech and Fintech Capital": (
@@ -710,7 +710,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior ML Engineer (4-7 yr)", min: 40, max: 80 },
       { role: "Staff MLE / Research Engineer (7-10 yr)", min: 65, max: 105 },
       { role: "Principal MLE / ML Architect (10+ yr)", min: 90, max: 130 },
-    ]} caption="India AI/ML salaries 2026 — GenAI engineers command 30–50% premium over classical ML" />
+    ]} caption="India AI/ML salaries 2026, GenAI engineers command 30–50% premium over classical ML" />
   ),
 
   "ai-ml-jobs-india-2026||Top Companies Hiring for AI/ML Roles in India in 2026": (
@@ -752,7 +752,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level SDE (2-5 yr)", min: 16, max: 38 },
       { role: "Senior SDE (5-8 yr)", min: 28, max: 60 },
       { role: "Staff / Principal (8+ yr)", min: 45, max: 80 },
-    ]} caption="EdTech salaries 2026 — PW and Scaler at top; BYJU's excluded due to financial distress" />
+    ]} caption="EdTech salaries 2026, PW and Scaler at top; BYJU's excluded due to financial distress" />
   ),
 
   "top-edtech-companies-india-2026||Honest Assessment: Which EdTech Companies Are Safe in 2026": (
@@ -794,7 +794,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level SDE (2-5 yr)", min: 18, max: 40 },
       { role: "Senior SDE (5-8 yr)", min: 32, max: 65 },
       { role: "Staff / Principal (8+ yr)", min: 50, max: 80 },
-    ]} caption="India HealthTech salaries 2026 — Tata 1mg/Practo at upper end; Apollo Healthco mid-range" />
+    ]} caption="India HealthTech salaries 2026, Tata 1mg/Practo at upper end; Apollo Healthco mid-range" />
   ),
 
   "top-healthtech-companies-india-2026||Practo and Tata 1mg: India's Two Largest Digital Health Platforms": (
@@ -868,7 +868,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Global SaaS Remote (Atlassian, GitLab)", min: 35, max: 95, note: "India band" },
       { role: "US Product Co Remote (Stripe, Notion)", min: 60, max: 140, note: "~USD salary, India resident" },
       { role: "US Contractor via Platform (Turing, Arc)", min: 50, max: 160, note: "Gross, pre-tax" },
-    ]} caption="Remote software engineer salaries from India 2026 — foreign employer rates converted at ₹83/USD" />
+    ]} caption="Remote software engineer salaries from India 2026, foreign employer rates converted at ₹83/USD" />
   ),
 
   /* top-fintech-companies-india-2026: Industry Insights */
@@ -878,7 +878,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level Fintech SDE (2-5 yr)", min: 22, max: 50 },
       { role: "Senior Fintech SDE (5-8 yr)", min: 40, max: 75 },
       { role: "Staff / Principal (8+ yr)", min: 60, max: 100 },
-    ]} caption="India fintech engineer salaries 2026 — payments infra (Razorpay, PhonePe) at upper band" />
+    ]} caption="India fintech engineer salaries 2026, payments infra (Razorpay, PhonePe) at upper band" />
   ),
 
   "top-fintech-companies-india-2026||India's Top Fintech Engineering Employers in 2026": (
@@ -920,7 +920,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Mid-Level Engineer (2-5 yr)", min: 16, max: 38 },
       { role: "Senior Engineer (5-8 yr)", min: 28, max: 60 },
       { role: "Staff / Lead (8+ yr)", min: 45, max: 80 },
-    ]} caption="India gaming tech salaries 2026 — real-money gaming (Dream11, MPL) pays higher than game dev" />
+    ]} caption="India gaming tech salaries 2026, real-money gaming (Dream11, MPL) pays higher than game dev" />
   ),
 
   "top-gaming-companies-india-2026||India's Top Gaming Engineering Employers in 2026": (
@@ -962,7 +962,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Data Engineer II (2-5 yr)", min: 18, max: 42 },
       { role: "Senior Data Engineer (5-8 yr)", min: 35, max: 68 },
       { role: "Staff / Principal DE (8+ yr)", min: 55, max: 90 },
-    ]} caption="India data engineering salaries 2026 — Spark + Kafka + dbt stack commands top rates" />
+    ]} caption="India data engineering salaries 2026, Spark + Kafka + dbt stack commands top rates" />
   ),
 
   "data-engineering-jobs-india-2026||Data Engineering Skills Required in India 2026": (
@@ -1005,7 +1005,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior Cloud Engineer (5-8 yr)", min: 30, max: 62 },
       { role: "Cloud Architect (8-12 yr)", min: 50, max: 90 },
       { role: "Principal / CCoE Lead (12+ yr)", min: 75, max: 100 },
-    ]} caption="India cloud engineering salaries 2026 — multi-cloud + FinOps expertise pushes into architect range" />
+    ]} caption="India cloud engineering salaries 2026, multi-cloud + FinOps expertise pushes into architect range" />
   ),
 
   "cloud-computing-jobs-india-2026||Cloud Computing Roles in Highest Demand in India 2026": (
@@ -1048,7 +1048,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Senior Security Engineer (5-8 yr)", min: 28, max: 58 },
       { role: "Security Architect (8-12 yr)", min: 48, max: 80 },
       { role: "CISO / Principal (12+ yr)", min: 70, max: 90 },
-    ]} caption="India cybersecurity salaries 2026 — Cloud Security and AppSec command highest premiums" />
+    ]} caption="India cybersecurity salaries 2026, Cloud Security and AppSec command highest premiums" />
   ),
 
   "cybersecurity-jobs-india-2026||Cybersecurity Roles in Highest Demand in India 2026": (
@@ -1118,7 +1118,7 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
 
   "top-startups-hiring-engineers-india-2026||How to Evaluate ESOP Offers at Indian Startups": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Verify vesting schedule", hint: "Standard is 4-year vesting with 1-year cliff. Beware anything shorter — it signals early-exit risk." },
+      { number: "01", label: "Verify vesting schedule", hint: "Standard is 4-year vesting with 1-year cliff. Beware anything shorter, it signals early-exit risk." },
       { number: "02", label: "Calculate strike price vs 409A/FMV", hint: "Strike price should be at or near the FMV at grant time. A high strike vs current valuation makes options near-worthless." },
       { number: "03", label: "Check exercise window", hint: "Post-termination exercise window (PTEW) should be 5–10 years, not 90 days. 90-day windows force you to buy or lose." },
       { number: "04", label: "Understand liquidation preferences", hint: "1x non-participating is fair. 2x participating preferred means investors take double before common shareholders (you) see anything." },
@@ -1135,6 +1135,6 @@ export const SECTION_VISUALS_5: Record<string, ReactNode> = {
       { role: "Java Developer (3–5 yrs)", min: 15, max: 30 },
       { role: "Senior Java Developer (5–8 yrs)", min: 25, max: 50 },
       { role: "Lead / Principal Engineer (8+ yrs)", min: 40, max: 80 },
-    ]} caption="India 2026 — Spring Boot + Microservices experience commands top of band" />
+    ]} caption="India 2026, Spring Boot + Microservices experience commands top of band" />
   ),
 };

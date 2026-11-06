@@ -258,15 +258,15 @@ function AutocompleteInput({
 /* ─── Intro text for TTS pre-fetch ─── */
 const introByType: Record<string, string> = {
   behavioral: "Hi! Welcome to your behavioral mock interview. I'm your AI interviewer today. We'll focus on leadership, decision-making, and conflict resolution. This will take about 15 minutes. Feel free to take your time. Ready?",
-  strategic: "Welcome to your strategic interview session. Today we'll explore your vision-setting ability, roadmap thinking, and business alignment. Let's dive in — are you ready?",
+  strategic: "Welcome to your strategic interview session. Today we'll explore your vision-setting ability, roadmap thinking, and business alignment. Let's dive in, are you ready?",
   technical: "Welcome to your technical leadership interview. We'll focus on architecture decisions, system design at scale, and tech strategy. Ready to begin?",
   "case-study": "Welcome to your case study interview. I'll present you with business scenarios that test your analytical thinking and problem-solving frameworks. Let's start.",
   "salary-negotiation": "Welcome to your salary negotiation practice session. I'll play the role of a hiring manager extending you an offer. We'll practice negotiating compensation, benefits, and terms. This is a safe space to build your confidence. Ready to negotiate?",
-  "panel": "Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. We'll each ask you questions from our perspective. Let's begin — tell us briefly about yourself.",
-  "campus-placement": "Welcome to your campus placement interview practice. We'll cover the typical questions asked during on-campus recruitment — aptitude, HR, and role-specific questions. Let's get you placement-ready!",
+  "panel": "Welcome to your panel interview. I'm the hiring manager, and I'll be joined by our technical lead and HR partner. We'll each ask you questions from our perspective. Let's begin, tell us briefly about yourself.",
+  "campus-placement": "Welcome to your campus placement interview practice. We'll cover the typical questions asked during on-campus recruitment, aptitude, HR, and role-specific questions. Let's get you placement-ready!",
   "hr-round": "Welcome to your HR round practice. We'll focus on culture fit, motivation, salary expectations, and behavioral questions that HR teams typically ask. Ready?",
   "management": "Welcome to your management interview. We'll explore your people leadership, project management, and stakeholder communication skills. Let's begin.",
-  "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?",
+  "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin, are you ready?",
 };
 
 /* Locked focuses render as "Coming soon" in the picker; the rule lives in
@@ -390,7 +390,7 @@ function PermissionCard({
     if (denyReason === "no-device") {
       return kind === "mic"
         ? "No microphone detected. Connect one and retry."
-        : "No camera detected — you can still proceed without one.";
+        : "No camera detected, you can still proceed without one.";
     }
     if (denyReason === "in-use") {
       return kind === "mic"
@@ -402,7 +402,7 @@ function PermissionCard({
         ? "Blocked. Tap aA in the address bar → Website Settings → Microphone → Allow, then retry."
         : "Blocked. Open browser settings → allow microphone, then retry.";
     }
-    return "Blocked — you can still proceed without camera.";
+    return "Blocked, you can still proceed without camera.";
   })();
 
   return (
@@ -522,7 +522,7 @@ function PermissionCard({
                 "warn-offcenter": { label: "Lighting ✓", tone: T.success },
                 "warn-motion": { label: "Lighting ✓", tone: T.success },
                 "fail-dark": { label: "Add more light", tone: T.error },
-                "fail-bright": { label: "Too bright — diffuse the light", tone: T.error },
+                "fail-bright": { label: "Too bright, diffuse the light", tone: T.error },
                 "fail-offcenter": { label: "Lighting ✓", tone: T.success },
                 "fail-motion": { label: "Lighting ✓", tone: T.success },
               },
@@ -546,7 +546,7 @@ function PermissionCard({
                 "fail-dark": { label: "Sharp ✓", tone: T.success },
                 "fail-bright": { label: "Sharp ✓", tone: T.success },
                 "fail-offcenter": { label: "Sharp ✓", tone: T.success },
-                "fail-motion": { label: "Hold still — too much motion", tone: T.error },
+                "fail-motion": { label: "Hold still, too much motion", tone: T.error },
               },
             } as const;
             const items = [
@@ -1788,14 +1788,14 @@ export default function SessionSetup() {
                         value={targetCompany}
                         onChange={(v) => { setTargetCompany(v); setCompanyTouched(true); }}
                         suggestions={COMPANY_SUGGESTIONS}
-                        placeholder={isNegotiationFocus ? "Required for salary negotiation — e.g. Razorpay, Google" : "e.g. Flipkart, Razorpay, TCS..."}
+                        placeholder={isNegotiationFocus ? "Required for salary negotiation, e.g. Razorpay, Google" : "e.g. Flipkart, Razorpay, TCS..."}
                         label={isNegotiationFocus ? "Company" : "Company (optional)"}
                         required={companyRequired}
                         error={
                           companyTouched && companyMissing
-                            ? "Required — we calibrate the offer band to this company"
+                            ? "Required, we calibrate the offer band to this company"
                             : hardRoleCompanyMismatch
-                              ? `${targetRole.trim()} doesn't typically exist at ${targetCompany.trim()} — pick a different role or company.`
+                              ? `${targetRole.trim()} doesn't typically exist at ${targetCompany.trim()}, pick a different role or company.`
                               : undefined
                         }
                       />
@@ -1811,10 +1811,10 @@ export default function SessionSetup() {
                           <span style={{ flexShrink: 0, marginTop: 1 }}>ⓘ</span>
                           <span>
                             {simulatedMarketMode === "soft"
-                              ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Soft market simulation</strong> — recruiter will concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.</>
+                              ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Soft market simulation</strong>: recruiter will concede ~30% less than baseline. Cash gains here are harder-won than the % suggests.</>
                               : simulatedMarketMode === "hot"
-                                ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong> — recruiter has more flex to stretch. Push confidently on your ask.</>
-                                : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong> — standard recruiter concession behaviour.</>
+                                ? <><strong style={{ color: T.coal, fontWeight: 600 }}>Competitive market simulation</strong>: recruiter has more flex to stretch. Push confidently on your ask.</>
+                                : <><strong style={{ color: T.coal, fontWeight: 600 }}>Neutral market simulation</strong>: standard recruiter concession behaviour.</>
                             }
                           </span>
                         </div>
@@ -1842,10 +1842,10 @@ export default function SessionSetup() {
                         { value: "Strategic", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>, desc: "Show how you set vision and align teams" },
                         { value: "Technical Leadership", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>, desc: "Walk through architecture and tech tradeoffs" },
                         { value: "Case Study", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>, desc: "Solve real business problems out loud" },
-                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork — fresher style" },
+                        { value: "Campus Placement", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>, desc: "Talk projects, goals, and teamwork, fresher style" },
                         { value: "HR Round", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Culture fit, motivation, salary expectations" },
                         { value: "Management", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>, desc: "How you lead, hire, and handle change" },
-                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
+                        { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once, manager, peer, HR" },
                         { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
                         { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
                       ];
@@ -1947,7 +1947,7 @@ export default function SessionSetup() {
                   <div style={{ marginBottom: 14 }}>
                     <h2 style={{ margin: 0, fontFamily: F.sans, fontSize: 13, fontWeight: 500, color: T.coal }}>Permissions</h2>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
-                      Used live for this session only — audio and video are never recorded. Only your session transcript is saved, so you can review your report.
+                      Used live for this session only, audio and video are never recorded. Only your session transcript is saved, so you can review your report.
                     </div>
                   </div>
                   <div className="ob-permissions-grid">
@@ -2014,12 +2014,12 @@ export default function SessionSetup() {
             if (isUrgent && creditBalance !== null && creditBalance > 0) return null;
             const message = showStarter
               ? starterRemaining === 0
-                ? 'Sprint Pack used up — buy session credits to keep going.'
+                ? 'Sprint Pack used up, buy session credits to keep going.'
                 : `${starterRemaining} of ${STARTER_WEEKLY_LIMIT} sessions left in your pack.`
               : freeLeft <= 0
-              ? 'No free sessions left — upgrade to continue.'
+              ? 'No free sessions left, upgrade to continue.'
               : freeLeft === 1
-              ? 'Last free session — make it your hardest target company.'
+              ? 'Last free session, make it your hardest target company.'
               : `${freeLeft} free sessions remaining.`;
             return (
               <div

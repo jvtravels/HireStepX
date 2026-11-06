@@ -318,7 +318,7 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
   const tips: Array<{ kbd: string; title: string; body: React.ReactNode }> = [
     {
       kbd: "Space",
-      title: "Voice or text — both work",
+      title: "Voice or text, both work",
       body: <>Just start speaking. We&rsquo;re always listening. Press <strong>Space</strong> when you&rsquo;re done, or type instead.</>,
     },
     {
@@ -404,7 +404,7 @@ export const InterviewCoachmarks = memo(function InterviewCoachmarks() {
         </ul>
         <div style={{ marginTop: 22, display: "flex", justifyContent: "flex-end" }}>
           <Button ref={dismissBtnRef} type="button" size="lg" onClick={dismiss}>
-            Got it — let&rsquo;s start
+            Got it, let&rsquo;s start
           </Button>
         </div>
       </div>

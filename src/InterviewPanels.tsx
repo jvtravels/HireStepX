@@ -675,7 +675,7 @@ export const UserAnswerArea = memo(function UserAnswerArea({ currentTranscript, 
               )
             ) : (
               <p style={{ fontFamily: ef.sans, fontSize: 13, color: e.inkSoft, lineHeight: 1.7, margin: 0 }}>
-                Start speaking — your answer will appear here...
+                Start speaking, your answer will appear here...
               </p>
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6 }}>
@@ -838,7 +838,7 @@ export const CompletionCard = memo(function CompletionCard({ currentQuestionNum,
           padding: "6px 12px", borderRadius: 999,
           background: e.indigo100, border: `1px solid oklch(0.359 0.135 278.697 / 0.20)`,
         }}>
-          {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"} — score is estimated from session metrics
+          {evalTimedOut ? "AI evaluation timed out" : "AI evaluation unavailable"}, score is estimated from session metrics
         </p>
       )}
       {videoURL && (
@@ -892,15 +892,15 @@ export const MicroFeedbackPanel = memo(function MicroFeedbackPanel({ transcript,
   // Render SKIPPED sentinels as a friendly chip instead of leaking the
   // raw "[SKIPPED — reason: too_hard]" engineering token to the user.
   // The reason maps to a short human label.
-  const skipMatch = lastUserMsg.text.trim().match(/^\[SKIPPED\s*[—–-]\s*reason:\s*([^\]]*)\]\s*$/i);
+  const skipMatch = lastUserMsg.text.trim().match(/^\[SKIPPED\s*[, –-]\s*reason:\s*([^\]]*)\]\s*$/i);
   const skipReasonLabel: string | null = skipMatch ? (() => {
     const raw = skipMatch[1].trim().toLowerCase();
-    if (raw === "too_hard") return "Skipped — too hard";
-    if (raw === "blank_mind" || raw === "blank") return "Skipped — drew a blank";
-    if (raw === "off_topic" || raw === "off-topic") return "Skipped — off-topic";
-    if (raw === "no_experience") return "Skipped — no experience";
+    if (raw === "too_hard") return "Skipped, too hard";
+    if (raw === "blank_mind" || raw === "blank") return "Skipped, drew a blank";
+    if (raw === "off_topic" || raw === "off-topic") return "Skipped, off-topic";
+    if (raw === "no_experience") return "Skipped, no experience";
     if (raw === "no_reason" || raw === "") return "Skipped";
-    return `Skipped — ${raw.replace(/_/g, " ")}`;
+    return `Skipped, ${raw.replace(/_/g, " ")}`;
   })() : null;
   // Dedupe immediate STT echo: collapse repeated word and short-phrase
   // stutters ("where where", "to it is very difficult to it is very
@@ -1404,7 +1404,7 @@ export const EndModal = memo(function EndModal({ currentQuestionNum, totalQuesti
         {isOffline && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 10, background: e.error100, border: `1px solid ${e.errorLine}` }}>
             <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={e.error} strokeWidth="2"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/></svg>
-            <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline — AI evaluation may fail. Your answers will be saved locally.</span>
+            <span style={{ fontFamily: ef.sans, fontSize: 12, color: e.error }}>You&rsquo;re offline, AI evaluation may fail. Your answers will be saved locally.</span>
           </div>
         )}
         <AlertDialogFooter>

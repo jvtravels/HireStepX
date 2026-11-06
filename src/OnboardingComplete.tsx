@@ -216,10 +216,10 @@ export default function OnboardingComplete() {
                 {sessionCount === 1
                   ? "Unlock 15-minute sessions for deeper, more realistic interview practice."
                   : score >= 85
-                    ? "You're already interview-ready — longer sessions will sharpen your edge."
+                    ? "You're already interview-ready, longer sessions will sharpen your edge."
                     : score >= 70
                       ? "Great progress! 15-min sessions unlock deeper practice to push past 85."
-                      : `${FREE_SESSION_LIMIT - sessionCount <= 0 ? "You've used all" : `Only ${FREE_SESSION_LIMIT - sessionCount}`} free session${FREE_SESSION_LIMIT - sessionCount === 1 ? "" : "s"} left — upgrade to keep improving.`}
+                      : `${FREE_SESSION_LIMIT - sessionCount <= 0 ? "You've used all" : `Only ${FREE_SESSION_LIMIT - sessionCount}`} free session${FREE_SESSION_LIMIT - sessionCount === 1 ? "" : "s"} left, upgrade to keep improving.`}
               </p>
               <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, marginBottom: 12 }}>
                 {score >= 70 ? "Pro users improve 2× faster with extended sessions and analytics." : "Most users see 15+ point improvement with focused practice."}
@@ -237,7 +237,7 @@ export default function OnboardingComplete() {
                 onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.25)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(49,46,129,0.15)"; }}
               >
-                View Plans — from ₹9/session
+                View Plans, from ₹9/session
               </Button>
             </div>
           )}
@@ -255,7 +255,7 @@ export default function OnboardingComplete() {
                 Curriculum Complete{user?.name ? `, ${user.name.split(" ")[0]}` : ""}!
               </span>
               <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, marginTop: 8, lineHeight: 1.6, maxWidth: 380, margin: "8px auto 0" }}>
-                You've finished all {FREE_SESSION_LIMIT} free sessions. Your score went from your first session to {score} — that's real progress.
+                You've finished all {FREE_SESSION_LIMIT} free sessions. Your score went from your first session to {score}, that's real progress.
               </p>
               <div className="obc-steps" style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 20, marginBottom: 20 }}>
                 {[
@@ -273,7 +273,7 @@ export default function OnboardingComplete() {
                 ))}
               </div>
               <p style={{ fontFamily: font.ui, fontSize: 13, fontWeight: 500, color: T.indigo, marginBottom: 16 }}>
-                Keep your momentum — upgrade to continue practicing with longer sessions, analytics, and AI coaching.
+                Keep your momentum, upgrade to continue practicing with longer sessions, analytics, and AI coaching.
               </p>
               <Button
                 type="button"
@@ -288,7 +288,7 @@ export default function OnboardingComplete() {
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 12px 40px rgba(49,46,129,0.35)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 8px 32px rgba(49,46,129,0.25)"; }}
               >
-                Upgrade — from ₹9/session
+                Upgrade, from ₹9/session
               </Button>
             </div>
           ) : (

@@ -236,7 +236,7 @@ export function UpcomingInterviews({ events, isMobile, onNavigate }: { events: C
           const urgent = days <= 3;
           const isToday = days === 0;
           return (
-            <div key={ev.id} role="button" tabIndex={0} aria-label={`${ev.company} interview — ${isToday ? "Today" : `${days} days away`}`}
+            <div key={ev.id} role="button" tabIndex={0} aria-label={`${ev.company} interview, ${isToday ? "Today" : `${days} days away`}`}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate("/calendar"); } }}
               style={{ padding: "16px 20px", borderRadius: radius.md, background: c.obsidian, borderLeft: `3px solid ${isToday ? c.ember : urgent ? T.indigo : c.sage}`, cursor: "pointer", transition: "background 0.2s ease" }} onClick={() => onNavigate("/calendar")}
               onMouseEnter={(e) => e.currentTarget.style.background = "rgba(14,12,8,0.02)"}
@@ -352,7 +352,7 @@ export function ChartsRow({ scoreTrend, skills, isMobile, onStartSession, onNavi
               <SkillRadar skills={skills} />
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 14 }}>
                 {skills.map((sk) => (
-                  <div key={sk.name} role="button" tabIndex={0} aria-label={`Practice ${skillLabel(sk.name)} — score ${sk.score}`}
+                  <div key={sk.name} role="button" tabIndex={0} aria-label={`Practice ${skillLabel(sk.name)}, score ${sk.score}`}
                     onClick={() => onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`)}
                     onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onNavigate(`/session/new?type=behavioral&focus=${sk.name.toLowerCase().replace(/\s+/g, "-")}`); } }}
                     style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "6px 8px", margin: "-6px -8px", borderRadius: radius.sm, transition: "background 0.15s ease" }}

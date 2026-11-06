@@ -68,7 +68,7 @@ export default function GlobalLayoutError({
             margin: "0 0 24px",
           }}
         >
-          A core part of the app failed to start. Try refreshing — if it
+          A core part of the app failed to start. Try refreshing, if it
           keeps happening, please reach out.
         </p>
         {error.digest ? (

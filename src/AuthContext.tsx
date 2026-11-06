@@ -483,7 +483,7 @@ function reconcileUserScopedStorage(currentUserId: string | null) {
       return;
     }
     if (previous && previous !== currentUserId) {
-      console.info(`[auth] user changed (${previous.slice(0, 8)} → ${currentUserId.slice(0, 8)}) — wiping per-user localStorage`);
+      console.info(`[auth] user changed (${previous.slice(0, 8)} → ${currentUserId.slice(0, 8)}), wiping per-user localStorage`);
       try { localStorage.removeItem(tierCacheKey(previous)); } catch { /* expected */ }
       wipeUserScopedStorage();
     }
@@ -942,7 +942,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               client.auth.getSession().then(r => r.data.session ?? null),
               new Promise<null>((resolve) => {
                 getSessionTimer = setTimeout(() => {
-                  console.warn("[auth] getSession() exceeded 7s — treating as no session (browser extension may be blocking fetch)");
+                  console.warn("[auth] getSession() exceeded 7s, treating as no session (browser extension may be blocking fetch)");
                   resolve(null);
                 }, 7000);
               }),
@@ -970,7 +970,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const supabaseConfirmedRestore = !!session.user.email_confirmed_at;
           const isOnResetPage = window.location.pathname === "/reset-password";
           if (!isGoogleUser && !customVerified && !supabaseConfirmedRestore && !isOnResetPage) {
-            console.warn("[auth] unverified email session found — signing out");
+            console.warn("[auth] unverified email session found, signing out");
             setUser(null);
             await client.auth.signOut().catch(() => {});
             clearTimeout(safetyTimer);
@@ -980,7 +980,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Enforce client-side "Stay signed in" TTL — if the session
           // has aged past 24h (unchecked) or 30d (checked), force re-auth.
           if (isSessionExpiredByPreference()) {
-            console.info("[auth] session expired by Stay-signed-in TTL — signing out");
+            console.info("[auth] session expired by Stay-signed-in TTL, signing out");
             const staleAccessToken = session.access_token;
             setUser(null);
             clearSessionStart();
@@ -1153,7 +1153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // report. checkExpiry (which respects the same flag) handles any
             // genuine expiry once the interview ends.
             if (_interviewRefcount > 0) {
-              console.warn("[auth] skipping background refresh — interview in progress");
+              console.warn("[auth] skipping background refresh, interview in progress");
               return;
             }
             client.auth.refreshSession().then(({ data: refreshData, error: refreshError }) => {
@@ -1162,7 +1162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 if (refreshError?.message?.includes("Invalid Refresh Token") ||
                     refreshError?.message?.includes("Refresh Token Not Found") ||
                     refreshError?.status === 401) {
-                  console.warn("[auth] refresh token invalid — signing out");
+                  console.warn("[auth] refresh token invalid, signing out");
                   setUser(null);
                   client.auth.signOut().catch(err => console.warn("[auth] signOut failed:", err?.message));
                 }
@@ -1202,7 +1202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const customVerifiedEvent = session.user.user_metadata?.custom_email_verified === true;
           const supabaseConfirmedEvent = !!session.user.email_confirmed_at;
           if (!isGoogleProvider && !customVerifiedEvent && !supabaseConfirmedEvent && !isOnResetPage) {
-            console.warn("[auth] onAuthStateChange: unverified email — signing out");
+            console.warn("[auth] onAuthStateChange: unverified email, signing out");
             setUser(null);
             await client.auth.signOut().catch(() => {});
             setLoading(false);
@@ -1730,7 +1730,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!result.ok) {
       const details = result.data?.details || "";
       const missing = result.data?.missingColumn;
-      console.error(`[updateUser] API update failed (${result.status}): ${result.error}${details ? ` — ${details}` : ""}${missing ? ` [missingColumn=${missing}]` : ""}`);
+      console.error(`[updateUser] API update failed (${result.status}): ${result.error}${details ? `, ${details}` : ""}${missing ? ` [missingColumn=${missing}]` : ""}`);
       console.error("[updateUser] payload keys:", Object.keys(payload));
     }
   }, []);
@@ -1842,7 +1842,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // We retry the refresh in 60s; if the interview finishes first,
           // the next tick signs them out cleanly.
           if (_interviewRefcount > 0) {
-            console.warn("[auth] Session expired during interview — deferring signout until session ends.");
+            console.warn("[auth] Session expired during interview, deferring signout until session ends.");
             setSessionExpiryWarning("Session needs to refresh after this interview ends.");
             return;
           }

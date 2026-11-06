@@ -124,7 +124,7 @@ export const SessionHeader = memo(function SessionHeader({ type, dateLabel, scor
       </div>
       <div style={{ textAlign: "center", flexShrink: 0 }}>
         <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: c.stone, display: "block", marginBottom: 8 }}>Overall Score</span>
-        <div role="img" aria-label={`Score ${score} out of 100 — ${scoreLabel(score)}`} style={{
+        <div role="img" aria-label={`Score ${score} out of 100, ${scoreLabel(score)}`} style={{
           width: 72, height: 72, borderRadius: "50%",
           border: `3px solid ${scoreLabelColor(score)}`,
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
@@ -585,7 +585,7 @@ export const WhatsNext = memo(function WhatsNext({ session, skillEntries, isFree
       <h3 style={{ fontSize: 16, fontWeight: 600, color: c.ivory, marginBottom: 8 }}>What's Next?</h3>
       {weakest && (
         <p style={{ fontSize: 13, color: c.stone, lineHeight: 1.5, marginBottom: 16 }}>
-          Your <strong style={{ color: c.chalk }}>{weakest.name}</strong> scored {weakest.score} — focus a session on this to improve fastest.
+          Your <strong style={{ color: c.chalk }}>{weakest.name}</strong> scored {weakest.score}, focus a session on this to improve fastest.
         </p>
       )}
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>

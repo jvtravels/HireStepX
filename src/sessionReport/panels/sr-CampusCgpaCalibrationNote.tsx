@@ -66,7 +66,7 @@ export function CampusCgpaCalibrationNote({
               letterSpacing: 0.2,
               textTransform: "none",
             }}
-            title="Campus archetype — drives the CGPA bar, DSA expectation, and bond/location-flex rubric"
+            title="Campus archetype, drives the CGPA bar, DSA expectation, and bond/location-flex rubric"
           >
             {archetypeLabel}
           </span>

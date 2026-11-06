@@ -21,7 +21,7 @@ export function CredibilitySection({
   return (
     <section
       id="ir-section-credibility"
-      aria-label="Credibility — resume vs transcript"
+      aria-label="Credibility, resume vs transcript"
       style={{
         background: t.errorWash,
         border: `1px solid ${t.error}`,
@@ -62,7 +62,7 @@ export function CredibilitySection({
             color: t.coal,
           }}
         >
-          BGV-risk audit — fix before the next interview
+          BGV-risk audit, fix before the next interview
         </h2>
       </header>
       <p
@@ -78,7 +78,7 @@ export function CredibilitySection({
         What you said in the interview drifted from what your resume
         claims. Indian recruiters cross-check these against the
         offer letter, transcript, and degree certificate during
-        background verification — each one is an instant-disqualifier
+        background verification, each one is an instant-disqualifier
         if it surfaces post-offer.
       </p>
       <ul

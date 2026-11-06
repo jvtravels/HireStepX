@@ -52,13 +52,13 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
       ? "Reference levels.fyi or Glassdoor data for your level. Anchor to the market, not your current CTC."
       : "State your target range backed by market data, not your current salary." },
     { icon: "3", title: "Think total comp", desc: isStartup
-      ? "Equity is key in startups — ask about ESOP pool %, vesting schedule, cliff period, and strike price."
+      ? "Equity is key in startups, ask about ESOP pool %, vesting schedule, cliff period, and strike price."
       : isFintech
-      ? "Fintech often has strong variable pay — ask about performance bonus structure, RSUs, and retention bonuses."
-      : "Negotiate equity, joining bonus, flexibility, and learning budget — not just base." },
+      ? "Fintech often has strong variable pay, ask about performance bonus structure, RSUs, and retention bonuses."
+      : "Negotiate equity, joining bonus, flexibility, and learning budget, not just base." },
     { icon: "4", title: "Trade, don't just ask", desc: isConsulting
       ? "Trade flexibility for base: 'I'll commit to weekend travel if we can agree on ₹X base + quarterly bonuses.'"
-      : "\"I can accept ₹X base if you add a ₹Y joining bonus\" — give something to get something." },
+      : "\"I can accept ₹X base if you add a ₹Y joining bonus\", give something to get something." },
     { icon: "5", title: "Close with next steps", desc: "Ask about timeline, offer letter, and start date. Don't leave it open-ended." },
   ];
 
@@ -127,7 +127,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
         </div>
         <p style={{ fontFamily: ef.sans, fontSize: 11, color: targetInvalid ? e.error : e.inkSoft, margin: 0 }}>
           {targetInvalid
-            ? "Enter your target as annual LPA — a number between 1 and 200 (e.g. 25)."
+            ? "Enter your target as annual LPA, a number between 1 and 200 (e.g. 25)."
             : "Setting a target helps us coach you on whether you anchored high enough."}
         </p>
       </div>
@@ -153,8 +153,8 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {([
               { id: "standard", label: "Standard Offer", desc: "Typical negotiation from initial offer" },
-              { id: "lowball", label: "Lowball Recovery", desc: "Offer 20-30% below market — fight back" },
-              { id: "exploding", label: "Exploding Offer", desc: "24-hour deadline — handle pressure" },
+              { id: "lowball", label: "Lowball Recovery", desc: "Offer 20-30% below market, fight back" },
+              { id: "exploding", label: "Exploding Offer", desc: "24-hour deadline, handle pressure" },
               { id: "competing", label: "Competing Offers", desc: "Use multiple offers as leverage" },
             ]).map(s => (
               <Button
@@ -174,7 +174,7 @@ export const NegotiationCoachingCard = memo(function NegotiationCoachingCard({ o
       )}
 
       <Button style={{ marginTop: 4 }} onClick={handleStart}>
-        Got it — start negotiation
+        Got it, start negotiation
       </Button>
     </div>
   );
@@ -610,7 +610,7 @@ export const NegotiationLiveDashboard = memo(function NegotiationLiveDashboard({
   const phaseGuidance: Record<string, string> = {
     "offer-reaction": "Don't accept yet. Thank them, show interest, and ask for details.",
     "probe-expectations": "Share your research-backed expectations. Anchor high with reasoning.",
-    "counter-offer": "State your specific number. Trade concessions — don't just ask.",
+    "counter-offer": "State your specific number. Trade concessions, don't just ask.",
     "benefits-discussion": "Think total comp: equity, bonus, flexibility, learning budget.",
     "closing-pressure": "Use competing offers or BATNA. Don't fold under deadline pressure.",
     "closing": "Confirm all terms explicitly. Set clear next steps and timelines.",
@@ -890,40 +890,40 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
       if (turn.speaker === "user") {
         // Check for salary numbers
         if (/₹?\s*\d+(?:\.\d+)?\s*(?:lpa|lakh)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Named a specific number — anchoring." });
+          annotations.push({ type: "positive", text: "Named a specific number, anchoring." });
         }
         if (/(?:equity|esop|stock|rsu)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Explored equity/ESOPs — thinking total comp." });
+          annotations.push({ type: "positive", text: "Explored equity/ESOPs, thinking total comp." });
         }
         if (/(?:other offer|competing|another company)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Mentioned competing offers — building leverage." });
+          annotations.push({ type: "positive", text: "Mentioned competing offers, building leverage." });
         }
         if (/(?:joining bonus|sign.?on|bonus)/i.test(text)) {
           annotations.push({ type: "positive", text: "Asked about joining bonus." });
         }
         if (/(?:remote|wfh|flexible|hybrid)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Negotiated flexibility — total package thinking." });
+          annotations.push({ type: "positive", text: "Negotiated flexibility, total package thinking." });
         }
         if (/(?:i accept|sounds good|that works|it.?s a deal|fine with me)/i.test(text) && idx < visible.length - 2) {
-          annotations.push({ type: "negative", text: "Accepted early — may have left value on the table." });
+          annotations.push({ type: "negative", text: "Accepted early, may have left value on the table." });
         }
         if (/(?:current(?:ly)?\s+(?:earning|getting|making|drawing)|my ctc)/i.test(text)) {
-          annotations.push({ type: "negative", text: "Revealed current salary — weaker bargaining position." });
+          annotations.push({ type: "negative", text: "Revealed current salary, weaker bargaining position." });
         }
         if (text.trim().split(/\s+/).length < 8 && idx > 0) {
-          annotations.push({ type: "neutral", text: "Short response — could be tactical silence or missed opportunity." });
+          annotations.push({ type: "neutral", text: "Short response, could be tactical silence or missed opportunity." });
         }
         if (/(?:market.*data|glassdoor|levels\.fyi|benchmark|ambition\s*box)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Referenced market data — strong justification." });
+          annotations.push({ type: "positive", text: "Referenced market data, strong justification." });
         }
         if (/(?:walk away|alternative|plan b|other option)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Mentioned BATNA — strong leverage signal." });
+          annotations.push({ type: "positive", text: "Mentioned BATNA, strong leverage signal." });
         }
         if (/(?:need time|think about|sleep on|let me think|get back to you)/i.test(text)) {
-          annotations.push({ type: "positive", text: "Asked for time — prevents pressure-driven decisions." });
+          annotations.push({ type: "positive", text: "Asked for time, prevents pressure-driven decisions." });
         }
         if (annotations.length === 0 && text.length > 20) {
-          annotations.push({ type: "neutral", text: "General response — consider adding specific numbers or trade-offs." });
+          annotations.push({ type: "neutral", text: "General response, consider adding specific numbers or trade-offs." });
         }
       } else {
         // AI turn annotations
@@ -939,10 +939,10 @@ export const AnnotatedReplayPanel = memo(function AnnotatedReplayPanel({ transcr
           }
         }
         if (/(?:can'?t|unable|not possible|budget|constraint|limit)/i.test(text)) {
-          annotations.push({ type: "neutral", text: "Pushback — test your composure. Counter with reasoning." });
+          annotations.push({ type: "neutral", text: "Pushback, test your composure. Counter with reasoning." });
         }
         if (/(?:final|last|best|take it or leave)/i.test(text)) {
-          annotations.push({ type: "neutral", text: "Closing pressure — don't cave. Explore other components." });
+          annotations.push({ type: "neutral", text: "Closing pressure, don't cave. Explore other components." });
         }
       }
       return { ...turn, annotations };

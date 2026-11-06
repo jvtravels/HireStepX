@@ -154,7 +154,7 @@ export function BandMix({ d }: { d: Fixture }) {
             if (noHire / total > 0.3) {
               return (
                 <p style={{ margin: "14px 0 0", padding: "10px 14px", background: t.copperSoft, borderRadius: 10, fontFamily: f.sans, fontSize: 12, color: t.coal, lineHeight: 1.5 }}>
-                  {noHire} of your {total} sessions fell below the hiring bar. This is usually a <strong>Consistency</strong> problem — your peak score is fine, but your floor is too low. Reducing variance moves the RI faster than chasing higher peaks.
+                  {noHire} of your {total} sessions fell below the hiring bar. This is usually a <strong>Consistency</strong> problem, your peak score is fine, but your floor is too low. Reducing variance moves the RI faster than chasing higher peaks.
                 </p>
               );
             }
@@ -181,7 +181,7 @@ const PILLAR_HINT: Record<Pillar["key"], string> = {
   competence: "how deep your knowledge goes",
   consistency: "how stable your scores are (not how often you practice)",
   coverage: "round types practiced and STAR completeness",
-  currency: "how fresh each skill is — idle skills decay",
+  currency: "how fresh each skill is, idle skills decay",
   composure: "filler words, pace, energy under pressure",
 };
 
@@ -497,7 +497,7 @@ export function AttentionTimeline({ d }: { d: Fixture }) {
     return (
       <Card as="section">
         <Eyebrow as="h2" tone="indigo">Interviewer attention</Eyebrow>
-        <div style={{ marginTop: 12 }}><EmptyState title="Where sessions go wrong — unlocks after 1 voice session" need="Run one session in voice mode to see where you hold the interviewer's attention and where you lose it." /></div>
+        <div style={{ marginTop: 12 }}><EmptyState title="Where sessions go wrong, unlocks after 1 voice session" need="Run one session in voice mode to see where you hold the interviewer's attention and where you lose it." /></div>
       </Card>
     );
   }
@@ -672,7 +672,7 @@ export function FocusMetrics({ d, narrow }: { d: Fixture; narrow: boolean }) {
           <div style={{ gridColumn: narrow ? "auto" : "1 / -1" }}>
             <EmptyState
               title={`${d.coverage.focusTotal - d.coverage.focusDone} round ${d.coverage.focusTotal - d.coverage.focusDone === 1 ? "type" : "types"} not yet practiced`}
-              need="Run one session in each type to unlock its performance data. Unpracticed types are also your highest-risk gaps — the real interview can probe any of them."
+              need="Run one session in each type to unlock its performance data. Unpracticed types are also your highest-risk gaps, the real interview can probe any of them."
             />
           </div>
         )}
@@ -715,7 +715,7 @@ export function PatternsOverTime({ d, narrow }: { d: Fixture; narrow: boolean })
             })}
           </ul>
         ) : (
-          <div style={{ marginTop: 16 }}><EmptyState title="No patterns detected yet" need="Patterns appear after 5 sessions across at least 2 interview types. Keep going — the data is building." /></div>
+          <div style={{ marginTop: 16 }}><EmptyState title="No patterns detected yet" need="Patterns appear after 5 sessions across at least 2 interview types. Keep going, the data is building." /></div>
         )}
       </Card>
       <Card as="section">
@@ -1064,7 +1064,7 @@ export function PracticeCadence({ d, narrow }: { d: Fixture; narrow: boolean }) 
             const weeklyAvg = avg.toFixed(1);
             const needed = 3;
             if (avg >= needed) return `You averaged ${weeklyAvg} sessions per week. That cadence is enough to keep your RI moving.`;
-            return `You averaged ${weeklyAvg} sessions per week. Aim for ${needed} per week — at your current pace, progress will stall.`;
+            return `You averaged ${weeklyAvg} sessions per week. Aim for ${needed} per week, at your current pace, progress will stall.`;
           })()}
         </p>
       )}

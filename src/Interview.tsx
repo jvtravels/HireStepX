@@ -675,7 +675,7 @@ function InterviewInner() {
               <polygon points="5 4 15 12 5 20 5 4" />
               <line x1="19" y1="5" x2="19" y2="19" />
             </svg>
-            Continue — Enter
+            Continue, Enter
           </Button>
         )}
 
@@ -767,7 +767,7 @@ function InterviewInner() {
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <Spinner aria-hidden="true" className="size-2.5" style={{ color: e.indigo }} />
             <span style={{ fontFamily: ef.sans, fontSize: 11, color: e.inkSoft }}>
-              {llmSlow ? "Taking a bit longer — almost there…" : "Personalizing questions…"}
+              {llmSlow ? "Taking a bit longer, almost there…" : "Personalizing questions…"}
             </span>
           </div>
         )}

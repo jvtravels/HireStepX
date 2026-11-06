@@ -13,7 +13,7 @@ const TACTIC_LABELS: Record<string, { name: string; what: string }> = {
   "calibrated": { name: "Calibrated question", what: "Asked a 'how' / 'what' question that made the recruiter solve the problem with you." },
   "label": { name: "Label", what: "Named what the other side was feeling ('it sounds like budget is tight…') to defuse and unlock info." },
   "mirror": { name: "Mirror", what: "Repeated their last 1–3 words to keep them talking and reveal more." },
-  "sign-today-bundle": { name: "Sign-today bundle", what: "Offered to close today *if* a specific lever moves — turns urgency into leverage." },
+  "sign-today-bundle": { name: "Sign-today bundle", what: "Offered to close today *if* a specific lever moves, turns urgency into leverage." },
   "deflect-current-ctc": { name: "Deflected current CTC", what: "Side-stepped the 'what's your current package?' anchor and re-asked about the role." },
 };
 const INFO_LABELS: Record<string, string> = {
@@ -103,12 +103,12 @@ function KernelTacticsPanel({ m }: { m: KernelMetrics }) {
           )}
           {m.hardBandCap && (
             <div style={{ padding: "8px 12px", background: t.creamSoft, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.inkSoft }}>
-              <strong style={{ color: t.coal }}>Hard band cap.</strong> The simulated company had a fixed fitment grid (services-co pattern). The kernel redirected to joining bonus, equity, and benefits — the right play.
+              <strong style={{ color: t.coal }}>Hard band cap.</strong> The simulated company had a fixed fitment grid (services-co pattern). The kernel redirected to joining bonus, equity, and benefits, the right play.
             </div>
           )}
           {m.walkAwayReturned && (
             <div style={{ padding: "8px 12px", background: t.kernelWarnBg, border: `1px solid ${t.kernelWarnBorder}`, borderRadius: radius.lg, fontFamily: f.sans, fontSize: size.sm, color: t.kernelWarnInk }}>
-              <strong>You walked away and came back.</strong> This works, but the recruiter prices in your reduced leverage — concession rate halves after a return.
+              <strong>You walked away and came back.</strong> This works, but the recruiter prices in your reduced leverage, concession rate halves after a return.
             </div>
           )}
         </div>
@@ -191,7 +191,7 @@ export function KernelNegotiationQualitySection({ m }: { m: KernelMetrics }) {
           fontSize: size.sm,
           color: t.kernelBadInk,
         }}>
-          Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen — please report.
+          Kernel anomaly: AI offered above the band ceiling on at least one turn. This shouldn't happen, please report.
         </div>
       )}
       {(m.candidateCurrentCtcLpa == null) && (

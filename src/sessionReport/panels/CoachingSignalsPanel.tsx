@@ -24,7 +24,7 @@ const FLAG_COPY: Record<string, { label: string; meaning: string }> = {
   "pressure-repeat": {
     label: "Two pressure moves in a row",
     meaning:
-      "The recruiter used a coercive tactic (exploding offer, fake competing candidate, retention threat) two turns in a row. This is the manipulative pattern — slow down and don't react to the second one.",
+      "The recruiter used a coercive tactic (exploding offer, fake competing candidate, retention threat) two turns in a row. This is the manipulative pattern, slow down and don't react to the second one.",
   },
   "stall-cascade": {
     label: "Two stalling tactics in a row",
@@ -34,7 +34,7 @@ const FLAG_COPY: Record<string, { label: string; meaning: string }> = {
   "anchor-double-set": {
     label: "They anchored twice without listening",
     meaning:
-      "The recruiter put a number on the table, then put another number on the table without waiting for your reaction. You can ignore the second anchor — respond to the first one.",
+      "The recruiter put a number on the table, then put another number on the table without waiting for your reaction. You can ignore the second anchor, respond to the first one.",
   },
 };
 
@@ -58,7 +58,7 @@ export function CoachingSignalsPanel({ flagSummary }: Props) {
     <PanelShell
       index="07"
       title="Recruiter patterns the system flagged"
-      subtitle="These are recurring move-shapes the negotiation engine watched for during your call. Each one is a tactic to be aware of — not necessarily a problem you caused."
+      subtitle="These are recurring move-shapes the negotiation engine watched for during your call. Each one is a tactic to be aware of, not necessarily a problem you caused."
     >
       <EyebrowLabel>FLAGGED PATTERNS · {entries.length}</EyebrowLabel>
       <div className="nfr-vstack-md">

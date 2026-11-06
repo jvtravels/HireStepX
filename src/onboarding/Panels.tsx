@@ -269,7 +269,7 @@ export function ResumeEmptyState({
 
         <label
           htmlFor="resume-file-input"
-          aria-label="Upload resume — drag a file here or click to browse"
+          aria-label="Upload resume, drag a file here or click to browse"
           className="hsx-onb-drop"
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
@@ -783,7 +783,7 @@ export function ProfileReadyState({
                 role="status"
                 style={{ alignSelf: "flex-start", display: "inline-flex", alignItems: "center", flexWrap: "wrap", gap: 8, padding: "5px 11px", borderRadius: 999, background: t.warning100, border: `1px solid ${t.warningLine}`, fontFamily: f.mono, fontSize: 11, letterSpacing: "0.10em", textTransform: "uppercase", color: t.warningInk, fontWeight: 500, marginBottom: 14 }}
               >
-                Quick profile — AI analysis didn't finish
+                Quick profile, AI analysis didn't finish
                 <Button type="button" variant="link" onClick={onReanalyze} className="hsx-link-indigo">
                   Try again
                 </Button>
@@ -871,7 +871,7 @@ export function ProfileReadyState({
                 aria-live="polite"
                 style={{ marginTop: 0, marginBottom: 14, fontFamily: f.sans, fontSize: 12, color: t.copper, lineHeight: 1.4 }}
               >
-                Add a target role to continue — it's how we match you to the right interview questions and job openings.
+                Add a target role to continue, it's how we match you to the right interview questions and job openings.
               </p>
             )}
 
@@ -1429,7 +1429,7 @@ export function NavigationFooter({
       )}
       {saveStatus === "error" && (
         <div style={{ fontFamily: f.sans, fontSize: 12, color: t.error }}>
-          Couldn&apos;t save — your work is safe locally.
+          Couldn&apos;t save, your work is safe locally.
         </div>
       )}
     </div>

@@ -388,7 +388,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
     getCreditBalance(user.id)
       .then(bal => { setCreditBalance(bal); setCreditsLoaded(true); })
       .catch(err => {
-        console.warn("[credits] refreshCreditBalance failed — keeping cached value:", err?.message);
+        console.warn("[credits] refreshCreditBalance failed, keeping cached value:", err?.message);
       });
   }, [user?.id]);
 
@@ -584,7 +584,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         try {
           const cached = localStorage.getItem(sessionsCacheKey);
           if (cached) {
-            setSyncError("Offline — showing cached data.");
+            setSyncError("Offline, showing cached data.");
           } else {
             setSyncError("Could not load session data.");
             setSessionsLoadFailed(true);
@@ -630,7 +630,7 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         try {
           const cached = localStorage.getItem(eventsCacheKey);
           if (cached) {
-            if (!syncError) setSyncError("Offline — showing cached data.");
+            if (!syncError) setSyncError("Offline, showing cached data.");
           }
         } catch { /* expected: cache read may fail */ }
       }).finally(() => { if (!cancelled) setEventsLoading(false); }),

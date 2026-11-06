@@ -93,7 +93,7 @@ export default function GlobalRouteError({
           lineHeight: 1.6,
         }}
       >
-        We hit an unexpected error. Try again — most of the time, this
+        We hit an unexpected error. Try again, most of the time, this
         clears on its own. If it keeps happening, please get in touch.
       </p>
       {/* The digest is the only identifier the user can pass us to

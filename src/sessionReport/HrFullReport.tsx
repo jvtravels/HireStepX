@@ -161,7 +161,7 @@ function DimensionGate({ skills }: { skills: Skill[] }) {
       <Eyebrow
         kicker={`THE ${skills.length}-DIMENSION GATE`}
         title="How HR scored you"
-        sub="HR uses multiple axes, not one. You need to clear ≥60/100 on every axis — one zero anywhere often kills the offer."
+        sub="HR uses multiple axes, not one. You need to clear ≥60/100 on every axis, one zero anywhere often kills the offer."
       />
       <div style={{ display: "grid", gap: 12 }}>
         {skills.map((skill) => {
@@ -259,7 +259,7 @@ function WinsPanel({ wins }: { wins: string[] }) {
       <Eyebrow
         kicker="KEEP DOING"
         title="What HR will remember positively"
-        sub="A No-Hire isn't a 0. These landed — the fixes are on top of, not instead of, the wins."
+        sub="A No-Hire isn't a 0. These landed, the fixes are on top of, not instead of, the wins."
       />
       <div style={{ display: "grid", gap: 0 }}>
         {wins.map((win, i) => (
@@ -500,7 +500,7 @@ function NoticePanel({ hrReport }: { hrReport: HrReportData }) {
             <Pill tone={flexTone as "default" | "good" | "bad" | "warn" | "indigo"}>{flexLabel}</Pill>
             {noticeFlexibility === "buyout-possible" && (
               <div style={{ fontFamily: SANS, fontSize: 12, color: INK_SOFT, marginTop: 10, lineHeight: 1.5 }}>
-                Good — you flagged flexibility. In the real round, ask if they can absorb it as a signing bonus.
+                Good, you flagged flexibility. In the real round, ask if they can absorb it as a signing bonus.
               </div>
             )}
             {noticeFlexibility === "strict" && (
@@ -626,26 +626,26 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
     low: {
       tone: "good",
       headline: "Counter-offer commitment: clear",
-      body: "You came across as decided and non-negotiable with your current employer. HR read this as a low drop-out risk — that's exactly what they need before issuing the offer.",
-      script: '"I\'ve already made my decision, and I\'ve given you my word. If my current employer comes back with a counter, that changes nothing for me — I\'m moving for the role and the growth, not for the number."',
+      body: "You came across as decided and non-negotiable with your current employer. HR read this as a low drop-out risk, that's exactly what they need before issuing the offer.",
+      script: '"I\'ve already made my decision, and I\'ve given you my word. If my current employer comes back with a counter, that changes nothing for me, I\'m moving for the role and the growth, not for the number."',
     },
     med: {
       tone: "warn",
       headline: "Counter-offer commitment: unclear",
       body: "You were somewhat non-committal on whether you'd take a counter-offer from your current employer. HR's biggest fear is extending an offer and having the candidate use it as a counter-offer lever. Sharpen this.",
-      script: '"I\'ve made my decision. Even if my current employer matches the comp, I\'d still join — what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
+      script: '"I\'ve made my decision. Even if my current employer matches the comp, I\'d still join, what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
     },
     high: {
       tone: "bad",
       headline: "Counter-offer commitment: high risk",
-      body: "Your answers on the commitment / other-offers probes were vague or implied you might take a counter from your current employer. This is the single biggest HR red flag in India — it signals you might not join even if they issue the offer.",
-      script: '"I\'ve already made my decision to move, and a counter-offer from my current employer wouldn\'t change it — the reason I\'m leaving isn\'t the salary, it\'s the growth and the work, which a raise doesn\'t fix. I\'m not using this process as leverage."',
+      body: "Your answers on the commitment / other-offers probes were vague or implied you might take a counter from your current employer. This is the single biggest HR red flag in India, it signals you might not join even if they issue the offer.",
+      script: '"I\'ve already made my decision to move, and a counter-offer from my current employer wouldn\'t change it, the reason I\'m leaving isn\'t the salary, it\'s the growth and the work, which a raise doesn\'t fix. I\'m not using this process as leverage."',
     },
     "not-assessed": {
       tone: "warn",
       headline: "Counter-offer commitment: not probed this round",
-      body: "The interviewer didn't ask how you'd respond to a counter-offer in this conversation, so we can't read your commitment from it. Don't mistake that for a pass — in a real Indian HR round this is almost always asked, and it's the single biggest reason offers fall through. Have the line below ready.",
-      script: '"I\'ve made my decision to move. Even if my current employer matches the comp, I\'d still join — what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
+      body: "The interviewer didn't ask how you'd respond to a counter-offer in this conversation, so we can't read your commitment from it. Don't mistake that for a pass, in a real Indian HR round this is almost always asked, and it's the single biggest reason offers fall through. Have the line below ready.",
+      script: '"I\'ve made my decision to move. Even if my current employer matches the comp, I\'d still join, what I\'m moving for is the scope of this role and where it takes my career, and that\'s not something a counter can give me."',
     },
   };
   const c = copy[risk];
@@ -656,7 +656,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
       <Eyebrow
         kicker="COMMITMENT · COUNTER-OFFER HOLD"
         title={c.headline}
-        sub="HR's biggest fear: you take their offer to your current employer for a raise. They probe for this — your script needs to be ready."
+        sub="HR's biggest fear: you take their offer to your current employer for a raise. They probe for this, your script needs to be ready."
       />
       <div style={{ marginBottom: 16 }}>
         <Pill tone={c.tone}>{pillLabel}</Pill>
@@ -681,7 +681,7 @@ function CounterOfferPanel({ risk }: { risk: HrReportData["counterOfferRisk"] })
             marginBottom: 10,
           }}
         >
-          {risk === "not-assessed" ? 'Prep this — HR will ask "what if they counter?"' : 'If HR asks "what happens if they counter?"'}
+          {risk === "not-assessed" ? 'Prep this, HR will ask "what if they counter?"' : 'If HR asks "what happens if they counter?"'}
         </div>
         <div
           style={{
@@ -712,7 +712,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
     <Panel>
       <Eyebrow
         kicker="MOTIVATION · BEFORE → AFTER"
-        title="Your 'why this company' — rewritten"
+        title="Your 'why this company', rewritten"
         sub="Generic answers ('great culture, great opportunity') signal you'll churn. This is the version that lands."
       />
       <div style={{ display: "grid", gridTemplateColumns: twoUp ? "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" : "1fr", gap: 14 }}>
@@ -797,7 +797,7 @@ function MotivationRewritePanel({ hrReport }: { hrReport: HrReportData }) {
           lineHeight: 1.5,
         }}
       >
-        The rewrite names a specific product/leader/domain decision the company made — that's what distinguishes
+        The rewrite names a specific product/leader/domain decision the company made, that's what distinguishes
         you from every other candidate who said "great culture, great people."
       </div>
     </Panel>
@@ -887,7 +887,7 @@ export default function HrFullReport({
             </div>
             <div className="hrfr-bridge-msg" style={{ fontFamily: SANS, fontSize: 13, lineHeight: 1.5, color: base.creamMuted }}>
               {failingDims === 0
-                ? "All dimensions cleared — strong HR signal across the board."
+                ? "All dimensions cleared, strong HR signal across the board."
                 : `${failingDims} dimension${failingDims > 1 ? "s" : ""} below the 60/100 floor. Fix any one of them and you cross the line.`}
             </div>
           </>
@@ -943,7 +943,7 @@ export default function HrFullReport({
         </>
       ) : (
         <Panel>
-          <EmptyState message="Logistics data (notice period, comp, BGV) wasn't extracted from this session — this can happen for short sessions or when the mock didn't cover these topics. Re-run a full HR mock to get the detailed breakdown." />
+          <EmptyState message="Logistics data (notice period, comp, BGV) wasn't extracted from this session, this can happen for short sessions or when the mock didn't cover these topics. Re-run a full HR mock to get the detailed breakdown." />
         </Panel>
       )}
 

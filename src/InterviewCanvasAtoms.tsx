@@ -127,7 +127,7 @@ export function CanvasMuteToggle({ muted, onClick }: { muted: boolean; onClick: 
       onPressedChange={() => onClick()}
       variant="outline"
       aria-label={muted ? "Unmute (Alt+M)" : "Mute (Alt+M)"}
-      title={muted ? "Muted — click to unmute (Alt+M)" : "Mute (Alt+M)"}
+      title={muted ? "Muted, click to unmute (Alt+M)" : "Mute (Alt+M)"}
     >
       {muted ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -157,7 +157,7 @@ export function CanvasCameraToggle({ on, onClick }: { on: boolean; onClick: () =
       onPressedChange={() => onClick()}
       variant="outline"
       aria-label={on ? "Turn camera off" : "Turn camera on"}
-      title={on ? "Camera on — click to turn off" : "Camera off — click to turn on"}
+      title={on ? "Camera on, click to turn off" : "Camera off, click to turn on"}
     >
       {on ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

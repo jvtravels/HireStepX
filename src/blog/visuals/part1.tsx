@@ -897,11 +897,11 @@ export const SECTION_VISUALS_1: Record<string, ReactNode> = {
   /* resume-tips-freshers-india-2026: Resume tips for freshers — ATS and section strategy */
   "resume-tips-freshers-india-2026||ATS Optimisation: What Indian Companies Actually Use": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Use Standard Section Headings", hint: "Write 'Experience', 'Education', 'Skills' — ATS parsers at TCS, Infosys, and Wipro fail on creative labels like 'My Journey'" },
-      { number: "02", label: "Match Keywords from the JD", hint: "Copy exact skill terms from the job description — 'Core Java' not just 'Java', 'REST APIs' not 'web services'" },
+      { number: "01", label: "Use Standard Section Headings", hint: "Write 'Experience', 'Education', 'Skills', ATS parsers at TCS, Infosys, and Wipro fail on creative labels like 'My Journey'" },
+      { number: "02", label: "Match Keywords from the JD", hint: "Copy exact skill terms from the job description, 'Core Java' not just 'Java', 'REST APIs' not 'web services'" },
       { number: "03", label: "Avoid Tables and Columns", hint: "Multi-column resume layouts break most ATS tools used by Indian IT companies including iCIMS and SuccessFactors" },
-      { number: "04", label: "Use .docx or .pdf Correctly", hint: "Send .docx to large IT companies unless PDF is specified — many Indian ATS systems parse Word better than PDF" },
-      { number: "05", label: "No Headers or Footers for Key Info", hint: "Do not put your name, phone, or email in the document header — ATS often ignores text outside the body" },
+      { number: "04", label: "Use .docx or .pdf Correctly", hint: "Send .docx to large IT companies unless PDF is specified, many Indian ATS systems parse Word better than PDF" },
+      { number: "05", label: "No Headers or Footers for Key Info", hint: "Do not put your name, phone, or email in the document header, ATS often ignores text outside the body" },
     ]} />
   ),
 

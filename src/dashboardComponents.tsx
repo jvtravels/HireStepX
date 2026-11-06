@@ -297,14 +297,14 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           authHeadersRef.current = {}; // force a fresh token on retry (a 401 means it went stale)
           // Auto-retry once after 2 seconds with user feedback
           if (attempt < 1) {
-            setError("Verification taking longer than expected — retrying...");
+            setError("Verification taking longer than expected, retrying...");
             setTimeout(() => { if (!cancelled) attemptVerify(attempt + 1); }, 2000);
           } else {
             // Transient failure (network/timeout) — keep the sessionStorage copy.
             // The payment was captured server-side; "retryVerification" (and a
             // future remount via the sessionStorage resume above) should still
             // be able to pick it back up rather than losing it here.
-            setError("Payment verification failed. Your payment was received — try refreshing, or contact hello@hirestepx.com for help.");
+            setError("Payment verification failed. Your payment was received, try refreshing, or contact hello@hirestepx.com for help.");
             setVerifyRetries(attempt + 1);
             setLoading(null);
           }
@@ -435,8 +435,8 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
         const reason = errDetail?.description || errDetail?.reason || "Unknown error";
         const code = errDetail?.code || "";
         const humanReason = code === "BAD_REQUEST_ERROR" ? reason
-          : code === "GATEWAY_ERROR" ? "Payment gateway error — try a different payment method."
-          : code === "SERVER_ERROR" ? "Temporary server error — your money was not charged."
+          : code === "GATEWAY_ERROR" ? "Payment gateway error, try a different payment method."
+          : code === "SERVER_ERROR" ? "Temporary server error, your money was not charged."
           : reason;
         // Razorpay closes its sheet on payment.failed; our modal is still
         // mounted. Show an inline reassurance card rather than redirecting
@@ -509,7 +509,7 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
     <div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(20,17,10,0.40)" }} onClick={guardedClose} role="dialog" aria-modal="true" aria-labelledby="upgrade-modal-title">
       {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- stops click propagation to backdrop */}
       <div ref={modalRef} tabIndex={-1} onClick={(e) => e.stopPropagation()} className="upgrade-modal-inner" style={{ background: c.graphite, border: `1px solid ${c.border}`, borderRadius: 20, padding: "36px 28px 28px", maxWidth: 1120, width: "96%", maxHeight: "92vh", overflowY: "auto", position: "relative", boxShadow: "0 24px 64px rgba(20,17,10,0.18)", outline: "none" }}>
-        <Button variant="ghost" size="icon-sm" onClick={guardedClose} disabled={loading === "verifying"} aria-label={loading === "verifying" ? "Verifying payment — please wait" : "Close dialog"} style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
+        <Button variant="ghost" size="icon-sm" onClick={guardedClose} disabled={loading === "verifying"} aria-label={loading === "verifying" ? "Verifying payment, please wait" : "Close dialog"} style={{ position: "absolute", top: 14, right: 14, color: c.stone }}>
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </Button>
 
@@ -517,10 +517,10 @@ export const UpgradeModal = memo(function UpgradeModal({ onClose, sessionsUsed: 
           <h2 id="upgrade-modal-title" style={{ fontFamily: font.ui, fontSize: 28, fontWeight: 400, color: c.ivory, marginBottom: 6, letterSpacing: "-0.02em" }}>More practice, better answers.</h2>
           <p style={{ fontFamily: font.ui, fontSize: 13, color: c.stone, lineHeight: 1.5 }}>
             {currentTier === "team"
-              ? "Add sessions — your Team plan stays active."
+              ? "Add sessions, your Team plan stays active."
               : currentTier === "starter"
               ? "Sprint Pack sessions expire with the pack. Grab another to keep going."
-              : "No subscription — pay for one session or a five-session pack."}
+              : "No subscription, pay for one session or a five-session pack."}
           </p>
         </div>
 
@@ -822,7 +822,7 @@ const featureHighlights: Record<string, { icon: string; items: string[] }> = {
 type GateCopy = { body: string; cta: string; footnote: string };
 const gateCopy: Record<string, GateCopy> = {
   "Interview Calendar": {
-    body: "The Interview Calendar is included with every paid plan — month view, countdown timers, Google Calendar sync, and prep reminders.",
+    body: "The Interview Calendar is included with every paid plan, month view, countdown timers, Google Calendar sync, and prep reminders.",
     cta: "See plans",
     footnote: "On any paid plan · Sprint Pack from ₹39",
   },
@@ -838,7 +838,7 @@ const GATE_TITLE: Record<string, string> = {
 export const PaywallGate = memo(function PaywallGate({ feature, onUpgrade }: { feature: string; onUpgrade: () => void }) {
   const highlights = featureHighlights[feature];
   const copy: GateCopy = gateCopy[feature] ?? {
-    body: `Upgrade to unlock ${feature.toLowerCase()}. Included with any paid plan — Sprint Pack starts at ₹39.`,
+    body: `Upgrade to unlock ${feature.toLowerCase()}. Included with any paid plan, Sprint Pack starts at ₹39.`,
     cta: "See plans",
     footnote: "On any paid plan · Sprint Pack from ₹39",
   };

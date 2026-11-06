@@ -149,12 +149,12 @@ export default function Signup() {
   const nameError = nameTouched ? nameV.message : null;
   const emailError = emailTouched
     ? emailV.message ||
-      (workEmailValid ? null : "Use your work email (e.g. you@yourcompany.com) — personal email addresses can't register a company.")
+      (workEmailValid ? null : "Use your work email (e.g. you@yourcompany.com), personal email addresses can't register a company.")
     : null;
   const passwordError = passwordTouched
     ? passwordV.message ||
       (passwordHasEdgeWhitespace(password)
-        ? "Password has leading or trailing spaces — check your paste."
+        ? "Password has leading or trailing spaces, check your paste."
         : null)
     : null;
   const companyNameError =
@@ -281,7 +281,7 @@ export default function Signup() {
       const cleanForDispoCheck = sanitizeEmail(email);
       if (isDisposableEmail(cleanForDispoCheck)) {
         setError(
-          "Please use a permanent email address — temporary inboxes aren't supported.",
+          "Please use a permanent email address, temporary inboxes aren't supported.",
         );
         return;
       }
@@ -294,7 +294,7 @@ export default function Signup() {
       if (!isMounted.current) return;
       if (breach.breached) {
         setError(
-          "This password is too common — attackers already know it. Try a different one.",
+          "This password is too common, attackers already know it. Try a different one.",
         );
         setLoading(false);
         return;
@@ -308,7 +308,7 @@ export default function Signup() {
         // Non-blocking — log it for ops + surface as a console hint
         // (we don't want to spam the form with a network-failure
         // banner that gates submit).
-        console.warn("[signup] HIBP breach check unreachable — proceeding without verification");
+        console.warn("[signup] HIBP breach check unreachable, proceeding without verification");
       }
 
       // No client-side bot check. Bot prevention now lives on
@@ -675,7 +675,7 @@ export default function Signup() {
               }}
             >
               {isEmployerFlow
-                ? "Post a role and meet AI-interviewed candidates — already scored and ranked."
+                ? "Post a role and meet AI-interviewed candidates, already scored and ranked."
                 : "Start practising. Improve with every answer. One step closer to your next interview."}
             </p>
           </div>

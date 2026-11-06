@@ -926,7 +926,7 @@ export default function AdminDashboard() {
         {/* Churn warning */}
         {u.churningThisWeek > 0 && (
           <div style={{ background: "rgba(220,38,38,0.08)", border: "1px solid rgba(220,38,38,0.25)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 12, color: "#F87171" }}>
-            ⏰ <strong>{u.churningThisWeek} paid subscription{u.churningThisWeek > 1 ? "s" : ""}</strong> expire this week — check the Users tab (filter by tier) to reach out before they churn.
+            ⏰ <strong>{u.churningThisWeek} paid subscription{u.churningThisWeek > 1 ? "s" : ""}</strong> expire this week, check the Users tab (filter by tier) to reach out before they churn.
           </div>
         )}
 
@@ -1009,7 +1009,7 @@ export default function AdminDashboard() {
         {/* Activation Funnel (30d) */}
         {activation && (
           <div style={{ ...card, marginBottom: 24 }}>
-            <p style={{ ...labelStyle, marginBottom: 16 }}>Activation Funnel — Last 30 Days</p>
+            <p style={{ ...labelStyle, marginBottom: 16 }}>Activation Funnel, Last 30 Days</p>
             <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
               {[
                 { label: "Signed Up", value: activation.signups30d, color: c.stone, pct: 100 },
@@ -1632,7 +1632,7 @@ export default function AdminDashboard() {
                       try {
                         const res = await fetchSection("ban-user", { userId: selectedUserId }, true);
                         const r = res as { ok?: boolean; error?: string } | null;
-                        if (r?.ok) setQaStatus({ ok: true, msg: "User banned — they cannot sign in." });
+                        if (r?.ok) setQaStatus({ ok: true, msg: "User banned, they cannot sign in." });
                         else setQaStatus({ ok: false, msg: r?.error ?? "Ban failed" });
                       } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
                       finally { setQaBusy(false); }
@@ -1654,7 +1654,7 @@ export default function AdminDashboard() {
                       try {
                         const res = await fetchSection("unban-user", { userId: selectedUserId }, true);
                         const r = res as { ok?: boolean; error?: string } | null;
-                        if (r?.ok) setQaStatus({ ok: true, msg: "User unbanned — they can sign in again." });
+                        if (r?.ok) setQaStatus({ ok: true, msg: "User unbanned, they can sign in again." });
                         else setQaStatus({ ok: false, msg: r?.error ?? "Unban failed" });
                       } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
                       finally { setQaBusy(false); }
@@ -1899,7 +1899,7 @@ export default function AdminDashboard() {
                             try {
                               const res = await fetchSection("refund-payment", { paymentId: p.razorpay_payment_id }, true);
                               const r = res as { ok?: boolean; error?: string; refundId?: string } | null;
-                              if (r?.ok) setQaStatus({ ok: true, msg: `Refund initiated — Razorpay ID: ${r.refundId}` });
+                              if (r?.ok) setQaStatus({ ok: true, msg: `Refund initiated, Razorpay ID: ${r.refundId}` });
                               else setQaStatus({ ok: false, msg: r?.error ?? "Refund failed" });
                             } catch (err) { setQaStatus({ ok: false, msg: String(err) }); }
                             finally { setQaBusy(false); }
@@ -1999,7 +1999,7 @@ export default function AdminDashboard() {
 
         <AdminEmployerFinancials getToken={getToken} setToken={setToken} />
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue — Last 12 Months</p>
+          <p style={{ ...labelStyle, marginBottom: 16 }}>Revenue, Last 12 Months</p>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 120, marginBottom: 8 }}>
             {monthEntries.map(([key, v], i) => (
               <div key={key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", height: "100%", justifyContent: "flex-end" }}>
@@ -2436,7 +2436,7 @@ export default function AdminDashboard() {
               ))}
             </div>
             <p style={{ margin: "12px 0 0", fontSize: 11, color: c.stone, lineHeight: 1.5 }}>
-              Counts come from the most recent {formatNum(llm.totalCalls)} llm_usage rows. If "Rate limit" or "Context length" dominate, daily token quota isn't the bottleneck — per-minute caps or oversized prompts are. "Model access" means the provider account itself has that model gated (fix in the provider console) — don't confuse it with "Auth/key" (a bad or expired credential).
+              Counts come from the most recent {formatNum(llm.totalCalls)} llm_usage rows. If "Rate limit" or "Context length" dominate, daily token quota isn't the bottleneck, per-minute caps or oversized prompts are. "Model access" means the provider account itself has that model gated (fix in the provider console), don't confuse it with "Auth/key" (a bad or expired credential).
             </p>
           </div>
         )}
@@ -2803,7 +2803,7 @@ export default function AdminDashboard() {
             }
           </div>
           <div style={{ ...card, flex: "1 1 320px" }}>
-            <p style={{ ...labelStyle, marginBottom: 12 }}>Volume — Last 14 Days</p>
+            <p style={{ ...labelStyle, marginBottom: 12 }}>Volume, Last 14 Days</p>
             <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 48 }}>
               {last14Days.map(day => {
                 const v = supportMessages.volumeByDay[day] || 0;
@@ -2834,7 +2834,7 @@ export default function AdminDashboard() {
         {supportMessages.recent.length > 0 ? (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>Messages — Help &amp; Support widget</p>
+              <p style={labelStyle}>Messages, Help &amp; Support widget</p>
               <Button variant="ghost" size="sm" onClick={() => exportCsv("support-messages.csv", supportMessages.recent)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
@@ -3006,7 +3006,7 @@ export default function AdminDashboard() {
 
         {/* Volume sparkline */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 12 }}>Volume — Last 14 Days</p>
+          <p style={{ ...labelStyle, marginBottom: 12 }}>Volume, Last 14 Days</p>
           <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 48 }}>
             {last14Days.map(day => {
               const v = messaging.volumeByDay[day] || 0;
@@ -3035,7 +3035,7 @@ export default function AdminDashboard() {
         {/* Flag queue */}
         <div style={{ ...card, padding: 0, overflow: "auto", marginBottom: 24 }}>
           <div style={{ padding: "16px 24px 8px" }}>
-            <p style={labelStyle}>Flag Queue — {openFlags.length} open</p>
+            <p style={labelStyle}>Flag Queue, {openFlags.length} open</p>
           </div>
           {openFlags.length > 0 ? (
             <table style={tableStyle}>
@@ -3101,7 +3101,7 @@ export default function AdminDashboard() {
         {messaging.recentMessages.length > 0 ? (
           <div style={{ ...card, padding: 0, overflow: "auto" }}>
             <div style={{ padding: "16px 24px 8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <p style={labelStyle}>All Conversations — Recent Messages</p>
+              <p style={labelStyle}>All Conversations, Recent Messages</p>
               <Button variant="ghost" size="sm" onClick={() => exportCsv("messages.csv", messaging.recentMessages)} style={exportBtn}>Export CSV</Button>
             </div>
             <table style={tableStyle}>
@@ -3217,7 +3217,7 @@ export default function AdminDashboard() {
     return (
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20 }}>
-          <h3 style={{ margin: 0, color: c.ivory, fontSize: 18 }}>Live — Last 30 Minutes</h3>
+          <h3 style={{ margin: 0, color: c.ivory, fontSize: 18 }}>Live, Last 30 Minutes</h3>
           <span style={{ fontSize: 12, color: c.stone }}>Since {since} · auto-refreshes every 30s</span>
           <div style={{ width: 8, height: 8, borderRadius: "50%", background: "rgb(74,222,128)", boxShadow: "0 0 6px rgb(74,222,128)" }} />
         </div>
@@ -3309,7 +3309,7 @@ export default function AdminDashboard() {
       },
       {
         name: "SERPWatcher",
-        desc: "Keyword rank tracking — daily updates, India target",
+        desc: "Keyword rank tracking, daily updates, India target",
         color: "#6B4FDB",
         links: [
           { label: "Rank tracker", url: "https://mangools.com/serpwatcher" },
@@ -3344,7 +3344,7 @@ export default function AdminDashboard() {
       },
       {
         name: "Resend",
-        desc: "Transactional email delivery — open rates, bounces, domains",
+        desc: "Transactional email delivery, open rates, bounces, domains",
         color: "#000000",
         links: [
           { label: "Overview", url: "https://resend.com/overview" },
@@ -3418,7 +3418,7 @@ export default function AdminDashboard() {
       { event: "interview_session_completed", desc: "User finishes an interview and sees the report", stage: "activation" },
       { event: "upgrade_modal_shown", desc: "User hits the paywall", stage: "revenue" },
       { event: "payment_initiated", desc: "User opens Razorpay checkout", stage: "revenue" },
-      { event: "payment_success", desc: "Payment confirmed — user is now paid tier", stage: "revenue" },
+      { event: "payment_success", desc: "Payment confirmed, user is now paid tier", stage: "revenue" },
     ];
 
     /* SEO action checklist */
@@ -3451,7 +3451,7 @@ export default function AdminDashboard() {
 
     return (
       <div>
-        <p style={{ ...labelStyle, marginBottom: 20 }}>All active tracking tools — click any link to open the live report</p>
+        <p style={{ ...labelStyle, marginBottom: 20 }}>All active tracking tools, click any link to open the live report</p>
 
         {/* ── Tool cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, marginBottom: 32 }}>
@@ -3487,7 +3487,7 @@ export default function AdminDashboard() {
 
         {/* ── Full conversion funnel ── */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 4 }}>Full conversion funnel — PostHog events</p>
+          <p style={{ ...labelStyle, marginBottom: 4 }}>Full conversion funnel, PostHog events</p>
           <p style={{ margin: "0 0 16px", fontSize: 12, color: c.stone }}>
             Build in PostHog → Insights → Funnel → add events below in order. Stages: top (discovery) → mid (intent) → activation → revenue.
           </p>
@@ -3505,7 +3505,7 @@ export default function AdminDashboard() {
 
         {/* ── Schema health ── */}
         <div style={{ ...card, marginBottom: 24 }}>
-          <p style={{ ...labelStyle, marginBottom: 4 }}>Schema markup — deployed coverage</p>
+          <p style={{ ...labelStyle, marginBottom: 4 }}>Schema markup, deployed coverage</p>
           <p style={{ margin: "0 0 16px", fontSize: 12, color: c.stone }}>
             Pages with structured data injected server-side. Validate any page in Google Rich Results Test using the links below.
           </p>
@@ -3576,7 +3576,7 @@ export default function AdminDashboard() {
   };
 
   const renderOutcomes = () => {
-    if (!outcomes) return <EmptyState title="No outcome data yet — users haven't reported job-search results." />;
+    if (!outcomes) return <EmptyState title="No outcome data yet, users haven't reported job-search results." />;
     return (
       <div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 24 }}>
@@ -3599,7 +3599,7 @@ export default function AdminDashboard() {
                 <div key={i} style={{ padding: "12px 14px", background: "rgba(21,128,61,0.04)", border: `1px solid rgba(21,128,61,0.18)`, borderRadius: 10 }}>
                   <p style={{ fontFamily: font.ui, fontSize: 13, color: c.ivory, lineHeight: 1.6, margin: "0 0 6px", fontStyle: "italic" }}>&ldquo;{t.testimonial}&rdquo;</p>
                   <p style={{ fontFamily: font.ui, fontSize: 11, color: c.stone, margin: 0 }}>
-                    — <strong style={{ color: c.chalk }}>{t.firstName}</strong> · landed {t.roleLanded} at {t.company} · {formatDateTime(t.reportedAt)}
+, <strong style={{ color: c.chalk }}>{t.firstName}</strong> · landed {t.roleLanded} at {t.company} · {formatDateTime(t.reportedAt)}
                   </p>
                 </div>
               ))}

@@ -383,7 +383,7 @@ export const AccountSection = memo(function AccountSection(props: AccountSection
             last
             icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
             title="Password"
-            desc="You signed in with Google — manage your password in your Google Account."
+            desc="You signed in with Google, manage your password in your Google Account."
             action={<TinyChip>Google</TinyChip>}
           />
         )}
@@ -436,7 +436,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
       setDialogOpen(false);
       showToast("Link added");
     } catch {
-      setFormError("Failed to save — try again");
+      setFormError("Failed to save, try again");
     } finally {
       setAdding(false);
     }
@@ -450,7 +450,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
       setLinks(next);
       showToast("Link removed");
     } catch {
-      showToast("Failed to remove — try again");
+      showToast("Failed to remove, try again");
     } finally {
       setRemovingIndex(null);
     }
@@ -459,7 +459,7 @@ export const PortfolioLinksSection = memo(function PortfolioLinksSection(props: 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <p style={subHeaderHint}>
-        Add links to work employers can review — GitHub, Behance, Notion, a personal site.
+        Add links to work employers can review, GitHub, Behance, Notion, a personal site.
         Only what you add here is ever shown; nothing is invented on your behalf.
       </p>
 

@@ -180,7 +180,7 @@ const PERSONA_TRAITS: Record<string, string> = {
   "Vikram Desai":      "Old-school IT services manager. Long pauses, careful with budget, references 'the band'.",
   "Kavya Nair":        "Senior, calm, inscrutable. Doesn't reveal where she can stretch until she has to.",
   "Siddharth Joshi":   "Startup founder energy. Fast, candid, willing to bend on equity but tight on cash.",
-  "Neha Gupta":        "HR partner — process-heavy. References policy, vesting schedules, joining-bonus formulas.",
+  "Neha Gupta":        "HR partner, process-heavy. References policy, vesting schedules, joining-bonus formulas.",
   "Aditya Rao":        "Engineering manager. Talks shop fluently, will get distracted into role-tech if you let him.",
   "Deepika Iyer":      "MNC GCC veteran. Polished, slightly bureaucratic. 'Let me check with comp committee.'",
   "Karthik Nair":      "Mid-tier services manager. Friendly, slightly underconfident on stretch authority.",

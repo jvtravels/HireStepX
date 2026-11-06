@@ -21,7 +21,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Senior Data Analyst (3–6 yrs)", min: 12, max: 25 },
       { role: "Lead / Analytics Manager (6–10 yrs)", min: 20, max: 40 },
       { role: "Principal / Head of Analytics (10+ yrs)", min: 30, max: 45, note: "Product companies pay premium" },
-    ]} caption="India 2026 — SQL + Python + business domain expertise maximise compensation" />
+    ]} caption="India 2026, SQL + Python + business domain expertise maximise compensation" />
   ),
 
   /* Data Analyst (Role Guide): career path framework */
@@ -43,7 +43,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Senior PM (4–7 yrs)", min: 40, max: 80 },
       { role: "Group PM / Staff PM (7–10 yrs)", min: 60, max: 100 },
       { role: "Director of Product (10+ yrs)", min: 80, max: 120 },
-    ]} caption="India 2026 — Flipkart, PhonePe, Swiggy, and FAANG India pay top-of-band" />
+    ]} caption="India 2026, Flipkart, PhonePe, Swiggy, and FAANG India pay top-of-band" />
   ),
 
   /* Product Manager (Role Guide, first instance): framework for product design questions */
@@ -64,7 +64,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Frontend Developer (2–4 yrs)", min: 12, max: 25 },
       { role: "Senior Frontend Developer (4–7 yrs)", min: 22, max: 45 },
       { role: "Lead / Staff Frontend Engineer (7+ yrs)", min: 35, max: 55, note: "React Native or performance specialisation adds premium" },
-    ]} caption="India 2026 — React + TypeScript + performance engineering commands highest salaries" />
+    ]} caption="India 2026, React + TypeScript + performance engineering commands highest salaries" />
   ),
 
   /* Frontend Developer (Role Guide): JavaScript deep dive framework */
@@ -85,7 +85,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "MLE (2–4 yrs)", min: 18, max: 40 },
       { role: "Senior MLE (4–7 yrs)", min: 32, max: 65 },
       { role: "Staff / Principal MLE (7+ yrs)", min: 55, max: 90, note: "LLM/GenAI specialists command top of band" },
-    ]} caption="India 2026 — GenAI and LLM fine-tuning skills command 30–50% premium over classical ML" />
+    ]} caption="India 2026, GenAI and LLM fine-tuning skills command 30–50% premium over classical ML" />
   ),
 
   /* ML Engineer (Role Guide): fundamentals framework */
@@ -107,7 +107,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Senior Backend Developer (4–7 yrs)", min: 25, max: 50 },
       { role: "Staff / Principal Engineer (7–10 yrs)", min: 40, max: 70 },
       { role: "Distinguished Engineer (10+ yrs)", min: 55, max: 80, note: "Rare; primarily at FAANG and top unicorns" },
-    ]} caption="India 2026 — Golang, Java, or distributed systems expertise at scale pays top of band" />
+    ]} caption="India 2026, Golang, Java, or distributed systems expertise at scale pays top of band" />
   ),
 
   /* Backend Developer (Role Guide): language choice framework */
@@ -128,7 +128,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "DevOps Engineer (2–4 yrs)", min: 14, max: 28 },
       { role: "Senior DevOps / SRE (4–7 yrs)", min: 25, max: 50 },
       { role: "Staff SRE / Platform Lead (7+ yrs)", min: 40, max: 70, note: "K8s + Terraform + observability expertise commands top pay" },
-    ]} caption="India 2026 — SRE roles at product companies pay 20–30% more than DevOps at service IT" />
+    ]} caption="India 2026, SRE roles at product companies pay 20–30% more than DevOps at service IT" />
   ),
 
   /* DevOps/SRE (Role Guide, first instance): K8s framework */
@@ -149,7 +149,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Android Developer (2–4 yrs)", min: 12, max: 25 },
       { role: "Senior Android Developer (4–7 yrs)", min: 22, max: 45 },
       { role: "Lead / Principal Android Engineer (7+ yrs)", min: 35, max: 55, note: "Kotlin Multiplatform skills add premium" },
-    ]} caption="India 2026 — Jetpack Compose + Kotlin Coroutines is the dominant skill stack" />
+    ]} caption="India 2026, Jetpack Compose + Kotlin Coroutines is the dominant skill stack" />
   ),
 
   /* Android Developer (Role Guide, first instance): Kotlin fundamentals framework */
@@ -170,7 +170,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Data Engineer (2–4 yrs)", min: 14, max: 28 },
       { role: "Senior Data Engineer (4–7 yrs)", min: 24, max: 45 },
       { role: "Staff / Principal Data Engineer (7+ yrs)", min: 38, max: 65, note: "Spark + Kafka + dbt + cloud data stack expertise" },
-    ]} caption="India 2026 — Real-time streaming (Kafka + Flink) expertise commands 20% premium over batch-only" />
+    ]} caption="India 2026, Real-time streaming (Kafka + Flink) expertise commands 20% premium over batch-only" />
   ),
 
   /* Data Engineer (Role Guide): Spark framework */
@@ -188,7 +188,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "system-design-interview-questions-india-2026||The System Design Interview Framework": (
     <FrameworkSteps steps={[
       { number: "01", label: "Clarify Requirements", hint: "Functional requirements, scale targets (QPS/DAU), latency SLA, constraints" },
-      { number: "02", label: "Estimate Scale", hint: "Storage, bandwidth, QPS calculations — anchor your design to real numbers" },
+      { number: "02", label: "Estimate Scale", hint: "Storage, bandwidth, QPS calculations, anchor your design to real numbers" },
       { number: "03", label: "High-Level Design", hint: "Core components: clients, API layer, services, databases, cache, CDN" },
       { number: "04", label: "Deep Dive", hint: "Pick 2–3 critical components the interviewer signals; go deep on trade-offs" },
       { number: "05", label: "Address Bottlenecks", hint: "Identify single points of failure, discuss sharding, replication, failover" },
@@ -203,7 +203,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDE-2 / Mid-Level (basic HLD expected)", min: 22, max: 45 },
       { role: "SDE-3 / Senior (full system design required)", min: 38, max: 70 },
       { role: "Staff Engineer (leads the system design round)", min: 55, max: 90, note: "Can make or break the hire decision" },
-    ]} caption="India 2026 — System design is the gate for SDE-2+ roles at product companies" />
+    ]} caption="India 2026, System design is the gate for SDE-2+ roles at product companies" />
   ),
 
   /* iOS Developer (Role Guide): salary ladder */
@@ -213,7 +213,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "iOS Developer (2–4 yrs)", min: 12, max: 25 },
       { role: "Senior iOS Developer (4–7 yrs)", min: 22, max: 45 },
       { role: "Lead / Principal iOS Engineer (7+ yrs)", min: 35, max: 55, note: "SwiftUI + Combine + performance depth commands top pay" },
-    ]} caption="India 2026 — iOS roles are rarer than Android; premium exists for experienced engineers" />
+    ]} caption="India 2026, iOS roles are rarer than Android; premium exists for experienced engineers" />
   ),
 
   /* iOS Developer (Role Guide): Swift fundamentals framework */
@@ -234,7 +234,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDET / Automation Engineer (2–4 yrs)", min: 8, max: 18 },
       { role: "Senior SDET (4–7 yrs)", min: 15, max: 30 },
       { role: "QA Lead / Principal SDET (7+ yrs)", min: 24, max: 45, note: "Performance and security testing expertise boosts pay" },
-    ]} caption="India 2026 — Selenium + Cypress + API automation + CI/CD integration is the core skill set" />
+    ]} caption="India 2026, Selenium + Cypress + API automation + CI/CD integration is the core skill set" />
   ),
 
   /* QA/SDET (Role Guide): QA vs SDET framework */
@@ -255,7 +255,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Full-Stack Developer (2–4 yrs)", min: 14, max: 28 },
       { role: "Senior Full-Stack Developer (4–7 yrs)", min: 24, max: 50 },
       { role: "Lead / Principal Full-Stack Engineer (7+ yrs)", min: 40, max: 70, note: "MERN or MEAN with cloud-native delivery" },
-    ]} caption="India 2026 — React + Node.js + PostgreSQL + AWS remains the most in-demand full-stack combination" />
+    ]} caption="India 2026, React + Node.js + PostgreSQL + AWS remains the most in-demand full-stack combination" />
   ),
 
   /* Full-Stack Developer (Role Guide): interview framework */
@@ -276,7 +276,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Product Manager (2–5 yrs)", min: 28, max: 55 },
       { role: "Senior PM (5–8 yrs)", min: 45, max: 85 },
       { role: "Group PM / Director of Product (8+ yrs)", min: 70, max: 120 },
-    ]} caption="India 2026 — Razorpay, PhonePe, Flipkart, CRED, and FAANG India pay highest PM salaries" />
+    ]} caption="India 2026, Razorpay, PhonePe, Flipkart, CRED, and FAANG India pay highest PM salaries" />
   ),
 
   /* Product Manager (Role Guide, second instance): product design framework */
@@ -297,7 +297,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Data Scientist (2–4 yrs)", min: 16, max: 35 },
       { role: "Senior Data Scientist (4–7 yrs)", min: 28, max: 55 },
       { role: "Principal / Staff Data Scientist (7+ yrs)", min: 45, max: 75, note: "Causal inference and experimentation depth commands top pay" },
-    ]} caption="India 2026 — Statistics depth + ML engineering skills + business acumen is the winning combination" />
+    ]} caption="India 2026, Statistics depth + ML engineering skills + business acumen is the winning combination" />
   ),
 
   /* Data Scientist (Role Guide): interview framework */
@@ -318,7 +318,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "DevOps / Platform Engineer (2–4 yrs)", min: 14, max: 28 },
       { role: "Senior SRE / DevOps (4–7 yrs)", min: 26, max: 50 },
       { role: "Staff SRE / Platform Architect (7+ yrs)", min: 42, max: 70, note: "Platform engineering at unicorns pays at top of band" },
-    ]} caption="India 2026 — SRE roles at Razorpay, PhonePe, and Google India pay significantly above market" />
+    ]} caption="India 2026, SRE roles at Razorpay, PhonePe, and Google India pay significantly above market" />
   ),
 
   /* DevOps/SRE (Role Guide, second instance): K8s and infra framework */
@@ -339,7 +339,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Android Developer (2–4 yrs)", min: 12, max: 25 },
       { role: "Senior Android Developer (4–7 yrs)", min: 22, max: 45 },
       { role: "Lead / Principal Android Engineer (7+ yrs)", min: 35, max: 55 },
-    ]} caption="India 2026 — Companies like PhonePe, Swiggy, Razorpay, and CRED pay top Android salaries" />
+    ]} caption="India 2026, Companies like PhonePe, Swiggy, Razorpay, and CRED pay top Android salaries" />
   ),
 
   /* Android Developer (Role Guide, second instance): Kotlin depth framework */
@@ -359,7 +359,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Behavioral: top-10-google-interview-questions */
   "top-10-google-interview-questions||1. Tell me about a time you led a project with ambiguous requirements": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Set the Scene", hint: "Name the project, org context, and why requirements were unclear — 2 sentences max" },
+      { number: "S", label: "Set the Scene", hint: "Name the project, org context, and why requirements were unclear, 2 sentences max" },
       { number: "T", label: "State YOUR Task", hint: "What were YOU specifically responsible for deciding or delivering?" },
       { number: "A", label: "Describe YOUR Actions", hint: "List 2–3 concrete choices: how you gathered clarity, who you aligned with, what trade-offs you made" },
       { number: "R", label: "Quantify the Result", hint: "Ship date hit? Error rate? User impact? Metric that proves success" },
@@ -369,7 +369,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Behavioral: hr-interview-questions-answers-india */
   "hr-interview-questions-answers-india||Answering 'What Are Your Weaknesses?'": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Name a Real Weakness", hint: "Pick something genuine but not core to the job — e.g. public speaking, perfectionism on low-stakes tasks" },
+      { number: "01", label: "Name a Real Weakness", hint: "Pick something genuine but not core to the job, e.g. public speaking, perfectionism on low-stakes tasks" },
       { number: "02", label: "Show Self-Awareness", hint: "Explain when and how you noticed this weakness with a brief, specific example" },
       { number: "03", label: "Describe What You Did", hint: "Name the exact steps you took: course, practice, system, or mentor" },
       { number: "04", label: "Show Progress", hint: "Mention a measurable improvement or recent win that demonstrates you are actively closing the gap" },
@@ -379,26 +379,26 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Behavioral: hr-interview-questions-india-2026 — Tell Me About Yourself */
   "hr-interview-questions-india-2026||Tell Me About Yourself: How to Answer": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — Who You Are Now", hint: "Current role, tech stack, and the type of problems you solve. 1–2 sentences." },
-      { number: "02", label: "Past — What Built You", hint: "1 key experience or project that is directly relevant to this role. Skip unrelated history." },
-      { number: "03", label: "Future — Why This Role", hint: "Connect your trajectory to this company's domain or problem space. Make it specific." },
+      { number: "01", label: "Present, Who You Are Now", hint: "Current role, tech stack, and the type of problems you solve. 1–2 sentences." },
+      { number: "02", label: "Past, What Built You", hint: "1 key experience or project that is directly relevant to this role. Skip unrelated history." },
+      { number: "03", label: "Future, Why This Role", hint: "Connect your trajectory to this company's domain or problem space. Make it specific." },
     ]} />
   ),
 
   /* Behavioral: tell-me-about-yourself-fresher-india-2026 */
   "tell-me-about-yourself-answer-fresher-india-2026||The Formula: Present → Past → Future (Under 90 Seconds)": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — Name + Degree + Branch", hint: "'I am a final-year CSE student at [College].' One sentence. No fluff." },
-      { number: "02", label: "Past — One Strong Project or Internship", hint: "Name it, state the tech, and give one outcome metric. 2 sentences." },
-      { number: "03", label: "Future — Why This Company", hint: "Tie your interest to the company's product or domain. Avoid generic 'growth opportunities'." },
-      { number: "04", label: "Close — Invite Conversation", hint: "'I would love to contribute to [specific area] here.' Signals clarity and confidence." },
+      { number: "01", label: "Present, Name + Degree + Branch", hint: "'I am a final-year CSE student at [College].' One sentence. No fluff." },
+      { number: "02", label: "Past, One Strong Project or Internship", hint: "Name it, state the tech, and give one outcome metric. 2 sentences." },
+      { number: "03", label: "Future, Why This Company", hint: "Tie your interest to the company's product or domain. Avoid generic 'growth opportunities'." },
+      { number: "04", label: "Close, Invite Conversation", hint: "'I would love to contribute to [specific area] here.' Signals clarity and confidence." },
     ]} />
   ),
 
   /* Behavioral: why-do-you-want-to-join-our-company-answer-india-2026 */
   "why-do-you-want-to-join-our-company-answer-india-2026||The Framework: Why This Company, Why This Role, Why Now": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Why This Company", hint: "Name one specific product, initiative, or technology — not 'good reputation'. Show you researched." },
+      { number: "01", label: "Why This Company", hint: "Name one specific product, initiative, or technology, not 'good reputation'. Show you researched." },
       { number: "02", label: "Why This Role", hint: "Map 1–2 skills from your background directly to what this role demands." },
       { number: "03", label: "Why Now", hint: "Explain the career inflection point: what you are ready to do next and why timing matters." },
       { number: "04", label: "Tie It Together", hint: "One sentence connecting company mission + your skill + your timing into a coherent narrative." },
@@ -411,26 +411,26 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { number: "01", label: "Acknowledge the Gap Briefly", hint: "State the dates and reason in one sentence. No over-explaining, no apologies." },
       { number: "02", label: "What You Did During the Gap", hint: "Name any upskilling, freelance work, certification, or caregiving. Even informal learning counts." },
       { number: "03", label: "What You Learned or Built", hint: "One concrete output: a project, a certificate, a skill now directly relevant to this role." },
-      { number: "04", label: "Bridge to Today", hint: "'I am now ready to …' — forward-looking statement that closes the gap narrative." },
+      { number: "04", label: "Bridge to Today", hint: "'I am now ready to …', forward-looking statement that closes the gap narrative." },
     ]} />
   ),
 
   /* Behavioral: star-method-interview-answers-india-2026 */
   "star-method-interview-answers-india-2026||How STAR Works: and Where Most Candidates Go Wrong": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Situation — Set Context Fast", hint: "One sentence: company type, team size, the business condition. Do NOT spend more than 15% of your time here." },
-      { number: "T", label: "Task — YOUR Responsibility", hint: "What were YOU asked to own or deliver? Distinguish your role from the team's role." },
-      { number: "A", label: "Action — What YOU Did", hint: "3–4 specific actions. Use 'I' not 'we'. This is 60% of your answer and where most candidates are too vague." },
-      { number: "R", label: "Result — Numbers Win", hint: "Quantify: time saved, revenue impact, error reduction, user growth. If no number, state the business outcome." },
+      { number: "S", label: "Situation, Set Context Fast", hint: "One sentence: company type, team size, the business condition. Do NOT spend more than 15% of your time here." },
+      { number: "T", label: "Task, YOUR Responsibility", hint: "What were YOU asked to own or deliver? Distinguish your role from the team's role." },
+      { number: "A", label: "Action, What YOU Did", hint: "3–4 specific actions. Use 'I' not 'we'. This is 60% of your answer and where most candidates are too vague." },
+      { number: "R", label: "Result, Numbers Win", hint: "Quantify: time saved, revenue impact, error reduction, user growth. If no number, state the business outcome." },
     ]} />
   ),
 
   /* Behavioral: walk-me-through-your-resume-answer-guide */
   "walk-me-through-your-resume-answer-guide||The PPF Framework: Present, Past, Future": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — Current Role & Impact", hint: "What you do now and one metric or outcome you are proud of. 30 seconds." },
-      { number: "02", label: "Past — The Thread That Connects", hint: "1–2 experiences that built the skill most relevant to THIS role. Skip everything else." },
-      { number: "03", label: "Future — Why Here, Why Now", hint: "Where you want to go and why this company is the right next step. Be specific." },
+      { number: "01", label: "Present, Current Role & Impact", hint: "What you do now and one metric or outcome you are proud of. 30 seconds." },
+      { number: "02", label: "Past, The Thread That Connects", hint: "1–2 experiences that built the skill most relevant to THIS role. Skip everything else." },
+      { number: "03", label: "Future, Why Here, Why Now", hint: "Where you want to go and why this company is the right next step. Be specific." },
       { number: "04", label: "Invite Depth", hint: "'Happy to go deeper on any of these.' Signals confidence and hands control to the interviewer." },
     ]} />
   ),
@@ -438,9 +438,9 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Behavioral: where-do-you-see-yourself-in-5-years-answer */
   "where-do-you-see-yourself-in-5-years-answer||The Formula: Skill + Impact + Alignment": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Skill — What You Want to Master", hint: "Name a specific technical or leadership capability. Vague answers ('grow as a professional') signal no vision." },
-      { number: "02", label: "Impact — What Problem You Want to Solve", hint: "Connect the skill to a business or product outcome you want to own." },
-      { number: "03", label: "Alignment — Why This Company Is the Path", hint: "Show how this role builds toward your goal. Avoid answers that work at any company." },
+      { number: "01", label: "Skill, What You Want to Master", hint: "Name a specific technical or leadership capability. Vague answers ('grow as a professional') signal no vision." },
+      { number: "02", label: "Impact, What Problem You Want to Solve", hint: "Connect the skill to a business or product outcome you want to own." },
+      { number: "03", label: "Alignment, Why This Company Is the Path", hint: "Show how this role builds toward your goal. Avoid answers that work at any company." },
     ]} />
   ),
 
@@ -449,7 +449,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Open with Your Current Role and Scope", hint: "Job title, team size or product scale, and the type of impact you drive. 1 sentence." },
       { number: "02", label: "Pick ONE Career Highlight", hint: "The one achievement most relevant to this company's domain. Metrics required." },
-      { number: "03", label: "State What You Are Looking For", hint: "Specific challenge, scale, or technology. Not 'new opportunity' — be precise." },
+      { number: "03", label: "State What You Are Looking For", hint: "Specific challenge, scale, or technology. Not 'new opportunity', be precise." },
       { number: "04", label: "Close with Why This Company", hint: "Connect their product or mission to what you just said you want. 1 sentence." },
     ]} />
   ),
@@ -477,26 +477,26 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Behavioral: tell-me-about-yourself-answer-india-2026 */
   "tell-me-about-yourself-answer-india-2026||The 3-part formula that works in India": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — Current Role or Status", hint: "Who you are professionally right now. For freshers: degree + college + relevant project. For experienced: role + company + key impact." },
-      { number: "02", label: "Past — What Led Here", hint: "The most relevant experience or decision that connects your background to this role. One example only." },
-      { number: "03", label: "Future — Why This Role", hint: "What you want to achieve next and why this specific company is the right fit. Avoid generic answers." },
+      { number: "01", label: "Present, Current Role or Status", hint: "Who you are professionally right now. For freshers: degree + college + relevant project. For experienced: role + company + key impact." },
+      { number: "02", label: "Past, What Led Here", hint: "The most relevant experience or decision that connects your background to this role. One example only." },
+      { number: "03", label: "Future, Why This Role", hint: "What you want to achieve next and why this specific company is the right fit. Avoid generic answers." },
     ]} />
   ),
 
   /* Behavioral: behavioral-interview-questions-india-2026 */
   "behavioral-interview-questions-india-2026||The STAR Framework: Applied Correctly": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Situation — Context Only (15%)", hint: "One sentence: industry, team size, the triggering event. Interviewers do not need your full project history." },
-      { number: "T", label: "Task — Your Ownership (10%)", hint: "Define exactly what YOU were accountable for. Differentiate from what the team did." },
-      { number: "A", label: "Action — Your Decisions (60%)", hint: "Walk through each specific action, decision, or trade-off YOU made. This is where candidates are graded." },
-      { number: "R", label: "Result — Proof (15%)", hint: "Quantified business impact. If exact numbers are confidential, give an order of magnitude." },
+      { number: "S", label: "Situation, Context Only (15%)", hint: "One sentence: industry, team size, the triggering event. Interviewers do not need your full project history." },
+      { number: "T", label: "Task, Your Ownership (10%)", hint: "Define exactly what YOU were accountable for. Differentiate from what the team did." },
+      { number: "A", label: "Action, Your Decisions (60%)", hint: "Walk through each specific action, decision, or trade-off YOU made. This is where candidates are graded." },
+      { number: "R", label: "Result, Proof (15%)", hint: "Quantified business impact. If exact numbers are confidential, give an order of magnitude." },
     ]} />
   ),
 
   /* Behavioral: hr-interview-questions-answers-india-2026 */
   "hr-interview-questions-answers-india-2026||STAR method behavioural questions": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Situation", hint: "Set context briefly — project type, team, timeline. 1–2 sentences." },
+      { number: "S", label: "Situation", hint: "Set context briefly, project type, team, timeline. 1–2 sentences." },
       { number: "T", label: "Task", hint: "State what YOUR goal or responsibility was, distinct from the team's." },
       { number: "A", label: "Action", hint: "3 specific actions YOU personally took. Avoid 'we'. Explain the why behind each decision." },
       { number: "R", label: "Result", hint: "Outcome with numbers: time saved, bug reduction, user growth, revenue impact." },
@@ -508,8 +508,8 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Prepare Depth, Not Breadth", hint: "Introverts can prepare 5–6 stories so thoroughly that answers feel polished and thoughtful rather than rehearsed." },
       { number: "02", label: "Use Structured Frameworks", hint: "STAR, PPF, and numbered lists buy processing time without awkward pauses. Say 'There are three points...' to buy thinking time." },
-      { number: "03", label: "Leverage Written Thinking", hint: "Use take-home tasks, coding problems, and whiteboard time — formats where introverts consistently outperform." },
-      { number: "04", label: "Reframe the Pause", hint: "Indian interviews read thinking-pause as confidence. Say 'Let me think for a moment' — do not apologise for it." },
+      { number: "03", label: "Leverage Written Thinking", hint: "Use take-home tasks, coding problems, and whiteboard time, formats where introverts consistently outperform." },
+      { number: "04", label: "Reframe the Pause", hint: "Indian interviews read thinking-pause as confidence. Say 'Let me think for a moment', do not apologise for it." },
     ]} />
   ),
 
@@ -518,9 +518,9 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: how-to-answer-tell-me-about-yourself-india */
   "how-to-answer-tell-me-about-yourself-india||The Framework: Present-Past-Future": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — What You Do Now", hint: "Role, domain, and one line about the type of problems you solve. For freshers: final year + branch + strongest project." },
-      { number: "02", label: "Past — What Built You", hint: "The ONE experience most relevant to this interviewer's company or domain. One sentence with a metric or outcome." },
-      { number: "03", label: "Future — Why This Role", hint: "What skill or scale you want next, and why this specific role is the right vehicle. Be specific — not 'growth'." },
+      { number: "01", label: "Present, What You Do Now", hint: "Role, domain, and one line about the type of problems you solve. For freshers: final year + branch + strongest project." },
+      { number: "02", label: "Past, What Built You", hint: "The ONE experience most relevant to this interviewer's company or domain. One sentence with a metric or outcome." },
+      { number: "03", label: "Future, Why This Role", hint: "What skill or scale you want next, and why this specific role is the right vehicle. Be specific, not 'growth'." },
       { number: "04", label: "Keep It Under 90 Seconds", hint: "Time yourself. If it runs longer, cut the past section. The interviewer wants a map, not a tour." },
     ]} />
   ),
@@ -538,10 +538,10 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: star-method-interview-examples-india-freshers */
   "star-method-interview-examples-india-freshers||What Is the STAR Method and Why Indian Companies Use It": (
     <FrameworkSteps steps={[
-      { number: "S", label: "Situation — College Context", hint: "Name the course project, club, or internship. State the team size and the problem you faced." },
-      { number: "T", label: "Task — Your Role", hint: "What were YOU specifically responsible for? Be precise — 'I led the backend' not 'we built the app'." },
-      { number: "A", label: "Action — What YOU Did", hint: "3 specific steps: the tool chosen, the decision made, the conflict handled. Use 'I' throughout." },
-      { number: "R", label: "Result — College-Level Metrics", hint: "Demo day feedback, professor score, lines of code, latency improvement, users in beta. Numbers matter even for freshers." },
+      { number: "S", label: "Situation, College Context", hint: "Name the course project, club, or internship. State the team size and the problem you faced." },
+      { number: "T", label: "Task, Your Role", hint: "What were YOU specifically responsible for? Be precise, 'I led the backend' not 'we built the app'." },
+      { number: "A", label: "Action, What YOU Did", hint: "3 specific steps: the tool chosen, the decision made, the conflict handled. Use 'I' throughout." },
+      { number: "R", label: "Result, College-Level Metrics", hint: "Demo day feedback, professor score, lines of code, latency improvement, users in beta. Numbers matter even for freshers." },
     ]} />
   ),
 
@@ -550,7 +550,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Research Market Range", hint: "Check Glassdoor, AmbitionBox, Levels.fyi for this exact role + city + years of experience before the interview." },
       { number: "02", label: "Anchor High in Your Range", hint: "State the top 30% of the market range, not the median. You can always come down; you cannot go up." },
-      { number: "03", label: "Defer If Asked Too Early", hint: "If asked before an offer: 'I am open to a competitive offer — what is the budgeted range for this role?'" },
+      { number: "03", label: "Defer If Asked Too Early", hint: "If asked before an offer: 'I am open to a competitive offer, what is the budgeted range for this role?'" },
       { number: "04", label: "Negotiate After Offer Letter", hint: "Once you have the number in writing, take 24–48 hours. Counter with a specific number + justification, not a vague 'can you do better?'" },
     ]} />
   ),
@@ -577,17 +577,17 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: salary-negotiation-tips-india-2026 */
   "salary-negotiation-tips-india-2026||How to Negotiate: The Exact Script": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Pause Before Responding", hint: "Say 'Thank you — I am excited about this offer. Can I take 24 hours to review it?' Never negotiate in the moment." },
+      { number: "01", label: "Pause Before Responding", hint: "Say 'Thank you, I am excited about this offer. Can I take 24 hours to review it?' Never negotiate in the moment." },
       { number: "02", label: "State a Specific Counter", hint: "'Based on my research and [competing offer / current CTC / market data], I was expecting ₹X.' Name a number." },
       { number: "03", label: "Justify with Evidence", hint: "One sentence: market data, competing offer, or a specific skill/impact that justifies the ask." },
-      { number: "04", label: "Stay Warm and Collaborative", hint: "End with 'I am genuinely excited about this role — I hope we can find a number that works.' Do not give ultimatums." },
+      { number: "04", label: "Stay Warm and Collaborative", hint: "End with 'I am genuinely excited about this role, I hope we can find a number that works.' Do not give ultimatums." },
     ]} />
   ),
 
   /* Interview Skills: fresher-resume-guide-india-2026 */
   "fresher-resume-guide-india-2026||How to Write Project Descriptions That Get Callbacks": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Lead with the Action Verb + Tech", hint: "'Built a real-time chat app using Node.js and WebSockets...' — not 'Worked on a project that...'." },
+      { number: "01", label: "Lead with the Action Verb + Tech", hint: "'Built a real-time chat app using Node.js and WebSockets...', not 'Worked on a project that...'." },
       { number: "02", label: "State the Problem Solved", hint: "One clause explaining WHY this project exists. Shows product thinking, not just coding." },
       { number: "03", label: "Quantify the Output", hint: "Users, latency, accuracy, uptime, lines of code reduced. Even 'served 200 beta users' beats nothing." },
       { number: "04", label: "Link to GitHub", hint: "Every project must have a public repo. Recruiters open links. No repo = the project did not happen." },
@@ -597,10 +597,10 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: group-discussion-tips-india-campus-placements */
   "group-discussion-tips-india-campus-placements||How to Enter, Contribute, and Stand Out in a GD": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Open with a Frame, Not an Opinion", hint: "'This topic has two sides worth examining...' — framing the discussion is more valued than rushing to a position." },
+      { number: "01", label: "Open with a Frame, Not an Opinion", hint: "'This topic has two sides worth examining...', framing the discussion is more valued than rushing to a position." },
       { number: "02", label: "Make 2–3 Substantive Points", hint: "Quality beats quantity. Evaluators penalise filler speech. One point with a fact beats three empty opinions." },
-      { number: "03", label: "Acknowledge and Build", hint: "'Building on what [Name] said...' — shows listening skill, a top evaluation criterion." },
-      { number: "04", label: "Redirect, Do Not Interrupt", hint: "Wait for a pause, then: 'I think we should also consider...' — entering forcefully loses points." },
+      { number: "03", label: "Acknowledge and Build", hint: "'Building on what [Name] said...', shows listening skill, a top evaluation criterion." },
+      { number: "04", label: "Redirect, Do Not Interrupt", hint: "Wait for a pause, then: 'I think we should also consider...', entering forcefully loses points." },
       { number: "05", label: "Close with a Summary", hint: "If asked to conclude: restate both sides, then give a balanced takeaway. Do not just repeat your own point." },
     ]} />
   ),
@@ -617,7 +617,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: how-to-negotiate-job-offer-india-software-engineer-2026 */
   "how-to-negotiate-job-offer-india-software-engineer-2026||What to Say: The Counter-Offer Script": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Buy Time First", hint: "'Thank you — I am very excited. Can I take until [specific date] to review the full package?' Always get it in writing before negotiating." },
+      { number: "01", label: "Buy Time First", hint: "'Thank you, I am very excited. Can I take until [specific date] to review the full package?' Always get it in writing before negotiating." },
       { number: "02", label: "Open with Gratitude + Anchor", hint: "'I am genuinely excited about this offer. Based on my research, I was expecting something closer to ₹X.' State the number confidently." },
       { number: "03", label: "Justify in One Sentence", hint: "Market rate, competing offer, or a specific skill/achievement: 'Given my experience with [X] and the market range of ₹Y–₹Z...'." },
       { number: "04", label: "Stay Silent After Your Ask", hint: "After stating your counter, stop talking. The first person to speak loses negotiating leverage." },
@@ -627,9 +627,9 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: tell-me-about-yourself-answer-india-software-engineer-2026 */
   "tell-me-about-yourself-answer-india-software-engineer-2026||The Best Framework for Experienced Engineers: Present-Past-Future": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Present — Role + Impact", hint: "Current title, tech stack, and one metric that shows scale or impact. 1–2 sentences." },
-      { number: "02", label: "Past — The Most Relevant Thread", hint: "Pick the ONE past experience most relevant to THIS company. Skip everything else on your resume." },
-      { number: "03", label: "Future — Your Specific Goal", hint: "What you want to build or learn next — tied directly to what this company does. Avoid 'new challenges'." },
+      { number: "01", label: "Present, Role + Impact", hint: "Current title, tech stack, and one metric that shows scale or impact. 1–2 sentences." },
+      { number: "02", label: "Past, The Most Relevant Thread", hint: "Pick the ONE past experience most relevant to THIS company. Skip everything else on your resume." },
+      { number: "03", label: "Future, Your Specific Goal", hint: "What you want to build or learn next, tied directly to what this company does. Avoid 'new challenges'." },
       { number: "04", label: "Close + Invite", hint: "'I would love to talk about how my background maps to what you are building.' Hands control to the interviewer." },
     ]} />
   ),
@@ -638,7 +638,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "how-to-answer-why-leaving-current-job||Four Answer Frameworks That Work for Indian Tech Engineers": (
     <FrameworkSteps steps={[
       { number: "01", label: "Growth Ceiling Frame", hint: "'I have delivered [X] and I am ready for [Y scope/scale/technology]. This company is the right place for that next step.'" },
-      { number: "02", label: "Domain Pivot Frame", hint: "'My current role is in [domain A] but I want to deepen in [domain B] — which is what your team is building.'" },
+      { number: "02", label: "Domain Pivot Frame", hint: "'My current role is in [domain A] but I want to deepen in [domain B], which is what your team is building.'" },
       { number: "03", label: "Technology Stack Frame", hint: "'I want to work with [specific tech] at scale. Your infra is built on exactly that.' Requires prior research." },
       { number: "04", label: "Impact Frame", hint: "'I want to work on a product that reaches [X users / market]. That scale aligns with what you are building.'" },
     ]} />
@@ -647,9 +647,9 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: linkedin-profile-tips-india-software-engineer-2026 */
   "linkedin-profile-tips-india-software-engineer-2026||Seven LinkedIn Optimisations That Actually Increase Recruiter Messages": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Headline = Role + Stack + Differentiator", hint: "'Senior Backend Engineer | Go, Kafka, Distributed Systems | Building for Scale' — not 'Software Engineer at Company'." },
-      { number: "02", label: "Turn On Open to Work (Recruiters Only)", hint: "Set visibility to 'Recruiters only' — your current employer cannot see it. Include target roles and locations." },
-      { number: "03", label: "About Section = 3-Sentence Pitch", hint: "What you build, how you think, and what you are looking for. First line must hook — it appears before 'see more'." },
+      { number: "01", label: "Headline = Role + Stack + Differentiator", hint: "'Senior Backend Engineer | Go, Kafka, Distributed Systems | Building for Scale', not 'Software Engineer at Company'." },
+      { number: "02", label: "Turn On Open to Work (Recruiters Only)", hint: "Set visibility to 'Recruiters only', your current employer cannot see it. Include target roles and locations." },
+      { number: "03", label: "About Section = 3-Sentence Pitch", hint: "What you build, how you think, and what you are looking for. First line must hook, it appears before 'see more'." },
       { number: "04", label: "Quantify Every Role", hint: "Each experience bullet: verb + metric + scale. 'Reduced API latency by 40% serving 2M daily requests.'" },
       { number: "05", label: "Add 5 Specific Skills", hint: "List the technologies at the TOP of your skills. Recruiters filter by skill keywords." },
       { number: "06", label: "Get 3 Endorsements for Top Skills", hint: "Ask former colleagues. Endorsed skills rank higher in LinkedIn search." },
@@ -660,7 +660,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Interview Skills: where-do-you-see-yourself-in-5-years-india-tech-interview */
   "where-do-you-see-yourself-in-5-years-india-tech-interview||Framework for Experienced Engineers (3+ Years)": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Name a Technical or Leadership Goal", hint: "Staff engineer, engineering manager, ML specialist — be specific. 'Grow as a professional' is a non-answer." },
+      { number: "01", label: "Name a Technical or Leadership Goal", hint: "Staff engineer, engineering manager, ML specialist, be specific. 'Grow as a professional' is a non-answer." },
       { number: "02", label: "Connect to a Problem Domain", hint: "What type of problem do you want to be known for solving? Distributed systems, product growth, ML infra?" },
       { number: "03", label: "Show How This Role Is the Path", hint: "Specifically how this company's scale, product, or team structure lets you pursue that goal." },
       { number: "04", label: "Stay Realistic and Committed", hint: "Ambitious enough to show drive; grounded enough to signal you will stay long enough to deliver." },
@@ -682,7 +682,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Strategy: salary-negotiation-after-offer-letter-india */
   "salary-negotiation-after-offer-letter-india||The Counter-Offer Script": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Pause and Request Time", hint: "'Thank you for the offer — I am excited. Can I have until [date] to review it?' Never negotiate same-day." },
+      { number: "01", label: "Pause and Request Time", hint: "'Thank you for the offer, I am excited. Can I have until [date] to review it?' Never negotiate same-day." },
       { number: "02", label: "State Your Number Confidently", hint: "'Based on my research and [current CTC / competing offer], I was expecting ₹X LPA.' Name a specific number." },
       { number: "03", label: "Justify in One Sentence", hint: "Market data (AmbitionBox, Glassdoor) + your specific skill or impact. One reason is enough." },
       { number: "04", label: "Stay Silent", hint: "After your counter, do not fill the silence. The recruiter will speak next. Waiting is power." },
@@ -700,7 +700,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Strategy: highest-paying-it-companies-india-2026 */
   "highest-paying-it-companies-india-2026||How to Use This Data Strategically": (
     <PrepTimeline caption="Career strategy roadmap to reach top-paying IT companies" phases={[
-      { period: "Year 1–2", label: "Build Fundaments", tasks: ["Join any company — product preferred", "Get depth in 1 technology stack", "Ship to production and collect metrics"], milestone: "2 quantifiable projects on resume" },
+      { period: "Year 1–2", label: "Build Fundaments", tasks: ["Join any company, product preferred", "Get depth in 1 technology stack", "Ship to production and collect metrics"], milestone: "2 quantifiable projects on resume" },
       { period: "Year 2–3", label: "Demonstrate Scale", tasks: ["Target CRED/Razorpay/Meesho tier", "Prepare system design fundamentals", "Build DSA consistency: 150+ problems solved"], milestone: "First product company offer above ₹20 LPA" },
       { period: "Year 3–5", label: "Target FAANG India", tasks: ["Deep dive: distributed systems, advanced DSA", "Mock interviews for Google/Meta/Uber bar", "Build cross-functional impact at current job"], milestone: "₹40–80 LPA offer from FAANG India" },
     ]} />
@@ -749,8 +749,8 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Know What Is Negotiable", hint: "Freshers: stipend during training, joining date, location preference. Band/grade is harder but not impossible at product companies." },
       { number: "02", label: "Use a Competing Offer if You Have One", hint: "'I have an offer for ₹X from [Company]. Is there any flexibility here?' This is the most effective fresher lever." },
-      { number: "03", label: "Negotiate Tone, Not Terms, If No Leverage", hint: "If only one offer: negotiate joining date, role clarity, or training stream. Never go silent — ask for something." },
-      { number: "04", label: "Get Everything in Writing", hint: "Offer letter, joining date, role, location, CTC breakup — all confirmed before resigning from or declining any other offer." },
+      { number: "03", label: "Negotiate Tone, Not Terms, If No Leverage", hint: "If only one offer: negotiate joining date, role clarity, or training stream. Never go silent, ask for something." },
+      { number: "04", label: "Get Everything in Writing", hint: "Offer letter, joining date, role, location, CTC breakup, all confirmed before resigning from or declining any other offer." },
     ]} />
   ),
 
@@ -763,7 +763,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDE-2 / 4–6 YOE", min: 30, max: 55 },
       { role: "SDE-3 / Senior / 6–9 YOE", min: 45, max: 80 },
       { role: "Staff / Principal (10+ YOE)", min: 65, max: 100, note: "FAANG India top band" },
-    ]} caption="Bengaluru 2026 — fixed + RSU vesting. FAANG India top of range." />
+    ]} caption="Bengaluru 2026, fixed + RSU vesting. FAANG India top of range." />
   ),
   "bangalore-salary-guide-software-engineers-2026||Bengaluru vs Hyderabad vs Pune vs Chennai for SWE careers": (
     <TierCompare cards={[
@@ -813,7 +813,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Strategy: mock-interview-importance-india-2026 */
   "mock-interview-importance-india-2026||Building a Mock Interview Practice Routine": (
     <PrepTimeline caption="Mock interview practice plan for Indian software engineers" phases={[
-      { period: "Week 1–2", label: "Solo Practice", tasks: ["Solve LeetCode problems out loud — narrate every step", "Record yourself on phone; watch back for filler words", "Time each problem: 20 min easy, 35 min medium"], milestone: "Comfortable talking while coding" },
+      { period: "Week 1–2", label: "Solo Practice", tasks: ["Solve LeetCode problems out loud, narrate every step", "Record yourself on phone; watch back for filler words", "Time each problem: 20 min easy, 35 min medium"], milestone: "Comfortable talking while coding" },
       { period: "Week 3–4", label: "Peer Mocks", tasks: ["Find 2–3 peers on HireStepX, Pramp, or InterviewBit", "Do 2 mocks per week: one as interviewee, one as interviewer", "Give and receive structured feedback on each mock"], milestone: "Completed 8 peer mock sessions" },
       { period: "Week 5–6", label: "AI + Company-Specific Mocks", tasks: ["Use AI mock tools for behavioural STAR practice", "Do company-tagged problem sets under strict time", "Simulate full 45-minute interview with intro + coding + questions"], milestone: "70%+ score across 5 consecutive mocks" },
     ]} />
@@ -827,7 +827,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { number: "03", label: "Estimation", hint: "Market sizing and Fermi estimates. Practice: DAU of Google Pay India, GMV of Flipkart. Structure > precision." },
       { number: "04", label: "Execution", hint: "How do you manage stakeholders, handle trade-offs, and sequence a roadmap? Use RICE or MoSCoW framework." },
       { number: "05", label: "Behavioural", hint: "STAR stories about product wins, failures, influencing without authority, and managing scope creep." },
-      { number: "06", label: "Technical Sufficiency", hint: "APIs, databases, system constraints — not deep code but enough to work with engineers. Especially tested at Flipkart and Razorpay." },
+      { number: "06", label: "Technical Sufficiency", hint: "APIs, databases, system constraints, not deep code but enough to work with engineers. Especially tested at Flipkart and Razorpay." },
     ]} />
   ),
   "product-manager-interview-india-2026||Product Sense Questions: The Framework": (
@@ -844,7 +844,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Salary negotiation after offer */
   "salary-negotiation-after-job-offer-india-guide||Negotiation scripts and techniques": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Acknowledge the offer", hint: "Thank the recruiter sincerely and ask for 24–48 hours to review. Never negotiate on the spot — it signals desperation." },
+      { number: "01", label: "Acknowledge the offer", hint: "Thank the recruiter sincerely and ask for 24–48 hours to review. Never negotiate on the spot, it signals desperation." },
       { number: "02", label: "State your number", hint: "Name your expected CTC confidently: \"Based on my research and experience, I was expecting ₹X. Is there flexibility?\"" },
       { number: "03", label: "Justify with data", hint: "Cite market ranges (Naukri, LinkedIn Salary, Glassdoor) and a competing offer if you have one. Don't just say \"I deserve more\"." },
       { number: "04", label: "Negotiate the full package", hint: "If base is fixed, negotiate joining bonus, variable %, ESOPs, notice period buyout, and WFH flexibility." },
@@ -871,7 +871,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Remote work negotiation */
   "negotiating-remote-work-india-2026||When and How to Ask About Remote Work": (
     <FrameworkSteps steps={[
-      { number: "01", label: "Time it right", hint: "Ask after you receive an offer — not during screening. Raising WFH requirements too early can screen you out before you've proven your value." },
+      { number: "01", label: "Time it right", hint: "Ask after you receive an offer, not during screening. Raising WFH requirements too early can screen you out before you've proven your value." },
       { number: "02", label: "Frame it as productivity", hint: "\"I do my deepest work remotely and have a well-equipped home office\" is stronger than \"I prefer working from home\"." },
       { number: "03", label: "Propose a structure", hint: "Offer a trial: \"I'm happy to come in for the first 30 days to ramp up, then move to 3 days in / 2 days remote.\" Structure lowers the risk for the employer." },
       { number: "04", label: "Get it in writing", hint: "Verbal WFH agreements disappear. Ask for the arrangement to be noted in your offer letter or a follow-up email." },
@@ -882,8 +882,8 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "interview-body-language-india-2026||The Foundation: Posture and Physical Presence": (
     <FrameworkSteps steps={[
       { number: "01", label: "Sit at 90°", hint: "Back upright, feet flat on the floor. Slouching signals disengagement; leaning forward too much signals anxiety. 90° is neutral confidence." },
-      { number: "02", label: "Open hands visible", hint: "Keep hands on the table or in view. Hidden hands read as concealment. Gestures when speaking are natural and positive — don't suppress them." },
-      { number: "03", label: "Nod, don't over-nod", hint: "A single slow nod while listening signals understanding. Rapid nodding signals you want the interviewer to stop talking — the opposite of engaged." },
+      { number: "02", label: "Open hands visible", hint: "Keep hands on the table or in view. Hidden hands read as concealment. Gestures when speaking are natural and positive, don't suppress them." },
+      { number: "03", label: "Nod, don't over-nod", hint: "A single slow nod while listening signals understanding. Rapid nodding signals you want the interviewer to stop talking, the opposite of engaged." },
       { number: "04", label: "Pause before answering", hint: "A 1–2 second pause before your answer signals thoughtfulness, not uncertainty. Rushing to fill silence is the single most common interview mistake." },
     ]} />
   ),
@@ -892,7 +892,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "optiver-interview-questions-india-2026||The Optiver Interview Process: What Makes It Different": (
     <RoundFlow rounds={[
       { label: "Online Assessment", duration: "60 min", detail: "Mental math (80 arithmetic problems in 8 min), personality test, numerical reasoning" },
-      { label: "HireVue Video", duration: "30 min", detail: "Async behavioral questions — recorded, not live" },
+      { label: "HireVue Video", duration: "30 min", detail: "Async behavioral questions, recorded, not live" },
       { label: "First Round", duration: "60 min", detail: "Mental math oral drill + probability puzzles + brain teasers" },
       { label: "Technical Round", duration: "90 min", detail: "Coding (Python/C++) + market-making scenarios + statistical reasoning" },
       { label: "Final Round", duration: "60 min", detail: "Culture fit + harder quant problems + P&L discussion" },
@@ -914,14 +914,14 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Smart Contract Engineer (2–4 yr)", min: 18, max: 40 },
       { role: "Senior Web3 Engineer (4–7 yr)", min: 30, max: 65 },
       { role: "Blockchain Architect / Tech Lead", min: 50, max: 80 },
-    ]} caption="India 2026 — Web3 salaries vary widely by company funding stage" />
+    ]} caption="India 2026, Web3 salaries vary widely by company funding stage" />
   ),
   "blockchain-web3-jobs-india-2026||Technical Skills for Web3 Engineering in India": (
     <FrameworkSteps steps={[
       { number: "01", label: "Solidity + EVM fundamentals", hint: "ERC-20, ERC-721, storage layout, gas optimisation. HardHat and Foundry are the dominant testing frameworks at Indian Web3 companies." },
       { number: "02", label: "Layer 2 familiarity", hint: "Polygon (largest Indian Web3 employer) uses Polygon PoS and CDK. Understand optimistic vs ZK rollups conceptually." },
       { number: "03", label: "Backend integration", hint: "ethers.js/web3.js, indexing with The Graph, event listeners. Node.js backend skills transfer directly." },
-      { number: "04", label: "Security awareness", hint: "Reentrancy, integer overflow, access control flaws — smart contract auditing awareness signals senior maturity." },
+      { number: "04", label: "Security awareness", hint: "Reentrancy, integer overflow, access control flaws, smart contract auditing awareness signals senior maturity." },
     ]} />
   ),
 
@@ -932,7 +932,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDE-2 / Mid-level (2–5 yr)", min: 18, max: 35 },
       { role: "Senior Engineer (5–8 yr)", min: 30, max: 55 },
       { role: "Tech Lead / Staff Engineer", min: 45, max: 60 },
-    ]} caption="Practo, PharmEasy, Pristyn Care, Medline India — 2026 ranges" />
+    ]} caption="Practo, PharmEasy, Pristyn Care, Medline India, 2026 ranges" />
   ),
   "healthtech-jobs-india-2026||Top HealthTech Employers in India 2026": (
     <TierCompare cards={[
@@ -949,7 +949,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Mid-level (2–5 yr)", min: 14, max: 30 },
       { role: "Senior Frontend (5–8 yr)", min: 25, max: 55 },
       { role: "Staff / Principal Engineer", min: 45, max: 70 },
-    ]} caption="India 2026 — higher end at fintech and consumer internet" />
+    ]} caption="India 2026, higher end at fintech and consumer internet" />
   ),
   "frontend-engineer-interview-questions-india-2026||React Interview Depth at Different Levels": (
     <TierCompare cards={[
@@ -976,7 +976,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Mid-level DevOps (2–5 yr)", min: 15, max: 35 },
       { role: "Senior DevOps / SRE (5–8 yr)", min: 28, max: 60 },
       { role: "Staff SRE / Platform Lead", min: 45, max: 70 },
-    ]} caption="India 2026 — SRE at product companies commands premium" />
+    ]} caption="India 2026, SRE at product companies commands premium" />
   ),
   "devops-engineer-interview-questions-india-2026||CI/CD and GitOps for Indian DevOps Interviews": (
     <FrameworkSteps steps={[
@@ -993,14 +993,14 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "Platform Engineer (2–4 yr)", min: 18, max: 35 },
       { role: "Senior Platform Engineer (4–7 yr)", min: 30, max: 60 },
       { role: "Staff Platform Engineer", min: 50, max: 80 },
-    ]} caption="India 2026 — platform roles command 15–25% premium over SWE at same level" />
+    ]} caption="India 2026, platform roles command 15–25% premium over SWE at same level" />
   ),
   "platform-engineer-interview-questions-india-2026||Platform Engineering Technical Skills for Interviews": (
     <FrameworkSteps steps={[
       { number: "01", label: "Internal developer platform", hint: "Backstage, Port, or custom IDP experience. Interviewers want to know if you've built self-service capabilities that reduced cognitive load for product engineers." },
       { number: "02", label: "Kubernetes at depth", hint: "Custom controllers, CRDs, admission webhooks, multi-cluster management. Platform roles go deeper than standard DevOps Kubernetes usage." },
       { number: "03", label: "Golden paths", hint: "How you define and enforce opinionated templates for services, CI pipelines, and infrastructure. Paved-road philosophy is a core platform engineering concept." },
-      { number: "04", label: "Developer experience metrics", hint: "DORA metrics (deploy frequency, lead time, MTTR, change failure rate). Platform engineers own these — you need to know how to improve them." },
+      { number: "04", label: "Developer experience metrics", hint: "DORA metrics (deploy frequency, lead time, MTTR, change failure rate). Platform engineers own these, you need to know how to improve them." },
     ]} />
   ),
 
@@ -1010,7 +1010,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDE-1 (0–2 yr)", min: 8, max: 18 },
       { role: "SDE-2 (2–5 yr)", min: 16, max: 32 },
       { role: "Senior / Lead (5+ yr)", min: 28, max: 50 },
-    ]} caption="PhysicsWallah, Unacademy, upGrad, BYJU's — 2026 ranges (post-edtech correction)" />
+    ]} caption="PhysicsWallah, Unacademy, upGrad, BYJU's, 2026 ranges (post-edtech correction)" />
   ),
   "edtech-jobs-india-2026||Which EdTech Companies Are Stable in India in 2026": (
     <TierCompare cards={[
@@ -1026,13 +1026,13 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { role: "SDE-1 (0–2 yr)", min: 12, max: 25 },
       { role: "SDE-2 (2–5 yr)", min: 22, max: 45 },
       { role: "Senior Engineer (5+ yr)", min: 38, max: 60 },
-    ]} caption="BharatPe, Slice, Fi Money, Jupiter, Setu — 2026 indicative ranges" />
+    ]} caption="BharatPe, Slice, Fi Money, Jupiter, Setu, 2026 indicative ranges" />
   ),
   "fintech-startup-jobs-india-2026||How to Evaluate a Fintech Startup Before Joining": (
     <FrameworkSteps steps={[
       { number: "01", label: "Check runway and last round", hint: "Ask in the interview: \"When was your last funding round and what's your current runway?\" Series A+ with 18+ months runway is the minimum safe zone." },
       { number: "02", label: "Verify RBI licensing", hint: "Lending, payments, and insurance products need RBI/IRDAI/SEBI licenses. A startup without the right license is building on sand." },
-      { number: "03", label: "Assess unit economics", hint: "Is the CAC declining? Is the cohort LTV improving? Good fintech has these numbers — ask if they can share directional data." },
+      { number: "03", label: "Assess unit economics", hint: "Is the CAC declining? Is the cohort LTV improving? Good fintech has these numbers, ask if they can share directional data." },
       { number: "04", label: "Review engineer attrition", hint: "Check LinkedIn: how many engineers have left in the last 12 months? High attrition in engineering signals leadership or product problems." },
     ]} />
   ),
@@ -1042,7 +1042,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
     <FrameworkSteps steps={[
       { number: "01", label: "Anchor high, not extreme", hint: "Counter 15–20% above your target. Companies expect negotiation and bake in room. Anchoring at exactly your target leaves money on the table." },
       { number: "02", label: "Give a range, not a point", hint: "\"I'm looking for ₹28–32 LPA\" is more negotiable than \"I want ₹30 LPA\". The range signals flexibility while setting a floor." },
-      { number: "03", label: "Justify once, then stop", hint: "State your market data. Then go quiet. Silence is powerful — recruiters are trained to fill it. Let them respond before you adjust." },
+      { number: "03", label: "Justify once, then stop", hint: "State your market data. Then go quiet. Silence is powerful, recruiters are trained to fill it. Let them respond before you adjust." },
       { number: "04", label: "Negotiate all levers", hint: "If base is stuck, push on: joining bonus, variable payout guarantee (first year), ESOPs, and WFH days. These often have more flexibility than base." },
     ]} />
   ),
@@ -1058,7 +1058,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "how-to-ace-technical-interview-india-2026||The 4-Week Technical Interview Preparation Plan": (
     <PrepTimeline caption="4-week interview prep plan" phases={[
       { period: "Week 1", label: "DSA Foundations", tasks: ["Arrays, strings, hashmaps: 15 LeetCode easy/medium", "Time/space complexity analysis for every solution", "Pick your primary language and practice its syntax"], milestone: "Consistent easy/medium in under 20 min" },
-      { period: "Week 2", label: "Core Patterns", tasks: ["Two pointers, sliding window, BFS/DFS, binary search: 20 problems", "At least 1 hard problem daily — even a failed attempt teaches", "Practice explaining your approach out loud"], milestone: "Can articulate approach before coding" },
+      { period: "Week 2", label: "Core Patterns", tasks: ["Two pointers, sliding window, BFS/DFS, binary search: 20 problems", "At least 1 hard problem daily, even a failed attempt teaches", "Practice explaining your approach out loud"], milestone: "Can articulate approach before coding" },
       { period: "Week 3", label: "System Design", tasks: ["Learn 4 core designs: URL shortener, rate limiter, notification service, feed", "Study CAP theorem, database selection, caching strategies", "Practice drawing and narrating design simultaneously"], milestone: "Any standard design in 40 min" },
       { period: "Week 4", label: "Mock Interviews", tasks: ["2 mock interviews (Pramp, Interviewing.io, or peer)", "Behavioral: 5 STAR stories covering ownership, conflict, failure, impact", "Research target companies' tech stacks and interview style"], milestone: "Offer-ready across all dimensions" },
     ]} />
@@ -1080,7 +1080,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
       { number: "03", label: "Define the API", hint: "Sketch 2–3 core API endpoints. This forces clarity on input/output before you start drawing boxes." },
       { number: "04", label: "High-level design", hint: "Draw: client, load balancer, app servers, database, cache, message queue. Explain each component's role and the data flow." },
       { number: "05", label: "Deep dive", hint: "The interviewer picks 1–2 components to drill. This is where you differentiate: schema, cache invalidation strategy, consistency model." },
-      { number: "06", label: "Scale and trade-offs", hint: "How does the system handle 10x traffic? What breaks first? SQL vs NoSQL? Sync vs async? State trade-offs explicitly — there's no single right answer." },
+      { number: "06", label: "Scale and trade-offs", hint: "How does the system handle 10x traffic? What breaks first? SQL vs NoSQL? Sync vs async? State trade-offs explicitly, there's no single right answer." },
     ]} />
   ),
   "system-design-interview-preparation-india-2026||Caching and Message Queue Architecture for Indian Tech Interviews": (
@@ -1094,7 +1094,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   /* Best AI mock interview tools comparison */
   "best-ai-mock-interview-tools-india-2026||What actually matters when you're choosing one": (
     <ComparisonTable
-      caption="Feature comparison across the tools covered below — pricing shown is the plan that unlocks full mock interview access, not a free-tier teaser."
+      caption="Feature comparison across the tools covered below, pricing shown is the plan that unlocks full mock interview access, not a free-tier teaser."
       columns={[
         { name: "HireStepX", highlight: true },
         { name: "Interviewing.io" },
@@ -1130,7 +1130,7 @@ export const SECTION_VISUALS_6: Record<string, ReactNode> = {
   "best-ai-mock-interview-tools-india-2026||Just using ChatGPT or Gemini directly": (
     <TierCompare cards={[
       { tier: "Campus / fresher", examples: "TCS NQT, Infosys InfyTQ, first job", rows: [{ label: "Pick", range: "HireStepX or Interview Warmup (free)" }] },
-      { tier: "Experienced, targeting Indian companies", examples: "Product companies, GCCs, IT services", rows: [{ label: "Pick", range: "HireStepX — India-specific rubric + voice" }] },
+      { tier: "Experienced, targeting Indian companies", examples: "Product companies, GCCs, IT services", rows: [{ label: "Pick", range: "HireStepX, India-specific rubric + voice" }] },
       { tier: "Targeting US-headquartered companies", examples: "FAANG, US-based remote roles", rows: [{ label: "Pick", range: "Final Round AI or Interviewing.io" }] },
     ]} />
   ),

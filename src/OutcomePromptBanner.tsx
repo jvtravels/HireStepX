@@ -128,7 +128,7 @@ export default function OutcomePromptBanner() {
       }}>
         <span style={{ fontSize: 18 }}>🎉</span>
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1 }}>
-          Thanks for sharing. {offer ? "Best of luck on the next chapter — or come back to keep your skills sharp." : "Keep practicing, you'll land it."}
+          Thanks for sharing. {offer ? "Best of luck on the next chapter, or come back to keep your skills sharp." : "Keep practicing, you'll land it."}
         </p>
       </div>
     );
@@ -143,7 +143,7 @@ export default function OutcomePromptBanner() {
       }}>
         <span style={{ fontSize: 18 }}>📈</span>
         <p style={{ fontFamily: font.ui, fontSize: 13, color: c.chalk, margin: 0, flex: 1, minWidth: 220 }}>
-          <strong style={{ color: c.ivory }}>How&apos;s your job search going?</strong> 30-second update — helps us show real outcomes (and the next person practicing what you did).
+          <strong style={{ color: c.ivory }}>How&apos;s your job search going?</strong> 30-second update, helps us show real outcomes (and the next person practicing what you did).
         </p>
         <div style={{ display: "flex", gap: 8 }}>
           <Button onClick={onSkip} variant="outline" size="sm" style={{ color: c.stone }}>Not now</Button>

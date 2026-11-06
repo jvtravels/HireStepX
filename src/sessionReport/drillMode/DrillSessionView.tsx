@@ -77,7 +77,7 @@ export function DrillSessionView({
             letterSpacing: "-0.01em",
           }}
         >
-          {config.skill.replace("-", " ")} — 5-question drill
+          {config.skill.replace("-", " ")}, 5-question drill
         </h2>
         <p
           style={{

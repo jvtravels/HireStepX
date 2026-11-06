@@ -128,7 +128,7 @@ export default function AuthCallback() {
           signedInUser?.app_metadata?.provider === "google" ||
           signedInUser?.app_metadata?.providers?.includes("google");
         if (signedInUser && !isGoogle && !signedInUser.email_confirmed_at) {
-          console.warn("[auth] OAuth returned unverified email — rejecting");
+          console.warn("[auth] OAuth returned unverified email, rejecting");
           await client.auth.signOut().catch(() => {});
           clearSessionStart();
           setError(

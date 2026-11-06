@@ -144,9 +144,9 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
         note: note.trim() || undefined,
       });
       if (!out) {
-        setResult({ ok: false, message: "Request failed. Nothing may have been unlocked — refresh to check." });
+        setResult({ ok: false, message: "Request failed. Nothing may have been unlocked, refresh to check." });
       } else if (out.ok) {
-        setResult({ ok: true, message: out.unlocked ? `Unlocked ${out.unlocked} candidate${out.unlocked === 1 ? "" : "s"}.` : "Nothing to unlock — already unlocked." });
+        setResult({ ok: true, message: out.unlocked ? `Unlocked ${out.unlocked} candidate${out.unlocked === 1 ? "" : "s"}.` : "Nothing to unlock, already unlocked." });
       } else {
         setResult({ ok: false, message: out.error || "Unlock failed." });
       }
@@ -237,7 +237,7 @@ export default function AdminUnlockPanel({ getToken, setToken }: Props) {
                 <input
                   type="text"
                   aria-label="Reason for complimentary unlock (optional)"
-                  placeholder="Reason (optional) — e.g. pilot, goodwill"
+                  placeholder="Reason (optional), e.g. pilot, goodwill"
                   value={note}
                   maxLength={200}
                   onChange={(e) => setNote(e.target.value)}

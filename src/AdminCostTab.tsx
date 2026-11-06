@@ -220,8 +220,8 @@ export default function AdminCostTab({ costData, monthRevenueInr, fetchSection, 
 
       <div style={rateBanner(cd.rateCardIsStale)}>
         {cd.rateCardIsStale ? "⚠️ " : ""}Rate card last verified <strong>{cd.ratesLastVerifiedAt}</strong> ({cd.rateCardAgeDays} days ago)
-        {cd.rateCardIsStale && " — overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. LLM is priced per model from provider-reported tokens; all figures on this tab are
-        modeled from <code style={MONO}>DEFAULT_COST_RATES</code>, not real invoices — log an actual month below to check them.
+        {cd.rateCardIsStale && ", overdue for a recheck against current Groq/Sarvam/Deepgram pricing"}. LLM is priced per model from provider-reported tokens; all figures on this tab are
+        modeled from <code style={MONO}>DEFAULT_COST_RATES</code>, not real invoices, log an actual month below to check them.
       </div>
 
       <div style={CARD_GAP}>
@@ -243,7 +243,7 @@ export default function AdminCostTab({ costData, monthRevenueInr, fetchSection, 
             ))}
           </div>
         ) : (
-          <p style={RECON_EMPTY}>No invoice totals logged yet — the modeled figures above have never been checked against a real bill.</p>
+          <p style={RECON_EMPTY}>No invoice totals logged yet, the modeled figures above have never been checked against a real bill.</p>
         )}
         <div style={FORM_ROW}>
           <input
@@ -280,7 +280,7 @@ export default function AdminCostTab({ costData, monthRevenueInr, fetchSection, 
       </div>
 
       <div style={CARD_GAP}>
-        <p style={LABEL_12}>All-in Cost / Day — ₹ (30d, IST)</p>
+        <p style={LABEL_12}>All-in Cost / Day, ₹ (30d, IST)</p>
         <MiniBarChart data={cd.perDay} color={T.copper} height={100} />
         <div style={AXIS_ROW}>
           <span>{Object.keys(cd.perDay)[0]}</span>

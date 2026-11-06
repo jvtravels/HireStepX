@@ -246,7 +246,7 @@ export function buildQuestionsPageModel(slug: string) {
   const recruitmentHowToSchema = page.recruitmentSteps && page.recruitmentSteps.length > 0 ? {
     "@context": "https://schema.org",
     "@type": "HowTo",
-    name: `${companyLabel} interview process — step by step`,
+    name: `${companyLabel} interview process, step by step`,
     description: `A step-by-step breakdown of the ${companyLabel} ${focusLabel.toLowerCase()} interview process for candidates in India.`,
     step: page.recruitmentSteps.map((step, i) => ({
       "@type": "HowToStep",

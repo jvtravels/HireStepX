@@ -246,7 +246,7 @@ export function ErrorShell({
         </h1>
         <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.55 }}>
           {hasPreliminary
-            ? "We captured your full interview — but it isn’t scored yet. Your coached report (model answers, STAR breakdowns and skill tracking) just needs one more try. Tap the button below to build it now. Your transcript is safe."
+            ? "We captured your full interview, but it isn’t scored yet. Your coached report (model answers, STAR breakdowns and skill tracking) just needs one more try. Tap the button below to build it now. Your transcript is safe."
             : message}
         </p>
         {hasQualitativeNotes && preliminary && <PreliminaryCard p={preliminary} />}
@@ -1015,7 +1015,7 @@ export const SessionReport = memo(function SessionReport({
             <div style={{ fontSize: 40, marginBottom: 16 }}>🎙️</div>
             <h1 style={{ fontFamily: f.serif, fontSize: 28, color: t.coal, margin: "0 0 12px", fontWeight: 400 }}>No answers were recorded</h1>
             <p style={{ fontFamily: f.sans, fontSize: 14, color: t.inkSoft, margin: "0 0 24px", lineHeight: 1.6 }}>
-              It looks like your microphone wasn&apos;t captured during this session — the interview ran but no candidate audio reached our system.
+              It looks like your microphone wasn&apos;t captured during this session, the interview ran but no candidate audio reached our system.
               Check that your browser has mic permission, or use <strong>Text mode</strong> to type your answers instead.
             </p>
             <Button type="button" size="lg" onClick={onBack}>

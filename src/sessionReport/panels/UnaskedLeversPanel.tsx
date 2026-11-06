@@ -14,13 +14,13 @@ export function renderLowballEventText(
   const headline = `You anchored at ₹${ev.candidateAnchor}L`;
   const gapLine = `That came in about ₹${gapLpa}L below the band floor for this role.`;
   const recruiterLine =
-    "The recruiter probed it with a calibrated surprise — a quiet signal that the number was under-anchored.";
+    "The recruiter probed it with a calibrated surprise, a quiet signal that the number was under-anchored.";
   const candidateLine = ev.candidateHeld
-    ? "You held the lowball — you reaffirmed the number instead of revising up."
-    : "You revised up after the probe — you adjusted your anchor once the signal landed.";
+    ? "You held the lowball, you reaffirmed the number instead of revising up."
+    : "You revised up after the probe, you adjusted your anchor once the signal landed.";
   const takeaway = ev.candidateHeld
     ? "This is the most expensive moment of the call. The recruiter gave you a clear signal that you were under-anchoring, and you confirmed the low number. Recovery is hard once you've reaffirmed an ask."
-    : "Good recovery. The recruiter probed, you adjusted. Next time, anchor higher in the first place — the surprise probe tells you the band floor is significantly above where you started.";
+    : "Good recovery. The recruiter probed, you adjusted. Next time, anchor higher in the first place, the surprise probe tells you the band floor is significantly above where you started.";
   return { headline, gapLine, recruiterLine, candidateLine, takeaway };
 }
 

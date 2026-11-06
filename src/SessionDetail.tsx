@@ -259,7 +259,7 @@ export default function SessionDetail() {
   // requirement/candidate-detail breadcrumbs (useEmployerBreadcrumb).
   useDashboardBreadcrumb(
     dashboardSession
-      ? [{ label: dashboardSession.company ? `${dashboardSession.role} — ${dashboardSession.company}` : dashboardSession.role }]
+      ? [{ label: dashboardSession.company ? `${dashboardSession.role}, ${dashboardSession.company}` : dashboardSession.role }]
       : null
   );
 

@@ -112,7 +112,7 @@ export default function Login() {
   const passwordError = passwordTouched
     ? passwordV.message ||
       (passwordHasEdgeWhitespace(password)
-        ? "Password has leading or trailing spaces — check your paste."
+        ? "Password has leading or trailing spaces, check your paste."
         : null)
     : null;
 
@@ -355,7 +355,7 @@ export default function Login() {
 
   const verifiedNotice =
     verifiedParam === "true"
-      ? "Email verified — you're all set. Log in below to continue."
+      ? "Email verified, you're all set. Log in below to continue."
       : verifiedParam === "already"
         ? "This email is already verified. Log in below to continue."
         : null;
@@ -680,7 +680,7 @@ export default function Login() {
                   checked={staySignedIn}
                   onChange={setStaySignedIn}
                   label="Stay signed in"
-                  description="Stay signed in for 30 days. Leave unchecked on shared devices — you'll be signed out after 24 hours."
+                  description="Stay signed in for 30 days. Leave unchecked on shared devices, you'll be signed out after 24 hours."
                 />
                 <a
                   href="/forgot-password"

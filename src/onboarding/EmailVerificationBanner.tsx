@@ -12,7 +12,7 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
   const COAL = tokens.coal;
   const LINE = tokens.line;
   const disabled = cooldown > 0 || sending;
-  const label = sending ? "Sending…" : cooldown > 0 ? (message?.kind === "ok" ? `Sent ✓ · resend in ${cooldown}s` : `Resend in ${cooldown}s`) : message?.kind === "error" ? "Failed — try again" : "Resend email";
+  const label = sending ? "Sending…" : cooldown > 0 ? (message?.kind === "ok" ? `Sent ✓ · resend in ${cooldown}s` : `Resend in ${cooldown}s`) : message?.kind === "error" ? "Failed, try again" : "Resend email";
   return (
     <div
       style={{
@@ -38,7 +38,7 @@ export function EmailVerificationBanner({ email }: { email?: string } = {}) {
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
           <polyline points="22,6 12,13 2,6" />
         </svg>
-        Check your inbox for a verification link — your progress is saved.
+        Check your inbox for a verification link, your progress is saved.
       </span>
       {email && (
         <Button

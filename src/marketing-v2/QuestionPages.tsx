@@ -431,7 +431,7 @@ export function QuestionSetPage({
                 sub={
                   questionsAreCompanySpecific
                     ? "Sourced from 2+ candidate post-mortems. Hit Practice to answer any one with AI voice feedback."
-                    : `We don't yet have ${companyLabel}-specific questions for this focus area — these are commonly asked across ${focusLabel.toLowerCase()} interviews. Hit Practice to answer any one with AI voice feedback.`
+                    : `We don't yet have ${companyLabel}-specific questions for this focus area, these are commonly asked across ${focusLabel.toLowerCase()} interviews. Hit Practice to answer any one with AI voice feedback.`
                 }
               />
               <div style={{ position: "relative" }}>
@@ -588,7 +588,7 @@ export function QuestionSetPage({
             distinction needs to be stated somewhere on the page. */}
         <section className="ed-container" style={{ paddingTop: 0, paddingBottom: 40 }}>
           <p style={{ fontFamily: fonts.sans, fontSize: 13, lineHeight: 1.7, color: t.inkFaint, margin: 0, maxWidth: "68ch", borderTop: `1px solid ${t.line}`, paddingTop: 24 }}>
-            These questions combine candidate-reported interview detail with practice questions compiled by the HireStepX team to help you rehearse — the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
+            These questions combine candidate-reported interview detail with practice questions compiled by the HireStepX team to help you rehearse, the two aren&apos;t the same thing, and we don&apos;t present a practice question as a verified historical one. See our{" "}
             <Link href="/methodology" className="ed-link" style={{ color: t.inkSoft, textDecoration: "underline" }}>
               methodology
             </Link>{" "}
