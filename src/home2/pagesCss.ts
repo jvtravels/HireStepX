@@ -286,11 +286,11 @@ export const pagesCss = `
 .hs-h { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 15px; }
 .hs-count { padding: 4px 10px; border-radius: 99px; background: oklch(0.935 0.045 285 / 0.7); color: var(--btn); font-size: 12px; font-weight: 500; }
 .hs-note { margin: 0; font-size: 14px; color: var(--ink-3); }
-.hs-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
-.hs-bars li { display: grid; grid-template-columns: 96px minmax(0, 1fr) 28px; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
-.hs-bars i { height: 6px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
-.hs-bars i::after { content: ''; position: absolute; inset: 0; width: var(--w); background: var(--btn); border-radius: 3px; transform-origin: left; animation: hs-grow .9s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
-.hs-bars b { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 500; font-size: 13px; color: var(--ink); text-align: right; }
+.hs-sbars { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+.hs-sbars li { display: grid; grid-template-columns: 96px minmax(0, 1fr) 28px; gap: 12px; align-items: center; font-size: 14px; color: var(--ink-2); }
+.hs-sbars i { height: 6px; border-radius: 3px; background: var(--line); position: relative; overflow: hidden; }
+.hs-sbars i::after { content: ''; position: absolute; inset: 0; width: var(--w); background: var(--btn); border-radius: 3px; transform-origin: left; animation: hs-grow .9s cubic-bezier(0.22, 1, 0.36, 1) var(--d, 0s) both; }
+.hs-sbars b { font-family: var(--font-mono), ui-monospace, monospace; font-weight: 500; font-size: 13px; color: var(--ink); text-align: right; }
 .hs-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .hs-rank li { display: grid; grid-template-columns: 16px 32px minmax(0, 1fr) auto auto; gap: 12px; align-items: center; height: 56px; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); font-size: 15px; animation: hs-slide 1s cubic-bezier(0.65, 0, 0.35, 1) var(--d, 0s) both; }
 .hs-rank li > span { font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-3); }
@@ -299,7 +299,7 @@ export const pagesCss = `
 .hs-two { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: stretch; }
 .hs-col { display: grid; gap: 22px; grid-template-rows: auto auto 1fr; min-width: 0; }
 .hs-col .hs-sum { align-self: stretch; }
-.hs-col .hs-bars li { grid-template-columns: 104px minmax(0, 1fr) 26px; }
+.hs-col .hs-sbars li { grid-template-columns: 104px minmax(0, 1fr) 26px; }
 @keyframes hs-scene { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes hs-fill { from { transform: scaleX(0); } to { transform: none; } }
 @keyframes hs-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -532,8 +532,8 @@ export const pagesCss = `
 .hs-people { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
 .hs-people > span { display: block; }
 .hs-people .hs-note { margin-left: 8px; }
-.hs-bars li.none > span, .hs-bars li.none > b { color: var(--ink-3); }
-.hs-bars li.none i::after { display: none; }
+.hs-sbars li.none > span, .hs-sbars li.none > b { color: var(--ink-3); }
+.hs-sbars li.none i::after { display: none; }
 .hs-scene .pg-win { width: min(100%, 640px); }
 .hs-scene.wide .pg-win { width: min(100%, 820px); }
 
@@ -579,8 +579,8 @@ export const pagesCss = `
 .em-head.ctr .hx-h2 { text-wrap: balance; }
 .hs-scene .pg-win, .hs-scene.wide .pg-win { width: min(100%, 780px); }
 .hs-scene .pg-body { justify-content: center; gap: 14px; }
-.hs-bars { gap: 18px; }
-.hs-bars li, .hs-col .hs-bars li { grid-template-columns: 116px minmax(0, 1fr) 28px; white-space: nowrap; }
+.hs-sbars { gap: 18px; }
+.hs-sbars li, .hs-col .hs-sbars li { grid-template-columns: 116px minmax(0, 1fr) 28px; white-space: nowrap; }
 .hs-people { display: grid; grid-template-columns: repeat(4, auto) 1fr; gap: 10px; margin-top: 8px; }
 .hs-people > span { display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px 4px 4px; border: 1px solid var(--line); border-radius: 99px; background: var(--white); font-family: var(--font-mono), ui-monospace, monospace; font-size: 12px; color: var(--ink-2); }
 .hs-people .hs-note { grid-column: 1 / -1; margin: 6px 0 0; }

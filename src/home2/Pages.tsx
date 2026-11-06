@@ -369,7 +369,7 @@ const HS_RANK = [["a41f", 86, 2], ["e07b", 80, 0], ["c92d", 74, 3], ["f19a", 66,
 
 export function SkillBars({ rows, start }: { rows: [string, number | null][]; start: number }) {
   return (
-    <ul className="hs-bars">
+    <ul className="hs-sbars">
       {rows.map(([s, v], i) => (
         <li key={s} className={v === null ? "none" : undefined}><span>{s}</span><i style={{ ...d(start + i * 0.45), ["--w" as string]: `${v ?? 0}%` }} /><b className="hs-in" style={d(start + 0.5 + i * 0.45)}>{v ?? "–"}</b></li>
       ))}
