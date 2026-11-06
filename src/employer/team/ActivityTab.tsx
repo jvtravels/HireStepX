@@ -3,6 +3,7 @@
 import { Fragment, useMemo } from "react";
 import { ActivityIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge, SegmentedControl } from "@/employer/_atoms";
 import { tokens as t, fonts as f } from "@/auth/_tokens";
@@ -106,7 +107,13 @@ export default function ActivityTab({
               </ul>
             </Fragment>
           ))}
-          {loading && <p role="status" className={PAD} style={{ ...muted, paddingTop: 16, paddingBottom: 16 }}>Loading…</p>}
+          {loading && (
+            <div role="status" aria-busy="true" className={`${PAD} grid gap-2.5 py-4`}>
+              <span className="sr-only">Loading more activity</span>
+              <Skeleton className="h-9" />
+              <Skeleton className="h-9" />
+            </div>
+          )}
           {nextBefore && !loading && (
             <div className={PAD} style={{ paddingTop: 16, paddingBottom: 16, borderTop: `1px solid ${t.line}` }}>
               <Button type="button" variant="outline" size="lg" className="h-9 px-4" onClick={() => void loadMore()}>Load more</Button>

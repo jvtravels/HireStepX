@@ -6,6 +6,7 @@ import { ArrowUpIcon, LightbulbIcon, MessageCircleQuestionIcon, ScaleIcon, Searc
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { matchBandLabel } from "../../../../../../server-handlers/_requirement-match-helpers";
 import type { Candidate } from "@/employer/mockData";
 import { CandidateStatusChip } from "@/employer/_atoms";
@@ -90,7 +91,7 @@ const Faint = ({ children }: { children: ReactNode }) => <span className="text-[
 
 /** One evidence cell: closed until unlock, a quiet note while loading or when there is nothing graded, otherwise the content. */
 function EvidenceCell({ state, children }: { state: EvidenceState | undefined; children: (e: CandidateEvidence) => ReactNode }) {
-  if (!state || state.status === "loading") return <Faint>Loading evidence</Faint>;
+  if (!state || state.status === "loading") return <span aria-busy="true" className="grid gap-1.5"><span className="sr-only">Loading evidence</span><Skeleton className="h-3.5 w-4/5" /><Skeleton className="h-3.5 w-3/5" /></span>;
   if (state.status === "locked") return <Faint>Unlock to see evidence</Faint>;
   if (state.status === "error") return <Faint>Couldn&apos;t load evidence</Faint>;
   return <>{children(state.evidence)}</>;
