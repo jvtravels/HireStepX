@@ -340,6 +340,31 @@ if you need to confirm readiness — do not re-trigger.
 - Interviews are always in English. No replay, no peer/human mocks in the MVP.
 - Keep the input border colour as it is.
 
+## Design: no AI-slop or vibe-coded tells (maintainer rule, do not re-ask)
+
+Before writing any UI or copy, check it against this list. If a change
+would add one of these, pick the alternative instead.
+
+- **Em dashes**: never in UI copy, meta descriptions, blog captions or
+  emails. Use a comma, colon, period or parentheses. A lone `"—"` for an
+  empty table cell is the only allowed use.
+- **Dot-grid / grid-pattern backgrounds**: don't add them. (The interview
+  voice visualiser dot grid is a feature, not decoration.)
+- **Purple/indigo gradients**, gradient text, glowing orbs, glass cards
+  (blur as decoration): use flat `hx-*` token colours.
+- **Colour-stripe card edges** (`border-left` accent): use a full border or
+  a tint.
+- **Sparkle icons** for "AI", and stock icon-library icons dropped in as
+  decoration: use an icon only when it carries meaning.
+- **Three identical cards in a row** (features, steps, pricing tiers) and
+  bento grids: vary size and structure; a list or table is often better.
+- **Emojis in headings or labels**: none.
+- **Default Inter/Geist look**: stay on the brand fonts in the tokens.
+- **Fake testimonials, invented stats, made-up logos**: only real,
+  checkable proof.
+- **Copy**: plain, specific, short. No filler like "seamless", "unlock",
+  "supercharge", "elevate", "revolutionize".
+
 ## Audit Department Registry
 
 When the user asks for "all departments" or "the audit list", pull this section.
