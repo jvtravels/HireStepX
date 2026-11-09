@@ -1,5 +1,5 @@
 "use client";
-import { homeCss } from "./homeCss";
+import "./home.css";
 import { HeroSurface, StepVisual, ReportSurface, InboxSurface } from "./Visuals";
 import { Trust } from "./Extra";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -265,7 +265,6 @@ export function Footer() {
 export function HomeShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="hx">
-      <style>{homeCss}</style>
       {children}
     </div>
   );

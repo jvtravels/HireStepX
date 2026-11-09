@@ -1,8 +1,8 @@
 "use client";
+import "./home.css";
+import "./pages.css";
 import { useEffect, useRef, useState } from "react";
 import { ScoreChip } from "./Score";
-import { homeCss } from "./homeCss";
-import { pagesCss } from "./pagesCss";
 import { Footer, Nav, type NavKey } from "./Homepage";
 import { EmpFaq } from "./Extra";
 import Skel, { useSkel } from "./Skel";
@@ -33,8 +33,6 @@ export const Lock = () => (
 export function Shell({ active, children }: { active?: NavKey; children: React.ReactNode }) {
   return (
     <div className="hx">
-      <style>{homeCss}</style>
-      <style>{pagesCss}</style>
       <Nav active={active} talentHref="/candidates" />
       <main>{children}</main>
       <Footer />

@@ -1,6 +1,6 @@
 "use client";
+import "./home.css";
 import type { ReactNode } from "react";
-import { homeCss } from "./homeCss";
 import { authCss } from "./Auth";
 
 const skinCss = `
@@ -47,7 +47,6 @@ const skinCss = `
 export function AuthSkin({ children, top, staging: stagingForm }: { children: ReactNode; top: ReactNode; staging?: ReactNode }) {
   return (
     <div className="hx hx-auth-skin">
-      <style>{homeCss}</style>
       <style>{authCss}</style>
       <style>{skinCss}</style>
       <div className="hx-au">

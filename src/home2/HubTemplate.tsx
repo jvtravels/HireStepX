@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Shell, Close, Arrow } from "./Pages";
-import { Faqs, Hubs, sxCss } from "./SeoTemplates";
+import { Faqs, Hubs } from "./SeoTemplates";
 
 export type HubItem = { label: string; href: string; meta?: string };
 export type HubSection =
@@ -59,7 +59,7 @@ function Grid({ s }: { s: Extract<HubSection, { kind: "grid" }> }) {
 export function HubTemplate({ kicker, title, dek, crumbs, stats, cta, sections, faqs, close }: HubProps) {
   return (
     <Shell active="resources">
-      <style>{sxCss + hubCss}</style>
+      <style>{hubCss}</style>
       <header className="sx-hero">
         <div className="hx-wrap">
           {crumbs && crumbs.length > 0 && (

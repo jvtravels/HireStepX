@@ -1,4 +1,3 @@
-export const homeCss = `
 @media (prefers-reduced-motion: no-preference) { @view-transition { navigation: auto; } }
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .16s; }
 .hx-nav { view-transition-name: hx-nav; }
@@ -848,5 +847,3 @@ p.hx-swap, div.hx-swap { display: block; }
   .hx-fl-row .hx-fakebtn { flex: 1 1 0; justify-content: center; }
 }
 @media (pointer: coarse) { .hs-rec { min-height: 44px; } }
-`;
-
