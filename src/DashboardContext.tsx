@@ -112,6 +112,11 @@ export interface SessionsContextValue {
   readinessDelta: number | null;
   practiceCoverage: PracticeCoverage;
   evidenceCapabilities: EvidenceCapability[];
+  /** Raw per-session rows (skill_scores, focus, type) behind recentSessions'
+   *  normalized view — exposed so narrow cross-session folds (e.g. the
+   *  Designer Loop scorecard) can read skill_scores without a second
+   *  session fetch, mirroring how evidenceCapabilities already reads it. */
+  realSessions: RealSession[];
   calendarEvents: InterviewEvent[];
   /**
    * Per-section initial-load flags. Replaces the all-or-nothing
@@ -956,9 +961,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
   const sessionsValue: SessionsContextValue = useMemo(() => ({
     recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData,
     weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities,
-    calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
+    realSessions, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion,
     sessionsLoading, eventsLoading,
-  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
+  }), [recentSessions, scoreTrend, skills, skillVelocity, overallStats, hasData, weekActivity, currentStreak, readinessScore, readinessDelta, practiceCoverage, evidenceCapabilities, realSessions, calendarEvents, topGaps, refreshSessions, invalidateSessions, sessionVersion, sessionsLoading, eventsLoading]);
 
   const subscriptionValue: SubscriptionContextValue = useMemo(() => ({
     isFree, isStarter, atSessionLimit,

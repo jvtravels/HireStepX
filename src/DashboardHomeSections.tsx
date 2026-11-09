@@ -438,6 +438,55 @@ export function DesignerLoopCard({ rounds, doneCount, total, onStartRound }: {
   );
 }
 
+/* ─── Design Interview Loop combined scorecard (Stage 3) ───
+   Shown once 2+ rounds are done — pulls each completed round's overall
+   score and skill-dimension breakdown (src/designerLoopScorecard.ts)
+   into one comparison view, so a candidate's stated design philosophy
+   in Portfolio Review can be checked against how they actually handled
+   the Design Exercise, without a new scoring run. */
+
+export function DesignerLoopScorecardCard({ rounds, averageScore }: {
+  rounds: Array<{ slug: string; label: string; overallScore: number; skills: Array<{ name: string; score: number }> }>;
+  averageScore: number | null;
+}) {
+  return (
+    <section aria-labelledby="dh-designer-scorecard-heading" style={{
+      padding: "24px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+        <h2 id="dh-designer-scorecard-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
+          Combined Scorecard
+        </h2>
+        {averageScore !== null && (
+          <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft }}>
+            Average {averageScore}
+          </span>
+        )}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        {rounds.map((r) => (
+          <div key={r.slug}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.coal }}>{r.label}</span>
+              <Tag tone="indigo" label={`${r.overallScore}`} />
+            </div>
+            {r.skills.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {r.skills.map((s) => (
+                  <span key={s.name} title={`${s.name}: ${s.score}`} style={{
+                    fontFamily: f.sans, fontSize: textSize.sm, color: t.inkSoft,
+                    background: t.creamSoft, borderRadius: 999, padding: "3px 9px",
+                  }}>{s.name} · {s.score}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ─── Getting Started stepper (empty-state only) ─── */
 
 export function GettingStartedCard({ hasResume, hasTargetRole, hasFirstSession, hasVisitedAnalytics }: {

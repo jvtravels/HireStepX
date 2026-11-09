@@ -25,6 +25,7 @@ import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
 import { profileFromRole } from "./roleInterviewMatrix";
 import { getDesignerLoopProgress } from "./designerLoop";
+import { getDesignerLoopScorecard } from "./designerLoopScorecard";
 import { isEnabled } from "./featureFlags";
 import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
@@ -46,6 +47,7 @@ import {
   UnlockTeaserGrid,
   NoSessionsEmptyState,
   DesignerLoopCard,
+  DesignerLoopScorecardCard,
 } from "./DashboardHomeSections";
 import { SessionsTable, toRow, DEFAULT_SORT } from "./SessionsV2";
 
@@ -439,6 +441,14 @@ export default function DashboardHome() {
     () => getDesignerLoopProgress(designerLoopRoleProfile.focuses, sessions.recentSessions.map((s) => s.type)),
     [designerLoopRoleProfile.focuses, sessions.recentSessions],
   );
+  /* Combined scorecard (Stage 3) — folds each completed round's existing
+   * report into one comparison view once 2+ rounds are done. Reads
+   * sessions.realSessions for skill_scores, the same source evidenceCapabilities
+   * already reads for a cross-session fold. */
+  const designerLoopScorecard = useMemo(
+    () => getDesignerLoopScorecard(designerLoopProgress.rounds, sessions.recentSessions, sessions.realSessions),
+    [designerLoopProgress.rounds, sessions.recentSessions, sessions.realSessions],
+  );
   const goToDesignerLoopRound = (slug: string) => {
     captureClientEvent("designer_loop_round_clicked", { slug });
     router.push(`/session/new?focus=${slug}`);
@@ -570,6 +580,13 @@ export default function DashboardHome() {
           doneCount={designerLoopProgress.doneCount}
           total={designerLoopProgress.total}
           onStartRound={goToDesignerLoopRound}
+        />
+      )}
+
+      {designerLoopEnabled && designerLoopScorecard.visible && (
+        <DesignerLoopScorecardCard
+          rounds={designerLoopScorecard.rounds}
+          averageScore={designerLoopScorecard.averageScore}
         />
       )}
 
