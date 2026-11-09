@@ -16,6 +16,8 @@ export const FOCUS_MINUTES: Record<string, number> = {
   "HR Round": 10,
   "Management": 18,
   "Government / PSU": 18,
+  "Portfolio Review": 18,
+  "Design Exercise": 20,
 };
 
 export function sessionMinutesForFocus(focus: string): number {

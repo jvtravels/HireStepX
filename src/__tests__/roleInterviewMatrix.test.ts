@@ -170,6 +170,27 @@ describe("getRelevantFocuses — anti-patterns from bug report", () => {
       expect(getRelevantFocuses(f, "mid")).toContain("Behavioral");
     }
   });
+
+  it("Designer gets Portfolio Review + Design Exercise at any seniority", () => {
+    for (const seniority of ["junior", "mid", "senior", "lead", "exec"] as const) {
+      const focuses = getRelevantFocuses("designer", seniority);
+      expect(focuses).toContain("Portfolio Review");
+      expect(focuses).toContain("Design Exercise");
+    }
+  });
+
+  it("Non-designer families do NOT get Portfolio Review or Design Exercise", () => {
+    const families = [
+      "swe", "em", "pm", "data", "qa", "devops",
+      "sales", "marketing", "finance", "ops", "consulting",
+      "cs", "hr", "legal", "founder", "psu", "student",
+    ] as const;
+    for (const f of families) {
+      const focuses = getRelevantFocuses(f, "senior");
+      expect(focuses).not.toContain("Portfolio Review");
+      expect(focuses).not.toContain("Design Exercise");
+    }
+  });
 });
 
 describe("profileFromRole integration", () => {

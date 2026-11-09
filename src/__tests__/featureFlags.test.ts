@@ -27,6 +27,19 @@ describe("featureFlagRegistry", () => {
       expect(p).toBeLessThan(100);
     }
   });
+
+  it("stagingOnly flags resolve false off-staging regardless of override, remote, or rollout", () => {
+    expect(resolveFlag("DESIGNER_LOOP_MODE", {})).toBe(false);
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { override: true })).toBe(false);
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { remote: true })).toBe(false);
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { userId: "always-in-rollout" })).toBe(false);
+  });
+
+  it("stagingOnly flags resolve normally once isStaging is true", () => {
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { isStaging: true })).toBe(false); // code default is still off
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { isStaging: true, override: true })).toBe(true);
+    expect(resolveFlag("DESIGNER_LOOP_MODE", { isStaging: true, remote: true })).toBe(true);
+  });
 });
 
 describe("client isEnabled", () => {
@@ -60,6 +73,12 @@ describe("client isEnabled", () => {
   it("ignores overrides for undeclared flags", () => {
     overrideFlag("NOT_A_FLAG", true);
     expect(localStorage.getItem("hirestepx_ff_NOT_A_FLAG")).toBeNull();
+  });
+
+  it("a stagingOnly flag stays off on a production-like host even with an override", () => {
+    overrideFlag("DESIGNER_LOOP_MODE", true);
+    expect(window.location.hostname).not.toBe("staging.hirestepx.com");
+    expect(isEnabled("DESIGNER_LOOP_MODE")).toBe(false);
   });
 });
 
@@ -103,5 +122,18 @@ describe("server isServerFlagEnabled", () => {
     now += 61_000;
     await isServerFlagEnabled("SALARY_NEGOTIATION_MODE", "u1", d);
     expect(remote).toHaveBeenCalledTimes(2);
+  });
+
+  it("a stagingOnly flag is forced off for any non-staging host, bypassing env override and remote", async () => {
+    const remote = vi.fn(async () => true);
+    const d = deps({ FF_DESIGNER_LOOP_MODE: "on" }, remote);
+    expect(await isServerFlagEnabled("DESIGNER_LOOP_MODE", "u1", d, "hirestepx.com")).toBe(false);
+    expect(await isServerFlagEnabled("DESIGNER_LOOP_MODE", "u1", d, undefined)).toBe(false);
+    expect(remote).not.toHaveBeenCalled();
+  });
+
+  it("a stagingOnly flag resolves normally once the host is staging", async () => {
+    const d = deps({ FF_DESIGNER_LOOP_MODE: "on" }, async () => undefined);
+    expect(await isServerFlagEnabled("DESIGNER_LOOP_MODE", "u1", d, "staging.hirestepx.com")).toBe(true);
   });
 });

@@ -7,7 +7,7 @@
  * flags share one cache entry so a kill switch costs ~1 PostHog call per
  * minute per isolate, not one per request. */
 
-import { FLAGS, remoteKeyFor, resolveFlag, type FlagName } from "../src/featureFlagRegistry";
+import { FLAGS, remoteKeyFor, resolveFlag, STAGING_HOST, type FeatureFlag, type FlagName } from "../src/featureFlagRegistry";
 import { getServerFeatureFlag } from "./_posthog";
 
 declare const process: { env: Record<string, string | undefined> };
@@ -38,7 +38,15 @@ export async function isServerFlagEnabled(
   name: FlagName,
   userId?: string,
   deps: ServerFlagDeps = { env: process.env, remote: getServerFeatureFlag, now: Date.now },
+  /** Request Host header. Only matters for `stagingOnly` flags — see
+      STAGING_HOST in featureFlagRegistry.ts (staging.hirestepx.com aliases
+      the prod deployment, so this is the only signal that tells them apart). */
+  host?: string | null,
 ): Promise<boolean> {
+  const isStaging = host === STAGING_HOST;
+  const flag: FeatureFlag = FLAGS[name];
+  if (flag.stagingOnly && !isStaging) return false;
+
   const override = parseEnvFlag(deps.env[`FF_${name}`]);
   if (override !== undefined) return override;
 
@@ -52,5 +60,5 @@ export async function isServerFlagEnabled(
     remote = await deps.remote(remoteKeyFor(name), distinctId);
     cache.set(cacheKey, { value: remote, expires: deps.now() + CACHE_TTL_MS });
   }
-  return resolveFlag(name, { remote, userId });
+  return resolveFlag(name, { remote, userId, isStaging });
 }

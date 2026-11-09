@@ -12,7 +12,16 @@ export interface FeatureFlag {
   /** "global" kill switches are evaluated once for everyone (cheap, cacheable
       server-side); "user" flags are evaluated per person for targeting. */
   scope: "global" | "user";
+  /** Hard-gated to STAGING_HOST: resolves false everywhere else, even under
+      an operator override or a remote "on" value. For features mid-build
+      that must not reach production candidates yet. */
+  stagingOnly?: boolean;
 }
+
+/** staging.hirestepx.com is a DNS alias of the production deployment (same
+    Vercel env), so this is the only way to tell them apart — see next.config.js's
+    host-based rewrites for the same distinction applied to routes. */
+export const STAGING_HOST = "staging.hirestepx.com";
 
 /**
  * Declared flags must have a real consumer: unused entries rot and suggest
@@ -29,6 +38,13 @@ export const FLAGS = {
     description: "Per-user daily LLM token ceiling on enhancement endpoints. Off → cap is not enforced (kill switch if it wrongly blocks users).",
     enabled: true,
     scope: "global",
+  },
+  DESIGNER_LOOP_MODE: {
+    description: "Designer-track interview loop (Portfolio Review + Design Exercise rounds, plus unlocking Panel Interview/Strategic for the designer family). Off → those focuses stay 'Coming soon' in setup for designer-family users. Staging-only while in build (see stagingOnly) — not yet cleared for production candidates. Staged rollout once promoted: internal → 10% of designer candidates → everyone.",
+    enabled: false,
+    rolloutPercent: 10,
+    scope: "user",
+    stagingOnly: true,
   },
 } as const satisfies Record<string, FeatureFlag>;
 
@@ -59,13 +75,17 @@ export interface FlagInputs {
   /** Value from the remote provider; undefined = flag not defined there or not loaded. */
   remote?: boolean;
   userId?: string;
+  /** Whether this request/session is on STAGING_HOST. Required to ever resolve
+      a `stagingOnly` flag true; irrelevant to every other flag. */
+  isStaging?: boolean;
 }
 
-/** Precedence: override > remote provider > userId rollout > code default. */
-export function resolveFlag(name: FlagName, { override, remote, userId }: FlagInputs): boolean {
+/** Precedence: stagingOnly hard-gate > override > remote provider > userId rollout > code default. */
+export function resolveFlag(name: FlagName, { override, remote, userId, isStaging }: FlagInputs): boolean {
+  const flag: FeatureFlag = FLAGS[name];
+  if (flag.stagingOnly && !isStaging) return false;
   if (override !== undefined) return override;
   if (remote !== undefined) return remote;
-  const flag: FeatureFlag = FLAGS[name];
   if (flag.rolloutPercent != null && userId) {
     return hashPercent(userId + name) < flag.rolloutPercent;
   }

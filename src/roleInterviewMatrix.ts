@@ -28,7 +28,9 @@ export type InterviewFocus =
   | "Campus Placement"
   | "HR Round"
   | "Management"
-  | "Government / PSU";
+  | "Government / PSU"
+  | "Portfolio Review"
+  | "Design Exercise";
 
 export type RoleFamily =
   | "swe"          // SDE / SWE / Backend / Frontend / Mobile / Full-stack
@@ -292,6 +294,16 @@ export function getRelevantFocuses(
     ["pm", "designer", "marketing", "sales", "ops", "hr"].includes(family)
   ) {
     out.push("Management");
+  }
+
+  // Portfolio Review + Design Exercise: designer-only rounds, any seniority —
+  // every design hiring loop (junior through staff) includes a portfolio walkthrough
+  // and a live/take-home design exercise. UI-layer visibility is still flag-gated
+  // (see DESIGNER_LOOP_MODE in featureFlagRegistry.ts) — this matrix stays the
+  // pure role→focus truth and doesn't know about rollout state.
+  if (family === "designer") {
+    out.push("Portfolio Review");
+    out.push("Design Exercise");
   }
 
   return out;

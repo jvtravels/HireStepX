@@ -12,7 +12,7 @@ import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { ROLE_SUGGESTIONS } from "./onboardingData";
 import { COMPANY_SUGGESTIONS as COMPANY_SUGGESTIONS_FULL } from "../data/company-suggestions";
-import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus } from "./roleInterviewMatrix";
+import { profileFromRole, inferRoleFamily, inferSeniority, type InterviewFocus, type RoleFamily } from "./roleInterviewMatrix";
 import { isEnabled } from "./featureFlags";
 import { detectRoleCompanyFit } from "./_role-company-fit";
 import { getCompanyTier } from "../data/company-tiers";
@@ -251,6 +251,8 @@ const introByType: Record<string, string> = {
   "hr-round": "Welcome to your HR round practice. We'll focus on culture fit, motivation, salary expectations, and behavioral questions that HR teams typically ask. Ready?",
   "management": "Welcome to your management interview. We'll explore your people leadership, project management, and stakeholder communication skills. Let's begin.",
   "government-psu": "Welcome to your government and public sector interview practice. These interviews test your awareness of public administration, ethics, current affairs, and your motivation for public service. Let's begin — are you ready?",
+  "portfolio-review": "Welcome to your portfolio review. Pick a project you're proud of and walk me through it — what you built, the decisions behind it, and how it landed. Ready?",
+  "design-exercise": "Welcome to your design exercise. I'll give you a lightweight brief and we'll work through it together, out loud — think of this as a live whiteboard session, not a test. Ready?",
 };
 
 /* Focus type → interview type mapping */
@@ -265,6 +267,8 @@ const focusToType: Record<string, string> = {
   "HR Round": "hr-round",
   "Management": "management",
   "Government / PSU": "government-psu",
+  "Portfolio Review": "portfolio-review",
+  "Design Exercise": "design-exercise",
 };
 
 /* MVP launch (2026-06): these focuses are shown in the picker but render as
@@ -279,13 +283,31 @@ const STATIC_COMING_SOON = new Set<InterviewFocus>([
   "Management",
   "Panel Interview",
   "Government / PSU",
+  "Portfolio Review",
+  "Design Exercise",
+]);
+/* Designer Interview Loop (2026-11): Portfolio Review + Design Exercise are
+   new, designer-only rounds. Panel Interview and Strategic are existing
+   focuses that STATIC_COMING_SOON currently blocks for every role — the
+   approved designer loop needs exactly these 4 focuses live for designers
+   on the staged rollout, without changing anything for any other role (or
+   for designers before the flag reaches them). */
+const DESIGNER_LOOP_FOCUSES = new Set<InterviewFocus>([
+  "Portfolio Review",
+  "Design Exercise",
+  "Panel Interview",
+  "Strategic",
 ]);
 /* Flag-gated focuses fall back to "Coming soon" when their kill switch is
    off. Evaluated per call (not at module load) so a PostHog flag that loads
    after first paint takes effect on the next render. */
 const COMING_SOON_FOCUSES = {
-  has: (f: InterviewFocus): boolean =>
-    STATIC_COMING_SOON.has(f) || (f === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE")),
+  has: (f: InterviewFocus, family?: RoleFamily, userId?: string): boolean => {
+    if (family === "designer" && DESIGNER_LOOP_FOCUSES.has(f) && isEnabled("DESIGNER_LOOP_MODE", userId)) {
+      return false;
+    }
+    return STATIC_COMING_SOON.has(f) || (f === "Salary Negotiation" && !isEnabled("SALARY_NEGOTIATION_MODE"));
+  },
 };
 
 function getRecommendedFocus(role?: string, experienceLevel?: string): string {
@@ -826,15 +848,15 @@ export default function SessionSetup() {
     // drafts that point at a focus we've since locked behind the MVP gate).
     if (
       current &&
-      !COMING_SOON_FOCUSES.has(current as InterviewFocus) &&
+      !COMING_SOON_FOCUSES.has(current as InterviewFocus, roleProfile.family, user?.id) &&
       relevantFocusSet.has(current as InterviewFocus)
     ) return;
     const recommended = getRecommendedFocus(targetRole, user?.experienceLevel);
     const fallback =
-      !COMING_SOON_FOCUSES.has(recommended as InterviewFocus) &&
+      !COMING_SOON_FOCUSES.has(recommended as InterviewFocus, roleProfile.family, user?.id) &&
       relevantFocusSet.has(recommended as InterviewFocus)
         ? recommended
-        : roleProfile.focuses.find((f) => !COMING_SOON_FOCUSES.has(f)) || "Behavioral";
+        : roleProfile.focuses.find((f) => !COMING_SOON_FOCUSES.has(f, roleProfile.family, user?.id)) || "Behavioral";
     setInterviewFocus([fallback]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [relevantFocusSet]);
@@ -1933,8 +1955,8 @@ export default function SessionSetup() {
                     </div>
                     <div style={{ fontFamily: F.sans, fontSize: 12, color: T.inkSoft, marginTop: 4 }}>
                       {relevantFocusSet && targetRole.trim()
-                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
-                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus) && targetRole.trim()
+                        ? `Showing the focuses real interviews for "${targetRole.trim()}" actually use.${recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus, roleProfile.family, user?.id) && relevantFocusSet.has(recommendedFocus as InterviewFocus) ? " Recommended pick highlighted." : ""}`
+                        : recommendedFocus && recommendedFocus !== "Behavioral" && !COMING_SOON_FOCUSES.has(recommendedFocus as InterviewFocus, roleProfile.family, user?.id) && targetRole.trim()
                           ? "Choose one area to focus on. The recommended pick for your role is highlighted."
                           : targetRole.trim()
                             ? "Choose one area to focus on."
@@ -1982,6 +2004,8 @@ export default function SessionSetup() {
                         { value: "Panel Interview", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, desc: "Field three angles at once — manager, peer, HR" },
                         { value: "Salary Negotiation", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, desc: "Negotiate offer, benefits, and counter-offers" },
                         { value: "Government / PSU", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/></svg>, desc: "Ethics, current affairs, public-service motivation" },
+                        { value: "Portfolio Review", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>, desc: "Walk through real projects from your portfolio" },
+                        { value: "Design Exercise", icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>, desc: "Work through a live design brief, out loud" },
                       ];
                       /* Role-aware filtering: when the user has typed a
                          classifiable role, hide focuses that real interview
@@ -1999,7 +2023,7 @@ export default function SessionSetup() {
                            users see the roadmap) but aren't selectable. They
                            drop role=radio so the roving-tabindex arrow nav
                            skips them, and `disabled` blocks clicks. */
-                        const comingSoon = COMING_SOON_FOCUSES.has(opt.value as InterviewFocus);
+                        const comingSoon = COMING_SOON_FOCUSES.has(opt.value as InterviewFocus, roleProfile.family, user?.id);
                         const sel = !comingSoon && interviewFocus[0] === opt.value;
                         const isRecommended = !comingSoon && opt.value === recommendedFocus && recommendedFocus !== "Behavioral";
                         return (

@@ -62,6 +62,7 @@ Requirements:
 - ACCURACY: Do NOT invent or fabricate details about the candidate (current employer, past companies, job titles) that are not explicitly stated in the resume or context above. If the resume mentions a company name, use it exactly as written. If no current employer is mentioned, do not guess one.`;
 
 import { withAuthAndRateLimit, checkSessionLimit, sanitizeForLLM, redisGet, redisSetEx, hashStable } from "./_shared";
+import { isServerFlagEnabled } from "./_feature-flags";
 import { captureServerEvent, captureServerException, distinctIdFrom } from "./_posthog";
 import { callLLM, extractJSON } from "./_llm";
 import { buildSalaryNegotiationGuidance, buildExperienceSalaryContext, generateNegotiationBand, getNegotiationStyleContext, INDUSTRY_PACKAGE_CONTEXT, type NegotiationStyle } from "../data/salary-lookup";
@@ -309,6 +310,20 @@ export default async function handler(req: Request): Promise<Response> {
     if (typeof experienceLevel === "string") requestExperienceLevel = experienceLevel;
     const isMini = mini === true;
     requestMini = isMini;
+
+    // Designer Loop (Portfolio Review / Design Exercise) is staging-only while
+    // in build — DESIGNER_LOOP_MODE is `stagingOnly` in the registry, so this
+    // resolves false on production regardless of rollout/override. Mirrors the
+    // SALARY_NEGOTIATION_MODE gate in negotiate-turn.ts.
+    if (
+      (requestType === "portfolio-review" || requestType === "design-exercise") &&
+      !(await isServerFlagEnabled("DESIGNER_LOOP_MODE", auth.userId, undefined, req.headers.get("host")))
+    ) {
+      return new Response(
+        JSON.stringify({ error: "This interview type isn't available yet. Please try another interview type." }),
+        { status: 503, headers },
+      );
+    }
 
     /* Response cache — keyed on the stable hash of the full request body.
      * Same input within the TTL window returns the cached questions without
@@ -1073,6 +1088,20 @@ If unclear, default to IAS-style interview tone.`,
 - ANCHOR TO REAL EXPERIENCE: aspirational answers ("I would do X, Y, Z") are weak. Every strategic answer must reference an actual past situation where the candidate did this. Pushback if missing: "That's the framework — now show me where you actually applied this. What did you decide, and what happened?"
 - FRAMEWORK RECOGNITION: reward explicit framework use (RICE, ICE, OKR, Eisenhower, North Star Metric, Wardley map, JTBD). When candidate uses one, name it back to confirm: "So you used RICE here — how did you weight the R vs the I?"
 - AT LEAST ONE QUESTION must explicitly demand a past-experience example, not a hypothetical: "Tell me about a strategic decision you actually made — what was the trade-off and how did it play out?". Aspirational answers without lived experience signal weakness.`,
+      "portfolio-review": `This is a PORTFOLIO REVIEW interview — designer-only round.
+- This is a WALKTHROUGH of the candidate's real shipped work, not a hypothetical design prompt. Invite them to pick a project from their resume/portfolio and talk through it.
+- Do NOT ask hypothetical "how would you design X" questions — that belongs to the separate Design Exercise round. Every question here anchors to something they actually shipped.
+- PROBE FOR ALTERNATIVES: when a candidate describes a design decision, the follow-up MUST ask what else they considered and why they didn't go that way. "What was option B, and why not that?"
+- USER-IMPACT PUSH: at least one question must ask for evidence beyond the shipped screens — a usability finding, an adoption number, a qualitative user reaction. "How do you know it worked?"
+- NOT ADVERSARIAL: this is a walkthrough, not a trap-question round. Push for specificity and depth, not "gotchas."
+- SIGNATURE QUESTION: the final question should ask about a project that didn't go well, or a decision the candidate would now reverse — tests honesty and growth, not just a highlight reel.
+- REVERSE-QUESTIONS CLOSER: the final question should invite the candidate to ask about the design team, process, or tools.`,
+      "design-exercise": `This is a DESIGN EXERCISE interview — designer-only round, distinct from Portfolio Review.
+- This is a LIVE, think-aloud design prompt. Present a lightweight product/feature brief scoped to the candidate's seniority (junior: a single screen or flow; senior+: a feature with cross-team implications) and have them reason through it out loud.
+- ARC: Q1 presents the brief and asks the candidate to clarify users/constraints/success criteria BEFORE proposing a solution. Q2 asks them to think aloud through their structure/approach. Q3 pushes on a specific trade-off in what they proposed. Q4 REVEALS a new constraint mid-exercise (e.g. "this now needs to work offline," "legal just added a consent requirement," "turns out 40% of users are on a 2G connection") and asks how their approach changes. Q5 asks what they'd cut if they had half the time.
+- Do NOT let the candidate skip straight to a polished-sounding final answer — reward visible, structured reasoning over a confident-but-shallow pitch.
+- TRADE-OFF DEMAND: if the candidate proposes a direction without naming its cost, push: "What does that cost you — complexity, timeline, an edge case?"
+- This is NOT a portfolio walkthrough — don't ask about past shipped work here; that's the separate Portfolio Review round.`,
       "technical": `This is a TECHNICAL LEADERSHIP interview.
 - Focus on: system design, architecture decisions, technology evaluation, tech debt management, scaling systems
 - Questions should test both depth (specific technical trade-offs) and breadth (cross-system thinking)

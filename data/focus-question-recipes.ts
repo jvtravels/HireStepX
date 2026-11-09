@@ -283,6 +283,46 @@ export const RECIPES: Record<string, FocusRecipe> = {
     ],
   },
 
+  /* ─── Portfolio Review (designer-only) ───
+     A walkthrough of 2-3 real shipped projects from the candidate's
+     portfolio/resume, not a hypothetical. Evaluates design judgment
+     through what they actually did, not what they'd do. */
+  "portfolio-review": {
+    label: "Portfolio Review",
+    mandatory: ["opening-resume", "experience-deepdive", "decision-making", "customer-user"],
+    optional: ["communication", "ownership", "problem-solving", "collaboration"],
+    trapBudget: 0,
+    inviteCandidateQuestions: true,
+    pacingNote: "Q1 invites them to pick and walk through one project from their portfolio/resume. Q2-3 drill into a specific design decision, pushing for alternatives considered and why they were rejected. Q4 asks for evidence of user impact (a metric, a usability finding, a stakeholder reaction). Q5 is the signature stretch: a project that didn't work, or a decision they'd now reverse. Not adversarial, this is a walkthrough, push for specificity not gotchas.",
+    scoringRubric: [
+      { dimension: "Design rationale", description: "Did the candidate explain WHY they made a specific design choice, naming alternatives they considered and rejected? 'We went with a bottom sheet' alone is weak; 'we considered a modal but a bottom sheet kept thumb-reach on mobile' is strong.", weight: 0.28 },
+      { dimension: "User-impact evidence", description: "Did they back the project with a real signal, a usability test finding, an adoption/conversion metric, qualitative user feedback? Or only describe the shipped screens?", weight: 0.24 },
+      { dimension: "Trade-off honesty", description: "Did they name what the chosen design gave up (scope, edge cases, a stakeholder ask) rather than presenting it as a clean win?", weight: 0.20 },
+      { dimension: "Craft depth", description: "Specificity on visual/interaction details, spacing, motion, states, accessibility, that signals real hands-on craft vs. a high-level PM-style retelling.", weight: 0.16 },
+      { dimension: "Storytelling clarity", description: "Structured walkthrough (context → problem → process → outcome), not a meandering screen-by-screen narration.", weight: 0.12 },
+    ],
+  },
+
+  /* ─── Design Exercise (designer-only) ───
+     A live/think-aloud design prompt, structurally similar to a
+     take-home critique session. Candidate receives a brief and reasons
+     through it out loud; this is NOT a portfolio walkthrough. */
+  "design-exercise": {
+    label: "Design Exercise",
+    mandatory: ["problem-solving", "decision-making", "customer-user", "communication"],
+    optional: ["ownership", "collaboration", "adaptability-learning"],
+    trapBudget: 0,
+    inviteCandidateQuestions: true,
+    pacingNote: "Q1 presents a lightweight design brief (a product/feature prompt scoped to the candidate's seniority) and asks them to clarify constraints and users first. Q2 asks them to think aloud through their structure/approach before any visual specifics. Q3 pushes on a specific trade-off in their approach. Q4 reveals a new constraint (e.g. 'this now has to work on a 2G connection' or 'legal just added a consent requirement') and asks how their design changes. Q5 asks them to prioritise what they'd cut if they had half the time. Reward structured think-aloud reasoning over jumping straight to a polished-sounding answer.",
+    scoringRubric: [
+      { dimension: "Problem framing", description: "Did the candidate clarify users, constraints, and success criteria before proposing a solution? Jumping straight to UI without framing = weak.", weight: 0.24 },
+      { dimension: "Structured ideation", description: "Did they generate and compare more than one direction before committing, or present only their first idea as the answer?", weight: 0.20 },
+      { dimension: "Trade-off reasoning", description: "When pushed, did they articulate what their chosen approach costs (complexity, edge cases, timeline) and why it's still right?", weight: 0.22 },
+      { dimension: "Adaptability under new constraint", description: "When a new constraint was revealed, did they genuinely revise their approach and explain how, or restate the same answer?", weight: 0.18 },
+      { dimension: "Think-aloud communication", description: "Was their reasoning audible and structured in real time, not just a final answer with no visible process?", weight: 0.16 },
+    ],
+  },
+
   /* ─── Mini (3-question quick session) ─── */
   mini: {
     label: "Mini interview (3 questions)",

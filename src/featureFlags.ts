@@ -6,7 +6,7 @@
    so a local override only changes what this browser shows.
    Console access via window.__FF. */
 
-import { FLAGS, isFlagName, remoteKeyFor, resolveFlag, type FlagName } from "./featureFlagRegistry";
+import { FLAGS, isFlagName, remoteKeyFor, resolveFlag, STAGING_HOST, type FlagName } from "./featureFlagRegistry";
 import { getClientFeatureFlag } from "./posthogClient";
 
 export { FLAGS, type FlagName } from "./featureFlagRegistry";
@@ -42,8 +42,21 @@ function readRemote(name: FlagName): boolean | undefined {
   }
 }
 
+function isStagingHost(): boolean {
+  try {
+    return window.location.hostname === STAGING_HOST;
+  } catch {
+    return false; /* SSR / restricted context */
+  }
+}
+
 export function isEnabled(flagName: FlagName, userId?: string): boolean {
-  return resolveFlag(flagName, { override: readOverride(flagName), remote: readRemote(flagName), userId });
+  return resolveFlag(flagName, {
+    override: readOverride(flagName),
+    remote: readRemote(flagName),
+    userId,
+    isStaging: isStagingHost(),
+  });
 }
 
 export function getEnabledFlags(): FlagName[] {
