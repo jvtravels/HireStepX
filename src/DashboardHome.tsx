@@ -23,6 +23,9 @@ import { captureClientEvent } from "./posthogClient";
 import { tokens as T, fonts as F } from "./auth/_tokens";
 import { computeReadinessGap } from "./dashboardData";
 import { isAiResume } from "./resumeParser";
+import { profileFromRole } from "./roleInterviewMatrix";
+import { getDesignerLoopProgress } from "./designerLoop";
+import { isEnabled } from "./featureFlags";
 import { daysUntilEvent, hasVisitedAnalytics } from "./dashboardHelpers";
 import HiringActivityCard from "./HiringActivityCard";
 import { authHeaders } from "./supabase";
@@ -42,6 +45,7 @@ import {
   GettingStartedCard,
   UnlockTeaserGrid,
   NoSessionsEmptyState,
+  DesignerLoopCard,
 } from "./DashboardHomeSections";
 import { SessionsTable, toRow, DEFAULT_SORT } from "./SessionsV2";
 
@@ -425,6 +429,21 @@ export default function DashboardHome() {
     goToInterview("next-move-primary", effectiveHref)();
   };
 
+  /* Design Interview Loop (Designer role, staging-only while in build —
+   * see DESIGNER_LOOP_MODE in featureFlagRegistry.ts). Evaluated per render,
+   * same convention as SessionSetup's COMING_SOON_FOCUSES, so a flag that
+   * flips after first paint (rollout, PostHog) takes effect immediately. */
+  const designerLoopRoleProfile = useMemo(() => profileFromRole(user?.targetRole || ""), [user?.targetRole]);
+  const designerLoopEnabled = designerLoopRoleProfile.family === "designer" && isEnabled("DESIGNER_LOOP_MODE", user?.id);
+  const designerLoopProgress = useMemo(
+    () => getDesignerLoopProgress(designerLoopRoleProfile.focuses, sessions.recentSessions.map((s) => s.type)),
+    [designerLoopRoleProfile.focuses, sessions.recentSessions],
+  );
+  const goToDesignerLoopRound = (slug: string) => {
+    captureClientEvent("designer_loop_round_clicked", { slug });
+    router.push(`/session/new?focus=${slug}`);
+  };
+
   const nextMoveBlocked = !isFirstTimerWithoutResume && isFree && sessionsRemaining === 0 && creditBalance === 0;
   const nextMoveOnStart = isFirstTimerWithoutResume
     ? goToResume
@@ -542,6 +561,15 @@ export default function DashboardHome() {
           sessionQuestionCount={nextMove.sessionQuestionCount}
           chips={nextMove.chips}
           headline={nextMove.headline}
+        />
+      )}
+
+      {designerLoopEnabled && designerLoopProgress.total > 0 && (
+        <DesignerLoopCard
+          rounds={designerLoopProgress.rounds}
+          doneCount={designerLoopProgress.doneCount}
+          total={designerLoopProgress.total}
+          onStartRound={goToDesignerLoopRound}
         />
       )}
 

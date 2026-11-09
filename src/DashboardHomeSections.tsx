@@ -392,6 +392,52 @@ export function EvidenceCapabilitiesCard({ capabilities }: { capabilities: Evide
   );
 }
 
+/* ─── Design Interview Loop (designer role, staging-only while in build —
+   see DESIGNER_LOOP_MODE in featureFlagRegistry.ts) ───
+   Groups the 6 approved rounds (src/designerLoop.ts) under one labeled,
+   progress-tracked card. Each round is still an ordinary independent
+   session underneath — this is a display grouping, not a new engine. */
+
+export function DesignerLoopCard({ rounds, doneCount, total, onStartRound }: {
+  rounds: Array<{ slug: string; label: string; done: boolean }>;
+  doneCount: number;
+  total: number;
+  onStartRound: (slug: string) => void;
+}) {
+  return (
+    <section aria-labelledby="dh-designer-loop-heading" style={{
+      padding: "24px", borderRadius: 14, background: t.cream, border: `1px solid ${t.line}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <h2 id="dh-designer-loop-heading" style={{ fontFamily: f.sans, fontSize: textSize.lg, fontWeight: 700, color: t.coal, margin: 0 }}>
+          Design Interview Loop
+        </h2>
+        <span style={{ fontFamily: f.sans, fontSize: textSize.sm, fontWeight: 600, color: t.inkSoft }}>
+          {doneCount} of {total} done
+        </span>
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <ProgressBar value={doneCount} max={total} color={t.indigo} />
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {rounds.map((r) => (
+          <div key={r.slug} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.coal }}>{r.label}</span>
+            {r.done ? (
+              <Tag tone="success" label="Done" />
+            ) : (
+              <Button
+                type="button" variant="ghost" size="sm" onClick={() => onStartRound(r.slug)}
+                style={{ fontFamily: f.sans, fontSize: textSize.sm, color: t.indigo, padding: "6px 10px", minHeight: 32, height: "auto" }}
+              >Start →</Button>
+            )}
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /* ─── Getting Started stepper (empty-state only) ─── */
 
 export function GettingStartedCard({ hasResume, hasTargetRole, hasFirstSession, hasVisitedAnalytics }: {

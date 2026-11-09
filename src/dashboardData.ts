@@ -184,6 +184,7 @@ function normalizeType(type: string): string {
     "salary-negotiation": "Salary Negotiation", technical: "Technical",
     "system-design": "System Design", panel: "Panel",
     management: "Management", "government-psu": "Government & PSU",
+    "portfolio-review": "Portfolio Review", "design-exercise": "Design Exercise",
   };
   return map[type] || type;
 }
