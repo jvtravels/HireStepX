@@ -109,6 +109,7 @@ import {
   type RawQuestion,
 } from "./_generate-questions-helpers";
 import { fetchRecentQuestions } from "./_question-dedup";
+import { fetchPortfolioReviewHandoff } from "./_design-exercise-handoff";
 // sampleBehavioralQuestions is exported by the bank but not used here —
 // the canonical-phrasing rule below is built from BEHAVIORAL_50 directly
 // (one example per competency, deterministic, module-scoped).
@@ -325,6 +326,20 @@ export default async function handler(req: Request): Promise<Response> {
       );
     }
 
+    // Stage 4 of the Designer Loop — Portfolio Review → Design Exercise
+    // handoff, one-way only. Fetched up front (before the cache check
+    // below) so a candidate's newly-completed Portfolio Review is
+    // reflected in the cache key, rather than masked by a stale cached
+    // Design Exercise response from before that round existed.
+    let portfolioHandoffText: string | null = null;
+    if (requestType === "design-exercise" && auth.userId && SUPABASE_URL && SUPABASE_SERVICE_KEY) {
+      portfolioHandoffText = await fetchPortfolioReviewHandoff({
+        supabaseUrl: SUPABASE_URL,
+        serviceKey: SUPABASE_SERVICE_KEY,
+        userId: auth.userId,
+      });
+    }
+
     /* Response cache — keyed on the stable hash of the full request body.
      * Same input within the TTL window returns the cached questions without
      * a fresh LLM call. Catches the dominant waste: rapid double-clicks,
@@ -375,6 +390,7 @@ export default async function handler(req: Request): Promise<Response> {
       drill: typeof drill === "string" ? drill : "",
       negotiationStyle: typeof negotiationStyle === "string" ? negotiationStyle : "",
       grounding: await hashStable(JSON.stringify(groundingPayload)),
+      portfolioHandoff: portfolioHandoffText ?? "",
     };
     const cacheKey = `gq:${await hashStable(JSON.stringify(cacheKeyInput))}`;
     const cached = await redisGet(cacheKey);
@@ -516,6 +532,15 @@ export default async function handler(req: Request): Promise<Response> {
       : [];
     const priorCoverageContext = (isHrRound && priorFlagList.length > 0)
       ? `LAST-SESSION COVERAGE PRIORITIES (auto-prebias from analyzer): The candidate's most recent HR-round session under-covered these dimensions. Ensure at least one question this session pressures each — without re-using last session's exact phrasings:\n${priorFlagList.map((f) => `  • ${PRIOR_FLAG_TO_DIMENSION[f]}`).join("\n")}`
+      : "";
+
+    // Stage 4 of the Designer Loop — see portfolioHandoffText above.
+    // Gated to design-exercise only, so the one-way direction can't leak
+    // into any other round. Framed as "paraphrase, don't quote verbatim"
+    // the same way resumeContext/jdContext tell the LLM to treat
+    // candidate-authored text as data, not an instruction.
+    const portfolioHandoffContext = (interviewType === "design-exercise" && portfolioHandoffText)
+      ? `HANDOFF FROM THIS CANDIDATE'S OWN PRIOR PORTFOLIO REVIEW ROUND (paraphrase naturally, don't quote verbatim): ${sanitizeForLLM(portfolioHandoffText, 240)}. Open the FIRST question with one brief, natural sentence referencing this before presenting the design brief and asking clarifying questions — don't let it turn into a second portfolio discussion.`
       : "";
 
     /* Phase-6.1 — behavioural auto-prebias. Mirror the HR-round
@@ -1350,7 +1375,7 @@ NEVER enumerate question counts. NEVER say "I'll ask N questions". NEVER include
 You are an expert interviewer conducting a ${interviewType.replace(/-/g, " ")} mock interview for a ${targetRole} candidate. ${tone}
 ${behavioralShapeGuide}${typeGuidance ? `\n${typeGuidance}\n` : ""}${roleFenceDirective}${disciplineFence ? `\n${disciplineFence}\n` : ""}${groundingRulesDirective}${knownFactsBlock}${csvFocusBlock}${csvPrimaryFocusBias}${resumeGroundingDirective}${industryFlavor ? `\n${industryFlavor}\n` : ""}${warmupBeat}${languageContext ? `\nLANGUAGE INSTRUCTION: ${languageContext}\n` : ""}${experienceCalibration ? `\n${experienceCalibration}\n` : ""}${tierSuffix ? `\n${tierSuffix}\n` : ""}${referenceBlock}
 Context:
-${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${behavioralPriorCoverageContext ? `- ${behavioralPriorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
+${candidateCtx}${companyContext ? `- ${companyContext}\n` : ""}${industryContext ? `- ${industryContext}\n` : ""}${focusContext ? `- ${focusContext}\n` : ""}${drillContext ? `- ${drillContext}\n` : ""}${priorCoverageContext ? `- ${priorCoverageContext}\n` : ""}${portfolioHandoffContext ? `- ${portfolioHandoffContext}\n` : ""}${behavioralPriorCoverageContext ? `- ${behavioralPriorCoverageContext}\n` : ""}${hrPersonaContext ? `- ${hrPersonaContext}\n` : ""}${behavioralPersonaContext ? `- ${behavioralPersonaContext}\n` : ""}${!isSalaryType && roleCompContext ? `- Role competencies to test: ${roleCompContext}\n` : ""}${resumeContext ? `- ${resumeContext}\n` : ""}${resumeIntelligence ? `- ${resumeIntelligence}\n` : ""}${jdContext ? `- ${jdContext}\n` : ""}${avoidTopics ? `- ${avoidTopics}\n` : ""}${weakSkillsContext ? `- ${weakSkillsContext}\n` : ""}
 Generate exactly ${stepCount} interview steps as a JSON array. Sequence: intro, ${Array(questionCount).fill("question").join(", ")}, closing. Do NOT include follow-up steps — those are generated dynamically based on the candidate's answers.
 
 ${isSalaryType ? "" : `DIFFICULTY PROGRESSION (mandatory): Question difficulty MUST escalate across the session. Real interviews open warm and ramp up — the candidate's later answers are read against a higher bar than their first.
@@ -1808,6 +1833,10 @@ Example bad question: "Tell me about your experience." (too vague, not role-spec
       // counts and dimension coverage.
       prior_coverage_hints: priorFlagList.length,
       prior_coverage_applied: !!priorCoverageContext,
+      // Stage 4 of the Designer Loop — whether this Design Exercise
+      // session's opening question referenced the candidate's prior
+      // Portfolio Review round.
+      portfolio_handoff_applied: !!portfolioHandoffContext,
       // Phase-6.1: behavioural auto-prebias telemetry. Same shape as
       // HR — counts + binary applied — so the dashboard can A/B
       // "behavioural-prebias-applied" against subsequent-session
